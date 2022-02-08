@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="Nazi-Zombies-Portable" />
+		<Option makefile_is_custom="1" />
+		<Option pch_mode="2" />
+		<Option compiler="pspsdk" />
+		<Build>
+			<Target title="Phat">
+				<Option output="EBOOT.PBP" prefix_auto="0" extension_auto="0" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="pspsdk" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+				<MakeCommands>
+					<Build command="make -f  makePhat install" />
+					<CompileFile command="make -f  makePhat $file" />
+					<Clean command="make -f  makePhat clean" />
+					<DistClean command="$make -f $makefile distclean$target" />
+					<AskRebuildNeeded command="make -q -f makePhat" />
+					<SilentBuild command="make -f  makePhat install &gt; $(CMD_NULL)" />
+				</MakeCommands>
+			</Target>
+			<Target title="Slim">
+				<Option output="EBOOT.PBP" prefix_auto="0" extension_auto="0" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="pspsdk" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+				<MakeCommands>
+					<Build command="make -f  makePhat install" />
+					<CompileFile command="make -f  makePhat $file" />
+					<Clean command="make -f  makePhat clean$target" />
+					<DistClean command="$make -f $makefile distclean$target" />
+					<AskRebuildNeeded command="make -q -f makePhat $target" />
+					<SilentBuild command="make -f  makePhat install &gt; $(CMD_NULL)" />
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<ExtraCommands>
+			<Add after='cmd /c copy &quot;$(PROJECT_DIR)$(TARGET_OUTPUT_FILE)&quot; &quot;C:\Users\jujoki\Dropbox\Nazi Zombies Portable!\nzportable&quot;' />
+			<Mode after="always" />
+		</ExtraCommands>
+		<Unit filename="../anorm_dots.h" />
+		<Unit filename="../anorms.h" />
+		<Unit filename="../bspfile.h" />
+		<Unit filename="../cdaudio.h" />
+		<Unit filename="../chase.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../cl_demo.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../cl_hud.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../cl_hud.h" />
+		<Unit filename="../cl_input.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../cl_main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../cl_parse.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../cl_slist.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../cl_slist.h" />
+		<Unit filename="../cl_tent.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../client.h" />
+		<Unit filename="../cmd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../cmd.h" />
+		<Unit filename="../common.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../common.h" />
+		<Unit filename="../console.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../console.h" />
+		<Unit filename="../crc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../crc.h" />
+		<Unit filename="../crypter.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../crypter.h" />
+		<Unit filename="../cvar.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../cvar.h" />
+		<Unit filename="../draw.h" />
+		<Unit filename="../host.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../host_cmd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../input.h" />
+		<Unit filename="../keys.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../keys.h" />
+		<Unit filename="../mathlib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../mathlib.h" />
+		<Unit filename="../menu.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../menu.h" />
+		<Unit filename="../modelgen.h" />
+		<Unit filename="../net.h" />
+		<Unit filename="../net_dgrm.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../net_dgrm.h" />
+		<Unit filename="../net_loop.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../net_loop.h" />
+		<Unit filename="../net_main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../net_none.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../net_vcr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../net_vcr.h" />
+		<Unit filename="../nonintel.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../pr_cmds.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../pr_comp.h" />
+		<Unit filename="../pr_edict.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../pr_exec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../progdefs.h" />
+		<Unit filename="../progs.h" />
+		<Unit filename="../protocol.h" />
+		<Unit filename="../quakedef.h" />
+		<Unit filename="../render.h" />
+		<Unit filename="../screen.h" />
+		<Unit filename="../server.h" />
+		<Unit filename="../snd_dma.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../snd_mem.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../snd_mix.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../sound.h" />
+		<Unit filename="../spritegn.h" />
+		<Unit filename="../sv_main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../sv_move.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../sv_phys.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../sv_user.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../sys.h" />
+		<Unit filename="../vid.h" />
+		<Unit filename="../view.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../view.h" />
+		<Unit filename="../wad.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../wad.h" />
+		<Unit filename="../world.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../world.h" />
+		<Unit filename="../zone.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../zone.h" />
+		<Unit filename="KernelHooks/ctrl/cwbhook.h" />
+		<Unit filename="KernelHooks/ctrl/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="KernelHooks/dvemgr/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="MakePHAT" />
+		<Unit filename="MakeSlim" />
+		<Unit filename="Random.cpp" />
+		<Unit filename="Random.h" />
+		<Unit filename="battery.cpp" />
+		<Unit filename="battery.hpp" />
+		<Unit filename="cd.cpp" />
+		<Unit filename="clipping.cpp" />
+		<Unit filename="clipping.hpp" />
+		<Unit filename="fnmatch.cpp" />
+		<Unit filename="fnmatch.h" />
+		<Unit filename="gethost.cpp" />
+		<Unit filename="gethost.hpp" />
+		<Unit filename="input.cpp" />
+		<Unit filename="m33libs/kubridge.h" />
+		<Unit filename="main.cpp" />
+		<Unit filename="math.cpp" />
+		<Unit filename="math.hpp" />
+		<Unit filename="module.cpp" />
+		<Unit filename="module.h" />
+		<Unit filename="mp3.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="mp3.h" />
+		<Unit filename="network.cpp" />
+		<Unit filename="network_infrastructure.cpp" />
+		<Unit filename="network_infrastructure.hpp" />
+		<Unit filename="network_psp.cpp" />
+		<Unit filename="network_psp.hpp" />
+		<Unit filename="sound.cpp" />
+		<Unit filename="system.cpp" />
+		<Unit filename="system.hpp" />
+		<Unit filename="video_hardware.cpp" />
+		<Unit filename="video_hardware.h" />
+		<Unit filename="video_hardware_QMB.cpp" />
+		<Unit filename="video_hardware_decals_QMB.cpp" />
+		<Unit filename="video_hardware_draw.cpp" />
+		<Unit filename="video_hardware_dxtn.cpp" />
+		<Unit filename="video_hardware_dxtn.h" />
+		<Unit filename="video_hardware_entity_fragment.cpp" />
+		<Unit filename="video_hardware_fog.cpp" />
+		<Unit filename="video_hardware_fullbright.cpp" />
+		<Unit filename="video_hardware_fullbright.h" />
+		<Unit filename="video_hardware_hlmdl.cpp" />
+		<Unit filename="video_hardware_hlmdl.h" />
+		<Unit filename="video_hardware_images.cpp" />
+		<Unit filename="video_hardware_images.h" />
+		<Unit filename="video_hardware_light.cpp" />
+		<Unit filename="video_hardware_main.cpp" />
+		<Unit filename="video_hardware_mesh.cpp" />
+		<Unit filename="video_hardware_mhex2.cpp" />
+		<Unit filename="video_hardware_misc.cpp" />
+		<Unit filename="video_hardware_model.cpp" />
+		<Unit filename="video_hardware_model.h" />
+		<Unit filename="video_hardware_part.cpp" />
+		<Unit filename="video_hardware_resample.cpp" />
+		<Unit filename="video_hardware_resample.h" />
+		<Unit filename="video_hardware_screen.cpp" />
+		<Unit filename="video_hardware_surface.cpp" />
+		<Unit filename="video_hardware_warp.cpp" />
+		<Unit filename="vram.cpp" />
+		<Unit filename="vram.hpp" />
+		<Unit filename="wad3.cpp" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

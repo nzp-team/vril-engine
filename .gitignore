@@ -1,0 +1,9 @@
+build/*
+*.o
+*.elf
+*.PBP
+*.prx
+*.SFO
+PARAM.SFO
+EBOOT.PBP
+EBOOT2000.PBP
