@@ -40,7 +40,6 @@ extern "C"
 #include "video_hardware_resample.h"
 
 #include "vram.hpp"
-#include <vram.hpp>
 
 byte		*draw_chars;				// 8*8 graphic characters
 qpic_t		*sniper_scope;
