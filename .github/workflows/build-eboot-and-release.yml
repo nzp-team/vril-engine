@@ -4,7 +4,7 @@ jobs:
   Compile-EBOOTs:
     runs-on: ubuntu-latest
     container:
-      image: bmaupin/pspdev
+      image: sharkwouter/pspdev
     steps:
       - uses: actions/checkout@v2
       - name: Get apt ready
