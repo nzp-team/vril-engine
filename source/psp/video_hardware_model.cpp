@@ -2151,7 +2151,7 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 		 !strcmp(mod->name, "progs/flame2.mdl"))
 		mod->modhint = MOD_FLAME;
 	else if (!strcmp(mod->name, "progs/bolt.mdl") ||
-		 !strcmp(mod->name, "progs/bolt2.mdl") ||
+		 !strcmp(mod->name, "models/misc/bolt2.mdl") ||
 		 !strcmp(mod->name, "progs/bolt3.mdl"))
 		mod->modhint = MOD_THUNDERBOLT;
 	else if (!strcmp(mod->name, "progs/VModels/v_Colt.mdl") || //JUKKI Add nzp weapons here please plox

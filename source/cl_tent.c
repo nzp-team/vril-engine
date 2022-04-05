@@ -271,7 +271,7 @@ void CL_ParseTEnt (void)
 		break;
 
 	case TE_LIGHTNING2:				// lightning bolts
-		CL_ParseBeam (Mod_ForName("progs/bolt2.mdl", true));
+		CL_ParseBeam (Mod_ForName("models/misc/bolt2.mdl", true));
 		break;
 
 	case TE_LIGHTNING3:				// lightning bolts

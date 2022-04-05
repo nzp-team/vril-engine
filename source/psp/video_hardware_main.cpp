@@ -2647,7 +2647,7 @@ void R_DrawMD2Model (entity_t *e)
 	    !strcmp (clmodel->name, "progs/flame.mdl") ||
 	    !strcmp (clmodel->name, "progs/lavaball.mdl") ||
 	    !strcmp (clmodel->name, "progs/bolt.mdl") ||
-	    !strcmp (clmodel->name, "progs/bolt2.mdl") ||
+	    !strcmp (clmodel->name, "models/misc/bolt2.mdl") ||
 	    !strcmp (clmodel->name, "progs/bolt3.mdl") ||
 	    !strcmp (clmodel->name, "progs/eyes.mdl") ||
 	    !strcmp (clmodel->name, "progs/k_spike.mdl") ||
