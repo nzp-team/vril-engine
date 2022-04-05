@@ -26,6 +26,10 @@ extern "C"
 #include "../quakedef.h"
 }
 
+#include <pspdisplay.h>
+#include <pspgu.h>
+#include <pspgum.h>
+
 /*
 
 background clear
@@ -102,14 +106,20 @@ extern "C"	cvar_t	crosshair;
 qboolean	scr_initialized;		// ready to draw
 
 qpic_t      *hitmark;
-qpic_t 		*ls_ndu;
+/*qpic_t 		*ls_ndu;
 qpic_t 		*ls_warehouse;
-qpic_t      *ls_xmas;
+qpic_t      *ls_xmas;*/
+qpic_t 		*lscreen;
 
 int			scr_fullupdate;
 
 int			loadingScreen;
 int			ShowBlslogo;
+
+qboolean 	loadscreeninit;
+
+char* 		loadname2;
+char* 		loadnamespec;
 
 int			clearconsole;
 int			clearnotify;
@@ -605,10 +615,6 @@ void SCR_Init (void)
 	Cmd_AddCommand ("screenshot",SCR_ScreenShot_f);
 
     hitmark 		= Draw_CachePic("gfx/hud/hit_marker");
-	//ls_wahnsinn 	= Draw_CachePic("gfx/lscreen/wahnsinn.lmp");
-	//ls_xmas 		= Draw_CachePic("gfx/lscreen/christmas_special.lmp");
-	//ls_warehouse 	= Draw_CacheImg("gfx/lscreen/warehouse");
-	//ls_ndu 			= Draw_CacheImg("gfx/lscreen/ndu");
 
 	scr_initialized = qtrue;
 }
@@ -811,18 +817,24 @@ SCR_DrawLoadScreen
 	* Derped_Crusader
 	* Aidan
 	* yasen
+	* greg
+	* Asher
+	* Bernerd
+	* Omar Alejandro
+	* TheSmashers
 */
 double loadingtimechange;
 int loadingdot;
+int loadingtextwidth;
 char *lodinglinetext;
 qpic_t *awoo;
 char *ReturnLoadingtex (void)
 {
-    int StringNum = Random_Int(48);
+    int StringNum = Random_Int(55);
     switch(StringNum)
     {
         case 1:
-            return  "The original Quake came out in 1996 (24 years ago as of 2020!)";
+			return  "Released in 1996, Quake is now over 25 years old!";
             break;
         case 2:
             return  "Use the Kar98-k to be the hero we want you to be!";
@@ -831,16 +843,16 @@ char *ReturnLoadingtex (void)
             return  "There is a huge number of modern engines based on Quake!";
             break;
         case 4:
-            return  "Development for NZ:P officially started on September 27, 2009";
+            return  "Development for NZ:P officially began on September 27, 2009";
             break;
         case 5:
-            return  "NZ:P was first released on December 25, 2010";
+            return  "NZ:P was first released on December 25, 2010!";
             break;
         case 6:
             return  "The 1.1 release of NZ:P has over 90,000 downloads!";
             break;
         case 7:
-            return  "NZ:P has been downloaded over 400,00 times!";
+            return  "NZ:P has been downloaded over 400,000 times!";
             break;
         case 8:
             return  "The original NZP was made mainly by 3 guys around the world.";
@@ -867,7 +879,7 @@ char *ReturnLoadingtex (void)
             return  "Try Retro Mode, it's in the Graphics Settings!";
             break;
         case 16:
-            return  "Tired of Nacht der Untoten? Make your own map!";
+			return  "Tired of the base maps? Make your own or try some online!";
             break;
         case 17:
             return  "Slay zombies & be grateful.";
@@ -951,10 +963,10 @@ char *ReturnLoadingtex (void)
 			return 	"Please help me find the meaning of   . Thanks.";
 			break;
 		case 44:
-			return  "Loading..."; // "ripperoni" made me think the game crashed while loading
+			return  "NZ:P Discord is ONLY for Thomas the Tank Engine Roleplay!";
 			break;
 		case 45:
-			return 	"Get rid of the 21% cooler tip, it's an MLP reference";
+			return 	"Get rid of the 21% cooler tip, it's an MLP reference.";
 			break;
 		case 46:
 			return 	"You're playing on a PSP!";
@@ -962,9 +974,31 @@ char *ReturnLoadingtex (void)
 		case 47:
 			return 	"Don't leak the beta!";
 			break;
+		case 48:
+			return  "Jugger-Nog increases your health!";
+			break;
+		case 49:
+			return  "greg was here";
+			break;
+		case 50:
+			return  "Where the hell is the Mystery Box?!";
+			break;
+		case 51:
+			return  "Zombies like getting shot.. I think.";
+			break;
+		case 52:
+			return  "pro tip: aiming helps";
+			break;
+		case 53:
+			return  "If a Nazi Zombie bites you, are you a Nazi, or a Zombie?";
+			break;
+		case 54:
+			return  "Play some Custom Maps!";
+			break;
     }
     return "wut wut";
 }
+qboolean load_screen_exists;
 void SCR_DrawLoadScreen (void)
 {
 
@@ -972,67 +1006,46 @@ void SCR_DrawLoadScreen (void)
 		return;
 	if (!con_forcedup)
 	    return;
-/*
-	static int	count;
 
-	if (host_frametime < 0.01)
-	{
-		count = 0;
-		return;
-	}
+	if (loadingScreen) {
+		if (!loadscreeninit) {
+			load_screen_exists = qfalse;
 
-	count++;
-	if (count < 3)
-		return;
-*/
+			char* lpath;
+			lpath = (char*)Z_Malloc(sizeof(char)*32);
+			strcpy(lpath, "gfx/lscreen/");
+			strcat(lpath, loadname2);
 
-	/*if(cl.worldmodel)
-	{
-		loadingScreen = 0;
-		ShowBlslogo = 1;
-		return;
-	}*/
+			lscreen = Draw_CachePic(lpath);
+			awoo = Draw_CacheImg("gfx/menu/awoo");
 
+			if (lscreen != NULL)
+				load_screen_exists = qtrue;
 
-	/*if (!ShowBlslogo)
-	{
-        pic = Draw_CachePic ("gfx/lscreen/blstrans");
-        Draw_Pic (scr_vrect.x, scr_vrect.y, pic);
-	}*/
-	/*if (loadingScreen == 1)
-		Draw_Pic (scr_vrect.x, scr_vrect.y, ls_wahnsinn);*/
-	//else if (loadingScreen == 2)
-		/*Draw_Pic (scr_vrect.x, scr_vrect.y, ls_anstieg);*//*
-	else if (loadingScreen == 3)
-	{
-		pic = Draw_CachePic ("gfx/lscreen/psp_ch");
-		Draw_Pic (scr_vrect.x, scr_vrect.y, pic);
-	}
-	else if (loadingScreen == 4)
-	{
-		pic = Draw_CachePic ("gfx/lscreen/psp_warehouse");
-		Draw_Pic (scr_vrect.x, scr_vrect.y, pic);
-	}*/
+			loadscreeninit = qtrue;
+		}
 
-	// loading screens
-	switch(loadingScreen) {
-		//case 1: Draw_Pic(scr_vrect.x, scr_vrect.y, ls_ndu); break;
-		//case 2: Draw_Pic(scr_vrect.x, scr_vrect.y, ls_warehouse); break;
-		//case 3: Draw_Pic(scr_vrect.x, scr_vrect.y, ls_xmas); break;
+		if (load_screen_exists == qtrue)
+			Draw_Pic(scr_vrect.x, scr_vrect.y, lscreen);
+
+		Draw_FillByColor(0, 0, 480, 24, GU_RGBA(0, 0, 0, 150));
+		Draw_FillByColor(0, 248, 480, 24, GU_RGBA(0, 0, 0, 150));
+
+		Draw_ColoredString(2, 4, loadnamespec, 255, 255, 0, 255, 2);
 	}
 
 	if (loadingtimechange < Sys_FloatTime ())
 	{
         lodinglinetext = ReturnLoadingtex();
+		loadingtextwidth = strlen(lodinglinetext)*8;
         loadingtimechange = Sys_FloatTime () + 5;
 	}
 
 	if (key_dest == key_game) {
-		Draw_String (0, 0, lodinglinetext);
+		Draw_ColoredString(240 - loadingtextwidth/2, 256, lodinglinetext, 255, 255, 255, 255, 1);
 
-		if (lodinglinetext == "Please help me find the meaning of   . Thanks.") {
-			awoo = Draw_CacheImg("gfx/menu/awoo");
-			Draw_Pic(284, 0, awoo);
+		if (strcmp(lodinglinetext, "Please help me find the meaning of   . Thanks.") == 0) {
+			Draw_Pic(335, 255, awoo);
 		}
 	}
 

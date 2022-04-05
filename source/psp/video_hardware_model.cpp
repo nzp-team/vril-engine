@@ -1675,6 +1675,8 @@ void Mod_LoadBrushModel (model_t *mod, void *buffer)
 
 
     loading_num_step = loading_num_step + 16;
+	loading_step = 2;
+
 	strcpy(loading_name, "Vertexes");
 	SCR_UpdateScreen ();
 
@@ -1772,6 +1774,9 @@ void Mod_LoadBrushModel (model_t *mod, void *buffer)
 	SCR_UpdateScreen ();
 
 	Mod_MakeHull0 ();
+	loading_cur_step++;
+
+	loading_step = 3;
 
 	strcpy(loading_name, "Screen");
     loading_cur_step++;

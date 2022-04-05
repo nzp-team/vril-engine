@@ -403,6 +403,7 @@ void CL_ParseServerInfo (void)
 //
 
    loading_num_step = loading_num_step +nummodels + numsounds;
+   loading_step = 1;
 
 	//Con_Printf("Loaded Model: ");
 
@@ -412,6 +413,7 @@ void CL_ParseServerInfo (void)
 		if (cl.model_precache[i] == NULL)
 		{
 			Con_Printf("Model %s not found\n", model_precache[i]);
+			loading_cur_step++;
 			return;
 		}
 		CL_KeepaliveMessage ();
@@ -428,6 +430,8 @@ void CL_ParseServerInfo (void)
 	// load the extra "no-flamed-torch" model
 	//cl.model_precache[nummodels] = Mod_ForName ("progs/flame0.mdl", false);
 	//cl_modelindex[mi_flame0] = nummodels++;
+
+	loading_step = 4;
 
 	S_BeginPrecaching ();
 	//Con_Printf("Loaded Sounds: ");

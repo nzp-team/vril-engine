@@ -57,6 +57,10 @@ extern qboolean bmg_type_changed;
 extern int loadingScreen;
 extern int ShowBlslogo;
 
+extern char* loadname2;
+extern char* loadnamespec;
+extern qboolean loadscreeninit;
+
 // Backgrounds
 qpic_t *menu_bk;
 
@@ -450,6 +454,7 @@ void M_Paused_Menu_f ()
 	m_state = m_paused_menu;
 	m_entersound = true;
 	loadingScreen = 0;
+	loadscreeninit = false;
 	M_Paused_Cusor = 0;
 }
 
@@ -792,6 +797,7 @@ void M_Exit_Key (int key)
 	case 'y':
 	case K_ENTER:
 		Cbuf_AddText("disconnect\n");
+		CL_ClearState ();
 		M_Menu_Main_f();
 		break;
 
@@ -1027,7 +1033,12 @@ void M_Map_Key (int key)
 					Cbuf_AddText ("disconnect\n");
 				Cbuf_AddText ("maxplayers 1\n");
 				Cbuf_AddText (va("map %s\n", custom_maps[m_map_cursor + multiplier].map_name));
-				//loadingScreen = 1;
+				loadingScreen = 1;
+				loadname2 = custom_maps[m_map_cursor + multiplier].map_name;
+				if (custom_maps[m_map_cursor + multiplier].map_name_pretty != 0)
+					loadnamespec = custom_maps[m_map_cursor + multiplier].map_name_pretty;
+				else
+					loadnamespec = custom_maps[m_map_cursor + multiplier].map_name;
 			}
 			break;
 	}
@@ -1171,6 +1182,8 @@ void M_SinglePlayer_Key (int key)
 					Cbuf_AddText ("maxplayers 1\n");
 					Cbuf_AddText ("map ndu\n");
 					loadingScreen = 1;
+					loadname2 = "ndu";
+					loadnamespec = "Nacht der Untoten";
 					break;
 				case 1:
 					key_dest = key_game;
@@ -1178,7 +1191,9 @@ void M_SinglePlayer_Key (int key)
 						Cbuf_AddText ("disconnect\n");
 					Cbuf_AddText ("maxplayers 1\n");
 					Cbuf_AddText ("map warehouse\n");
-					loadingScreen = 2;
+					loadingScreen = 1;
+					loadname2 = "warehouse";
+					loadnamespec = "Warehouse";
 					break;
 				case 2:
 					key_dest = key_game;
@@ -1186,7 +1201,9 @@ void M_SinglePlayer_Key (int key)
 						Cbuf_AddText ("disconnect\n");
 					Cbuf_AddText ("maxplayers 1\n");
 					Cbuf_AddText ("map christmas_special\n");
-					loadingScreen = 3;
+					loadingScreen = 1;
+					loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 					break;
 				case 3:
 					M_Menu_Map_f ();
@@ -4857,6 +4874,21 @@ double m_serverInfoMessageTime;
 
 //==================== Map Find System By Crow_bar =============================
 
+// UGHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+// fuck windows
+char* remove_windows_newlines(char* line)
+{
+	char *p = strchr(line, '\r');
+	while (p) {
+		*p = '\0';
+		strcat(line, ++p);
+		p = strchr(p, '\r');
+	}
+
+	return line;
+}
+
+
 void Map_Finder(void)
 {
 
@@ -4938,18 +4970,18 @@ void Map_Finder(void)
 				strtok(buffer, "\n");
 				while(buffer != NULL) {
 					switch(state) {
-						case 0: strcpy(custom_maps[user_maps_num].map_name_pretty, buffer); break;
-						case 1: strcpy(custom_maps[user_maps_num].map_desc_1, buffer); break;
-						case 2: strcpy(custom_maps[user_maps_num].map_desc_2, buffer); break;
-						case 3: strcpy(custom_maps[user_maps_num].map_desc_3, buffer); break;
-						case 4: strcpy(custom_maps[user_maps_num].map_desc_4, buffer); break;
-						case 5: strcpy(custom_maps[user_maps_num].map_desc_5, buffer); break;
-						case 6: strcpy(custom_maps[user_maps_num].map_desc_6, buffer); break;
-						case 7: strcpy(custom_maps[user_maps_num].map_desc_7, buffer); break;
-						case 8: strcpy(custom_maps[user_maps_num].map_desc_8, buffer); break;
-						case 9: strcpy(custom_maps[user_maps_num].map_author, buffer); break;
-						case 10: value = 0; sscanf(buffer, "%d", &value); custom_maps[user_maps_num].map_use_thumbnail = value; break;
-						case 11: value = 0; sscanf(buffer, "%d", &value); custom_maps[user_maps_num].map_allow_game_settings = value; break;
+						case 0: strcpy(custom_maps[user_maps_num].map_name_pretty, remove_windows_newlines(buffer)); break;
+						case 1: strcpy(custom_maps[user_maps_num].map_desc_1, remove_windows_newlines(buffer)); break;
+						case 2: strcpy(custom_maps[user_maps_num].map_desc_2, remove_windows_newlines(buffer)); break;
+						case 3: strcpy(custom_maps[user_maps_num].map_desc_3, remove_windows_newlines(buffer)); break;
+						case 4: strcpy(custom_maps[user_maps_num].map_desc_4, remove_windows_newlines(buffer)); break;
+						case 5: strcpy(custom_maps[user_maps_num].map_desc_5, remove_windows_newlines(buffer)); break;
+						case 6: strcpy(custom_maps[user_maps_num].map_desc_6, remove_windows_newlines(buffer)); break;
+						case 7: strcpy(custom_maps[user_maps_num].map_desc_7, remove_windows_newlines(buffer)); break;
+						case 8: strcpy(custom_maps[user_maps_num].map_desc_8, remove_windows_newlines(buffer)); break;
+						case 9: strcpy(custom_maps[user_maps_num].map_author, remove_windows_newlines(buffer)); break;
+						case 10: value = 0; sscanf(remove_windows_newlines(buffer), "%d", &value); custom_maps[user_maps_num].map_use_thumbnail = value; break;
+						case 11: value = 0; sscanf(remove_windows_newlines(buffer), "%d", &value); custom_maps[user_maps_num].map_allow_game_settings = value; break;
 						default: break;
 					}
 					state++;

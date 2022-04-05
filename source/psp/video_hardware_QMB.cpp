@@ -442,7 +442,7 @@ void QMB_InitParticles (void)
 	
 	if (!(particleimage = loadtextureimage("textures/particles/particlefont", 0, 0, qfalse, GU_LINEAR)))
 	{
-		Clear_LoadingFill ();
+		//Clear_LoadingFill ();
 		return;
 	}
 
@@ -470,7 +470,7 @@ void QMB_InitParticles (void)
 	// load the rest of the images
 	if(!(particleimage = loadtextureimage("textures/particles/q3particlefont", 0, 0, qfalse, GU_LINEAR)))
 	{
-		Clear_LoadingFill ();
+		//Clear_LoadingFill ();
 		return;
 	}
 	
@@ -495,7 +495,7 @@ void QMB_InitParticles (void)
 
 	if (!(particleimage = loadtextureimage("textures/particles/flame", 0, 0, qfalse, GU_LINEAR)))
 	{
-		Clear_LoadingFill ();
+		//Clear_LoadingFill ();
 		return;
 	}
 	
@@ -510,7 +510,7 @@ void QMB_InitParticles (void)
 
 	if (!(particleimage = loadtextureimage("textures/particles/inferno", 0, 0, qfalse, GU_LINEAR)))
 	{
-		Clear_LoadingFill ();
+		//Clear_LoadingFill ();
 		return;
 	}
     max_s = max_t = 256.0;
@@ -521,7 +521,7 @@ void QMB_InitParticles (void)
 
 	if (!(particleimage = loadtextureimage("textures/particles/zing1", 0, 0, qfalse, GU_LINEAR)))
 	{
-        Clear_LoadingFill ();
+        //Clear_LoadingFill ();
 		return;
 	}
 
@@ -534,7 +534,7 @@ void QMB_InitParticles (void)
 	
 	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl0", 0, 0, qfalse, GU_LINEAR)))
 	{
-		Clear_LoadingFill ();
+		//Clear_LoadingFill ();
 		return;
 	}
 	//max_s = max_t = 256.0;
@@ -545,7 +545,7 @@ void QMB_InitParticles (void)
 
 	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl1", 0, 0, qfalse, GU_LINEAR)))
 	{
-		Clear_LoadingFill ();
+		//Clear_LoadingFill ();
 		return;
 	}
 	//max_s = max_t = 256.0;
@@ -555,7 +555,7 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl2", 0, 0, qfalse, GU_LINEAR)))
 	{
-        Clear_LoadingFill ();
+        //Clear_LoadingFill ();
 		return;
 	}
 	//max_s = max_t = 256.0;
@@ -566,7 +566,7 @@ void QMB_InitParticles (void)
 
 	if (!(particleimage = loadtextureimage("textures/mzfl/muzzleflash8", 0, 0, qfalse, GU_LINEAR)))
 	{
-		Clear_LoadingFill ();
+		//Clear_LoadingFill ();
 		return;
 	}
 	//max_s = max_t = 256.0;
@@ -578,7 +578,7 @@ void QMB_InitParticles (void)
 	max_s = max_t = 64.0;
 	if (!(particleimage = loadtextureimage("textures/particles/bloodcloud", 0, 0, qfalse, GU_LINEAR)))
 	{
-        Clear_LoadingFill ();
+        //Clear_LoadingFill ();
 		return;
 	}
 	//max_s = max_t = 256.0;
@@ -613,7 +613,7 @@ void QMB_InitParticles (void)
 */
 	if (!(particleimage = loadtextureimage("textures/particles/fly", 0, 0, qfalse, GU_LINEAR)))
 	{
-		Clear_LoadingFill ();
+		//Clear_LoadingFill ();
 		return;
 	}
 	max_s = max_t = 256.0;

@@ -60,6 +60,8 @@ bool 	 	tex_scale_down = true;
 float 	loading_cur_step;
 char	loading_name[32];
 float 	loading_num_step;
+int 	loading_step;
+float 	loading_cur_step_bk;
 
 #define CLUT4
 
@@ -1024,29 +1026,46 @@ void Draw_LoadingFill(void)
 	int size       	= 8;
 	int max_step   	= 350;
     int x          	= (vid.width  / 2) - (max_step / 2);
-    int y          	= vid.height - (size/ 2) - 10;
+    int y          	= vid.height - (size/ 2) - 25;
 	int l;
 	char str[64];
+	char* text;
 
 
 	if(loading_cur_step > loading_num_step)
 	      loading_cur_step = loading_num_step;
 
+	if (loading_cur_step < loading_cur_step_bk)
+		loading_cur_step = loading_cur_step_bk;
+
+	if (loading_cur_step == loading_num_step && loading_cur_step_bk != loading_num_step)
+		loading_cur_step = loading_cur_step_bk;
+
     float loadsize = loading_cur_step * (max_step / loading_num_step);
-	Draw_FillByColor (x - 2, y - 2, max_step + 4, size + 4, GU_RGBA(255, 255, 255, 200));
+	Draw_FillByColor (x - 2, y - 2, max_step + 4, size + 4, GU_RGBA(69, 69, 69, 255));
 	Draw_FillByColor (x, y, loadsize, size, GU_RGBA(0, 0, 0, 200));
 
-	strcpy (str, "Loading: ");
-	strcat (str, loading_name);
-	l = strlen (str);
-	Draw_String((vid.width - l*8)/2, y, str);
+	switch(loading_step) {
+		case 1: text = "Loading Models.."; break;
+		case 2: text = "Loading World.."; break;
+		case 3: text = "Running Test Frame.."; break;
+		case 4: text = "Loading Sounds.."; break;
+		default: text = "Initializing.."; break;
+	}
+
+	l = strlen (text);
+	Draw_String((vid.width - l*8)/2, y, text);
+
+	loading_cur_step_bk = loading_cur_step;
 }
 
 void Clear_LoadingFill (void)
 {
     //it is end loading
 	loading_cur_step = 0;
+	loading_cur_step_bk = 0;
 	loading_num_step = 0;
+	loading_step = -1;
 	memset(loading_name, 0, sizeof(loading_name));
 }
 
