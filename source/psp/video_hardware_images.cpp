@@ -991,12 +991,18 @@ byte *LoadBMP (FILE *fin, int matchwidth, int matchheight)
 loadimagepixels
 =============
 */
+										// HACK HACK HACK
 byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int matchheight)
 {
 	FILE	*f;
 	char	basename[128], name[128];
 	byte	 *c;
-	COM_StripExtension(filename, basename); // strip the extension to allow TGA and PCX
+
+	if (complain == qfalse)
+		COM_StripExtension(filename, basename); // strip the extension to allow TGA and PCX
+	else
+		strcpy(basename, filename);
+
 	c = (byte*)(basename);
 
 	while (*c)
@@ -1038,8 +1044,8 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 	FS_FOpenFile (name, &f);
 	if (f)
 		return LoadBMP (f, matchwidth, matchheight);
-	if (complain)
-		Con_Printf ("Couldn't load %s .tga .jpg .bmp .png \n", filename);
+	//if (complain)
+	//	Con_Printf ("Couldn't load %s .tga .jpg .bmp .png \n", filename);
 	
 	return NULL;
 }

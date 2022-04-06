@@ -2043,12 +2043,13 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 		{
 			Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
 			COM_StripExtension(loadmodel->name, model);
-			sprintf (model2, "%s_%i", model, i);
+			// HACK HACK HACK
+			sprintf (model2, "%s.mdl_%i", model, i);
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
 			pheader->gl_texturenum[i][2] = 
-			pheader->gl_texturenum[i][3] = loadtextureimage (model2, 0, 0, qfalse, GU_LINEAR);
-			
+			pheader->gl_texturenum[i][3] = loadtextureimage (model2, 0, 0, qtrue, GU_LINEAR);
+
 			if (pheader->gl_texturenum[i][0] == 0)// did not find a matching TGA...
 			{
 				sprintf (name, "%s_%i", loadmodel->name, i);
