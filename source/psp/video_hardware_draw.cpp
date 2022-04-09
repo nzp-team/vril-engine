@@ -2381,7 +2381,8 @@ void GL_Upload32(int texture_index, const byte *data, int width, int height)
 
 	// Create a temporary buffer to use as a source for swizzling.
 	std::size_t buffer_size = GL_GetTexSize(texture.format, texture.width, texture.height, 0);
-	std::vector<byte> unswizzled(buffer_size);
+	int start = Hunk_LowMark ();
+	byte* unswizzled = static_cast<byte*>(Hunk_Alloc(buffer_size));
 
 	if (texture.mipmaps > 0)
 	{
@@ -2432,7 +2433,7 @@ void GL_Upload32(int texture_index, const byte *data, int width, int height)
 		}
 	}
 
-	unswizzled.clear();
+	Hunk_FreeToLowMark(start);
 
 	// Copy to VRAM?
 	if (texture.vram)
@@ -2470,7 +2471,8 @@ void GL_UploadDXT(int texture_index, const byte *data, int width, int height)
 	
 	// Create a temporary buffer to use as a source for swizzling.
 	std::size_t buffer_sizesrc = GL_GetTexSize(-1, texture.width, texture.height, texture.bpp);
-	std::vector<byte> unswizzled(buffer_sizesrc);
+	int start = Hunk_LowMark ();
+	byte* unswizzled = static_cast<byte*>(Hunk_Alloc(buffer_sizesrc));
 
     // New compressed texture
 	std::size_t buffer_sizedst = GL_GetTexSize(texture.format, texture.width, texture.height, 0);
@@ -2492,7 +2494,8 @@ void GL_UploadDXT(int texture_index, const byte *data, int width, int height)
 	}
 
 	tx_compress_dxtn(texture.bpp, texture.width, texture.height,(const unsigned char *)&unswizzled[0], texture.format, (unsigned char *)texture.ram);
-	unswizzled.clear();
+	Hunk_FreeToLowMark (start);
+
 	// Copy to VRAM?
 	if (texture.vram)
 	{
