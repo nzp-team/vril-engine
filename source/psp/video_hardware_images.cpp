@@ -67,9 +67,9 @@ byte *LoadJPG (FILE *fin, int matchwidth, int matchheight)
 
 	Con_Printf("JPG: Allocating data\n");
 	
-	data = static_cast<byte*>(malloc (cinfo.image_width * cinfo.image_height * 4));
+	data = static_cast<byte*>(Hunk_Alloc(cinfo.image_width * cinfo.image_height * 4));
 	row_stride = cinfo.output_width * cinfo.output_components;
-	scanline = static_cast<byte*>(malloc (row_stride));
+	scanline = static_cast<byte*>(Hunk_Alloc(row_stride));
 
 	Con_Printf("JPG: done allocating data\n");
 	
@@ -111,7 +111,6 @@ byte *LoadJPG (FILE *fin, int matchwidth, int matchheight)
 
 	jpeg_finish_decompress (&cinfo);
 	jpeg_destroy_decompress (&cinfo);
-	free (scanline);
 	fclose (fin);
 
 	return data;
