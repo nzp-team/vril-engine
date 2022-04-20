@@ -67,9 +67,9 @@ byte *LoadJPG (FILE *fin, int matchwidth, int matchheight)
 
 	Con_Printf("JPG: Allocating data\n");
 	
-	data = static_cast<byte*>(malloc (cinfo.image_width * cinfo.image_height * 4));
+	data = static_cast<byte*>(Hunk_Alloc(cinfo.image_width * cinfo.image_height * 4));
 	row_stride = cinfo.output_width * cinfo.output_components;
-	scanline = static_cast<byte*>(malloc (row_stride));
+	scanline = static_cast<byte*>(Hunk_Alloc(row_stride));
 
 	Con_Printf("JPG: done allocating data\n");
 	
@@ -111,7 +111,6 @@ byte *LoadJPG (FILE *fin, int matchwidth, int matchheight)
 
 	jpeg_finish_decompress (&cinfo);
 	jpeg_destroy_decompress (&cinfo);
-	free (scanline);
 	fclose (fin);
 
 	return data;
@@ -715,6 +714,19 @@ static void PNG_IO_user_flush_data (png_structp png_ptr)
 LoadPNG
 =============
 */
+void* Hunk_AllocPNG(png_struct* tmp, unsigned int num_bytes)
+{
+    void* ptr = Hunk_Alloc(num_bytes);
+
+    return ptr;
+}
+
+// Libpng requires a function for freeing memory, hunk gets free'd later so keep this empty.
+void Hunk_FreePNG(png_struct* tmp, void* ptr)
+{
+    return;
+}
+
 byte *LoadPNG (FILE *fin, int matchwidth, int matchheight)
 {
 	int		y, width, height, bitdepth, colortype;
@@ -733,7 +745,7 @@ byte *LoadPNG (FILE *fin, int matchwidth, int matchheight)
 		return NULL;
 	}
 
-	if (!(png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
+	if (!(png_ptr = png_create_read_struct_2(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL, NULL, Hunk_AllocPNG, Hunk_FreePNG)))
 	{
 		fclose (fin);
 		return NULL;
@@ -811,8 +823,8 @@ byte *LoadPNG (FILE *fin, int matchwidth, int matchheight)
 		return NULL;
 	}
 
-	data = static_cast<byte*>(malloc (height * rowbytes));
-	rowpointers = static_cast<byte**>(malloc (height * sizeof(*rowpointers)));
+	data = static_cast<byte*>(Hunk_Alloc(height * rowbytes));
+	rowpointers = static_cast<byte**>(Hunk_Alloc(height * sizeof(*rowpointers)));
 
 	for (y=0 ; y<height ; y++)
 		rowpointers[y] = data + y * rowbytes;
@@ -823,7 +835,6 @@ byte *LoadPNG (FILE *fin, int matchwidth, int matchheight)
 	png_read_image (png_ptr, rowpointers);
 	png_read_end (png_ptr, NULL);
 	png_destroy_read_struct (&png_ptr, &pnginfo, NULL);
-	free (rowpointers);
 	fclose (fin);
 
 	return data;
@@ -1060,7 +1071,11 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 {
 	int texture_index;
 	byte *data;
+
+	int hunk_start = Hunk_LowMark();
 	data = loadimagepixels (filename, complain, matchwidth, matchheight);
+	int hunk_stop = Hunk_LowMark();
+
 	if(!data)
 	{
 		return 0;
@@ -1076,6 +1091,12 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	{
 		texture_index = GL_LoadImages (filename, image_width, image_height, data, qtrue, filter, 0, 4);
 	}
-	free(data);
+
+	// Only free the hunk if it was used.
+	if (hunk_start != hunk_stop)
+		Hunk_FreeToLowMark(hunk_start);
+	else
+		free(data);
+
 	return texture_index;
 }
