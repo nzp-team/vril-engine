@@ -3378,13 +3378,14 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum, 
 	pspriteframe->left = origin[0];
 	pspriteframe->right = width + origin[0];
 
-	sprintf (name, "%s_%i", loadmodel->name, framenum);
+	// HACK HACK HACK
+	sprintf (name, "%s.spr_%i", loadmodel->name, framenum);
 
 	if (version == SPRITE_VERSION)
 	{
 		COM_StripExtension(loadmodel->name, sprite);
-		sprintf (sprite2, "%s_%i", sprite, framenum);
-		pspriteframe->gl_texturenum = loadtextureimage (sprite2, 0, 0, qfalse, GU_LINEAR);
+		sprintf (sprite2, "%s.spr_%i", sprite, framenum);
+		pspriteframe->gl_texturenum = loadtextureimage (sprite2, 0, 0, qtrue, GU_LINEAR);
 		
 		if (pspriteframe->gl_texturenum == 0)// did not find a matching TGA...
 		{
