@@ -893,17 +893,11 @@ void R_RenderBrushPoly (msurface_t *fa)
 
 	if(r_showtris.value) //Crow_bar
 	{
-		if(r_showtris_full.value)
-			sceGuDisable(GU_DEPTH_TEST);
-		else
-			sceGuDepthMask (GU_TRUE);
+		sceGuDepthMask (GU_TRUE);
 
 		DrawTrisPoly (fa->polys);
 
-		if(r_showtris_full.value)
-			sceGuEnable(GU_DEPTH_TEST);
-		else
-			sceGuDepthMask (GU_FALSE);
+		sceGuDepthMask (GU_FALSE);
 	}
 
 	if (fa->flags & SURF_DRAWSKY)
