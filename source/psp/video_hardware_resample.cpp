@@ -74,7 +74,7 @@ static void Image_Resample32 (void *indata, int inwidth, int inheight,void *outd
 				{
 					inrow = (byte *) indata + inwidth4 * yi;
 					if (yi == oldy + 1)
-						memcpy(row1, row2, outwidth4);
+						memcpy_vfpu(row1, row2, outwidth4);
 					else
 					Image_Resample32LerpLine (inrow, row1, inwidth, outwidth);
 					Image_Resample32LerpLine (inrow + inwidth4, row2, inwidth, outwidth);
@@ -116,12 +116,12 @@ static void Image_Resample32 (void *indata, int inwidth, int inheight,void *outd
 				{
 					inrow = (byte *) indata + inwidth4 * yi;
 					if (yi == oldy+1)
-						memcpy(row1, row2, outwidth4);
+						memcpy_vfpu(row1, row2, outwidth4);
 					else
 						Image_Resample32LerpLine (inrow, row1, inwidth, outwidth);
 					oldy = yi;
 				}
-				memcpy(out, row1, outwidth4);
+				memcpy_vfpu(out, row1, outwidth4);
 			}
 		}
 		free(memalloc);
@@ -221,7 +221,7 @@ static void Image_Resample24 (void *indata, int inwidth, int inheight,
 				if (yi != oldy) {
 					inrow = (byte *) indata + inwidth3 * yi;
 					if (yi == oldy + 1)
-						memcpy(row1, row2, outwidth3);
+						memcpy_vfpu(row1, row2, outwidth3);
 					else
 						Image_Resample24LerpLine (inrow, row1, inwidth, outwidth);
 					Image_Resample24LerpLine (inrow + inwidth3, row2, inwidth, outwidth);
@@ -259,12 +259,12 @@ static void Image_Resample24 (void *indata, int inwidth, int inheight,
 				if (yi != oldy) {
 					inrow = (byte *) indata + inwidth3 * yi;
 					if (yi == oldy+1)
-						memcpy(row1, row2, outwidth3);
+						memcpy_vfpu(row1, row2, outwidth3);
 					else
 						Image_Resample24LerpLine (inrow, row1, inwidth, outwidth);
 					oldy = yi;
 				}
-				memcpy(out, row1, outwidth3);
+				memcpy_vfpu(out, row1, outwidth3);
 			}
 		}
 		free(memalloc);

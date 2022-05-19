@@ -130,7 +130,7 @@ qboolean Mod_LoadHLModel (model_t *mod, void *buffer)
 	model = static_cast<hlmodelcache_t*>(Hunk_Alloc(sizeof(hlmodelcache_t)));
 
 	header = static_cast<hlmdl_header_t*>(Hunk_Alloc(com_filesize));
-	memcpy(header, buffer, com_filesize);
+	memcpy_vfpu(header, buffer, com_filesize);
 
 	if (header->version != 10)
 	{
@@ -175,7 +175,7 @@ qboolean Mod_LoadHLModel (model_t *mod, void *buffer)
 	if (!mod->cache.data)
 		return qfalse;
 
-	memcpy (mod->cache.data, model, total);
+	memcpy_vfpu(mod->cache.data, model, total);
 
 	Hunk_FreeToLowMark (start);
 	return qtrue;
@@ -482,7 +482,7 @@ void HL_SetupBones(hlmodel_t *model)
         }
         else
         {
-            memcpy(transform_matrix[i], matrix, 12 * sizeof(float));
+            memcpy_vfpu(transform_matrix[i], matrix, 12 * sizeof(float));
         }
     }
 }

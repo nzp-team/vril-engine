@@ -164,7 +164,7 @@ void Cbuf_Execute (void)
 		}
 			
 				
-		memcpy (line, text, i);
+		memcpy_vfpu(line, text, i);
 		line[i] = 0;
 		
 // delete the text from the command buffer and move remaining commands down

@@ -205,7 +205,7 @@ void CL_KeepaliveMessage (void)
 
 // read messages from server, should just be nops
 	old = net_message;
-	memcpy (olddata, net_message.data, net_message.cursize);
+	memcpy_vfpu(olddata, net_message.data, net_message.cursize);
 
 	do
 	{
@@ -227,7 +227,7 @@ void CL_KeepaliveMessage (void)
 	} while (ret);
 
 	net_message = old;
-	memcpy (net_message.data, olddata, net_message.cursize);
+	memcpy_vfpu(net_message.data, olddata, net_message.cursize);
 
 // check time
 	time = Sys_FloatTime ();

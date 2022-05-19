@@ -260,7 +260,7 @@ byte* LoadPCX (FILE *f, int matchwidth, int matchheight)
 	image_width = pcx->xmax+1;
 	image_height = pcx->ymax+1;
 
-	memcpy(image_palette, palette, sizeof(palette));
+	memcpy_vfpu(image_palette, palette, sizeof(palette));
 	image_palette_type = PAL_RGB;
 
 	fclose (f);
@@ -304,7 +304,7 @@ byte *LoadWAL (char *name)
 	size = width * height;
 
 	data = static_cast<byte*>(malloc(size));
-	memcpy(data, (byte *)mt + ofs, size);
+	memcpy_vfpu(data, (byte *)mt + ofs, size);
 
 	image_palette_type = PAL_Q2;
 

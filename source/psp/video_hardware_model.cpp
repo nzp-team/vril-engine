@@ -537,13 +537,13 @@ void Mod_LoadTextures (lump_t *l)
 		loadmodel->textures[i] = tx;
 
 
-		memcpy (tx->name, mt->name, sizeof(tx->name));
+		memcpy_vfpu(tx->name, mt->name, sizeof(tx->name));
 		tx->width = mt->width;
 		tx->height = mt->height;
 		for (j=0 ; j<MIPLEVELS ; j++)
 			tx->offsets[j] = mt->offsets[j] + sizeof(texture_t) - sizeof(miptex_t);
 		// the pixels immediately follow the structures
-		memcpy ( tx_pixels, mt+1, pixels);
+		memcpy_vfpu( tx_pixels, mt+1, pixels);
 
 		int level = 0;
 		if (r_mipmaps.value > 0)
@@ -776,7 +776,7 @@ void Mod_LoadLighting (lump_t *l)
 			return;
 		}
 		loadmodel->lightdata = static_cast<byte*>(Hunk_AllocName ( l->filelen, loadname));
-		memcpy (loadmodel->lightdata, mod_base + l->fileofs, l->filelen);
+		memcpy_vfpu(loadmodel->lightdata, mod_base + l->fileofs, l->filelen);
 		return;
 	}
 
@@ -816,7 +816,7 @@ void Mod_LoadLighting (lump_t *l)
         loadmodel->lightdata = static_cast<byte*>(Hunk_AllocName ( l->filelen*3, litfilename));
         in = loadmodel->lightdata + l->filelen*2; // place the file at the end, so it will not be overwritten until the very last write
         out = loadmodel->lightdata;
-        memcpy (in, mod_base + l->fileofs, l->filelen);
+        memcpy_vfpu(in, mod_base + l->fileofs, l->filelen);
         for (i = 0;i < l->filelen;i++)
         {
             d = *in++;
@@ -853,7 +853,7 @@ void Mod_HL_LoadLighting (lump_t *l)
 	}
 
 	loadmodel->lightdata = static_cast<byte*>(Hunk_AllocName ( l->filelen, loadname));
-	memcpy (loadmodel->lightdata, mod_base + l->fileofs, l->filelen);
+	memcpy_vfpu(loadmodel->lightdata, mod_base + l->fileofs, l->filelen);
 }
 
 /*
@@ -871,7 +871,7 @@ void Mod_LoadVisibility (lump_t *l)
 	}
 
 	loadmodel->visdata = static_cast<byte*>(Hunk_AllocName ( l->filelen, loadname));
-	memcpy (loadmodel->visdata, mod_base + l->fileofs, l->filelen);
+	memcpy_vfpu(loadmodel->visdata, mod_base + l->fileofs, l->filelen);
 }
 
 /*
@@ -980,7 +980,7 @@ void Mod_LoadEntities (lump_t *l)
 	}
 
 	loadmodel->entities = static_cast<char*>(Hunk_AllocName ( l->filelen, entfilename));
-	memcpy (loadmodel->entities, mod_base + l->fileofs, l->filelen);
+	memcpy_vfpu(loadmodel->entities, mod_base + l->fileofs, l->filelen);
 
 	if (loadmodel->bspversion == HL_BSPVERSION || loadmodel->bspversion == NZP_BSPVERSION)
 		Mod_ParseWadsFromEntityLump(loadmodel->entities);
@@ -2324,7 +2324,7 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	if (!mod->cache.data)
 		return;
 
-	memcpy (mod->cache.data, pheader, total);
+	memcpy_vfpu(mod->cache.data, pheader, total);
 
 	Hunk_FreeToLowMark (start);
 }
@@ -2496,7 +2496,7 @@ void Mod_LoadH2AliasModel (model_t *mod, void *buffer)
 	Cache_Alloc (&mod->cache, total, loadname);
 	if (!mod->cache.data)
 		return;
-	memcpy (mod->cache.data, pheader, total);
+	memcpy_vfpu(mod->cache.data, pheader, total);
 
 	Hunk_FreeToLowMark (start);
 }
@@ -2650,7 +2650,7 @@ void Mod_LoadQ2AliasModel (model_t *mod, void *buffer)
 	Cache_Alloc (&mod->cache, total, loadname);
 	if (!mod->cache.data)
 		return;
-	memcpy (mod->cache.data, pheader, total);
+	memcpy_vfpu(mod->cache.data, pheader, total);
 
 	Hunk_FreeToLowMark (start);
 }
@@ -3247,7 +3247,7 @@ void Mod_LoadQ3AliasModel (model_t *mod, void *buffer)
 	if (!mod->cache.data)
 		return;
 
-	memcpy (header, buffer, com_filesize);
+	memcpy_vfpu(header, buffer, com_filesize);
 	base = com_filesize;
 
 	mod->type = mod_md3;

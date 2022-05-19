@@ -183,7 +183,7 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, 
 	m[1][2] = vf[1];
 	m[2][2] = vf[2];
 
-	memcpy( im, m, sizeof( im ) );
+	memcpy_vfpu( im, m, sizeof( im ) );
 
 	im[0][1] = m[1][0];
 	im[0][2] = m[2][0];

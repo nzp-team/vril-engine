@@ -286,16 +286,16 @@ void M_BuildTranslationTable(int top, int bottom)
 		identityTable[j] = j;
 	dest = translationTable;
 	source = identityTable;
-	memcpy (dest, source, 256);
+	memcpy_vfpu(dest, source, 256);
 
 	if (top < 128)	// the artists made some backwards ranges.  sigh.
-		memcpy (dest + TOP_RANGE, source + top, 16);
+		memcpy_vfpu(dest + TOP_RANGE, source + top, 16);
 	else
 		for (j=0 ; j<16 ; j++)
 			dest[TOP_RANGE+j] = source[top+15-j];
 
 	if (bottom < 128)
-		memcpy (dest + BOTTOM_RANGE, source + bottom, 16);
+		memcpy_vfpu(dest + BOTTOM_RANGE, source + bottom, 16);
 	else
 		for (j=0 ; j<16 ; j++)
 			dest[BOTTOM_RANGE+j] = source[bottom+15-j];

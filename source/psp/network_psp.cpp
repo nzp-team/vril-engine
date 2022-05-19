@@ -77,7 +77,7 @@ static pdpStatStruct gPdpStat;
 pdpStatStruct *findPdpStat(int socket, pdpStatStruct *pdpStat)
 {
 	if(socket == pdpStat->pdpId) {
-		memcpy(&gPdpStat, pdpStat, sizeof(pdpStatStruct));
+		memcpy_vfpu(&gPdpStat, pdpStat, sizeof(pdpStatStruct));
 		return &gPdpStat;
 	}
 		if(pdpStat->next) return findPdpStat(socket, pdpStat->next);
@@ -863,7 +863,7 @@ namespace quake
 				pdpStatStruct *tempPdp = findPdpStat(socket, pdpStat);
 				if(tempPdp < 0) return -1;
 
-				memcpy(((struct sockaddr_adhoc *)addr)->mac, tempPdp->mac, 6);
+				memcpy_vfpu(((struct sockaddr_adhoc *)addr)->mac, tempPdp->mac, 6);
 				((struct sockaddr_adhoc *)addr)->port = tempPdp->port;
 				addr->sa_family = ADHOC_NET;
 				return 0;

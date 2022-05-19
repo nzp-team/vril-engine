@@ -337,12 +337,12 @@ void SetPal (int i)
 
 void CL_CopyPlayerInfo (entity_t *ent, entity_t *player)
 {
-	memcpy (&ent->baseline, &player->baseline, sizeof(entity_state_t));
+	memcpy_vfpu(&ent->baseline, &player->baseline, sizeof(entity_state_t));
 
 	ent->msgtime = player->msgtime;
-	memcpy (ent->msg_origins, player->msg_origins, sizeof(ent->msg_origins));
+	memcpy_vfpu(ent->msg_origins, player->msg_origins, sizeof(ent->msg_origins));
 	VectorCopy (player->origin, ent->origin);
-	memcpy (ent->msg_angles, player->msg_angles, sizeof(ent->msg_angles));
+	memcpy_vfpu(ent->msg_angles, player->msg_angles, sizeof(ent->msg_angles));
 	VectorCopy (player->angles, ent->angles);
 
 	ent->model = (ent == &q3player_body.ent) ? cl.model_precache[cl_modelindex[mi_q3torso]] : cl.model_precache[cl_modelindex[mi_q3head]];

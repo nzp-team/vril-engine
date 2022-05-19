@@ -263,7 +263,7 @@ void SV_ConnectClient (int clientnum)
 	netconnection = client->netconnection;
 
 	if (sv.loadgame)
-		memcpy (spawn_parms, client->spawn_parms, sizeof(spawn_parms));
+		memcpy_vfpu(spawn_parms, client->spawn_parms, sizeof(spawn_parms));
 	memset (client, 0, sizeof(*client));
 	client->netconnection = netconnection;
 
@@ -278,7 +278,7 @@ void SV_ConnectClient (int clientnum)
 	client->privileged = false;
 
 	if (sv.loadgame)
-		memcpy (client->spawn_parms, spawn_parms, sizeof(spawn_parms));
+		memcpy_vfpu(client->spawn_parms, spawn_parms, sizeof(spawn_parms));
 	else
 	{
 	// call the progs to get default spawn parms for the new client

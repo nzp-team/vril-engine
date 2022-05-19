@@ -406,9 +406,9 @@ void Host_SavegameComment (char *text)
 
 	for (i=0 ; i<SAVEGAME_COMMENT_LENGTH ; i++)
 		text[i] = ' ';
-	memcpy (text, cl.levelname, strlen(cl.levelname));
+	memcpy_vfpu(text, cl.levelname, strlen(cl.levelname));
 	sprintf (kills,"kills:%3i/%3i", cl.stats[STAT_INSTA], cl.stats[STAT_ROUNDCHANGE]);
-	memcpy (text+22, kills, strlen(kills));
+	memcpy_vfpu(text+22, kills, strlen(kills));
 // convert space to _ to make stdio happy
 	for (i=0 ; i<SAVEGAME_COMMENT_LENGTH ; i++)
 		if (text[i] == ' ')

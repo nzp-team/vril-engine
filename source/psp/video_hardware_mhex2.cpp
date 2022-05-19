@@ -343,7 +343,7 @@ void GL_MakeAliasModelDisplayListsH2 (model_t *m, aliashdr_t *hdr)
 
 	int* cmds = static_cast<int*>(Hunk_Alloc (numcommands * 4));
 	paliashdr->commands = (byte *)cmds - (byte *)paliashdr;
-	memcpy (cmds, commands, numcommands * 4);
+	memcpy_vfpu(cmds, commands, numcommands * 4);
 
 	trivertx_t* verts = static_cast<trivertx_t*>(Hunk_Alloc (paliashdr->numposes * paliashdr->poseverts
 		* sizeof(trivertx_t) ));
@@ -420,7 +420,7 @@ void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr)
 
 	cmds = static_cast<int*>(Hunk_Alloc (numcommands * 4));
 	paliashdr->commands = (byte *)cmds - (byte *)paliashdr;
-	memcpy (cmds, commands, numcommands * 4);
+	memcpy_vfpu(cmds, commands, numcommands * 4);
 
 	verts = static_cast<trivertx_t*>(Hunk_Alloc (paliashdr->numposes * paliashdr->poseverts
 		* sizeof(trivertx_t) ));

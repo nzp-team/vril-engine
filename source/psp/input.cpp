@@ -94,9 +94,9 @@ void IN_Init (void)
 	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_RIGHT)]	= K_RIGHTARROW;
 	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_DOWN)]	= K_DOWNARROW;
 	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_LEFT)]	= K_LEFTARROW;
-	memcpy(buttonToConsoleKeyMap, buttonToGameKeyMap, sizeof(ButtonToKeyMap));
-	memcpy(buttonToMessageKeyMap, buttonToGameKeyMap, sizeof(ButtonToKeyMap));
-	memcpy(buttonToMenuKeyMap, buttonToGameKeyMap, sizeof(ButtonToKeyMap));
+	memcpy_vfpu(buttonToConsoleKeyMap, buttonToGameKeyMap, sizeof(ButtonToKeyMap));
+	memcpy_vfpu(buttonToMessageKeyMap, buttonToGameKeyMap, sizeof(ButtonToKeyMap));
+	memcpy_vfpu(buttonToMenuKeyMap, buttonToGameKeyMap, sizeof(ButtonToKeyMap));
 
 	// Game keys:
 	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_LTRIGGER)]	= K_AUX1;
@@ -115,7 +115,7 @@ void IN_Init (void)
 	buttonToConsoleKeyMap[buttonMaskToShift(PSP_CTRL_SQUARE)]	= K_INS;
 
 	// Message keys:
-	memcpy(buttonToMessageKeyMap, buttonToConsoleKeyMap, sizeof(ButtonToKeyMap));
+	memcpy_vfpu(buttonToMessageKeyMap, buttonToConsoleKeyMap, sizeof(ButtonToKeyMap));
 
 	// Menu keys:
 	buttonToMenuKeyMap[buttonMaskToShift(PSP_CTRL_SQUARE)]	= K_INS;
