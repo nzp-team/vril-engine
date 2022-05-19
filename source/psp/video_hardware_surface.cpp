@@ -40,6 +40,7 @@ extern int LIGHTMAP_BYTES;
 using namespace quake;
 
 int			skytexturenum;
+int 		last_lightmap_allocated; // ericw -- optimization: remember the index of the last lightmap AllocBlock stored a surf in
 
 #define	BLOCK_WIDTH  128
 #define	BLOCK_HEIGHT 128
@@ -1627,14 +1628,23 @@ void R_MarkLeaves (void)
 =============================================================================
 */
 
-// returns a texture number and the position inside it
-static int AllocBlock (int w, int h, int *x, int *y)
+/*
+========================
+AllocBlock -- returns a texture number and the position inside it
+========================
+*/
+int AllocBlock (int w, int h, int *x, int *y)
 {
 	int		i, j;
 	int		best, best2;
 	int		texnum;
 
-	for (texnum=0 ; texnum<MAX_LIGHTMAPS ; texnum++)
+	// ericw -- rather than searching starting at lightmap 0 every time,
+	// start at the last lightmap we allocated a surface in.
+	// This makes AllocBlock much faster on large levels (can shave off 3+ seconds
+	// of load time on a level with 180 lightmaps), at a cost of not quite packing
+	// lightmaps as tightly vs. not doing this (uses ~5% more lightmaps)
+	for (texnum=last_lightmap_allocated ; texnum<MAX_LIGHTMAPS ; texnum++, last_lightmap_allocated++)
 	{
 		best = BLOCK_HEIGHT;
 
@@ -1657,17 +1667,16 @@ static int AllocBlock (int w, int h, int *x, int *y)
 		}
 
 		if (best + h > BLOCK_HEIGHT)
-		{
-			//Con_Printf("best + h > BLOCK_HEIGHT\n");
 			continue;
-		}
+
 		for (i=0 ; i<w ; i++)
 			allocated[texnum][*x + i] = best + h;
+
 		return texnum;
 	}
 
-	Host_Error("AllocBlock: full\n");
-	return 0;
+	Sys_Error ("AllocBlock: full");
+	return 0; //johnfitz -- shut up compiler
 }
 
 mvertex_t	*r_pcurrentvertbase;
@@ -1861,6 +1870,8 @@ void GL_BuildLightmaps (void)
 	memset (allocated, 0, sizeof(allocated));
 
 	r_framecount = 1;		// no dlightcache
+
+	last_lightmap_allocated = 0;
 
 	if (!lightmap_textures)
 	{
