@@ -494,6 +494,6 @@ byte *W_GetTextureHL(char *name)
 		else
 			break;
 	}
-
+	tex->width = tex->width = 0;
 	return NULL;
 }
