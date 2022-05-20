@@ -2584,11 +2584,11 @@ void GL_UnloadTexture(int texture_index)
 			free(texture.ram);
 			texture.ram = NULL;
 		}
-		/*if (texture.vram != NULL)
+		if (texture.vram != NULL)
 		{
 			vfree(texture.vram);
 			texture.vram = NULL;
-		} */
+		}
 
 	}
 
