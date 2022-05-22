@@ -1254,7 +1254,7 @@ void R_DrawBrushModel (entity_t *e)
 		VectorAdd (e->origin, clmodel->mins, mins);
 		VectorAdd (e->origin, clmodel->maxs, maxs);
 
-	    if (R_CullBox (mins, maxs))
+	    if (R_CullBox (mins, maxs) == 2)
 		    return;
 	}
 
@@ -1435,7 +1435,7 @@ void R_RecursiveWorldNode (mnode_t *node)
 
 	if (node->visframe != r_visframecount)
 		return;
-	if (R_CullBox (node->minmaxs, node->minmaxs+3))
+	if (R_CullBox (node->minmaxs, node->minmaxs+3) == 2)
 		return;
 
 // if a leaf node, draw stuff

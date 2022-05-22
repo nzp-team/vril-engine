@@ -314,59 +314,29 @@ void R_RotateForViewEntity (entity_t *ent)
 
 /*
 =================
-R_CullBox -- replaced with new function from lordhavoc
-
-Returns true if the box is completely outside the frustum
+R_CullBox
+Returns true if the box is completely outside the frustom
 =================
 */
-qboolean R_CullBox (vec3_t emins, vec3_t emaxs)
+int R_CullBox (vec3_t mins, vec3_t maxs)
 {
-	int i;
-	mplane_t *p;
+	int		result = 1; // Default to "all inside".
+	int		i;
 
-
-
-	for (i = 0;i < 4;i++)
+	for (i=0 ; i<4 ; i++)
 	{
-		p = frustum + i;
-		switch(p->signbits)
+		const int plane_result = BoxOnPlaneSide(mins, maxs, &frustum[i]);
+		if (plane_result == 2)
 		{
-		default:
-		case 0:
-			if (p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2] < p->dist)
-				return qtrue;
-			break;
-		case 1:
-			if (p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2] < p->dist)
-				return qtrue;
-			break;
-		case 2:
-			if (p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2] < p->dist)
-				return qtrue;
-			break;
-		case 3:
-			if (p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2] < p->dist)
-				return qtrue;
-			break;
-		case 4:
-			if (p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2] < p->dist)
-				return qtrue;
-			break;
-		case 5:
-			if (p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2] < p->dist)
-				return qtrue;
-			break;
-		case 6:
-			if (p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2] < p->dist)
-				return qtrue;
-			break;
-		case 7:
-			if (p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2] < p->dist)
-				return qtrue;
-			break;
+			return 2;
+		}
+		else if (plane_result == 3)
+		{
+			result = 3;
 		}
 	}
-	return qfalse;
+
+	return result;
 }
 
 /*
@@ -2060,7 +2030,7 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	VectorAdd (e->origin, clmodel->mins, mins);
 	VectorAdd (e->origin, clmodel->maxs, maxs);
 
-	if (R_CullBox(mins, maxs))
+	if (R_CullBox(mins, maxs) == 2)
 		return;
 	
 	VectorCopy (e->origin, r_entorigin);
@@ -2194,7 +2164,7 @@ void R_DrawAliasModel (entity_t *e)
 	VectorAdd (e->origin, clmodel->mins, mins);
 	VectorAdd (e->origin, clmodel->maxs, maxs);
 
-	if (R_CullBox(mins, maxs))
+	if (R_CullBox(mins, maxs) == 2)
 		return;
 
 	//=============================================================================================== 97% at this point
@@ -2544,7 +2514,7 @@ void R_DrawMD2Model (entity_t *e)
 	//}
 	//else
 	//{
-		if (R_CullBox(mins, maxs))
+		if (R_CullBox(mins, maxs) == 2)
 			return;
 	//}
 
@@ -3279,7 +3249,7 @@ void R_DrawQ3Model (entity_t *ent)
 	}
 	else
 	{
-		if (R_CullBox(mins, maxs))
+		if (R_CullBox(mins, maxs) == 2)
 			return;
 	}
 
