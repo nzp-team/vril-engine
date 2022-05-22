@@ -128,7 +128,7 @@ Offset is filled in to contain the adjustment that must be added to the
 testing object's origin to get a point to use with the returned hull.
 ================
 */
-hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
+hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset, edict_t *move_ent)
 {
 	model_t		*model;
 	vec3_t		size;
@@ -142,40 +142,43 @@ hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
 			Sys_Error ("SOLID_BSP without MOVETYPE_PUSH");
 
 		model = sv.models[ (int)ent->v.modelindex ];
-		
+
 		if (!model || model->type != mod_brush)
 			Sys_Error ("MOVETYPE_PUSH with a non bsp model");
 
 		VectorSubtract (maxs, mins, size);
 
-		if (model->bspversion == HL_BSPVERSION || model->bspversion == NZP_BSPVERSION)
 		{
-			if (size[0] < 3)
+			if (model->bspversion == HL_BSPVERSION)
 			{
-				hull = &model->hulls[0]; // 0x0x0
-			}
-			else if (size[0] <= 32)
-			{
-				if (size[2] < 54) // pick the nearest of 36 or 72
-					hull = &model->hulls[3]; // 32x32x36
+				if (size[0] < 3)
+				{
+					hull = &model->hulls[0]; // 0x0x0
+				}
+				else if (size[0] <= 32)
+				{
+					if (size[2] < 54) // pick the nearest of 36 or 72
+						hull = &model->hulls[3]; // 32x32x36
+					else
+						hull = &model->hulls[1]; // 32x32x72
+				}
 				else
-					hull = &model->hulls[1]; // 32x32x72
+				{
+					hull = &model->hulls[2]; // 64x64x64
+				}
 			}
 			else
 			{
-				hull = &model->hulls[2]; // 64x64x64
+				if (size[0] < 3)
+					hull = &model->hulls[0];
+				else if (size[0] <= 32)
+					hull = &model->hulls[1];
+				else if (size[0] <= 32 && size[2] <= 28)  // Crouch
+					hull = &model->hulls[3];
+				else
+					hull = &model->hulls[2];
 			}
-		}
-		else
-		{
-			if (size[0] < 3)
-				hull = &model->hulls[0];
-			else if (size[0] <= 32)
-				hull = &model->hulls[1];
-			else
-				hull = &model->hulls[2];
-		}
-
+         }
 // calculate an offset value to center the origin
 		VectorSubtract (hull->clip_mins, mins, offset);
 		VectorAdd (offset, ent->v.origin, offset);
@@ -720,6 +723,56 @@ qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec
 	return false;
 }
 
+/*
+==================
+SV_WorldTransformAABB
+==================
+*/
+void SV_WorldTransformAABB( matrix4x4 transform, const vec3_t mins, const vec3_t maxs, vec3_t outmins, vec3_t outmaxs )
+{
+	vec3_t	p1, p2;
+	matrix4x4	itransform;
+	int	i;
+
+	if( !outmins || !outmaxs ) return;
+
+	Matrix4x4_Invert_Simple( itransform, transform );
+
+	outmins[0] = outmins[1] = outmins[2] =  999999;
+	outmaxs[0] = outmaxs[1] = outmaxs[2] = -999999;
+
+	// compute a full bounding box
+	for( i = 0; i < 8; i++ )
+	{
+		p1[0] = ( i & 1 ) ? mins[0] : maxs[0];
+		p1[1] = ( i & 2 ) ? mins[1] : maxs[1];
+		p1[2] = ( i & 4 ) ? mins[2] : maxs[2];
+
+		p2[0] = DotProduct( p1, itransform[0] );
+		p2[1] = DotProduct( p1, itransform[1] );
+		p2[2] = DotProduct( p1, itransform[2] );
+
+		if( p2[0] < outmins[0] ) outmins[0] = p2[0];
+		if( p2[0] > outmaxs[0] ) outmaxs[0] = p2[0];
+		if( p2[1] < outmins[1] ) outmins[1] = p2[1];
+		if( p2[1] > outmaxs[1] ) outmaxs[1] = p2[1];
+		if( p2[2] < outmins[2] ) outmins[2] = p2[2];
+		if( p2[2] > outmaxs[2] ) outmaxs[2] = p2[2];
+	}
+
+	// sanity check
+	for( i = 0; i < 3; i++ )
+	{
+		if( outmins[i] > outmaxs[i] )
+		{
+			Sys_Error("World_TransformAABB: backwards mins/maxs\n");
+			outmins[0] = outmins[1] = outmins[2] = 0;
+			outmaxs[0] = outmaxs[1] = outmaxs[2] = 0;
+			return;
+		}
+	}
+}
+
 
 /*
 ==================
@@ -729,84 +782,89 @@ Handles selection or creation of a clipping hull, and offseting (and
 eventually rotation) of the end points
 ==================
 */
-trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end)
+trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, edict_t *move_ent )
 {
 	trace_t		trace;
-	vec3_t		offset;
+	matrix4x4	matrix;
+	vec3_t		offset, temp;
 	vec3_t		start_l, end_l;
 	hull_t		*hull;
+	int         j;
+    qboolean    transform_bbox = true;
 
 // fill in a default trace
 	memset (&trace, 0, sizeof(trace_t));
+	VectorCopy (end, trace.endpos);
 	trace.fraction = 1;
 	trace.allsolid = true;
-	VectorCopy (end, trace.endpos);
 
 // get the clipping hull
-	hull = SV_HullForEntity (ent, mins, maxs, offset);
+	hull = SV_HullForEntity (ent, mins, maxs, offset, move_ent);
 
-	VectorSubtract (start, offset, start_l);
-	VectorSubtract (end, offset, end_l);
+	// keep untransformed bbox less than 45 degress or train on subtransit.bsp will stop working
 
+	if(( check_angles( ent->v.angles[0] ) || check_angles( ent->v.angles[2] )) && (mins[0] || mins[1] || mins[2]))
+		transform_bbox = true;
+	else
+	    transform_bbox = false;
 
 	// rotate start and end into the models frame of reference
-	if (ent->v.solid == SOLID_BSP &&
-	(ent->v.angles[0] || ent->v.angles[1] || ent->v.angles[2]) && ent != sv.edicts)//dr_mabuse1981: rotate fix...
+	if (ent->v.solid == SOLID_BSP && (ent->v.angles[0] || ent->v.angles[1] || ent->v.angles[2]))
 	{
-		//vec3_t	a;
-		vec3_t	forward, right, up;
-		vec3_t	temp;
+		vec3_t	out_mins, out_maxs;
 
-		AngleVectors (ent->v.angles, forward, right, up);
+		if( transform_bbox )
+			Matrix4x4_CreateFromEntity( matrix, ent->v.angles, ent->v.origin, 1.0f );
+		else
+		    Matrix4x4_CreateFromEntity( matrix, ent->v.angles, offset, 1.0f );
 
-		VectorCopy (start_l, temp);
-		start_l[0] = DotProduct (temp, forward);
-		start_l[1] = -DotProduct (temp, right);
-		start_l[2] = DotProduct (temp, up);
+		Matrix4x4_VectorITransform( matrix, start, start_l );
+		Matrix4x4_VectorITransform( matrix, end, end_l );
 
-		VectorCopy (end_l, temp);
-		end_l[0] = DotProduct (temp, forward);
-		end_l[1] = -DotProduct (temp, right);
-		end_l[2] = DotProduct (temp, up);
+		if( transform_bbox )
+		{
+			SV_WorldTransformAABB( matrix, mins, maxs, out_mins, out_maxs );
+			VectorSubtract( hull->clip_mins, out_mins, offset ); // calc new local offset
+
+			for( j = 0; j < 3; j++ )
+			{
+				if( start_l[j] >= 0.0f )
+					start_l[j] -= offset[j];
+				else start_l[j] += offset[j];
+				if( end_l[j] >= 0.0f )
+					end_l[j] -= offset[j];
+				else end_l[j] += offset[j];
+			}
+		}
+	}
+	else
+	{
+	    VectorSubtract (start, offset, start_l);
+	    VectorSubtract (end, offset, end_l);
 	}
 
 
 // trace a line through the apropriate clipping hull
 	SV_RecursiveHullCheck (hull, hull->firstclipnode, 0, 1, start_l, end_l, &trace);
 
-
-	// rotate endpos back to world frame of reference
-	if (ent->v.solid == SOLID_BSP &&
-	(ent->v.angles[0] || ent->v.angles[1] || ent->v.angles[2]) && ent != sv.edicts)
-	//dr_mabuse1981: rotate fix
+	if( trace.fraction != 1.0f )
 	{
-		vec3_t	a;
-		vec3_t	forward, right, up;
-		vec3_t	temp;
+		// compute endpos (generic case)
+		VectorLerp( start, trace.fraction, end, trace.endpos );
 
-		if (trace.fraction != 1)
+		if(ent->v.solid == SOLID_BSP && (ent->v.angles[0] || ent->v.angles[1] || ent->v.angles[2]))
 		{
-			VectorSubtract (vec3_origin, ent->v.angles, a);
-			AngleVectors (a, forward, right, up);
-
-			VectorCopy (trace.endpos, temp);
-			trace.endpos[0] = DotProduct (temp, forward);
-			trace.endpos[1] = -DotProduct (temp, right);
-			trace.endpos[2] = DotProduct (temp, up);
-
-			VectorCopy (trace.plane.normal, temp);
-			trace.plane.normal[0] = DotProduct (temp, forward);
-			trace.plane.normal[1] = -DotProduct (temp, right);
-			trace.plane.normal[2] = DotProduct (temp, up);
+			// transform plane
+			VectorCopy( trace.plane.normal, temp );
+			Matrix4x4_TransformPositivePlane( matrix, temp, trace.plane.dist, trace.plane.normal, &trace.plane.dist );
+		}
+		else
+		{
+			trace.plane.dist = DotProduct( trace.endpos, trace.plane.normal );
 		}
 	}
 
-// fix trace up by the offset
-	if (trace.fraction != 1)
-		VectorAdd (trace.endpos, offset, trace.endpos);
-
-// did we clip the move?
-	if (trace.fraction < 1 || trace.startsolid  )
+	if( trace.fraction < 1.0f || trace.startsolid )
 		trace.ent = ent;
 
 	return trace;
@@ -865,9 +923,10 @@ void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 		}
 
 		if ((int)touch->v.flags & FL_MONSTER)
-			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins2, clip->maxs2, clip->end);
+			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins2, clip->maxs2, clip->end, touch);
 		else
-			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins, clip->maxs, clip->end);
+			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins, clip->maxs, clip->end, touch);
+
 		if (trace.allsolid || trace.startsolid ||
 		trace.fraction < clip->trace.fraction)
 		{
@@ -937,15 +996,15 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 
 	memset ( &clip, 0, sizeof ( moveclip_t ) );
 
-// clip to world
-	clip.trace = SV_ClipMoveToEntity ( sv.edicts, start, mins, maxs, end );
-
 	clip.start = start;
 	clip.end = end;
 	clip.mins = mins;
 	clip.maxs = maxs;
 	clip.type = type;
 	clip.passedict = passedict;
+
+// clip to world
+	clip.trace = SV_ClipMoveToEntity( sv.edicts, start, mins, maxs, end, passedict);
 
 	if (type == MOVE_MISSILE)
 	{

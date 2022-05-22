@@ -50,6 +50,7 @@ COMMON_OBJS = \
 	source/host_cmd.o \
 	source/keys.o \
 	source/mathlib.o \
+	source/matrixlib.o \
 	source/menu.o \
 	source/net_dgrm.o \
 	source/net_loop.o \
