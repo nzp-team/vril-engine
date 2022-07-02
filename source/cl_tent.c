@@ -40,10 +40,10 @@ CL_ParseTEnt
 void CL_InitTEnts (void)
 {
 	cl_sfx_r_exp3 = S_PrecacheSound ("sounds/weapons/r_exp3.wav");
-	cl_sfx_step[0] = S_PrecacheSound ("sounds/player/steps/step_1.wav");
-	cl_sfx_step[1] = S_PrecacheSound ("sounds/player/steps/step_2.wav");
-	cl_sfx_step[2] = S_PrecacheSound ("sounds/player/steps/step_3.wav");
-	cl_sfx_step[3] = S_PrecacheSound ("sounds/player/steps/step_4.wav");
+	cl_sfx_step[0] = S_PrecacheSound ("sounds/player/footstep1.wav");
+	cl_sfx_step[1] = S_PrecacheSound ("sounds/player/footstep2.wav");
+	cl_sfx_step[2] = S_PrecacheSound ("sounds/player/footstep3.wav");
+	cl_sfx_step[3] = S_PrecacheSound ("sounds/player/footstep4.wav");
 }
 
 /*
