@@ -2031,7 +2031,7 @@ Mod_LoadAllSkins
 ===============
 */
 static qboolean mod_h2;
-extern int zombie_skins[4];
+extern int zombie_skinss[4];
 void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 {
 	int		i, j, k;
@@ -2059,7 +2059,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] =
 			pheader->gl_texturenum[i][1] =
 			pheader->gl_texturenum[i][2] =
-			pheader->gl_texturenum[i][3] = zombie_skins[i];
+			pheader->gl_texturenum[i][3] = zombie_skinss[i];
 		}
 
 		pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
