@@ -61,6 +61,10 @@ typedef struct entity_s
     float		rendercolor[3];
     //Crow_bar
 
+	// motolegacy -- scale shit from FTE
+	float 		scale; /* Multiplier that resizes the entity. 1 is normal sized, 2 is double sized. scale 0 is remapped to 1. In SSQC, this is limited to 1/16th precision, with a maximum just shy of 16.*/
+	// motolegacy -- end scale
+
   	struct model_s			*model;			// NULL = no model
   	char					old_model[128];			// NULL = no model
 	struct efrag_s			*efrag;			// linked list of efrags

@@ -373,14 +373,6 @@ void R_RotateForEntity (entity_t *e, int shadow)
 		e->origin[0], e->origin[1], e->origin[2]
 	};
 	sceGumTranslate(&translation);
-/*
-	// Scale.
-    const ScePspFVector3 scale =
-	{
-	e->scale, e->scale, e->scale
-	};
-	sceGumScale(&scale);
-*/
 
 	// Rotate.
     sceGumRotateZ(e->angles[YAW] * (GU_PI / 180.0f));
@@ -388,6 +380,15 @@ void R_RotateForEntity (entity_t *e, int shadow)
 	{
 		sceGumRotateY (-e->angles[PITCH] * (GU_PI / 180.0f));
 		sceGumRotateX (e->angles[ROLL] * (GU_PI / 180.0f));
+	}
+
+	// Scale.
+	if (e != &cl.viewent && e != &cl.viewent2) {
+		const ScePspFVector3 scale =
+		{
+			e->scale, e->scale, e->scale
+		};
+		sceGumScale(&scale);
 	}
 
 	sceGumUpdateMatrix();

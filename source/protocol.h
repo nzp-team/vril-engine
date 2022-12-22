@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	U_EXTEND2	    (1<<21) // another byte to follow
 #define	U_FRAMETIME	    (1<<22) // another byte to follow
 // Tomaz - QC Alpha Scale Glow Control End
+#define U_SCALE			(1<<23)
 
 
 #define	SU_VIEWHEIGHT	(1<<0)
