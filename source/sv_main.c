@@ -516,7 +516,7 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg, qboolean nomap)
 			bits |= U_MODEL;
 
 		if (ent->baseline.scale != ent->v.scale) {
-			if (ent->v.scale == 0f)
+			if (ent->v.scale == 0)
 				ent->v.scale = 1.0f;
 
 			if (ent->v.scale > 16.0f)
