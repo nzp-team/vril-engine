@@ -516,11 +516,11 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg, qboolean nomap)
 			bits |= U_MODEL;
 
 		if (ent->baseline.scale != ent->v.scale) {
-			if (ent->v.scale == 0)
-				ent->v.scale = 1;
+			if (ent->v.scale == 0f)
+				ent->v.scale = 1.0f;
 
-			if (ent->v.scale > 16)
-				ent->v.scale = 16;
+			if (ent->v.scale > 16.0f)
+				ent->v.scale = 16.0f;
 
 			bits |= U_SCALE;
 		}
@@ -1044,16 +1044,15 @@ void SV_CreateBaseline (void)
 		VectorCopy (svent->v.angles, svent->baseline.angles);
 		svent->baseline.frame = svent->v.frame;
 		svent->baseline.skin = svent->v.skin;
+		svent->baseline.scale = 1.0f;
 		if (entnum > 0 && entnum <= svs.maxclients)
 		{
 			svent->baseline.colormap = entnum;
-			svent->baseline.scale = 1;
 			svent->baseline.modelindex = SV_ModelIndex("models/player.mdl");
 		}
 		else
 		{
 			svent->baseline.colormap = 0;
-			svent->baseline.scale = 1;
 			svent->baseline.modelindex =
 				SV_ModelIndex(pr_strings + svent->v.model);
 		}

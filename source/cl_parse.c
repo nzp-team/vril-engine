@@ -621,7 +621,7 @@ void CL_ParseUpdate (int bits)
 	if (bits & U_SCALE)
 		ent->scale = MSG_ReadFloat();
 	else
-		ent->scale = 1;
+		ent->scale = 1.0f;
 	
 // Tomaz - QC Alpha Scale Glow Begin
 	if (bits & U_RENDERAMT)
