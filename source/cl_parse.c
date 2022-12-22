@@ -675,7 +675,7 @@ void CL_ParseBaseline (entity_t *ent)
 	ent->baseline.frame = MSG_ReadByte ();
 	ent->baseline.colormap = MSG_ReadByte();
 	ent->baseline.skin = MSG_ReadByte();
-	ent->baseline.scale = MSG_ReadFloat();
+	ent->baseline.scale = (float)MSG_ReadByte();
 	for (i=0 ; i<3 ; i++)
 	{
 		ent->baseline.origin[i] = MSG_ReadCoord ();

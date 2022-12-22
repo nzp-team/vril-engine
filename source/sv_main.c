@@ -1067,7 +1067,7 @@ void SV_CreateBaseline (void)
 		MSG_WriteByte (&sv.signon, svent->baseline.frame);
 		MSG_WriteByte (&sv.signon, svent->baseline.colormap);
 		MSG_WriteByte (&sv.signon, svent->baseline.skin);
-		MSG_WriteFloat (&sv.signon, svent->baseline.scale);
+		MSG_WriteByte (&sv.signon, (int)svent->baseline.scale);
 		for (i=0 ; i<3 ; i++)
 		{
 			MSG_WriteCoord(&sv.signon, svent->baseline.origin[i]);
