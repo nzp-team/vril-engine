@@ -164,7 +164,6 @@ typedef struct
 	float 		currentmag2;
 	float 		maxspeed;
 	float 		facingenemy;
-	float 		scale;
 } entvars_t;
 
 #define PROGHEADER_CRC 14116

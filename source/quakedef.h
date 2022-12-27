@@ -211,7 +211,6 @@ typedef struct
 	int		colormap;
 	int		skin;
 	int		effects;
-	float	scale;
 	// dr_mabuse1981: HalfLife rendermodes fixed START
 	unsigned short renderamt;
 	unsigned short rendermode;
