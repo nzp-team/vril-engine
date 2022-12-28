@@ -823,16 +823,25 @@ void Preload (void)
 {
 	Mod_ForName ("models/player.mdl", true);
 
-	Mod_ForName("models/ai/zbod.mdl", true);
-	Mod_ForName("models/ai/zcbod.mdl", true);
+	// Body
+	Mod_ForName("models/ai/zb#.mdl", true);
+	Mod_ForName("models/ai/zbc#.mdl", true);
+
+	// Full Model
 	Mod_ForName ("models/ai/zfull.mdl",true);
 	Mod_ForName ("models/ai/zcfull.mdl",true);
-	Mod_ForName ("models/ai/zhead.mdl",true);
-	Mod_ForName ("models/ai/zchead.mdl",true);
-	Mod_ForName ("models/ai/zlarm.mdl",true);
-	Mod_ForName ("models/ai/zclarm.mdl",true);
-	Mod_ForName ("models/ai/zrarm.mdl",true);
-	Mod_ForName ("models/ai/zcrarm.mdl",true);
+
+	// Head
+	Mod_ForName ("models/ai/zh^.mdl",true);
+	Mod_ForName ("models/ai/zhc^.mdl",true);
+
+	// Left Arm
+	Mod_ForName ("models/ai/zal(.mdl",true);
+	Mod_ForName ("models/ai/zalc(.mdl",true);
+
+	// Right Arm
+	Mod_ForName ("models/ai/zar(.mdl",true);
+	Mod_ForName ("models/ai/zarc(.mdl",true);
 
 	Mod_ForName ("models/weapons/knife/v_knife.mdl", true);
 	Mod_ForName ("models/weapons/m1911/v_colt.mdl", true);

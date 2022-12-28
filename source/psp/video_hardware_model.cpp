@@ -2014,7 +2014,6 @@ Mod_LoadAllSkins
 ===============
 */
 static qboolean mod_h2;
-extern int zombie_skinss[4];
 void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 {
 	int		i, j, k;
