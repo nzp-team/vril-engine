@@ -3642,6 +3642,131 @@ int SetFlameModelState (void)
 
 /*
 =============
+R_DrawEntitiesOnList
+=============
+*/
+void R_DrawEntitiesOnList (void)
+{
+	int		i;
+
+	if (!r_drawentities.value)
+		return;
+
+	//t1 = 0;
+	//t2 = 0;
+	//t3 = 0;
+	//t1 -= Sys_FloatTime();
+	
+	int zHackCount = 0;
+	doZHack = 0;
+	char specChar;
+
+   	// draw sprites seperately, because of alpha blending
+	for (i=0 ; i<cl_numvisedicts ; i++)
+	{
+		currententity = cl_visedicts[i];
+
+		if (currententity == &cl_entities[cl.viewentity])
+			currententity->angles[0] *= 0.3;
+
+		//currentmodel = currententity->model;
+		if(!(currententity->model))
+		{
+			R_DrawNullModel();
+			continue;
+		}
+		
+		
+		specChar = currententity->model->name[strlen(currententity->model->name)-5];
+		
+		if(specChar == '(' || specChar == '^')//skip heads and arms: it's faster to do this than a strcmp...
+		{
+			continue;
+		}
+		doZHack = 0;
+		if(specChar == '#')
+		{
+			if(zHackCount > 5 || ((currententity->z_head != 0) && (currententity->z_larm != 0) && (currententity->z_rarm != 0)))
+			{
+				doZHack = 1;
+			}
+			else
+			{
+				zHackCount ++;//drawing zombie piece by piece.
+			}
+		}
+
+		switch (currententity->model->type)
+		{
+		case mod_alias:
+
+			if (qmb_initialized && SetFlameModelState() == -1)
+				continue;
+			
+			if (currententity->model->aliastype == ALIASTYPE_MD2)
+				R_DrawMD2Model (currententity);
+			else
+			{
+				if(specChar == '$')//This is for smooth alpha, draw in the following loop, not this one
+				{
+					continue;
+				}
+				R_DrawAliasModel (currententity);
+			}
+			
+			break;
+		case mod_md3:
+			R_DrawQ3Model (currententity);
+			break;
+
+		case mod_halflife:
+			R_DrawHLModel (currententity);
+			break;
+
+		case mod_brush:
+			R_DrawBrushModel (currententity);
+			break;
+
+		default:
+			break;
+		}
+		doZHack = 0;
+	}
+
+	for (i=0 ; i<cl_numvisedicts ; i++)
+	{
+		currententity = cl_visedicts[i];
+		
+		if(!(currententity->model))
+		{
+			continue;
+		}
+		
+		specChar = currententity->model->name[strlen(currententity->model->name)-5];
+
+		switch (currententity->model->type)
+		{
+		case mod_sprite:
+		{
+			R_DrawSpriteModel (currententity);
+			break;
+		}
+		case mod_alias:
+			if (currententity->model->aliastype != ALIASTYPE_MD2)
+			{
+				if(specChar == '$')//mdl model with blended alpha
+				{
+					R_DrawTransparentAliasModel(currententity);
+				}
+			}
+			break;
+		default: break;
+		}
+	}
+}
+
+/*
+=============
 R_DrawViewModel
 =============
 */
@@ -4069,80 +4194,7 @@ void R_RenderScene (void)
 	R_DrawWorld ();		// adds static entities to the list
 	S_ExtraUpdate ();	// don't let sound get messed up if going slow
 	
-	// drawentitiesonlist
-	if (r_drawentities.value) {
-
-		int zHackCount;
-		doZHack = 0;
-
-		// draw sprites seperately, because of alpha blending
-		for (i=0 ; i<cl_numvisedicts ; i++)
-		{
-			currententity = cl_visedicts[i];
-
-			if (currententity == &cl_entities[cl.viewentity])
-			currententity->angles[0] *= 0.3;
-
-			//currentmodel = currententity->model;
-			if(!(currententity->model))
-			{
-				R_DrawNullModel();
-				continue;
-			}
-
-			specChar = currententity->model->name[strlen(currententity->model->name)-5];
-
-			if(specChar == '(' || specChar == '^')//skip heads and arms: it's faster to do this than a strcmp...
-			{
-				continue;
-			}
-			doZHack = 0;
-			if(specChar == '#')
-			{
-				if(zHackCount > 5 || ((currententity->z_head != 0) && (currententity->z_larm != 0) && (currententity->z_rarm != 0)))
-				{
-					doZHack = 1;
-				}
-				else
-				{
-					zHackCount ++;//drawing zombie piece by piece.
-				}
-			}
-
-			switch (currententity->model->type) {
-				case mod_alias:
-					if (qmb_initialized && SetFlameModelState() == -1) continue;
-					
-					if (currententity->model->aliastype == ALIASTYPE_MD2)
-						R_DrawMD2Model(currententity);
-					else {
-						if (specChar == '$')
-							R_DrawTransparentAliasModel(currententity);
-						else
-							R_DrawAliasModel(currententity);
-					}
-
-					break;
-				case mod_md3:
-					R_DrawQ3Model (currententity);
-					break;
-
-				case mod_halflife:
-					R_DrawHLModel (currententity);
-					break;
-
-				case mod_brush:
-					R_DrawBrushModel (currententity);
-					break;
-				case mod_sprite:
-					R_DrawSpriteModel(currententity);
-					break;
-				default:
-					break;
-			}
-			doZHack = 0;
-		}
-	}
+	R_DrawEntitiesOnList();
 
 	R_RenderDlights ();		//pointless jump? -xaa
 	
