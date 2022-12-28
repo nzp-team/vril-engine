@@ -2281,9 +2281,9 @@ void R_DrawAliasModel (entity_t *e)
 	if(doZHack && specChar == '#')
 	{
 		if(clmodel->name[strlen(clmodel->name) - 6] == 'c')
-			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("progs/ai/zcfull.mdl"));
+			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zcfull.mdl"));
 		else
-			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("progs/ai/zfull.mdl"));
+			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zfull.mdl"));
 	}
 	else
 		paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
@@ -4072,6 +4072,9 @@ void R_RenderScene (void)
 	// drawentitiesonlist
 	if (r_drawentities.value) {
 
+		int zHackCount;
+		doZHack = 0;
+
 		// draw sprites seperately, because of alpha blending
 		for (i=0 ; i<cl_numvisedicts ; i++)
 		{
@@ -4088,6 +4091,23 @@ void R_RenderScene (void)
 			}
 
 			specChar = currententity->model->name[strlen(currententity->model->name)-5];
+
+			if(specChar == '(' || specChar == '^')//skip heads and arms: it's faster to do this than a strcmp...
+			{
+				continue;
+			}
+			doZHack = 0;
+			if(specChar == '#')
+			{
+				if(zHackCount > 5 || ((currententity->z_head != 0) && (currententity->z_larm != 0) && (currententity->z_rarm != 0)))
+				{
+					doZHack = 1;
+				}
+				else
+				{
+					zHackCount ++;//drawing zombie piece by piece.
+				}
+			}
 
 			switch (currententity->model->type) {
 				case mod_alias:
@@ -4120,6 +4140,7 @@ void R_RenderScene (void)
 				default:
 					break;
 			}
+			doZHack = 0;
 		}
 	}
 
