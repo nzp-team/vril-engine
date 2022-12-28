@@ -2008,23 +2008,6 @@ void Mod_FloodFillSkin( byte *skin, int skinwidth, int skinheight )
 	}
 }
 
-qboolean model_is_zombie(char name[MAX_QPATH])
-{
-	if (Q_strcmp(name, "models/ai/zbod.mdl") == 0 ||
-	Q_strcmp(name, "models/ai/zcbod.mdl") == 0 ||
-	Q_strcmp(name, "models/ai/zcfull.mdl") == 0 ||
-	Q_strcmp(name, "models/ai/zchead.mdl") == 0 ||
-	Q_strcmp(name, "models/ai/zclarm.mdl") == 0 ||
-	Q_strcmp(name, "models/ai/zcrarm.mdl") == 0 ||
-	Q_strcmp(name, "models/ai/zfull.mdl") == 0 ||
-	Q_strcmp(name, "models/ai/zhead.mdl") == 0 ||
-	Q_strcmp(name, "models/ai/zlarm.mdl") == 0 ||
-	Q_strcmp(name, "models/ai/zrarm.mdl") == 0)
-		return qtrue;
-
-	return qfalse;
-}
-
 /*
 ===============
 Mod_LoadAllSkins
@@ -2050,21 +2033,6 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d\n", numskins);
 
 	s = pheader->skinwidth * pheader->skinheight;
-
-	if (model_is_zombie(loadmodel->name) == qtrue) {
-		Mod_FloodFillSkin(skin, pheader->skinwidth, pheader->skinheight);
-
-		// force-fill 4 skin slots
-		for (int i = 0; i < 4; i++) {
-			pheader->gl_texturenum[i][0] =
-			pheader->gl_texturenum[i][1] =
-			pheader->gl_texturenum[i][2] =
-			pheader->gl_texturenum[i][3] = zombie_skinss[i];
-		}
-
-		pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-		return (void *)pskintype;
-	}
 
 	for (i=0 ; i<numskins ; i++)
 	{

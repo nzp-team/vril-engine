@@ -608,10 +608,10 @@ void Draw_Init (void)
 
 	sniper_scope = Draw_CachePic ("gfx/hud/scope");
 	
-	zombie_skins[0][0] = loadtextureimage("/textures/ai/z0",0,0,qfalse,GU_LINEAR);
-	zombie_skins[0][1] = loadtextureimage("/textures/ai/z0",0,0,qfalse,GU_LINEAR);
-	zombie_skins[1][0] = loadtextureimage("/textures/ai/z0",0,0,qfalse,GU_LINEAR);
-	zombie_skins[1][1] = loadtextureimage("/textures/ai/z0",0,0,qfalse,GU_LINEAR);
+	zombie_skins[0][0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
+	zombie_skins[0][1] = loadtextureimage ("models/ai/zfull.mdl_1", 0, 0, qtrue, GU_LINEAR);
+	zombie_skins[1][0] = loadtextureimage ("models/ai/zfull.mdl_2", 0, 0, qtrue, GU_LINEAR);
+	zombie_skins[1][1] = loadtextureimage ("models/ai/zfull.mdl_3", 0, 0, qtrue, GU_LINEAR);
 	
 	Clear_LoadingFill ();
 }

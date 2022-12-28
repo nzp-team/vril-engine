@@ -35,7 +35,6 @@ void GL_InitTextureUsage ();
 qboolean	r_loadq3player = qfalse;
 
 int decal_blood1, decal_blood2, decal_blood3, decal_q3blood, decal_burn, decal_mark, decal_glow;
-int zombie_skinss[4];
 
 /*
 ==================
@@ -52,12 +51,6 @@ void	R_InitOtherTextures (void)
 	decal_burn	  = loadtextureimage ("textures/decals/explo_burn01", 0, 0, qfalse, GU_LINEAR);
 	decal_mark	  = loadtextureimage ("textures/decals/particle_burn01", 0, 0, qfalse, GU_LINEAR);
 	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, qfalse, GU_LINEAR);
-
-	// external zombie skins
-	zombie_skinss[0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
-	zombie_skinss[1] = loadtextureimage ("models/ai/zfull.mdl_1", 0, 0, qtrue, GU_LINEAR);
-	zombie_skinss[2] = loadtextureimage ("models/ai/zfull.mdl_2", 0, 0, qtrue, GU_LINEAR);
-	zombie_skinss[3] = loadtextureimage ("models/ai/zfull.mdl_3", 0, 0, qtrue, GU_LINEAR);
 }
 
 /*
