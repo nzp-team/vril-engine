@@ -64,6 +64,7 @@ qpic_t      *fx_blood_rd;
 
 qboolean	sb_showscores;
 qboolean 	domaxammo;
+qboolean 	has_chaptertitle;
 
 int  x_value, y_value;
 
@@ -103,6 +104,8 @@ HUD_Init
 void HUD_Init (void)
 {
 	int		i;
+	
+	has_chaptertitle = false;
 
 	for (i=0 ; i<5 ; i++)
 	{
@@ -539,6 +542,11 @@ void HUD_WorldText(int alpha)
 
 		strcpy(value, com_token);
 
+		if (!strcmp("chaptertitle", key)) // search for chaptertitle key
+		{
+			has_chaptertitle = true;
+			Draw_ColoredString(4, vid.height/2 + 40, value, 255, 255, 255, alpha, 1);	
+		}
 		if (!strcmp("location", key)) // search for location key
 		{
 			Draw_ColoredString(4, vid.height/2 + 50, value, 255, 255, 255, alpha, 1);
@@ -625,7 +633,9 @@ void HUD_Rounds (void)
 		Draw_ColoredString(vid.width/2 - strlen("Round")*8, 80, "Round", 255, 0, 0, value, 2);
 
 		HUD_WorldText(value2);
-		Draw_ColoredString(4, vid.height/2 + 40, "'Nazi Zombies'", 255, 255, 255, value2, 1);
+		
+		if (has_chaptertitle == false)
+			Draw_ColoredString(4, vid.height/2 + 40, "'Nazi Zombies'", 255, 255, 255, value2, 1);
 		
 		value -= cl.time * 0.4;
 		value2 += cl.time * 0.4;
@@ -639,7 +649,9 @@ void HUD_Rounds (void)
 	// Hold world text for a few seconds
 	else if (textstate == 2) {
 		HUD_WorldText(255);
-		Draw_ColoredString(4, vid.height/2 + 40, "'Nazi Zombies'", 255, 255, 255, 255, 1);
+		
+		if (has_chaptertitle == false)
+			Draw_ColoredString(4, vid.height/2 + 40, "'Nazi Zombies'", 255, 255, 255, 255, 1);
 
 		value2 += cl.time * 0.4;
 
@@ -651,7 +663,9 @@ void HUD_Rounds (void)
 	// Fade worldtext out, finally.
 	else if (textstate == 3) {
 		HUD_WorldText(value2);
-		Draw_ColoredString(4, vid.height/2 + 40, "'Nazi Zombies'", 255, 255, 255, value2, 1);
+		
+		if (has_chaptertitle == false)
+			Draw_ColoredString(4, vid.height/2 + 40, "'Nazi Zombies'", 255, 255, 255, value2, 1);
 
 		value2 -= cl.time * 0.4;
 
