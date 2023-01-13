@@ -2556,7 +2556,7 @@ void M_AdjustSliders (int dir, int m_submenu, int options_cursor)
 				Cvar_SetValue ("nzp_particles", !nzp_decals.value);
 				break;
 			case OPT_FULLBRIGHT:
-				Cvar_SetValue ("r_fullbright", !nzp_decals.value);
+				Cvar_SetValue ("r_fullbright", !r_fullbright.value);
 				break;
 			case OPT_DITHERING:
 				Cvar_SetValue ("r_dithering", !r_dithering.value);
