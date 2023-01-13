@@ -2010,10 +2010,16 @@ void Mod_FloodFillSkin( byte *skin, int skinwidth, int skinheight )
 
 qboolean model_is_zombie(char name[MAX_QPATH])
 {
-	char specChar;
-	specChar = name[strlen(name) - 5];
-
-	if (specChar == '#' || specChar == '(' || specChar == '^')
+	if (Q_strcmp(name, "models/ai/zb#.mdl") == 0 ||
+	Q_strcmp(name, "models/ai/zbc#.mdl") == 0 ||
+	Q_strcmp(name, "models/ai/zcfull.mdl") == 0 ||
+	Q_strcmp(name, "models/ai/zhc^.mdl") == 0 ||
+	Q_strcmp(name, "models/ai/zalc(.mdl") == 0 ||
+	Q_strcmp(name, "models/ai/zarc(.mdl") == 0 ||
+	Q_strcmp(name, "models/ai/zfull.mdl") == 0 ||
+	Q_strcmp(name, "models/ai/zh^.mdl") == 0 ||
+	Q_strcmp(name, "models/ai/zal(.mdl") == 0 ||
+	Q_strcmp(name, "models/ai/zar(.mdl") == 0)
 		return qtrue;
 
 	return qfalse;
