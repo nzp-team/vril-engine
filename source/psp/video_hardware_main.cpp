@@ -2354,33 +2354,8 @@ void R_DrawAliasModel (entity_t *e)
 
 	IgnoreInterpolatioFrame(e, paliashdr);
 
-	if (specChar == '#')//Zombie body
-	{
-		switch(e->skinnum)
-		{
-			case 0:
-				GL_Bind(zombie_skins[0][0]);
-				break;
-			case 1:
-				GL_Bind(zombie_skins[0][1]);
-				break;
-			case 2:
-				GL_Bind(zombie_skins[1][0]);
-				break;
-			case 3:
-				GL_Bind(zombie_skins[1][1]);
-				break;
-			default: //out of bounds? assuming 0
-				Con_Printf("Zombie tex out of bounds: Tex[%i]\n",e->skinnum);
-				GL_Bind(zombie_skins[0][0]);
-				break;
-		}
-	}
-	else
-	{
-		anim = (int)(cl.time*10) & 3;
-		GL_Bind(paliashdr->gl_texturenum[e->skinnum][anim]);
-	}
+	anim = (int)(cl.time*10) & 3;
+	GL_Bind(paliashdr->gl_texturenum[e->skinnum][anim]);
 
 	//===================================================================================================== 80% at this point
 	//Rendering block
