@@ -2075,6 +2075,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][3] = zombie_skins[1][1];
 					break;
 				default: break;
+			}
 		}
 
 		pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
