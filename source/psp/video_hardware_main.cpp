@@ -2278,7 +2278,7 @@ void R_DrawAliasModel (entity_t *e)
 	//
 	// locate the proper data
 	//
-	if(doZHack && specChar == '#')
+	if(doZHack && specChar == '%')
 	{
 		if(clmodel->name[strlen(clmodel->name) - 6] == 'c')
 			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zcfull.mdl"));
@@ -2393,7 +2393,7 @@ void R_DrawAliasModel (entity_t *e)
 	sceGumPopMatrix();
 	sceGumUpdateMatrix();
 	
-	if (doZHack == 0 && specChar == '#')//if we're drawing zombie, also draw its limbs in one call
+	if (doZHack == 0 && specChar == '%')//if we're drawing zombie, also draw its limbs in one call
 	{
 		if(e->z_head)
 			R_DrawZombieLimb(e,1);
@@ -3659,7 +3659,7 @@ void R_DrawEntitiesOnList (void)
 			continue;
 		}
 		doZHack = 0;
-		if(specChar == '#')
+		if(specChar == '%')
 		{
 			if(zHackCount > 5 || ((currententity->z_head != 0) && (currententity->z_larm != 0) && (currententity->z_rarm != 0)))
 			{
