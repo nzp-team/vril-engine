@@ -81,10 +81,14 @@ namespace quake
 
 
 #ifdef SLIM
+
 		// How big a heap to allocate.
 		static size_t  heapSize	= 34 * 1024 * 1024;
+
 #else
+
 		static size_t  heapSize	= 13 * 1024 * 1024;
+
 #endif // SLIM
 
 		// Should the main loop stop running?
