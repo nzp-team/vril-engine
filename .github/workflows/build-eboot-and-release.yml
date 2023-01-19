@@ -27,13 +27,6 @@ jobs:
         working-directory: ./build
         run: |
           zip -r psp-nzp-eboots.zip EBOOT.PBP EBOOT2000.PBP
-      - name: Delete Old Release
-        uses: dev-drprasad/delete-tag-and-release@v0.2.0
-        with:
-          delete_release: true
-          tag_name: bleeding-edge
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
