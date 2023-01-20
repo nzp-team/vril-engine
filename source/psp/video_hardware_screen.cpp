@@ -1346,7 +1346,7 @@ int GetWeaponZoomAmmount (void)
 		case W_AFTERBURNER:
 			return 10;
 			break;
-		case W_MP5K:
+		case W_MP5:
 		case W_KOLLIDER:
 			return 10;
 			break;
