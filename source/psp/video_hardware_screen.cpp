@@ -1290,35 +1290,90 @@ int GetWeaponZoomAmmount (void)
 {
     switch (cl.stats[STAT_ACTIVEWEAPON])
     {
-        case W_MP40:
-        case W_357:
-        case W_SAWNOFF:
-        case W_TRENCH:
-        case W_PANZER:
-        case W_RAY:
-        case W_THOMPSON:
         case W_COLT:
-        case W_PPSH:
-        case W_TYPE:
-        //case W_TESLA:
-            return 5;
-            break;
-        case W_STG:
-        case W_BROWNING:
             return 10;
-            break;
-        case W_KAR:
-        case W_GEWEHR:
-        case W_M1:
-        case W_M1A1:
-        case W_BAR:
-        case W_FG:
-        case W_KAR_SCOPE:
-        case W_PTRS:
-        //case W_HEADCRACKER:
-        //case W_PENETRATOR:
-            return 20;
-            break;
+			break;
+		case W_KAR:
+		case W_ARMAGEDDON:
+			return 25;
+			break;
+		case W_KAR_SCOPE:
+		case W_HEADCRACKER:
+			return 50;
+			break;
+		case W_THOMPSON:
+		case W_GIBS:
+			return 10;
+			break;
+		case W_TRENCH:
+		case W_GUT:
+			return 10;
+			break;
+		case W_357:
+		case W_KILLU:
+			return 5;
+			break;
+		case W_MG:
+		case W_BARRACUDA:
+			return 15;
+			break;
+		case W_DB:
+		case W_BORE:
+		case W_SAWNOFF:
+			return 10;
+			break;
+		case W_M1A1:
+		case W_WIDDER:
+			return 20;
+			break;
+		case W_BAR:
+		case W_WIDOW:
+			return 30;
+			break;
+		case W_FG:
+		case W_IMPELLER:
+			return 30;
+			break;
+		case W_GEWEHR:
+		case W_COMPRESSOR:
+			return 25;
+			break;
+		case W_PPSH:
+		case W_REAPER:
+			return 10;
+			break;
+		case W_MP40:
+		case W_AFTERBURNER:
+			return 10;
+			break;
+		case W_MP5K:
+		case W_KOLLIDER:
+			return 10;
+			break;
+		case W_STG:
+		case W_SPATZ:
+			return 20;
+			break;
+		case W_M1:
+		case W_M1000:
+			return 25;
+			break;
+		case W_BROWNING:
+		case W_ACCELERATOR:
+			return 15;
+			break;
+		case W_PTRS:
+		case W_PENETRATOR:
+			return 50;
+			break;
+		case W_TYPE:
+		case W_SAMURAI:
+			return 10;
+			break;
+		case W_RAY:
+		case W_PORTER:
+			return 5;
+			break;
         default:
             return 5;
             break;
