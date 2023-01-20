@@ -1154,9 +1154,9 @@ void V_CalcRefdef (void)
 	temp_forward[1] *= cADSOfs[2];
 	temp_forward[2] *= cADSOfs[2];
 
-	view->origin[0] +=(temp_right[0] + temp_up[0] + temp_forward[0]);
-	view->origin[1] +=(temp_right[1] + temp_up[1] + temp_forward[1]);
-	view->origin[2] +=(temp_right[2] + temp_up[2] + temp_forward[2]);
+	view->origin[0] +=(temp_forward[0] + temp_right[0] + temp_up[0]);
+	view->origin[1] +=(temp_forward[1] + temp_right[1] + temp_up[1]);
+	view->origin[2] +=(temp_forward[2] + temp_right[2] + temp_up[2]);
 
 	float speed = (0.2 + sqrt((cl.velocity[0] * cl.velocity[0])	+	(cl.velocity[1] * cl.velocity[1])));
 	speed = speed/190;
