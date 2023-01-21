@@ -1136,6 +1136,7 @@ void V_CalcRefdef (void)
 	{
 		ADSOffset[0] = 0;
 		ADSOffset[1] = 0;
+		ADSOffset[2] = 0;
 	}
 	//Side offset
 	cADSOfs [0] += (ADSOffset[0] - cADSOfs[0]) * 0.25;
