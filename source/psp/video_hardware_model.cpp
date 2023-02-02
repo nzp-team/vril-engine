@@ -2370,7 +2370,10 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	end = Hunk_LowMark ();
 	total = end - start;
 
-	Cache_Alloc (&mod->cache, total, loadname);
+	// motolegacy -- in rare instances the viewmodel is able to fuck this
+	// up and try to allocate.. again.. let's tell it no and add this bound
+	if (!mod->cache.data)
+		Cache_Alloc (&mod->cache, total, loadname);
 
 	if (!mod->cache.data)
 		return;
