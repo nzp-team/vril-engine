@@ -842,14 +842,6 @@ void Preload (void)
 	// Right Arm
 	Mod_ForName ("models/ai/zar(.mdl",true);
 	Mod_ForName ("models/ai/zarc(.mdl",true);
-
-	Mod_ForName ("models/weapons/knife/v_knife.mdl", true);
-	Mod_ForName ("models/weapons/m1911/v_colt.mdl", true);
-	Mod_ForName ("models/pu/instakill!.mdl", true);
-	Mod_ForName ("models/pu/maxammo!.mdl", true);
-	Mod_ForName ("models/pu/nuke!.mdl", true);
-	Mod_ForName ("models/pu/carpenter!.mdl", true);
-	Mod_ForName ("models/pu/x2!.mdl", true);
 }
 /*
 ====================
