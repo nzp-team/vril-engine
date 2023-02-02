@@ -55,7 +55,7 @@ namespace quake
 		// Types.
         //ScePspRGB565;
         //ScePspRGBA8888
-		typedef ScePspRGBA8888	pixel;
+		typedef ScePspRGB565	pixel;
 		typedef u8				texel;
 		typedef u16				depth_value;
 
@@ -192,7 +192,7 @@ void VID_Init(unsigned char* palette)
 	sceGuStart(GU_DIRECT, display_list);
 	{
 		//sceGuDrawBuffer(GU_PSM_5650, vrelptr(draw_buffer), 512);
-		sceGuDrawBuffer(GU_PSM_8888, vrelptr(draw_buffer), 512);
+		sceGuDrawBuffer(GU_PSM_5650, vrelptr(draw_buffer), 512);
 		sceGuDispBuffer(screen_width, screen_height, vrelptr(display_buffer), 512);
 		sceGuDepthBuffer(vrelptr(depth_buffer), 512);
 
