@@ -28,7 +28,6 @@ extern "C"
 {
 #include "../quakedef.h"
 }
-#include <malloc.h>
 #include <pspgu.h>
 
 

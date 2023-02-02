@@ -192,7 +192,7 @@ void R_Envmap_f (void)
 {
     byte	*buffer;
 
-	buffer = static_cast<byte*>(malloc(ENVMAP_SIZE));
+	buffer = static_cast<byte*>(Q_malloc(ENVMAP_SIZE));
 	if(!buffer)
 	{
 		Con_Printf("ENV MAP FAILED, buffer not created\n");

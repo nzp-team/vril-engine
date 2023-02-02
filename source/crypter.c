@@ -42,7 +42,7 @@ char decrypt(char c, int key)
 char *strencrypt(char *s, int key, int len)
 {
     int i;
-	char *result = malloc(len);
+	char *result = Q_malloc(len);
 	for(i = 0; i < len; i++)
 	{
         result[i] = encrypt(s[i], key);
@@ -55,7 +55,7 @@ char *strencrypt(char *s, int key, int len)
 char *strdecrypt(char *s, int key, int len)
 {
     int i;
-	char *result = malloc(len);
+	char *result = Q_malloc(len);
 	for(i = 0; i < len; i++)
 	{
        result[i] = decrypt(s[i], -key);

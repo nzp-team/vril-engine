@@ -168,7 +168,7 @@ int ConvertWad3ToRGBA(miptex_t *tex)
     pal = in + ((image_size * 85) >> 6) + 2;
 
 
-	data = (byte*)malloc(image_size);
+	data = (byte*)Q_malloc(image_size);
     for (i = 0; i < image_size; i++)
 	{
         p = *in++;
@@ -369,7 +369,7 @@ void W_LoadTextureWadFileHL (char *filename, int complain)
 	return;
 	}
 
-	if (!(lumps = static_cast<lumpinfo_t*>(malloc(sizeof(lumpinfo_t)*numlumps))))
+	if (!(lumps = static_cast<lumpinfo_t*>(Q_malloc(sizeof(lumpinfo_t)*numlumps))))
 	{
     fclose(file);
 	Con_Printf ("W_LoadTextureWadFile: unable to allocate temporary memory for lump table");
@@ -415,7 +415,7 @@ byte *W_ConvertWAD3TextureHL(miptex_t *tex)
 	int		d, p, image_size;
 
 	in		= (byte *)((int) tex + tex->offsets[0]);
-	data	= out = static_cast<byte*>(malloc(tex->width * tex->height * 4));
+	data	= out = static_cast<byte*>(Q_malloc(tex->width * tex->height * 4));
 
 	if (!data)
 		return NULL;
@@ -468,7 +468,7 @@ byte *W_GetTextureHL(char *name)
 					return NULL;
 				}
 
-				tex = static_cast<miptex_t*>(malloc(texwadlump[i].size));
+				tex = static_cast<miptex_t*>(Q_malloc(texwadlump[i].size));
 
 				if (!tex)
 					return NULL;

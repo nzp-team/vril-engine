@@ -420,7 +420,8 @@ void QMB_AllocParticles (void)
         Con_Printf("QMB_AllocParticles: internal error >num particles<\n");
 
 	// can't alloc on Hunk, using native memory
-	particles = (particle_t *) malloc (r_numparticles * sizeof(particle_t));
+	// why??????? why not?????? where's the context :$
+	particles = (particle_t *) Q_malloc (r_numparticles * sizeof(particle_t));
 }
 
 void QMB_InitParticles (void)
