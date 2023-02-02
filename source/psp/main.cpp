@@ -87,7 +87,7 @@ namespace quake
 
 #else
 
-		static size_t  heapSize	= 13 * 1024 * 1024;
+		static size_t  heapSize	= 9 * 1024 * 1024;
 
 #endif // SLIM
 
