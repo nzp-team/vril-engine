@@ -2191,34 +2191,7 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	daliasskintype_t	*pskintype;
 	int					start, end, total;
 
-// some models are special
-	// NOTE: comparing not only with player.mdl, but with all models
-	// begin with "player" coz we need to support DME models as well!
-	if (!strncmp(mod->name, "progs/player", 12))
-		mod->modhint = MOD_PLAYER;
-	else if (!strcmp(mod->name, "progs/eyes.mdl"))
-		mod->modhint = MOD_EYES;
-	else if (!strcmp(mod->name, "progs/flame0.mdl") ||
-		 !strcmp(mod->name, "progs/flame.mdl") ||
-		 !strcmp(mod->name, "progs/flame2.mdl"))
-		mod->modhint = MOD_FLAME;
-	else if (!strcmp(mod->name, "progs/bolt.mdl") ||
-		 !strcmp(mod->name, "models/misc/bolt2.mdl") ||
-		 !strcmp(mod->name, "progs/bolt3.mdl"))
-		mod->modhint = MOD_THUNDERBOLT;
-	else if (!strcmp(mod->name, "progs/VModels/v_Colt.mdl") || //JUKKI Add nzp weapons here please plox
-		 !strcmp(mod->name, "progs/VModels/v_kar.mdl") ||
-		 !strcmp(mod->name, "progs/VModels/v_thomp.mdl"))
-		mod->modhint = MOD_WEAPON;
-	else if (!strcmp(mod->name, "progs/lavaball.mdl"))
-		mod->modhint = MOD_LAVABALL;
-	else if (!strcmp(mod->name, "progs/spike.mdl") ||
-		 !strcmp(mod->name, "progs/s_spike.mdl"))
-		mod->modhint = MOD_SPIKE;
-	else if (!strcmp(mod->name, "progs/shambler.mdl"))
-		mod->modhint = MOD_SHAMBLER;
-	else
-		mod->modhint = MOD_NORMAL;
+	mod->modhint = MOD_NORMAL;
 
 	start = Hunk_LowMark ();
 

@@ -236,7 +236,7 @@ byte* LoadPCX (FILE *f, int matchwidth, int matchheight)
 
 	count = (pcx->xmax+1) * (pcx->ymax+1);
 
-	image_rgba = static_cast<byte*>(malloc( count ));
+	image_rgba = static_cast<byte*>(Q_malloc( count ));
 
 	for (y=0 ; y<=pcx->ymax ; y++)
 	{
@@ -303,7 +303,7 @@ byte *LoadWAL (char *name)
 
 	size = width * height;
 
-	data = static_cast<byte*>(malloc(size));
+	data = static_cast<byte*>(Q_malloc(size));
 	memcpy_vfpu(data, (byte *)mt + ofs, size);
 
 	image_palette_type = PAL_Q2;
@@ -480,7 +480,7 @@ byte *LoadTGA (FILE *fin, int matchwidth, int matchheight)
 			fclose (fin);
 			return NULL;
 		}
-		ColorMap = static_cast<byte*>(malloc (TGA_MAXCOLORS * 4));
+		ColorMap = static_cast<byte*>(Q_malloc (TGA_MAXCOLORS * 4));
 		map_idx = 0;
 		for (i = temp1 ; i < temp1 + temp2 ; ++i, map_idx += 4)
 		{
@@ -936,7 +936,7 @@ byte *LoadBMP (FILE *fin, int matchwidth, int matchheight)
 
 	numPixels = columns * rows;
 
-	bmpRGBA = static_cast<byte*>(malloc(numPixels * 4));
+	bmpRGBA = static_cast<byte*>(Q_malloc(numPixels * 4));
 
 	for ( row = rows-1; row >= 0; row-- )
 	{

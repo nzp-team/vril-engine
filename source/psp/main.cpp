@@ -79,29 +79,17 @@ namespace quake
 		extern const int		ramClockSpeed	= cpuClockSpeed;
 		extern const int		busClockSpeed	= scePowerGetBusClockFrequencyInt();
 
-#ifdef PSP_SOFTWARE_VIDEO
-	#ifdef SLIM
-		// How big a heap to allocate.
-		static size_t  heapSize	= 16 * 1024 * 1024;
-	#else
-		static size_t  heapSize	= 17 * 1024 * 1024;
-	#endif
-#endif // PSP_SOFTWARE_VIDEO
-#ifdef KERNEL_MODE
-	#ifdef SLIM
+
+#ifdef SLIM
+
 		// How big a heap to allocate.
 		static size_t  heapSize	= 34 * 1024 * 1024;
-	#else
-		static size_t  heapSize	= 10 * 1024 * 1024;
-	#endif
+
 #else
-	#ifdef SLIM
-		// How big a heap to allocate.
-		static size_t  heapSize	= 34 * 1024 * 1024;
-	#else
-		static size_t  heapSize	= 10 * 1024 * 1024;
-	#endif
-#endif
+
+		static size_t  heapSize	= 9 * 1024 * 1024;
+
+#endif // SLIM
 
 		// Should the main loop stop running?
 		static volatile bool	quit			= false;

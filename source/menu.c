@@ -1445,7 +1445,7 @@ void M_Achievement_Draw (void)
 	int maxLenght = floor((vid.width - 155)/8);
 	int	stringLenght;
 	char *description;
-	char *string_line = (char*) malloc(maxLenght);
+	char *string_line = (char*) Q_malloc(maxLenght);
 	int lines;
 
     y = 0;
@@ -4925,15 +4925,15 @@ void Map_Finder(void)
 
 			COM_StripExtension(dirent.d_name, ntype);
 			custom_maps[user_maps_num].occupied = true;
-			custom_maps[user_maps_num].map_name = malloc(sizeof(char)*32);
+			custom_maps[user_maps_num].map_name = Q_malloc(sizeof(char)*32);
 			sprintf(custom_maps[user_maps_num].map_name, "%s", ntype);
 
 			char* 		setting_path;
 			int 		setting_file;
 			SceIoStat	setting_info;
 
-			setting_path 								  	= malloc(sizeof(char)*64);
-			custom_maps[user_maps_num].map_thumbnail_path 	= malloc(sizeof(char)*64);
+			setting_path 								  	= Q_malloc(sizeof(char)*64);
+			custom_maps[user_maps_num].map_thumbnail_path 	= Q_malloc(sizeof(char)*64);
 #ifdef KERNEL_MODE
 			strcpy(setting_path, 									va("%s/maps/", com_gamedir));
 #else
@@ -4953,16 +4953,16 @@ void Map_Finder(void)
 				state = 0;
 				int value;
 
-				custom_maps[user_maps_num].map_name_pretty = malloc(sizeof(char)*32);
-				custom_maps[user_maps_num].map_desc_1 = malloc(sizeof(char)*40);
-				custom_maps[user_maps_num].map_desc_2 = malloc(sizeof(char)*40);
-				custom_maps[user_maps_num].map_desc_3 = malloc(sizeof(char)*40);
-				custom_maps[user_maps_num].map_desc_4 = malloc(sizeof(char)*40);
-				custom_maps[user_maps_num].map_desc_5 = malloc(sizeof(char)*40);
-				custom_maps[user_maps_num].map_desc_6 = malloc(sizeof(char)*40);
-				custom_maps[user_maps_num].map_desc_7 = malloc(sizeof(char)*40);
-				custom_maps[user_maps_num].map_desc_8 = malloc(sizeof(char)*40);
-				custom_maps[user_maps_num].map_author = malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_name_pretty = Q_malloc(sizeof(char)*32);
+				custom_maps[user_maps_num].map_desc_1 = Q_malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_desc_2 = Q_malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_desc_3 = Q_malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_desc_4 = Q_malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_desc_5 = Q_malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_desc_6 = Q_malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_desc_7 = Q_malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_desc_8 = Q_malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_author = Q_malloc(sizeof(char)*40);
 
 				char* buffer = (char*)calloc(setting_info.st_size+1, sizeof(char));
 				sceIoRead(setting_file, buffer, setting_info.st_size);

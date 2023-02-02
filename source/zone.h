@@ -85,6 +85,11 @@ Zone block
 
 void Memory_Init (void *buf, int size);
 
+void *Q_malloc (size_t size);			// joe
+void *Q_calloc (size_t n, size_t size);		//
+void *Q_realloc (void *ptr, size_t size);	//
+void *Q_strdup (const char *str);		//
+
 void Z_Free (void *ptr);
 void *Z_Malloc (int size);			// returns 0 filled memory
 void *Z_TagMalloc (int size, int tag);

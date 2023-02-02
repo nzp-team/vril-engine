@@ -474,13 +474,13 @@ char *Sys_FindFirstFile (char *path, char *pattern)
 		return NULL;
 
 	tmp_len = strlen (pattern);
-	findpattern = (char*) malloc (tmp_len + 1);
+	findpattern = (char*) Q_malloc (tmp_len + 1);
 	if (!findpattern)
 		return NULL;
 	strcpy (findpattern, pattern);
 	findpattern[tmp_len] = '\0';
 	tmp_len = strlen (path);
-	findpath = (char*) malloc (tmp_len + 1);
+	findpath = (char*) Q_malloc (tmp_len + 1);
 	if (!findpath)
 		return NULL;
 	strcpy (findpath, path);

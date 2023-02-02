@@ -1,4 +1,3 @@
-#include <malloc.h>
 #include <pspgu.h>
 
 extern "C"
@@ -57,7 +56,7 @@ static void Image_Resample32 (void *indata, int inwidth, int inheight,void *outd
 		out = static_cast<byte*>(outdata);
 		fstep = (int) (inheight * 65536.0f / outheight);
 
-		memalloc = static_cast<byte*>(malloc(2 * outwidth4));
+		memalloc = static_cast<byte*>(Q_malloc(2 * outwidth4));
 		row1 = memalloc;
 		row2 = memalloc + outwidth4;
 		inrow = (byte *) indata;
@@ -207,7 +206,7 @@ static void Image_Resample24 (void *indata, int inwidth, int inheight,
 		out = static_cast<byte*>(outdata);
 		fstep = (int) (inheight * 65536.0f / outheight);
 
-		memalloc = static_cast<byte*>(malloc(2 * outwidth3));
+		memalloc = static_cast<byte*>(Q_malloc(2 * outwidth3));
 		row1 = memalloc;
 		row2 = memalloc + outwidth3;
 		inrow = (byte *) indata;
