@@ -28,7 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspkernel.h>
 #include <psputility.h>
 #include <pspdebug.h>
-#include <malloc.h>
 #include <limits.h>
 extern "C"
 {
@@ -575,7 +574,7 @@ void SCR_ScreenShot_f (void)
 		return;
  	}
 
-	buffer = static_cast<byte*>(malloc(buffersize));
+	buffer = static_cast<byte*>(Q_malloc(buffersize));
 	memset(buffer, 0, buffersize);
 
 	GL_GetPixelsRGB(buffer, glwidth, glheight, 0);
