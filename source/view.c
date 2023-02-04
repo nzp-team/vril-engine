@@ -690,7 +690,7 @@ static float OldYawTheta;
 static float OldPitchTheta;
 
 
-static vec2_t cADSOfs;
+static vec3_t cADSOfs;
 
 void CalcGunAngle (void)
 {
@@ -1121,7 +1121,7 @@ void V_CalcRefdef (void)
 	//============================================================ Engine-Side Iron Sights ============================================================
 	AngleVectors (r_refdef.viewangles, temp_forward, temp_right, temp_up);
 
-	vec2_t ADSOffset;
+	vec3_t ADSOffset;
 	if(cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2)
 	{
 		ADSOffset[0] = sv_player->v.ADS_Offset[0];
