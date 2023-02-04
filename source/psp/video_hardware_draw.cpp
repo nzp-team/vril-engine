@@ -120,7 +120,11 @@ void GL_Bind4Part(int texture_index)
 	vid_palmode = GU_PSM_T4;
 
 	sceGuTexMode(texture.format, 0, 0, GU_FALSE);
-	sceGuTexFilter(texture.filter, texture.filter);
+
+	if (r_retro.value)
+		sceGuTexFilter(GU_NEAREST, GU_NEAREST);
+	else
+		sceGuTexFilter(texture.filter, texture.filter);
 
 	const void* const texture_memory = texture.vram ? texture.vram : texture.ram;
 	sceGuTexImage(0, texture.width, texture.height, texture.width, texture_memory);
@@ -205,7 +209,11 @@ void GL_Bind (int texture_index)
 		vid_palmode = GU_PSM_T4;
 
 		sceGuTexMode(texture.format, 0, 0, GU_TRUE);
-		sceGuTexFilter(texture.filter, texture.filter);
+
+		if (r_retro.value)
+			sceGuTexFilter(GU_NEAREST, GU_NEAREST);
+		else
+			sceGuTexFilter(texture.filter, texture.filter);
 
 		const void* const texture_memory = texture.vram ? texture.vram : texture.ram;
 		sceGuTexImage(0, texture.width, texture.height, texture.width, texture_memory);
@@ -228,21 +236,18 @@ void GL_Bind (int texture_index)
 		// Set the texture mode.
 		sceGuTexMode(texture.format, texture.mipmaps , 0, texture.swizzle);
 
-		if (texture.mipmaps > 0 && r_mipmaps.value > 0)
-		{
-			//Con_Printf("asd\n");
-			float slope = 0.4f;
-			sceGuTexSlope(slope); // the near from 0 slope is the lower (=best detailed) mipmap it uses
-			sceGuTexFilter(GU_LINEAR_MIPMAP_LINEAR, GU_LINEAR_MIPMAP_LINEAR);
-			sceGuTexLevelMode(int(r_mipmaps_func.value), r_mipmaps_bias.value);
-		}
-		else {
-			// dr_mabuse1981: "retro filter" start.
-			if (r_retro.value)	
-				sceGuTexFilter(GU_NEAREST, GU_NEAREST);
-			else
+		if (r_retro.value) {
+			sceGuTexFilter(GU_NEAREST, GU_NEAREST);
+		} else {
+			if (texture.mipmaps > 0 && r_mipmaps.value > 0) {
+				//Con_Printf("asd\n");
+				float slope = 0.4f;
+				sceGuTexSlope(slope); // the near from 0 slope is the lower (=best detailed) mipmap it uses
+				sceGuTexFilter(GU_LINEAR_MIPMAP_LINEAR, GU_LINEAR_MIPMAP_LINEAR);
+				sceGuTexLevelMode(int(r_mipmaps_func.value), r_mipmaps_bias.value);
+			} else {
 				sceGuTexFilter(texture.filter, texture.filter);
-			// dr_mabuse1981: "retro filter" end.
+			}
 		}
 		
 		// Set the texture image.
@@ -309,19 +314,18 @@ void GL_BindDET (int texture_index)
 	// Set the texture mode.
 	sceGuTexMode(texture.format, texture.mipmaps , 0, texture.swizzle);
 
-	if (texture.mipmaps > 0 && r_detail_mipmaps.value > 0)
-	{
-        float slope = 0.4f;
-		sceGuTexSlope(slope); // the near from 0 slope is the lower (=best detailed) mipmap it uses
-		sceGuTexFilter(GU_LINEAR_MIPMAP_LINEAR, GU_LINEAR_MIPMAP_LINEAR);
-		sceGuTexLevelMode(tex_m, r_detail_mipmaps_bias.value); // manual slope setting
+	if (r_retro.value) {
+		sceGuTexFilter(GU_NEAREST, GU_NEAREST);
+	} else {
+		if (texture.mipmaps > 0 && r_detail_mipmaps.value > 0) {
+			float slope = 0.4f;
+			sceGuTexSlope(slope); // the near from 0 slope is the lower (=best detailed) mipmap it uses
+			sceGuTexFilter(GU_LINEAR_MIPMAP_LINEAR, GU_LINEAR_MIPMAP_LINEAR);
+			sceGuTexLevelMode(tex_m, r_detail_mipmaps_bias.value); // manual slope setting
+		} else {
+			sceGuTexFilter(texture.filter, texture.filter);
+		}
 	}
-	else
-		sceGuTexFilter(texture.filter, texture.filter);
-
-
-	//sceGuTexLevelMode(1, 1.0f); // manual slope setting
-	//sceGuTexSlope(0.2f); // the near from 0 slope is the lower (=best detailed) mipmap it uses
 
 	// Set the texture image.
 	const void* const texture_memory = texture.vram ? texture.vram : texture.ram;
