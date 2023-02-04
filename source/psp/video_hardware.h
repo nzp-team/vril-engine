@@ -295,8 +295,8 @@ extern  cvar_t	r_decal_explosions;
 extern  cvar_t  r_coronas;
 
 // MotoLegacy - simplified cvars for decals/particles (5/27/2020)
-extern cvar_t 	nzp_particles;
-extern cvar_t 	nzp_decals;
+// almost 3 years, wowza! - ivy~ (03 feb 2023)
+extern cvar_t 	r_runqmbparticles;
 
 
 extern	int			mirrortexturenum;	// quake texturenum, not gltexturenum

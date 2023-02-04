@@ -2484,7 +2484,6 @@ enum //video menu
 	OPT_FOV,
 	OPT_GAMMA,
 	OPT_DECALS,
-	OPT_PARTICLES,
 	OPT_FULLBRIGHT,
 	OPT_DITHERING,
 	OPT_RETRO,
@@ -2550,10 +2549,7 @@ void M_AdjustSliders (int dir, int m_submenu, int options_cursor)
 				Cvar_SetValue ("scr_fov", scr_fov.value);
 				break;
 			case OPT_DECALS:
-				Cvar_SetValue ("nzp_decals", !nzp_decals.value);
-				break;
-			case OPT_PARTICLES:
-				Cvar_SetValue ("nzp_particles", !nzp_decals.value);
+				Cvar_SetValue ("r_runqmbparticles", !r_runqmbparticles.value);
 				break;
 			case OPT_FULLBRIGHT:
 				Cvar_SetValue ("r_fullbright", !r_fullbright.value);
@@ -2728,41 +2724,34 @@ void M_Screen_Draw (void)
 
 	// Decals
 	if (video_cursor == 4)
-		Draw_ColoredString(10, 85, "Decals", 255, 0, 0, 255, 1);
+		Draw_ColoredString(10, 85, "Particles", 255, 0, 0, 255, 1);
 	else
-		Draw_ColoredString(10, 85, "Decals", 255, 255, 255, 255, 1);
-	M_DrawCheckbox(225, 85, nzp_decals.value);
-
-	// Particles
-	if (video_cursor == 5)
-		Draw_ColoredString(10, 95, "Particles", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(10, 95, "Particles", 255, 255, 255, 255, 1);
-	M_DrawCheckbox(225, 95, nzp_particles.value);
+		Draw_ColoredString(10, 85, "Particles", 255, 255, 255, 255, 1);
+	M_DrawCheckbox(225, 85, r_runqmbparticles.value);
 
 	// Fullbright
-	if (video_cursor == 6)
-		Draw_ColoredString(10, 105, "Fullbright", 255, 0, 0, 255, 1);
+	if (video_cursor == 5)
+		Draw_ColoredString(10, 95, "Fullbright", 255, 0, 0, 255, 1);
 	else
-		Draw_ColoredString(10, 105, "Fullbright", 255, 255, 255, 255, 1);
+		Draw_ColoredString(10, 95, "Fullbright", 255, 255, 255, 255, 1);
 	M_DrawCheckbox(225, 105, r_fullbright.value);
 
 	// Dithering
-	if (video_cursor == 7)
-		Draw_ColoredString(10, 115, "Dithering", 255, 0, 0, 255, 1);
+	if (video_cursor == 6)
+		Draw_ColoredString(10, 105, "Dithering", 255, 0, 0, 255, 1);
 	else
-		Draw_ColoredString(10, 115, "Dithering", 255, 255, 255, 255, 1);
+		Draw_ColoredString(10, 105, "Dithering", 255, 255, 255, 255, 1);
 	M_DrawCheckbox(225, 115, r_dithering.value);
 
 	// Retro
-	if (video_cursor == 8)
-		Draw_ColoredString(10, 125, "Retro", 255, 0, 0, 255, 1);
+	if (video_cursor == 7)
+		Draw_ColoredString(10, 115, "Retro", 255, 0, 0, 255, 1);
 	else
-		Draw_ColoredString(10, 125, "Retro", 255, 255, 255, 255, 1);
+		Draw_ColoredString(10, 115, "Retro", 255, 255, 255, 255, 1);
 	M_DrawCheckbox(225, 125, r_retro.value);
 
 	// Back
-	if (video_cursor == 9)
+	if (video_cursor == 8)
 		Draw_ColoredString(10, 250, "Back", 255, 0, 0, 255, 1);
 	else
 		Draw_ColoredString(10, 250, "Back", 255, 255, 255, 255, 1);
@@ -2781,19 +2770,16 @@ void M_Screen_Draw (void)
 		case 3: // Brightness
 			Draw_ColoredString(10, 230, "Increase or Decrease Game Brightness.", 255, 255, 255, 255, 1);
 			break;
-		case 4: // Decals
-			Draw_ColoredString(10, 230, "Toggle Bullet and Explosive Decals.", 255, 255, 255, 255, 1);
+		case 4: // Particles
+			Draw_ColoredString(10, 230, "Toggle most Particle Effects.", 255, 255, 255, 255, 1);
 			break;
-		case 5: // Particles
-			Draw_ColoredString(10, 230, "Toggle Appearence of (most) Particles.", 255, 255, 255, 255, 1);
-			break;
-		case 6: // Fullbright
+		case 5: // Fullbright
 			Draw_ColoredString(10, 230, "Toggle all non-realtime lights (Requires Map Restart).", 255, 255, 255, 255, 1);
 			break;
-		case 7: // Dithering
+		case 6: // Dithering
 			Draw_ColoredString(10, 230, "Toggle decrease in Color Banding.", 255, 255, 255, 255, 1);
 			break;
-		case 8: // Retro
+		case 7: // Retro
 			Draw_ColoredString(10, 230, "Toggle texture filtering.", 255, 255, 255, 255, 1);
 			break;
 	}
@@ -2982,127 +2968,6 @@ void M_Menu_Gameplay_f (void)
 	m_entersound = true;
 	gameplay_cursor = 0;
 }
-
-/*
-	float 	  r;
-
-	// Background
-	if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
-
-	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
-
-	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
-
-	// Header
-	Draw_ColoredString(10, 10, "GRAPHICS SETTINGS", 255, 255, 255, 255, 2);
-
-	// Show FPS
-	if (video_cursor == 0)
-		Draw_ColoredString(10, 45, "Show FPS", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(10, 45, "Show FPS", 255, 255, 255, 255, 1);
-	M_DrawCheckbox(225, 45, show_fps.value);
-	
-	// Max FPS
-	if (video_cursor == 1)
-		Draw_ColoredString(10, 55, "Max FPS", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(10, 55, "Max FPS", 255, 255, 255, 255, 1);
-	r = (cl_maxfps.value - 30.0)*(1.0/35.0);
-	M_DrawSlider (225, 55, r);
-
-	// FOV
-	if (video_cursor == 2)
-		Draw_ColoredString(10, 65, "Field of View", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(10, 65, "Field of View", 255, 255, 255, 255, 1);
-	r = (scr_fov.value - 50.0)*(1.0/70.0);
-	M_DrawSlider (225, 65, r);
-
-	// Brightness
-	if (video_cursor == 3)
-		Draw_ColoredString(10, 75, "Brightness", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(10, 75, "Brightness", 255, 255, 255, 255, 1);
-	r = (1.0 - v_gamma.value) / 0.5;
-	M_DrawSlider (225, 75, r);
-
-	// Decals
-	if (video_cursor == 4)
-		Draw_ColoredString(10, 85, "Decals", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(10, 85, "Decals", 255, 255, 255, 255, 1);
-	M_DrawCheckbox(225, 85, nzp_decals.value);
-
-	// Particles
-	if (video_cursor == 5)
-		Draw_ColoredString(10, 95, "Particles", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(10, 95, "Particles", 255, 255, 255, 255, 1);
-	M_DrawCheckbox(225, 95, nzp_particles.value);
-
-	// Fullbright
-	if (video_cursor == 6)
-		Draw_ColoredString(10, 105, "Fullbright", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(10, 105, "Fullbright", 255, 255, 255, 255, 1);
-	M_DrawCheckbox(225, 105, r_fullbright.value);
-
-	// Dithering
-	if (video_cursor == 7)
-		Draw_ColoredString(10, 115, "Dithering", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(10, 115, "Dithering", 255, 255, 255, 255, 1);
-	M_DrawCheckbox(225, 115, r_dithering.value);
-
-	// Retro
-	if (video_cursor == 8)
-		Draw_ColoredString(10, 125, "Retro", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(10, 125, "Retro", 255, 255, 255, 255, 1);
-	M_DrawCheckbox(225, 125, r_retro.value);
-
-	// Back
-	if (video_cursor == 9)
-		Draw_ColoredString(10, 250, "Back", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(10, 250, "Back", 255, 255, 255, 255, 1);
-
-	// Descriptions
-	switch(video_cursor) {
-		case 0: // Show FPS
-			Draw_ColoredString(10, 230, "Toggle Framerate Overlay.", 255, 255, 255, 255, 1);
-			break;
-		case 1: // Max FPS
-			Draw_ColoredString(10, 230, "Increase of Decrease Max Frames per Second.", 255, 255, 255, 255, 1);
-			break;
-		case 2: // FOV
-			Draw_ColoredString(10, 230, "Adjust Game Field of View.", 255, 255, 255, 255, 1);
-			break;
-		case 3: // Brightness
-			Draw_ColoredString(10, 230, "Increase or Decrease Game Brightness.", 255, 255, 255, 255, 1);
-			break;
-		case 4: // Decals
-			Draw_ColoredString(10, 230, "Toggle Bullet and Explosive Decals.", 255, 255, 255, 255, 1);
-			break;
-		case 5: // Particles
-			Draw_ColoredString(10, 230, "Toggle Appearence of (most) Particles.", 255, 255, 255, 255, 1);
-			break;
-		case 6: // Fullbright
-			Draw_ColoredString(10, 230, "Toggle all non-realtime lights (Requires Map Restart).", 255, 255, 255, 255, 1);
-			break;
-		case 7: // Dithering
-			Draw_ColoredString(10, 230, "Toggle decrease in Color Banding.", 255, 255, 255, 255, 1);
-			break;
-		case 8: // Retro
-			Draw_ColoredString(10, 230, "Toggle texture filtering.", 255, 255, 255, 255, 1);
-			break;
-	}
-	*/
-
 
 void M_Gameplay_Draw (void)
 {

@@ -348,6 +348,8 @@ void R_Init (void)
 	//Shpuld
 	Cvar_RegisterVariable (&r_model_brightness);
 
+	Cvar_RegisterVariable (&r_runqmbparticles);
+
 	R_InitParticles ();
 	R_InitParticleTexture ();
 	R_InitOtherTextures ();
