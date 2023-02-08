@@ -2734,21 +2734,21 @@ void M_Screen_Draw (void)
 		Draw_ColoredString(10, 95, "Fullbright", 255, 0, 0, 255, 1);
 	else
 		Draw_ColoredString(10, 95, "Fullbright", 255, 255, 255, 255, 1);
-	M_DrawCheckbox(225, 105, r_fullbright.value);
+	M_DrawCheckbox(225, 955, r_fullbright.value);
 
 	// Dithering
 	if (video_cursor == 6)
 		Draw_ColoredString(10, 105, "Dithering", 255, 0, 0, 255, 1);
 	else
 		Draw_ColoredString(10, 105, "Dithering", 255, 255, 255, 255, 1);
-	M_DrawCheckbox(225, 115, r_dithering.value);
+	M_DrawCheckbox(225, 105, r_dithering.value);
 
 	// Retro
 	if (video_cursor == 7)
 		Draw_ColoredString(10, 115, "Retro", 255, 0, 0, 255, 1);
 	else
 		Draw_ColoredString(10, 115, "Retro", 255, 255, 255, 255, 1);
-	M_DrawCheckbox(225, 125, r_retro.value);
+	M_DrawCheckbox(225, 115, r_retro.value);
 
 	// Back
 	if (video_cursor == 8)
