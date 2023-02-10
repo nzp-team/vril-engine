@@ -99,7 +99,7 @@ void _VectorCopy (vec3_t in, vec3_t out);
 
 void vectoangles (vec3_t vec, vec3_t ang);
 
-int VectorCompare (vec3_t v1, vec3_t v2);
+#define VectorCompare(v1,v2)  ((v1)[0]==(v2)[0] && (v1)[1]==(v2)[1] && (v1)[2]==(v2)[2])
 vec_t Length (vec3_t v);
 void CrossProduct (vec3_t v1, vec3_t v2, vec3_t cross);
 float VectorLength (vec3_t v);

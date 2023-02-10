@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern "C"
 {
 #include "../quakedef.h"
-#include "iridlibs/perflib.h"
 float TraceLine (vec3_t start, vec3_t end, vec3_t impact, vec3_t normal);
 }
 
@@ -928,12 +927,6 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, float apitch, float 
 	int		*order;
 	int		count;
 	int prim;
-	prim = GU_TRIANGLE_FAN;
-	if(r_showtris.value)
-	{
-		sceGuDisable(GU_TEXTURE_2D);
-		prim = GU_LINE_STRIP;
-	}
 
 	lastposenum = posenum;
 	verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
@@ -1001,10 +994,6 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, float apitch, float 
 		sceGuDrawArray(prim, GU_TEXTURE_32BITF | GU_VERTEX_32BITF | GU_COLOR_8888, count, 0, out);
 		
 		//================================================================== fps: 50 ===============================================
-	}
-	if(r_showtris.value)
-	{
-		sceGuEnable(GU_TEXTURE_2D);
 	}
 	sceGuColor(0xffffffff);
 }
@@ -4306,9 +4295,5 @@ void R_RenderView (void)
 	{
 		Con_Printf ("%4i world poly\n",  c_brush_polys);
 		Con_Printf ("%4i entity poly\n",  c_alias_polys);
-		Con_Printf ("%4i CPU Percentage\n", (int)PFL_GetCPUPercentage()/(1000/game_fps));
-		Con_Printf ("%4i GPU Percentage\n", (int)PFL_GetGPUPercentage()/(1000/game_fps));
-		Con_Printf ("%4i CPU Time (ms)\n", (int)PFL_GetCPUTime());
-		Con_Printf ("%4i GPU Time (ms)\n", (int)PFL_GetGPUTime());
 	}
 }

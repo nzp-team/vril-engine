@@ -38,8 +38,6 @@ extern "C"
 
 #include "video_hardware_images.h"
 
-#include "iridlibs/perflib.h"
-
 #ifdef _WIN32
 # define ALIGNED(x)
 #else
@@ -292,7 +290,6 @@ void VID_Shutdown(void)
 
 void GL_BeginRendering (int *x, int *y, int *width, int *height)
 {
-	PFL_BeginGPURecord();
 	*x = 2048;
 	*y = 2048;
 	*width = screen_width;
@@ -309,7 +306,6 @@ void GL_EndRendering (void)
 	// Finish rendering.
 	sceGuFinish();
 	sceGuSync(0, 0);
-	PFL_EndGPURecord();
 
 	// At the moment only do this if we are in network mode, once we get above
 	// 60fps we might as well leave it on for all games
