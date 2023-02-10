@@ -15,8 +15,12 @@ PSP_LARGE_MEMORY = 1
 
 MODE=-DKERNEL_MODE
 
-
-BUILD_PRX = 1
+ifeq ($(USE_GPROF),1)
+GPROF_LIBS      = -lpspprof
+GPROF_FLAGS		= -pg -DPROFILE
+else
+BUILD_PRX		= 1
+endif
 
 COMMON_OBJS = \
 	source/psp/battery.o \
@@ -115,9 +119,9 @@ AUDIO_LIBS	= -lpspaudiolib -lpspaudio -lpspmp3 source/psp/m33libs/libpspaudiocod
 MISC_LIBS	= -lpsprtc -lpsppower -lpspmath -lpsphprm -ljpeg -lpng source/psp/m33libs/libz.a source/psp/iridlibs/libPerf.a
 NET_LIBS    = -lpspwlan -lpspnet_adhoc -lpspnet_adhocctl
 STD_LIBS	= -lstdc++ -lm -lc
-LIBS		= $(GU_LIBS) $(AUDIO_LIBS) $(MISC_LIBS) $(STD_LIBS) $(NET_LIBS)
+LIBS		= $(GPROF_LIBS) $(GU_LIBS) $(AUDIO_LIBS) $(MISC_LIBS) $(STD_LIBS) $(NET_LIBS)
 
-CFLAGS = -ffast-math -O3 -G0 -Wall -Did386="0" -DPSP $(MODE) $(HARDWARE_VIDEO_ONLY_FLAGS) -DSWIZZLE32 -DSLIM -DPSP_MP3_HWDECODE -DFULLBRIGHT -DHL_RENDER -Wno-strict-aliasing -DPSP_VFPU
+CFLAGS = -ffast-math -O3 -G0 -Wall $(GPROF_FLAGS) -Did386="0" -DPSP $(MODE) $(HARDWARE_VIDEO_ONLY_FLAGS) -DSWIZZLE32 -DSLIM -DPSP_MP3_HWDECODE -DFULLBRIGHT -DHL_RENDER -Wno-strict-aliasing -DPSP_VFPU
 CXXFLAGS = -fno-rtti -Wcast-qual -Wno-write-strings -Wno-sign-compare -Wno-strict-aliasing
 ASFLAGS = $(CFLAGS) -c
 
