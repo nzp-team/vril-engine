@@ -307,11 +307,7 @@ void V_DriftPitch (void)
 // don't count small mouse motion
 	if (cl.nodrift)
 	{
-		#ifdef PSP_VFPU
-		if ( vfpu_fabsf(cl.cmd.forwardmove) < cl_forwardspeed)
-		#else
 		if ( fabsf(cl.cmd.forwardmove) < cl_forwardspeed)
-		#endif
 			cl.driftmove = 0;
 		else
 			cl.driftmove += host_frametime;
@@ -408,10 +404,9 @@ void BuildGammaTable (float g)
 V_CheckGamma
 =================
 */
+static float oldgammavalue;
 qboolean V_CheckGamma (void)
 {
-	static float oldgammavalue;
-
 	if (v_gamma.value == oldgammavalue)
 		return false;
 	oldgammavalue = v_gamma.value;
@@ -1725,7 +1720,7 @@ void V_Init (void)
 	Cvar_RegisterVariable (&v_kickroll);
 	Cvar_RegisterVariable (&v_kickpitch);
 
-	BuildGammaTable (1.0);	// no gamma yet
+	BuildGammaTable (5.0);	// no gamma yet
 	Cvar_RegisterVariable (&v_gamma);
 }
 

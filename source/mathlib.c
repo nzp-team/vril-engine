@@ -125,18 +125,10 @@ void PerpendicularVector( vec3_t dst, const vec3_t src )
 	*/
 	for ( pos = 0, i = 0; i < 3; i++ )
 	{
-		#ifdef PSP_VFPU
-		if ( vfpu_fabsf( src[i] ) < minelem )
-		#else
 		if ( fabsf( src[i] ) < minelem )
-		#endif
 		{
 			pos = i;
-			#ifdef PSP_VFPU	
-			minelem = vfpu_fabsf( src[i] );
-			#else
 			minelem = fabsf( src[i] );
-			#endif
 		}
 	}
 	tempvec[0] = tempvec[1] = tempvec[2] = 0.0F;
@@ -449,11 +441,10 @@ void vectoangles (vec3_t vec, vec3_t ang)
 		if (yaw < 0)
 			yaw += 360;
 
+		forward = sqrt (vec[0] * vec[0] + vec[1] * vec[1]);
 		#ifdef PSP_VFPU
-		forward = vfpu_sqrtf (vec[0] * vec[0] + vec[1] * vec[1]);
 		pitch = vfpu_atan2f (vec[2], forward) * 180 / M_PI;
 		#else
-		forward = sqrt (vec[0] * vec[0] + vec[1] * vec[1]);
 		pitch = atan2 (vec[2], forward) * 180 / M_PI;
 		#endif
 		if (pitch < 0)
@@ -508,11 +499,7 @@ void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 
 float VectorLength (vec3_t v)
 {
-	#ifdef PSP_VFPU
-	return vfpu_sqrtf(DotProduct(v, v));
-	#else
 	return sqrtf(DotProduct(v, v));
-	#endif
 }
 
 int VectorCompare (vec3_t v1, vec3_t v2)
@@ -569,11 +556,7 @@ void CrossProduct (vec3_t v1, vec3_t v2, vec3_t cross)
 
 vec_t Length(vec3_t v)
 {
-	#ifdef PSP_VFPU
-	return vfpu_sqrtf(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-	#else
 	return sqrtf(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-	#endif
 }
 
 float VecLength2(vec3_t v1, vec3_t v2)
@@ -585,11 +568,7 @@ float VecLength2(vec3_t v1, vec3_t v2)
 
 float VectorNormalize (vec3_t v)
 {
-	#ifdef PSP_VFPU
-	float length = vfpu_sqrtf(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-	#else
 	float length = sqrtf(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-	#endif
 
 	if (length)
 	{
