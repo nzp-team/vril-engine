@@ -47,23 +47,8 @@ namespace quake
 
 		static inline void copySamples(const Sample* first, const Sample* last, Sample* destination)
 		{
-			switch (inputSamplesPerOutputSample)
-			{
-			case 1:
-				memcpy(destination, first, (last - first) * sizeof(Sample));
-				break;
-
-			case 2:
-				for (const Sample* source = first; source != last; ++source)
-				{
-					const Sample sample = *source;
-					*destination++ = sample;
-					*destination++ = sample;
-				}
-				break;
-
-			case 4:
-				for (const Sample* source = first; source != last; ++source)
+			// just assume inputSamplesPerOutputSample is 4.
+			for (const Sample* source = first; source != last; ++source)
 				{
 					const Sample sample = *source;
 					*destination++ = sample;
@@ -71,11 +56,6 @@ namespace quake
 					*destination++ = sample;
 					*destination++ = sample;
 				}
-				break;
-
-			default:
-				break;
-			}
 		}
 
 		static void fillOutputBuffer(void* buffer, unsigned int samplesToWrite, void* userData)
