@@ -543,11 +543,6 @@ void CrossProduct (vec3_t v1, vec3_t v2, vec3_t cross)
 	cross[2] = v1[0]*v2[1] - v1[1]*v2[0];
 }
 
-inline vec_t Length(vec3_t v)
-{
-	return sqrtf(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-}
-
 float VecLength2(vec3_t v1, vec3_t v2)
 {
 	vec3_t k;
