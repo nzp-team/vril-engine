@@ -436,11 +436,9 @@ void Q_snprintfz (char *dest, size_t size, char *fmt, ...)
 qboolean        bigendien;
 
 short   (*BigShort) (short l);
-short   (*LittleShort) (short l);
 int     (*BigLong) (int l);
-int     (*LittleLong) (int l);
 float   (*BigFloat) (float l);
-float   (*LittleFloat) (float l);
+
 
 short   ShortSwap (short l)
 {
@@ -450,11 +448,6 @@ short   ShortSwap (short l)
 	b2 = (l>>8)&255;
 
 	return (b1<<8) + b2;
-}
-
-static inline short ShortNoSwap (short l)
-{
-	return l;
 }
 
 int    LongSwap (int l)
@@ -467,11 +460,6 @@ int    LongSwap (int l)
 	b4 = (l>>24)&255;
 
 	return ((int)b1<<24) + ((int)b2<<16) + ((int)b3<<8) + b4;
-}
-
-static inline int LongNoSwap (int l)
-{
-	return l;
 }
 
 float FloatSwap (float f)
@@ -489,11 +477,6 @@ float FloatSwap (float f)
 	dat2.b[2] = dat1.b[1];
 	dat2.b[3] = dat1.b[0];
 	return dat2.f;
-}
-
-static inline float FloatNoSwap (float f)
-{
-	return f;
 }
 
 /*
@@ -1183,11 +1166,8 @@ void COM_Init (char *basedir)
 	// force set little endian to be cool and fast
 	bigendien = false;
 	BigShort = ShortSwap;
-	LittleShort = ShortNoSwap;
 	BigLong = LongSwap;
-	LittleLong = LongNoSwap;
 	BigFloat = FloatSwap;
-	LittleFloat = FloatNoSwap;
 
 	Cmd_AddCommand ("path", COM_Path_f);
 
