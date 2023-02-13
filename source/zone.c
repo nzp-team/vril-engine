@@ -672,7 +672,6 @@ typedef struct
 {
 	int		sentinal;
 	int		size;		// including sizeof(hunk_t), -1 = not allocated
-	char	name[8];
 } hunk_t;
 
 byte	*hunk_base;
@@ -701,7 +700,7 @@ void Hunk_Check (void)
 	{
 		if (h->sentinal != HUNK_SENTINAL)
 			Sys_Error ("Hunk_Check: trahsed sentinal");
-		if (h->size < 16 || h->size + (byte *)h - hunk_base > hunk_size)
+		if (h->size < 8 || h->size + (byte *)h - hunk_base > hunk_size)
 			Sys_Error ("Hunk_Check: bad size");
 		h = (hunk_t *)((byte *)h+h->size);
 	}
@@ -717,6 +716,7 @@ Otherwise, allocations with the same name will be totaled up before printing.
 */
 void Hunk_Print (qboolean all)
 {
+/*
 	hunk_t	*h, *next, *endlow, *starthigh, *endhigh;
 	int		count, sum;
 	int		totalblocks;
@@ -790,8 +790,7 @@ void Hunk_Print (qboolean all)
 	}
 
 	Con_Printf ("-------------------------\n");
-	Con_Printf ("%8i total blocks\n", totalblocks);
-
+	Con_Printf ("%8i total blocks\n", totalblocks);*/
 }
 
 /*
@@ -810,7 +809,7 @@ void *Hunk_AllocName (int size, char *name)
 		return NULL;
 	}
 
-	size = sizeof(hunk_t) + ((size+15)&~15);
+	size = sizeof(hunk_t) + ((size+7)&~7);
 
 	if (hunk_size - hunk_low_used - hunk_high_used < size)
 	{
@@ -828,7 +827,7 @@ void *Hunk_AllocName (int size, char *name)
 
 	h->size = size;
 	h->sentinal = HUNK_SENTINAL;
-	Q_strncpy (h->name, name, 8);
+	//Q_strncpy (h->name, name, 8);
 
 	return (void *)(h+1);
 }
@@ -915,7 +914,7 @@ void *Hunk_HighAllocName (int size, char *name)
 	memset (h, 0, size);
 	h->size = size;
 	h->sentinal = HUNK_SENTINAL;
-	Q_strncpy (h->name, name, 8);
+	//Q_strncpy (h->name, name, 8);
 
 	return (void *)(h+1);
 }
@@ -961,7 +960,6 @@ typedef struct cache_system_s
 {
 	int						size;		// including this header
 	cache_user_t			*user;
-	char					name[16];
 	struct cache_system_s	*prev, *next;
 	struct cache_system_s	*lru_prev, *lru_next;	// for LRU flushing
 } cache_system_t;
@@ -987,7 +985,7 @@ void Cache_Move ( cache_system_t *c)
 
 		Q_memcpy ( new+1, c+1, c->size - sizeof(cache_system_t) );
 		new->user = c->user;
-		Q_memcpy (new->name, c->name, sizeof(new->name));
+		//Q_memcpy (new->name, c->name, sizeof(new->name));
 		Cache_Free (c->user);
 		new->user->data = (void *)(new+1);
 	}
@@ -1174,12 +1172,12 @@ Cache_Print
 */
 void Cache_Print (void)
 {
-	cache_system_t	*cd;
+	/*cache_system_t	*cd;
 
 	for (cd = cache_head.next ; cd != &cache_head ; cd = cd->next)
 	{
 		Con_Printf ("%8i : %s\n", cd->size, cd->name);
-	}
+	}*/
 }
 
 /*
@@ -1289,7 +1287,7 @@ void *Cache_Alloc (cache_user_t *c, int size, char *name)
 		cs = Cache_TryAlloc (size, false);
 		if (cs)
 		{
-			strncpy (cs->name, name, sizeof(cs->name)-1);
+			//strncpy (cs->name, name, sizeof(cs->name)-1);
 			c->data = (void *)(cs+1);
 			cs->user = c;
 			break;
