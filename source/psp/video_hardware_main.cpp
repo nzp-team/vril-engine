@@ -1334,7 +1334,7 @@ void GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, ent
 	VectorCopy (e->origin, downmove);
 	downmove[2] = downmove[2] - 4096;
 	memset (&downtrace, 0, sizeof(downtrace));
-	SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, e->origin, downmove, &downtrace);
+	SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, e->origin, downmove, &downtrace);
 
 	#ifdef PSP_VFPU
 	s1 = vfpu_sinf( e->angles[1]/180*M_PI);
@@ -1711,7 +1711,7 @@ void GL_DrawQ2AliasShadow (entity_t *e, md2_t *pheader, int lastpose, int pose, 
 	VectorCopy (e->origin, downmove);
 	downmove[2] = downmove[2] - 4096;
 	memset (&downtrace, 0, sizeof(downtrace));
-	SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, e->origin, downmove, &downtrace);
+	SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, e->origin, downmove, &downtrace);
 
 	#ifdef PSP_VFPU
 	s1 = vfpu_sinf( e->angles[1]/180*M_PI);
@@ -1853,7 +1853,7 @@ void R_SetupQ2AliasFrame (entity_t *e, md2_t *pheader)
 
 		downmove[2] = downmove[2] - 4096;
 		memset (&downtrace, 0, sizeof(downtrace));
-		SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, e->origin, downmove, &downtrace);
+		SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, e->origin, downmove, &downtrace);
 
 		sceGuDisable (GU_TEXTURE_2D);
 		sceGuEnable (GU_BLEND);
@@ -3362,7 +3362,7 @@ void R_DrawQ3Model (entity_t *ent)
 		VectorCopy (ent->origin, downmove);
 		downmove[2] -= farclip;
 		memset (&downtrace, 0, sizeof(downtrace));
-		SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, ent->origin, downmove, &downtrace);
+		SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, ent->origin, downmove, &downtrace);
 
 		lheight = ent->origin[2] - lightspot[2];
 

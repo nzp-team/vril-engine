@@ -365,7 +365,7 @@ qboolean TraceLineN (vec3_t start, vec3_t end, vec3_t impact, vec3_t normal)
 	trace_t	trace;
 
 	memset (&trace, 0, sizeof(trace));
-	if (!SV_RecursiveHullCheck(cl.worldmodel->hulls, 0, 0, 1, start, end, &trace))
+	if (!SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, start, end, &trace))
 	{
 		if (trace.fraction < 1)
 		{
@@ -454,7 +454,7 @@ void CL_UpdateTEnts (void)
 				VectorAdd(org, forward, b->end);
 
 				memset (&trace, 0, sizeof(trace_t));
-				if (!SV_RecursiveHullCheck(cl.worldmodel->hulls, 0, 0, 1, org, b->end, &trace))
+				if (!SV_RecursiveHullCheck(cl.worldmodel->hulls, 0, org, b->end, &trace))
 					VectorCopy(trace.endpos, b->end);
 			}
 		}

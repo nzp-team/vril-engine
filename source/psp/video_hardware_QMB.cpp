@@ -3140,7 +3140,7 @@ void QMB_LaserSight (void)
 
 			memset (&trace, 0, sizeof(trace_t));
 			trace.fraction = 1;
-			SV_RecursiveHullCheck(cl.worldmodel->hulls, 0, 0, 1, start, dest, &trace);
+			SV_RecursiveHullCheck(cl.worldmodel->hulls, 0, start, dest, &trace);
 
 			start[2]+=cl.crouch;
 			AddParticle (p_streaktrail, start, 1, 2, 0.02, color, trace.endpos);// draw the line
@@ -3203,7 +3203,7 @@ void QMB_LightningBeam (vec3_t start, vec3_t end)
 			if (qmb_initialized && r_part_sparks.value)
 			{
 				memset (&trace, 0, sizeof(trace_t));
-				if (!SV_RecursiveHullCheck(cl.worldmodel->hulls, 0, 0, 1, start, end, &trace))
+				if (!SV_RecursiveHullCheck(cl.worldmodel->hulls, 0, start, end, &trace))
 				{
 					if (trace.fraction < 1)
 					{
