@@ -887,14 +887,14 @@ void R_RenderBrushPoly (msurface_t *fa)
 
 	c_brush_polys++;
 
-	if(r_showtris.value) //Crow_bar
+	/*if(r_showtris.value) //Crow_bar
 	{
 		sceGuDepthMask (GU_TRUE);
 
 		DrawTrisPoly (fa->polys);
 
 		sceGuDepthMask (GU_FALSE);
-	}
+	}*/
 
 	if (fa->flags & SURF_DRAWSKY)
 	{	// warp texture, no lightmaps
@@ -910,38 +910,42 @@ void R_RenderBrushPoly (msurface_t *fa)
 		EmitWaterPolys (fa);
 		return;
 	}
-	if (!Q_strncmp(fa->texinfo->texture->name,"{",1)) // Halflife Alpha
-	{
-		sceGuEnable(GU_ALPHA_TEST);
-		sceGuAlphaFunc(GU_GREATER, 0xaa, 0xff);
-		sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
-	}
 
-	if (!Q_strncmp(fa->texinfo->texture->name,"light",5)) // Lights
-	{
-		DrawGLPoly (fa->polys);
-		return;
-	}
+	sceGuEnable(GU_ALPHA_TEST);
+	sceGuAlphaFunc(GU_GREATER, 0xaa, 0xff);
+	sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 
-	if (!Q_strncmp(fa->texinfo->texture->name,"env",3)) // ENV
-	{
-		EmitReflectivePolys (fa);
-	}
-
-	if (!Q_strncmp(fa->texinfo->texture->name,"nodraw",6)) // Nodraw
-	{
-		return;
-	}
+	// motolegacy -- avoid spamming with strncmp lol
+	// a little ugly but does the job!
+	// also some improved logic thanks to darkduke/ipq
+	const char *tex_name = fa->texinfo->texture->name;
 
 	if (fa->flags & SURF_UNDERWATER)
 		DrawGLWaterPoly (fa->polys);
-	else
-		DrawGLPoly (fa->polys);
-
-	if (!Q_strncmp(fa->texinfo->texture->name,"glass",5)) // Glass
-	{
-		EmitReflectivePolys (fa);
+	// Don't draw texture and lightmaps.
+	else if (tex_name[0] == 'n' && tex_name[1] == 'o' && 
+	tex_name[2] == 'd' && tex_name[3] == 'r' && 
+	tex_name[4] == 'a' && tex_name[5] == 'w')
+		return;
+	// Alpha blended textures, no lightmaps.
+	else if (tex_name[0] == '{' || tex_name[0] == 'z') {
+		DrawGLPoly(fa->polys);
 	}
+	// No lightmaps.
+	else if (tex_name[0] == 'l' && tex_name[1] == 'i' && 
+	tex_name[2] == 'g' && tex_name[3] == 'h' && 
+	tex_name[4] == 't') {
+		DrawGLPoly(fa->polys);
+	}
+	// Surface uvmaps warp, like metal or glass effects.
+	else if ((tex_name[0] == 'e' && tex_name[1] == 'n' && 
+	tex_name[2] == 'v') || (tex_name[0] == 'g' && 
+	tex_name[1] == 'l' && tex_name[2] == 'a' && 
+	tex_name[3] == 's' && tex_name[4] == 's')) {
+		EmitReflectivePolys(fa);
+	} else
+		DrawGLPoly(fa->polys);
+	// motolegacy -- end new stuff
 
 	// add the poly to the proper lightmap chain
 	fa->polys->chain = lightmap_polys[fa->lightmaptexturenum];
