@@ -111,10 +111,14 @@ typedef struct texture_s
 #define	SURF_PLANEBACK		2
 #define	SURF_DRAWSKY		4
 #define SURF_DRAWSPRITE		8
-#define SURF_DRAWTURB		0x10
-#define SURF_DRAWTILED		0x20
-#define SURF_DRAWBACKGROUND	0x40
-#define SURF_UNDERWATER		0x80
+#define SURF_DRAWTURB		0x10 // 16
+#define SURF_DRAWTILED		0x20 // 32
+#define SURF_DRAWBACKGROUND	0x40 // 64
+#define SURF_UNDERWATER		0x80 // 128
+
+#define TEXFLAG_NODRAW		256
+#define TEXFLAG_REFLECT		512
+#define TEXFLAG_NORMAL		1024
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct

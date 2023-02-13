@@ -1251,30 +1251,50 @@ void Mod_LoadFaces (lump_t *l)
 		else
 			out->samples = loadmodel->lightdata + (i);
 
-		if (!Q_strncmp(out->texinfo->texture->name,"sky",3))
-		{
+		// motolegacy -- moved from video_hardware_surface
+		// modified to use new TEXFLAG hacky fields and have
+		// surfs use the same shabang.
+		const char* tex_name = out->texinfo->texture->name;
+
+		// Sky textures.
+		if (tex_name[0] == 's' && tex_name[1] == 'k' && tex_name[2] == 'y') {
 			out->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
 
-			//if(kurok)
-				//GL_SubdivideSurface (out);	// cut up polygon for warps
-			//else
-			GL_Surface (out);	// Don't cut up polygon for warps               
+			GL_Surface(out); // Don't cut up polygon for warps
 			continue;
 		}
-
-		if (!Q_strncmp(out->texinfo->texture->name,"*",1))// turbulent
-		{
+		// Turbulent.
+		else if (tex_name[0] == '*') {
 			out->flags |= (SURF_DRAWTURB | SURF_DRAWTILED);
+
 			for (i=0 ; i<2 ; i++)
 			{
 				out->extents[i] = 16384;
 				out->texturemins[i] = -8192;
 			}
+
 			GL_Surface (out);	// Don't cut up polygon for warps
-			//GL_SubdivideSurface (out);// cut up polygon for warps
 			continue;
 		}
+		// Don't draw texture and lightmaps.
+		else if (tex_name[0] == 'n' && tex_name[1] == 'o' && tex_name[2] == 'd' && tex_name[3] == 'r' && 
+		tex_name[4] == 'a' && tex_name[5] == 'w') {
+			out->flags |= TEXFLAG_NODRAW;
 
+			continue;
+		}
+		// Surface uvmaps warp, like metal or glass effects.
+		else if ((tex_name[0] == 'e' && tex_name[1] == 'n' && tex_name[2] == 'v') || (tex_name[0] == 'g' && 
+		tex_name[1] == 'l' && tex_name[2] == 'a' && tex_name[3] == 's' && tex_name[4] == 's')) {
+			out->flags |= TEXFLAG_REFLECT;
+
+			continue;
+		} else {
+			out->flags |= TEXFLAG_NORMAL;
+
+			continue;
+		}
+		// motolegacy -- end modification
 	}
 }
 
