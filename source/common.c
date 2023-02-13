@@ -452,7 +452,7 @@ short   ShortSwap (short l)
 	return (b1<<8) + b2;
 }
 
-short   ShortNoSwap (short l)
+static inline short ShortNoSwap (short l)
 {
 	return l;
 }
@@ -469,7 +469,7 @@ int    LongSwap (int l)
 	return ((int)b1<<24) + ((int)b2<<16) + ((int)b3<<8) + b4;
 }
 
-int     LongNoSwap (int l)
+static inline int LongNoSwap (int l)
 {
 	return l;
 }
@@ -491,7 +491,7 @@ float FloatSwap (float f)
 	return dat2.f;
 }
 
-float FloatNoSwap (float f)
+static inline float FloatNoSwap (float f)
 {
 	return f;
 }
@@ -1180,27 +1180,14 @@ void COM_Init (char *basedir)
 {
 	byte    swaptest[2] = {1,0};
 
-// set the byte swapping variables in a portable manner
-	if ( *(short *)swaptest == 1)
-	{
-		bigendien = false;
-		BigShort = ShortSwap;
-		LittleShort = ShortNoSwap;
-		BigLong = LongSwap;
-		LittleLong = LongNoSwap;
-		BigFloat = FloatSwap;
-		LittleFloat = FloatNoSwap;
-	}
-	else
-	{
-		bigendien = true;
-		BigShort = ShortNoSwap;
-		LittleShort = ShortSwap;
-		BigLong = LongNoSwap;
-		LittleLong = LongSwap;
-		BigFloat = FloatNoSwap;
-		LittleFloat = FloatSwap;
-	}
+	// force set little endian to be cool and fast
+	bigendien = false;
+	BigShort = ShortSwap;
+	LittleShort = ShortNoSwap;
+	BigLong = LongSwap;
+	LittleLong = LongNoSwap;
+	BigFloat = FloatSwap;
+	LittleFloat = FloatNoSwap;
 
 	Cmd_AddCommand ("path", COM_Path_f);
 
