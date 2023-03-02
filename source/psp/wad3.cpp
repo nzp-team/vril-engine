@@ -156,42 +156,34 @@ loaded:
 //converts paletted to rgba
 int ConvertWad3ToRGBA(miptex_t *tex)
 {
-	byte *in, *data, *pal;
-	int i, p, image_size;
+	// Check that texture has data
+    if (!tex->offsets[0]) {
+        Sys_Error("ConvertWad3ToRGBA: tex->offsets[0] == 0");
+    }
 
-	if (!tex->offsets[0])
-		Sys_Error("ConvertWad3ToRGBA: tex->offsets[0] == 0");
+    // Get pointers to WAD3 data and palette
+    byte* wadData = ((byte*)tex) + tex->offsets[0];
+    byte* palette = ((byte*)tex) + tex->offsets[3] + (tex->width>>3)*(tex->height>>3) + 2;
+	//byte* palette = wadData + tex->offsets[MIPLEVELS]; // Palette starts 2 bytes after the last mipmap
 
-	image_size = tex->width * tex->height;
+    // Allocate buffer for RGBA data
+    int imageSize = tex->width * tex->height;
+    byte* rgbaData = (byte*)Q_malloc(imageSize * 4);
 
-	in = (byte *) ((byte *) tex + tex->offsets[0]);
-    pal = in + ((image_size * 85) >> 6) + 2;
+    // Convert WAD3 data to RGBA format
+    for (int i = 0; i < imageSize; i++) {
+        byte colorIndex = wadData[i];
+        rgbaData[i * 4]     = palette[colorIndex * 3 + 0];
+        rgbaData[i * 4 + 1] = palette[colorIndex * 3 + 1];
+        rgbaData[i * 4 + 2] = palette[colorIndex * 3 + 2];
+        rgbaData[i * 4 + 3] = 255; // Set alpha to opaque
+    }
 
+	int index = GL_LoadImages(tex->name, tex->width, tex->height, rgbaData, qtrue, GU_LINEAR, 0, 4);
 
-	data = (byte*)Q_malloc(image_size);
-    for (i = 0; i < image_size; i++)
-	{
-        p = *in++;
-/*
-		if (tex->name[0] == '{' && p == 255)
-			data[i] = 0;
-		else
-*/
-			data[i] = p;
-	}
-
-
-
-	int level = 0;
-    if (r_mipmaps.value > 0)
-		level = 3;
-
-	int index = GL_LoadPalTex (tex->name, tex->width, tex->height, (const byte*)data, qtrue, GU_LINEAR, level, (byte *)pal, PAL_RGB);
-
-	free(data);
+	free(rgbaData);
 
 	return index;
-
 }
 
 int WAD3_LoadTexture(miptex_t *mt)

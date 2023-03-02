@@ -282,24 +282,23 @@ namespace quake
 			__asm__ (
 				".set		push\n"					// save assembler option
 				".set		noreorder\n"			// suppress reordering
-				"move		$8,   %1\n"				// $8 = &vertices[0]
-				"move		$9,   %2\n"				// $9 = vertex_count
-				"li			$10,  20\n"				// $10 = 20( sizeof(glvert_t) )
-				"mul		$10,  $10,   $9\n"		// $10 = $10 * $9
-				"addu		$10,  $10,   $8\n"		// $10 = $10 + $8
+				"move		$8,   %1\n"				// $8 = &v[0]
+				"move		$9,   %2\n"				// $9 = vc
+				"li			$10,  20\n"				// $10 = 20( sizeof( gu_vert_t ) )
+				"mul		$10,  $10,  $9\n"		// $10 = $10 * $9
+				"addu		$10,  $10,  $8\n"		// $10 = $10 + $8
+				"addiu		%0,   $0,   1\n"		// res = 1
+				"vzero.q	C600\n"					// C600 = [0.0f, 0.0f, 0.0f. 0.0f]
 			"0:\n"									// loop
-				"ulv.q		C610, 8($8)\n"			// Load vertex into register skip tex cord 8 byte
-				"vone.s		S613\n"					// Now set the 4th entry to be 1 as that is just random
-				"vdot.q		S620, C700, C610\n"		// S620 = v[i] * frustrum[0]
-				"vdot.q		S621, C710, C610\n"		// S621 = v[i] * frustrum[1]
-				"vdot.q		S622, C720, C610\n"		// S622 = v[i] * frustrum[2]
-				"vdot.q		S623, C730, C610\n"		// S623 = v[i] * frustrum[3]
-				"vzero.q	C610\n"					// C610 = [0.0f, 0.0f, 0.0f. 0.0f]
-				"addiu		%0,   $0, 1\n"			// res = 1
-				"vcmp.q		LT,   C620, C610\n"		// S620 < 0.0f || S621 < 0.0f || S622 < 0.0f || S623 < 0.0f
+				"lv.s		S610,  8($8)\n"			// S610 = v[i].xyz[0]
+				"lv.s		S611,  12($8)\n"		// S611 = v[i].xyz[1]
+				"lv.s		S612,  16($8)\n"		// S612 = v[i].xyz[2]
+				"vhtfm4.q	C620, M700, C610\n"		// C620 = frustrum * v[i].xyz
+				"vcmp.q		LT,   C620, C600\n"		// S620 < 0.0f || S621 < 0.0f || S622 < 0.0f || S623 < 0.0f
 				"bvt		4,    1f\n"				// if ( CC[4] == 1 ) jump to exit
-				"addiu		$8,   $8,   20\n"		// $8 = $8 + 20( sizeof(glvert_t) )
-				"bne		$10,  $8,   0b\n"		// if ( $9 != 0 ) jump to loop
+				"addiu		$8,   $8,   20\n"		// $8 = $8 + 20( sizeof( gu_vert_t ) )	( delay slot )
+				"bne		$10,  $8,   0b\n"		// if ( $10 != $8 ) jump to loop
+				"nop\n"								// 										( delay slot )
 				"move		%0,   $0\n"				// res = 0
 			"1:\n"									// exit
 				".set		pop\n"					// Restore assembler option

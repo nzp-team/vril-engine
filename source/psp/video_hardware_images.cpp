@@ -189,83 +189,68 @@ typedef struct
     unsigned char	data;			// unbounded
 } pcx_t;
 
-byte* LoadPCX (FILE *f, int matchwidth, int matchheight)
-{
-	pcx_t	*pcx, pcxbuf;
-	byte	palette[768];
-	byte	*pix, *image_rgba;
-	int		x, y;
-	int		dataByte, runLength;
-	int		count;
+byte* LoadPCX(FILE* f, int matchwidth, int matchheight) {
+    pcx_t pcxbuf;
+    fread(&pcxbuf, 1, sizeof(pcxbuf), f);
 
-//
-// parse the PCX file
-//
-	fread (&pcxbuf, 1, sizeof(pcxbuf), f);
+    pcx_t* pcx = &pcxbuf;
 
-	pcx = &pcxbuf;
+    if (pcx->manufacturer != 0x0a || pcx->version != 5 || pcx->encoding != 1 ||
+        pcx->bits_per_pixel != 8 || pcx->xmax >= 320 || pcx->ymax >= 256) {
+        Con_Printf("Bad pcx file\n");
+        return nullptr;
+    }
 
-	if (pcx->manufacturer != 0x0a
-		|| pcx->version != 5
-		|| pcx->encoding != 1
-		|| pcx->bits_per_pixel != 8
-		|| pcx->xmax >= 320
-		|| pcx->ymax >= 256)
-	{
-		Con_Printf ("Bad pcx file\n");
-		return NULL;
-	}
+    if (matchwidth && (pcx->xmax + 1) != matchwidth) {
+        fclose(f);
+        return nullptr;
+    }
 
-	if (matchwidth && (pcx->xmax+1) != matchwidth)
-	{
-	    fclose (f);
-		return NULL;
-	}
+    if (matchheight && (pcx->ymax + 1) != matchheight) {
+        fclose(f);
+        return nullptr;
+    }
 
-	if (matchheight && (pcx->ymax+1) != matchheight)
-	{
-		fclose (f);
-		return NULL;
-	}
+    fseek(f, -768, SEEK_END);
+    byte palette[768];
+    fread(palette, 1, 768, f);
 
-	// seek to palette
-	fseek (f, -768, SEEK_END);
-	fread (palette, 1, 768, f);
+    fseek(f, sizeof(pcxbuf) - 4, SEEK_SET);
 
-	fseek (f, sizeof(pcxbuf) - 4, SEEK_SET);
+    int count = (pcx->xmax + 1) * (pcx->ymax + 1);
+    byte* image_rgba = static_cast<byte*>(Q_malloc(4 * count));
 
-	count = (pcx->xmax+1) * (pcx->ymax+1);
+    byte* pix = image_rgba;
+    for (int y = 0; y <= pcx->ymax; y++) {
+        for (int x = 0; x <= pcx->xmax;) {
+            int dataByte = fgetc(f);
 
-	image_rgba = static_cast<byte*>(Q_malloc( count ));
+            int runLength = 1;
+            if ((dataByte & 0xC0) == 0xC0) {
+                runLength = dataByte & 0x3F;
+                dataByte = fgetc(f);
+            }
 
-	for (y=0 ; y<=pcx->ymax ; y++)
-	{
-		pix = image_rgba + y  * (pcx->xmax+1);
-		for (x=0 ; x<=pcx->xmax ; ) // muff - fixed - was referencing ymax
-		{
-			dataByte = fgetc(f);
+            while (runLength-- > 0) {
+                byte* color = palette + dataByte * 3;
+                pix[0] = color[0];
+                pix[1] = color[1];
+                pix[2] = color[2];
+                pix[3] = 0xFF;  // set alpha to 255
+                pix += 4;
+                x++;
+            }
+        }
+    }
 
-			if((dataByte & 0xC0) == 0xC0)
-			{
-				runLength = dataByte & 0x3F;
-				dataByte = fgetc(f);
-			}
-			else
-				runLength = 1;
+    image_width = pcx->xmax + 1;
+    image_height = pcx->ymax + 1;
+    //memcpy_vfpu(image_palette, palette, sizeof(palette));
+    //image_palette_type = PAL_RGB;
 
-			while(runLength-- > 0)
-				pix[x++] = dataByte;
-		}
-	}
-	image_width = pcx->xmax+1;
-	image_height = pcx->ymax+1;
+    fclose(f);
 
-	memcpy_vfpu(image_palette, palette, sizeof(palette));
-	image_palette_type = PAL_RGB;
-
-	fclose (f);
-
-	return image_rgba;
+    return image_rgba;
 }
 
 /*

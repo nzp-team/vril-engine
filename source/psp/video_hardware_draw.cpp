@@ -2498,19 +2498,23 @@ void GL_UploadDXT(int texture_index, const byte *data, int width, int height)
 		}
 	}
 
-	tx_compress_dxtn(texture.bpp, texture.width, texture.height,(const unsigned char *)&unswizzled[0], texture.format, (unsigned char *)texture.ram);
+	if (texture.vram) {
+		tx_compress_dxtn(texture.bpp, texture.width, texture.height,(const unsigned char *)&unswizzled[0], texture.format, (unsigned char *)texture.vram);
+	} else {
+		tx_compress_dxtn(texture.bpp, texture.width, texture.height,(const unsigned char *)&unswizzled[0], texture.format, (unsigned char *)texture.ram);
+	}
+
 	Hunk_FreeToLowMark (start);
 
 	// Copy to VRAM?
 	if (texture.vram)
 	{
-		// Copy.
-		memcpy(texture.vram, texture.ram, buffer_sizedst);
 		// Flush the data cache.
 		sceKernelDcacheWritebackRange(texture.vram, buffer_sizedst);
+	} else {
+		// Flush the data cache.
+		sceKernelDcacheWritebackRange(texture.ram, buffer_sizedst);
 	}
-	// Flush the data cache.
-	sceKernelDcacheWritebackRange(texture.ram, buffer_sizedst);
 }
 
 static std::size_t round_up(std::size_t size)
@@ -3310,6 +3314,7 @@ int GL_LoadImages (const char *identifier, int width, int height, const byte *da
 
 	// Allocate the VRAM.
 	texture.vram = static_cast<texel*>(valloc(buffer_size));
+
 	// Upload the texture.
 	switch(texture.format)
 	{
@@ -3328,11 +3333,14 @@ int GL_LoadImages (const char *identifier, int width, int height, const byte *da
 			GL_UploadDXT(texture_index, data, width, height);
 			break;
 	}
+
+	//FIXME: this isn't completely clearing out the normal ram stuff :s
 	if (texture.vram && texture.ram)
 	{
 		free(texture.ram);
 		texture.ram = NULL;
 	}
+
 	// Done.
 	return texture_index;
 }
