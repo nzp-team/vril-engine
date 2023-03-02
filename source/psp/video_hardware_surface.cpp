@@ -912,7 +912,7 @@ void R_RenderBrushPoly (msurface_t *fa)
 	}
 
 	sceGuEnable(GU_ALPHA_TEST);
-	sceGuAlphaFunc(GU_GREATER, 0x88, 0xff);
+	sceGuAlphaFunc(GU_GREATER, 0xaa, 0xff);
 	sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 
 	// motolegacy -- use our new texflag hack
