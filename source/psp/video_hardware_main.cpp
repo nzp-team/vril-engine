@@ -920,6 +920,7 @@ float old_i_model_transform;
 GL_DrawAliasFrame
 =============
 */
+// Modified DrawAliasFrame to draw triangle strips in a single draw call
 void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, float apitch, float ayaw)
 {
 	float 	l,r,g,b;
@@ -941,60 +942,127 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, float apitch, float 
 	};
 
 	//for blubs's alternate BuildTris: 1) Disable while(1) loop 2) Disable the break; 3) replace GU_TRIANGLE_STRIP with GU_TRIANGLES
-	while (1)
-	{
-		// get the vertex count and primitive type
-		count = *order++;
-		if (!count)
-			break;		// done
 
-		if(prim != GU_LINE_STRIP)
-		{
-			if (count < 0)
-			{
-				prim = GU_TRIANGLE_FAN;
+	// Count the total number of vertices and tristrips:
+	int n_verts = 0;
+	int n_tri_strips = 0;
+	while(1) {
+		count = *order++;
+		if(count == 0) {
+			break;
+		}
+		else if(count < 0) { 
+			// Blubs NOTE - This should never happen, count < 0 iff this draw call is a triangle fan, which have been disabled.
 				count = -count;
 			}
-			else
-			{
-				prim = GU_TRIANGLE_STRIP;
-				//prim = GU_TRIANGLES; //used for blubs' alternate BuildTris with one continual triangle list
-			}
-		}
+		n_verts += count;
+		n_tri_strips++;
+		// Consume the texture coordinates for this many verts to get the next count
+		order += (count * 2);
+	}
+	// Every tristrip after the first will emit up to two extra copies of its first vertex
+	n_verts += (n_tri_strips - 1) * 2;
+	// Every tristrip will emit an extra copy of its final vertex
+	n_verts += n_tri_strips;
 
-		// Allocate the vertices.
-		vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * count));
-		//================================================================== fps: 50 ===============================================
-		for (int vertex_index = 0; vertex_index < count; ++vertex_index)
-		{
+	// Allocate enough space for all verts in a single draw call:
+	vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * n_verts));
+
+	// FIXME - prim is uninitialized... where does it come from?
+	// if(prim != GU_LINE_STRIP) {
+	// 	prim = GU_TRIANGLE_STRIP;
+	// }
+				prim = GU_TRIANGLE_STRIP;
+
+	int verts_written = 0;
+	int tri_strip_idx = 0;
+
+	// Reset order
+	order = (int *)((byte *)paliashdr + paliashdr->commands);
+
+	// Iterate through all triangle strips
+	while(1) {
+		// Get the current triangle strip vertex count
+		count = *order++;
+		// If count is 0, we're done
+		if(count == 0) {
+			break;
+			}
+
+		// --
+		// For the first triangle strip, emit the first vertex a single time
+		// For every triangle strip after, draw additional copies of the first vertex
+		// --
+		// If we've drawn an odd number of verts, draw one extra copy of the first vertex
+		// If we've drawn an even number of verts, draw two extra copies of the first vertex
+		// --
+		// Functionally equivalent to the following statement, without using conditionals:
+		// (verts_written == 0)? 0 : (verts_written % 2 == 1)? 1 : 2
+		// --
+		const int n_first_vert_copies = ((verts_written - 1) % 2) + 1;
+		
+		for(int i=0; i < n_first_vert_copies; i++) {
 			// texture coordinates come from the draw list
-			out[vertex_index].u = ((float *)order)[0];
-			out[vertex_index].v = ((float *)order)[1];
-			order += 2;
+			out[verts_written].u = ((float *)order)[0];
+			out[verts_written].v = ((float *)order)[1];
 
 			l = shadedots[verts->lightnormalindex];
-			r = l * lightcolor[0];
-			g = l * lightcolor[1];
-			b = l * lightcolor[2];
+			r = fmin(1.0, l * lightcolor[0]);
+			g = fmin(1.0, l * lightcolor[1]);
+			b = fmin(1.0, l * lightcolor[2]);
 
-			 if(r > 1)
-				r = 1;
-			 if(g > 1)
-				g = 1;
-			 if(b > 1)
-				b = 1;
-
-			out[vertex_index].x = verts->v[0];
-			out[vertex_index].y = verts->v[1];
-			out[vertex_index].z = verts->v[2];
-			out[vertex_index].color = GU_COLOR(r, g, b, 1.0f);
-
-			++verts;
+			out[verts_written].x = verts->v[0];
+			out[verts_written].y = verts->v[1];
+			out[verts_written].z = verts->v[2];
+			out[verts_written].color = GU_COLOR(r, g, b, 1.0f);
+			verts_written++;
 		}
-		sceGuDrawArray(prim, GU_TEXTURE_32BITF | GU_VERTEX_32BITF | GU_COLOR_8888, count, 0, out);
+
+		// Emit all verts in the current triangle strip
+		// Skip the last vertex
+		for(int vert_idx=0; vert_idx < count - 1; vert_idx++) {
+			// texture coordinates come from the draw list
+			out[verts_written].u = ((float *)order)[0];
+			out[verts_written].v = ((float *)order)[1];
+
+			l = shadedots[verts->lightnormalindex];
+			r = fmin(1.0, l * lightcolor[0]);
+			g = fmin(1.0, l * lightcolor[1]);
+			b = fmin(1.0, l * lightcolor[2]);
+			out[verts_written].color = GU_COLOR(r, g, b, 1.0f);
+
+			out[verts_written].x = verts->v[0];
+			out[verts_written].y = verts->v[1];
+			out[verts_written].z = verts->v[2];
+			verts_written++;
+			order += 2;
+			verts++;
+		}
+
+		// Emit the last vertex of this triangle strip 2 times
+		for(int i = 0; i < 2; i++) {
+			// texture coordinates come from the draw list
+			out[verts_written].u = ((float *)order)[0];
+			out[verts_written].v = ((float *)order)[1];
+
+			l = shadedots[verts->lightnormalindex];
+			r = fmin(1.0, l * lightcolor[0]);
+			g = fmin(1.0, l * lightcolor[1]);
+			b = fmin(1.0, l * lightcolor[2]);
+
+			out[verts_written].x = verts->v[0];
+			out[verts_written].y = verts->v[1];
+			out[verts_written].z = verts->v[2];
+			out[verts_written].color = GU_COLOR(r, g, b, 1.0f);
+			verts_written++;
+		}
 		
-		//================================================================== fps: 50 ===============================================
+		order += 2;
+		verts++;
+
+		tri_strip_idx++;
 	}
+	sceGuDrawArray(prim, GU_TEXTURE_32BITF | GU_VERTEX_32BITF | GU_COLOR_8888, verts_written, 0, out);
 	sceGuColor(0xffffffff);
 }
 
@@ -1013,7 +1081,7 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 	int*        order;
 	int         count;
 	vec3_t      d;
-	vec3_t       point;
+	// vec3_t       point;
 	int prim;
 	prim = GU_TRIANGLE_FAN;
 	if(r_showtris.value)
@@ -1040,74 +1108,136 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 		float x, y, z;
 	};
 
-	//for blubs's alternate BuildTris: 1) Disable while(1) loop 2) Disable the break; 3) replace GU_TRIANGLE_STRIP with GU_TRIANGLES
-	while (1)
-	{
-		// get the vertex count and primitive type
+
+	// Count the total number of vertices and tristrips:
+	int n_verts = 0;
+	int n_tri_strips = 0;
+	while(1) {
 		count = *order++;
+		if(count == 0) {
+			break;
+		}
+		else if(count < 0) { 
+			// Blubs NOTE - This should never happen, count < 0 iff this draw call is a triangle fan, which have been disabled.
+			count = -count;
+		}
+		n_verts += count;
+		n_tri_strips++;
+		// Consume the texture coordinates for this many verts to get the next count
+		order += (count * 2);
+	}
+	// Every tristrip after the first will emit up to two extra copies of its first vertex
+	n_verts += (n_tri_strips - 1) * 2;
+	// Every tristrip will emit an extra copy of its final vertex
+	n_verts += n_tri_strips;
 
-		if (!count) break;
+	// Allocate enough space for all verts in a single draw call:
+	vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * n_verts));
 
-		if(prim != GU_LINE_STRIP)
-		{
-			if (count < 0)
-			{
-				prim = GU_TRIANGLE_FAN;
-				count = -count;
-			}
-			else
-			{
+	// FIXME - prim is uninitialized... where does it come from?
+	// if(prim != GU_LINE_STRIP) {
+	// 	prim = GU_TRIANGLE_STRIP;
+	// }
 				prim = GU_TRIANGLE_STRIP;
-				//prim = GU_TRIANGLES; //used for blubs' alternate BuildTris with one continual triangle list
-			}
+
+	int verts_written = 0;
+	int tri_strip_idx = 0;
+
+	// Reset order
+	order = (int *)((byte *)paliashdr + paliashdr->commands);
+
+	// Iterate through all triangle strips
+	while(1) {
+		// Get the current triangle strip vertex count
+		count = *order++;
+		// If count is 0, we're done
+		if(count == 0) {
+			break;
 		}
 
-		// Allocate the vertices.
-		vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * count));
+		// --
+		// For the first triangle strip, emit the first vertex a single time
+		// For every triangle strip after, draw additional copies of the first vertex
+		// --
+		// If we've drawn an odd number of verts, draw one extra copy of the first vertex
+		// If we've drawn an even number of verts, draw two extra copies of the first vertex
+		// --
+		// Functionally equivalent to the following statement, without using conditionals:
+		// (verts_written == 0)? 0 : (verts_written % 2 == 1)? 1 : 2
+		// --
+		const int n_first_vert_copies = ((verts_written - 1) % 2) + 1;
 
-		for (int vertex_index = 0; vertex_index < count; ++vertex_index)
-		{
 
+		for(int i=0; i < n_first_vert_copies; i++) {
 			// texture coordinates come from the draw list
-			out[vertex_index].u = ((float *)order)[0];
-			out[vertex_index].v = ((float *)order)[1];
+			out[verts_written].u = ((float *)order)[0];
+			out[verts_written].v = ((float *)order)[1];
 
-			order += 2;
 			d[0] = shadedots[verts2->lightnormalindex] - shadedots[verts1->lightnormalindex];
 			l = shadedots[verts1->lightnormalindex] + (blend * d[0]);
-
-			r = l * lightcolor[0];
-			g = l * lightcolor[1];
-			b = l * lightcolor[2];
-
-			if(r > 1)
-				r = 1;
-			 if(g > 1)
-				g = 1;
-			 if(b > 1)
-				b = 1;
+			r = fmin(1.0, l * lightcolor[0]);
+			g = fmin(1.0, l * lightcolor[1]);
+			b = fmin(1.0, l * lightcolor[2]);
 
 			VectorSubtract(verts2->v, verts1->v, d);
-
-			// blend the vertex positions from each frame together
-			point[0] = verts1->v[0] + (blend * d[0]);
-			point[1] = verts1->v[1] + (blend * d[1]);
-			point[2] = verts1->v[2] + (blend * d[2]);
-
-			out[vertex_index].x = point[0];
-			out[vertex_index].y = point[1];
-			out[vertex_index].z = point[2];
-			out[vertex_index].color = GU_COLOR(r, g, b, 1.0f);
-
-			++verts1;
-			++verts2;
+			out[verts_written].x = verts1->v[0] + (blend * d[0]);
+			out[verts_written].y = verts1->v[1] + (blend * d[1]);
+			out[verts_written].z = verts1->v[2] + (blend * d[2]);
+			out[verts_written].color = GU_COLOR(r, g, b, 1.0f);
+			verts_written++;
 		}
-		sceGuDrawArray(prim, GU_TEXTURE_32BITF | GU_VERTEX_32BITF | GU_COLOR_8888, count, 0, out);
+
+		// Emit all verts in the current triangle strip
+		// Skip the last vertex
+		for(int vert_idx=0; vert_idx < count - 1; vert_idx++) {
+			// texture coordinates come from the draw list
+			out[verts_written].u = ((float *)order)[0];
+			out[verts_written].v = ((float *)order)[1];
+
+			d[0] = shadedots[verts2->lightnormalindex] - shadedots[verts1->lightnormalindex];
+			l = shadedots[verts1->lightnormalindex] + (blend * d[0]);
+			r = fmin(1.0, l * lightcolor[0]);
+			g = fmin(1.0, l * lightcolor[1]);
+			b = fmin(1.0, l * lightcolor[2]);
+
+			VectorSubtract(verts2->v, verts1->v, d);
+			out[verts_written].x = verts1->v[0] + (blend * d[0]);
+			out[verts_written].y = verts1->v[1] + (blend * d[1]);
+			out[verts_written].z = verts1->v[2] + (blend * d[2]);
+			out[verts_written].color = GU_COLOR(r, g, b, 1.0f);
+			verts_written++;
+			order += 2;
+			verts1++;
+			verts2++;
+		}
+
+		// Emit the last vertex of this triangle strip 2 times
+		for(int i = 0; i < 2; i++) {
+			// texture coordinates come from the draw list
+			out[verts_written].u = ((float *)order)[0];
+			out[verts_written].v = ((float *)order)[1];
+
+			d[0] = shadedots[verts2->lightnormalindex] - shadedots[verts1->lightnormalindex];
+			l = shadedots[verts1->lightnormalindex] + (blend * d[0]);
+			r = fmin(1.0, l * lightcolor[0]);
+			g = fmin(1.0, l * lightcolor[1]);
+			b = fmin(1.0, l * lightcolor[2]);
+
+			VectorSubtract(verts2->v, verts1->v, d);
+			out[verts_written].x = verts1->v[0] + (blend * d[0]);
+			out[verts_written].y = verts1->v[1] + (blend * d[1]);
+			out[verts_written].z = verts1->v[2] + (blend * d[2]);
+			out[verts_written].color = GU_COLOR(r, g, b, 1.0f);
+			verts_written++;
+		}
+
+		order += 2;
+		verts1++;
+		verts2++;
+
+		tri_strip_idx++;
 	}
-	if(r_showtris.value)
-	{
-		sceGuEnable(GU_TEXTURE_2D);
-	}
+	sceGuDrawArray(prim, GU_TEXTURE_32BITF | GU_VERTEX_32BITF | GU_COLOR_8888, verts_written, 0, out);
 	sceGuColor(0xffffffff);
 }
 

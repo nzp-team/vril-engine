@@ -290,8 +290,8 @@ static void BuildTris (void)
 			continue;
 
 		bestlen = 0;
-		for (type = 0 ; type < 2 ; type++)
-		//	type = 1;
+		// for (type = 0 ; type < 2 ; type++)
+		type = 1; // Always use triangle strips // Blubs - 2023-03-03
 		{
 			for (startv =0 ; startv < 3 ; startv++)
 			{
