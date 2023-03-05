@@ -660,13 +660,6 @@ void CL_RelinkEntities (void)
 			#endif
 		}
 
-		if (ent->effects & EF_BRIGHTFIELD)
-			R_EntityParticles (ent);
-
-		if (ent->effects & EF_DARKFIELD)
-            R_DarkFieldParticles (ent);
-
-
 		if (ent->effects & EF_MUZZLEFLASH)
 		{
 
@@ -705,38 +698,6 @@ void CL_RelinkEntities (void)
 				}
 			}
 
-		}
-
-		if (ent->modelindex != cl_modelindex[mi_player] && ent->model->modhint != MOD_PLAYER)
-		{
-			if (ent->effects & EF_BRIGHTLIGHT)
-			{
-				vec3_t	tmp;
-
-				dl = CL_AllocDlight (i);
-				VectorCopy (ent->origin, tmp);
-				tmp[2] += 16;
-				dl->color[0] = 1;
-                dl->color[1] = 0.8;
-                dl->color[2] = 0.5;
-				CL_NewDlight (i, tmp, 400 + (rand() & 31), 0.1, lt_default);
-			}
-		}
-
-		if (ent->effects & EF_DARKLIGHT)
-		{
-			dl = CL_AllocDlight (i);
-			VectorCopy (ent->origin,  dl->origin);
-			dl->radius = 200.0 + (rand()&31);
-			dl->die = cl.time + 0.001;
-			dl->dark = true;
-		}
-		if (ent->effects & EF_LIGHT)
-		{
-			dl = CL_AllocDlight (i);
-			VectorCopy (ent->origin,  dl->origin);
-			dl->radius = 200;
-			dl->die = cl.time + 0.001;
 		}
 
 		if (ent->effects & EF_BLUELIGHT)
@@ -782,27 +743,6 @@ void CL_RelinkEntities (void)
 			dl->color[1] = 2;
 			dl->color[2] = 0.25;
 		}
-		if (ent->effects & EF_ORANGELIGHT)
-		{
-			dl = CL_AllocDlight (i);
-			VectorCopy (ent->origin,  dl->origin);
-			dl->die = cl.time + 0.001;
-			dl->radius = 100;
-			dl->color[0] = 2;
-			dl->color[1] = 1;
-			dl->color[2] = 0;
-		}
-
-		if (ent->effects & EF_GREENLIGHT)
-		{
-			dl = CL_AllocDlight (i);
-			VectorCopy (ent->origin,  dl->origin);
-			dl->die = cl.time + 0.001;
-			dl->radius = 100;
-			dl->color[0] = 0.25;
-			dl->color[1] = 2;
-			dl->color[2] = 0.25;
-		}
 		
 		if (ent->effects & EF_PURPLELIGHT)
 		{
@@ -813,6 +753,50 @@ void CL_RelinkEntities (void)
 			dl->color[0] = 2;
 			dl->color[1] = 0.25;
 			dl->color[2] = 2;
+		}
+
+		if (ent->effects & EF_CYANLIGHT)
+		{
+			dl = CL_AllocDlight (i);
+			VectorCopy (ent->origin, dl->origin);
+			dl->die = cl.time + 0.001;
+			dl->radius = 100;
+			dl->color[0] = 0.765;
+			dl->color[1] = 1.40;
+			dl->color[2] = 1.95;
+		}
+
+		if (ent->effects & EF_PINKLIGHT)
+		{
+			dl = CL_AllocDlight (i);
+			VectorCopy (ent->origin, dl->origin);
+			dl->die = cl.time + 0.001;
+			dl->radius = 100;
+			dl->color[0] = 2.37;
+			dl->color[1] = 1.35;
+			dl->color[2] = 1.35;
+		}
+
+		if (ent->effects & EF_LIMELIGHT)
+		{
+			dl = CL_AllocDlight (i);
+			VectorCopy (ent->origin, dl->origin);
+			dl->die = cl.time + 0.001;
+			dl->radius = 100;
+			dl->color[0] = 1;
+			dl->color[1] = 2;
+			dl->color[2] = 1;
+		}
+
+		if (ent->effects & EF_YELLOWLIGHT)
+		{
+			dl = CL_AllocDlight (i);
+			VectorCopy (ent->origin, dl->origin);
+			dl->die = cl.time + 0.001;
+			dl->radius = 100;
+			dl->color[0] = 2;
+			dl->color[1] = 2;
+			dl->color[2] = 1;
 		}
 
 		if (ent->effects & EF_RAYGREEN)
