@@ -3234,6 +3234,18 @@ int GL_LoadImages (const char *identifier, int width, int height, const byte *da
 		break;
 	}
 
+	// HACK HACK: Force use of DXT5 for the mbox glow
+	char specChar = identifier[strlen(identifier) - 7];
+	if (specChar == '$')
+		texture.format = GU_PSM_DXT5;
+
+	// Sprite textures also get special treatment :)
+	if (identifier[strlen(identifier) - 5] == 's' && 
+	identifier[strlen(identifier) - 4] == 'p' && 
+	identifier[strlen(identifier) - 3] == 'r') {
+		texture.format = GU_PSM_DXT5;
+	}
+
 	texture.filter = filter;
 	if(texture.format < GU_PSM_DXT1)
 	{
