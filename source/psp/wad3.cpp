@@ -177,6 +177,11 @@ int ConvertWad3ToRGBA(miptex_t *tex)
         rgbaData[i * 4 + 1] = palette[colorIndex * 3 + 1];
         rgbaData[i * 4 + 2] = palette[colorIndex * 3 + 2];
         rgbaData[i * 4 + 3] = 255; // Set alpha to opaque
+
+		if (rgbaData[i * 4] == 0 && rgbaData[i * 4 + 1] == 0 && rgbaData[i * 4 + 2] == 255) {
+			rgbaData[i * 4] = rgbaData[i * 4 + 1] = rgbaData[i * 4 + 2] = 128;
+			rgbaData[i * 4 + 3] = 0;
+		}
     }
 
 	int index = GL_LoadImages(tex->name, tex->width, tex->height, rgbaData, qtrue, GU_LINEAR, 0, 4);
