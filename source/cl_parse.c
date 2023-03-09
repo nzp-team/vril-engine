@@ -1081,11 +1081,10 @@ void CL_ParseWeaponFire (void)
 	kick[1] = MSG_ReadCoord()/5;
 	kick[2] = MSG_ReadCoord()/5;
 
-	if (!(cl.perks & 64)) {
-		cl.gun_kick[0] += kick[0];
-		cl.gun_kick[1] += kick[1];
-		cl.gun_kick[2] += kick[2];
-	}
+	cl.gun_kick[0] += kick[0];
+	cl.gun_kick[1] += kick[1];
+	cl.gun_kick[2] += kick[2];
+
 }
 /*
 ===================
