@@ -36,6 +36,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspge.h>
 #include <pspsysevent.h>
 
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
+
 extern "C"
 {
 #include "../quakedef.h"
@@ -528,8 +531,22 @@ int user_main(SceSize argc, void* argp)
 	// operations.
 	disableFloatingPointExceptions();
 
-	// Initialise the Common module.
+	// Initialize the Common module.
     InitExtModules ();
+
+	// Initialize SDL
+    if (SDL_Init(SDL_INIT_AUDIO) < 0)
+    {
+        Sys_Error("SDL2: Could not initialize!\n");
+        return 0;
+    }
+
+	// Initialize SDL2_mixer
+    if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 4096) == -1)
+    {
+        Sys_Error("SDL2_mixer: Could not initialize!\n");
+        return 0;
+    }
 
 	// Get the current working dir.
 	char currentDirectory[1024];
