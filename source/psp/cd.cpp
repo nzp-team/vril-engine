@@ -180,7 +180,7 @@ void CDAudio_Track(char* trackname)
 
 void CDAudio_Play(byte track, qboolean looping)
 {
-	last_track = track;
+	/*last_track = track;
 	CDAudio_Stop();
 
     if (track < 1)
@@ -207,7 +207,7 @@ void CDAudio_Play(byte track, qboolean looping)
 	}
 
 
-	CDAudio_VolumeChange(bgmvolume.value);
+	CDAudio_VolumeChange(bgmvolume.value);*/
 }
 
 void CDAudio_Stop(void)

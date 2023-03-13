@@ -541,13 +541,6 @@ int user_main(SceSize argc, void* argp)
         return 0;
     }
 
-	// Initialize SDL2_mixer
-    if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 4096) == -1)
-    {
-        Sys_Error("SDL2_mixer: Could not initialize!\n");
-        return 0;
-    }
-
 	// Get the current working dir.
 	char currentDirectory[1024];
 	char gameDirectory[1024];
@@ -649,9 +642,6 @@ int user_main(SceSize argc, void* argp)
 		// Record the time that the main loop started.
 		u64 lastTicks;
 		sceRtcGetCurrentTick(&lastTicks);
-
-		// Set up threads
-		Sys_InitThreads();
 
 		// Enter the main loop.
 		while (!quit)

@@ -759,18 +759,11 @@ void _Host_Frame (float time)
 // update audio
 	if (cls.signon == SIGNONS)
 	{
-		Thread_UpdateSound(r_origin, vpn, vright, vup);
-		//S_Update (r_origin, vpn, vright, vup);
+		S_Update (r_origin, vpn, vright, vup);
 		CL_DecayLights ();
 	}
 	else
-		Thread_UpdateSound(vec3_origin, vec3_origin, vec3_origin, vec3_origin);
-		//S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
-
-	//if (bmg_type_changed == true) {
-		CDAudio_Update();
-	//	bmg_type_changed = false;
-	//}
+		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
 
 	if (host_speeds.value)
 	{

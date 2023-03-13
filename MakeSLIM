@@ -29,7 +29,6 @@ COMMON_OBJS = \
 	source/psp/input.o \
 	source/psp/main.o \
 	source/psp/math.o \
-	source/psp/sound.o \
 	source/psp/system.o \
 	source/psp/module.o \
 	source/psp/network.o \
@@ -65,6 +64,7 @@ COMMON_OBJS = \
 	source/pr_cmds.o \
 	source/pr_edict.o \
 	source/pr_exec.o \
+	source/snd_sdl.o \
 	source/snd_dma.o \
 	source/snd_mem.o \
 	source/snd_mix.o \
