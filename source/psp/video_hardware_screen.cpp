@@ -1321,6 +1321,8 @@ int GetWeaponZoomAmmount (void)
         case W_COLT:
             return 10;
 			break;
+		case W_SPRING:
+		case W_PULVERIZER:
 		case W_KAR:
 		case W_ARMAGEDDON:
 			return 25;

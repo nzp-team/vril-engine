@@ -2466,6 +2466,9 @@ float pap_detr(int weapon)
 		case W_BIATCH:
 			return 1;
 			break;
+		case W_SPRING:
+			return 0;
+			break;
 		case W_KAR:
 			return 0;
 			break;
@@ -2541,6 +2544,9 @@ float pap_detr(int weapon)
 		case W_COMPRESSOR:
       return 1;
       break;
+	case W_PULVERIZER:
+		return 1;
+		break;
     case W_M1000:
       return 1;
       break;

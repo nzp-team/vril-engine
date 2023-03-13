@@ -1169,95 +1169,66 @@ int CrossHairWeapon (void)
 	{
 		case W_COLT:
 		case W_BIATCH:
-			i = 15;
-			break;
-		case W_KAR:
-		case W_ARMAGEDDON:
-			i = 50;
-			break;
-		case W_THOMPSON:
-		case W_GIBS:
-			i = 10;
-			break;
 		case W_357:
 		case W_KILLU:
-			i = 10;
+			i = 22;
 			break;
+		case W_PTRS:
+		case W_PENETRATOR:
+		case W_KAR_SCOPE:
+		case W_HEADCRACKER:
+		case W_KAR:
+		case W_ARMAGEDDON:
+		case W_SPRING:
+		case W_PULVERIZER:
+			i = 65;
+			break;
+		case W_MP40:
+		case W_AFTERBURNER:
+		case W_STG:
+		case W_SPATZ:
+		case W_THOMPSON:
+		case W_GIBS:
 		case W_BAR:
 		case W_WIDOW:
+		case W_PPSH:
+		case W_REAPER:
+		case W_RAY:
+		case W_PORTER:
+		case W_TYPE:
+		case W_SAMURAI:
+		case W_FG:
+		case W_IMPELLER:
+		case W_MP5:
+		case W_KOLLIDER:
 			i = 10;
 			break;
 		case W_BROWNING:
 		case W_ACCELERATOR:
-			i = 20;
-			break;
-		case W_DB:
-		case W_BORE:
-			i = 25;
-			break;
-		case W_FG:
-		case W_IMPELLER:
-			i = 10;
-			break;
-		case W_GEWEHR:
-		case W_COMPRESSOR:
-			i = 10;
-			break;
-		case W_KAR_SCOPE:
-		case W_HEADCRACKER:
-			i = 50;
-			break;
-		case W_M1:
-		case W_M1000:
-			i = 10;
-			break;
-		case W_M1A1:
-		case W_WIDDER:
-			i = 10;
-			break;
-		case W_MP40:
-		case W_AFTERBURNER:
-			i = 10;
-			break;
 		case W_MG:
 		case W_BARRACUDA:
-			i = 20;
-			break;
-		case W_PANZER:
-		case W_LONGINUS:
-			i = 0;
-			break;
-		case W_PPSH:
-		case W_REAPER:
-			i = 10;
-			break;
-		case W_PTRS:
-		case W_PENETRATOR:
-			i = 50;
-			break;
-		case W_RAY:
-		case W_PORTER:
-			i = 10;
+			i = 30;
 			break;
 		case W_SAWNOFF:
 		case W_SNUFF:
-			i = 30;
-			break;
-		case W_STG:
-		case W_SPATZ:
-			i = 10;
+			i = 50;
 			break;
 		case W_TRENCH:
 		case W_GUT:
-			i = 25;
+		case W_DB:
+		case W_BORE:
+			i = 35;
 			break;
-		case W_TYPE:
-		case W_SAMURAI:
-			i = 10;
+		case W_GEWEHR:
+		case W_COMPRESSOR:
+		case W_M1:
+		case W_M1000:
+		case W_M1A1:
+		case W_WIDDER:
+			i = 5;
 			break;
-		case W_MP5:
-			i = 10;
-			break;
+		case W_PANZER:
+		case W_LONGINUS:
 		case W_TESLA:
 			i = 0;
 			break;
@@ -1265,6 +1236,8 @@ int CrossHairWeapon (void)
 			i = 0;
 			break;
 	}
+
+	i *= 0.75;
 
     if (cl.perks & 64)
         i *= 0.65;
@@ -1278,95 +1251,60 @@ int CrossHairMaxSpread (void)
 	{
 		case W_COLT:
 		case W_BIATCH:
-			i = 30;
-			break;
-		case W_KAR:
-		case W_ARMAGEDDON:
-			i = 75;
-			break;
+		case W_STG:
+		case W_SPATZ:
+		case W_MP40:
+		case W_AFTERBURNER:
 		case W_THOMPSON:
 		case W_GIBS:
-			i = 25;
-			break;
-		case W_357:
-		case W_KILLU:
-			i = 20;
-			break;
 		case W_BAR:
 		case W_WIDOW:
-			i = 35;
-			break;
+		case W_357:
+		case W_KILLU:
 		case W_BROWNING:
 		case W_ACCELERATOR:
+		case W_FG:
+		case W_IMPELLER:
+		case W_MP5:
+		case W_KOLLIDER:
+		case W_MG:
+		case W_BARRACUDA:
+		case W_PPSH:
+		case W_REAPER:
+		case W_RAY:
+		case W_PORTER:
+		case W_TYPE:
+		case W_SAMURAI:
+			i = 48;
+			break;
+		case W_PTRS:
+		case W_PENETRATOR:
+		case W_KAR_SCOPE:
+		case W_HEADCRACKER:
+		case W_KAR:
+		case W_ARMAGEDDON:
+		case W_SPRING:
+		case W_PULVERIZER:
+			i = 75;
+			break;
+		case W_SAWNOFF:
+		case W_SNUFF:
 			i = 50;
 			break;
 		case W_DB:
 		case W_BORE:
-			i = 25;
-			break;
-		case W_FG:
-		case W_IMPELLER:
-			i = 40;
-			break;
+		case W_TRENCH:
+		case W_GUT:
 		case W_GEWEHR:
 		case W_COMPRESSOR:
-			i = 35;
-			break;
-		case W_KAR_SCOPE:
-		case W_HEADCRACKER:
-			i = 75;
-			break;
 		case W_M1:
 		case W_M1000:
-			i = 35;
-			break;
 		case W_M1A1:
 		case W_WIDDER:
 			i = 35;
 			break;
-		case W_MP40:
-		case W_AFTERBURNER:
-			i = 25;
-			break;
-		case W_MG:
-		case W_BARRACUDA:
-			i = 50;
-			break;
 		case W_PANZER:
 		case W_LONGINUS:
-			i = 0;
-			break;
-		case W_PPSH:
-		case W_REAPER:
-			i = 25;
-			break;
-		case W_PTRS:
-		case W_PENETRATOR:
-			i = 75;
-			break;
-		case W_RAY:
-		case W_PORTER:
-			i = 20;
-			break;
-		case W_SAWNOFF:
-		case W_SNUFF:
-			i = 30;
-			break;
-		case W_STG:
-		case W_SPATZ:
-			i = 35;
-			break;
-		case W_TRENCH:
-		case W_GUT:
-			i = 25;
-			break;
-		case W_TYPE:
-		case W_SAMURAI:
-			i = 25;
-			break;
-		case W_MP5:
-			i = 25;
-			break;
 		case W_TESLA:
 			i = 0;
 			break;
@@ -1374,6 +1312,8 @@ int CrossHairMaxSpread (void)
 			i = 0;
 			break;
 	}
+
+	i *= 0.75;
 
     if (cl.perks & 64)
         i *= 0.65;
