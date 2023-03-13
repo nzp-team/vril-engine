@@ -113,7 +113,7 @@ OBJS = $(COMMON_OBJS) $(HARDWARE_VIDEO_ONLY_OBJS)
 #LIBS = -lpspaudiolib -lpspaudio -lpspgum -lpspgu -lpsprtc -lpsppower -lpspwlan -lstdc++ -lm
 
 GU_LIBS	= -lpspgum_vfpu -lpspvfpu -lpspgu -lpspvram
-AUDIO_LIBS	= -lpspaudiolib -lpspaudio -lpspmp3 source/psp/m33libs/libpspaudiocodec.a source/psp/m33libs/libpspkubridge.a
+AUDIO_LIBS	= -lpspaudiolib -lpspaudio -lpspmp3 -lSDL2_mixer -lSDL2 source/psp/m33libs/libpspaudiocodec.a source/psp/m33libs/libpspkubridge.a
 
 MISC_LIBS	= -lpsprtc -lpspmath -lpsppower -lpsphprm -ljpeg -lpng source/psp/m33libs/libz.a
 NET_LIBS    = -lpspwlan -lpspnet_adhoc -lpspnet_adhocctl
