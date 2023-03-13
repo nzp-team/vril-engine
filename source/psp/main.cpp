@@ -36,6 +36,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspge.h>
 #include <pspsysevent.h>
 
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
+
 extern "C"
 {
 #include "../quakedef.h"
@@ -86,7 +89,7 @@ namespace quake
 
 #else
 
-		static size_t  heapSize	= 9 * 1024 * 1024;
+		static size_t  heapSize	= 10 * 1024 * 1024;
 
 #endif // SLIM
 
@@ -528,8 +531,15 @@ int user_main(SceSize argc, void* argp)
 	// operations.
 	disableFloatingPointExceptions();
 
-	// Initialise the Common module.
+	// Initialize the Common module.
     InitExtModules ();
+
+	// Initialize SDL
+    if (SDL_Init(SDL_INIT_AUDIO) < 0)
+    {
+        Sys_Error("SDL2: Could not initialize!\n");
+        return 0;
+    }
 
 	// Get the current working dir.
 	char currentDirectory[1024];
@@ -632,9 +642,6 @@ int user_main(SceSize argc, void* argp)
 		// Record the time that the main loop started.
 		u64 lastTicks;
 		sceRtcGetCurrentTick(&lastTicks);
-
-		// Set up threads
-		Sys_InitThreads();
 
 		// Enter the main loop.
 		while (!quit)

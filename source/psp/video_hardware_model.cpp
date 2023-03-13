@@ -2112,12 +2112,21 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			COM_StripExtension(loadmodel->name, model);
 			// HACK HACK HACK
 			sprintf (model2, "%s.mdl_%i", model, i);
+
+			// Sigh.. something is totally awry with memory and the Slim kinda band-aids it..
+			// Textures can occupy RAM and VRAM at the same time, ie RAM isnt being freed properly
+			// So PHAT ends up kicking the bucket with a lot of external textures.
+#ifdef SLIM
+
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
 			pheader->gl_texturenum[i][2] = 
 			pheader->gl_texturenum[i][3] = loadtextureimage (model2, 0, 0, qtrue, GU_LINEAR);
 
 			if (pheader->gl_texturenum[i][0] == 0)// did not find a matching TGA...
+
+#endif // SLIM
+
 			{
 				sprintf (name, "%s_%i", loadmodel->name, i);
 				if(mod_h2)

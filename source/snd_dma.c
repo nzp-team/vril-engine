@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
 
 See the GNU General Public License for more details.
 
@@ -20,7 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // snd_dma.c -- main control for any streaming sound output device
 
 #include "quakedef.h"
-#include "thread.h"
 
 void S_Play(void);
 void S_PlayVol(void);
@@ -60,7 +59,7 @@ int			num_sfx;
 
 sfx_t		*ambient_sfx[NUM_AMBIENTS];
 
-int 		desired_speed = 11025;
+int 		desired_speed = 44100; //11025;
 int 		desired_bits = 16;
 
 int sound_started=0;
@@ -115,7 +114,7 @@ void S_SoundInfo_f(void)
 		Con_Printf ("sound system not started\n");
 		return;
 	}
-
+	
     Con_Printf("%5d stereo\n", shm->channels - 1);
     Con_Printf("%5d samples\n", shm->samples);
     Con_Printf("%5d samplepos\n", shm->samplepos);
@@ -184,14 +183,13 @@ void S_Init (void)
 	Cvar_RegisterVariable(&loadas8bit);
 	Cvar_RegisterVariable(&bgmvolume);
 	Cvar_RegisterVariable(&bgmbuffer);
-	Cvar_RegisterVariable(&bgmtype);
 	Cvar_RegisterVariable(&ambient_level);
 	Cvar_RegisterVariable(&ambient_fade);
 	Cvar_RegisterVariable(&snd_noextraupdate);
 	Cvar_RegisterVariable(&snd_show);
 	Cvar_RegisterVariable(&_snd_mixahead);
 
-	if (host_parms.memsize < 0x800000)
+	//if (host_parms.memsize < 0x800000)
 	{
 		Cvar_Set ("loadas8bit", "1");
 		Con_Printf ("loading all sounds as 8bit\n");
@@ -225,15 +223,17 @@ void S_Init (void)
 		shm->buffer = Hunk_AllocName(1<<16, "shmbuf");
 	}
 
-	Con_Printf ("Sound sampling rate: %i\n", shm->speed);
+	if ( shm ) {
+		Con_Printf ("Sound sampling rate: %i\n", shm->speed);
+	}
 
 	// provides a tick sound until washed clean
 
 //	if (shm->buffer)
 //		shm->buffer[4] = shm->buffer[5] = 0x7f;	// force a pop for debugging
 
-	ambient_sfx[AMBIENT_WATER] = S_PrecacheSound ("sounds/ambience/water1.wav");
-	ambient_sfx[AMBIENT_SKY] = S_PrecacheSound ("sounds/ambience/wind2.wav");
+	ambient_sfx[AMBIENT_WATER] = S_PrecacheSound ("ambience/water1.wav");
+	ambient_sfx[AMBIENT_SKY] = S_PrecacheSound ("ambience/wind2.wav");
 
 	S_StopAllSounds (true);
 }
@@ -292,12 +292,12 @@ sfx_t *S_FindName (char *name)
 
 	if (num_sfx == MAX_SFX)
 		Sys_Error ("S_FindName: out of sfx_t");
-
+	
 	sfx = &known_sfx[i];
 	strcpy (sfx->name, name);
 
 	num_sfx++;
-
+	
 	return sfx;
 }
 
@@ -311,7 +311,7 @@ S_TouchSound
 void S_TouchSound (char *name)
 {
 	sfx_t	*sfx;
-
+	
 	if (!sound_started)
 		return;
 
@@ -333,11 +333,11 @@ sfx_t *S_PrecacheSound (char *name)
 		return NULL;
 
 	sfx = S_FindName (name);
-
+	
 // cache it in
 	if (precache.value)
 		S_LoadSound (sfx);
-
+	
 	return sfx;
 }
 
@@ -385,8 +385,8 @@ channel_t *SND_PickChannel(int entnum, int entchannel)
 	if (channels[first_to_die].sfx)
 		channels[first_to_die].sfx = NULL;
 
-    return &channels[first_to_die];
-}
+    return &channels[first_to_die];    
+}       
 
 /*
 =================
@@ -396,7 +396,7 @@ SND_Spatialize
 void SND_Spatialize(channel_t *ch)
 {
     vec_t dot;
-    vec_t dist;
+    vec_t ldist, rdist, dist;
     vec_t lscale, rscale, scale;
     vec3_t source_vec;
 	sfx_t *snd;
@@ -413,9 +413,9 @@ void SND_Spatialize(channel_t *ch)
 
 	snd = ch->sfx;
 	VectorSubtract(ch->origin, listener_origin, source_vec);
-
+	
 	dist = VectorNormalize(source_vec) * ch->dist_mult;
-
+	
 	dot = DotProduct(listener_right, source_vec);
 
 	if (shm->channels == 1)
@@ -439,7 +439,7 @@ void SND_Spatialize(channel_t *ch)
 	ch->leftvol = (int) (ch->master_vol * scale);
 	if (ch->leftvol < 0)
 		ch->leftvol = 0;
-}
+}           
 
 
 // =======================================================================
@@ -469,7 +469,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float f
 	target_chan = SND_PickChannel(entnum, entchannel);
 	if (!target_chan)
 		return;
-
+		
 // spatialize
 	memset (target_chan, 0, sizeof(*target_chan));
 	VectorCopy(origin, target_chan->origin);
@@ -492,7 +492,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float f
 
 	target_chan->sfx = sfx;
 	target_chan->pos = 0.0;
-    target_chan->end = paintedtime + sc->length;
+    target_chan->end = paintedtime + sc->length;	
 
 // if an identical sound has also been started this frame, offset the pos
 // a bit to keep it from just making the first one louder
@@ -510,7 +510,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float f
 			target_chan->end -= skip;
 			break;
 		}
-
+		
 	}
 }
 
@@ -557,7 +557,7 @@ void S_StopAllSoundsC (void)
 void S_ClearBuffer (void)
 {
 	int		clear;
-
+		
 	if (!sound_started || !shm || !shm->buffer)
 		return;
 
@@ -566,10 +566,7 @@ void S_ClearBuffer (void)
 	else
 		clear = 0;
 
-
-	{
-		Q_memset(shm->buffer, clear, shm->samples * shm->samplebits/8);
-	}
+	Q_memset(shm->buffer, clear, shm->samples * shm->samplebits/8);
 }
 
 
@@ -604,13 +601,13 @@ void S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 		Con_Printf ("Sound %s not looped\n", sfx->name);
 		return;
 	}
-
+	
 	ss->sfx = sfx;
 	VectorCopy (origin, ss->origin);
 	ss->master_vol = vol;
 	ss->dist_mult = (attenuation/64) / sound_nominal_clip_dist;
-    ss->end = paintedtime + sc->length;
-
+    ss->end = paintedtime + sc->length;	
+	
 	SND_Spatialize (ss);
 }
 
@@ -646,9 +643,9 @@ void S_UpdateAmbientSounds (void)
 
 	for (ambient_channel = 0 ; ambient_channel< NUM_AMBIENTS ; ambient_channel++)
 	{
-		chan = &channels[ambient_channel];
+		chan = &channels[ambient_channel];	
 		chan->sfx = ambient_sfx[ambient_channel];
-
+	
 		vol = ambient_level.value * l->ambient_sound_level[ambient_channel];
 		if (vol < 8)
 			vol = 0;
@@ -666,7 +663,7 @@ void S_UpdateAmbientSounds (void)
 			if (chan->master_vol < vol)
 				chan->master_vol = vol;
 		}
-
+		
 		chan->leftvol = chan->rightvol = chan->master_vol;
 	}
 }
@@ -693,13 +690,13 @@ void S_Update(vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 	VectorCopy(forward, listener_forward);
 	VectorCopy(right, listener_right);
 	VectorCopy(up, listener_up);
-
+	
 // update general area ambient sound sources
 	S_UpdateAmbientSounds ();
 
 	combine = NULL;
 
-// update spatialization for static and dynamic sounds
+// update spatialization for static and dynamic sounds	
 	ch = channels+NUM_AMBIENTS;
 	for (i=NUM_AMBIENTS ; i<total_channels; i++, ch++)
 	{
@@ -711,7 +708,7 @@ void S_Update(vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 
 	// try to combine static sounds with a previous channel of the same
 	// sound effect so we don't mix five torches every frame
-
+	
 		if (i >= MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS)
 		{
 		// see if it can just use the last one
@@ -727,7 +724,7 @@ void S_Update(vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 			for (j=MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS ; j<i; j++, combine++)
 				if (combine->sfx == ch->sfx)
 					break;
-
+					
 			if (j == total_channels)
 			{
 				combine = NULL;
@@ -743,8 +740,8 @@ void S_Update(vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 				continue;
 			}
 		}
-
-
+		
+		
 	}
 
 //
@@ -760,7 +757,7 @@ void S_Update(vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 				//Con_Printf ("%3i %3i %s\n", ch->leftvol, ch->rightvol, ch->sfx->name);
 				total++;
 			}
-
+		
 		Con_Printf ("----(%i)----\n", total);
 	}
 
@@ -774,7 +771,7 @@ void GetSoundtime(void)
 	static	int		buffers;
 	static	int		oldsamplepos;
 	int		fullsamples;
-
+	
 	fullsamples = shm->samples / shm->channels;
 
 // it is possible to miscount buffers if it has wrapped twice between
@@ -785,7 +782,7 @@ void GetSoundtime(void)
 	if (samplepos < oldsamplepos)
 	{
 		buffers++;					// buffer wrapped
-
+		
 		if (paintedtime > 0x40000000)
 		{	// time to chop things off to avoid 32 bit limits
 			buffers = 0;
@@ -800,9 +797,6 @@ void GetSoundtime(void)
 
 void S_ExtraUpdate (void)
 {
-
-
-
 	if (snd_noextraupdate.value)
 		return;		// don't pollute timings
 	S_Update_();
@@ -810,9 +804,11 @@ void S_ExtraUpdate (void)
 
 void S_Update_(void)
 {
+/*#ifndef SDL
+
 	unsigned        endtime;
 	int				samps;
-
+	
 	if (!sound_started || (snd_blocked > 0))
 		return;
 
@@ -835,6 +831,7 @@ void S_Update_(void)
 	S_PaintChannels (endtime);
 
 	SNDDMA_Submit ();
+#endif*/
 }
 
 /*
@@ -851,7 +848,7 @@ void S_Play(void)
 	int 	i;
 	char name[256];
 	sfx_t	*sfx;
-
+	
 	i = 1;
 	while (i<Cmd_Argc())
 	{
@@ -875,7 +872,7 @@ void S_PlayVol(void)
 	float vol;
 	char name[256];
 	sfx_t	*sfx;
-
+	
 	i = 1;
 	while (i<Cmd_Argc())
 	{
@@ -926,7 +923,7 @@ void S_LocalSound (char *sound)
 		return;
 	if (!sound_started)
 		return;
-
+		
 	sfx = S_PrecacheSound (sound);
 	if (!sfx)
 	{
@@ -950,4 +947,3 @@ void S_BeginPrecaching (void)
 void S_EndPrecaching (void)
 {
 }
-

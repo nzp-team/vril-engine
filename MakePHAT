@@ -13,7 +13,6 @@ PSP_FW_VERSION=660
 
 MODE=-DKERNEL_MODE
 
-
 ifeq ($(USE_GPROF),1)
 GPROF_LIBS      = -lpspprof
 GPROF_FLAGS		= -pg -DPROFILE
@@ -28,7 +27,6 @@ COMMON_OBJS = \
 	source/psp/input.o \
 	source/psp/main.o \
 	source/psp/math.o \
-	source/psp/sound.o \
 	source/psp/system.o \
 	source/psp/module.o \
 	source/psp/network.o \
@@ -64,6 +62,7 @@ COMMON_OBJS = \
 	source/pr_cmds.o \
 	source/pr_edict.o \
 	source/pr_exec.o \
+	source/snd_sdl.o \
 	source/snd_dma.o \
 	source/snd_mem.o \
 	source/snd_mix.o \
@@ -109,16 +108,14 @@ HARDWARE_VIDEO_ONLY_FLAGS = -DPSP_HARDWARE_VIDEO
 
 OBJS = $(COMMON_OBJS) $(HARDWARE_VIDEO_ONLY_OBJS)
 
-
-#LIBS = -lpspaudiolib -lpspaudio -lpspgum -lpspgu -lpsprtc -lpsppower -lpspwlan -lstdc++ -lm
-
+SDL_LIBS = -lSDL2 -lvorbisfile -lvorbis -logg -lGL -lGLU -lglut
 GU_LIBS	= -lpspgum_vfpu -lpspvfpu -lpspgu -lpspvram
 AUDIO_LIBS	= -lpspaudiolib -lpspaudio -lpspmp3 source/psp/m33libs/libpspaudiocodec.a source/psp/m33libs/libpspkubridge.a
 
-MISC_LIBS	= -lpsprtc -lpspmath -lpsppower -lpsphprm -ljpeg -lpng source/psp/m33libs/libz.a
+MISC_LIBS	= -lpsprtc -lpsppower -lpspmath -lpsphprm -ljpeg -lpng source/psp/m33libs/libz.a
 NET_LIBS    = -lpspwlan -lpspnet_adhoc -lpspnet_adhocctl
 STD_LIBS	= -lstdc++ -lm -lc
-LIBS		= $(GPROF_LIBS) $(GU_LIBS) $(AUDIO_LIBS) $(MISC_LIBS) $(STD_LIBS) $(NET_LIBS)
+LIBS		= $(GPROF_LIBS) $(SDL_LIBS) $(GU_LIBS) $(AUDIO_LIBS) $(MISC_LIBS) $(STD_LIBS) $(NET_LIBS)
 
 CFLAGS = -ffast-math -O3 -G0 -Wall $(GPROF_FLAGS) -Did386="0" -DPSP $(MODE) $(HARDWARE_VIDEO_ONLY_FLAGS) -DSWIZZLE32 -DPSP_MP3_HWDECODE -DFULLBRIGHT -DHL_RENDER -Wno-strict-aliasing -DPSP_VFPU
 CXXFLAGS = -fno-rtti -Wcast-qual -Wno-write-strings -Wno-sign-compare -Wno-strict-aliasing
