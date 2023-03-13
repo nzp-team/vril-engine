@@ -255,7 +255,8 @@ Press somthing printing
 ===============================================================================
 */
 
-char		scr_usestring[1024];
+char		scr_usestring[64];
+char 		scr_usestring2[64];
 float		scr_usetime_off = 0.0f;
 int			button_pic_x;
 extern qpic_t 		*b_circle;
@@ -376,91 +377,113 @@ char *GetPerkName (int perk)
 
 void SCR_UsePrint (int type, int cost, int weapon)
 {
-    char s[128];
+    char s[64];
+	char c[64];
 
     switch (type)
 	{
 		case 0://clear
 			strcpy(s, "");
+			strcpy(c, "");
 			break;
 		case 1://door
-			strcpy(s, va("Hold %s to open Door [Cost:%i]\n", GetUseButtonL(), cost));
+			strcpy(s, va("Hold %s to open Door\n", GetUseButtonL()));
+			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = 5;
 			break;
 		case 2://debris
-			strcpy(s, va("Hold %s to remove Debris [Cost:%i]\n", GetUseButtonL(), cost));
+			strcpy(s, va("Hold %s to remove Debris\n", GetUseButtonL()));
+			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = 5;
 			break;
 		case 3://ammo
-			strcpy(s, va("Hold %s to buy Ammo for %s [Cost:%i]\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch, cost));
+			strcpy(s, va("Hold %s to buy Ammo for %s\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch));
+			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = 5;
 			break;
 		case 4://weapon
-			strcpy(s, va("Hold %s to buy %s [Cost:%i]\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch, cost));
+			strcpy(s, va("Hold %s to buy %s\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch));
+			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = 5;
 			break;
 		case 5://window
 			strcpy(s, va("Hold %s to Rebuild Barrier\n", GetUseButtonL()));
+			strcpy(c, "");
 			button_pic_x = 5;
 			break;
 		case 6://box
-			strcpy(s, va("Hold %s to buy a Random Weapon [cost:%i]\n", GetUseButtonL(), cost));
+			strcpy(s, va("Hold %s to buy a Random Weapon\n", GetUseButtonL()));
+			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = 5;
 			break;
 		case 7://box take
 			strcpy(s, va("Press %s to take Weapon\n", GetUseButtonL()));
+			strcpy(c, "");
 			button_pic_x = 6;
 			break;
 		case 8://power
 			strcpy(s, "The Power must be Activated first\n");
+			strcpy(c, "");
 			button_pic_x = 100;
 			break;
 		case 9://perk
-			strcpy(s, va("Hold %s to buy %s [Cost:%i]\n", GetUseButtonL(), GetPerkName(weapon), cost));
+			strcpy(s, va("Hold %s to buy %s\n", GetUseButtonL(), GetPerkName(weapon)));
+			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = 5;
 			break;
 		case 10://turn on power
 			strcpy(s, va("Hold %s to Turn On the Power\n", GetUseButtonL()));
+			strcpy(c, "");
 			button_pic_x = 5;
 			break;
 		case 11://turn on trap
-			strcpy(s, va("Hold %s to Activate the Trap [Cost:%i]\n", GetUseButtonL(), cost));
+			strcpy(s, va("Hold %s to Activate the Trap\n", GetUseButtonL()));
+			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = 5;
 			break;
 		case 12://PAP
-			strcpy(s, va("Hold %s to Pack-a-Punch [Cost:%i]\n", GetUseButtonL(), cost));
+			strcpy(s, va("Hold %s to Pack-a-Punch\n", GetUseButtonL()));
+			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = 5;
 			break;
 		case 13://revive
 			strcpy(s, va("Hold %s to Fix your Code.. :)\n", GetUseButtonL()));
+			strcpy(c, "");
 			button_pic_x = 5;
 			break;
 		case 14://use teleporter (free)
 			strcpy(s, va("Hold %s to use Teleporter\n", GetUseButtonL()));
+			strcpy(c, "");
 			button_pic_x = 5;
 			break;
 		case 15://use teleporter (cost)
-			strcpy(s, va("Hold %s to use Teleporter [Cost:%i]\n", GetUseButtonL(), cost));
+			strcpy(s, va("Hold %s to use Teleporter\n", GetUseButtonL()));
+			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = 5;
 			break;
 		case 16://tp cooldown
 			strcpy(s, "Teleporter is cooling down\n");
+			strcpy(c, "");
 			button_pic_x = 100;
 			break;
 		case 17://link
 			strcpy(s, va("Hold %s to initiate link to pad\n", GetUseButtonL()));
+			strcpy(c, "");
 			button_pic_x = 5;
 			break;
 		case 18://no link
 			strcpy(s, "Link not active\n");
+			strcpy(c, "");
 			button_pic_x = 100;
 			break;
 		case 19://finish link
 			strcpy(s, va("Hold %s to link pad with core\n", GetUseButtonL()));
+			strcpy(c, "");
 			button_pic_x = 5;
 			break;
 		case 20://buyable ending
-			strcpy(s, va("Hold %s to End the Game [Cost:%i]\n", GetUseButtonL(), cost));
+			strcpy(s, va("Hold %s to End the Game\n", GetUseButtonL()));
+			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = 5;
 			break;
 		default:
@@ -469,24 +492,29 @@ void SCR_UsePrint (int type, int cost, int weapon)
 	}
 
 	strncpy (scr_usestring, va(s), sizeof(scr_usestring)-1);
+	strncpy (scr_usestring2, va(c), sizeof(scr_usestring2)-1);
 	scr_usetime_off = 0.1;
 }
 
 
 void SCR_DrawUseString (void)
 {
-	int		l;
-	int		x, y;
+	int		l, l2;
+	int		x, x2, y;
 
 	if (cl.stats[STAT_HEALTH] < 0)
 		return;
 // the finale prints the characters one at a time
 
-	y = vid.height*0.70;
+	y = 182;
 	l = strlen (scr_usestring);
     x = (vid.width - l*8)/2;
 
+	l2 = strlen (scr_usestring2);
+	x2 = (vid.width - l2*8)/2;
+
     Draw_String (x, y, scr_usestring);
+	Draw_String (x2, y + 10, scr_usestring2);
 	Draw_Pic (x + button_pic_x*8, y, GetButtonIcon("+use"));
 }
 

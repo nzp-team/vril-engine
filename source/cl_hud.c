@@ -338,7 +338,7 @@ void HUD_Parse_Point_Change (int points, int negative, int x_start, int y_start)
 	point_change[i].negative = negative;
 
 	f = HUD_itoa (points, str);
-	point_change[i].x = x_start - 10.0 - 8.0*f;
+	point_change[i].x = x_start + 10.0 + 8.0*f;
 	point_change[i].y = y_start;
 	point_change[i].move_x = 1.0;
 	point_change[i].move_y = ((rand ()&0x7fff) / ((float)0x7fff)) - 0.5;
@@ -360,8 +360,8 @@ void HUD_Points (void)
 	l = scoreboardlines;
 
 
-    x = vid.width - sb_moneyback->width;
-    y = vid.height - 16 - fragpic->height - 4 - 16 - sb_moneyback->height;
+    x = 6;
+    y = 200;
 	for (i=0 ; i<l ; i++)
 	{
 		k = pointsort[i];
@@ -401,16 +401,17 @@ void HUD_Points (void)
 				point_change_interval_neg = 0;
 			}
 		}
+
 		Draw_Pic (x, y, sb_moneyback);
-		xplus = HUD_itoa (f, str);
-		Draw_String (vid.width - (xplus*8) - 16, y + 3, va("%i", current_points));
+		xplus = strlen(va("%i", current_points))*8;
+		Draw_String (((64 - xplus)/2)+5, y + 3, va("%i", current_points));
 
 		if (old_points != f)
 		{
 			if (f > old_points)
-				HUD_Parse_Point_Change(f - old_points, 0, vid.width - (xplus*8) - 16, y + 3);
+				HUD_Parse_Point_Change(f - old_points, 0, ((64 - xplus)/2)+5, y + 3);
 			else
-				HUD_Parse_Point_Change(old_points - f, 1, vid.width - (xplus*8) - 16, y + 3);
+				HUD_Parse_Point_Change(old_points - f, 1, ((64 - xplus)/2)+5, y + 3);
 
 			old_points = f;
 		}
@@ -441,7 +442,7 @@ void HUD_Point_Change (void)
 			else
 				Draw_ColoredString (point_change[i].x, point_change[i].y, va ("+%i", point_change[i].points), 255, 255, 0, 255, 1);
 			point_change[i].y = point_change[i].y + point_change[i].move_y;
-			point_change[i].x = point_change[i].x - point_change[i].move_x;
+			point_change[i].x = point_change[i].x + point_change[i].move_x;
 			if (point_change[i].alive_time && point_change[i].alive_time < Sys_FloatTime())
 			{
 				point_change[i].points = 0;
@@ -545,19 +546,19 @@ void HUD_WorldText(int alpha)
 		if (!strcmp("chaptertitle", key)) // search for chaptertitle key
 		{
 			has_chaptertitle = true;
-			Draw_ColoredString(4, vid.height/2 + 40, value, 255, 255, 255, alpha, 1);	
+			Draw_ColoredString(6, vid.height/2 + 10, value, 255, 255, 255, alpha, 1);	
 		}
 		if (!strcmp("location", key)) // search for location key
 		{
-			Draw_ColoredString(4, vid.height/2 + 50, value, 255, 255, 255, alpha, 1);
+			Draw_ColoredString(6, vid.height/2 + 20, value, 255, 255, 255, alpha, 1);
 		}
 		if (!strcmp("date", key)) // search for date key
 		{
-			Draw_ColoredString(4, vid.height/2 + 60, value, 255, 255, 255, alpha, 1);
+			Draw_ColoredString(6, vid.height/2 + 30, value, 255, 255, 255, alpha, 1);
 		}
 		if (!strcmp("person", key)) // search for person key
 		{
-			Draw_ColoredString(4, vid.height/2 + 70, value, 255, 255, 255, alpha, 1);
+			Draw_ColoredString(6, vid.height/2 + 40, value, 255, 255, 255, alpha, 1);
 		}
 	}
 }
@@ -635,7 +636,7 @@ void HUD_Rounds (void)
 		HUD_WorldText(value2);
 		
 		if (has_chaptertitle == false)
-			Draw_ColoredString(4, vid.height/2 + 40, "'Nazi Zombies'", 255, 255, 255, value2, 1);
+			Draw_ColoredString(6, vid.height/2 + 40, "'Nazi Zombies'", 255, 255, 255, value2, 1);
 		
 		value -= cl.time * 0.4;
 		value2 += cl.time * 0.4;
@@ -1096,55 +1097,44 @@ int current_perk_order;
 
 void HUD_Perks (void)
 {
-	int i;
-	int y;
-	y = vid.height - sb_round[1]->height - jugpic->height -2;
+	int x, y, scale;
 
-	for (i = 0; i < 9; i++)
-	{
-		if (perk_order[i])
-		{
-			if (perk_order[i] == P_JUG)
-			{
-				Draw_StretchPic (2, y, jugpic, 20, 20);
-				y = y - 22;
-			}
-			else if (perk_order[i] == P_DOUBLE)
-			{
-				Draw_StretchPic (2, y, doublepic, 20, 20);
-				y = y - 22;
-			}
-			else if (perk_order[i] == P_SPEED)
-			{
-				Draw_StretchPic (2, y, speedpic, 20, 20);
-				y = y - 22;
-			}
-			else if (perk_order[i] == P_REVIVE)
-			{
-				Draw_StretchPic (2, y, revivepic, 20, 20);
-				y = y - 22;
-			}
-			else if (perk_order[i] == P_FLOP)
-			{
-				Draw_StretchPic (2, y, floppic, 20, 20);
-				y = y - 22;
-			}
-			else if (perk_order[i] == P_STAMIN)
-			{
-				Draw_StretchPic (2, y, staminpic, 20, 20);
-				y = y - 22;
-			}
-			else if (perk_order[i] == P_DEAD)
-			{
-				Draw_StretchPic (2, y, deadpic, 20, 20);
-				y = y - 22;
-			}
-			else if (perk_order[i] == P_MULE)
-			{
-				Draw_StretchPic (2, y, mulepic, 20, 20);
-				y = y - 22;
-			}
+	x = 18;
+	y = 2;
+	scale = 22;
+
+	// Draw second column first -- these need to be
+	// overlayed below the first column.
+	for (int i = 4; i < 8; i++) {
+		if (perk_order[i]) {
+			if (perk_order[i] == P_JUG) {Draw_StretchPic(x, y, jugpic, scale, scale);}
+			if (perk_order[i] == P_DOUBLE) {Draw_StretchPic(x, y, doublepic, scale, scale);}
+			if (perk_order[i] == P_SPEED) {Draw_StretchPic(x, y, speedpic, scale, scale);}
+			if (perk_order[i] == P_REVIVE) {Draw_StretchPic(x, y, revivepic, scale, scale);}
+			if (perk_order[i] == P_FLOP) {Draw_StretchPic(x, y, floppic, scale, scale);}
+			if (perk_order[i] == P_STAMIN) {Draw_StretchPic(x, y, staminpic, scale, scale);}
+			if (perk_order[i] == P_DEAD) {Draw_StretchPic(x, y, deadpic, scale, scale);}
+			if (perk_order[i] == P_MULE) {Draw_StretchPic(x, y, mulepic, scale, scale);}
 		}
+		y += scale;
+	}
+
+	x = 6;
+	y = 2;
+
+	// Now the first column.
+	for (int i = 0; i < 4; i++) {
+		if (perk_order[i]) {
+			if (perk_order[i] == P_JUG) {Draw_StretchPic(x, y, jugpic, scale, scale);}
+			if (perk_order[i] == P_DOUBLE) {Draw_StretchPic(x, y, doublepic, scale, scale);}
+			if (perk_order[i] == P_SPEED) {Draw_StretchPic(x, y, speedpic, scale, scale);}
+			if (perk_order[i] == P_REVIVE) {Draw_StretchPic(x, y, revivepic, scale, scale);}
+			if (perk_order[i] == P_FLOP) {Draw_StretchPic(x, y, floppic, scale, scale);}
+			if (perk_order[i] == P_STAMIN) {Draw_StretchPic(x, y, staminpic, scale, scale);}
+			if (perk_order[i] == P_DEAD) {Draw_StretchPic(x, y, deadpic, scale, scale);}
+			if (perk_order[i] == P_MULE) {Draw_StretchPic(x, y, mulepic, scale, scale);}
+		}
+		y += scale;
 	}
 }
 
@@ -1155,11 +1145,26 @@ HUD_Powerups
 */
 void HUD_Powerups (void)
 {
+	int count;
 
-	if(cl.stats[STAT_X2])
-		Draw_StretchPic ((vid.width/2) - 30,0, x2pic, 28, 28);
-	if(cl.stats[STAT_INSTA])
-		Draw_StretchPic ((vid.width/2) + 2,0, instapic, 28, 28);
+	// horrible way to offset check :)))))))))))))))))) :DDDDDDDD XOXO
+
+	if (cl.stats[STAT_X2])
+		count++;
+
+	if (cl.stats[STAT_INSTA])
+		count++;
+
+	// both are avail draw fixed order
+	if (count == 2) {
+		Draw_StretchPic(211, 242, x2pic, 28, 28);
+		Draw_StretchPic(240, 242, instapic, 28, 28);
+	} else {
+		if (cl.stats[STAT_X2])
+			Draw_StretchPic(226, 242, x2pic, 28, 28);
+		if(cl.stats[STAT_INSTA])
+			Draw_StretchPic (226, 242, instapic, 28, 28);
+	}
 }
 
 /*
@@ -1268,43 +1273,41 @@ int IsDualWeapon(int weapon)
 
 void HUD_Ammo (void)
 {
-	char str[12];
-    int xplus;
-	char *magstring;
+	char* magstring;
+	int reslen;
 
-	y_value = vid.height - 16;
+	reslen = strlen(va("/%i", cl.stats[STAT_AMMO]));
 
-	magstring = va("%i", cl.stats[STAT_CURRENTMAG]);
-
-	xplus = HUD_itoa(cl.stats[STAT_CURRENTMAG], str);
-
+	//
 	// Magazine
-	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG])
-		Draw_ColoredString(vid.width - 42 - (xplus*8), y_value, magstring, 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(vid.width - 42 - (xplus*8), y_value, magstring, 255, 255, 255, 255, 1);
+	//
+	magstring = va("%i", cl.stats[STAT_CURRENTMAG]);
+	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG]) {
+		Draw_ColoredString((422 -(reslen*8)) - strlen(magstring)*8, 247, magstring, 255, 0, 0, 255, 1);
+	} else {
+		Draw_ColoredString((422 -(reslen*8)) - strlen(magstring)*8, 247, magstring, 255, 255, 255, 255, 1);
+	}
 
-	// Second mag for dual weps
+	//
+	// Reserve Ammo
+	//
+	magstring = va("/%i", cl.stats[STAT_AMMO]);
+	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_AMMO]) {
+		Draw_ColoredString(422 - strlen(magstring)*8, 247, magstring, 255, 0, 0, 255, 1);
+	} else {
+		Draw_ColoredString(422 - strlen(magstring)*8, 247, magstring, 255, 255, 255, 255, 1);
+	}
+
+	//
+	// Second Magazine
+	//
 	if (IsDualWeapon(cl.stats[STAT_ACTIVEWEAPON])) {
 		magstring = va("%i", cl.stats[STAT_CURRENTMAG2]);
-		xplus = HUD_itoa(cl.stats[STAT_CURRENTMAG2], str);
-
-		if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG2])
-			Draw_ColoredString(vid.width - 56 - (xplus*8), y_value, magstring, 255, 0, 0, 255, 1);
-		else
-			Draw_ColoredString(vid.width - 56 - (xplus*8), y_value, magstring, 255, 255, 255, 255, 1);
-	}
-
-	// Reserve ammo
-	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_AMMO])
-	{
-		Draw_ColoredString (vid.width - 42, y_value, "/", 255, 0, 0, 255, 1);
-		Draw_ColoredString (vid.width - 34, y_value, va ("%i",cl.stats[STAT_AMMO]), 255, 0, 0, 255, 1);
-	}
-	else
-	{
-		Draw_ColoredString (vid.width - 42, y_value, "/", 255, 255, 255, 255, 1);
-		Draw_ColoredString (vid.width - 34, y_value, va ("%i",cl.stats[STAT_AMMO]), 255, 255, 255, 255, 1);
+		if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_CURRENTMAG2]) {
+			Draw_ColoredString(388 - strlen(magstring)*8, 247, magstring, 255, 0, 0, 255, 1);
+		} else {
+			Draw_ColoredString(388 - strlen(magstring)*8, 247, magstring, 255, 255, 255, 255, 1);
+		}
 	}
 }
 
@@ -1318,12 +1321,17 @@ void HUD_AmmoString (void)
 {
 	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG])
 	{
+		int x;
+
 		if (0 < cl.stats[STAT_AMMO] && cl.stats[STAT_CURRENTMAG] >= 0) {
-			Draw_ColoredString ((vid.width)/2, (vid.height)/2 + 40, "Reload", 255, 255, 255, 255, 1);
+			x = (vid.width - strlen("Reload")*8)/2;
+			Draw_ColoredString (x, 164, "Reload", 255, 255, 255, 255, 1);
 		} else if (0 < cl.stats[STAT_CURRENTMAG]) {
-			Draw_ColoredString ((vid.width)/2, (vid.height)/2 + 40, "LOW AMMO", 255, 255, 0, 255, 1);
+			x = (vid.width - strlen("LOW AMMO")*8)/2;
+			Draw_ColoredString (x, 164, "LOW AMMO", 255, 255, 0, 255, 1);
 		} else {
-			Draw_ColoredString ((vid.width)/2, (vid.height)/2 + 40, "NO AMMO", 255, 0, 0, 255, 1);
+			x = (vid.width - strlen("NO AMMO")*8)/2;
+			Draw_ColoredString (x, 164, "NO AMMO", 255, 0, 0, 255, 1);
 		}
 	}
 }
@@ -1338,23 +1346,23 @@ HUD_Grenades
 
 void HUD_Grenades (void)
 {
-	if (cl.stats[STAT_GRENADES])
-	{
-		x_value = vid.width - 50;
-		y_value = vid.height - 16 - fragpic->height - 4;
-	}
+	Draw_StretchPic (448, 232, fragpic, 22, 22);
+
 	if (cl.stats[STAT_GRENADES] & UI_FRAG)
 	{
-		Draw_StretchPic (x_value, y_value, fragpic, 22, 22);
 		if (cl.stats[STAT_PRIGRENADES] <= 0)
-			Draw_ColoredString (x_value + 12, y_value + 12, va ("%i",cl.stats[STAT_PRIGRENADES]), 255, 0, 0, 255, 1);
+			Draw_ColoredString (463, 247, va ("%i",cl.stats[STAT_PRIGRENADES]), 255, 0, 0, 255, 1);
 		else
-			Draw_String (x_value + 12, y_value + 12, va ("%i",cl.stats[STAT_PRIGRENADES]));
+			Draw_String (463, 247, va ("%i",cl.stats[STAT_PRIGRENADES]));
 	}
+
 	if (cl.stats[STAT_GRENADES] & UI_BETTY)
 	{
-		Draw_StretchPic (x_value - fragpic->width - 5, y_value, bettypic, 22, 22);
-		Draw_String (x_value - fragpic->width + 7, y_value + 12, va ("%i",cl.stats[STAT_SECGRENADES]));
+		Draw_StretchPic (427, 233, bettypic, 22, 22);
+		if (cl.stats[STAT_PRIGRENADES] <= 0)
+			Draw_ColoredString (440, 247, va ("%i",cl.stats[STAT_SECGRENADES]), 255, 0, 0, 255, 1);
+		else
+			Draw_String (440, 247, va ("%i",cl.stats[STAT_SECGRENADES]));
 	}
 }
 
@@ -1368,12 +1376,12 @@ void HUD_Weapon (void)
 	char str[32];
 	float l;
 	x_value = vid.width;
-	y_value = vid.height - 16 - fragpic->height - 4 - 16;
+	y_value = 234;
 
 	strcpy(str, pr_strings+sv_player->v.Weapon_Name);
 	l = strlen(str);
 
-	x_value = vid.width - 8 - l*8;
+	x_value = 422 - l*8;
 	Draw_String (x_value, y_value, str);
 }
 
@@ -1395,7 +1403,7 @@ void HUD_Draw (void)
 
 	if (waypoint_mode.value)
 	{
-		Draw_String (vid.width - 112, 0, "WAYPOINTMODE");
+		Draw_String (vid.width - 112, 0, "WAYPOINT MODE");
 		Draw_String (vid.width - 240, 8, "Press fire to create waypoint");
 		Draw_String (vid.width - 232, 16, "Press use to select waypoint");
 		Draw_String (vid.width - 216, 24, "Press aim to link waypoint");
@@ -1430,7 +1438,7 @@ void HUD_Draw (void)
 	if (domaxammo == true) {
 		if (maxammoopac <= 0) {
 			maxammoopac = 255;
-			maxammoy = 250;
+			maxammoy = 48;
 		}
 		HUD_MaxAmmo();
 	}

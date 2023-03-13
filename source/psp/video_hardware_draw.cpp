@@ -1444,21 +1444,25 @@ void Draw_Crosshair (void)
 
 		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5;
 
+		// Left
 		x_value = (vid.width - 8)/2 - crosshair_offset_step;
 		y_value = (vid.height - 8)/2;
-		Draw_CharacterRGBA(x_value, y_value, 158, 255, col, col, crosshair_opacity);
+		Draw_FillByColor(x_value, y_value, 3, 1, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
 
-		x_value = (vid.width - 8)/2 + crosshair_offset_step;
+		// Right
+		x_value = (vid.width - 8)/2 + crosshair_offset_step - 2;
 		y_value = (vid.height - 8)/2;
-		Draw_CharacterRGBA(x_value, y_value, 158, 255, col, col, crosshair_opacity);
+		Draw_FillByColor(x_value, y_value, 3, 1, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
 
+		// Top
 		x_value = (vid.width - 8)/2;
 		y_value = (vid.height - 8)/2 - crosshair_offset_step;
-		Draw_CharacterRGBA(x_value, y_value, 157, 255, col, col, crosshair_opacity);
+		Draw_FillByColor(x_value, y_value, 1, 3, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
 
+		// Bottom
 		x_value = (vid.width - 8)/2;
-		y_value = (vid.height - 8)/2 + crosshair_offset_step;
-		Draw_CharacterRGBA(x_value, y_value, 157, 255, col, col, crosshair_opacity);
+		y_value = (vid.height - 8)/2 + crosshair_offset_step - 2;
+		Draw_FillByColor(x_value, y_value, 1, 3, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
     }
     else if (crosshair.value && cl.stats[STAT_ZOOM] != 1 && cl.stats[STAT_ZOOM] != 2)
 		Draw_CharacterRGBA((vid.width - 8)/2, (vid.height - 8)/2, '.', 255, col, col, crosshair_opacity);
