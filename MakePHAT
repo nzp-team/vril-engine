@@ -13,7 +13,6 @@ PSP_FW_VERSION=660
 
 MODE=-DKERNEL_MODE
 
-
 ifeq ($(USE_GPROF),1)
 GPROF_LIBS      = -lpspprof
 GPROF_FLAGS		= -pg -DPROFILE
@@ -28,7 +27,6 @@ COMMON_OBJS = \
 	source/psp/input.o \
 	source/psp/main.o \
 	source/psp/math.o \
-	source/psp/sound.o \
 	source/psp/system.o \
 	source/psp/module.o \
 	source/psp/network.o \
@@ -64,6 +62,7 @@ COMMON_OBJS = \
 	source/pr_cmds.o \
 	source/pr_edict.o \
 	source/pr_exec.o \
+	source/snd_sdl.o \
 	source/snd_dma.o \
 	source/snd_mem.o \
 	source/snd_mix.o \
