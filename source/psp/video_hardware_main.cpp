@@ -405,146 +405,43 @@ modified by blubswillrule
 
 void R_InterpolateEntity(entity_t *e, int shadow)	// Tomaz - New Shadow
 {
-	float timepassed;
-	float blend;
-	vec3_t deltaVec;
-	int i;
-	
-	// positional interpolation
-	
-	timepassed = realtime - e->translate_start_time;
-	
-	//notes to self (blubs)
-	//-Added this method, and commented out the check for r_i_model_transforms.value
-	//tried the snapping interpolation, though it worked, it was still a bit jittery...
-	//problem with linear interpolation is we don't know the exact time it should take to move from origin1 to origin2...
-	//looks like the rotation interpolation doesn't work all that great either, rotation could benefit from the snapping interpolation that I use
-	//if I get this method to work well, make sure we go back and check for r_i_model_transforms again, (because vmodel and other models that don't use interpolation)
-	//probably go back and edit animations too as I redo the last 2 textures..
-	
-	
-	/*if (e->translate_start_time == 0 || timepassed > 1)
-	{
-		e->translate_start_time = realtime;
-		VectorCopy (e->origin, e->origin1);
-		VectorCopy (e->origin, e->origin2);
-	}
-	
-	//our origin has been updated
-	if (!VectorCompare (e->origin, e->origin2))
-	{
-		e->translate_start_time = realtime;
-		VectorCopy (e->origin2, e->origin1);
-		VectorCopy (e->origin,  e->origin2);
-		blend = 0;
-	}
-	else
-	{
-		blend =  1;
-		if (cl.paused)
-			blend = 0;
-		
-		e->origin1[0] += (blend * 0.25 * (e->origin2[0] - e->origin1[0]));
-		e->origin1[1] += (blend * 0.25 * (e->origin2[1] - e->origin1[1]));
-		e->origin1[2] += (blend * 0.25 * (e->origin2[2] - e->origin1[2]));
-	}
-	
-	//VectorSubtract (e->origin2, e->origin1, deltaVec);
-	
-	// Translate.
-	const ScePspFVector3 translation = 
-	{*/
-		/*e->origin[0] + (blend * deltaVec[0]),
-		e->origin[1] + (blend * deltaVec[1]),
-		e->origin[2] + (blend * deltaVec[2])*/
-		/*
-		e->origin1[0], e->origin1[1], e->origin1[2]
-	};
-	*/
-	
-	if (e->translate_start_time == 0 || timepassed > 1)
-	{
-		e->translate_start_time = realtime;
-		VectorCopy (e->origin, e->origin1);
-		VectorCopy (e->origin, e->origin2);
-	}
-	
-	//our origin has been updated
-	if (!VectorCompare (e->origin, e->origin2))
-	{
-		e->translate_start_time = realtime;
-		VectorCopy (e->origin2, e->origin1);
-		VectorCopy (e->origin,  e->origin2);
-		blend = 0;
-	}
-	else
-	{
-		blend =  timepassed / 0.4;//0.1 not sure what this value should be...
-		//technically this value should be the total amount of time that we take from 1 position to the next, it's practically how long it should take us to go from one location to the next...
-		if (cl.paused || blend > 1)
-			blend = 0;
-	}
-	
-	VectorSubtract (e->origin2, e->origin1, deltaVec);
-	
-	// Translate.
-	const ScePspFVector3 translation = 
-	{
-		e->origin[0] + (blend * deltaVec[0]),
-		e->origin[1] + (blend * deltaVec[1]),
-		e->origin[2] + (blend * deltaVec[2])
-	};
-	sceGumTranslate(&translation);
-	
-	
-	// orientation interpolation (Euler angles, yuck!)
-	timepassed = realtime - e->rotate_start_time;
-	
-	if (e->rotate_start_time == 0 || timepassed > 1)
-	{
-		e->rotate_start_time = realtime;
-		VectorCopy (e->angles, e->angles1);
-		VectorCopy (e->angles, e->angles2);
-	}
-	
-	if (!VectorCompare (e->angles, e->angles2))
-	{
-		e->rotate_start_time = realtime;
-		VectorCopy (e->angles2, e->angles1);
-		VectorCopy (e->angles,  e->angles2);
-		blend = 0;
-	}
-	else
-	{
-		blend = timepassed / 0.1;
-		if (cl.paused || blend > 1)
-			blend = 1;
-	}
-	
-	VectorSubtract (e->angles2, e->angles1, deltaVec);
-	
-	// always interpolate along the shortest path
-	for (i = 0; i < 3; i++)
-	{
-		if (deltaVec[i] > 180)
-		{
-			deltaVec[i] -= 360;
-		}
-		else if (deltaVec[i] < -180)
-		{
-		    deltaVec[i] += 360;
-		}
-	}
+	static float lastRealtime = 0;
 
-	// Rotate.
-	sceGumRotateZ((e->angles1[YAW] + ( blend * deltaVec[YAW])) * (GU_PI / 180.0f));
-	if (shadow == 0)
-	{
-		sceGumRotateY ((-e->angles1[PITCH] + (-blend * deltaVec[PITCH])) * (GU_PI / 180.0f));
-		sceGumRotateX ((e->angles1[ROLL] + ( blend * deltaVec[ROLL])) * (GU_PI / 180.0f));
-	}
+    float timepassed = realtime - e->translate_start_time;
+    int blend = (cl.paused || timepassed > 1) ? 0 : (int)((timepassed / 0.4) * 256);
+    if (blend > 256) blend = 256;
+    if (e->translate_start_time == 0 || VectorCompare(e->origin, e->origin2)) {
+        blend = lastRealtime == realtime ? 0 : 256;
+    }
+    VectorCopy(e->origin2, e->origin1);
+    VectorCopy(e->origin, e->origin2);
+    lastRealtime = realtime;
 
-	sceGumUpdateMatrix();
+    int deltaX = (e->origin2[0] - e->origin1[0]) * 256;
+    int deltaY = (e->origin2[1] - e->origin1[1]) * 256;
+    int deltaZ = (e->origin2[2] - e->origin1[2]) * 256;
+    int newX = e->origin1[0] * 256 + ((blend * deltaX) >> 8);
+    int newY = e->origin1[1] * 256 + ((blend * deltaY) >> 8);
+    int newZ = e->origin1[2] * 256 + ((blend * deltaZ) >> 8);
+    const ScePspFVector3 translation = { newX / 256.0f, newY / 256.0f, newZ / 256.0f };
+    sceGumTranslate(&translation);
+
+    float angles1Yaw = e->angles1[YAW], angles2Yaw = e->angles2[YAW];
+    int deltaYaw = (angles2Yaw - angles1Yaw);
+    if (deltaYaw > 180) deltaYaw -= 360;
+    else if (deltaYaw < -180) deltaYaw += 360;
+    int newYaw = (int)(angles1Yaw + (blend * deltaYaw) / 256.0f);
+    int newPitch = (int)(-e->angles1[PITCH] - (blend * (e->angles2[PITCH] - e->angles1[PITCH])) / 256.0f);
+    int newRoll = (int)(e->angles1[ROLL] + (blend * (e->angles2[ROLL] - e->angles1[ROLL])) / 256.0f);
+    sceGumPushMatrix();
+    sceGumLoadIdentity();
+    sceGumRotateZ(newYaw * (GU_PI / 180.0f));
+    if (shadow == 0) {
+        sceGumRotateY(newPitch * (GU_PI / 180.0f));
+        sceGumRotateX(newRoll * (GU_PI / 180.0f));
+    }
+    sceGumUpdateMatrix();
+    sceGumPopMatrix();
 }
 
 
