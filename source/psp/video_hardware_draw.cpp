@@ -190,6 +190,7 @@ void GL_Copy(int texture_index, int dx, int dy, int sx, int sy, int w, int h)
 
 void VID_SetPaletteTX();
 extern qboolean last_palette_wasnt_tx;
+extern qboolean last_palette_wasnt_clut4;
 void GL_Bind (int texture_index)
 {
 	// Binding the currently bound texture?
@@ -207,7 +208,9 @@ void GL_Bind (int texture_index)
 
 	// Set the palette (for CLUT4)
 	if (texture.format == GU_PSM_T4) {
-		VID_SetPalette4(texture.palette);
+		// HACK HACK HACK: avoid setting this all the time
+		if (last_palette_wasnt_clut4 == qtrue)
+			VID_SetPalette4(texture.palette);
 		vid_palmode = GU_PSM_T4;
 	} else {
 		// HACK HACK HACK: avoid setting this all the time
