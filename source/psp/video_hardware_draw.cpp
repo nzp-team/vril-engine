@@ -189,6 +189,7 @@ void GL_Copy(int texture_index, int dx, int dy, int sx, int sy, int w, int h)
 
 
 void VID_SetPaletteTX();
+extern qboolean last_palette_wasnt_tx;
 void GL_Bind (int texture_index)
 {
 	// Binding the currently bound texture?
@@ -203,72 +204,29 @@ void GL_Bind (int texture_index)
 
 	// Which texture is it?
 	const gltexture_t& texture = gltextures[texture_index];
-	
+
+	// Set the palette (for CLUT4)
 	if (texture.format == GU_PSM_T4) {
 		VID_SetPalette4(texture.palette);
 		vid_palmode = GU_PSM_T4;
-
-		sceGuTexMode(texture.format, 0, 0, GU_TRUE);
-
-		if (r_retro.value)
-			sceGuTexFilter(GU_NEAREST, GU_NEAREST);
-		else
-			sceGuTexFilter(texture.filter, texture.filter);
-
-		const void* const texture_memory = texture.vram ? texture.vram : texture.ram;
-		sceGuTexImage(0, texture.width, texture.height, texture.width, texture_memory);
 	} else {
-				
-		if(texture.palette_active == qtrue)
-		{
-			// Used for wad3 textures with their own palette
-			// 	Upload the palette.
-			sceGuClutMode(GU_PSM_8888, 0, 255, 0);
-			sceKernelDcacheWritebackRange(texture.palette_2, 256);
-			sceGuClutLoad(256 /8 , texture.palette_2);
-			reloaded_pallete = 0;
-		} else {
-			// Used for wad2 textures
+		// HACK HACK HACK: avoid setting this all the time
+		if (last_palette_wasnt_tx == qtrue)
 			VID_SetPaletteTX();
-			vid_palmode = GU_PSM_T8;
-		}
-		
-		// Set the texture mode.
-		sceGuTexMode(texture.format, texture.mipmaps , 0, texture.swizzle);
-
-		if (r_retro.value) {
-			sceGuTexFilter(GU_NEAREST, GU_NEAREST);
-		} else {
-			if (texture.mipmaps > 0 && r_mipmaps.value > 0) {
-				//Con_Printf("asd\n");
-				float slope = 0.4f;
-				sceGuTexSlope(slope); // the near from 0 slope is the lower (=best detailed) mipmap it uses
-				sceGuTexFilter(GU_LINEAR_MIPMAP_LINEAR, GU_LINEAR_MIPMAP_LINEAR);
-				sceGuTexLevelMode(int(r_mipmaps_func.value), r_mipmaps_bias.value);
-			} else {
-				sceGuTexFilter(texture.filter, texture.filter);
-			}
-		}
-		
-		// Set the texture image.
-		const void* const texture_memory = texture.vram ? texture.vram : texture.ram;
-		sceGuTexImage(0, texture.width, texture.height, texture.width, texture_memory);
-
-		if (texture.mipmaps > 0 && r_mipmaps.value > 0) {
-			int size = (texture.width * texture.height);
-			int offset = size;
-			int div = 2;
-
-			for (int i = 1; i <= texture.mipmaps; i++) {
-				void* const texture_memory2 = ((byte*)texture_memory) + offset;
-				sceGuTexImage(i, texture.width / div, texture.height / div, texture.width / div, texture_memory2);
-				offset += size / (div*div);
-				div *= 2;
-			}
-		}
+		vid_palmode = GU_PSM_T8;
 	}
 
+	sceGuTexMode(texture.format, texture.mipmaps , 0, GU_TRUE);
+	
+	// Set the Texture filter.
+	if (r_retro.value)
+		sceGuTexFilter(GU_NEAREST, GU_NEAREST);
+	else
+		sceGuTexFilter(texture.filter, texture.filter);
 
+	// Set the texture image.
+	const void* const texture_memory = texture.vram ? texture.vram : texture.ram;
+	sceGuTexImage(0, texture.width, texture.height, texture.width, texture_memory);
 }
 
 void GL_BindLM (int texture_index)

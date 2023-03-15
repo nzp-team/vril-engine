@@ -109,6 +109,8 @@ void VID_InitPaleteLM()
 	}
 }
 
+qboolean last_palette_wasnt_tx;
+
 void VID_SetPaletteLM()
 {
 	// Upload the palette.
@@ -116,6 +118,7 @@ void VID_SetPaletteLM()
 	sceKernelDcacheWritebackRange(d_8to24tableLM, sizeof(d_8to24tableLM));
 	sceGuClutLoad(palette_size / 8, d_8to24tableLM);
     reloaded_pallete = 1;
+	last_palette_wasnt_tx = qtrue;
 }
 
 void VID_SetPaletteTX()
@@ -125,12 +128,14 @@ void VID_SetPaletteTX()
 	sceKernelDcacheWritebackRange(d_8to24table, sizeof(d_8to24table));
 	sceGuClutLoad(palette_size / 8, d_8to24table);
 	reloaded_pallete = 1;
+	last_palette_wasnt_tx = qfalse;
 }
 
 void VID_SetPalette4(unsigned char* clut4pal) {
 	sceGuClutMode(GU_PSM_8888, 0, 0xFF, 0);
 	sceKernelDcacheWritebackRange(clut4pal, sizeof(clut4pal));
 	sceGuClutLoad(2, clut4pal);
+	last_palette_wasnt_tx = qtrue;
 }
 
 void VID_SetPalette(unsigned char* palette)
@@ -153,6 +158,7 @@ void VID_SetPalette(unsigned char* palette)
 	sceKernelDcacheWritebackRange(d_8to24table, sizeof(d_8to24table));
 	sceGuClutLoad(palette_size / 8, d_8to24table);
 	reloaded_pallete = 1;
+	last_palette_wasnt_tx = qtrue;
 }
 
 void VID_ShiftPalette(unsigned char* palette)
