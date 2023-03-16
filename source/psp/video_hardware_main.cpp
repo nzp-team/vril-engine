@@ -1485,49 +1485,64 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e, fl
 		frame = 0;
 	}
 
-	pose = paliashdr->frames[frame].firstpose;
-	numposes = paliashdr->frames[frame].numposes;
+	// HACK: if we're a certain distance away, don't bother blending
+	// motolegacy -- Lets not care about Z (up).. chances are they're out of the frustum anyway
+	int dist_x = (cl.viewent.origin[0] - e->origin[0]);
+	int dist_y = (cl.viewent.origin[1] - e->origin[1]);
+	int distance_from_client = (int)((dist_x) * (dist_x) + (dist_y) * (dist_y)); // no use sqrting, just slows us down.
 
-	if (numposes > 1)
-	{
-		//Con_Printf("numposes (%i) > 1: %s, %i\n", numposes, e->model->name, frame); FIXME-Jukkiwashere (not sure if this was something you were working on blubs)
-  		//if (e->iframetime)
-		//	e->frame_interval = e->iframetime;
-		//else
-		e->frame_interval = paliashdr->frames[frame].interval;
-  		pose += (int)(cl.time / e->frame_interval) % numposes;
-  	}
-	else
-	{
-		/* One tenth of a second is a good for most Quake animations.
-		If the nextthink is longer then the animation is usually meant to pause
-		(e.g. check out the shambler magic animation in shambler.qc).  If its
-		shorter then things will still be smoothed partly, and the jumps will be
-		less noticable because of the shorter time.  So, this is probably a good
-		assumption. */
-		//Jukki, except that this is not good for us. We need to control it better
-		//if (e->iframetime)
-		//	e->frame_interval = e->iframetime;
-		//else
-			e->frame_interval = 0.1;
+	// They're too far away from us to care about blending their frames.
+	if (distance_from_client >= 40000) { // 200 * 200
+		// Fix them from jumping from last lerp
+		e->pose1 = e->pose2 = paliashdr->frames[frame].firstpose;
+		e->frame_interval = 0.1;
+
+		GL_DrawAliasFrame (paliashdr, paliashdr->frames[frame].firstpose, apitch, ayaw);
+	} else {
+		pose = paliashdr->frames[frame].firstpose;
+		numposes = paliashdr->frames[frame].numposes;
+
+		if (numposes > 1)
+		{
+			//Con_Printf("numposes (%i) > 1: %s, %i\n", numposes, e->model->name, frame); FIXME-Jukkiwashere (not sure if this was something you were working on blubs)
+			//if (e->iframetime)
+			//	e->frame_interval = e->iframetime;
+			//else
+			e->frame_interval = paliashdr->frames[frame].interval;
+			pose += (int)(cl.time / e->frame_interval) % numposes;
+		}
+		else
+		{
+			/* One tenth of a second is a good for most Quake animations.
+			If the nextthink is longer then the animation is usually meant to pause
+			(e.g. check out the shambler magic animation in shambler.qc).  If its
+			shorter then things will still be smoothed partly, and the jumps will be
+			less noticable because of the shorter time.  So, this is probably a good
+			assumption. */
+			//Jukki, except that this is not good for us. We need to control it better
+			//if (e->iframetime)
+			//	e->frame_interval = e->iframetime;
+			//else
+				e->frame_interval = 0.1;
+		}
+
+		if (e->pose2 != pose)
+		{
+			e->frame_start_time = realtime;
+			e->pose1 = e->pose2;
+			e->pose2 = pose;
+			blend = 0;
+		}
+		else
+			blend = (realtime - e->frame_start_time) / e->frame_interval;
+		// wierd things start happening if blend passes 1
+		if (cl.paused || blend > 1) blend = 1;
+
+		if (blend == 1)
+			GL_DrawAliasFrame (paliashdr, pose, apitch, ayaw);
+		else
+			GL_DrawAliasBlendedFrame (paliashdr, e->pose1, e->pose2, blend, apitch, ayaw);
 	}
-
-	if (e->pose2 != pose)
-	{
-		e->frame_start_time = realtime;
-		e->pose1 = e->pose2;
-		e->pose2 = pose;
-		blend = 0;
-	}
-	else
-		blend = (realtime - e->frame_start_time) / e->frame_interval;
-	// wierd things start happening if blend passes 1
-	if (cl.paused || blend > 1) blend = 1;
-
-	if (blend == 1)
-		GL_DrawAliasFrame (paliashdr, pose, apitch, ayaw);
-	else
-		GL_DrawAliasBlendedFrame (paliashdr, e->pose1, e->pose2, blend, apitch, ayaw);
 }
 
 /*
