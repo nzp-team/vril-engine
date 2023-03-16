@@ -190,7 +190,6 @@ void GL_Copy(int texture_index, int dx, int dy, int sx, int sy, int w, int h)
 
 void VID_SetPaletteTX();
 extern qboolean last_palette_wasnt_tx;
-extern qboolean last_palette_wasnt_clut4;
 void GL_Bind (int texture_index)
 {
 	// Binding the currently bound texture?
@@ -206,18 +205,13 @@ void GL_Bind (int texture_index)
 	// Which texture is it?
 	const gltexture_t& texture = gltextures[texture_index];
 
-	// Set the palette (for CLUT4)
-	if (texture.format == GU_PSM_T4) {
-		VID_SetPalette4(texture.palette);
-		vid_palmode = GU_PSM_T4;
-		sceGuTexMode(texture.format, texture.mipmaps , 0, GU_TRUE);
-	} else {
-		// HACK HACK HACK: avoid setting this all the time
-		if (last_palette_wasnt_tx == qtrue)
-			VID_SetPaletteTX();
-		vid_palmode = GU_PSM_T8;
-		sceGuTexMode(texture.format, texture.mipmaps , 0, texture.swizzle);
-	}
+
+	// HACK HACK HACK: avoid setting this all the time
+	if (last_palette_wasnt_tx == qtrue)
+		VID_SetPaletteTX();
+
+	vid_palmode = GU_PSM_T8;
+	sceGuTexMode(texture.format, texture.mipmaps , 0, texture.swizzle);
 	
 	// Set the Texture filter.
 	if (r_retro.value)
