@@ -119,7 +119,7 @@ NET_LIBS    = -lpspwlan -lpspnet_adhoc -lpspnet_adhocctl
 STD_LIBS	= -lstdc++ -lm -lc
 LIBS		= $(GPROF_LIBS) $(SDL_LIBS) $(GU_LIBS) $(AUDIO_LIBS) $(MISC_LIBS) $(STD_LIBS) $(NET_LIBS)
 
-CFLAGS = -ffast-math -O3 -G0 -Wall $(GPROF_FLAGS) -Did386="0" -DPSP $(MODE) $(HARDWARE_VIDEO_ONLY_FLAGS) -DSWIZZLE32 -DSLIM -DPSP_MP3_HWDECODE -DFULLBRIGHT -DHL_RENDER -Wno-strict-aliasing -DPSP_VFPU
+CFLAGS = -ffast-math -O3 -Ofast -G0 -Wall $(GPROF_FLAGS) -Did386="0" -DPSP $(MODE) $(HARDWARE_VIDEO_ONLY_FLAGS) -DSWIZZLE32 -DSLIM -DPSP_MP3_HWDECODE -DFULLBRIGHT -DHL_RENDER -Wno-strict-aliasing -DPSP_VFPU
 CXXFLAGS = -fno-rtti -Wcast-qual -Wno-write-strings -Wno-sign-compare -Wno-strict-aliasing
 ASFLAGS = $(CFLAGS) -c
 
