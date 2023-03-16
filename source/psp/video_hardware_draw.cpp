@@ -217,7 +217,7 @@ void GL_Bind (int texture_index)
 		vid_palmode = GU_PSM_T8;
 	}
 
-	sceGuTexMode(texture.format, texture.mipmaps , 0, GU_TRUE);
+	sceGuTexMode(texture.format, texture.mipmaps , 0, texture.swizzle);
 	
 	// Set the Texture filter.
 	if (r_retro.value)
