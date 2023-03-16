@@ -210,14 +210,14 @@ void GL_Bind (int texture_index)
 	if (texture.format == GU_PSM_T4) {
 		VID_SetPalette4(texture.palette);
 		vid_palmode = GU_PSM_T4;
+		sceGuTexMode(texture.format, texture.mipmaps , 0, GU_TRUE);
 	} else {
 		// HACK HACK HACK: avoid setting this all the time
 		if (last_palette_wasnt_tx == qtrue)
 			VID_SetPaletteTX();
 		vid_palmode = GU_PSM_T8;
+		sceGuTexMode(texture.format, texture.mipmaps , 0, texture.swizzle);
 	}
-
-	sceGuTexMode(texture.format, texture.mipmaps , 0, texture.swizzle);
 	
 	// Set the Texture filter.
 	if (r_retro.value)
