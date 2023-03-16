@@ -121,11 +121,8 @@ int GreatestCommonDivisor (int i1, int i2);
 void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
 int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct mplane_s *plane);
 
-static inline float anglemod(float a)
-{
-	a = (360.0/65536) * ((int)(a*(65536/360.0)) & 65535);
-	return a;
-}
+
+#define anglemod(a) ((360.0/65536) * ((int)((a)*(65536/360.0)) & 65535))
 
 #define VectorL2Compare(v, w, m)					\
 	(_mathlib_temp_float1 = (m) * (m),				\
