@@ -208,9 +208,7 @@ void GL_Bind (int texture_index)
 
 	// Set the palette (for CLUT4)
 	if (texture.format == GU_PSM_T4) {
-		// HACK HACK HACK: avoid setting this all the time
-		if (last_palette_wasnt_clut4 == qtrue)
-			VID_SetPalette4(texture.palette);
+		VID_SetPalette4(texture.palette);
 		vid_palmode = GU_PSM_T4;
 	} else {
 		// HACK HACK HACK: avoid setting this all the time
