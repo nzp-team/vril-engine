@@ -132,7 +132,7 @@ namespace quake
 				my_addr = inet_addr(szMyIPAddr);
 
 				// if the quake hostname isn't set, set it to the machine name
-				if (Q_strcmp(hostname.string, "UNNAMED") == 0)
+				if (strcmp(hostname.string, "UNNAMED") == 0)
 				{
 					buff[15] = 0;
 					Cvar_Set ("hostname", buff);

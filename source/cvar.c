@@ -34,7 +34,7 @@ cvar_t *Cvar_FindVar (char *var_name)
 	cvar_t	*var;
 	
 	for (var=cvar_vars ; var ; var=var->next)
-		if (!Q_strcmp (var_name, var->name))
+		if (!strcmp (var_name, var->name))
 			return var;
 
 	return NULL;
@@ -113,7 +113,7 @@ void Cvar_Set (char *var_name, char *value)
 		return;
 	}
 
-	changed = Q_strcmp(var->string, value);
+	changed = strcmp(var->string, value);
 	
 	Z_Free (var->string);	// free the old value string
 	

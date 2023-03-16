@@ -185,7 +185,7 @@ int CheckParm (char **args, int argc, char *parm)
 	{
 		if (!args[i])
 			continue;               // NEXTSTEP sometimes clears appkit vars.
-		if (!Q_strcmp (parm,args[i]))
+		if (!strcmp (parm,args[i]))
 			return i;
 	}
 

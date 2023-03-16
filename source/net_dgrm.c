@@ -403,7 +403,7 @@ void NET_Stats_f (void)
 		Con_Printf("shortPacketCount           = %i\n", shortPacketCount);
 		Con_Printf("droppedDatagrams           = %i\n", droppedDatagrams);
 	}
-	else if (Q_strcmp(Cmd_Argv(1), "*") == 0)
+	else if (strcmp(Cmd_Argv(1), "*") == 0)
 	{
 		for (s = net_activeSockets; s; s = s->next)
 			PrintStats(s);
@@ -781,7 +781,7 @@ static qsocket_t *_Datagram_CheckNewConnections (void)
 	command = MSG_ReadByte();
 	if (command == CCREQ_SERVER_INFO)
 	{
-		if (Q_strcmp(MSG_ReadString(), "QUAKE") != 0)
+		if (strcmp(MSG_ReadString(), "QUAKE") != 0)
 			return NULL;
 
 		SZ_Clear(&net_message);
@@ -884,7 +884,7 @@ static qsocket_t *_Datagram_CheckNewConnections (void)
 	if (command != CCREQ_CONNECT)
 		return NULL;
 
-	if (Q_strcmp(MSG_ReadString(), "QUAKE") != 0)
+	if (strcmp(MSG_ReadString(), "QUAKE") != 0)
 		return NULL;
 
 	if (MSG_ReadByte() != NET_PROTOCOL_VERSION)

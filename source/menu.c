@@ -1927,9 +1927,9 @@ void M_Setup_Key (int k)
 	//		break;
 
 		// setup_cursor == 4 (OK)
-		if (Q_strcmp(cl_name.string, setup_myname) != 0)
+		if (strcmp(cl_name.string, setup_myname) != 0)
 			Cbuf_AddText ( va ("name \"%s\"\n", setup_myname) );
-		if (Q_strcmp(hostname.string, setup_hostname) != 0)
+		if (strcmp(hostname.string, setup_hostname) != 0)
 			Cvar_Set("hostname", setup_hostname);
 		m_entersound = true;
 		M_Menu_MultiPlayer_f ();

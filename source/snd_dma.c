@@ -285,7 +285,7 @@ sfx_t *S_FindName (char *name)
 
 // see if already loaded
 	for (i=0 ; i < num_sfx ; i++)
-		if (!Q_strcmp(known_sfx[i].name, name))
+		if (!strcmp(known_sfx[i].name, name))
 		{
 			return &known_sfx[i];
 		}

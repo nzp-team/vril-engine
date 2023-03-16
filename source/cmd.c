@@ -713,7 +713,7 @@ void	Cmd_AddCommand (char *cmd_name, xcommand_t function)
 // fail if the command already exists
 	for (cmd=cmd_functions ; cmd ; cmd=cmd->next)
 	{
-		if (!Q_strcmp (cmd_name, cmd->name))
+		if (!strcmp (cmd_name, cmd->name))
 		{
 			Con_Printf ("Cmd_AddCommand: %s already defined\n", cmd_name);
 			return;
@@ -738,7 +738,7 @@ qboolean	Cmd_Exists (char *cmd_name)
 
 	for (cmd=cmd_functions ; cmd ; cmd=cmd->next)
 	{
-		if (!Q_strcmp (cmd_name,cmd->name))
+		if (!strcmp (cmd_name,cmd->name))
 			return true;
 	}
 
