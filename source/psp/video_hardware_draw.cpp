@@ -548,7 +548,7 @@ void Draw_Init (void)
 			detail_texture = GL_LoadTexture ("Detail", 256, 256, detail, qfalse, GU_LINEAR, 3);
 	}
 
-	sniper_scope = Draw_CachePic ("gfx/hud/scope");
+	sniper_scope = Draw_CachePic ("gfx/hud/scope_256");
 	
 	zombie_skins[0][0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
 	zombie_skins[0][1] = loadtextureimage ("models/ai/zfull.mdl_1", 0, 0, qtrue, GU_LINEAR);
@@ -1344,8 +1344,20 @@ void Draw_Crosshair (void)
     }
     else if (crosshair.value && cl.stats[STAT_ZOOM] != 1 && cl.stats[STAT_ZOOM] != 2)
 		Draw_CharacterRGBA((vid.width - 8)/2, (vid.height - 8)/2, '.', 255, col, col, crosshair_opacity);
-	if (cl.stats[STAT_ZOOM] == 2)
-		Draw_Pic (0, 0, sniper_scope);
+
+	// The scope was originally a 480x272 graphic to fit the screen..
+	// but this is a total waste of VRAM.. 1mB down to 256kB lmao
+	if (cl.stats[STAT_ZOOM] == 2) {
+		// Draw the Scope
+		Draw_Pic (112, 7, sniper_scope);
+
+		// And its borders
+		Draw_FillByColor(0, 0, 480, 7, GU_RGBA(0, 0, 0, 255)); // Top
+		Draw_FillByColor(0, 263, 480, 9, GU_RGBA(0, 0, 0, 255)); // Bottom
+		Draw_FillByColor(0, 7, 112, 256, GU_RGBA(0, 0, 0, 255)); // Left
+		Draw_FillByColor(368, 7, 112, 256, GU_RGBA(0, 0, 0, 255)); // Right
+	}
+		
    	if (Hitmark_Time > sv.time)
         Draw_Pic ((vid.width - hitmark->width)/2,(vid.height - hitmark->height)/2, hitmark);
 }
@@ -3129,15 +3141,8 @@ int GL_LoadImages (const char *identifier, int width, int height, const byte *da
 	}
 
 	texture.filter = filter;
-	if(texture.format < GU_PSM_DXT1)
-	{
-		texture.mipmaps	= mipmap_level;
-	}
-	else
-	{
-		texture.mipmaps	= 0;
-	}
-	
+	texture.mipmaps = 0; 		// sacrifice some beauty for vram.
+
 	switch(texture.format)
 	{
 		case GU_PSM_T8:
@@ -3185,19 +3190,7 @@ int GL_LoadImages (const char *identifier, int width, int height, const byte *da
 	// Allocate the RAM.
 	std::size_t buffer_size = GL_GetTexSize(texture.format, texture.width, texture.height, 0);
 
-	Con_DPrintf("Loading: %s [%dx%d](%0.2f KB)\n",texture.identifier,texture.width,texture.height, (float) buffer_size/1024);
-	
-	//Con_Printf("Loading: %s [%dx%d](%d Bytes) (Format: %d, BPP: %d)\n",texture.identifier,texture.width,texture.height, buffer_size,texture.format,bpp);
-
-	if (texture.mipmaps > 0 && texture.format < GU_PSM_DXT1)
-	{
-		int size_incr = buffer_size/4;
-		for (int i= 1;i <= texture.mipmaps;i++)
-		{
-			buffer_size += size_incr;
-			size_incr = size_incr/4;
-		}
-	}
+	Con_Printf("Loading: %s [%dx%d](%0.2f KB)\n",texture.identifier,texture.width,texture.height, (float) buffer_size/1024);
 
 	texture.ram	= static_cast<texel*>(memalign(16, buffer_size));
 
