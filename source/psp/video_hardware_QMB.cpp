@@ -82,7 +82,6 @@ typedef	enum
 	p_muzzleflash,
 	p_muzzleflash2,
 	p_muzzleflash3,
-	p_muzzleflash8,
 	p_fly,
     p_q3blood_trail,
 	p_q3blood_decal,
@@ -125,7 +124,6 @@ typedef	enum
 	ptex_muzzleflash,
 	ptex_muzzleflash2,
 	ptex_muzzleflash3,
-	ptex_muzzleflash8,
 	ptex_bloodcloud,
 	ptex_fly,
    	ptex_q3blood,
@@ -564,17 +562,6 @@ void QMB_InitParticles (void)
 
     loading_cur_step++;
 	SCR_UpdateScreen ();
-
-	if (!(particleimage = loadtextureimage("textures/mzfl/muzzleflash8", 0, 0, qfalse, GU_LINEAR)))
-	{
-		//Clear_LoadingFill ();
-		return;
-	}
-	//max_s = max_t = 256.0;
-	ADD_PARTICLE_TEXTURE(ptex_muzzleflash8, particleimage, 0, 1, 0, 0, 128, 128);
-
-    loading_cur_step++;
-	SCR_UpdateScreen ();
 	
 	max_s = max_t = 64.0;
 	if (!(particleimage = loadtextureimage("textures/particles/bloodcloud", 0, 0, qfalse, GU_LINEAR)))
@@ -694,7 +681,6 @@ void QMB_InitParticles (void)
 	ADD_PARTICLE_TYPE(p_muzzleflash, pd_billboard, GU_SRC_ALPHA, GU_FIX, ptex_muzzleflash, 255, 0, 0, pm_static, 0);
 	ADD_PARTICLE_TYPE(p_muzzleflash2, pd_billboard, GU_SRC_ALPHA, GU_FIX, ptex_muzzleflash2, 255, 0, 0, pm_static, 0);
 	ADD_PARTICLE_TYPE(p_muzzleflash3, pd_billboard, GU_SRC_ALPHA, GU_FIX, ptex_muzzleflash3, 255, 0, 0, pm_static, 0);
-	ADD_PARTICLE_TYPE(p_muzzleflash8, pd_billboard, GU_SRC_ALPHA, GU_FIX, ptex_muzzleflash8, 220, 0, 0, pm_static, 0);
 	ADD_PARTICLE_TYPE(p_rain, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_generic, 255, -16, 0, pm_rain, 0);
 	
 	loading_cur_step++;
@@ -913,7 +899,6 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 		case p_muzzleflash:
 		case p_muzzleflash2:
 		case p_muzzleflash3:
-		case p_muzzleflash8:
 			VectorCopy (org, p->org);
 			p->rotspeed = (rand() & 45) - 90;
 			//p->size = size * (rand() % 6) / 4;//r00k
@@ -2706,11 +2691,6 @@ void QMB_MuzzleFlashLG(vec3_t org)
 
 	if (!particle_mode)
 		return;
-
-	if (!(ISUNDERWATER(TruePointContents(org))))
-	{
-		AddParticle (p_muzzleflash8, org, 1, 8, 0.4 * frametime, color, zerodir);
-	}
 }
 
 void QMB_RocketTrail (vec3_t start, vec3_t end, trail_type_t type)
