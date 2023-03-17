@@ -82,7 +82,6 @@ typedef	enum
 	p_muzzleflash,
 	p_muzzleflash2,
 	p_muzzleflash3,
-	p_fly,
     p_q3blood_trail,
 	p_q3blood_decal,
 	p_q3rocketsmoke,
@@ -125,7 +124,6 @@ typedef	enum
 	ptex_muzzleflash2,
 	ptex_muzzleflash3,
 	ptex_bloodcloud,
-	ptex_fly,
    	ptex_q3blood,
 	ptex_q3blood_trail,
 	ptex_q3smoke,
@@ -574,38 +572,8 @@ void QMB_InitParticles (void)
 
 	loading_cur_step++;
 	SCR_UpdateScreen ();
-/*
-	if (!(particleimage = loadtextureimage("textures/particles/blood1", 0, 0, qfalse, GU_LINEAR)))
-	{
-        Clear_LoadingFill ();
-		return;
-	}
 
-    max_s = max_t = 256.0;
-	ADD_PARTICLE_TEXTURE(ptex_blood1, particleimage, 0, 1, 0, 0, 256, 256);
-
-    loading_cur_step++;
-	SCR_UpdateScreen ();
-
-	if (!(particleimage = loadtextureimage("textures/particles/blood2", 0, 0, qfalse, GU_LINEAR)))
-	{
-        Clear_LoadingFill ();
-		return;
-	}
-    max_s = max_t = 256.0;
-	ADD_PARTICLE_TEXTURE(ptex_blood2, particleimage, 0, 1, 0, 0, 256, 256);
-
-    loading_cur_step++;
-	SCR_UpdateScreen ();
-
-*/
-	if (!(particleimage = loadtextureimage("textures/particles/fly", 0, 0, qfalse, GU_LINEAR)))
-	{
-		//Clear_LoadingFill ();
-		return;
-	}
 	max_s = max_t = 256.0;
-	ADD_PARTICLE_TEXTURE(ptex_fly, particleimage, 0, 1, 0, 0, 256, 256);
 
     loading_cur_step++;
 	SCR_UpdateScreen ();
@@ -640,7 +608,6 @@ void QMB_InitParticles (void)
 	ADD_PARTICLE_TYPE(p_dpsmoke, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_dpsmoke, 85, 3, 0, pm_die, 0);
 	ADD_PARTICLE_TYPE(p_teleflare, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_blueflare, 255, 0, 0, pm_die, 0);
 	ADD_PARTICLE_TYPE(p_flare, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_bubble, 255, 0, 0, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_fly, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_fly, 255, 0, 0, pm_die, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
@@ -907,7 +874,6 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 
 		case p_teleflare:
 		case p_flare:
-		case p_fly:
 			VectorCopy (org, p->org);
 			VectorCopy (dir, p->vel);
 			p->growth = 1.75;
@@ -3375,8 +3341,6 @@ void QMB_FlyParticles (vec3_t origin, int count)
 			org[0] = origin[0] + r_avertexnormals[i][0]*dist + forward[0]*32;
 			org[1] = origin[1] + r_avertexnormals[i][1]*dist + forward[1]*32;
 			org[2] = origin[2] + r_avertexnormals[i][2]*dist + forward[2]*32;
-
-			AddParticle (p_fly, org, 1, 1,0.01, color, forward);
 		}
 	}
 }
