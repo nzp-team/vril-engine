@@ -3041,6 +3041,7 @@ int GL_LoadTextureLM (const char *identifier, int width, int height, const byte 
 GL_LoadImages
 ================
 */
+int total_overbudget_texturemem;
 int GL_LoadImages (const char *identifier, int width, int height, const byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp)
 {
 	int texture_index = -1;
@@ -3190,7 +3191,7 @@ int GL_LoadImages (const char *identifier, int width, int height, const byte *da
 	// Allocate the RAM.
 	std::size_t buffer_size = GL_GetTexSize(texture.format, texture.width, texture.height, 0);
 
-	Con_Printf("Loading: %s [%dx%d](%0.2f KB)\n",texture.identifier,texture.width,texture.height, (float) buffer_size/1024);
+	Con_DPrintf("Loading: %s [%dx%d](%0.2f KB)\n",texture.identifier,texture.width,texture.height, (float) buffer_size/1024);
 
 	texture.ram	= static_cast<texel*>(memalign(16, buffer_size));
 
@@ -3226,6 +3227,10 @@ int GL_LoadImages (const char *identifier, int width, int height, const byte *da
 	{
 		free(texture.ram);
 		texture.ram = NULL;
+	} else {
+		Con_Printf("Couldn't fit %s into VRAM (%dkB)\n", identifier, buffer_size/1024);
+		total_overbudget_texturemem += buffer_size/1024;
+		Con_Printf("RESIDUAL VRAM: %d\n", total_overbudget_texturemem);
 	}
 
 	// Done.
