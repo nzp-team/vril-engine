@@ -48,7 +48,6 @@ qpic_t		*sniper_scope;
 int			translate_texture;
 int			char_texture;
 int			detail_texture;
-int			underwater_texture;
 //int			zombie_skins[3][8];
 int			zombie_skins[2][2];
 int         ref_texture;
@@ -519,7 +518,7 @@ Draw_Init
 */
 void Draw_Init (void)
 {
-	byte	*detail, *uw;
+	byte	*detail;
 	int i;
 
   	// load the console background and the charset
@@ -547,20 +546,6 @@ void Draw_Init (void)
 		}
 		else
 			detail_texture = GL_LoadTexture ("Detail", 256, 256, detail, qfalse, GU_LINEAR, 3);
-	}
-
-	underwater_texture = loadtextureimage ("gfx/uwater", 0, 0, qfalse, GU_LINEAR);
-	if (underwater_texture == 0)// did not find a matching TGA...
-	{
-
-		uw = static_cast<byte*>(COM_LoadTempFile ("gfx/uwater.lmp"));
-		if (!uw)
-		{
-			Con_Printf ("Couldn't load gfx/uwater \n");
-			underwater_texture = nonetexture;
-		}
-		else
-			underwater_texture = GL_LoadTexture ("Underwater", 256, 256, uw, qfalse, GU_LINEAR, 0);
 	}
 
 	sniper_scope = Draw_CachePic ("gfx/hud/scope");

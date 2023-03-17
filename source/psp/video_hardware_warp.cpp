@@ -443,7 +443,6 @@ based on water polys!
 By Crow_bar.
 =============
 */
-extern int underwater_texture;
 void EmitUnderWaterPolys (void)
 {
    	const float scale		= (-3 * (0.5 / 64));
@@ -452,8 +451,6 @@ void EmitUnderWaterPolys (void)
 	sceGuEnable(GU_BLEND);
 	sceGuBlendFunc (GU_ADD, GU_DST_COLOR, GU_SRC_COLOR, 0, 0);
     sceGuTexFunc(GU_TFX_DECAL, GU_TCC_RGBA);
-
-	GL_Bind(underwater_texture);
 
 
 	// For each polygon...

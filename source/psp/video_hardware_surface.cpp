@@ -1135,7 +1135,6 @@ void R_DrawWaterSurfaces (void)
 DrawTextureChains
 ================
 */
-extern int underwater_texture;
 
 static void DrawTextureChains (void)
 {
@@ -1165,21 +1164,6 @@ static void DrawTextureChains (void)
 			for ( ; s ; s = s->texturechain)
 			{
 				R_RenderBrushPoly (s);
-
-				//Crow_bar //begin blubsremoved because quartal
-				//if ((s->flags & SURF_UNDERWATER) && r_caustics.value && underwater_texture)
-				//{
-				//	s->polys->caustics_chain = caustics_polys;
-				//	caustics_polys = s->polys;
-				//}
-				// end blubsremoved quartal
-/*
-				if (!(s->flags & SURF_UNDERWATER) && r_detail.value && t->dt_texturenum)
-			    {
-				  s->polys->detail_chain = detail_polys;
-				  detail_polys = s->polys;
-			    }
-*/
 			}
 		}
 
