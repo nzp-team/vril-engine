@@ -49,7 +49,6 @@ typedef	enum
 	p_fire,
 	p_fire2,
 	p_bubble,
-	p_lavasplash,
 	p_gunblast,
 	p_chunk,
 	p_shockwave,
@@ -110,11 +109,8 @@ typedef	enum
 {
 	ptex_none,
 	ptex_smoke,
-	ptex_bubble,
 	ptex_generic,
 	ptex_dpsmoke,
-	ptex_lava,
-	ptex_blueflare,
 	ptex_blood1,
 	ptex_blood2,
 	ptex_blood3,
@@ -291,7 +287,6 @@ static byte *ColorForParticle (part_type_t type)
 		break;
 
 	case p_teleflare:
-	case p_lavasplash:
 		color[0] = color[1] = color[2] = 128 + (rand() & 127);
 		break;
 
@@ -447,16 +442,15 @@ void QMB_InitParticles (void)
 	strcpy(loading_name, "Particles");
 	SCR_UpdateScreen ();
 
-	max_s = max_t = 256.0;
+	max_s = max_t = 128.0;
+
+	// LAST 4 PARAMS = START X, START Y, END X, END Y
 	ADD_PARTICLE_TEXTURE(ptex_none, 0, 0, 1, 0, 0, 0, 0);
 	ADD_PARTICLE_TEXTURE(ptex_blood1, particleimage, 0, 1, 0, 0, 64, 64);
 	ADD_PARTICLE_TEXTURE(ptex_blood2, particleimage, 0, 1, 64, 0, 128, 64);
-	ADD_PARTICLE_TEXTURE(ptex_lava, particleimage, 0, 1, 128, 0, 192, 64);
-	ADD_PARTICLE_TEXTURE(ptex_blueflare, particleimage, 0, 1, 192, 0, 256, 64);
-	ADD_PARTICLE_TEXTURE(ptex_generic, particleimage, 0, 1, 0, 96, 96, 192);
-	ADD_PARTICLE_TEXTURE(ptex_smoke, particleimage, 0, 1, 96, 96, 192, 192);
-	ADD_PARTICLE_TEXTURE(ptex_blood3, particleimage, 0, 1, 192, 96, 256, 160);
-	ADD_PARTICLE_TEXTURE(ptex_bubble, particleimage, 0, 1, 192, 160, 224, 192);
+	ADD_PARTICLE_TEXTURE(ptex_generic, particleimage, 0, 1, 0, 64, 32, 96);
+	ADD_PARTICLE_TEXTURE(ptex_smoke, particleimage, 0, 1, 32, 64, 96, 128);
+	ADD_PARTICLE_TEXTURE(ptex_blood3, particleimage, 0, 1, 0, 96, 32, 128);
 	
 	for (i=0 ; i<8 ; i++)
 		ADD_PARTICLE_TEXTURE(ptex_dpsmoke, particleimage, i, 8, i * 32, 64, (i + 1) * 32, 96);
@@ -606,8 +600,6 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 
 	ADD_PARTICLE_TYPE(p_dpsmoke, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_dpsmoke, 85, 3, 0, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_teleflare, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_blueflare, 255, 0, 0, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_flare, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_bubble, 255, 0, 0, pm_die, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
@@ -620,16 +612,12 @@ void QMB_InitParticles (void)
 	loading_cur_step++;
 	SCR_UpdateScreen();
 	
-	ADD_PARTICLE_TYPE(p_lavasplash, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_lava, 170, 0, 0, pm_nophysics, 0);
-	ADD_PARTICLE_TYPE(p_bubble, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_bubble, 204, 8, 0, pm_float, 0);
-	ADD_PARTICLE_TYPE(p_staticbubble, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_bubble, 204, 0, 0, pm_static, 0);
 	ADD_PARTICLE_TYPE(p_flame, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_generic, 200, 10, 0, pm_die, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
 	
 	ADD_PARTICLE_TYPE(p_lavatrail, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_dpsmoke, 255, 3, 0, pm_normal, 0);//R00k
-	ADD_PARTICLE_TYPE(p_bubble2, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_bubble, 204, 1, 0, pm_float, 0);
 	ADD_PARTICLE_TYPE(p_glow, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_generic, 204, 0, 0, pm_die, 0);
 	ADD_PARTICLE_TYPE(p_alphatrail, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_generic, 100, 0, 0, pm_static, 0);
 	
@@ -779,7 +767,6 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 			VectorClear (p->vel);
 			break;
 
-		case p_lavasplash:
 		case p_streak:
 		case p_streakwave:
 		case p_shockwave:
@@ -2899,7 +2886,6 @@ void QMB_LavaSplash (vec3_t org)
 			vel = 50 + (rand() & 63);
 			VectorScale (dir, vel, dir);
 
-			AddParticle (p_lavasplash, neworg, 1, 4.5, 2.6 + (rand() & 31) * 0.02, NULL, dir);
 		}
 	}
 }
