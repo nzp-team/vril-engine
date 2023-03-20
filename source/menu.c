@@ -874,7 +874,7 @@ void M_Map_Draw (void)
 
 			if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
 				menu_cuthum = Draw_CacheImg(custom_maps[i + multiplier].map_thumbnail_path);
-				Draw_Pic(256, 45, menu_cuthum);
+				Draw_StretchPic(256, 45, menu_cuthum, 175, 100);
 			}
 			
 			if (custom_maps[i + multiplier].map_name_pretty != 0)
@@ -1123,25 +1123,25 @@ void M_SinglePlayer_Draw (void)
 	// Map description & pic
 	switch(m_singleplayer_cursor) {
 		case 0:
-			Draw_Pic(256, 45, menu_ndu);
+			Draw_StretchPic(256, 45, menu_ndu, 175, 100);
 			Draw_ColoredString(215, 155, "Lock and Load; Crashed Plane.", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 165, "Divided. Thousands of Undead.", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 175, "This is the Night of the Dead.", 255, 255, 255, 255, 1);
 			break;
 		case 1:
-			Draw_Pic(256, 45, menu_wh);
+			Draw_StretchPic(256, 45, menu_wh, 175, 100);
 			Draw_ColoredString(215, 155, "Old Warehouse full of Zombies!", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 165, "Fight your way to the Power", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 175, "Switch through the Hordes!", 255, 255, 255, 255, 1);
 			break;
 		case 2:
-			Draw_Pic(256, 45, menu_ch);
+			Draw_StretchPic(256, 45, menu_ch, 175, 100);
 			Draw_ColoredString(215, 155, "No Santa this year. Though we're", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 165, "sure you will get presents from", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 175, "the undead! Will you accept them?", 255, 255, 255, 255, 1);
 			break;
 		case 3:
-			Draw_Pic(256, 45, menu_custom);
+			Draw_StretchPic(256, 45, menu_custom, 175, 100);
 			Draw_ColoredString(215, 155, "Custom Maps made by Community", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 165, "Members on the Fourm and on", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 175, "Discord!", 255, 255, 255, 255, 1);
