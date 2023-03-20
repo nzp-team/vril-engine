@@ -2026,8 +2026,8 @@ void Mod_FloodFillSkin( byte *skin, int skinwidth, int skinheight )
 
 qboolean model_is_zombie(char name[MAX_QPATH])
 {
-	if (strcmp(name, "models/ai/zb#.mdl") == 0 ||
-	strcmp(name, "models/ai/zbc#.mdl") == 0 ||
+	if (strcmp(name, "models/ai/zb%.mdl") == 0 ||
+	strcmp(name, "models/ai/zbc%.mdl") == 0 ||
 	strcmp(name, "models/ai/zcfull.mdl") == 0 ||
 	strcmp(name, "models/ai/zhc^.mdl") == 0 ||
 	strcmp(name, "models/ai/zalc(.mdl") == 0 ||
