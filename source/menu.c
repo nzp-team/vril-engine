@@ -439,6 +439,7 @@ void M_Start_Key (int key)
 	{
 		case K_ESCAPE:
 			S_LocalSound ("sounds/menu/enter.wav");
+			Cbuf_AddText("cd playstring tensioned_by_the_damned 1\n");
 			Cbuf_AddText("togglemenu\n");
 			break;
 	}
@@ -1032,6 +1033,7 @@ void M_Map_Key (int key)
 				if (sv.active)
 					Cbuf_AddText ("disconnect\n");
 				Cbuf_AddText ("maxplayers 1\n");
+				Cbuf_AddText ("cd stop\n");
 				Cbuf_AddText (va("map %s\n", custom_maps[m_map_cursor + multiplier].map_name));
 				loadingScreen = 1;
 				loadname2 = custom_maps[m_map_cursor + multiplier].map_name;
@@ -1180,6 +1182,7 @@ void M_SinglePlayer_Key (int key)
 					if (sv.active)
 						Cbuf_AddText ("disconnect\n");
 					Cbuf_AddText ("maxplayers 1\n");
+					Cbuf_AddText ("cd stop\n");
 					Cbuf_AddText ("map ndu\n");
 					loadingScreen = 1;
 					loadname2 = "ndu";
@@ -1190,6 +1193,7 @@ void M_SinglePlayer_Key (int key)
 					if (sv.active)
 						Cbuf_AddText ("disconnect\n");
 					Cbuf_AddText ("maxplayers 1\n");
+					Cbuf_AddText ("cd stop\n");
 					Cbuf_AddText ("map warehouse\n");
 					loadingScreen = 1;
 					loadname2 = "warehouse";
@@ -1200,6 +1204,7 @@ void M_SinglePlayer_Key (int key)
 					if (sv.active)
 						Cbuf_AddText ("disconnect\n");
 					Cbuf_AddText ("maxplayers 1\n");
+					Cbuf_AddText ("cd stop\n");
 					Cbuf_AddText ("map christmas_special\n");
 					loadingScreen = 1;
 					loadname2 = "christmas_special";

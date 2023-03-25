@@ -53,6 +53,8 @@ namespace quake
 		static bool	 paused   = false;
 		static bool	 enabled  = false;
 		static float cdvolume = 0;
+		static int   cd_loop = 0;
+		static char* last_track_string = "";
 	}
 }
 
@@ -112,6 +114,13 @@ static void CD_f (void)
 		return;
 	}
 
+	if (Q_strcasecmp(command, "playstring") == 0)
+	{
+		char* track_name = Cmd_Argv(2);
+		qboolean loop = (qboolean)atoi(Cmd_Argv(3));
+		CDAudio_PlayFromString(track_name, loop);
+	}
+
 	if (Q_strcasecmp(command, "loop") == 0)
 	{
 		CDAudio_Play((byte)atoi(Cmd_Argv (2)), (qboolean) true);
@@ -149,6 +158,7 @@ static void CD_f (void)
 		Con_Printf("Based On sceMp3 Lib\n");
 		Con_Printf("Additional fixed by\n");
 		Con_Printf("dr_mabuse1981 and Baker.\n");
+		Con_Printf("string support: motolegacy.\n");
 		Con_Printf("\n");
 		return;
 	}
@@ -176,6 +186,28 @@ void CDAudio_Track(char* trackname)
 	sprintf(path, "%s\\sounds\\stream\\%s", host_parms.basedir, trackname);
 
 	Sys_Error(path);
+}
+
+void CDAudio_PlayFromString(char* track_name, qboolean looping)
+{
+	CDAudio_Stop();
+
+	char path[256];
+	sprintf(path, "%s/tracks/%s.mp3", com_gamedir, track_name);
+
+	int ret = mp3_start_play(path, 0);
+	cd_loop = looping;
+	last_track_string = track_name;
+
+	if (ret != 2) playing = true;
+	else {
+		Con_Printf("Couldn't find %s\n", path);
+		playing = false;
+		Cvar_Set("bgmtype","none");
+		CDAudio_VolumeChange(0);
+	}
+
+	CDAudio_VolumeChange(0.75);
 }
 
 void CDAudio_Play(byte track, qboolean looping)
@@ -239,12 +271,12 @@ void CDAudio_Update(void)
 	//if(changeMp3Volume) CDAudio_VolumeChange(bgmvolume.value);
 
 	if (strcmpi(bgmtype.string,"cd") == 0) {
-		if (playing == false) {
-			CDAudio_Play(last_track, (qboolean) false);
-		}
-		if (paused == true) {
-			CDAudio_Resume();
-		}
+		/*if(mp3_status == MP3_END)
+		{
+			if(cd_loop == 1) {
+				CDAudio_PlayFromString(last_track_string, qtrue);
+			} 
+		}*/
 
 	} else {
 		if (paused == false) {
