@@ -2102,6 +2102,22 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 
 		pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 		return (void *)pskintype;
+	} else {
+		//
+		// General texture override stuff.
+		//
+
+		// Mustang & Sally // v_biatch
+		if (strcmp(loadmodel->name, "models/weapons/m1911/v_biatch_left.mdl") == 0 ||
+		strcmp(loadmodel->name, "models/weapons/m1911/v_biatch_right.mdl") == 0) {
+			pheader->gl_texturenum[i][0] = 
+			pheader->gl_texturenum[i][1] = 
+			pheader->gl_texturenum[i][2] = 
+			pheader->gl_texturenum[i][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, qtrue, GU_LINEAR);
+
+			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+			return (void *)pskintype;
+		}
 	}
 
 	for (i=0 ; i<numskins ; i++)
