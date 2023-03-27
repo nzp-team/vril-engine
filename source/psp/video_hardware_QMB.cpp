@@ -79,8 +79,14 @@ typedef	enum
 	p_flare,
 	p_dot,
 	p_muzzleflash,
+
+#ifdef SLIM
+
 	p_muzzleflash2,
 	p_muzzleflash3,
+
+#endif // SLIM
+
     p_q3blood_trail,
 	p_q3blood_decal,
 	p_q3rocketsmoke,
@@ -117,8 +123,14 @@ typedef	enum
 	ptex_lightning,
 	ptex_flame,
 	ptex_muzzleflash,
+
+#ifdef SLIM
+
 	ptex_muzzleflash2,
 	ptex_muzzleflash3,
+
+#endif // SLIM
+
 	ptex_bloodcloud,
    	ptex_q3blood,
 	ptex_q3blood_trail,
@@ -534,6 +546,10 @@ void QMB_InitParticles (void)
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 
+	// PSP PHAT: Only have 1 Muzzleflash graphic.. saves 32kB VRAM.
+
+#ifdef SLIM
+
 	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl1", 0, 0, qfalse, GU_LINEAR)))
 	{
 		//Clear_LoadingFill ();
@@ -554,6 +570,8 @@ void QMB_InitParticles (void)
 
     loading_cur_step++;
 	SCR_UpdateScreen ();
+
+#endif // SLIM
 	
 	max_s = max_t = 64.0;
 	if (!(particleimage = loadtextureimage("textures/particles/bloodcloud", 0, 0, qfalse, GU_LINEAR)))
@@ -634,8 +652,14 @@ void QMB_InitParticles (void)
 	
 	ADD_PARTICLE_TYPE(p_lightningbeam, pd_beam, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_lightning, 255, 0, 0, pm_die, 0);
 	ADD_PARTICLE_TYPE(p_muzzleflash, pd_billboard, GU_SRC_ALPHA, GU_FIX, ptex_muzzleflash, 255, 0, 0, pm_static, 0);
+
+#ifdef SLIM
+
 	ADD_PARTICLE_TYPE(p_muzzleflash2, pd_billboard, GU_SRC_ALPHA, GU_FIX, ptex_muzzleflash2, 255, 0, 0, pm_static, 0);
 	ADD_PARTICLE_TYPE(p_muzzleflash3, pd_billboard, GU_SRC_ALPHA, GU_FIX, ptex_muzzleflash3, 255, 0, 0, pm_static, 0);
+
+#endif // SLIM
+
 	ADD_PARTICLE_TYPE(p_rain, pd_billboard, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, ptex_generic, 255, -16, 0, pm_rain, 0);
 	
 	loading_cur_step++;
@@ -851,8 +875,14 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 			break;
 
 		case p_muzzleflash:
+
+#ifdef SLIM
+
 		case p_muzzleflash2:
 		case p_muzzleflash3:
+
+#endif // SLIM
+
 			VectorCopy (org, p->org);
 			p->rotspeed = (rand() & 45) - 90;
 			//p->size = size * (rand() % 6) / 4;//r00k
@@ -1750,12 +1780,30 @@ void QMB_DrawParticles (void)
 					}
 				}
 				
-				if(pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 || pt->texture == ptex_muzzleflash3)
+#ifdef SLIM
+
+				if (pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 || pt->texture == ptex_muzzleflash3)
+
+#else
+
+				if (pt->texture == ptex_muzzleflash)
+
+#endif // SLIM
+
 					sceGuDepthRange(0, 19660);
 				
 				DRAW_PARTICLE_BILLBOARD(ptex, p, billboard);
 				
-				if(pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 || pt->texture == ptex_muzzleflash3)
+#ifdef SLIM
+
+				if (pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 || pt->texture == ptex_muzzleflash3)
+
+#else
+
+				if (pt->texture == ptex_muzzleflash)
+
+#endif // SLIM
+
 					sceGuDepthRange(0, 65535);
 			}
 			break;
@@ -2613,6 +2661,9 @@ void QMB_MuzzleFlash(vec3_t org)
 		
 		if(size == 0 || cl.stats[STAT_ZOOM] == 2)
 			return;
+
+#ifdef SLIM
+
         switch(rand() % 3 + 1)
         {
             case 1:
@@ -2628,6 +2679,13 @@ void QMB_MuzzleFlash(vec3_t org)
                 AddParticle (p_muzzleflash, org, 1, size, 0.04 * frametime, color, zerodir);
                 break;
         }
+
+#else
+
+		AddParticle (p_muzzleflash, org, 1, size, 0.04 * frametime, color, zerodir);
+
+#endif // SLIM
+
 	}
 }
 

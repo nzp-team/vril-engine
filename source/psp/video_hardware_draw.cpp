@@ -551,9 +551,23 @@ void Draw_Init (void)
 	sniper_scope = Draw_CachePic ("gfx/hud/scope_256");
 	
 	zombie_skins[0][0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
+
+
+	// PSP PHAT: Only have 1 Zombie skin.. this saves 192kB of VRAM, well worth it.
+
+#ifdef SLIM
+
 	zombie_skins[0][1] = loadtextureimage ("models/ai/zfull.mdl_1", 0, 0, qtrue, GU_LINEAR);
 	zombie_skins[1][0] = loadtextureimage ("models/ai/zfull.mdl_2", 0, 0, qtrue, GU_LINEAR);
 	zombie_skins[1][1] = loadtextureimage ("models/ai/zfull.mdl_3", 0, 0, qtrue, GU_LINEAR);
+
+#else
+
+	zombie_skins[0][1] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
+	zombie_skins[1][0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
+	zombie_skins[1][1] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
+
+#endif // SLIM
 	
 	Clear_LoadingFill ();
 }
