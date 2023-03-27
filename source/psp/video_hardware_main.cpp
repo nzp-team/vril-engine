@@ -168,7 +168,7 @@ cvar_t  r_model_brightness = { "r_model_brightness", "1", qtrue};   // Toggle hi
 cvar_t 	r_runqmbparticles = {"r_runqmbparticles", 	"1", qtrue};
 
 extern cvar_t cl_maxfps;
-
+extern cvar_t scr_fov_viewmodel;
 
 
 
@@ -2300,24 +2300,31 @@ void R_DrawAliasModel (entity_t *e)
 
 	R_InterpolateEntity(e,0);
 	
-	//blubs disabled this
-	/*if (r_i_model_transform.value)
-		R_BlendedRotateForEntity (e, 0);
-	else
-		R_RotateForEntity (e, 0);
-	*/
-	
-	const ScePspFVector3 translation =
-	{
-		paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]
-	};
-	sceGumTranslate(&translation);
 
-	const ScePspFVector3 scaling =
-	{
-		paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]
-	};
-	sceGumScale(&scaling);
+	// Special handling of view model to keep FOV from altering look.  Pretty good.  Not perfect but rather close.
+	if (e == &cl.viewent && scr_fov_viewmodel.value) {
+		float scale = 1.0f / tan (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
+
+		const ScePspFVector3 translation = {
+			paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]
+		};
+		const ScePspFVector3 scaling = {
+			paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]
+		};
+
+		sceGumTranslate(&translation);
+		sceGumScale(&scaling);
+	} else {
+		const ScePspFVector3 translation = {
+			paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]
+		};
+		const ScePspFVector3 scaling = {
+			paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]
+		};
+
+		sceGumTranslate(&translation);
+		sceGumScale(&scaling);
+	}
 
 	//============================================================================================================================= 83% at this point
 
