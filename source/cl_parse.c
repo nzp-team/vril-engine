@@ -531,7 +531,7 @@ void CL_ParseUpdate (int bits)
 
 	if (bits & U_MODEL)
 	{
-		modnum = MSG_ReadByte ();
+		modnum = MSG_ReadShort ();
 		if (modnum >= MAX_MODELS)
 			Host_Error ("CL_ParseModel: bad modnum");
 	}
@@ -664,7 +664,7 @@ void CL_ParseBaseline (entity_t *ent)
 {
 	int			i;
 
-	ent->baseline.modelindex = MSG_ReadByte ();
+	ent->baseline.modelindex = MSG_ReadShort ();
 	ent->baseline.frame = MSG_ReadByte ();
 	ent->baseline.colormap = MSG_ReadByte();
 	ent->baseline.skin = MSG_ReadByte();
