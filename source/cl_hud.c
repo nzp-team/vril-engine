@@ -1346,23 +1346,23 @@ HUD_Grenades
 
 void HUD_Grenades (void)
 {
-	Draw_StretchPic (448, 232, fragpic, 22, 22);
+	Draw_StretchPic (427, 232, fragpic, 22, 22);
 
 	if (cl.stats[STAT_GRENADES] & UI_FRAG)
 	{
 		if (cl.stats[STAT_PRIGRENADES] <= 0)
-			Draw_ColoredString (463, 247, va ("%i",cl.stats[STAT_PRIGRENADES]), 255, 0, 0, 255, 1);
+			Draw_ColoredString (440, 247, va ("%i",cl.stats[STAT_PRIGRENADES]), 255, 0, 0, 255, 1);
 		else
-			Draw_String (463, 247, va ("%i",cl.stats[STAT_PRIGRENADES]));
+			Draw_String (440, 247, va ("%i",cl.stats[STAT_PRIGRENADES]));
 	}
 
 	if (cl.stats[STAT_GRENADES] & UI_BETTY)
 	{
-		Draw_StretchPic (427, 233, bettypic, 22, 22);
+		Draw_StretchPic (448, 233, bettypic, 22, 22);
 		if (cl.stats[STAT_PRIGRENADES] <= 0)
-			Draw_ColoredString (440, 247, va ("%i",cl.stats[STAT_SECGRENADES]), 255, 0, 0, 255, 1);
+			Draw_ColoredString (463, 247, va ("%i",cl.stats[STAT_SECGRENADES]), 255, 0, 0, 255, 1);
 		else
-			Draw_String (440, 247, va ("%i",cl.stats[STAT_SECGRENADES]));
+			Draw_String (463, 247, va ("%i",cl.stats[STAT_SECGRENADES]));
 	}
 }
 
