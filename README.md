@@ -4,7 +4,7 @@
 This repository contains the PSP engine for NZ:P, based on dQuakePlus and containing optimizations from the NZ:P Team, adQuake, and Xash3D-PSP, as well as NZ:P-specific feature implementation. It has also been modified to build on the latest versions of the [PSPSDK](https://github.com/pspdev/pspsdk).
 
 ## Building (Advanced)
-Building requires a full install of [psptoolchain](https://github.com/pspdev/psptoolchain/). You can either follow the instructions on the GitHub repository or use a Docker container (we recommend [sharkwouter](https://hub.docker.com/r/sharkwouter/pspdev)'s)!
+Building requires a full install of [psptoolchain](https://github.com/pspdev/psptoolchain/). You can either follow the instructions on the GitHub repository or use a Docker container (we recommend [the official one](https://hub.docker.com/r/pspdev/pspdev))!
 
 With the psptoolchain installed, you now need to install `libpspmath`, which we have included in the GitHub repository:
 ```bash

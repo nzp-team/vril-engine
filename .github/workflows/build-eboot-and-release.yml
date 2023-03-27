@@ -4,13 +4,12 @@ jobs:
   Compile-EBOOTs:
     runs-on: ubuntu-latest
     container:
-      image: sharkwouter/pspdev
+      image: pspdev/pspdev
     steps:
       - uses: actions/checkout@v2
-      - name: Get apt ready
+      - name: Get container ready
         run: |
-          apt update
-          apt install -y zip
+          apk add bash zip git gmp mpc1 mpfr4 make
       - name: Build
         working-directory: ./
         run: |

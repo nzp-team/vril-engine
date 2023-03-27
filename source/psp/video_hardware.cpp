@@ -171,19 +171,19 @@ void VID_Init(unsigned char* palette)
 	Sys_Printf("VID_Init\n");
 
 	// Allocate the buffers.
-	display_buffer	= static_cast<pixel*>(valloc(screen_height * 512 * sizeof(pixel)));
+	display_buffer	= static_cast<pixel*>(vramalloc(screen_height * 512 * sizeof(pixel)));
 	if (!display_buffer)
 	{
 		Sys_Error("Couldn't allocate display buffer");
 	}
 
-	draw_buffer	= static_cast<pixel*>(valloc(screen_height * 512 * sizeof(pixel)));
+	draw_buffer	= static_cast<pixel*>(vramalloc(screen_height * 512 * sizeof(pixel)));
 	if (!draw_buffer)
 	{
 		Sys_Error("Couldn't allocate draw buffer");
 	}
 
-	depth_buffer	= static_cast<depth_value*>(valloc(screen_height * 512 * sizeof(depth_value)));
+	depth_buffer	= static_cast<depth_value*>(vramalloc(screen_height * 512 * sizeof(depth_value)));
 	if (!depth_buffer)
 	{
 		Sys_Error("Couldn't allocate depth buffer");

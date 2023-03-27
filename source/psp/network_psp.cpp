@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <psputility.h>
 #include <pspnet.h>
 #include <pspwlan.h>
+#include <pspnet_inet.h>
 #include <pspnet_apctl.h>
 #include <pspnet_adhoc.h>
 #include <pspnet_adhocctl.h>
@@ -755,7 +756,7 @@ namespace quake
 
 				pdpStatStruct *tempPdp = findPdpStat(accept_socket, pdpStat);
 
-				if(tempPdp < 0) return -1;
+				if(tempPdp->pdpId < 0) return -1;
 
 				if(tempPdp->rcvdData > 0) return accept_socket;
 
@@ -861,7 +862,7 @@ namespace quake
 				if(err<0) return -1;
 
 				pdpStatStruct *tempPdp = findPdpStat(socket, pdpStat);
-				if(tempPdp < 0) return -1;
+				if(tempPdp->pdpId < 0) return -1;
 
 				memcpy_vfpu(((struct sockaddr_adhoc *)addr)->mac, tempPdp->mac, 6);
 				((struct sockaddr_adhoc *)addr)->port = tempPdp->port;

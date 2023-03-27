@@ -270,7 +270,7 @@ void CDAudio_Update(void)
 	//	CDAudio_VolumeChange(bgmvolume.value);
 	//if(changeMp3Volume) CDAudio_VolumeChange(bgmvolume.value);
 
-	if (strcmpi(bgmtype.string,"cd") == 0) {
+	if (strcasecmp(bgmtype.string,"cd") == 0) {
 		/*if(mp3_status == MP3_END)
 		{
 			if(cd_loop == 1) {

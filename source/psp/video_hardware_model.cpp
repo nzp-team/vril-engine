@@ -36,9 +36,8 @@ extern "C"
 #include "video_hardware_hlmdl.h"
 
 #include <list>
-using namespace std;
 
-list<int> mapTextureNameList;
+std::list<int> mapTextureNameList;
 
 int LIGHTMAP_BYTES;
 
@@ -3322,10 +3321,10 @@ void Mod_LoadQ3AliasModel (model_t *mod, void *buffer)
 	{
 		for (j=0 ; j<3 ; j++)
 		{
-			md3bboxmins[j] = min(md3bboxmins[j], frame[i].mins[j]);
-			md3bboxmaxs[j] = max(md3bboxmaxs[j], frame[i].maxs[j]);
+			md3bboxmins[j] = std::min(md3bboxmins[j], frame[i].mins[j]);
+			md3bboxmaxs[j] = std::max(md3bboxmaxs[j], frame[i].maxs[j]);
 		}
-		radiusmax = max(radiusmax, frame[i].radius);
+		radiusmax = std::max(radiusmax, frame[i].radius);
 	}
 	VectorCopy (md3bboxmins, mod->mins);
 	VectorCopy (md3bboxmaxs, mod->maxs);

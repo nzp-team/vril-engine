@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 static int net_landriverlevel;
 
+int net_driver_to_use;
+
 /* statistic counters */
 int	packetsSent = 0;
 int	packetsReSent = 0;

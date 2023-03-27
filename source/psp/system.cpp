@@ -55,17 +55,14 @@ extern "C"
 }
 #include "fnmatch.h"
 
+extern int cpuClockSpeed;
+extern int ramClockSpeed;
+extern int busClockSpeed;
+
 void CDAudio_Stop(void);
 
 namespace quake
 {
-	namespace main
-	{
-		extern const int	cpuClockSpeed;
-		extern const int	ramClockSpeed;
-		extern const int	busClockSpeed;
-	}
-
 	namespace system
 	{
 		struct file
@@ -410,7 +407,7 @@ void Sys_Quit (void)
 	}
 
 	// Restore the old clock frequency.
-	scePowerSetClockFrequency(main::cpuClockSpeed, main::ramClockSpeed, main::busClockSpeed);
+	scePowerSetClockFrequency(cpuClockSpeed, ramClockSpeed, busClockSpeed);
 
 	// Insert a false delay so files and stuff can be saved before the kernel kills us.
 	sceKernelDelayThread(50 * 1000);

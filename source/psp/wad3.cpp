@@ -28,9 +28,7 @@ extern "C"
 
 #include <list>
 
-using namespace std;
-
-list<FILE*> UnloadFileList;
+std::list<FILE*> UnloadFileList;
 
 #define TEXWAD_MAXIMAGES 16384
 typedef struct

@@ -72,15 +72,15 @@ void Sys_ReadCommandLineFile (char* netpath);
 #define MIN_HEAP_MB	6
 #define MAX_HEAP_MB (PSP_HEAP_SIZE_MB-1)
 
+// Clock speeds.
+int cpuClockSpeed;
+int ramClockSpeed;
+int busClockSpeed;
+
 namespace quake
 {
 	namespace main
 	{
-	// Clock speeds.
-		extern const int		cpuClockSpeed	= scePowerGetCpuClockFrequencyInt();
-		extern const int		ramClockSpeed	= cpuClockSpeed;
-		extern const int		busClockSpeed	= scePowerGetBusClockFrequencyInt();
-
 
 #ifdef SLIM
 
@@ -238,8 +238,8 @@ void StartUpParams(char **args, int argc, char *cmdlinePath, char *currentDirect
  			do {
  				res = sceIoDread(dir_fd, p_dir_de);
  				if ((res > 0) && (p_dir_de->d_stat.st_attr & FIO_SO_IFDIR)) {
- 					if (!(stricmp(p_dir_de->d_name, ".") == 0 || stricmp(p_dir_de->d_name, "..") == 0 ||
- 					      stricmp(p_dir_de->d_name, "mp3") == 0 || stricmp(p_dir_de->d_name, "id1") == 0)) {
+ 					if (!(strcasecmp(p_dir_de->d_name, ".") == 0 || strcasecmp(p_dir_de->d_name, "..") == 0 ||
+ 					      strcasecmp(p_dir_de->d_name, "mp3") == 0 || strcasecmp(p_dir_de->d_name, "id1") == 0)) {
  						dirs[j++] = strdup( p_dir_de->d_name);
  					}
  				}
@@ -259,7 +259,7 @@ void StartUpParams(char **args, int argc, char *cmdlinePath, char *currentDirect
 
 			if (idx+1 < f_argc) {
 				for (int i = 0 ;i < MAX_HEAP_MB - MIN_HEAP_MB; i++) {
-					if (stricmp(heaps[i], args[idx+1]) == 0) {
+					if (strcasecmp(heaps[i], args[idx+1]) == 0) {
 						menu_cur[2] = i;
 					}
 
@@ -271,7 +271,7 @@ void StartUpParams(char **args, int argc, char *cmdlinePath, char *currentDirect
 		} else {
 			for (int i = 0 ;i < MAX_HEAP_MB - MIN_HEAP_MB; i++) {
 				sprintf(temp_str, "%d", heapSize/(1024*1024));
-				if (stricmp(heaps[i],temp_str) == 0) {
+				if (strcasecmp(heaps[i],temp_str) == 0) {
 					menu_cur[2] = i;
 				}
 			}
@@ -282,7 +282,7 @@ void StartUpParams(char **args, int argc, char *cmdlinePath, char *currentDirect
 
 			if (idx+1 < f_argc) {
 				for (int i = 0 ;i < j; i++) {
-					if (stricmp(args[idx+1],dirs[i]) == 0) {
+					if (strcasecmp(args[idx+1],dirs[i]) == 0) {
 						menu_cur[0] = i;
 					}
 
@@ -363,7 +363,7 @@ void StartUpParams(char **args, int argc, char *cmdlinePath, char *currentDirect
 				}
 			}
 			if(sceHprmIsRemoteExist()){
-               unsigned int hprmkey;
+               u32 hprmkey;
 	           sceHprmPeekCurrentKey(&hprmkey);
 			   if (hprmkey != 0){
                    if (hprmkey & PSP_HPRM_BACK){
@@ -383,7 +383,7 @@ void StartUpParams(char **args, int argc, char *cmdlinePath, char *currentDirect
 		}
 		if (CheckParm(args, f_argc, "-game")) {
 			int idx = CheckParm(args, f_argc, "-game");
-			if (stricmp(args[idx+1],dirs[menu_cur[0]]) != 0) {
+			if (strcasecmp(args[idx+1],dirs[menu_cur[0]]) != 0) {
 
 				if (strlen(dirs[menu_cur[0]]) > 0) {
 					int len2 = strlen(dirs[menu_cur[0]]);
@@ -410,7 +410,7 @@ void StartUpParams(char **args, int argc, char *cmdlinePath, char *currentDirect
 			}
 		}
 
-		if (stricmp(cpus[menu_cur[1]],"333") == 0) {
+		if (strcasecmp(cpus[menu_cur[1]],"333") == 0) {
 
 			if (!CheckParm(args, f_argc, "-cpu333")) {
 				int len1 = strlen("-cpu333");
@@ -540,6 +540,9 @@ int user_main(SceSize argc, void* argp)
         Sys_Error("SDL2: Could not initialize!\n");
         return 0;
     }
+
+	ramClockSpeed = cpuClockSpeed = scePowerGetCpuClockFrequencyInt();
+	busClockSpeed = scePowerGetBusClockFrequencyInt();
 
 	// Get the current working dir.
 	char currentDirectory[1024];

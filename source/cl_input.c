@@ -319,7 +319,7 @@ Send the intended movement message to the server
 ================
 */
 
-cvar_t waypoint_mode;
+extern cvar_t waypoint_mode;
 float crosshair_opacity;
 void CL_BaseMove (usercmd_t *cmd)
 {

@@ -23,6 +23,4 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "module.h"
 
 // Set up the module info.
-PSP_MODULE_INFO("NZPortable", 0, 1, 1);
-PSP_MAIN_THREAD_ATTR(PSP_THREAD_ATTR_USER | PSP_THREAD_ATTR_VFPU);
 PSP_HEAP_SIZE_KB(-1024);

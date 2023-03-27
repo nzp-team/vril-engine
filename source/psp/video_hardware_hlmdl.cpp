@@ -30,8 +30,8 @@ extern"C"
 #include <pspgu.h>
 #include <pspgum.h>
 #include <list>
-using namespace std;
-extern list<int> mapTextureNameList;
+
+extern std::list<int> mapTextureNameList;
 
 extern model_t	*loadmodel;
 
