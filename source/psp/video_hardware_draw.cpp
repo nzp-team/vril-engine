@@ -2610,7 +2610,7 @@ int GL_LoadTexture (const char *identifier, int width, int height, const byte *d
 	}
 
 	// Allocate the VRAM.
-	texture.vram = static_cast<texel*>(valloc(buffer_size));
+	texture.vram = static_cast<texel*>(vramalloc(buffer_size));
 
 	// Upload the texture.
 	GL_Upload8(texture_index, data, width, height);
@@ -2793,7 +2793,7 @@ int GL_LoadPalTex (const char *identifier, int width, int height, const byte *da
 	}
 
 	// Allocate the VRAM.
-	texture.vram = static_cast<texel*>(valloc(buffer_size));
+	texture.vram = static_cast<texel*>(vramalloc(buffer_size));
 
 	// Upload the texture.
 	GL_Upload8(texture_index, data, width, height);
@@ -2927,7 +2927,7 @@ int GL_LoadTextureLM (const char *identifier, int width, int height, const byte 
 		}
 
 		// Allocate the VRAM.
-		texture.vram = static_cast<texel*>(valloc(buffer_size));
+		texture.vram = static_cast<texel*>(vramalloc(buffer_size));
 
 	    // Upload the texture.
 		if(!texture.swizzle)
@@ -3201,7 +3201,7 @@ int GL_LoadImages (const char *identifier, int width, int height, const byte *da
 	}
 
 	// Allocate the VRAM.
-	texture.vram = static_cast<texel*>(valloc(buffer_size));
+	texture.vram = static_cast<texel*>(vramalloc(buffer_size));
 
 	// Upload the texture.
 	switch(texture.format)
