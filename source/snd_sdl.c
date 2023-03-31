@@ -40,7 +40,7 @@ qboolean SNDDMA_Init(void)
 			return 0;
 	}
 	desired.channels = 2;
-	desired.samples = 512;
+	desired.samples = 48;
 	desired.callback = paint_audio;
 
 	/* Open the audio device */

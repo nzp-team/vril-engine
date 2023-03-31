@@ -773,13 +773,14 @@ char *exitMessage [] =
   "   X :Yes    O : No       "
 };
 
-
+extern qboolean in_game;
 void M_Menu_Exit_f (void)
 {
 	wasInMenus = (key_dest == key_menu_pause);
 	key_dest = key_menu_pause;
 	m_state = m_exit;
 	m_entersound = true;
+	in_game = false;
 }
 
 

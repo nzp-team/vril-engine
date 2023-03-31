@@ -876,6 +876,9 @@ R_LoadSkys
 extern int nonetexture;
 void Sky_LoadSkyBox (char *name)
 {
+
+#ifdef SLIM
+
 	if (strcmp(skybox_name, name) == 0)
 		return; //no change
 
@@ -899,6 +902,7 @@ void Sky_LoadSkyBox (char *name)
     for (int i = 0; i < 6; i++)
     {
         int mark = Hunk_LowMark ();
+
 		if(!(skyimage[i] = loadtextureimage (va("gfx/env/%s%s", name, suf[i]), 0, 0, qfalse, GU_LINEAR)) &&
            !(skyimage[i] = loadtextureimage (va("gfx/env/%s_%s", name, suf[i]), 0, 0, qfalse, GU_LINEAR)))
 		{
@@ -912,6 +916,9 @@ void Sky_LoadSkyBox (char *name)
         Hunk_FreeToLowMark (mark);
     }
     strcpy(skybox_name, name);
+
+#endif // SLIM
+
 }
 
 /*

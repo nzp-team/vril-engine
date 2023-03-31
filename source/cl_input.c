@@ -320,11 +320,14 @@ Send the intended movement message to the server
 */
 
 extern cvar_t waypoint_mode;
+qboolean in_game;
 float crosshair_opacity;
 void CL_BaseMove (usercmd_t *cmd)
 {
 	if (cls.signon != SIGNONS)//BLUBS CHANGED HERE
 		return;
+
+	in_game = true;
 
 	CL_AdjustAngles ();
 

@@ -41,9 +41,21 @@ void CL_InitTEnts (void)
 {
 	cl_sfx_r_exp3 = S_PrecacheSound ("sounds/weapons/r_exp3.wav");
 	cl_sfx_step[0] = S_PrecacheSound ("sounds/player/footstep1.wav");
+
+#ifdef SLIM
+
 	cl_sfx_step[1] = S_PrecacheSound ("sounds/player/footstep2.wav");
 	cl_sfx_step[2] = S_PrecacheSound ("sounds/player/footstep3.wav");
 	cl_sfx_step[3] = S_PrecacheSound ("sounds/player/footstep4.wav");
+
+#else
+
+	cl_sfx_step[1] = S_PrecacheSound ("sounds/player/footstep1.wav");
+	cl_sfx_step[2] = S_PrecacheSound ("sounds/player/footstep1.wav");
+	cl_sfx_step[3] = S_PrecacheSound ("sounds/player/footstep1.wav");
+
+#endif // SLIM
+
 }
 
 /*

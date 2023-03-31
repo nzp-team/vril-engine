@@ -2128,12 +2128,17 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			// HACK HACK HACK
 			sprintf (model2, "%s.mdl_%i", model, i);
 
+#ifdef SLIM
+
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
 			pheader->gl_texturenum[i][2] = 
 			pheader->gl_texturenum[i][3] = loadtextureimage (model2, 0, 0, qtrue, GU_LINEAR);
 
 			if (pheader->gl_texturenum[i][0] == 0)// did not find a matching TGA...
+
+#endif // SLIM
+
 			{
 				sprintf (name, "%s_%i", loadmodel->name, i);
 				if(mod_h2)
