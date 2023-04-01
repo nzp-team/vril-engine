@@ -1127,9 +1127,14 @@ void M_SinglePlayer_Draw (void)
 	switch(m_singleplayer_cursor) {
 		case 0:
 			Draw_StretchPic(256, 45, menu_ndu, 175, 100);
-			Draw_ColoredString(215, 155, "Lock and Load; Crashed Plane.", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 165, "Divided. Thousands of Undead.", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 175, "This is the Night of the Dead.", 255, 255, 255, 255, 1);
+			Draw_ColoredString(215, 155, "Desolate bunker located on a Ge-", 255, 255, 255, 255, 1);
+			Draw_ColoredString(215, 165, "rman airfield, stranded after a", 255, 255, 255, 255, 1);
+			Draw_ColoredString(215, 175, "brutal plane crash surrounded by", 255, 255, 255, 255, 1);
+			Draw_ColoredString(215, 185, "hordes of undead. Exploit myste-", 255, 255, 255, 255, 1);
+			Draw_ColoredString(215, 195, "rious forces at play and hold o-", 255, 255, 255, 255, 1);
+			Draw_ColoredString(215, 205, "ut against relentless waves. Der", 255, 255, 255, 255, 1);
+			Draw_ColoredString(215, 215, "Anstieg ist jetzt. Will you fall", 255, 255, 255, 255, 1);
+			Draw_ColoredString(215, 225, "to the overwhelming onslaught?", 255, 255, 255, 255, 1);
 			break;
 		case 1:
 			Draw_StretchPic(256, 45, menu_wh, 175, 100);
