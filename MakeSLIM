@@ -127,6 +127,10 @@ clean:
 	rm -rf build/
 	rm source/*.o
 
+clean-keep-eboot:
+	rm -rf build/exec/
+	rm source/*.o
+
 install: EBOOT.PBP
 	mkdir -p build/exec/
 	mv EBOOT.PBP build/EBOOT2000.PBP

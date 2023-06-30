@@ -17,7 +17,7 @@ jobs:
           make && make install
           cd ../../
           make -f MakePHAT install
-          make -f MakePHAT clean
+          make -f MakePHAT clean-keep-eboot
           make -f MakeSLIM install
       - name: Generate Build Date
         id: date
