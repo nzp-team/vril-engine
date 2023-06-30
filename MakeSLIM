@@ -12,14 +12,13 @@ PSP_EBOOT_PIC1	= source/psp/pics/pic.png
 
 PSP_FW_VERSION=400
 
-MODE=-DKERNEL_MODE
-
 ifeq ($(USE_GPROF),1)
 GPROF_LIBS      = -lpspprof
 GPROF_FLAGS		= -pg -DPROFILE
 else
 ifeq ($(DEBUG),1)
 BUILD_PRX		= 1
+MODE=-DKERNEL_MODE
 endif
 endif
 
