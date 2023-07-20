@@ -1282,8 +1282,15 @@ Draw_Crosshair
 */
 
 extern float crosshair_opacity;
+extern cvar_t cl_crosshair_debug;
 void Draw_Crosshair (void)
 {
+	if (cl_crosshair_debug.value) {
+		Draw_FillByColor(vid.width/2, 0, 1, 272, GU_RGBA(255, 0, 0, 255));
+		Draw_FillByColor(0, vid.height/2, 480, 1, GU_RGBA(0, 255, 0, 255));
+	}
+
+
 	if (cl.stats[STAT_HEALTH] < 20)
 		return;
 
@@ -1326,6 +1333,11 @@ void Draw_Crosshair (void)
 	else if (crosshair.value == 1 && cl.stats[STAT_ZOOM] != 1 && cl.stats[STAT_ZOOM] != 2 && cl.stats[STAT_ACTIVEWEAPON] != W_PANZER)
     {
         int x_value, y_value;
+		int x_center, y_center;
+
+		x_center = vid.width/2;
+		y_center = vid.height/2;
+
         int crosshair_offset = CrossHairWeapon() + cur_spread;
 		if (CrossHairMaxSpread() < crosshair_offset || croshhairmoving)
 			crosshair_offset = CrossHairMaxSpread();
@@ -1339,23 +1351,23 @@ void Draw_Crosshair (void)
 		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5;
 
 		// Left
-		x_value = (vid.width - 8)/2 - crosshair_offset_step;
-		y_value = (vid.height - 8)/2;
+		x_value = x_center - crosshair_offset_step;
+		y_value = y_center;
 		Draw_FillByColor(x_value, y_value, 3, 1, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
 
 		// Right
-		x_value = (vid.width - 8)/2 + crosshair_offset_step - 2;
-		y_value = (vid.height - 8)/2;
+		x_value = x_center + crosshair_offset_step - 3;
+		y_value = y_center;
 		Draw_FillByColor(x_value, y_value, 3, 1, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
 
 		// Top
-		x_value = (vid.width - 8)/2;
-		y_value = (vid.height - 8)/2 - crosshair_offset_step;
+		x_value = x_center;
+		y_value = y_center - crosshair_offset;
 		Draw_FillByColor(x_value, y_value, 1, 3, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
 
 		// Bottom
-		x_value = (vid.width - 8)/2;
-		y_value = (vid.height - 8)/2 + crosshair_offset_step - 2;
+		x_value = x_center;
+		y_value = y_center + crosshair_offset - 3;
 		Draw_FillByColor(x_value, y_value, 1, 3, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
     }
     else if (crosshair.value && cl.stats[STAT_ZOOM] != 1 && cl.stats[STAT_ZOOM] != 2)

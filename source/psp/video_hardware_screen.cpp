@@ -98,6 +98,7 @@ cvar_t		scr_showpause = {"showpause","1"};
 cvar_t		scr_printspeed = {"scr_printspeed","8"};
 cvar_t 		scr_conheight = {"scr_conheight", "0.5"};
 cvar_t		scr_loadscreen = {"scr_loadscreen","1", qtrue};
+cvar_t 		cl_crosshair_debug = {"cl_crosshair_debug", "0", qtrue};
 
 
 cvar_t		r_dithering = {"r_dithering","1",qtrue};
@@ -638,6 +639,7 @@ void SCR_Init (void)
     Cvar_RegisterVariable (&scr_conheight);
 	Cvar_RegisterVariable (&r_dithering);
     Cvar_RegisterVariable (&scr_coloredtext);
+	Cvar_RegisterVariable (&cl_crosshair_debug);
 
 //
 // register our commands
