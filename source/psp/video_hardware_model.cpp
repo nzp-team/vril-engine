@@ -2023,6 +2023,22 @@ void Mod_FloodFillSkin( byte *skin, int skinwidth, int skinheight )
 	}
 }
 
+qboolean model_is_gun(char name[MAX_QPATH])
+{
+	char* wep_path = static_cast<char*>(malloc(sizeof(char)*15));
+
+	for (int i = 0; i < 15; i++) {
+		wep_path[i] = name[i];
+	}
+	wep_path[14] = '\0';
+
+	if (strcmp(wep_path, "models/weapons") == 0) {
+		return qtrue;
+	}
+
+	return qfalse;
+}
+
 qboolean model_is_zombie(char name[MAX_QPATH])
 {
 	if (strcmp(name, "models/ai/zb%.mdl") == 0 ||
@@ -2046,6 +2062,7 @@ Mod_LoadAllSkins
 ===============
 */
 static qboolean mod_h2;
+extern int has_pap;
 void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 {
 	int		i, j, k;
@@ -2064,6 +2081,8 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d\n", numskins);
 
 	s = pheader->skinwidth * pheader->skinheight;
+
+	qboolean is_gun = model_is_gun(loadmodel->name);
 
 	if (model_is_zombie(loadmodel->name) == qtrue) {
 		Mod_FloodFillSkin(skin, pheader->skinwidth, pheader->skinheight);
@@ -2121,14 +2140,22 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 
 	for (i=0 ; i<numskins ; i++)
 	{
-		if (pskintype->type == ALIAS_SKIN_SINGLE)
+		if (!has_pap && model_is_gun(loadmodel->name) && i >= 1) {
+			pheader->gl_texturenum[i][0] = 
+			pheader->gl_texturenum[i][1] = 
+			pheader->gl_texturenum[i][2] = 
+			pheader->gl_texturenum[i][3] = pheader->gl_texturenum[0][0];
+			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+			return (void *)pskintype;
+		}
+		else if (pskintype->type == ALIAS_SKIN_SINGLE)
 		{
 			Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
 			COM_StripExtension(loadmodel->name, model);
 			// HACK HACK HACK
 			sprintf (model2, "%s.mdl_%i", model, i);
 
-#ifdef SLIM
+//#ifdef SLIM
 
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
@@ -2137,7 +2164,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 
 			if (pheader->gl_texturenum[i][0] == 0)// did not find a matching TGA...
 
-#endif // SLIM
+//#endif // SLIM
 
 			{
 				sprintf (name, "%s_%i", loadmodel->name, i);

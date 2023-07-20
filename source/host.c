@@ -775,7 +775,7 @@ void _Host_Frame (float time)
 					pass1+pass2+pass3, pass1, pass2, pass3);
 	}
 
-    //Con_Printf ("%dkB free \n", freememory()/1024);
+    //Con_Printf ("%dkB free \n", pspSdkTotalFreeUserMemSize()/1024);
 
 	//frame speed counter
 	fps_count++;//muff

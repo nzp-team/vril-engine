@@ -25,6 +25,8 @@ extern 	cvar_t	bgmtype;
 
 extern 	qboolean 	domaxammo;
 
+extern int EN_Find(int num,char *string);
+
 char *svc_strings[] =
 {
 	"svc_bad",
@@ -249,6 +251,7 @@ void CL_KeepaliveMessage (void)
 CL_ParseServerInfo
 ==================
 */
+int has_pap;
 void CL_ParseServerInfo (void)
 {
 	char	*str, tempname[MAX_QPATH];;
@@ -306,6 +309,8 @@ void CL_ParseServerInfo (void)
 // precache models
 	for (i=0 ; i<NUM_MODELINDEX ; i++)
 		cl_modelindex[i] = -1;
+
+	has_pap = EN_Find(0,"perk_pap");
 
 // precache models
 	memset (cl.model_precache, 0, sizeof(cl.model_precache));
