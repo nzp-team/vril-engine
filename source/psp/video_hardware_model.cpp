@@ -2063,6 +2063,14 @@ Mod_LoadAllSkins
 */
 static qboolean mod_h2;
 extern int has_pap;
+extern int has_perk_revive;
+extern int has_perk_juggernog;
+extern int has_perk_speedcola;
+extern int has_perk_doubletap;
+extern int has_perk_staminup;
+extern int has_perk_flopper;
+extern int has_perk_deadshot;
+extern int has_perk_mulekick;
 void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 {
 	int		i, j, k;
@@ -2134,6 +2142,134 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, qtrue, GU_LINEAR);
 
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+			return (void *)pskintype;
+		}
+
+		// Perk Bottles // v_perk
+		if (strcmp(loadmodel->name, "models/machines/v_perk.mdl") == 0) {
+			for (int i = 0; i < 8; i++) {
+				if (i == 0 && has_perk_revive) {
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_0", 0, 0, qtrue, GU_LINEAR);
+					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
+				} else if (!has_perk_revive && i == 0) {
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
+					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
+				}
+				if (i == 1 && has_perk_juggernog) {
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_1", 0, 0, qtrue, GU_LINEAR);
+					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
+				} else if (!has_perk_juggernog && i == 1) {
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
+					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
+				}
+				if (i == 2 && has_perk_speedcola) {
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_2", 0, 0, qtrue, GU_LINEAR);
+					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
+				} else if (!has_perk_speedcola && i == 2) {
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
+					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
+				}
+				if (i == 3 && has_perk_doubletap) {
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_3", 0, 0, qtrue, GU_LINEAR);
+					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
+				} else if (!has_perk_doubletap && i == 3) {
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
+					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
+				}
+				if (i == 4 && has_perk_staminup) {
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_4", 0, 0, qtrue, GU_LINEAR);
+					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
+				} else if (!has_perk_staminup && i == 4) {
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
+					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
+				}
+				if (i == 5 && has_perk_flopper) {
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_5", 0, 0, qtrue, GU_LINEAR);
+					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
+				} else if (!has_perk_flopper && i == 5) {
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
+					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
+				}
+				if (i == 6 && has_perk_deadshot) {
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_6", 0, 0, qtrue, GU_LINEAR);
+					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
+				} else if (!has_perk_deadshot && i == 6) {
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
+					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
+				}
+				if (i == 7 && has_perk_mulekick) {
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_7", 0, 0, qtrue, GU_LINEAR);
+					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
+				} else if (!has_perk_mulekick && i == 7) {
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
+					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
+				}
+			}
+
 			return (void *)pskintype;
 		}
 	}

@@ -252,6 +252,14 @@ CL_ParseServerInfo
 ==================
 */
 int has_pap;
+int has_perk_revive;
+int has_perk_juggernog;
+int has_perk_speedcola;
+int has_perk_doubletap;
+int has_perk_staminup;
+int has_perk_flopper;
+int has_perk_deadshot;
+int has_perk_mulekick;
 void CL_ParseServerInfo (void)
 {
 	char	*str, tempname[MAX_QPATH];;
@@ -311,6 +319,15 @@ void CL_ParseServerInfo (void)
 		cl_modelindex[i] = -1;
 
 	has_pap = EN_Find(0,"perk_pap");
+	has_perk_revive = EN_Find(0, "perk_revive");
+	has_perk_juggernog = EN_Find(0, "perk_juggernog");
+	has_perk_speedcola = EN_Find(0, "perk_speed");
+	has_perk_doubletap = EN_Find(0, "perk_double");
+	has_perk_staminup = EN_Find(0, "perk_staminup");
+	has_perk_flopper = EN_Find(0, "perk_flopper");
+	has_perk_deadshot = EN_Find(0, "perk_deadshot");
+	has_perk_mulekick = EN_Find(0, "perk_mule");
+
 
 // precache models
 	memset (cl.model_precache, 0, sizeof(cl.model_precache));
