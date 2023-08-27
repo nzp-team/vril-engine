@@ -1333,7 +1333,7 @@ int GetWeaponZoomAmmount (void)
 			break;
 		case W_KAR_SCOPE:
 		case W_HEADCRACKER:
-			return 50;
+			return 47;
 			break;
 		case W_THOMPSON:
 		case W_GIBS:
