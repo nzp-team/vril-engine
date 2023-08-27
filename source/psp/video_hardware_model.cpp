@@ -2285,6 +2285,16 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 			return (void *)pskintype;
 		}
+#ifndef SLIM
+		else if (has_pap && model_is_gun(loadmodel->name) && i >= 1) {
+			pheader->gl_texturenum[i][0] = 
+			pheader->gl_texturenum[i][1] = 
+			pheader->gl_texturenum[i][2] = 
+			pheader->gl_texturenum[i][3] = loadtextureimage("models/weapons/v_papskin", 0, 0, qtrue, GU_LINEAR);
+			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+			return (void *)pskintype;
+		}
+#endif
 		else if (pskintype->type == ALIAS_SKIN_SINGLE)
 		{
 			Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
