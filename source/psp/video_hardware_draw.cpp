@@ -3197,6 +3197,15 @@ int GL_LoadImages (const char *identifier, int width, int height, const byte *da
 		texture.height			= std::max(round_up(height),32U);
 	}
 
+#ifndef SLIM
+
+	if (texture.width > 128)
+		texture.width = 128;
+	if (texture.height > 128)
+		texture.height = 128;
+
+#endif // SLIM
+
 	if(texture.format < GU_PSM_DXT1)
 	{
 		for (int i=0; i <= mipmap_level;i++)
