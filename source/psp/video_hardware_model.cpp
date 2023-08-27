@@ -34,6 +34,7 @@ extern "C"
 
 #include "video_hardware_fullbright.h"
 #include "video_hardware_hlmdl.h"
+#include "video_hardware_images.h"
 
 #include <list>
 
@@ -2304,22 +2305,11 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 
 			{
 				sprintf (name, "%s_%i", loadmodel->name, i);
-				if(mod_h2)
-				{
-					pheader->gl_texturenum[i][0] =
-					pheader->gl_texturenum[i][1] =
-					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] =
-					GL_LoadPalTex (name, pheader->skinwidth, pheader->skinheight, (byte *)(pskintype + 1) , qtrue, GU_LINEAR, 0, NULL, PAL_H2);
-				}
-				else
-				{
-					pheader->gl_texturenum[i][0] =
-					pheader->gl_texturenum[i][1] =
-					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] =
-					GL_LoadTexture (name, pheader->skinwidth, pheader->skinheight, (byte *)(pskintype + 1) , qtrue, GU_LINEAR, 0);
-				}
+
+				pheader->gl_texturenum[i][0] =
+				pheader->gl_texturenum[i][1] =
+				pheader->gl_texturenum[i][2] =
+				pheader->gl_texturenum[i][3] = loadrgbafrompal(name, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1));
 			}
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 			/* Crow_bar Memory Leak Fixed   One Work not used       */

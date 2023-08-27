@@ -29,3 +29,4 @@ int Image_WritePNGPLTE (char *filename, int compression, byte *pixels, int width
 int Image_WriteJPEG (char *filename, int compression, byte *pixels, int width, int height);
 int Image_WritePCX (char *filename, byte *data, int width, int height, byte *palette);
 
+int loadrgbafrompal (char* name, int width, int height, byte* data);

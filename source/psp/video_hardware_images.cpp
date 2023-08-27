@@ -25,6 +25,8 @@ extern "C"
 #include "../quakedef.h"
 }
 
+#include <pspgu.h>
+
 cvar_t	jpeg_compression_level = {"jpeg_compression_level", "75"};
 
 int		    image_width;
@@ -1084,4 +1086,29 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 		free(data);
 
 	return texture_index;
+}
+
+/*
+=============
+loadrgbafrompal
+=============
+*/
+
+int loadrgbafrompal (char* name, int width, int height, byte* data)
+{
+	int pixels = width * height;
+	byte* rgbadata = (byte*)Q_malloc(pixels * 4);
+
+	for(int i = 0; i < pixels; i++) {
+		byte palette_index = data[i];
+		rgbadata[i * 4]     = host_basepal[palette_index * 3 + 0];
+        rgbadata[i * 4 + 1] = host_basepal[palette_index * 3 + 1];
+        rgbadata[i * 4 + 2] = host_basepal[palette_index * 3 + 2];
+        rgbadata[i * 4 + 3] = 255; // Set alpha to opaque
+	}
+
+	int ret = GL_LoadImages(name, width, height, rgbadata, qtrue, GU_LINEAR, 0, 4);
+
+	free(rgbadata);
+	return ret;
 }
