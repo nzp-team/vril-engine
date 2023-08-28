@@ -125,10 +125,12 @@ include $(PSPSDK)/lib/build.mak
 
 clean:
 	rm -rf build/
+	rm source/psp/*.o
 	rm source/*.o
 
 clean-keep-eboot:
 	rm -rf build/exec/
+	rm source/psp/*.o
 	rm source/*.o
 
 install: EBOOT.PBP
