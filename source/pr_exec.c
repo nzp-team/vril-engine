@@ -384,7 +384,7 @@ void PR_ExecuteProgram (func_t fnum)
 
 	f = &pr_functions[fnum];
 
-	runaway = 100000;
+	runaway = 200000;
 	pr_trace = false;
 
 // make a stack frame
