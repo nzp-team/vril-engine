@@ -414,12 +414,12 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			button_pic_x = 5;
 			break;
 		case 6://box
-			strcpy(s, va("Hold %s to buy a Random Weapon\n", GetUseButtonL()));
+			strcpy(s, va("Hold %s for Mystery Box\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = 5;
 			break;
 		case 7://box take
-			strcpy(s, va("Press %s to take Weapon\n", GetUseButtonL()));
+			strcpy(s, va("Hold %s for %s\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch));
 			strcpy(c, "");
 			button_pic_x = 6;
 			break;
