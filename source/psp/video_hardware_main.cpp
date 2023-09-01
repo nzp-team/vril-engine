@@ -1057,9 +1057,6 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 			}
 		}
 
-		// Allocate the vertices.
-		vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * count));
-
 		for (int start = vertex_index; vertex_index < (start + count); ++vertex_index)
 		{
 
