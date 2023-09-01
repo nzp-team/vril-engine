@@ -122,7 +122,6 @@ cvar_t	r_detail_mipmaps      = {"r_detail_mipmaps",          "1",qtrue};
 cvar_t	r_detail_mipmaps_func = {"r_detail_mipmaps_func",     "2",qtrue};
 cvar_t	r_detail_mipmaps_bias = {"r_detail_mipmaps_bias",    "-6",qtrue};
 cvar_t  r_asynch              = {"r_asynch",                  "0"};
-cvar_t  r_ipolations          = {"r_ipolations",              "0"};
 cvar_t  r_i_model_animation   = {"r_i_model_animation",       "1",qtrue}; // Toggle smooth model animation
 cvar_t  r_i_model_transform   = {"r_i_model_transform",       "1",qtrue}; // Toggle smooth model movement
 cvar_t	r_mipmaps             = {"r_mipmaps",                 "1",qtrue};
@@ -935,10 +934,16 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, float apitch, float 
 
 	struct vertex
 	{
-		float u, v;
-		unsigned int color;
-		float x, y, z;
+		int uvs;
+		char x, y, z;
+		char _padding;
 	};
+
+	sceGuColor(GU_COLOR(lightcolor[0], lightcolor[1], lightcolor[2], 1.0f));
+
+	// Allocate the vertices.
+	vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * paliashdr->numtris * 3));
+	int vertex_index = 0;
 
 	//for blubs's alternate BuildTris: 1) Disable while(1) loop 2) Disable the break; 3) replace GU_TRIANGLE_STRIP with GU_TRIANGLES
 	while (1)
@@ -962,36 +967,20 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, float apitch, float 
 			}
 		}
 
-		// Allocate the vertices.
-		vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * count));
 		//================================================================== fps: 50 ===============================================
-		for (int vertex_index = 0; vertex_index < count; ++vertex_index)
+		for (int start = vertex_index; vertex_index < (start + count); ++vertex_index)
 		{
 			// texture coordinates come from the draw list
-			out[vertex_index].u = ((float *)order)[0];
-			out[vertex_index].v = ((float *)order)[1];
-			order += 2;
-
-			l = shadedots[verts->lightnormalindex];
-			r = l * lightcolor[0];
-			g = l * lightcolor[1];
-			b = l * lightcolor[2];
-
-			 if(r > 1)
-				r = 1;
-			 if(g > 1)
-				g = 1;
-			 if(b > 1)
-				b = 1;
+			out[vertex_index].uvs = order[0];
+			order += 1;
 
 			out[vertex_index].x = verts->v[0];
 			out[vertex_index].y = verts->v[1];
 			out[vertex_index].z = verts->v[2];
-			out[vertex_index].color = GU_COLOR(r, g, b, 1.0f);
 
 			++verts;
 		}
-		sceGuDrawArray(prim, GU_TEXTURE_32BITF | GU_VERTEX_32BITF | GU_COLOR_8888, count, 0, out);
+		sceGuDrawArray(prim, GU_TEXTURE_16BIT | GU_VERTEX_8BIT, count, 0, &out[vertex_index - count]);
 		
 		//================================================================== fps: 50 ===============================================
 	}
@@ -1035,10 +1024,16 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 
 	struct vertex
 	{
-		float u, v;
-		unsigned int color;
-		float x, y, z;
+		int uvs;
+		char x, y, z;
+		char _padding;
 	};
+
+	sceGuColor(GU_COLOR(lightcolor[0], lightcolor[1], lightcolor[2], 1.0f));
+
+	// Allocate the vertices.
+	vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * paliashdr->numtris * 3));
+	int vertex_index = 0;
 
 	//for blubs's alternate BuildTris: 1) Disable while(1) loop 2) Disable the break; 3) replace GU_TRIANGLE_STRIP with GU_TRIANGLES
 	while (1)
@@ -1065,27 +1060,12 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 		// Allocate the vertices.
 		vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * count));
 
-		for (int vertex_index = 0; vertex_index < count; ++vertex_index)
+		for (int start = vertex_index; vertex_index < (start + count); ++vertex_index)
 		{
 
 			// texture coordinates come from the draw list
-			out[vertex_index].u = ((float *)order)[0];
-			out[vertex_index].v = ((float *)order)[1];
-
-			order += 2;
-			d[0] = shadedots[verts2->lightnormalindex] - shadedots[verts1->lightnormalindex];
-			l = shadedots[verts1->lightnormalindex] + (blend * d[0]);
-
-			r = l * lightcolor[0];
-			g = l * lightcolor[1];
-			b = l * lightcolor[2];
-
-			if(r > 1)
-				r = 1;
-			 if(g > 1)
-				g = 1;
-			 if(b > 1)
-				b = 1;
+			out[vertex_index].uvs = order[0];
+			order += 1;
 
 			VectorSubtract(verts2->v, verts1->v, d);
 
@@ -1097,12 +1077,11 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 			out[vertex_index].x = point[0];
 			out[vertex_index].y = point[1];
 			out[vertex_index].z = point[2];
-			out[vertex_index].color = GU_COLOR(r, g, b, 1.0f);
 
 			++verts1;
 			++verts2;
 		}
-		sceGuDrawArray(prim, GU_TEXTURE_32BITF | GU_VERTEX_32BITF | GU_COLOR_8888, count, 0, out);
+		sceGuDrawArray(prim, GU_TEXTURE_16BIT | GU_VERTEX_8BIT, count, 0, &out[vertex_index - count]);
 	}
 	if(r_showtris.value)
 	{
@@ -1110,330 +1089,6 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 	}
 	sceGuColor(0xffffffff);
 }
-
-/*
-=============
-GL_DrawAliasInterpolatedFrame
-=============
-*/
-void GL_DrawAliasInterpolatedFrame (aliashdr_t *paliashdr, int posenum, int oldposenum, int interp)
-{
-	float  l,r,g,b;
-	float interpolations;
-	trivertx_t *verts, *oldverts;
-	int  *order;
-	int  count;
-
-	int prim;
-	prim = GU_TRIANGLE_FAN;
-	if(r_showtris.value)
-	{
-		sceGuDisable(GU_TEXTURE_2D);
-		prim = GU_LINE_STRIP;
-	}
-
-	lastposenum = posenum;
-	interpolations = interp/r_ipolations.value;
-	verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
-	oldverts = verts;
-	verts += posenum * paliashdr->poseverts;
-	if (oldposenum >= 0)
-		oldverts += oldposenum * paliashdr->poseverts;
-	else
-		oldverts += posenum * paliashdr->poseverts;
-
-	order = (int *)((byte *)paliashdr + paliashdr->commands);
-
-
-	struct vertex
-	{
-		float u, v;
-		unsigned int color;
-		float x, y, z;
-	};
-
-	while (1)
-	{
-		// get the vertex count and primitive type
-		count = *order++;
-
-		if (!count)
-			break;
-
-		if(prim != GU_LINE_STRIP)
-		{
-			if (count < 0)
-			{
-				prim = GU_TRIANGLE_FAN;
-				count = -count;
-			}
-			else
-			{
-				prim = GU_TRIANGLE_STRIP;
-				//prim = GU_TRIANGLES;
-			}
-		}
-
-		// Allocate the vertices.
-		vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * count));
-
-		for (int vertex_index = 0; vertex_index < count; ++vertex_index)
-		{
-			// texture coordinates come from the draw list
-			out[vertex_index].u = ((float *)order)[0];
-			out[vertex_index].v = ((float *)order)[1];
-			order += 2;
-			// normals and vertexes come from the frame list
-			l = shadedots[verts->lightnormalindex];
-
-			r = l * lightcolor[0];
-			g = l * lightcolor[1];
-			b = l * lightcolor[2];
-			if(r > 1)
-				r = 1;
-			if(g > 1)
-				g = 1;
-			if(b > 1)
-				b = 1;
-
-			out[vertex_index].x = oldverts->v[0] + ((verts->v[0] - oldverts->v[0])*interpolations);
-			out[vertex_index].y = oldverts->v[1] + ((verts->v[1] - oldverts->v[1])*interpolations);
-			out[vertex_index].z = oldverts->v[2] + ((verts->v[2] - oldverts->v[2])*interpolations);
-
-			out[vertex_index].color = GU_COLOR(r, g, b, 1.0f);
-
-			++verts;
-			++oldverts;
-		}
-		sceGuDrawArray(prim, GU_TEXTURE_32BITF | GU_VERTEX_32BITF | GU_COLOR_8888, count, 0, out);
-	}
-	if(r_showtris.value)
-	{
-		sceGuEnable(GU_TEXTURE_2D);
-	}
-	sceGuColor(0xffffffff);
-}
-
-
-/*
-=============
-GL_DrawAliasShadow
-=============
-*/
-extern	vec3_t			lightspot;
-void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
-{
-	trivertx_t	*verts;
-	int		*order;
-	vec3_t	point;
-	float	height, lheight;
-	int		count;
-
-	lheight = currententity->origin[2] - lightspot[2];
-
-	height = 0;
-	verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
-	verts += posenum * paliashdr->poseverts;
-	order = (int *)((byte *)paliashdr + paliashdr->commands);
-
-	height = -lheight + 1.0;
-
-	struct vertex
-	{
-		float x, y, z;
-	};
-
-	while (1)
-	{
-		// get the vertex count and primitive type
-		int prim;
-		count = *order++;
-
-		if (!count)
-			break;		// done
-
-		if (count < 0)
-		{
-			count = -count;
-			prim =  GU_TRIANGLE_FAN;
-		}
-		else
-			prim =  GU_TRIANGLE_STRIP;
-
-		// Allocate the vertices.
-		vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * count));
-
-		for (int vertex_index = 0; vertex_index < count; ++vertex_index)
-		{
-			// texture coordinates come from the draw list
-			// (skipped for shadows) glTexCoord2fv ((float *)order);
-			order += 2;
-
-			// normals and vertexes come from the frame list
-			point[0] = verts->v[0] * paliashdr->scale[0] + paliashdr->scale_origin[0];
-			point[1] = verts->v[1] * paliashdr->scale[1] + paliashdr->scale_origin[1];
-			point[2] = verts->v[2] * paliashdr->scale[2] + paliashdr->scale_origin[2];
-
-			point[0] -= shadevector[0]*(point[2]+lheight);
-			point[1] -= shadevector[1]*(point[2]+lheight);
-			point[2] = height;
-
-			out[vertex_index].x = point[0];
-			out[vertex_index].y = point[1];
-			out[vertex_index].z = point[2];
-			++verts;
-		}
-        if(r_showtris.value)
-		{
-		   sceGuDisable(GU_TEXTURE_2D);
-		}
-
-		sceGuDrawArray(r_showtris.value ? GU_LINE_STRIP : prim, GU_VERTEX_32BITF, count, 0, out);
-
-		if(r_showtris.value)
-		{
-		   sceGuEnable(GU_TEXTURE_2D);
-		}
-	}
-}
-
-/*
-=============
-GL_DrawAliasBlendedShadow
-
-fenix@io.com: model animation interpolation
-=============
-*/
-void GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, entity_t* e)
-{
-    trivertx_t* verts1;
-    trivertx_t* verts2;
-    int*        order;
-    vec3_t      point1;
-    vec3_t      point2;
-    vec3_t      d;
-    float       height;
-    float       lheight;
-    int         count;
-    float       blend;
-
-	// Tomaz - New Shadow Begin
-	trace_t		downtrace;
-	vec3_t		downmove;
-	float		s1,c1;
-	// Tomaz - New Shadow End
-
-    blend = (realtime - e->frame_start_time) / e->frame_interval;
-
-    if (blend > 1) blend = 1;
-
-    lheight = e->origin[2] - lightspot[2];
-    height  = -lheight; // Tomaz - New Shadow
-
-	// Tomaz - New Shadow Begin
-	VectorCopy (e->origin, downmove);
-	downmove[2] = downmove[2] - 4096;
-	memset (&downtrace, 0, sizeof(downtrace));
-	SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, e->origin, downmove, &downtrace);
-
-	#ifdef PSP_VFPU
-	s1 = vfpu_sinf( e->angles[1]/180*M_PI);
-	c1 = vfpu_cosf( e->angles[1]/180*M_PI);
-	#else
-	s1 = sin( e->angles[1]/180*M_PI);
-	c1 = cos( e->angles[1]/180*M_PI);
-	#endif
-	// Tomaz - New Shadow End
-
-    verts1 = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
-    verts2 = verts1;
-
-    verts1 += pose1 * paliashdr->poseverts;
-    verts2 += pose2 * paliashdr->poseverts;
-
-    order = (int *)((byte *)paliashdr + paliashdr->commands);
-
-    for (;;)
-    {
-        // get the vertex count and primitive type
-        count = *order++;
-
-        if (!count)
-		break;
-
-        int prim;
-		if (count < 0)
-		{
-		 count = -count;
-		 prim = GU_TRIANGLE_FAN;
-		}
-		else
-		{
-		 prim = GU_TRIANGLE_STRIP;
-		}
-
-		// Allocate the vertices.
-		struct vertex
-		{
-			float x, y, z;
-		};
-
-		vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * count));
-
-		for (int vertex_index = 0; vertex_index < count; ++vertex_index)
-		{
-                order += 2;
-
-                point1[0] = verts1->v[0] * paliashdr->scale[0] + paliashdr->scale_origin[0];
-                point1[1] = verts1->v[1] * paliashdr->scale[1] + paliashdr->scale_origin[1];
-                point1[2] = verts1->v[2] * paliashdr->scale[2] + paliashdr->scale_origin[2];
-
-                point1[0] -= shadevector[0]*(point1[2]+lheight);
-                point1[1] -= shadevector[1]*(point1[2]+lheight);
-
-                point2[0] = verts2->v[0] * paliashdr->scale[0] + paliashdr->scale_origin[0];
-                point2[1] = verts2->v[1] * paliashdr->scale[1] + paliashdr->scale_origin[1];
-                point2[2] = verts2->v[2] * paliashdr->scale[2] + paliashdr->scale_origin[2];
-
-                point2[0] -= shadevector[0]*(point2[2]+lheight);
-                point2[1] -= shadevector[1]*(point2[2]+lheight);
-
-                VectorSubtract(point2, point1, d);
-
-				// Tomaz - New shadow Begin
-				point1[0] = point1[0] + (blend * d[0]);
-				point1[1] = point1[1] + (blend * d[1]);
-				point1[2] = point1[2] + (blend * d[2]);
-
-				point1[2] =  - (e->origin[2] - downtrace.endpos[2]);
-
-				point1[2] += ((point1[1] * (s1 * downtrace.plane.normal[0])) -
-							  (point1[0] * (c1 * downtrace.plane.normal[0])) -
-							  (point1[0] * (s1 * downtrace.plane.normal[1])) -
-							  (point1[1] * (c1 * downtrace.plane.normal[1]))) +
-							  ((1.0 - downtrace.plane.normal[2])*20) + 0.2 ;
-
-				out[vertex_index].x = point1[0];
-                out[vertex_index].y = point1[1] ;
-                out[vertex_index].z = point1[2];
-				// Tomaz - New shadow Begin
-
-                verts1++;
-                verts2++;
-        }
-        if(r_showtris.value)
-		{
-		   sceGuDisable(GU_TEXTURE_2D);
-		}
-		sceGuDrawArray(r_showtris.value ? GU_LINE_STRIP : prim,GU_VERTEX_32BITF, count, 0, out);
-        if(r_showtris.value)
-		{
-		   sceGuEnable(GU_TEXTURE_2D);
-		}
-    }
-}
-
-
 
 /*
 =================
@@ -1543,49 +1198,6 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e, fl
 		else
 			GL_DrawAliasBlendedFrame (paliashdr, e->pose1, e->pose2, blend, apitch, ayaw);
 	}
-}
-
-/*
-=================
-R_SetupAliasInterpolatedFrame
-=================
-*/
-void R_SetupAliasInterpolatedFrame (int frame, int lastframe, float interp, aliashdr_t *paliashdr)
-{
-   int   pose, numposes, oldpose;
-   float   interval;
-
-	if ((frame >= paliashdr->numframes) || (frame < 0))
-    {
-      Con_DPrintf ("R_AliasSetupFrame: no such frame %d\n", frame);
-      frame = 0;
-    }
-
-	if ((lastframe >= paliashdr->numframes) || (lastframe < 0))
-    {
-      Con_DPrintf ("R_AliasSetupFrame: no such last frame %d\n", lastframe);
-      lastframe = 0;
-    }
-
-	pose = paliashdr->frames[frame].firstpose;
-    numposes = paliashdr->frames[frame].numposes;
-
-	if (numposes > 1)
-    {
-      interval = paliashdr->frames[frame].interval;
-      pose += (int)(cl.time / interval) % numposes;
-    }
-
-    oldpose = paliashdr->frames[lastframe].firstpose;
-    numposes = paliashdr->frames[lastframe].numposes;
-
-	if (numposes > 1)
-    {
-      interval = paliashdr->frames[lastframe].interval;
-      oldpose += (int)(cl.time / interval) % numposes;
-    }
-
-   GL_DrawAliasInterpolatedFrame (paliashdr, pose, oldpose, interp);
 }
 
 /*
@@ -1702,6 +1314,7 @@ void GL_DrawQ2AliasFrame (entity_t *e, md2_t *pheader, int lastpose, int pose, f
 GL_DrawQ2AliasShadow
 =============
 */
+extern	vec3_t	lightspot;
 void GL_DrawQ2AliasShadow (entity_t *e, md2_t *pheader, int lastpose, int pose, float lerp)
 {
 	float	ilerp, height, lheight;
@@ -1969,7 +1582,7 @@ void R_DrawZombieLimb (entity_t *e,int which)
 
 	const ScePspFVector3 scaling =
 	{
-		paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]
+		paliashdr->scale[0] * 128.f, paliashdr->scale[1] * 128.f, paliashdr->scale[2] * 128.f
 	};
 	sceGumScale(&scaling);
 
@@ -1984,30 +1597,7 @@ void R_DrawZombieLimb (entity_t *e,int which)
 	}
 	else
 	{
-		if (r_ipolations.value)//blubs: seems like we don't even use InterpolatedFrames.
-		{
-			if (r_asynch.value)
-			{
-				if (e->interpolation >= r_ipolations.value)
-				{
-					e->last_frame = e->current_frame;
-					e->current_frame = e->frame;
-					e->interpolation = 1;
-				}
-			}
-			else
-			{
-				if (e->frame != e->current_frame)
-				{
-					e->last_frame = e->current_frame;
-					e->current_frame = e->frame;
-					e->interpolation = 1;
-				}
-			}
-			R_SetupAliasInterpolatedFrame (e->current_frame,e->last_frame,e->interpolation,paliashdr);
-		}
-		else
-			R_SetupAliasFrame (e->frame, paliashdr, e->angles[0], e->angles[1]);
+		R_SetupAliasFrame (e->frame, paliashdr, e->angles[0], e->angles[1]);
 	}
 	//t3 += Sys_FloatTime();
 	sceGumPopMatrix();
@@ -2069,7 +1659,7 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	sceGumTranslate(&translation);
 	const ScePspFVector3 scaling =
 	{
-		paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]
+		paliashdr->scale[0] * 128.f, paliashdr->scale[1] * 128.f, paliashdr->scale[2] * 128.f
 	};
 	sceGumScale(&scaling);
 
@@ -2096,30 +1686,7 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	}
 	else
 	{
-		if (r_ipolations.value)//blubs: seems like we don't even use InterpolatedFrames.
-		{
-			if (r_asynch.value)
-			{
-				if (e->interpolation >= r_ipolations.value)
-				{
-					e->last_frame = e->current_frame;
-					e->current_frame = e->frame;
-					e->interpolation = 1;
-				}
-			}
-			else
-			{
-				if (e->frame != e->current_frame)
-				{
-					e->last_frame = e->current_frame;
-					e->current_frame = e->frame;
-					e->interpolation = 1;
-				}
-			}
-			R_SetupAliasInterpolatedFrame (e->current_frame,e->last_frame,e->interpolation,paliashdr);
-		}
-		else
-			R_SetupAliasFrame (e->frame, paliashdr, e->angles[0], e->angles[1]);
+		R_SetupAliasFrame (e->frame, paliashdr, e->angles[0], e->angles[1]);
 	}
 	sceGumPopMatrix();
 	sceGumUpdateMatrix();
@@ -2309,7 +1876,7 @@ void R_DrawAliasModel (entity_t *e)
 			paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]
 		};
 		const ScePspFVector3 scaling = {
-			paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]
+			paliashdr->scale[0] * scale * 128.f, paliashdr->scale[1] * 128.f, paliashdr->scale[2] * 128.f
 		};
 
 		sceGumTranslate(&translation);
@@ -2319,7 +1886,7 @@ void R_DrawAliasModel (entity_t *e)
 			paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]
 		};
 		const ScePspFVector3 scaling = {
-			paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]
+			paliashdr->scale[0] * 128.f, paliashdr->scale[1] * 128.f, paliashdr->scale[2] * 128.f
 		};
 
 		sceGumTranslate(&translation);
@@ -2375,30 +1942,7 @@ void R_DrawAliasModel (entity_t *e)
 	}
 	else
 	{
-		if (r_ipolations.value)//blubs: seems like we don't even use InterpolatedFrames.
-		{
-			if (r_asynch.value)
-			{
-				if (e->interpolation >= r_ipolations.value)
-				{
-					e->last_frame = e->current_frame;
-					e->current_frame = e->frame;
-					e->interpolation = 1;
-				}
-			}
-			else
-			{
-				if (e->frame != e->current_frame)
-				{
-					e->last_frame = e->current_frame;
-					e->current_frame = e->frame;
-					e->interpolation = 1;
-				}
-			}
-			R_SetupAliasInterpolatedFrame (e->current_frame,e->last_frame,e->interpolation,paliashdr);
-		}
-		else
-			R_SetupAliasFrame (e->frame, paliashdr, e->angles[0], e->angles[1]);
+		R_SetupAliasFrame (e->frame, paliashdr, e->angles[0], e->angles[1]);
 	}
 	sceGumPopMatrix();
 	sceGumUpdateMatrix();
