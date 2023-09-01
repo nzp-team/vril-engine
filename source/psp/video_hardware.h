@@ -230,7 +230,6 @@ extern  cvar_t  r_loadq3models;
 
 extern  cvar_t  r_i_model_animation;
 extern  cvar_t  r_i_model_transform;
-extern  cvar_t  r_ipolations;
 extern  cvar_t  r_asynch;
 
 extern  cvar_t  cl_loadmapcfg;

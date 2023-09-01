@@ -316,7 +316,6 @@ void R_Init (void)
     Cvar_RegisterVariable (&r_farclip);
 
 	Cvar_RegisterVariable (&r_asynch);
-    Cvar_RegisterVariable (&r_ipolations);
 	Cvar_RegisterVariable (&gl_keeptjunctions);
     Cvar_RegisterVariable (&r_waterwarp);
 
