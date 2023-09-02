@@ -289,6 +289,16 @@ static void BuildTris (void)
 		short uv[2];
 	};
 
+	union xyz_union {
+		int i;
+		char xyz[4];
+	};
+
+	// Reserve slot as the first entry in commands buffer,
+	// After the loop, we will put number of commands there.
+	commands[0] = 0;
+	numcommands++;
+
 	for (i=0 ; i<pheader->numtris ; i++)
 	{
 		// pick an unused triangle and start the trifan
@@ -347,10 +357,23 @@ static void BuildTris (void)
 			st.uv[1] = (short)(t * 32767); 
 
 			commands[numcommands++] = st.i;
+
+			if (pheader->numframes <= 1) {
+				xyz_union pos;
+				pos.xyz[0] = poseverts[0][k].v[0];
+				pos.xyz[1] = poseverts[0][k].v[1];
+				pos.xyz[2] = poseverts[0][k].v[2];
+				pos.xyz[3] = 0;
+				commands[numcommands++] = pos.i;
+			}
+			
 		}
 	}
 
 	commands[numcommands++] = 0;		// end of list marker
+
+	// Update the first entry again with number of commands
+	commands[0] = numcommands;
 
 	Con_DPrintf ("%3i tri %3i vert %3i cmd\n", pheader->numtris, numorder, numcommands);
 
@@ -423,12 +446,16 @@ void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr)
 	paliashdr->commands = (byte *)cmds - (byte *)paliashdr;
 	memcpy (cmds, commands, numcommands * sizeof(int));
 
-	verts = static_cast<trivertx_t*>(Hunk_Alloc (paliashdr->numposes * paliashdr->poseverts
-		* sizeof(trivertx_t)));
-	paliashdr->posedata = (byte *)verts - (byte *)paliashdr;
-	for (i=0 ; i<paliashdr->numposes ; i++)
-		for (j=0 ; j<numorder ; j++)
-			*verts++ = poseverts[i][vertexorder[j]];
+	// Only allocate this for animated models, static models have their vert coords in the command buffer for speed
+	if (paliashdr->numframes > 1)
+	{
+		verts = static_cast<trivertx_t*>(Hunk_Alloc (paliashdr->numposes * paliashdr->poseverts
+			* sizeof(trivertx_t)));
+		paliashdr->posedata = (byte *)verts - (byte *)paliashdr;
+		for (i=0 ; i<paliashdr->numposes ; i++)
+			for (j=0 ; j<numorder ; j++)
+				*verts++ = poseverts[i][vertexorder[j]];
+	} 
 
 	// code for elimination of muzzleflashes on viewmodels
 	/*if (m->modhint == MOD_WEAPON && qmb_initialized && r_part_muzzleflash.value)
