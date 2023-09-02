@@ -914,102 +914,14 @@ int	lastposenum;
 float old_i_model_transform;
 //
 
-/*
-=============
-GL_DrawAliasFrame
-=============
-*/
-void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, float apitch, float ayaw)
+void GL_DrawAliasBlendedWireFrame (aliashdr_t *paliashdr, int pose1, int pose2, float blend)
 {
-	float 	l,r,g,b;
-	trivertx_t	*verts;
-	int		*order;
-	int		count;
-	int prim;
-
-	lastposenum = posenum;
-	verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
-	verts += posenum * paliashdr->poseverts;
-	order = (int *)((byte *)paliashdr + paliashdr->commands);
-
-	struct vertex
-	{
-		int uvs;
-		char x, y, z;
-		char _padding;
-	};
-
-	sceGuColor(GU_COLOR(lightcolor[0], lightcolor[1], lightcolor[2], 1.0f));
-
-	// Allocate the vertices.
-	vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * paliashdr->numtris * 3));
-	int vertex_index = 0;
-
-	//for blubs's alternate BuildTris: 1) Disable while(1) loop 2) Disable the break; 3) replace GU_TRIANGLE_STRIP with GU_TRIANGLES
-	while (1)
-	{
-		// get the vertex count and primitive type
-		count = *order++;
-		if (!count)
-			break;		// done
-
-		if(prim != GU_LINE_STRIP)
-		{
-			if (count < 0)
-			{
-				prim = GU_TRIANGLE_FAN;
-				count = -count;
-			}
-			else
-			{
-				prim = GU_TRIANGLE_STRIP;
-				//prim = GU_TRIANGLES; //used for blubs' alternate BuildTris with one continual triangle list
-			}
-		}
-
-		//================================================================== fps: 50 ===============================================
-		for (int start = vertex_index; vertex_index < (start + count); ++vertex_index)
-		{
-			// texture coordinates come from the draw list
-			out[vertex_index].uvs = order[0];
-			order += 1;
-
-			out[vertex_index].x = verts->v[0];
-			out[vertex_index].y = verts->v[1];
-			out[vertex_index].z = verts->v[2];
-
-			++verts;
-		}
-		sceGuDrawArray(prim, GU_TEXTURE_16BIT | GU_VERTEX_8BIT, count, 0, &out[vertex_index - count]);
-		
-		//================================================================== fps: 50 ===============================================
-	}
-	sceGuColor(0xffffffff);
-}
-
-/*
-=============
-GL_DrawAliasBlendedFrame
-
-fenix@io.com: model animation interpolation
-=============
-*/
-void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float blend, float apitch, float ayaw)
-{
-	float       l,r,g,b;
 	trivertx_t* verts1;
 	trivertx_t* verts2;
 	int*        order;
 	int         count;
 	vec3_t      d;
 	vec3_t       point;
-	int prim;
-	prim = GU_TRIANGLE_FAN;
-	if(r_showtris.value)
-	{
-		sceGuDisable(GU_TEXTURE_2D);
-		prim = GU_LINE_STRIP;
-	}
 
 	lastposenum0 = pose1;
 	lastposenum  = pose2;
@@ -1022,6 +934,9 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 
 	order = (int *)((byte *)paliashdr + paliashdr->commands);
 
+	int numcommands = order[0];
+	order++;
+
 	struct vertex
 	{
 		int uvs;
@@ -1032,7 +947,7 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 	sceGuColor(GU_COLOR(lightcolor[0], lightcolor[1], lightcolor[2], 1.0f));
 
 	// Allocate the vertices.
-	vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * paliashdr->numtris * 3));
+	vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * numcommands));
 	int vertex_index = 0;
 
 	//for blubs's alternate BuildTris: 1) Disable while(1) loop 2) Disable the break; 3) replace GU_TRIANGLE_STRIP with GU_TRIANGLES
@@ -1042,9 +957,110 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 		count = *order++;
 
 		if (!count) break;
+		if (count < 0)
+			count = -count;
 
-		if(prim != GU_LINE_STRIP)
+		for (int start = vertex_index; vertex_index < (start + count); ++vertex_index)
 		{
+
+			// texture coordinates come from the draw list
+			out[vertex_index].uvs = order[0];
+			order += 1;
+
+			VectorSubtract(verts2->v, verts1->v, d);
+
+			// blend the vertex positions from each frame together
+			point[0] = verts1->v[0] + (blend * d[0]);
+			point[1] = verts1->v[1] + (blend * d[1]);
+			point[2] = verts1->v[2] + (blend * d[2]);
+
+			out[vertex_index].x = point[0];
+			out[vertex_index].y = point[1];
+			out[vertex_index].z = point[2];
+
+			++verts1;
+			++verts2;
+		}
+		sceGuDrawArray(GU_LINE_STRIP, GU_TEXTURE_16BIT | GU_VERTEX_8BIT, count, 0, &out[vertex_index - count]);
+	}
+
+	sceGuEnable(GU_TEXTURE_2D);
+	sceGuColor(0xffffffff);
+}
+
+
+/*
+=============
+GL_DrawAliasFrame
+=============
+*/
+void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum)
+{
+	if (r_showtris.value)
+	{
+		GL_DrawAliasBlendedWireFrame(paliashdr, posenum, posenum, 0);
+		return;
+	}
+	trivertx_t	*verts;
+	int		*order;
+	int		count;
+	int prim;
+
+	lastposenum = posenum;
+	verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
+	verts += posenum * paliashdr->poseverts;
+	order = (int *)((byte *)paliashdr + paliashdr->commands);
+
+	int numcommands = order[0];
+	order++;
+
+	qboolean isStatic = paliashdr->numframes <= 1 ? qtrue : qfalse;
+
+	struct vertex
+	{
+		int uvs;
+		char x, y, z;
+		char _padding;
+	};
+
+	sceGuColor(GU_COLOR(lightcolor[0], lightcolor[1], lightcolor[2], 1.0f));
+
+
+	if (isStatic)
+	{
+		while (1)
+		{
+			// get the vertex count and primitive type
+			count = *order++;
+			if (!count)
+				break;		// done
+
+			if (count < 0)
+			{
+				prim = GU_TRIANGLE_FAN;
+				count = -count;
+			}
+			else
+			{
+				prim = GU_TRIANGLE_STRIP;
+			}
+
+			sceGuDrawArray(prim, GU_TEXTURE_16BIT | GU_VERTEX_8BIT, count, 0, order);
+			order += 2 * count;
+		}
+	}
+	else
+	{
+		// Allocate the vertices.
+		vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * numcommands));
+		int vertex_index = 0;
+		//for blubs's alternate BuildTris: 1) Disable while(1) loop 2) Disable the break; 3) replace GU_TRIANGLE_STRIP with GU_TRIANGLES
+		while (1)
+		{
+			// get the vertex count and primitive type
+			count = *order++;
+			if (!count)
+				break;		// done
 			if (count < 0)
 			{
 				prim = GU_TRIANGLE_FAN;
@@ -1055,6 +1071,93 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 				prim = GU_TRIANGLE_STRIP;
 				//prim = GU_TRIANGLES; //used for blubs' alternate BuildTris with one continual triangle list
 			}
+			//================================================================== fps: 50 ===============================================
+			for (int start = vertex_index; vertex_index < (start + count); ++vertex_index)
+			{
+				// texture coordinates come from the draw list
+				out[vertex_index].uvs = order[0];
+				order += 1;
+
+				out[vertex_index].x = verts->v[0];
+				out[vertex_index].y = verts->v[1];
+				out[vertex_index].z = verts->v[2];
+
+				++verts;
+			}
+			sceGuDrawArray(prim, GU_TEXTURE_16BIT | GU_VERTEX_8BIT, count, 0, &out[vertex_index - count]);
+			
+			//================================================================== fps: 50 ===============================================
+		}
+	}
+	sceGuColor(0xffffffff);
+}
+
+/*
+=============
+GL_DrawAliasBlendedFrame
+
+fenix@io.com: model animation interpolation
+=============
+*/
+void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float blend)
+{
+	if (r_showtris.value)
+	{
+		GL_DrawAliasBlendedWireFrame(paliashdr, pose1, pose2, blend);
+		return;
+	}
+	trivertx_t* verts1;
+	trivertx_t* verts2;
+	int*        order;
+	int         count;
+	vec3_t      d;
+	vec3_t       point;
+	int prim;
+	prim = GU_TRIANGLE_FAN;
+
+	lastposenum0 = pose1;
+	lastposenum  = pose2;
+
+	verts1 = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
+	verts2 = verts1;
+
+	verts1 += pose1 * paliashdr->poseverts;
+	verts2 += pose2 * paliashdr->poseverts;
+
+	order = (int *)((byte *)paliashdr + paliashdr->commands);
+
+	int numcommands = order[0];
+	order++;
+
+	struct vertex
+	{
+		int uvs;
+		char x, y, z;
+		char _padding;
+	};
+
+	sceGuColor(GU_COLOR(lightcolor[0], lightcolor[1], lightcolor[2], 1.0f));
+
+	// Allocate the vertices.
+	vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * numcommands));
+	int vertex_index = 0;
+
+	//for blubs's alternate BuildTris: 1) Disable while(1) loop 2) Disable the break; 3) replace GU_TRIANGLE_STRIP with GU_TRIANGLES
+	while (1)
+	{
+		// get the vertex count and primitive type
+		count = *order++;
+
+		if (!count) break;
+		if (count < 0)
+		{
+			prim = GU_TRIANGLE_FAN;
+			count = -count;
+		}
+		else
+		{
+			prim = GU_TRIANGLE_STRIP;
+			//prim = GU_TRIANGLES; //used for blubs' alternate BuildTris with one continual triangle list
 		}
 
 		for (int start = vertex_index; vertex_index < (start + count); ++vertex_index)
@@ -1080,10 +1183,6 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 		}
 		sceGuDrawArray(prim, GU_TEXTURE_16BIT | GU_VERTEX_8BIT, count, 0, &out[vertex_index - count]);
 	}
-	if(r_showtris.value)
-	{
-		sceGuEnable(GU_TEXTURE_2D);
-	}
 	sceGuColor(0xffffffff);
 }
 
@@ -1093,7 +1192,7 @@ R_SetupAliasFrame
 
 =================
 */
-void R_SetupAliasFrame (int frame, aliashdr_t *paliashdr, float apitch, float ayaw)
+void R_SetupAliasFrame (int frame, aliashdr_t *paliashdr)
 {
 	int				pose, numposes;
 	float			interval;
@@ -1113,7 +1212,7 @@ void R_SetupAliasFrame (int frame, aliashdr_t *paliashdr, float apitch, float ay
 		pose += (int)(cl.time / interval) % numposes;
 	}
 
-	GL_DrawAliasFrame (paliashdr, pose, apitch, ayaw);
+	GL_DrawAliasFrame (paliashdr, pose);
 }
 
 /*
@@ -1125,7 +1224,7 @@ fenix@io.com: model animation interpolation
 */
 //double t1, t2, t3;
 
-void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e, float apitch, float ayaw)
+void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 {
 	int   pose;
 	int   numposes;
@@ -1149,7 +1248,7 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e, fl
 		e->pose1 = e->pose2 = paliashdr->frames[frame].firstpose;
 		e->frame_interval = 0.1;
 
-		GL_DrawAliasFrame (paliashdr, paliashdr->frames[frame].firstpose, apitch, ayaw);
+		GL_DrawAliasFrame (paliashdr, paliashdr->frames[frame].firstpose);
 	} else {
 		pose = paliashdr->frames[frame].firstpose;
 		numposes = paliashdr->frames[frame].numposes;
@@ -1191,9 +1290,9 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e, fl
 		if (cl.paused || blend > 1) blend = 1;
 
 		if (blend == 1)
-			GL_DrawAliasFrame (paliashdr, pose, apitch, ayaw);
+			GL_DrawAliasFrame (paliashdr, pose);
 		else
-			GL_DrawAliasBlendedFrame (paliashdr, e->pose1, e->pose2, blend, apitch, ayaw);
+			GL_DrawAliasBlendedFrame (paliashdr, e->pose1, e->pose2, blend);
 	}
 }
 
@@ -1587,14 +1686,14 @@ void R_DrawZombieLimb (entity_t *e,int which)
 
 	IgnoreInterpolatioFrame(e, paliashdr);
 
-
-	if (r_i_model_animation.value)
+	// Make sure we never try to do blended frame on models with just single frame
+	if (r_i_model_animation.value && paliashdr->numframes > 1)
 	{
-		R_SetupAliasBlendedFrame (e->frame, paliashdr, e, e->angles[0], e->angles[1]);
+		R_SetupAliasBlendedFrame (e->frame, paliashdr, e);
 	}
 	else
 	{
-		R_SetupAliasFrame (e->frame, paliashdr, e->angles[0], e->angles[1]);
+		R_SetupAliasFrame (e->frame, paliashdr);
 	}
 	//t3 += Sys_FloatTime();
 	sceGumPopMatrix();
@@ -1679,11 +1778,11 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	//Rendering block
 	if (r_i_model_animation.value)
 	{
-		R_SetupAliasBlendedFrame (e->frame, paliashdr, e, e->angles[0], e->angles[1]);
+		R_SetupAliasBlendedFrame (e->frame, paliashdr, e);
 	}
 	else
 	{
-		R_SetupAliasFrame (e->frame, paliashdr, e->angles[0], e->angles[1]);
+		R_SetupAliasFrame (e->frame, paliashdr);
 	}
 	sceGumPopMatrix();
 	sceGumUpdateMatrix();
@@ -1935,11 +2034,11 @@ void R_DrawAliasModel (entity_t *e)
 	//Rendering block
 	if (r_i_model_animation.value)
 	{
-		R_SetupAliasBlendedFrame (e->frame, paliashdr, e, e->angles[0], e->angles[1]);
+		R_SetupAliasBlendedFrame (e->frame, paliashdr, e);
 	}
 	else
 	{
-		R_SetupAliasFrame (e->frame, paliashdr, e->angles[0], e->angles[1]);
+		R_SetupAliasFrame (e->frame, paliashdr);
 	}
 	sceGumPopMatrix();
 	sceGumUpdateMatrix();
