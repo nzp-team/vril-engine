@@ -358,7 +358,7 @@ static void BuildTris (void)
 
 			commands[numcommands++] = st.i;
 
-			if (pheader->numframes <= 1) {
+			if (pheader->numposes <= 1) {
 				xyz_union pos;
 				pos.xyz[0] = poseverts[0][k].v[0];
 				pos.xyz[1] = poseverts[0][k].v[1];
@@ -447,7 +447,7 @@ void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr)
 	memcpy (cmds, commands, numcommands * sizeof(int));
 
 	// Only allocate this for animated models, static models have their vert coords in the command buffer for speed
-	if (paliashdr->numframes > 1)
+	if (paliashdr->numposes > 1)
 	{
 		verts = static_cast<trivertx_t*>(Hunk_Alloc (paliashdr->numposes * paliashdr->poseverts
 			* sizeof(trivertx_t)));
