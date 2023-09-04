@@ -1014,7 +1014,7 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum)
 	int numcommands = order[0];
 	order++;
 
-	qboolean isStatic = paliashdr->numframes <= 1 ? qtrue : qfalse;
+	qboolean isStatic = paliashdr->numposes <= 1 ? qtrue : qfalse;
 
 	struct vertex
 	{
@@ -1687,7 +1687,7 @@ void R_DrawZombieLimb (entity_t *e,int which)
 	IgnoreInterpolatioFrame(e, paliashdr);
 
 	// Make sure we never try to do blended frame on models with just single frame
-	if (r_i_model_animation.value && paliashdr->numframes > 1)
+	if (r_i_model_animation.value && paliashdr->numposes > 1)
 	{
 		R_SetupAliasBlendedFrame (e->frame, paliashdr, e);
 	}
