@@ -832,6 +832,14 @@ static void R_BlendLightmaps (void)
 
 int ClipFace (msurface_t * fa)
 {
+	// skip maths if broad phase tells us we don't need clipping
+	if (!(fa->flags & SURF_NEEDSCLIPPING))
+	{
+		fa->polys->numclippedverts = fa->polys->numverts;
+		fa->polys->display_list_verts = fa->polys->verts;
+		return fa->polys->numverts;
+	}
+
 	// shpuld: moved clipping here to have it in one place only
 	int verts_total = 0;
 	glpoly_t* poly = fa->polys;
@@ -867,10 +875,7 @@ int ClipFace (msurface_t * fa)
 		poly->numclippedverts = clipped_vertex_count;
 	} else {
 		verts_total += unclipped_vertex_count;
-
-		const std::size_t buffer_size = unclipped_vertex_count * sizeof(glvert_t);
-		poly->display_list_verts = static_cast<glvert_t*>(sceGuGetMemory(buffer_size));
-		memcpy(poly->display_list_verts, unclipped_vertices, buffer_size);
+		poly->display_list_verts = poly->verts;
 		poly->numclippedverts = unclipped_vertex_count;
 	}
 	return verts_total;
@@ -1162,21 +1167,24 @@ void R_DrawBrushModel (entity_t *e)
 
 	clmodel = e->model;
 
+	int frustum_check;
+
 	if (e->angles[0] || e->angles[1] || e->angles[2])
 	{
 		rotated = qtrue;
-		if (R_CullSphere(e->origin, clmodel->radius))
-			return;
+		frustum_check = R_FrustumCheckSphere(e->origin, clmodel->radius);
+		
 	}
 	else
 	{
 		rotated = qfalse;
 		VectorAdd (e->origin, clmodel->mins, mins);
 		VectorAdd (e->origin, clmodel->maxs, maxs);
-
-	    if (R_CullBox (mins, maxs) == 2)
-		    return;
+	    frustum_check = R_FrustumCheckBox(mins, maxs);
 	}
+
+	if (frustum_check < 0)
+		return;
 
 
 	memset (lightmap_chains, 0, sizeof(lightmap_chains));
@@ -1281,6 +1289,8 @@ void R_DrawBrushModel (entity_t *e)
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON)))
 		{
+			psurf->flags &= ~SURF_NEEDSCLIPPING;
+			psurf->flags |= SURF_NEEDSCLIPPING * (frustum_check > 1);
 			R_RenderBrushPoly (psurf);
 		}
 	}
@@ -1356,7 +1366,11 @@ void R_RecursiveWorldNode (mnode_t *node)
 
 	if (node->visframe != r_visframecount)
 		return;
-	if (R_CullBox (node->minmaxs, node->minmaxs+3) == 2)
+
+	// maybe we can avoid extra checks if we remember results for "completely inside",
+	// then we don't need to check at all for next one? experiment with it.
+	int frustum_check = R_FrustumCheckBox (node->minmaxs, node->minmaxs+3);
+	if (frustum_check < 0)
 		return;
 
 // if a leaf node, draw stuff
@@ -1435,14 +1449,17 @@ void R_RecursiveWorldNode (mnode_t *node)
 
 				// if sorting by texture, just store it out
 				/*if (gl_texsort.value)*/
+				
+				if (!mirror
+				|| surf->texinfo->texture != cl.worldmodel->textures[mirrortexturenum])
 				{
-					if (!mirror
-					|| surf->texinfo->texture != cl.worldmodel->textures[mirrortexturenum])
-					{
-						surf->texturechain = surf->texinfo->texture->texturechain;
-						surf->texinfo->texture->texturechain = surf;
-					}
-				}/* else if (surf->flags & SURF_DRAWSKY) {
+					surf->flags &= ~SURF_NEEDSCLIPPING;
+					surf->flags |= SURF_NEEDSCLIPPING * (frustum_check > 1);
+
+					surf->texturechain = surf->texinfo->texture->texturechain;
+					surf->texinfo->texture->texturechain = surf;
+				}
+				/* else if (surf->flags & SURF_DRAWSKY) {
 					surf->texturechain = skychain;
 					skychain = surf;
 				} else if (surf->flags & SURF_DRAWTURB) {
@@ -1483,7 +1500,6 @@ void R_DrawWorld (void)
 	num_lightmapped_faces = 0;
 
 	R_ClearSkyBox ();
-
 
 	R_RecursiveWorldNode (cl.worldmodel->nodes);
 

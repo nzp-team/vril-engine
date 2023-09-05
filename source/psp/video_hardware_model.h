@@ -120,6 +120,8 @@ typedef struct texture_s
 #define TEXFLAG_REFLECT		512
 #define TEXFLAG_NORMAL		1024
 
+#define SURF_NEEDSCLIPPING	2048 // see texflags below
+
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct
 {
