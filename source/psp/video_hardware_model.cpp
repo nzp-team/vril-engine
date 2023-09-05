@@ -1947,9 +1947,9 @@ void *Mod_LoadAliasGroup (void * pin,  maliasframedesc_t *frame)
 
 		for (int j = 0; j < pheader->numverts; j++) {
 			utrivertx_t * unsigned_vert = (utrivertx_t*)&(poseverts[posenum][j]);
-			poseverts[posenum][i].v[0] = unsigned_vert->v[0] - 128;
-			poseverts[posenum][i].v[1] = unsigned_vert->v[1] - 128;
-			poseverts[posenum][i].v[2] = unsigned_vert->v[2] - 128;
+			poseverts[posenum][j].v[0] = unsigned_vert->v[0] - 128;
+			poseverts[posenum][j].v[1] = unsigned_vert->v[1] - 128;
+			poseverts[posenum][j].v[2] = unsigned_vert->v[2] - 128;
 		}
 
 		posenum++;
@@ -2538,6 +2538,7 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 					Mod_LoadAliasGroup (pframetype + 1, &pheader->frames[i]);
 		}
 	}
+
 
 	pheader->numposes = posenum;
 
