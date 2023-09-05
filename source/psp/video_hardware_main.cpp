@@ -311,6 +311,50 @@ void R_RotateForViewEntity (entity_t *ent)
 
 /*
 =================
+R_FrustumCheckBox
+Returns 0 if box completely inside frustum
+Returns +N with intersected planes count as N
+Returns -1 when completely outside frustum
+=================
+*/
+int R_FrustumCheckBox (vec3_t mins, vec3_t maxs)
+{
+	int i, res;
+	int intersections = 0;
+	for (i=0 ; i<4 ; i++)
+	{
+		res = BoxOnPlaneSide (mins, maxs, &frustum[i]);
+		if (res == 2) return -1; 
+		if (res == 3) ++intersections;
+	}
+
+	return intersections;
+}
+
+/*
+=================
+R_FrustumCheckSphere
+=================
+*/
+int R_FrustumCheckSphere (vec3_t centre, float radius)
+{
+	int		i, res;
+	mplane_t	*p;
+	int intersections = 0;
+
+	for (i=0, p=frustum ; i<4 ; i++, p++)
+	{
+		res = PlaneDiff(centre, p);
+		if (res <= -radius) return -1;
+		if (res < radius) ++intersections;
+	}
+
+	return intersections;
+}
+
+
+/*
+=================
 R_CullBox
 Returns true if the box is completely outside the frustom
 =================

@@ -332,6 +332,8 @@ void EmitBothSkyLayers (msurface_t *fa);
 void EmitUnderWaterPolys (void);
 void EmitDetailPolys (void);
 void R_DrawSkyChain (msurface_t *s);
+int R_FrustumCheckBox (vec3_t mins, vec3_t maxs);
+int R_FrustumCheckSphere (vec3_t centre, float radius);
 int R_CullBox (vec3_t emins, vec3_t emaxs);
 qboolean R_CullSphere (vec3_t centre, float radius);
 void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
