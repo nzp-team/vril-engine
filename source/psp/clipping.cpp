@@ -289,13 +289,22 @@ namespace quake
 				"addu		$10,  $10,  $8\n"		// $10 = $10 + $8
 				"addiu		%0,   $0,   1\n"		// res = 1
 				"vzero.q	C600\n"					// C600 = [0.0f, 0.0f, 0.0f. 0.0f]
+				"vone.s		S500\n"
 			"0:\n"									// loop
 				"lv.s		S610,  8($8)\n"			// S610 = v[i].xyz[0]
 				"lv.s		S611,  12($8)\n"		// S611 = v[i].xyz[1]
 				"lv.s		S612,  16($8)\n"		// S612 = v[i].xyz[2]
 				"vhtfm4.q	C620, M700, C610\n"		// C620 = frustrum * v[i].xyz
+				/* shpuld: older code checked if vertex is outside any clipping plane
 				"vcmp.q		LT,   C620, C600\n"		// S620 < 0.0f || S621 < 0.0f || S622 < 0.0f || S623 < 0.0f
 				"bvt		4,    1f\n"				// if ( CC[4] == 1 ) jump to exit
+				*/
+				/* newer code checks if vertex is outside 2 clipping planes, as psp isn't that aggressive */
+				"vslt.q		C630, C620, C600\n"		// C630 = S620 < 0.f, S621 < 0.f, S622 < 0.f, S623 < 0.f
+				"vfad.q		S510, C630\n"			// S510 = sum of C630.q
+				"vcmp.s		GT,	  S510, S500\n"		// S510 > 1
+				"bvt		0,	  1f\n"				// exit if true
+
 				"addiu		$8,   $8,   20\n"		// $8 = $8 + 20( sizeof( gu_vert_t ) )	( delay slot )
 				"bne		$10,  $8,   0b\n"		// if ( $10 != $8 ) jump to loop
 				"nop\n"								// 										( delay slot )
