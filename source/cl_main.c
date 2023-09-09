@@ -73,6 +73,8 @@ modelindex_t		cl_modelindex[NUM_MODELINDEX];
 
 int				cl_numvisedicts;
 entity_t		*cl_visedicts[MAX_VISEDICTS];
+int				cl_numstaticbrushmodels;
+entity_t		*cl_staticbrushmodels[MAX_VISEDICTS];
 
 void CL_ClearTEnts (void);
 
@@ -547,7 +549,7 @@ void CL_RelinkEntities (void)
 
 
 	cl_numvisedicts = 0;
-
+	cl_numstaticbrushmodels = 0;
 //
 // interpolate player info
 //
@@ -589,6 +591,23 @@ void CL_RelinkEntities (void)
             ent->translate_start_time = 0;
             ent->rotate_start_time    = 0;
 			continue;
+		}
+
+		// shpuld: if brush model is at 0 with no angle changes, we can draw it with world
+		if (ent->model->type == mod_brush && cl_numstaticbrushmodels < MAX_VISEDICTS)
+		{
+			if (ent->msg_origins[0][0] == 0 &&
+				ent->msg_origins[0][1] == 0 &&
+				ent->msg_origins[0][2] == 0 &&
+				ent->msg_angles[0][0] == 0 &&
+				ent->msg_angles[0][1] == 0 &&
+				ent->msg_angles[0][2] == 0 &&
+				(ent->rendermode == 0 || ent->rendermode == TEX_SOLID || ent->rendermode == TEX_TEXTURE))
+			{
+				cl_staticbrushmodels[cl_numstaticbrushmodels] = ent;
+				cl_numstaticbrushmodels++;
+				continue;
+			}
 		}
 
 		VectorCopy (ent->origin, oldorg);

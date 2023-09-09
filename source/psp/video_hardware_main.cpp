@@ -1063,8 +1063,7 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum)
 	struct vertex
 	{
 		int uvs;
-		char x, y, z;
-		char _padding;
+		int xyz;
 	};
 
 	sceGuColor(GU_COLOR(lightcolor[0], lightcolor[1], lightcolor[2], 1.0f));
@@ -1116,17 +1115,11 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum)
 				//prim = GU_TRIANGLES; //used for blubs' alternate BuildTris with one continual triangle list
 			}
 			//================================================================== fps: 50 ===============================================
-			for (int start = vertex_index; vertex_index < (start + count); ++vertex_index)
+			for (int start = vertex_index; vertex_index < (start + count); ++vertex_index, ++order, ++verts)
 			{
 				// texture coordinates come from the draw list
 				out[vertex_index].uvs = order[0];
-				order += 1;
-
-				out[vertex_index].x = verts->v[0];
-				out[vertex_index].y = verts->v[1];
-				out[vertex_index].z = verts->v[2];
-
-				++verts;
+				out[vertex_index].xyz = ((int*)verts->v)[0]; // cast to int because trivertx is is 4 bytes
 			}
 			sceGuDrawArray(prim, GU_TEXTURE_16BIT | GU_VERTEX_8BIT, count, 0, &out[vertex_index - count]);
 			
@@ -1204,26 +1197,17 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 			//prim = GU_TRIANGLES; //used for blubs' alternate BuildTris with one continual triangle list
 		}
 
-		for (int start = vertex_index; vertex_index < (start + count); ++vertex_index)
+		for (int start = vertex_index; vertex_index < (start + count); ++vertex_index, ++order, ++verts1, ++verts2)
 		{
-
 			// texture coordinates come from the draw list
 			out[vertex_index].uvs = order[0];
-			order += 1;
 
 			VectorSubtract(verts2->v, verts1->v, d);
 
 			// blend the vertex positions from each frame together
-			point[0] = verts1->v[0] + (blend * d[0]);
-			point[1] = verts1->v[1] + (blend * d[1]);
-			point[2] = verts1->v[2] + (blend * d[2]);
-
-			out[vertex_index].x = point[0];
-			out[vertex_index].y = point[1];
-			out[vertex_index].z = point[2];
-
-			++verts1;
-			++verts2;
+			out[vertex_index].x = verts1->v[0] + (blend * d[0]);
+			out[vertex_index].y = verts1->v[1] + (blend * d[1]);
+			out[vertex_index].z = verts1->v[2] + (blend * d[2]);
 		}
 		sceGuDrawArray(prim, GU_TEXTURE_16BIT | GU_VERTEX_8BIT, count, 0, &out[vertex_index - count]);
 	}

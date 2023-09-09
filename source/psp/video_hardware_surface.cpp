@@ -776,6 +776,7 @@ static void R_BlendLightmaps (void)
 	sceGuDepthMask(GU_TRUE);
 	sceGuEnable(GU_BLEND);
 	sceGuBlendFunc(GU_ADD, GU_DST_COLOR, GU_SRC_COLOR, 0, 0);
+	sceGuDepthFunc(GU_EQUAL);
 
 	if(LIGHTMAP_BYTES == 1)
 	   VID_SetPaletteLM();
@@ -828,6 +829,7 @@ static void R_BlendLightmaps (void)
 	sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
 	sceGuDepthMask (GU_FALSE);
 	sceGuEnable(GU_DEPTH_TEST); // dr_mabuse1981: fix
+	sceGuDepthFunc(GU_LEQUAL);
 }
 
 int ClipFace (msurface_t * fa)
@@ -922,11 +924,6 @@ void R_RenderBrushPoly (msurface_t *fa)
 	if (verts_count <= 0)
 		return;
 
-	sceGuEnable(GU_ALPHA_TEST);
-	sceGuAlphaFunc(GU_GREATER, 0xaa, 0xff);
-	sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
-	sceGuColor(0xffffffff);
-
 	// motolegacy -- use our new texflag hack
 	if (fa->flags & TEXFLAG_NODRAW)
 		return;
@@ -987,8 +984,6 @@ dynamic:
 
 		}
 	}
-	sceGuAlphaFunc(GU_GREATER, 0, 0xff);
-	sceGuDisable(GU_ALPHA_TEST);
 }
 
 /*
@@ -1099,6 +1094,11 @@ static void DrawTextureChains (void)
 	msurface_t	*s;
 	texture_t	*t;
 
+	sceGuEnable(GU_ALPHA_TEST);
+	sceGuAlphaFunc(GU_GREATER, 0xaa, 0xff);
+	sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
+	sceGuColor(0xffffffff);
+
 	for (i=0 ; i<cl.worldmodel->numtextures ; i++)
 	{
 		t = cl.worldmodel->textures[i];
@@ -1126,6 +1126,9 @@ static void DrawTextureChains (void)
 
 		t->texturechain = NULL;
 	}
+
+	sceGuAlphaFunc(GU_GREATER, 0, 0xff);
+	sceGuDisable(GU_ALPHA_TEST);
 
 	//EmitUnderWaterPolys (); //blubsremoved quartal
 	//EmitDetailPolys ();
@@ -1237,13 +1240,6 @@ void R_DrawBrushModel (entity_t *e)
 		GU_COLOR(alpha2,alpha2,alpha2,alpha2));
 		dlight = qfalse;
 	}
-	else if (ISSOLID(e))
-	{
-		sceGuEnable(GU_ALPHA_TEST);
-		int c = (int)(e->renderamt * 255.0f);
-		sceGuAlphaFunc(GU_GREATER, c, 0xff);
-		dlight = qfalse;
-	}
 	else if (ISGLOW(e))
 	{
 		sceGuTexFunc(GU_TFX_MODULATE , GU_TCC_RGBA);
@@ -1251,18 +1247,36 @@ void R_DrawBrushModel (entity_t *e)
 		sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_FIX, 0, 0xFFFFFFFF);
 		R_GlowSetupBegin(e);
 	}
+	// shpuld: these have been broken for who knows how long, both were treated as just fence
+	// this is fine, but it's good to be more explicit about it in code, hence I'm commenting them out.
+	/*
+	else if (ISSOLID(e))
+	{
+		sceGuEnable(GU_ALPHA_TEST);
+		int c = (int)(e->renderamt * 255.0f);
+		sceGuAlphaFunc(GU_GREATER, c, 0xff);
+		dlight = qfalse;
+	}
 	else if (ISTEXTURE(e))
 	{
 		sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 		sceGuColor(GU_RGBA(255, 255, 255, (int)(e->renderamt * 255.0f)));
 		dlight = qfalse;
 	}
+	*/
 	else if (ISCOLOR(e))
 	{
 		sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 		sceGuColor(GU_RGBA((int)(e->rendercolor[0] * 255.0f),
 			(int)(e->rendercolor[1] * 255.0f),
 			(int)(e->rendercolor[2] * 255.0f), 255));
+	}
+	else
+	{
+		sceGuEnable(GU_ALPHA_TEST);
+		sceGuAlphaFunc(GU_GREATER, 0xaa, 0xff);
+		sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
+		sceGuColor(0xffffffff);
 	}
 	//Con_DPrintf("\n");
 	//Con_DPrintf("render mode is:  %i \n", (int)e->rendermode);
@@ -1308,11 +1322,6 @@ void R_DrawBrushModel (entity_t *e)
 		sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
 		sceGuDisable (GU_BLEND);
 	}
-	else if(ISSOLID(e))
-	{
-		sceGuAlphaFunc(GU_GREATER, 0, 0xff);
-		sceGuDisable(GU_ALPHA_TEST);
-	}
 	else if(ISGLOW(e))
 	{
 		R_GlowSetupEnd(e);
@@ -1326,11 +1335,23 @@ void R_DrawBrushModel (entity_t *e)
 		sceGuColor(0xffffffff);
 		sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 	}
+	else
+	{
+		sceGuAlphaFunc(GU_GREATER, 0, 0xff);
+		sceGuDisable(GU_ALPHA_TEST);
+	}
+	/*
+	else if(ISSOLID(e))
+	{
+		sceGuAlphaFunc(GU_GREATER, 0, 0xff);
+		sceGuDisable(GU_ALPHA_TEST);
+	}
 	else if(ISTEXTURE(e))
 	{
 		sceGuColor(0xffffffff);
 		sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 	}
+	*/
 	//dr_mabuse1981: commented out, this was the one who caused the epic lag
 	//DrawFullBrightTextures (clmodel->surfaces, clmodel->numsurfaces);
 	//dr_mabuse1981: commented out, this was the one who caused the epic lag
@@ -1477,6 +1498,62 @@ void R_RecursiveWorldNode (mnode_t *node)
 	R_RecursiveWorldNode (node->children[!side]);
 }
 
+void R_AddBrushModelToChains (entity_t * e)
+{
+	model_t * clmodel = e->model;
+	vec3_t mins, maxs;
+	VectorAdd (e->origin, clmodel->mins, mins);
+	VectorAdd (e->origin, clmodel->maxs, maxs);
+	int frustum_check = R_FrustumCheckBox(mins, maxs);
+	if (frustum_check < 0)
+	{
+		return;
+	}
+
+	msurface_t * psurf = &clmodel->surfaces[clmodel->firstmodelsurface];
+
+	/*
+	if (clmodel->firstmodelsurface != 0)
+	{
+		for (int k = 0; k < MAX_DLIGHTS; k++)
+		{
+			if ((cl_dlights[k].die < cl.time) ||
+				(!cl_dlights[k].radius))
+				continue;
+
+			R_MarkLights (&cl_dlights[k], 1<<k,	clmodel->nodes + clmodel->hulls[0].firstclipnode);
+		}
+	}
+	*/
+
+	for (int j = 0; j < clmodel->nummodelsurfaces; j++, psurf++)
+	{
+		// find which side of the node we are on
+		mplane_t * pplane = psurf->plane;
+		float dot = DotProduct (modelorg, pplane->normal) - pplane->dist;
+		// draw the polygon
+		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
+			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON)))
+		{
+			psurf->flags &= ~SURF_NEEDSCLIPPING;
+			psurf->flags |= SURF_NEEDSCLIPPING * (frustum_check > 1);
+
+			psurf->texturechain = psurf->texinfo->texture->texturechain;
+			psurf->texinfo->texture->texturechain = psurf;
+		}
+	}
+}
+
+void R_AddStaticBrushModelsToChains ()
+{
+	// Con_Printf("static models %d\n", cl_numstaticbrushmodels);
+	for (int i = 0; i < cl_numstaticbrushmodels; i++)
+	{
+		// if (i >= 1) return;
+		R_AddBrushModelToChains(cl_staticbrushmodels[i]);
+	}
+}
+
 extern char	skybox_name[32];
 /*
 =============
@@ -1502,6 +1579,8 @@ void R_DrawWorld (void)
 	R_ClearSkyBox ();
 
 	R_RecursiveWorldNode (cl.worldmodel->nodes);
+
+	R_AddStaticBrushModelsToChains ();
 
 	DrawTextureChains ();
 
