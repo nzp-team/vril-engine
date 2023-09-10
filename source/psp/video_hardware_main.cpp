@@ -1268,7 +1268,7 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 	int distance_from_client = (int)((dist_x) * (dist_x) + (dist_y) * (dist_y)); // no use sqrting, just slows us down.
 
 	// They're too far away from us to care about blending their frames.
-	if (distance_from_client >= 40000) { // 200 * 200
+	if (distance_from_client >= 160000) { // 400 * 400
 		// Fix them from jumping from last lerp
 		e->pose1 = e->pose2 = paliashdr->frames[frame].firstpose;
 		e->frame_interval = 0.1;
