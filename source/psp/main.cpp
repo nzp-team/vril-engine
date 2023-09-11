@@ -36,9 +36,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspge.h>
 #include <pspsysevent.h>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_mixer.h>
-
 extern "C"
 {
 #include "../quakedef.h"
@@ -533,13 +530,6 @@ int user_main(SceSize argc, void* argp)
 
 	// Initialize the Common module.
     InitExtModules ();
-
-	// Initialize SDL
-    if (SDL_Init(SDL_INIT_AUDIO) < 0)
-    {
-        Sys_Error("SDL2: Could not initialize!\n");
-        return 0;
-    }
 
 	ramClockSpeed = cpuClockSpeed = scePowerGetCpuClockFrequencyInt();
 	busClockSpeed = scePowerGetBusClockFrequencyInt();

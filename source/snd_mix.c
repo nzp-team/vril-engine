@@ -34,8 +34,7 @@ void Snd_WriteLinearBlastStereo16 (void);
 #if	!id386
 void Snd_WriteLinearBlastStereo16 (void)
 {
-	int		i;
-	int		val;
+	int	i, val;
 
 	for (i=0 ; i<snd_linear_count ; i+=2)
 	{
@@ -60,8 +59,7 @@ void Snd_WriteLinearBlastStereo16 (void)
 
 void S_TransferStereo16 (int endtime)
 {
-	int		lpos;
-	int		lpaintedtime;
+	int		lpos, lpaintedtime;
 	DWORD	*pbuf;
 
 	snd_vol = volume.value*256;
@@ -96,13 +94,7 @@ void S_TransferStereo16 (int endtime)
 
 void S_TransferPaintBuffer(int endtime)
 {
-	int 	out_idx;
-	int 	count;
-	int 	out_mask;
-	int 	*p;
-	int 	step;
-	int		val;
-	int		snd_vol;
+	int 	out_idx, count, out_mask, *p, step, val, snd_vol;
 	DWORD	*pbuf;
 
 	if (shm->samplebits == 16 && shm->channels == 2)
@@ -153,6 +145,7 @@ void S_TransferPaintBuffer(int endtime)
 			out_idx = (out_idx + 1) & out_mask;
 		}
 	}
+
 }
 
 
@@ -169,11 +162,9 @@ void SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int endtime);
 
 void S_PaintChannels(int endtime)
 {
-	int 	i;
-	int 	end;
+	int		i, end, ltime, count;
 	channel_t *ch;
 	sfxcache_t	*sc;
-	int		ltime, count;
 
 	while (paintedtime < endtime)
 	{
@@ -183,7 +174,7 @@ void S_PaintChannels(int endtime)
 			end = paintedtime + PAINTBUFFER_SIZE;
 
 	// clear the paint buffer
-		Q_memset(paintbuffer, 0, (end - paintedtime) * sizeof(portable_samplepair_t));
+		memset(paintbuffer, 0, (end - paintedtime) * sizeof(portable_samplepair_t));
 
 	// paint in the channels.
 		ch = channels;
@@ -193,8 +184,7 @@ void S_PaintChannels(int endtime)
 				continue;
 			if (!ch->leftvol && !ch->rightvol)
 				continue;
-			sc = S_LoadSound (ch->sfx);
-			if (!sc)
+			if (!(sc = S_LoadSound (ch->sfx)))
 				continue;
 
 			ltime = paintedtime;
@@ -254,10 +244,8 @@ void SND_InitScaletable (void)
 
 void SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count)
 {
-	int 	data;
-	int		*lscale, *rscale;
+	int 		i, data, *lscale, *rscale;
 	unsigned char *sfx;
-	int		i;
 
 	if (ch->leftvol > 255)
 		ch->leftvol = 255;
@@ -283,9 +271,7 @@ void SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count)
 
 void SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 {
-	int data;
-	int left, right;
-	int leftvol, rightvol;
+	int data, left, right, leftvol, rightvol;
 	signed short *sfx;
 	int	i;
 

@@ -130,6 +130,8 @@ void SNDDMA_Shutdown(void);
 #define	MAX_CHANNELS			128
 #define	MAX_DYNAMIC_CHANNELS	8
 
+#define	MAX_SFX		512
+
 
 extern	channel_t   channels[MAX_CHANNELS];
 // 0 to MAX_DYNAMIC_CHANNELS-1	= normal entity sounds

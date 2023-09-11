@@ -105,8 +105,7 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 	byte	stackbuf[1*1024];		// avoid dirtying the cache heap
 
 // see if still in memory
-	sc = Cache_Check (&s->cache);
-	if (sc)
+	if ((sc = Cache_Check (&s->cache)))
 		return sc;
 
 //Con_Printf ("S_LoadSound: %x\n", (int)stackbuf);
@@ -116,9 +115,7 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 
 //	Con_Printf ("loading %s\n",namebuffer);
 
-	data = COM_LoadStackFile(namebuffer, stackbuf, sizeof(stackbuf));
-
-	if (!data)
+	if (!(data = COM_LoadStackFile(namebuffer, stackbuf, sizeof(stackbuf))))
 	{
 		Con_Printf ("Couldn't load %s\n", namebuffer);
 		return NULL;
@@ -212,7 +209,7 @@ void FindNextChunk(char *name)
 //			Sys_Error ("FindNextChunk: %i length is past the 1 meg sanity limit", iff_chunk_len);
 		data_p -= 8;
 		last_chunk = data_p + 8 + ( (iff_chunk_len + 1) & ~1 );
-		if (!Q_strncmp((char *)data_p, name, 4))
+		if (!strncmp((char*) data_p, name, 4))
 			return;
 	}
 }
@@ -262,7 +259,7 @@ wavinfo_t GetWavinfo (char *name, byte *wav, int wavlength)
 
 // find "RIFF" chunk
 	FindChunk("RIFF");
-	if (!(data_p && !Q_strncmp((char *)data_p+8, "WAVE", 4)))
+	if (!(data_p && !strncmp((char*) data_p+8, "WAVE", 4)))
 	{
 		Con_Printf("Missing RIFF/WAVE chunks\n");
 		return info;
@@ -303,7 +300,7 @@ wavinfo_t GetWavinfo (char *name, byte *wav, int wavlength)
 		FindNextChunk ("LIST");
 		if (data_p)
 		{
-			if (!strncmp ((char *)data_p + 28, "mark", 4))
+			if (!strncmp ((char*) data_p + 28, "mark", 4))
 			{	// this is not a proper parse, but it works with cooledit...
 				data_p += 24;
 				i = GetLittleLong ();	// samples in loop
