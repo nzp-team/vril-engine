@@ -1374,7 +1374,7 @@ void R_DrawBrushModel (entity_t *e)
 R_RecursiveWorldNode
 ================
 */
-void R_RecursiveWorldNode (mnode_t *node)
+void R_RecursiveWorldNode (mnode_t *node, bool nofrustumcheck)
 {
 	int			c, side;
 	mplane_t	*plane;
@@ -1388,9 +1388,8 @@ void R_RecursiveWorldNode (mnode_t *node)
 	if (node->visframe != r_visframecount)
 		return;
 
-	// maybe we can avoid extra checks if we remember results for "completely inside",
-	// then we don't need to check at all for next one? experiment with it.
-	int frustum_check = R_FrustumCheckBox (node->minmaxs, node->minmaxs+3);
+	int frustum_check = nofrustumcheck ? 0 : R_FrustumCheckBox (node->minmaxs, node->minmaxs+3);
+
 	if (frustum_check < 0)
 		return;
 
@@ -1445,7 +1444,7 @@ void R_RecursiveWorldNode (mnode_t *node)
 		side = 1;
 
 // recurse down the children, front side first
-	R_RecursiveWorldNode (node->children[side]);
+	R_RecursiveWorldNode (node->children[side], !frustum_check);
 
 // draw stuff
 	c = node->numsurfaces;
@@ -1495,7 +1494,7 @@ void R_RecursiveWorldNode (mnode_t *node)
 	}
 
 // recurse down the back side
-	R_RecursiveWorldNode (node->children[!side]);
+	R_RecursiveWorldNode (node->children[!side], !frustum_check);
 }
 
 void R_AddBrushModelToChains (entity_t * e)
@@ -1512,7 +1511,7 @@ void R_AddBrushModelToChains (entity_t * e)
 
 	msurface_t * psurf = &clmodel->surfaces[clmodel->firstmodelsurface];
 
-	/*
+	/* TODO: doesn't work for some reason, needs investigation if dlights ever come back
 	if (clmodel->firstmodelsurface != 0)
 	{
 		for (int k = 0; k < MAX_DLIGHTS; k++)
@@ -1546,10 +1545,8 @@ void R_AddBrushModelToChains (entity_t * e)
 
 void R_AddStaticBrushModelsToChains ()
 {
-	// Con_Printf("static models %d\n", cl_numstaticbrushmodels);
 	for (int i = 0; i < cl_numstaticbrushmodels; i++)
 	{
-		// if (i >= 1) return;
 		R_AddBrushModelToChains(cl_staticbrushmodels[i]);
 	}
 }
@@ -1578,7 +1575,7 @@ void R_DrawWorld (void)
 
 	R_ClearSkyBox ();
 
-	R_RecursiveWorldNode (cl.worldmodel->nodes);
+	R_RecursiveWorldNode (cl.worldmodel->nodes, false);
 
 	R_AddStaticBrushModelsToChains ();
 
