@@ -1169,14 +1169,13 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 	struct vertex
 	{
 		int uvs;
-		char x, y, z;
-		char _padding;
+		int xyz;
 	};
 
 	sceGuColor(GU_COLOR(lightcolor[0], lightcolor[1], lightcolor[2], 1.0f));
 
 	// Allocate the vertices.
-	vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * numcommands));
+	vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * numcommands * 2));
 	int vertex_index = 0;
 
 	//for blubs's alternate BuildTris: 1) Disable while(1) loop 2) Disable the break; 3) replace GU_TRIANGLE_STRIP with GU_TRIANGLES
@@ -1197,19 +1196,17 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 			//prim = GU_TRIANGLES; //used for blubs' alternate BuildTris with one continual triangle list
 		}
 
-		for (int start = vertex_index; vertex_index < (start + count); ++vertex_index, ++order, ++verts1, ++verts2)
+		for (int start = vertex_index; vertex_index < (start + count * 2); ++vertex_index, ++order, ++verts1, ++verts2)
 		{
-			// texture coordinates come from the draw list
 			out[vertex_index].uvs = order[0];
-
-			VectorSubtract(verts2->v, verts1->v, d);
-
-			// blend the vertex positions from each frame together
-			out[vertex_index].x = verts1->v[0] + (blend * d[0]);
-			out[vertex_index].y = verts1->v[1] + (blend * d[1]);
-			out[vertex_index].z = verts1->v[2] + (blend * d[2]);
+			out[vertex_index].xyz = ((int*)verts1->v)[0];
+			++vertex_index;
+			out[vertex_index].uvs = order[0];
+			out[vertex_index].xyz = ((int*)verts2->v)[0];
 		}
-		sceGuDrawArray(prim, GU_TEXTURE_16BIT | GU_VERTEX_8BIT, count, 0, &out[vertex_index - count]);
+		sceGuMorphWeight(0, 1 - blend);
+		sceGuMorphWeight(1, blend);
+		sceGuDrawArray(prim, GU_TEXTURE_16BIT | GU_VERTEX_8BIT | GU_VERTICES(2), count, 0, &out[vertex_index - count * 2]);
 	}
 	sceGuColor(0xffffffff);
 }
@@ -1271,7 +1268,7 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 	int distance_from_client = (int)((dist_x) * (dist_x) + (dist_y) * (dist_y)); // no use sqrting, just slows us down.
 
 	// They're too far away from us to care about blending their frames.
-	if (distance_from_client >= 40000) { // 200 * 200
+	if (distance_from_client >= 160000) { // 400 * 400
 		// Fix them from jumping from last lerp
 		e->pose1 = e->pose2 = paliashdr->frames[frame].firstpose;
 		e->frame_interval = 0.1;
