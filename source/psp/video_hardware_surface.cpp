@@ -224,6 +224,7 @@ void R_BuildLightMap (msurface_t *surf, byte *dest, int stride)
 	unsigned	scale;
 	int			maps;
 	unsigned	*bl;
+	int r, g, b, a;
 
     //unsigned *blcr, *blcg, *blcb;
 
@@ -326,17 +327,25 @@ store:
 		break;
 	case 2:
 		bl = blocklights;
+		union luxel {
+			unsigned short rgb;
+			byte bytes[2];
+		};
 		for (i=0 ; i<tmax ; i++ ,dest += stride)
 		{
-			for (j=0 ; j<smax ; j++)
+			for (j=0 ; j<smax*2 ; j++)
 			{
-				// LordHavoc: .lit support begin
-				t = ((bl[0] + bl[1] + bl[2]) * 85) >> 15; // LordHavoc: basically / 3, but faster and combined with >> 7 shift down, note: actual number would be 85.3333...
+				r = bl[0] >> 7; if (r > 255) r = 255; r = r >> 3;
+				g = bl[1] >> 7; if (g > 255) g = 255; g = g >> 3;
+				b = bl[2] >> 7; if (b > 255) b = 255; b = b >> 3;
+				
+				luxel lx;
+				lx.rgb = (a << 15) | (b << 10) | (g << 5) | (r);
+
+				dest[j] = lx.bytes[0];
+				j++;
+				dest[j] = lx.bytes[1];
 				bl += 3;
-				// LordHavoc: .lit support end
-				if (t > 255)
-					t = 255;
-				dest[j] = t;
 			}
 		}
 		break;

@@ -2911,7 +2911,7 @@ int GL_LoadTextureLM (const char *identifier, int width, int height, const byte 
 				texture.format		= GU_PSM_T8;
 				break;
 			case 2:
-				texture.format		= GU_PSM_4444;
+				texture.format		= GU_PSM_5551;
 				break;
 	        case 3:
 				texture.format		= GU_PSM_8888;
