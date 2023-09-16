@@ -3832,7 +3832,19 @@ void R_RenderScene (void)
 
 	sceGumMatrixMode(GU_MODEL);
 
-	clipping::begin_frame();
+
+	// the value 2.2 is a bit of a sweet spot found by trial and error
+	// the bigger the number, the more polys skip clipping entirely and less polys also rejected
+	// the smaller the number, the more polys get clipped and by extension more polys also rejected
+	// at a sweet spot we want to maximize rejected polys but minimize (clipped - rejected) amount at the same time
+	// it's a balancing act and every change has to be benchmarked. between 2.5, 2.2 and 2.0, 2.2 was the fastest.
+	clipping::begin_frame(fovy, fmin(165.f, fovy * 2.2f), fovx);
+
+	sceGumMatrixMode(GU_PROJECTION);
+	sceGumLoadIdentity();
+	sceGumPerspective(fovy, fovx, 4, r_maxrange.value);
+	sceGumUpdateMatrix();
+	sceGumMatrixMode(GU_MODEL);
 
 	// set drawing parms
 	sceGuDisable(GU_BLEND);
