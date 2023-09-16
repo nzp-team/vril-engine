@@ -76,6 +76,27 @@ namespace quake
 		static ScePspFMatrix4		projection_view_matrix __attribute__((aligned(16)));
 		static frustum_t			projection_view_frustum __attribute__((aligned(16)));
 		static frustum_t			clipping_frustum __attribute__((aligned(16)));
+		/*
+		shpuld's magical clipping adventures:
+
+		wide frustum explained, PSP hardware cull happens when any vert goes past the 0-4095 virtual coordinate space (VCS)
+		the viewport is centered in the middle of the VCS, so verts that go enough pixels past any of the screen edges to reach
+		the edge of the VCS get culled completely. this is why we need some kind of frustum clipping. however clipping to view
+		frustum is very wasteful, as most polys clipped to it would not get rejected by HW cull, only a tiny minority reach the edge of VCS.
+
+		for this reason, we have a wider frustum to better approximate (not calculated precisely) if polys get actually close to the edges.
+		now we could just use wide frustum only in clipping, check if clipping is required with the wide one, as well as clip with the wide one.
+		however this turned out to be slower, as a lot of the polygons that are completely out of regular frustum get through and get rendered,
+		and in addition polygons that clip the wider frustum might be completely out of view too so it's wasteful to clip them at all.
+
+		the currently fastest system uses wide frustum to check if a poly should proceed to clipping, if not then it gets drawn fast, then
+		polygons that do require clipping are then clipped using the accurate view frustum, this allows for vast majority of them to be rejected
+		when they fall completely outside the view. as a result the amount of actually clipped polygons ends up being extremely low.
+		this is fast.
+		*/
+		static ScePspFMatrix4		wide_projection_view_matrix __attribute__((aligned(16)));
+		static frustum_t			wide_projection_view_frustum __attribute__((aligned(16)));
+		static frustum_t			wide_clipping_frustum __attribute__((aligned(16)));
 
 		// The temporary working buffers.
 		static const std::size_t	max_clipped_vertices	= 32;
@@ -186,12 +207,23 @@ namespace quake
 			);
 		}
 
-		void begin_frame()
+		void begin_frame(float regularfov, float wideclippingfov, float screenaspect)
 		{
 			// Get the projection matrix.
 			sceGumMatrixMode(GU_PROJECTION);
+			sceGumLoadIdentity();
+			sceGumPerspective(regularfov + 1.0f, screenaspect, 6, 4096); // add + 1.0f to reduce the 1px lines at the edge of viewport when polys get clipped
+			sceGumUpdateMatrix();
+		
 			ScePspFMatrix4	proj;
 			sceGumStoreMatrix(&proj);
+
+			sceGumLoadIdentity();
+			sceGumPerspective(wideclippingfov, screenaspect, 6, 4096);
+			sceGumUpdateMatrix();
+		
+			ScePspFMatrix4	wide_proj;
+			sceGumStoreMatrix(&wide_proj);
 
 			// Get the view matrix.
 			sceGumMatrixMode(GU_VIEW);
@@ -203,9 +235,11 @@ namespace quake
 
 			// Combine the two matrices (multiply projection by view).
 			gumMultMatrix(&projection_view_matrix, &proj, &view);
+			gumMultMatrix(&wide_projection_view_matrix, &wide_proj, &view);
 
 			// Calculate and cache the clipping frustum.
 			calculate_frustum(projection_view_matrix, &projection_view_frustum);
+			calculate_frustum(wide_projection_view_matrix, &wide_projection_view_frustum);
 
 			__asm__ volatile (
 				"ulv.q		C700, %4\n"				// Load plane into register
@@ -225,6 +259,25 @@ namespace quake
 					"m"( projection_view_frustum[plane_index_right] ),
 					"m"( projection_view_frustum[plane_index_top] )
 			);
+
+			__asm__ volatile (
+				"ulv.q		C500, %4\n"				// Load plane into register
+				"ulv.q		C510, %5\n"				// Load plane into register
+				"ulv.q		C520, %6\n"				// Load plane into register
+				"ulv.q		C530, %7\n"				// Load plane into register
+				"sv.q		C500, %0\n"				// Store plane from register
+				"sv.q		C510, %1\n"				// Store plane from register
+				"sv.q		C520, %2\n"				// Store plane from register
+				"sv.q		C530, %3\n"				// Store plane from register
+				:	"=m"( wide_clipping_frustum[plane_index_bottom] ),
+					"=m"( wide_clipping_frustum[plane_index_left] ),
+					"=m"( wide_clipping_frustum[plane_index_right] ),
+					"=m"( wide_clipping_frustum[plane_index_top] )
+				:	"m"( wide_projection_view_frustum[plane_index_bottom] ),
+					"m"( wide_projection_view_frustum[plane_index_left] ),
+					"m"( wide_projection_view_frustum[plane_index_right] ),
+					"m"( wide_projection_view_frustum[plane_index_top] )
+			);
 		}
 
 		void begin_brush_model()
@@ -239,7 +292,7 @@ namespace quake
 
 			// Calculate the clipping frustum.
 			calculate_frustum(projection_view_model_matrix, &clipping_frustum);
-
+			
 			__asm__ volatile (
 				"ulv.q	C700, %0\n"	// Load plane into register
 				"ulv.q	C710, %1\n"	// Load plane into register
@@ -249,6 +302,24 @@ namespace quake
 					"m"(clipping_frustum[plane_index_left]),
 					"m"(clipping_frustum[plane_index_right]), 
 					"m"(clipping_frustum[plane_index_top])
+			);
+		
+			// Combine the matrices (multiply projection-view by model).
+			ScePspFMatrix4	wide_projection_view_model_matrix;
+			gumMultMatrix(&wide_projection_view_model_matrix, &wide_projection_view_matrix, &model_matrix);
+
+			// Calculate the clipping frustum.
+			calculate_frustum(wide_projection_view_model_matrix, &wide_clipping_frustum);
+
+			__asm__ volatile (
+				"ulv.q	C500, %0\n"	// Load plane into register
+				"ulv.q	C510, %1\n"	// Load plane into register
+				"ulv.q	C520, %2\n"	// Load plane into register
+				"ulv.q	C530, %3\n"	// Load plane into register
+				:: "m"(wide_clipping_frustum[plane_index_bottom]),
+					"m"(wide_clipping_frustum[plane_index_left]),
+					"m"(wide_clipping_frustum[plane_index_right]), 
+					"m"(wide_clipping_frustum[plane_index_top])
 			);
 		}
 
@@ -273,9 +344,27 @@ namespace quake
 					"m"( projection_view_frustum[plane_index_right] ),
 					"m"( projection_view_frustum[plane_index_top] )
 			);
+
+			__asm__ volatile (
+				"ulv.q		C500, %4\n"				// Load plane into register
+				"ulv.q		C510, %5\n"				// Load plane into register
+				"ulv.q		C520, %6\n"				// Load plane into register
+				"ulv.q		C530, %7\n"				// Load plane into register
+				"sv.q		C500, %0\n"				// Store plane from register
+				"sv.q		C510, %1\n"				// Store plane from register
+				"sv.q		C520, %2\n"				// Store plane from register
+				"sv.q		C530, %3\n"				// Store plane from register
+				:	"=m"( wide_clipping_frustum[plane_index_bottom] ),
+					"=m"( wide_clipping_frustum[plane_index_left] ),
+					"=m"( wide_clipping_frustum[plane_index_right] ),
+					"=m"( wide_clipping_frustum[plane_index_top] )
+				:	"m"( wide_projection_view_frustum[plane_index_bottom] ),
+					"m"( wide_projection_view_frustum[plane_index_left] ),
+					"m"( wide_projection_view_frustum[plane_index_right] ),
+					"m"( wide_projection_view_frustum[plane_index_top] )
+			);
 		}
 
-		// Is clipping required?
 		bool is_clipping_required(const struct glvert_s* vertices, std::size_t vertex_count)
 		{
 			int res;
@@ -293,7 +382,7 @@ namespace quake
 				"lv.s		S610,  8($8)\n"			// S610 = v[i].xyz[0]
 				"lv.s		S611,  12($8)\n"		// S611 = v[i].xyz[1]
 				"lv.s		S612,  16($8)\n"		// S612 = v[i].xyz[2]
-				"vhtfm4.q	C620, M700, C610\n"		// C620 = frustrum * v[i].xyz
+				"vhtfm4.q	C620, M500, C610\n"		// C620 = frustrum * v[i].xyz, note: 500 is wide frustum, 700 is regular frustum
 				"vcmp.q		LT,   C620, C600\n"		// S620 < 0.0f || S621 < 0.0f || S622 < 0.0f || S623 < 0.0f
 				"bvt		4,    1f\n"				// if ( CC[4] == 1 ) jump to exit
 				"addiu		$8,   $8,   20\n"		// $8 = $8 + 20( sizeof( gu_vert_t ) )	( delay slot )

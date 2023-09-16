@@ -30,7 +30,7 @@ namespace quake
 	namespace clipping
 	{
 		// Calculates clipping planes from the GU view and projection matrices.
-		void begin_frame();
+		void begin_frame(float regularfov, float wideclippingfov, float screenaspect);
 
 		// Calculates clipping planes from the GU view and projection matrices.
 		void begin_brush_model();
