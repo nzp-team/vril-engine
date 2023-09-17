@@ -89,8 +89,8 @@ float		scr_conlines;		// lines of console to display
 
 float		oldscreensize, oldfov;
 cvar_t		scr_coloredtext = {"scr_coloredtext","1", qtrue};
-cvar_t		scr_fov = {"fov","105", qtrue};	// motolegacy -- dquake is 15 degrees off for.. some reason. this is really 90 according to elsewhere.
-cvar_t 		scr_fov_viewmodel = {"r_viewmodel_fov","85"}; // motolegacy -- and this is 70.
+cvar_t		scr_fov = {"fov","90", qtrue};
+cvar_t 		scr_fov_viewmodel = {"r_viewmodel_fov","75"};
 cvar_t		scr_conspeed = {"scr_conspeed","300"};
 cvar_t		scr_centertime = {"scr_centertime","2"};
 cvar_t		scr_showram = {"showram","1"};
@@ -421,7 +421,7 @@ void SCR_UsePrint (int type, int cost, int weapon)
 		case 7://box take
 			strcpy(s, va("Hold %s for %s\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch));
 			strcpy(c, "");
-			button_pic_x = 6;
+			button_pic_x = 5;
 			break;
 		case 8://power
 			strcpy(s, "The Power must be Activated first\n");
