@@ -89,6 +89,8 @@ extern	int nanmask;
 
 #define VectorNormalizeFast( v ){float	ilength = (float)rsqrt(DotProduct(v,v));v[0] *= ilength;v[1] *= ilength;v[2] *= ilength; }
 
+#define VectorDistanceSquared(a,b)((a[0]-b[0])*(a[0]-b[0])+(a[1]-b[1])*(a[1]-b[1])+(a[2]-b[2])*(a[2]-b[2]))
+
 typedef float matrix3x4[3][4];
 typedef float matrix3x3[3][3];
 
