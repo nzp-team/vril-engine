@@ -156,6 +156,9 @@ FIXME: walk all entities and NULL out references to this entity
 */
 void ED_Free (edict_t *ed)
 {
+	// pathfind optimization:
+	closest_waypoints[NUM_FOR_EDICT(ed)] = -1;
+
 	SV_UnlinkEdict (ed);		// unlink from world bsp
 
 	ed->free = true;

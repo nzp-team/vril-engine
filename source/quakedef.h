@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <stdlib.h>
 #include <setjmp.h>
+#include <ctype.h>
 //#include <assert.h> // For QMB assert
 
 
@@ -353,6 +354,7 @@ typedef struct
 } waypoint_ai;
 
 extern waypoint_ai waypoints[MAX_WAYPOINTS];
+extern short closest_waypoints[MAX_EDICTS];
 
 
 // thread structs
