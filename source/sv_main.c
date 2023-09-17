@@ -1484,7 +1484,7 @@ void Load_Waypoint ()
 				}
 			}
 		}
-		Con_Printf("Waypoint (%i)\n target: %i (%i, %f),\n target2: %i (%i, %f),\n target3: %i (%i, %f),\n target4: %i (%i, %f),\n target5: %i (%i, %f),\n target6: %i (%i, %f),\n target7: %i (%i, %f),\n target8: %i (%i, %f)\n",
+		Con_DPrintf("Waypoint (%i)\n target: %i (%i, %f),\n target2: %i (%i, %f),\n target3: %i (%i, %f),\n target4: %i (%i, %f),\n target5: %i (%i, %f),\n target6: %i (%i, %f),\n target7: %i (%i, %f),\n target8: %i (%i, %f)\n",
 		waypoints[i].id,
 		waypoints[i].target[0],
 		waypoints[i].target_id[0],
