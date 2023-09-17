@@ -1320,7 +1320,10 @@ void R_DrawBrushModel (entity_t *e)
 
 
 	if(dlight)
+	{
+		sceGuDisable(GU_ALPHA_TEST);
 		R_BlendLightmaps ();
+	}
 
 	if (ISADDITIVE(e))
 	{
