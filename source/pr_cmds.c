@@ -1865,7 +1865,7 @@ Do_Pathfind
 float Do_Pathfind (entity zombie, entity target)
 =================
 */
-#define MEASURE_PF_PERF
+// #define MEASURE_PF_PERF
 float max_waypoint_distance = 750;
 short closest_waypoints[MAX_EDICTS]; 
 
