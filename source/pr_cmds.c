@@ -1860,66 +1860,63 @@ Do_Pathfind
 float Do_Pathfind (entity zombie, entity target)
 =================
 */
+// #define MEASURE_PF_PERF
 void Do_Pathfind (void)
 {
-	float best_dist;
-	float dist;
-	int i, s, best, best_target;
+	int i, s;
 	trace_t   trace;
 	edict_t   *ent;
 	edict_t   *zombie;
 	int			entnum;
 
+	#ifdef MEASURE_PF_PERF
+	u64 t1, t2;
+	sceRtcGetCurrentTick(&t1);
+	#endif
+
 	entnum = G_EDICTNUM(OFS_PARM0);
 
-	best = 0;
 	Con_DPrintf("Starting Do_Pathfind\n"); //we first need to look for closest point for both zombie and the player
 	zombie = G_EDICT(OFS_PARM0);
 	ent = G_EDICT(OFS_PARM1);
 
-	best_dist = 1000000000;
-	dist = 0;
+	float best_dist_z = 1000000000;
+	float dist_z = 0;
+	int best_z = 0;
+	float best_dist_e = 1000000000;
+	float dist_e = 0;
+	int best_e = 0;
 
 	for (i = 0; i < MAX_WAYPOINTS; i++)
 	{
 		if (waypoints[i].used && waypoints[i].open)
 		{
-			trace = SV_Move (zombie->v.origin, vec3_origin, vec3_origin, waypoints[i].origin, 1, zombie);
-			if (trace.fraction >= 1)
+			dist_z = VecLength2(waypoints[i].origin, zombie->v.origin);
+			if (dist_z < best_dist_z)
 			{
-				dist = VecLength2(waypoints[i].origin, zombie->v.origin);
-
-				if(dist < best_dist)
+				trace = SV_Move (zombie->v.origin, vec3_origin, vec3_origin, waypoints[i].origin, 1, zombie);
+				if (trace.fraction >= 1)
 				{
-					best_dist = dist;
-					best = i;
+					best_dist_z = dist_z;
+					best_z = i;
+				}
+			}
+
+			dist_e = VecLength2(waypoints[i].origin, ent->v.origin);
+			if (dist_e < best_dist_e)
+			{
+				trace = SV_Move (ent->v.origin, vec3_origin, vec3_origin, waypoints[i].origin, 1, ent);
+				if (trace.fraction >= 1)
+				{
+					best_dist_e = dist_e;
+					best_e = i;
 				}
 			}
 		}
 	}
 
-	best_dist = 1000000000;
-	dist = 0;
-	best_target = 0;
-	for (i = 0; i < MAX_WAYPOINTS; i++)
-	{
-		if (waypoints[i].used && waypoints[i].open)
-		{
-			trace = SV_Move (ent->v.origin, vec3_origin, vec3_origin, waypoints[i].origin, 1, ent);
-			if (trace.fraction >= 1)
-			{
-				dist = VecLength2(waypoints[i].origin, ent->v.origin);
-
-				if(dist < best_dist)
-				{
-					best_dist = dist;
-					best_target = i;
-				}
-			}
-		}
-	}
-	Con_DPrintf("Starting waypoint: %i, Ending waypoint: %i\n", best, best_target);
-	if (Pathfind(best, best_target))
+	Con_DPrintf("Starting waypoint: %i, Ending waypoint: %i\n", best_z, best_e);
+	if (Pathfind(best_z, best_e))
 	{
 		for (i = 0; i < MaxZombies; i++)
 		{
@@ -1951,16 +1948,34 @@ void Do_Pathfind (void)
 
 		if(zombie_list[i].pathlist[2] == 0 && zombie_list[i].pathlist[1] != 0)//then we are at player's waypoint!
 		{
+			#ifdef MEASURE_PF_PERF
+			sceRtcGetCurrentTick(&t2);
+			double elapsed = (t2 - t1) * 0.000001;
+			Con_Printf("PF time: %f\n", elapsed);
+			#endif
+
 			Con_DPrintf("We are at player's waypoint already!\n");
 			G_FLOAT(OFS_RETURN) = -1;
 			return;
 		}
+
+		#ifdef MEASURE_PF_PERF
+		sceRtcGetCurrentTick(&t2);
+		double elapsed = (t2 - t1) * 0.000001;
+		Con_Printf("PF time: %f\n", elapsed);
+		#endif
 
 		Con_DPrintf("Path found!\n");
 		G_FLOAT(OFS_RETURN) = 1;
 	}
 	else
 	{
+		#ifdef MEASURE_PF_PERF
+		sceRtcGetCurrentTick(&t2);
+		double elapsed = (t2 - t1) * 0.000001;
+		Con_Printf("PF time: %f\n", elapsed);
+		#endif
+
 		Con_DPrintf("Path not found!\n");
 		G_FLOAT(OFS_RETURN) = 0;
 	}
