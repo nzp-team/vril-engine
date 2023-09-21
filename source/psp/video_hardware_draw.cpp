@@ -97,7 +97,6 @@ typedef struct
 
 int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
 void VID_SetPalette4(unsigned char* clut4pal);
-int vid_palmode;
 
 #define	MAX_GLTEXTURES	1024
 gltexture_t	gltextures[MAX_GLTEXTURES];
@@ -116,7 +115,6 @@ void GL_Bind4Part(int texture_index)
 {
 	const gltexture_t& texture = gltextures[texture_index];
 	VID_SetPalette4(texture.palette);
-	vid_palmode = GU_PSM_T4;
 
 	sceGuTexMode(texture.format, 0, 0, GU_FALSE);
 
@@ -209,7 +207,10 @@ void GL_Bind (int texture_index)
 	if (last_palette_wasnt_tx == qtrue)
 		VID_SetPaletteTX();
 
-	vid_palmode = GU_PSM_T8;
+	if (texture.format == GU_PSM_T4) {
+		VID_SetPalette4(texture.palette);
+	}
+
 	sceGuTexMode(texture.format, texture.mipmaps , 0, texture.swizzle);
 	
 	// Set the Texture filter.
@@ -1712,7 +1713,7 @@ void swizzle(u8* out, const u8* in, unsigned int width, unsigned int height)
 swizzle_fast
 ================
 */
-static void swizzle_fast(u8* out, const u8* in, unsigned int width, unsigned int height)
+void swizzle_fast(u8* out, const u8* in, unsigned int width, unsigned int height)
 {
 	unsigned int blockx, blocky;
 	unsigned int j;
@@ -3338,13 +3339,12 @@ void GL_Upload4(int texture_index, const byte *data, int width, int height)
 
 	memcpy(texture.ram, data, buffer_size);
 	memcpy(texture.palette, data + buffer_size, 16 * 4);
-	int i;
 
 	// Flush the data cache.
 	sceKernelDcacheWritebackRange(texture.ram, buffer_size);
 }
 
-int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, const byte *data, int filter)
+int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, const byte *data, int filter, qboolean swizzled)
 {
 	int texture_index = -1;
 
@@ -3390,6 +3390,7 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 	texture.original_width = texture.width = width;
 	texture.original_height = texture.height = height;
 	texture.stretch_to_power_of_two = qfalse;
+	texture.swizzle = swizzled;
 
 	// Fill in the texture description.
 	texture.format = GU_PSM_T4;

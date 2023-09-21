@@ -29,7 +29,7 @@ void GL_Upload8(int texture_index, const byte *data, int width, int height);
 void GL_Upload16(int texture_index, const byte *data, int width, int height);
 int  GL_LoadTexture(const char *identifier, int width, int height, const byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level);
 // CLUT4
-int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, const byte *data, int filter);
+int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, const byte *data, int filter, qboolean swizzled);
 
 int GL_LoadTextureLM (const char *identifier, int width, int height, const byte *data, int bpp, int filter, qboolean update, int forcopy);
 int GL_LoadImages (const char *identifier, int width, int height, const byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp);
@@ -41,6 +41,8 @@ int GL_LoadPaletteTexture (const char *identifier, int width, int height, const 
 void GL_GetPixelsBGR (byte *buffer, int width, int height, int i);
 void GL_GetPixelsRGB (byte *buffer, int width, int height, int i);
 void GL_GetPixelsRGBA(byte *buffer, int width, int height, int i);
+
+void swizzle_fast(u8* out, const u8* in, unsigned int width, unsigned int height);
 
 
 #define PAL_RGB  24
@@ -329,7 +331,7 @@ void EmitSkyPolys (msurface_t *fa);
 void EmitReflectivePolys (msurface_t *fa);
 void EmitScrollPolys (msurface_t *fa);
 void EmitBothSkyLayers (msurface_t *fa);
-void EmitUnderWaterPolys (void);
+// void EmitUnderWaterPolys (void);
 void EmitDetailPolys (void);
 void R_DrawSkyChain (msurface_t *s);
 int R_FrustumCheckBox (vec3_t mins, vec3_t maxs);
@@ -418,3 +420,6 @@ int 	      D_DrawParticleBuffered (psp_particle* vertices, particle2_t *pparticl
 
 
 extern int			zombie_skins[2][2];
+
+
+extern int faces_rejected, faces_checked, faces_clipped;
