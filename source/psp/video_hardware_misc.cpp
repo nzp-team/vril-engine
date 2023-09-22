@@ -44,13 +44,13 @@ R_InitOtherTextures
 void	R_InitOtherTextures (void)
 {
 	//static decals
-	decal_blood1  = loadtextureimage ("textures/decals/blood_splat01", 0, 0, qfalse, GU_LINEAR);
-	decal_blood2  = loadtextureimage ("textures/decals/blood_splat02", 0, 0, qfalse, GU_LINEAR);
-	decal_blood3  = loadtextureimage ("textures/decals/blood_splat03", 0, 0, qfalse, GU_LINEAR);
-    decal_q3blood = loadtextureimage ("textures/decals/blood_stain", 0, 0, qfalse, GU_LINEAR);
-	decal_burn	  = loadtextureimage ("textures/decals/explo_burn01", 0, 0, qfalse, GU_LINEAR);
-	decal_mark	  = loadtextureimage ("textures/decals/particle_burn01", 0, 0, qfalse, GU_LINEAR);
-	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, qfalse, GU_LINEAR);
+	decal_blood1  = loadtextureimage ("textures/decals/blood_splat01", 0, 0, qfalse, GU_LINEAR, 0);
+	decal_blood2  = loadtextureimage ("textures/decals/blood_splat02", 0, 0, qfalse, GU_LINEAR, 0);
+	decal_blood3  = loadtextureimage ("textures/decals/blood_splat03", 0, 0, qfalse, GU_LINEAR, 0);
+    decal_q3blood = loadtextureimage ("textures/decals/blood_stain", 0, 0, qfalse, GU_LINEAR, 0);
+	decal_burn	  = loadtextureimage ("textures/decals/explo_burn01", 0, 0, qfalse, GU_LINEAR, 0);
+	decal_mark	  = loadtextureimage ("textures/decals/particle_burn01", 0, 0, qfalse, GU_LINEAR, 0);
+	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, qfalse, GU_LINEAR, 0);
 }
 
 /*
