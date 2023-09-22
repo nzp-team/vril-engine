@@ -3410,7 +3410,7 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 	}
 
 	// Allocate the VRAM.
-	//texture.vram = static_cast<texel*>(quake::vram::allocate(buffer_size));
+	texture.vram = static_cast<texel*>(quake::vram::allocate(buffer_size));
 
 	// Upload the texture.
 	GL_Upload4(texture_index, data, width, height);
@@ -3419,6 +3419,7 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 		free(texture.ram);
 		texture.ram = NULL;
 	}
+
 	// Done.
 	return texture_index;	
 }
