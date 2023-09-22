@@ -1006,7 +1006,7 @@ void Draw_LoadingFill(void)
 	switch(loading_step) {
 		case 1: text = "Loading Models.."; break;
 		case 2: text = "Loading World.."; break;
-		case 3: text = "Running Test Frame.."; break;
+		case 3: text = "Running Spawn Functions.."; break;
 		case 4: text = "Loading Sounds.."; break;
 		default: text = "Initializing.."; break;
 	}
