@@ -452,6 +452,7 @@ based on water polys!
 By Crow_bar.
 =============
 */
+/*
 void EmitUnderWaterPolys (void)
 {
    	const float scale		= (-3 * (0.5 / 64));
@@ -537,6 +538,7 @@ void EmitUnderWaterPolys (void)
 
 	caustics_polys = NULL;
 }
+*/
 
 /*
 =============

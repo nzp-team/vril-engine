@@ -1964,6 +1964,7 @@ void QMB_Shockwave_Splash(vec3_t org, int radius)
 }
 
 extern sfx_t		*cl_sfx_thunder;
+/*
 void QMB_LetItRain(void)
 {
 	int			i;
@@ -2001,7 +2002,7 @@ void QMB_LetItRain(void)
 					S_StartSound (-1, 0, cl_sfx_thunder, p->midpoint, 1, 1);
 					cl.thundertime = cl.time + (rand()% 60 + 1);
 				}*/
-
+				/*
 				point[0] = p->midpoint[0] + (rand() % 80 - 40);
 				point[1] = p->midpoint[1] + (rand() % 80 - 40);
 				point[2] = p->midpoint[2];
@@ -2011,6 +2012,7 @@ void QMB_LetItRain(void)
 		}
 	}
 };
+*/
 
 //R00k: revamped to coincide with classic particle style...
 

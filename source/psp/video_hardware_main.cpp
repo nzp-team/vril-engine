@@ -44,7 +44,7 @@ void Fog_DisableGFog (void);
 void R_DrawDecals (void);
 void R_RenderDecals (void);
 void R_MarkLeaves (void);
-void QMB_LetItRain(void);
+// void QMB_LetItRain(void);
 void QMB_LaserSight (void);
 void VID_SetPaletteH2();
 void VID_SetPaletteTX();
