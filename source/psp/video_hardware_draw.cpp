@@ -3347,8 +3347,6 @@ void GL_Upload4(int texture_index, const byte *data, int width, int height)
 int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, const byte *data, int filter, qboolean swizzled)
 {
 	int texture_index = -1;
-
-	tex_scale_down = r_tex_scale_down.value == qtrue;
 	
 	if (identifier[0])
 	{
@@ -3423,4 +3421,46 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 	}
 	// Done.
 	return texture_index;	
+}
+
+int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int height, const byte *data, const byte *pal, int filter)
+{
+	tex_scale_down = r_tex_scale_down.value == qtrue;
+	int new_width = width;
+	int new_height = height;
+	if (tex_scale_down == true)
+	{
+		new_width			= std::max(round_down(width), 32U);
+		new_height			= std::max(round_down(height),16U);
+	}
+	else
+	{
+		new_width			= std::max(round_up(width), 32U);
+		new_height			= std::max(round_up(height),16U);
+	}
+
+	std::size_t resamp_size = new_width * new_height;
+	byte * resamp_data = static_cast<byte*>(memalign(16, resamp_size));
+	// Resamp required?
+	if ((new_width != width) || (new_height != height)) {
+		GL_ResampleTexture(data, width, height, resamp_data, new_width, new_height);
+	} else {
+		memcpy(resamp_data, data, resamp_size);
+	}
+
+	std::size_t buffer_size = resamp_size * 0.5;
+	byte * clut4data = static_cast<byte*>(memalign(16, buffer_size + 16 * 4));
+	byte * clut4pal = &(clut4data[buffer_size]);
+	byte * unswizzled_data = static_cast<byte*>(memalign(16, buffer_size));
+
+	convert_8bpp_to_4bpp(resamp_data, pal, new_width, new_height, unswizzled_data, clut4pal);
+	swizzle_fast(clut4data, unswizzled_data, new_width * 0.5, new_height);
+
+	free(unswizzled_data);
+
+	int id = GL_LoadTexture4(identifier, new_width, new_height, clut4data, filter, qtrue);
+
+	free(clut4data);
+
+	return id;
 }
