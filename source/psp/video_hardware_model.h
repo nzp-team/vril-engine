@@ -151,10 +151,10 @@ typedef struct glpoly_s
 	struct		glpoly_s	*chain;
 	int			numverts;
 	int			flags;		// for SURF_UNDERWATER
-    struct glpoly_s	*detail_chain;		// next detail poly in chain
-    struct glpoly_s	*caustics_chain;	// next caustic poly in chain
-    vec3_t midpoint;//MHQuake
-	float fxofs;	//MHQuake
+    // struct glpoly_s	*detail_chain;		// next detail poly in chain
+    // struct glpoly_s	*caustics_chain;	// next caustic poly in chain
+    // vec3_t midpoint;//MHQuake
+	// float fxofs;	//MHQuake
 
 	// shpuld: for display list allocated temporary memory for psp rendering
 	int			numclippedverts;
