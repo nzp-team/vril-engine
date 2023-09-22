@@ -3409,8 +3409,8 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 		Sys_Error("Out of RAM for textures.");
 	}
 
-	// Allocate the VRAM.
-	texture.vram = static_cast<texel*>(quake::vram::allocate(buffer_size));
+	// Allocate the VRAM. causes problems?
+	// texture.vram = static_cast<texel*>(vramalloc(buffer_size));
 
 	// Upload the texture.
 	GL_Upload4(texture_index, data, width, height);
