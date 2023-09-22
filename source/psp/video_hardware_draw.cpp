@@ -3462,6 +3462,7 @@ int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int 
 	int id = GL_LoadTexture4(identifier, new_width, new_height, clut4data, filter, qtrue);
 
 	free(clut4data);
+	free(resamp_data);
 
 	return id;
 }
