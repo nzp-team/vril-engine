@@ -573,7 +573,7 @@ void Mod_LoadTextures (lump_t *l)
 			}
 			
 			if (!f) {
-				Con_Printf("Loading texture %s as WAD3\n", mt->name);		// didn't find the texture in the folder
+				Con_Printf("Loading texture %s as WAD3, %dx%d\n", mt->name, mt->width, mt->height);		// didn't find the texture in the folder
 					
 				// naievil -- try to push wad3 loading 
 				int index = WAD3_LoadTexture(mt);
@@ -611,7 +611,7 @@ void Mod_LoadTextures (lump_t *l)
 					w = *((int*)(f + 4));
 					h = *((int*)(f + 8));
 
-					tx->gl_texturenum = GL_LoadTexture4(mt->name, w, h, (byte*)(f + 16), GU_LINEAR);
+					tx->gl_texturenum = GL_LoadTexture4(mt->name, w, h, (byte*)(f + 16), GU_LINEAR, qfalse);
 					mapTextureNameList.push_back(tx->gl_texturenum);
 				}
 	

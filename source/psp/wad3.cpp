@@ -25,7 +25,7 @@ extern "C"
 #include "../quakedef.h"
 }
 #include <pspgu.h>
-
+#include <malloc.h>
 #include <list>
 
 std::list<FILE*> UnloadFileList;
@@ -189,6 +189,20 @@ int ConvertWad3ToRGBA(miptex_t *tex)
 	return index;
 }
 
+int ConvertWad3ToClut4(miptex_t *tex)
+{
+	// Check that texture has data
+    if (!tex->offsets[0]) {
+        Sys_Error("ConvertWad3ToRGBA: tex->offsets[0] == 0");
+    }
+
+    // Get pointers to WAD3 data and palette
+    const byte* wadData = ((byte*)tex) + tex->offsets[0];
+	const byte* palette = ((byte*)tex) + tex->offsets[3] + (tex->width>>3)*(tex->height>>3) + 2;
+
+	return GL_LoadTexture8to4(tex->name, tex->width, tex->height, wadData, palette, GU_LINEAR);
+}
+
 int WAD3_LoadTexture(miptex_t *mt)
 {
 	char texname[MAX_QPATH];
@@ -198,7 +212,7 @@ int WAD3_LoadTexture(miptex_t *mt)
 	int index;
 
 	if (mt->offsets[0])
- 	    return ConvertWad3ToRGBA(mt);
+ 	    return ConvertWad3ToClut4(mt); // ConvertWad3ToRGBA(mt);
 
 	texname[sizeof(texname) - 1] = 0;
 	W_CleanupName (mt->name, texname);
@@ -242,7 +256,7 @@ int WAD3_LoadTexture(miptex_t *mt)
 		for (j = 0;j < MIPLEVELS;j++)
 			tex->offsets[j] = LittleLong(tex->offsets[j]);
 
-	    index = ConvertWad3ToRGBA(tex);
+	    index = ConvertWad3ToClut4(mt); // ConvertWad3ToRGBA(tex);
 
 		Hunk_FreeToLowMark(lowmark);
 

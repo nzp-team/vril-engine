@@ -103,7 +103,8 @@ HARDWARE_VIDEO_ONLY_OBJS = \
     source/psp/video_hardware_surface.o \
     source/psp/video_hardware_warp.o \
     source/psp/video_hardware_fog.o \
-    source/psp/video_hardware_dxtn.o
+    source/psp/video_hardware_dxtn.o \
+    source/psp/video_hardware_colorquant.o
 HARDWARE_VIDEO_ONLY_FLAGS = -DPSP_HARDWARE_VIDEO
 
 OBJS = $(COMMON_OBJS) $(HARDWARE_VIDEO_ONLY_OBJS)

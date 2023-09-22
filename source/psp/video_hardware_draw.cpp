@@ -97,7 +97,6 @@ typedef struct
 
 int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
 void VID_SetPalette4(unsigned char* clut4pal);
-int vid_palmode;
 
 #define	MAX_GLTEXTURES	1024
 gltexture_t	gltextures[MAX_GLTEXTURES];
@@ -116,7 +115,6 @@ void GL_Bind4Part(int texture_index)
 {
 	const gltexture_t& texture = gltextures[texture_index];
 	VID_SetPalette4(texture.palette);
-	vid_palmode = GU_PSM_T4;
 
 	sceGuTexMode(texture.format, 0, 0, GU_FALSE);
 
@@ -209,7 +207,10 @@ void GL_Bind (int texture_index)
 	if (last_palette_wasnt_tx == qtrue)
 		VID_SetPaletteTX();
 
-	vid_palmode = GU_PSM_T8;
+	if (texture.format == GU_PSM_T4) {
+		VID_SetPalette4(texture.palette);
+	}
+
 	sceGuTexMode(texture.format, texture.mipmaps , 0, texture.swizzle);
 	
 	// Set the Texture filter.
@@ -1712,7 +1713,7 @@ void swizzle(u8* out, const u8* in, unsigned int width, unsigned int height)
 swizzle_fast
 ================
 */
-static void swizzle_fast(u8* out, const u8* in, unsigned int width, unsigned int height)
+void swizzle_fast(u8* out, const u8* in, unsigned int width, unsigned int height)
 {
 	unsigned int blockx, blocky;
 	unsigned int j;
@@ -3338,17 +3339,24 @@ void GL_Upload4(int texture_index, const byte *data, int width, int height)
 
 	memcpy(texture.ram, data, buffer_size);
 	memcpy(texture.palette, data + buffer_size, 16 * 4);
-	int i;
+
+	// Copy to VRAM?
+	if (texture.vram)
+	{
+		// Copy.
+		memcpy(texture.vram, texture.ram, buffer_size);
+
+		// Flush the data cache.
+		sceKernelDcacheWritebackRange(texture.vram, buffer_size);
+	}
 
 	// Flush the data cache.
 	sceKernelDcacheWritebackRange(texture.ram, buffer_size);
 }
 
-int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, const byte *data, int filter)
+int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, const byte *data, int filter, qboolean swizzled)
 {
 	int texture_index = -1;
-
-	tex_scale_down = r_tex_scale_down.value == qtrue;
 	
 	if (identifier[0])
 	{
@@ -3390,6 +3398,7 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 	texture.original_width = texture.width = width;
 	texture.original_height = texture.height = height;
 	texture.stretch_to_power_of_two = qfalse;
+	texture.swizzle = swizzled;
 
 	// Fill in the texture description.
 	texture.format = GU_PSM_T4;
@@ -3410,8 +3419,7 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 		Sys_Error("Out of RAM for textures.");
 	}
 
-	// Allocate the VRAM.
-	//texture.vram = static_cast<texel*>(quake::vram::allocate(buffer_size));
+	texture.vram = static_cast<texel*>(vramalloc(buffer_size));
 
 	// Upload the texture.
 	GL_Upload4(texture_index, data, width, height);
@@ -3420,6 +3428,50 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 		free(texture.ram);
 		texture.ram = NULL;
 	}
+
 	// Done.
 	return texture_index;	
+}
+
+int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int height, const byte *data, const byte *pal, int filter)
+{
+	tex_scale_down = r_tex_scale_down.value == qtrue;
+	int new_width = width;
+	int new_height = height;
+	if (tex_scale_down == true)
+	{
+		new_width			= std::max(round_down(width), 32U);
+		new_height			= std::max(round_down(height),16U);
+	}
+	else
+	{
+		new_width			= std::max(round_up(width), 32U);
+		new_height			= std::max(round_up(height),16U);
+	}
+
+	std::size_t resamp_size = new_width * new_height;
+	byte * resamp_data = static_cast<byte*>(memalign(16, resamp_size));
+	// Resamp required?
+	if ((new_width != width) || (new_height != height)) {
+		GL_ResampleTexture(data, width, height, resamp_data, new_width, new_height);
+	} else {
+		memcpy(resamp_data, data, resamp_size);
+	}
+
+	std::size_t buffer_size = resamp_size * 0.5;
+	byte * clut4data = static_cast<byte*>(memalign(16, buffer_size + 16 * 4));
+	byte * clut4pal = &(clut4data[buffer_size]);
+	byte * unswizzled_data = static_cast<byte*>(memalign(16, buffer_size));
+
+	convert_8bpp_to_4bpp(resamp_data, pal, new_width, new_height, unswizzled_data, clut4pal);
+	swizzle_fast(clut4data, unswizzled_data, new_width * 0.5, new_height);
+
+	free(unswizzled_data);
+
+	int id = GL_LoadTexture4(identifier, new_width, new_height, clut4data, filter, qtrue);
+
+	free(clut4data);
+	free(resamp_data);
+
+	return id;
 }
