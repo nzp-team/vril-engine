@@ -3340,6 +3340,16 @@ void GL_Upload4(int texture_index, const byte *data, int width, int height)
 	memcpy(texture.ram, data, buffer_size);
 	memcpy(texture.palette, data + buffer_size, 16 * 4);
 
+	// Copy to VRAM?
+	if (texture.vram)
+	{
+		// Copy.
+		memcpy(texture.vram, texture.ram, buffer_size);
+
+		// Flush the data cache.
+		sceKernelDcacheWritebackRange(texture.vram, buffer_size);
+	}
+
 	// Flush the data cache.
 	sceKernelDcacheWritebackRange(texture.ram, buffer_size);
 }
@@ -3410,7 +3420,7 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 	}
 
 	// Allocate the VRAM. causes problems?
-	// texture.vram = static_cast<texel*>(vramalloc(buffer_size));
+	texture.vram = static_cast<texel*>(vramalloc(buffer_size));
 
 	// Upload the texture.
 	GL_Upload4(texture_index, data, width, height);
