@@ -573,7 +573,7 @@ void Mod_LoadTextures (lump_t *l)
 			}
 			
 			if (!f) {
-				Con_Printf("Loading texture %s as WAD3, %dx%d\n", mt->name, mt->width, mt->height);		// didn't find the texture in the folder
+				Con_DPrintf("Loading texture %s as WAD3, %dx%d\n", mt->name, mt->width, mt->height);		// didn't find the texture in the folder
 					
 				// naievil -- try to push wad3 loading 
 				int index = WAD3_LoadTexture(mt);
