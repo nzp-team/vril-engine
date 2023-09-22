@@ -3419,7 +3419,6 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 		Sys_Error("Out of RAM for textures.");
 	}
 
-	// Allocate the VRAM. causes problems?
 	texture.vram = static_cast<texel*>(vramalloc(buffer_size));
 
 	// Upload the texture.
