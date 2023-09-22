@@ -1214,6 +1214,7 @@ void Mod_LoadFaces (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Con_Printf ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
+	Con_Printf("Model faces %d\n", count);
 	out = static_cast<msurface_t*>(Hunk_AllocName ( count*sizeof(*out), loadname));
 
 	loadmodel->surfaces = out;

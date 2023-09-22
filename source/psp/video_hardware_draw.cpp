@@ -2464,7 +2464,6 @@ GL_UnloadTexture
 */
 void GL_UnloadTexture(int texture_index)
 {
-
 	if (gltextures_used[texture_index] == true)
 	{
 		gltexture_t& texture = gltextures[texture_index];
@@ -2522,23 +2521,12 @@ void GL_UnloadTexture(int texture_index)
 			texture.vram = NULL;
 		}
 
+		gltextures_used[texture_index] = false;
+		numgltextures--;
 	}
-
-	gltextures_used[texture_index] = false;
-	numgltextures--;
-	
 }
 
-/*
-================
-GL_LoadTexture
-================
-*/
-int GL_LoadTexture (const char *identifier, int width, int height, const byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level)
-{
-	int texture_index = -1;
-
-	tex_scale_down = r_tex_scale_down.value == qtrue;
+int GL_TextureForName(const char * identifier) {
 	// See if the texture is already present.
 	if (identifier[0])
 	{
@@ -2554,26 +2542,53 @@ int GL_LoadTexture (const char *identifier, int width, int height, const byte *d
 			}
 		}
 	}
+	return -1;
+}
 
+int GL_GetTextureIndex() {
 	// Out of textures?
 	if (numgltextures == MAX_GLTEXTURES)
 	{
-		Sys_Error("Out of OpenGL textures");
+		Sys_Error("Out of gl textures");
 	}
 
-	// Use the next available texture.
 	numgltextures++;
-	texture_index = numgltextures;
+	int texture_index = -1;
 
 	for (int i = 0; i < MAX_GLTEXTURES; ++i)
 	{
-		if (gltextures_used[i] == false) {
+		if (gltextures_used[i] == false)
+		{
 			texture_index = i;
 			break;
 		}
 	}
-	gltexture_t& texture = gltextures[texture_index];
+
+	if (texture_index < 0) {
+		Sys_Error("Could not find a free gl texture!\n");
+	}
+
+	Con_Printf("gltextures used %d\n", numgltextures);
 	gltextures_used[texture_index] = true;
+
+	return texture_index;
+}
+
+/*
+================
+GL_LoadTexture
+================
+*/
+int GL_LoadTexture (const char *identifier, int width, int height, const byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level)
+{
+	int texture_index = GL_TextureForName(identifier);
+	if (texture_index >= 0) return texture_index;
+
+	tex_scale_down = r_tex_scale_down.value == qtrue;
+	
+	texture_index = GL_GetTextureIndex();
+
+	gltexture_t& texture = gltextures[texture_index];
 
 	// Fill in the source data.
 	strcpy(texture.identifier, identifier);
@@ -2660,46 +2675,14 @@ GL_LoadPalTex
 */
 int GL_LoadPalTex (const char *identifier, int width, int height, const byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, byte *palette, int paltype)
 {
-	
-	int texture_index = -1;
+	int texture_index = GL_TextureForName(identifier);
+	if (texture_index >= 0) return texture_index;
 
 	tex_scale_down = r_tex_scale_down.value == qtrue;
-	// See if the texture is already present.
-	if (identifier[0])
-	{
-		for (int i = 0; i < MAX_GLTEXTURES; ++i)
-		{
-			if (gltextures_used[i] == true)
-			{
-				const gltexture_t& texture = gltextures[i];
-				if (!strcmp (identifier, texture.identifier))
-				{
-					return i;
-				}
-			}
-		}
-	}
+	
+	texture_index = GL_GetTextureIndex();
 
-	// Out of textures?
-	if (numgltextures == MAX_GLTEXTURES)
-	{
-		Sys_Error("Out of OpenGL textures");
-	}
-
-	// Use the next available texture.
-	numgltextures++;
-	texture_index = numgltextures;
-
-	for (int i = 0; i < MAX_GLTEXTURES; ++i)
-	{
-		if (gltextures_used[i] == false)
-		{
-			texture_index = i;
-			break;
-		}
-	}
 	gltexture_t& texture = gltextures[texture_index];
-	gltextures_used[texture_index] = true;
 
 	// Fill in the source data.
 	strcpy(texture.identifier, identifier);
@@ -2845,51 +2828,14 @@ GL_LoadTextureLM
 int GL_LoadTextureLM (const char *identifier, int width, int height, const byte *data, int bpp, int filter, qboolean update, int forcopy)
 {
 	tex_scale_down = r_tex_scale_down.value == qtrue;
-	int texture_index = -1;
-	// See if the texture is already present.
-	if (identifier[0])
-	{
-		for (int i = 0; i < MAX_GLTEXTURES; ++i)
-		{
-			if (gltextures_used[i] == true)
-			{
-				const gltexture_t& texture = gltextures[i];
-				if (!strcmp (identifier, texture.identifier))
-				{
-					if (update == qfalse)
-					{
-						return i;
-					}
-					else
-					{
-						texture_index = i;
-						break;
-					}
-				}
-			}
-		}
+	int texture_index = GL_TextureForName(identifier);
+	if (texture_index >= 0 && update == qfalse) {
+		return texture_index;
 	}
 
 	if (update == qfalse || texture_index == -1)
 	{
-		// Out of textures?
-		if (numgltextures == MAX_GLTEXTURES)
-		{
-			Sys_Error("Out of OpenGL textures");
-		}
-
-		// Use the next available texture.
-		numgltextures++;
-		texture_index = numgltextures;
-
-		for (int i = 0; i < MAX_GLTEXTURES; ++i)
-		{
-			if (gltextures_used[i] == false)
-			{
-				texture_index = i;
-				break;
-			}
-		}
+		texture_index = GL_GetTextureIndex();
 		gltexture_t& texture = gltextures[texture_index];
 		gltextures_used[texture_index] = true;
 
@@ -3073,47 +3019,14 @@ GL_LoadImages
 int total_overbudget_texturemem;
 int GL_LoadImages (const char *identifier, int width, int height, const byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp)
 {
-	int texture_index = -1;
+	int texture_index = GL_TextureForName(identifier);
+	if (texture_index >= 0) return texture_index;
 
 	tex_scale_down = r_tex_scale_down.value == qtrue;
 	
-	// See if the texture is already present.
-	if (identifier[0])
-	{
-		for (int i = 0; i < MAX_GLTEXTURES; ++i)
-		{
-			if (gltextures_used[i] == true)
-			{
-				const gltexture_t& texture = gltextures[i];
-				if (!strcmp (identifier, texture.identifier))
-				{
-					return i;
-				}
-			}
-		}
-	}
-	
-	// Out of textures?
-	if (numgltextures == MAX_GLTEXTURES)
-	{		Sys_Error("Out of OpenGL textures");
-	}
+	texture_index = GL_GetTextureIndex();
 
-	// Use the next available texture.
-	numgltextures++;
-	texture_index = numgltextures;
-
-	for (int i = 0; i < MAX_GLTEXTURES; ++i)
-	{
-		if (gltextures_used[i] == false)
-		{
-			texture_index = i;
-			break;
-		}
-	}
-	
 	gltexture_t& texture = gltextures[texture_index];
-	gltextures_used[texture_index] = true;
-
 	// Fill in the source data.
 	strcpy(texture.identifier, identifier);
 	texture.original_width			= width;
@@ -3356,42 +3269,11 @@ void GL_Upload4(int texture_index, const byte *data, int width, int height)
 
 int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, const byte *data, int filter, qboolean swizzled)
 {
-	int texture_index = -1;
-	
-	if (identifier[0])
-	{
-		for (int i = 0; i < MAX_GLTEXTURES; ++i)
-		{
-			if (gltextures_used[i] == true)
-			{
-				const gltexture_t& texture = gltextures[i];
-				if (!strcmp(identifier, texture.identifier))
-				{
-					return i;
-				}
-			}
-		}
-	}
+	int texture_index = GL_TextureForName(identifier);
+	if (texture_index >= 0) return texture_index;
 
-	// Out of textures?
-	if (numgltextures == MAX_GLTEXTURES)
-	{
-		Sys_Error("Out of OpenGL textures");
-	}
-
-	// Use the next available texture.
-	numgltextures++;
-	texture_index = numgltextures;
-
-	for (int i = 0; i < MAX_GLTEXTURES; ++i)
-	{
-		if (gltextures_used[i] == false) {
-			texture_index = i;
-			break;
-		}
-	}
+	texture_index = GL_GetTextureIndex();
 	gltexture_t& texture = gltextures[texture_index];
-	gltextures_used[texture_index] = true;
 
 	// Fill in the source data.
 	strcpy(texture.identifier, identifier);
