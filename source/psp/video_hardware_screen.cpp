@@ -1048,7 +1048,7 @@ void SCR_DrawLoadScreen (void)
 			strcpy(lpath, "gfx/lscreen/");
 			strcat(lpath, loadname2);
 
-			lscreen = Draw_CachePic(lpath);
+			lscreen = Draw_CacheImg(lpath);
 			awoo = Draw_CacheImg("gfx/menu/awoo");
 
 			if (lscreen != NULL)
