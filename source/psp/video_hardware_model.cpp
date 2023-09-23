@@ -560,53 +560,24 @@ void Mod_LoadTextures (lump_t *l)
 	{
 		if (loadmodel->bspversion == HL_BSPVERSION || loadmodel->bspversion == NZP_BSPVERSION)
 		{
-			
-			// char filename[64];		// Filename to check r4w file
-			// byte *f;
-			// sprintf(filename, "textures/maps/%s/%s.r4w", sv.name, mt->name);		// search in textures/maps/MAPNAME/TEXNAME
-			
-			// f = static_cast<byte*>(COM_LoadHunkFile(filename));
-			
-			// if (!f) {
-			// 	sprintf(filename, "textures/%s.r4w", mt->name);					// search in textures/TEXNAME
-			// 	f = static_cast<byte*>(COM_LoadHunkFile(filename));
-			// }
-			
-			// if (!f) {
-				Con_DPrintf("Loading texture %s as WAD3, %dx%d\n", mt->name, mt->width, mt->height);		// didn't find the texture in the folder
+			Con_DPrintf("Loading texture %s as WAD3, %dx%d\n", mt->name, mt->width, mt->height);		// didn't find the texture in the folder
 					
-				// naievil -- try to push wad3 loading 
-				int index = WAD3_LoadTexture(mt);
-				if(index)
-				{
-					com_netpath[0] = 0;
-					tx->gl_texturenum = index;
-					tx->fullbright = -1;
-					mapTextureNameList.push_back(tx->gl_texturenum);
-					tx->dt_texturenum = 0;
-				}
-				else
-				{
-					Con_Printf("Texture %s not found\n", mt->name);		// didn't find the texture in the folder
-					com_netpath[0] = 0;
-					tx->gl_texturenum = nonetexture;
-				}
-			
-			// } else {
-				
-			// 	int w, h;
-				
-			// 	unsigned int magic = *((unsigned int*)(f));
-			// 	if (magic == 0x65663463)								// what the fuck? 
-			// 	{
-			// 		w = *((int*)(f + 4));
-			// 		h = *((int*)(f + 8));
-
-			// 		tx->gl_texturenum = GL_LoadTexture4(mt->name, w, h, (byte*)(f + 16), GU_LINEAR, qfalse);
-			// 		mapTextureNameList.push_back(tx->gl_texturenum);
-			// 	}
-	
-			// }
+			// naievil -- try to push wad3 loading 
+			int index = WAD3_LoadTexture(mt);
+			if(index)
+			{
+				com_netpath[0] = 0;
+				tx->gl_texturenum = index;
+				tx->fullbright = -1;
+				mapTextureNameList.push_back(tx->gl_texturenum);
+				tx->dt_texturenum = 0;
+			}
+			else
+			{
+				Con_Printf("Texture %s not found\n", mt->name);		// didn't find the texture in the folder
+				com_netpath[0] = 0;
+				tx->gl_texturenum = nonetexture;
+			}
 		}
 		else
 		{
