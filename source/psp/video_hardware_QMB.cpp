@@ -444,7 +444,7 @@ void QMB_InitParticles (void)
 
 	loading_num_step = loading_num_step + 24;
 	
-	if (!(particleimage = loadtextureimage("textures/particles/particlefont", 0, 0, qfalse, GU_LINEAR)))
+	if (!(particleimage = loadtextureimage("textures/particles/particlefont", 0, 0, qfalse, GU_LINEAR, 0)))
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -471,7 +471,7 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 
 	// load the rest of the images
-	if(!(particleimage = loadtextureimage("textures/particles/q3particlefont", 0, 0, qfalse, GU_LINEAR)))
+	if(!(particleimage = loadtextureimage("textures/particles/q3particlefont", 0, 0, qfalse, GU_LINEAR, 0)))
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -496,7 +496,7 @@ void QMB_InitParticles (void)
 	
 	max_s = max_t = 128.0;
 
-	if (!(particleimage = loadtextureimage("textures/particles/flame", 0, 0, qfalse, GU_LINEAR)))
+	if (!(particleimage = loadtextureimage("textures/particles/flame", 0, 0, qfalse, GU_LINEAR, 0)))
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -511,7 +511,7 @@ void QMB_InitParticles (void)
     loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	if (!(particleimage = loadtextureimage("textures/particles/inferno", 0, 0, qfalse, GU_LINEAR)))
+	if (!(particleimage = loadtextureimage("textures/particles/inferno", 0, 0, qfalse, GU_LINEAR, 0)))
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -522,7 +522,7 @@ void QMB_InitParticles (void)
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	if (!(particleimage = loadtextureimage("textures/particles/zing1", 0, 0, qfalse, GU_LINEAR)))
+	if (!(particleimage = loadtextureimage("textures/particles/zing1", 0, 0, qfalse, GU_LINEAR, 0)))
 	{
         //Clear_LoadingFill ();
 		return;
@@ -535,7 +535,7 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 	max_s = max_t = 128.0;
 	
-	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl0", 0, 0, qfalse, GU_LINEAR)))
+	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl0", 0, 0, qfalse, GU_LINEAR, 0)))
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -550,7 +550,7 @@ void QMB_InitParticles (void)
 
 #ifdef SLIM
 
-	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl1", 0, 0, qfalse, GU_LINEAR)))
+	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl1", 0, 0, qfalse, GU_LINEAR, 0)))
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -560,7 +560,7 @@ void QMB_InitParticles (void)
 
     loading_cur_step++;	
 	SCR_UpdateScreen ();
-	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl2", 0, 0, qfalse, GU_LINEAR)))
+	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl2", 0, 0, qfalse, GU_LINEAR, 0)))
 	{
         //Clear_LoadingFill ();
 		return;
@@ -574,7 +574,7 @@ void QMB_InitParticles (void)
 #endif // SLIM
 	
 	max_s = max_t = 64.0;
-	if (!(particleimage = loadtextureimage("textures/particles/bloodcloud", 0, 0, qfalse, GU_LINEAR)))
+	if (!(particleimage = loadtextureimage("textures/particles/bloodcloud", 0, 0, qfalse, GU_LINEAR, 0)))
 	{
         //Clear_LoadingFill ();
 		return;

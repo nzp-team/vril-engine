@@ -914,11 +914,11 @@ void Sky_LoadSkyBox (char *name)
     {
         int mark = Hunk_LowMark ();
 
-		if(!(skyimage[i] = loadtextureimage (va("gfx/env/%s%s", name, suf[i]), 0, 0, qfalse, GU_LINEAR)) &&
-           !(skyimage[i] = loadtextureimage (va("gfx/env/%s_%s", name, suf[i]), 0, 0, qfalse, GU_LINEAR)))
+		if(!(skyimage[i] = loadtextureimage (va("gfx/env/%s%s", name, suf[i]), 0, 0, qfalse, GU_LINEAR, 0)) &&
+           !(skyimage[i] = loadtextureimage (va("gfx/env/%s_%s", name, suf[i]), 0, 0, qfalse, GU_LINEAR, 0)))
 		{
 			Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[i]);
-		    if(!(skyimage[i] = loadtextureimage (va("gfx/env/skybox%s", suf[i]), 0, 0, qfalse, GU_LINEAR)))
+		    if(!(skyimage[i] = loadtextureimage (va("gfx/env/skybox%s", suf[i]), 0, 0, qfalse, GU_LINEAR, 0)))
 		    {
 			    Sys_Error("STD SKY NOT FOUND!");
 			}

@@ -990,7 +990,7 @@ loadimagepixels
 =============
 */
 										// HACK HACK HACK
-byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int matchheight)
+byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int matchheight, int type)
 {
 	FILE	*f;
 	char	basename[128], name[128];
@@ -1011,21 +1011,20 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 	}
 
 	com_netpath[0] = 0;
-/*
-    sprintf (name, "%s.wal", basename);
-	if (data = LoadWAL(name))
-		return data;
-*/
+
+	sprintf (name, "%s.pcx", basename);
+	FS_FOpenFile (name, &f);
+	if (f)
+		return LoadPCX (f, matchwidth, matchheight);
+
+	// models only support loading PCX textures
+	if (type == 1)
+		return NULL;
 
 	sprintf (name, "%s.tga", basename);
 	FS_FOpenFile (name, &f);
 	if (f)
 		return LoadTGA (f, matchwidth, matchheight);
-		
-	sprintf (name, "%s.pcx", basename);
-	FS_FOpenFile (name, &f);
-	if (f)
-		return LoadPCX (f, matchwidth, matchheight);
 	
 	sprintf (name, "%s.jpg", basename);
 	FS_FOpenFile (name, &f);
@@ -1038,13 +1037,6 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 	if (f)
 		return LoadPNG (f, matchwidth, matchheight);
 	
-	sprintf (name, "%s.bmp", basename);
-	FS_FOpenFile (name, &f);
-	if (f)
-		return LoadBMP (f, matchwidth, matchheight);
-	//if (complain)
-	//	Con_Printf ("Couldn't load %s .tga .jpg .bmp .png \n", filename);
-	
 	return NULL;
 }
 
@@ -1054,13 +1046,13 @@ loadtextureimage
 =============
 */
 
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter)
+int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter, int type)
 {
 	int texture_index;
 	byte *data;
 
 	int hunk_start = Hunk_LowMark();
-	data = loadimagepixels (filename, complain, matchwidth, matchheight);
+	data = loadimagepixels (filename, complain, matchwidth, matchheight, type);
 	int hunk_stop = Hunk_LowMark();
 
 	if(!data)

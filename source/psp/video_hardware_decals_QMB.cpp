@@ -115,23 +115,7 @@ void R_InitDecals (void)
 
 	if (!qmb_initialized)
 		return;
-/*
- decal_blood1  = loadtextureimage("textures/decals/blood_splat01",   0, 0, qfalse, GU_LINEAR);
- decal_blood2  = loadtextureimage("textures/decals/blood_splat02",   0, 0, qfalse, GU_LINEAR);
- decal_blood3  = loadtextureimage("textures/decals/blood_splat03",   0, 0, qfalse, GU_LINEAR);
- decal_q3blood = loadtextureimage("textures/decals/blood_stain",     0, 0, qfalse, GU_LINEAR);
- decal_burn    = loadtextureimage("textures/decals/explo_burn01",    0, 0, qfalse, GU_LINEAR);
- decal_mark    = loadtextureimage("textures/decals/particle_burn01", 0, 0, qfalse, GU_LINEAR);
- decal_glow    = loadtextureimage("textures/decals/glow2",           0, 0, qfalse, GU_LINEAR);
 
-	decal_blood1 = GL_LoadTextureImage ("textures/decals/blood_splat01", "decals:blood_splat01", 128, 128, TEX_ALPHA | TEX_COMPLAIN);
-	decal_blood2 = GL_LoadTextureImage ("textures/decals/blood_splat02", "decals:blood_splat02", 128, 128, TEX_ALPHA | TEX_COMPLAIN);
-	decal_blood3 = GL_LoadTextureImage ("textures/decals/blood_splat03", "decals:blood_splat03", 128, 128, TEX_ALPHA | TEX_COMPLAIN);
-	decal_q3blood = GL_LoadTextureImage ("textures/decals/blood_stain", "decals:blood_stain", 64, 64, TEX_ALPHA | TEX_COMPLAIN);
-	decal_burn = GL_LoadTextureImage ("textures/decals/explo_burn01", "decals:explo_burn01", 128, 128, TEX_ALPHA | TEX_COMPLAIN);
-	decal_mark = GL_LoadTextureImage ("textures/decals/particle_burn01", "decals:particle_burn01", 64, 64, TEX_ALPHA | TEX_COMPLAIN);
-	decal_glow = GL_LoadTextureImage ("textures/decals/glow2", "decals:glow2", 64, 64, TEX_ALPHA | TEX_COMPLAIN);
-*/
 	if ((i = COM_CheckParm("-decals")) && i + 1 < com_argc)
 	{
 		r_numdecals = Q_atoi(com_argv[i+1]);
@@ -389,7 +373,7 @@ void R_SpawnDecalBSP (vec3_t org, char *texname, int size)
 	if (!qmb_initialized)
 		return;
 
-	int tex = loadtextureimage(va("decals/%s",texname),   0, 0, qfalse, GU_LINEAR);
+	int tex = loadtextureimage(va("decals/%s",texname),   0, 0, qfalse, GU_LINEAR, 0);
 	if(!tex) //find in decals.wad
 	{
 		if(wadreload)

@@ -560,78 +560,34 @@ void Mod_LoadTextures (lump_t *l)
 	{
 		if (loadmodel->bspversion == HL_BSPVERSION || loadmodel->bspversion == NZP_BSPVERSION)
 		{
-			
-			char filename[64];		// Filename to check r4w file
-			byte *f;
-			sprintf(filename, "textures/maps/%s/%s.r4w", sv.name, mt->name);		// search in textures/maps/MAPNAME/TEXNAME
-			
-			f = static_cast<byte*>(COM_LoadHunkFile(filename));
-			
-			if (!f) {
-				sprintf(filename, "textures/%s.r4w", mt->name);					// search in textures/TEXNAME
-				f = static_cast<byte*>(COM_LoadHunkFile(filename));
-			}
-			
-			if (!f) {
-				Con_Printf("Loading texture %s as WAD3, %dx%d\n", mt->name, mt->width, mt->height);		// didn't find the texture in the folder
+			Con_DPrintf("Loading texture %s as WAD3, %dx%d\n", mt->name, mt->width, mt->height);		// didn't find the texture in the folder
 					
-				// naievil -- try to push wad3 loading 
-				int index = WAD3_LoadTexture(mt);
-				if(index)
-				{
-					com_netpath[0] = 0;
-					tx->gl_texturenum = index;
-					tx->fullbright = -1;
-					mapTextureNameList.push_back(tx->gl_texturenum);
-					tx->dt_texturenum = 0;
-
-	//				if(tx_pixels = WAD3_LoadTexture(mt))
-	//				{
-	//					com_netpath[0] = 0;
-	//					tx->gl_texturenum = GL_LoadPalletedTexture (tx_pixels, tx->name, tx->width, tx->height, 0);
-	//					tx->fullbright = -1;
-	//					mapTextureNameList.push_back(tx->gl_texturenum);
-	//					tx->dt_texturenum = 0;
-
-				}
-				else
-				{
-					Con_Printf("Texture %s not found\n", mt->name);		// didn't find the texture in the folder
-					com_netpath[0] = 0;
-					tx->gl_texturenum = nonetexture;
-				}
-			
-			} else {
-				
-				int w, h;
-				
-				unsigned int magic = *((unsigned int*)(f));
-				if (magic == 0x65663463)								// what the fuck? 
-				{
-					w = *((int*)(f + 4));
-					h = *((int*)(f + 8));
-
-					tx->gl_texturenum = GL_LoadTexture4(mt->name, w, h, (byte*)(f + 16), GU_LINEAR, qfalse);
-					mapTextureNameList.push_back(tx->gl_texturenum);
-				}
-	
+			// naievil -- try to push wad3 loading 
+			int index = WAD3_LoadTexture(mt);
+			if(index)
+			{
+				com_netpath[0] = 0;
+				tx->gl_texturenum = index;
+				tx->fullbright = -1;
+				mapTextureNameList.push_back(tx->gl_texturenum);
+				tx->dt_texturenum = 0;
+			}
+			else
+			{
+				Con_Printf("Texture %s not found\n", mt->name);		// didn't find the texture in the folder
+				com_netpath[0] = 0;
+				tx->gl_texturenum = nonetexture;
 			}
 		}
 		else
 		{
 			sprintf (texname, "textures/%s", mt->name);
-			tx->gl_texturenum = loadtextureimage (texname, 0, 0, qfalse, GU_LINEAR);
+			tx->gl_texturenum = loadtextureimage (texname, 0, 0, qfalse, GU_LINEAR, 0);
 			if(tx->gl_texturenum == 0)
 			{
 				tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(tx_pixels), qtrue, GU_LINEAR, level);
 			}
 			mapTextureNameList.push_back(tx->gl_texturenum);
-/*
-		          //Crow_bar mult detail textures
-				  sprintf (detname, "gfx/detail/%s", mt->name);
-			      tx->dt_texturenum = loadtextureimage (detname, 0, 0, qfalse, GU_LINEAR);
-			      mapTextureNameList.push_back(tx->dt_texturenum);
-*/
 			tx->dt_texturenum = 0;
 		          // check for fullbright pixels in the texture - only if it ain't liquid, etc also
 			if ((tx->name[0] != '*') && (FindFullbrightTexture ((byte *)(tx_pixels), pixels)))
@@ -2156,7 +2112,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
 			pheader->gl_texturenum[i][2] = 
-			pheader->gl_texturenum[i][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, qtrue, GU_LINEAR);
+			pheader->gl_texturenum[i][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, qtrue, GU_LINEAR, 1);
 
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 			return (void *)pskintype;
@@ -2169,7 +2125,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_0", 0, 0, qtrue, GU_LINEAR);
+					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_0", 0, 0, qtrue, GU_LINEAR, 1);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				} else if (!has_perk_revive && i == 0) {
@@ -2184,7 +2140,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_1", 0, 0, qtrue, GU_LINEAR);
+					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_1", 0, 0, qtrue, GU_LINEAR, 1);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				} else if (!has_perk_juggernog && i == 1) {
@@ -2199,7 +2155,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_2", 0, 0, qtrue, GU_LINEAR);
+					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_2", 0, 0, qtrue, GU_LINEAR, 1);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				} else if (!has_perk_speedcola && i == 2) {
@@ -2214,7 +2170,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_3", 0, 0, qtrue, GU_LINEAR);
+					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_3", 0, 0, qtrue, GU_LINEAR, 1);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				} else if (!has_perk_doubletap && i == 3) {
@@ -2229,7 +2185,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_4", 0, 0, qtrue, GU_LINEAR);
+					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_4", 0, 0, qtrue, GU_LINEAR, 1);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				} else if (!has_perk_staminup && i == 4) {
@@ -2244,7 +2200,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_5", 0, 0, qtrue, GU_LINEAR);
+					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_5", 0, 0, qtrue, GU_LINEAR, 1);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				} else if (!has_perk_flopper && i == 5) {
@@ -2259,7 +2215,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_6", 0, 0, qtrue, GU_LINEAR);
+					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_6", 0, 0, qtrue, GU_LINEAR, 1);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				} else if (!has_perk_deadshot && i == 6) {
@@ -2274,7 +2230,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_7", 0, 0, qtrue, GU_LINEAR);
+					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_7", 0, 0, qtrue, GU_LINEAR, 1);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				} else if (!has_perk_mulekick && i == 7) {
@@ -2306,7 +2262,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
 			pheader->gl_texturenum[i][2] = 
-			pheader->gl_texturenum[i][3] = loadtextureimage("models/weapons/v_papskin", 0, 0, qtrue, GU_LINEAR);
+			pheader->gl_texturenum[i][3] = loadtextureimage("models/weapons/v_papskin", 0, 0, qtrue, GU_LINEAR, 1);
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 			return (void *)pskintype;
 		}
@@ -2323,7 +2279,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
 			pheader->gl_texturenum[i][2] = 
-			pheader->gl_texturenum[i][3] = loadtextureimage (model2, 0, 0, qtrue, GU_LINEAR);
+			pheader->gl_texturenum[i][3] = loadtextureimage (model2, 0, 0, qtrue, GU_LINEAR, 1);
 
 			if (pheader->gl_texturenum[i][0] == 0)// did not find a matching TGA...
 
@@ -2358,7 +2314,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 				COM_StripExtension(loadmodel->name, model);
 				sprintf (model2, "%s_%i_%i", model, i, j);
 				pheader->gl_texturenum[i][j&3] =
-				loadtextureimage (model2, 0, 0, qfalse, GU_LINEAR);
+				loadtextureimage (model2, 0, 0, qfalse, GU_LINEAR, 1);
 				
 				if (pheader->gl_texturenum[i][j&3] == 0)// did not find a matching TGA...
 				{
@@ -2750,7 +2706,7 @@ void Mod_LoadH2AliasModel (model_t *mod, void *buffer)
 Mod_LoadQ2AliasModel
 =================
 */
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
+int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter, int type);
 
 void Mod_LoadQ2AliasModel (model_t *mod, void *buffer)
 {
@@ -2821,7 +2777,7 @@ void Mod_LoadQ2AliasModel (model_t *mod, void *buffer)
 		pinskins = static_cast<char*>((void*)((int) pinmodel + LittleLong(pinmodel->ofs_skins)));
 		for (i = 0;i < pheader->num_skins;i++)
 		{
-			pheader->gl_texturenum[i] = loadtextureimage (pinskins, 0, 0, qtrue, GU_LINEAR);
+			pheader->gl_texturenum[i] = loadtextureimage (pinskins, 0, 0, qtrue, GU_LINEAR, 0);
 			pinskins += MD2MAX_SKINNAME;
             /* Crow_bar Memory Leak Fixed                           */
 			mapTextureNameList.push_back(pheader->gl_texturenum[i]);
@@ -3073,22 +3029,22 @@ void Mod_LoadQ3ModelTexture (char *identifier, int flags, int *gl_texnum)
 	char	loadpath[64];
 
 	Q_snprintfz (loadpath, sizeof(loadpath), "textures/q3models/%s", identifier);
-	*gl_texnum = loadtextureimage (loadpath, 0, 0, qtrue, GU_LINEAR);
+	*gl_texnum = loadtextureimage (loadpath, 0, 0, qtrue, GU_LINEAR, 0);
 
 	if (!*gl_texnum)
 	{
 		Q_snprintfz (loadpath, sizeof(loadpath), "textures/%s", identifier);
-		*gl_texnum = loadtextureimage (loadpath, 0, 0, qtrue, GU_LINEAR);
+		*gl_texnum = loadtextureimage (loadpath, 0, 0, qtrue, GU_LINEAR, 0);
 	}
 	if (!*gl_texnum)
 	{
 		Q_snprintfz (loadpath, sizeof(loadpath), "progs/%s", identifier);
-		*gl_texnum = loadtextureimage (loadpath, 0, 0, qtrue, GU_LINEAR);
+		*gl_texnum = loadtextureimage (loadpath, 0, 0, qtrue, GU_LINEAR, 0);
 	}
 	if (!*gl_texnum)
 	{
 		Q_snprintfz (loadpath, sizeof(loadpath), "maps/%s", identifier);
-		*gl_texnum = loadtextureimage (loadpath, 0, 0, qtrue, GU_LINEAR);
+		*gl_texnum = loadtextureimage (loadpath, 0, 0, qtrue, GU_LINEAR, 0);
 	}
 
 	mapTextureNameList.push_back(*gl_texnum);
@@ -3629,7 +3585,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum, 
 	{
 		COM_StripExtension(loadmodel->name, sprite);
 		sprintf (sprite2, "%s.spr_%i", sprite, framenum);
-		pspriteframe->gl_texturenum = loadtextureimage (sprite2, 0, 0, qtrue, GU_LINEAR);
+		pspriteframe->gl_texturenum = loadtextureimage (sprite2, 0, 0, qtrue, GU_LINEAR, 0);
 		
 		if (pspriteframe->gl_texturenum == 0)// did not find a matching TGA...
 		{
@@ -3971,7 +3927,7 @@ qboolean Mod_LoadQ2SpriteModel (model_t *mod, void *buffer)
 
 		frame = psprite->frames[i].frameptr = static_cast<mspriteframe_t*>(Hunk_AllocName(sizeof(mspriteframe_t), loadname));
 
-		frame->gl_texturenum = loadtextureimage (pframetype->name, 0, 0, qtrue, GU_LINEAR);
+		frame->gl_texturenum = loadtextureimage (pframetype->name, 0, 0, qtrue, GU_LINEAR, 0);
         mapTextureNameList.push_back(frame->gl_texturenum);
 
 		frame->width = LittleLong(pframetype->width);

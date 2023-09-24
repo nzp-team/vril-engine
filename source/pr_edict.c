@@ -903,15 +903,7 @@ if (!strcmp(com_token, "light"))
 		key = ED_FindField (keyname);
 		if (!key)
 		{
-			if (strcmp (keyname, "compiler") &&
-				strcmp (keyname, "r_skycolor") &&
-				strcmp (keyname, "sequence") &&
-				strcmp (keyname, "message2") && //dirty hack to keep the console clean. Dem lazy mappers
-				strcmp (keyname, "mangle") &&
-				strcmp (keyname, "Maxrange") &&
-				strcmp (keyname, "light_lev") &&
-				strcmp (keyname, "fog"))
-				Con_Printf ("'%s' is not a field\n", keyname);
+			// cypress -- removed useless conprints
 			continue;
 		}
 
@@ -1062,8 +1054,8 @@ void PR_LoadProgs (void)
 
 	if (progs->version != PROG_VERSION)
 		Sys_Error ("progs.dat has wrong version number (%i should be %i)", progs->version, PROG_VERSION);
-	if (progs->crc != PROGHEADER_CRC)
-		Con_Printf ("WARNING!!! progs.dat system vars have been modified, progdefs.h is out of date. Current one is %i\n", progs->crc);
+	// if (progs->crc != PROGHEADER_CRC)
+	// 	Con_Printf ("WARNING!!! progs.dat system vars have been modified, progdefs.h is out of date. Current one is %i\n", progs->crc);
 
 	pr_functions = (dfunction_t *)((byte *)progs + progs->ofs_functions);
 	pr_strings = (char *)progs + progs->ofs_strings;

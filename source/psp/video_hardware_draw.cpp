@@ -95,7 +95,7 @@ typedef struct
 	texel*	vram;
 } gltexture_t;
 
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
+int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter, int type);
 void VID_SetPalette4(unsigned char* clut4pal);
 
 #define	MAX_GLTEXTURES	1024
@@ -363,7 +363,7 @@ qpic_t	*Draw_CachePic (char *path)
 // load the pic from disk
 //
 
-	int index = loadtextureimage (str, 0, 0, qfalse, GU_LINEAR);
+	int index = loadtextureimage (str, 0, 0, qfalse, GU_LINEAR, 0);
 	if(index)
 	{
 		pic->pic.width  = gltextures[index].original_width;
@@ -425,7 +425,7 @@ qpic_t	*Draw_CacheImg (char *path)
 // load the pic from disk
 //
 
-	int index = loadtextureimage (path, 0, 0, qfalse, GU_LINEAR);
+	int index = loadtextureimage (path, 0, 0, qfalse, GU_LINEAR, 0);
 	if(index != -1)
 	{
 		pic->pic.width  = gltextures[index].original_width;
@@ -531,11 +531,11 @@ void Draw_Init (void)
 	R_CreateDlightImage();
 
 	// now turn them into textures
-	char_texture = loadtextureimage ("gfx/charset", 0, 0, qfalse, GU_NEAREST);
+	char_texture = loadtextureimage ("gfx/charset", 0, 0, qfalse, GU_NEAREST, 0);
 	if (char_texture == 0)// did not find a matching TGA...
 		Sys_Error ("Could not load charset, make sure you have every folder and file installed properly\nDouble check that all of your files are in their correct places\nAnd that you have installed the game properly.\nRefer to the readme.txt file for help\n");
 
-	detail_texture = loadtextureimage ("gfx/detail", 0, 0, qfalse, GU_LINEAR);
+	detail_texture = loadtextureimage ("gfx/detail", 0, 0, qfalse, GU_LINEAR, 0);
 
 	if (detail_texture == 0)// did not find a matching TGA...
 	{
@@ -551,22 +551,22 @@ void Draw_Init (void)
 
 	sniper_scope = Draw_CachePic ("gfx/hud/scope_256");
 	
-	zombie_skins[0][0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
+	zombie_skins[0][0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR, 1);
 
 
 	// PSP PHAT: Only have 1 Zombie skin.. this saves 192kB of VRAM, well worth it.
 
 #ifdef SLIM
 
-	zombie_skins[0][1] = loadtextureimage ("models/ai/zfull.mdl_1", 0, 0, qtrue, GU_LINEAR);
-	zombie_skins[1][0] = loadtextureimage ("models/ai/zfull.mdl_2", 0, 0, qtrue, GU_LINEAR);
-	zombie_skins[1][1] = loadtextureimage ("models/ai/zfull.mdl_3", 0, 0, qtrue, GU_LINEAR);
+	zombie_skins[0][1] = loadtextureimage ("models/ai/zfull.mdl_1", 0, 0, qtrue, GU_LINEAR, 1);
+	zombie_skins[1][0] = loadtextureimage ("models/ai/zfull.mdl_2", 0, 0, qtrue, GU_LINEAR, 1);
+	zombie_skins[1][1] = loadtextureimage ("models/ai/zfull.mdl_3", 0, 0, qtrue, GU_LINEAR, 1);
 
 #else
 
-	zombie_skins[0][1] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
-	zombie_skins[1][0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
-	zombie_skins[1][1] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
+	zombie_skins[0][1] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR, 1);
+	zombie_skins[1][0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR, 1);
+	zombie_skins[1][1] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR, 1);
 
 #endif // SLIM
 	
@@ -1006,7 +1006,7 @@ void Draw_LoadingFill(void)
 	switch(loading_step) {
 		case 1: text = "Loading Models.."; break;
 		case 2: text = "Loading World.."; break;
-		case 3: text = "Running Test Frame.."; break;
+		case 3: text = "Running Spawn Functions.."; break;
 		case 4: text = "Loading Sounds.."; break;
 		default: text = "Initializing.."; break;
 	}
