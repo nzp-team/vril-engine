@@ -55,7 +55,6 @@ const float piconst = GU_PI / 180.0f;
 entity_t	r_worldentity;
 entity_t 	*currententity;
 
-qboolean	r_cache_thrash;		// compatability
 qboolean 	envmap;
 qboolean 	mirror;
 
@@ -3707,8 +3706,6 @@ void R_RenderScene (void)
 
 	V_SetContentsColor (r_viewleaf->contents);
 	V_CalcBlend ();
-
-	r_cache_thrash = qfalse;
 
 	c_brush_polys = 0;
 	c_alias_polys = 0;

@@ -111,7 +111,8 @@ qpic_t      *hitmark;
 /*qpic_t 		*ls_ndu;
 qpic_t 		*ls_warehouse;
 qpic_t      *ls_xmas;*/
-qpic_t 		*lscreen;
+// qpic_t 		*lscreen;
+int lscreen_index;
 
 int			scr_fullupdate;
 
@@ -862,7 +863,7 @@ char *lodinglinetext;
 qpic_t *awoo;
 char *ReturnLoadingtex (void)
 {
-    int StringNum = Random_Int(55);
+    int StringNum = Random_Int(61);
     switch(StringNum)
     {
         case 1:
@@ -1027,10 +1028,31 @@ char *ReturnLoadingtex (void)
 		case 54:
 			return  "Play some Custom Maps!";
 			break;
+		case 55:
+			return  "Real OGs play on a PSP-1000!";
+			break;
+		case 56:
+			return  "Adding this tip improved framerate by 39%!";
+			break;
+		case 57:
+			return  "The NZ in NZP stands for New Zealand!";
+			break;
+		case 58:
+			return  "The P in NZP stands for Professional!";
+			break;
+		case 59:
+			return  "Many people have worked on this game!";
+			break;
+		case 60:
+			return  "Remember to stay hydrated!";
+			break;
+		case 61:
+			return  "cofe";
+			break;
     }
     return "wut wut";
 }
-qboolean load_screen_exists;
+
 void SCR_DrawLoadScreen (void)
 {
 
@@ -1041,24 +1063,16 @@ void SCR_DrawLoadScreen (void)
 
 	if (loadingScreen) {
 		if (!loadscreeninit) {
-			load_screen_exists = qfalse;
-
-			char* lpath;
-			lpath = (char*)Z_Malloc(sizeof(char)*32);
+			char lpath[32];
 			strcpy(lpath, "gfx/lscreen/");
 			strcat(lpath, loadname2);
-
-			lscreen = Draw_CachePic(lpath);
+			lscreen_index = loadtextureimage(lpath, 0, 0, qfalse, GU_LINEAR);
 			awoo = Draw_CacheImg("gfx/menu/awoo");
-
-			if (lscreen != NULL)
-				load_screen_exists = qtrue;
-
 			loadscreeninit = qtrue;
 		}
 
-		if (load_screen_exists == qtrue)
-			Draw_Pic(scr_vrect.x, scr_vrect.y, lscreen);
+		if (lscreen_index > 0)
+			Draw_PicIndex(scr_vrect.x, scr_vrect.y, 480, 272, lscreen_index);
 
 		Draw_FillByColor(0, 0, 480, 24, GU_RGBA(0, 0, 0, 150));
 		Draw_FillByColor(0, 248, 480, 24, GU_RGBA(0, 0, 0, 150));
