@@ -1189,7 +1189,6 @@ void Mod_LoadFaces (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Con_Printf ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	Con_Printf("Model faces %d\n", count);
 	out = static_cast<msurface_t*>(Hunk_AllocName ( count*sizeof(*out), loadname));
 
 	loadmodel->surfaces = out;
@@ -2018,7 +2017,7 @@ void Mod_FloodFillSkin( byte *skin, int skinwidth, int skinheight )
 
 qboolean model_is_gun(char name[MAX_QPATH])
 {
-	char* wep_path = static_cast<char*>(malloc(sizeof(char)*15));
+	char wep_path[15];
 
 	for (int i = 0; i < 15; i++) {
 		wep_path[i] = name[i];

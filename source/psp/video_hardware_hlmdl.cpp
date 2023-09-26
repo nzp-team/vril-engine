@@ -31,8 +31,6 @@ extern"C"
 #include <pspgum.h>
 #include <list>
 
-extern std::list<int> mapTextureNameList;
-
 extern model_t	*loadmodel;
 
 extern vec3_t lightcolor; // LordHavoc: .lit support
@@ -157,9 +155,7 @@ qboolean Mod_LoadHLModel (model_t *mod, void *buffer)
 
 	for(i = 0; i < header->numtextures; i++)
     {
-
 		tex[i].i = GL_LoadPalTex (tex[i].name, tex[i].w, tex[i].h, (byte *) header + tex[i].i, qtrue, GU_LINEAR, 0, (byte *) header + tex[i].w * tex[i].h + tex[i].i, PAL_RGB);
-	    mapTextureNameList.push_back(tex[i].i); // for unload textures
 	}
 //
 // move the complete, relocatable alias model to the cache
