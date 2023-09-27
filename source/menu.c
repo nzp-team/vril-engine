@@ -62,16 +62,16 @@ extern char* loadnamespec;
 extern qboolean loadscreeninit;
 
 // Backgrounds
-qpic_t *menu_bk;
+int menu_bk;
 
 // Map screens
-qpic_t *menu_ndu;
-qpic_t *menu_wh;
+int menu_ndu;
+int menu_wh;
 //qpic_t *menu_kn;
-qpic_t *menu_ch;
+int menu_ch;
 //qpic_t *menu_wn;
-qpic_t *menu_custom;
-qpic_t *menu_cuthum;
+int menu_custom;
+int menu_cuthum;
 
 
 typedef struct
@@ -79,6 +79,7 @@ typedef struct
 	int 		occupied;
 	int 	 	map_allow_game_settings;
 	int 	 	map_use_thumbnail;
+	int			thumbnail_index;
 	char* 		map_name;
 	char* 		map_name_pretty;
 	char* 		map_desc_1;
@@ -94,7 +95,8 @@ typedef struct
 } usermap_t;
 
 SceIoStat custom_thumbnail_size;
-usermap_t custom_maps[50];
+#define MAX_CUSTOM_MAPS 50
+usermap_t custom_maps[MAX_CUSTOM_MAPS];
 
 enum
 {
@@ -414,18 +416,18 @@ int M_Start_Cusor;
 
 void M_Start_Menu_f ()
 {
+	Load_Achivements();
+	M_Load_Menu_Pics();
 	key_dest = key_menu;
 	m_state = m_start;
 	m_entersound = true;
 	//loadingScreen = 0;
-	Load_Achivements();
 }
 
 static void M_Start_Menu_Draw ()
 {
 	// Background
-    menu_bk = Draw_CacheImg("gfx/menu/menu_background");
-	Draw_Pic (0, 0, menu_bk);
+	Draw_PicIndex (0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
@@ -444,6 +446,23 @@ void M_Start_Key (int key)
 			break;
 	}
 }
+
+void M_Load_Menu_Pics ()
+{
+	menu_bk = loadtextureimage("gfx/menu/menu_background", 0, 0, false, GU_LINEAR);
+	menu_ndu 	= loadtextureimage("gfx/menu/nacht_der_untoten", 0, 0, false, GU_LINEAR);
+	//menu_kn 	= Draw_CacheImg("gfx/menu/kino_der_toten");
+	menu_wh 	= loadtextureimage("gfx/menu/warehouse", 0, 0, false, GU_LINEAR);
+	//menu_wn 	= Draw_CacheImg("gfx/menu/wahnsinn");
+	menu_ch 	= loadtextureimage("gfx/menu/christmas_special", 0, 0, false, GU_LINEAR);
+	menu_custom = loadtextureimage("gfx/menu/custom", 0, 0, false, GU_LINEAR);
+	for (int i = 0; i < MAX_CUSTOM_MAPS; i++) {
+		if (custom_maps[i].occupied == false) continue;
+		if (custom_maps[i].map_use_thumbnail == false) continue;
+		custom_maps[i].thumbnail_index = loadtextureimage(custom_maps[i].map_thumbnail_path, 0, 0, false, GU_LINEAR);
+	}
+}
+
 //=============================================================================
 
 int M_Paused_Cusor;
@@ -568,7 +587,7 @@ void M_Menu_Main_f (void)
 void M_Main_Draw (void)
 {
 	// Background
-	Draw_Pic (0, 0, menu_bk);
+	Draw_PicIndex (0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
@@ -800,6 +819,7 @@ void M_Exit_Key (int key)
 	case K_ENTER:
 		Cbuf_AddText("disconnect\n");
 		CL_ClearState ();
+		M_Load_Menu_Pics();
 		M_Menu_Main_f();
 		break;
 
@@ -848,7 +868,7 @@ void M_Menu_Map_f (void)
 void M_Map_Draw (void)
 {
 	// Background
-	Draw_Pic(0, 0, menu_bk);
+	Draw_PicIndex(0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
@@ -875,8 +895,7 @@ void M_Map_Draw (void)
 		if (m_map_cursor == i) {
 
 			if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
-				menu_cuthum = Draw_CacheImg(custom_maps[i + multiplier].map_thumbnail_path);
-				Draw_StretchPic(256, 45, menu_cuthum, 175, 100);
+				Draw_PicIndex(256, 45, 175, 100, custom_maps[i].thumbnail_index);
 			}
 			
 			if (custom_maps[i + multiplier].map_name_pretty != 0)
@@ -1036,6 +1055,7 @@ void M_Map_Key (int key)
 				Cbuf_AddText ("maxplayers 1\n");
 				Cbuf_AddText ("cd stop\n");
 				Cbuf_AddText (va("map %s\n", custom_maps[m_map_cursor + multiplier].map_name));
+				Cbuf_Execute ();
 				loadingScreen = 1;
 				loadname2 = custom_maps[m_map_cursor + multiplier].map_name;
 				if (custom_maps[m_map_cursor + multiplier].map_name_pretty != 0)
@@ -1065,15 +1085,8 @@ void M_Menu_SinglePlayer_f (void)
 
 void M_SinglePlayer_Draw (void)
 {
-	menu_ndu 	= Draw_CacheImg("gfx/menu/nacht_der_untoten");
-	//menu_kn 	= Draw_CacheImg("gfx/menu/kino_der_toten");
-	menu_wh 	= Draw_CacheImg("gfx/menu/warehouse");
-	//menu_wn 	= Draw_CacheImg("gfx/menu/wahnsinn");
-	menu_ch 	= Draw_CacheImg("gfx/menu/christmas_special");
-	menu_custom = Draw_CacheImg("gfx/menu/custom");
-
 	// Background
-	Draw_Pic(0, 0, menu_bk);
+	Draw_PicIndex(0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
@@ -1126,7 +1139,7 @@ void M_SinglePlayer_Draw (void)
 	// Map description & pic
 	switch(m_singleplayer_cursor) {
 		case 0:
-			Draw_StretchPic(256, 45, menu_ndu, 175, 100);
+			Draw_PicIndex(256, 45, 175, 100, menu_ndu);
 			Draw_ColoredString(215, 155, "Desolate bunker located on a Ge-", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 165, "rman airfield, stranded after a", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 175, "brutal plane crash surrounded by", 255, 255, 255, 255, 1);
@@ -1137,19 +1150,19 @@ void M_SinglePlayer_Draw (void)
 			Draw_ColoredString(215, 225, "to the overwhelming onslaught?", 255, 255, 255, 255, 1);
 			break;
 		case 1:
-			Draw_StretchPic(256, 45, menu_wh, 175, 100);
+			Draw_PicIndex(256, 45, 175, 100, menu_wh);
 			Draw_ColoredString(215, 155, "Old Warehouse full of Zombies!", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 165, "Fight your way to the Power", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 175, "Switch through the Hordes!", 255, 255, 255, 255, 1);
 			break;
 		case 2:
-			Draw_StretchPic(256, 45, menu_ch, 175, 100);
+			Draw_PicIndex(256, 45, 175, 100, menu_ch);
 			Draw_ColoredString(215, 155, "No Santa this year. Though we're", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 165, "sure you will get presents from", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 175, "the undead! Will you accept them?", 255, 255, 255, 255, 1);
 			break;
 		case 3:
-			Draw_StretchPic(256, 45, menu_custom, 175, 100);
+			Draw_PicIndex(256, 45, 175, 100, menu_custom);
 			Draw_ColoredString(215, 155, "Custom Maps made by Community", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 165, "Members on the Fourm and on", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 175, "Discord!", 255, 255, 255, 255, 1);
@@ -1190,6 +1203,7 @@ void M_SinglePlayer_Key (int key)
 					Cbuf_AddText ("maxplayers 1\n");
 					Cbuf_AddText ("cd stop\n");
 					Cbuf_AddText ("map ndu\n");
+					Cbuf_Execute ();
 					loadingScreen = 1;
 					loadname2 = "ndu";
 					loadnamespec = "Nacht der Untoten";
@@ -1201,6 +1215,7 @@ void M_SinglePlayer_Key (int key)
 					Cbuf_AddText ("maxplayers 1\n");
 					Cbuf_AddText ("cd stop\n");
 					Cbuf_AddText ("map warehouse\n");
+					Cbuf_Execute ();
 					loadingScreen = 1;
 					loadname2 = "warehouse";
 					loadnamespec = "Warehouse";
@@ -1212,6 +1227,7 @@ void M_SinglePlayer_Key (int key)
 					Cbuf_AddText ("maxplayers 1\n");
 					Cbuf_AddText ("cd stop\n");
 					Cbuf_AddText ("map christmas_special\n");
+					Cbuf_Execute ();
 					loadingScreen = 1;
 					loadname2 = "christmas_special";
 					loadnamespec = "Christmas Special";
@@ -1481,7 +1497,7 @@ void M_Achievement_Draw (void)
 
 	// Background
 	if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
+		Draw_PicIndex (0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
@@ -1647,7 +1663,7 @@ void M_MultiPlayer_Draw (void)
 
 
     if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
+		Draw_PicIndex (0, 0, 480, 272, menu_bk);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 	//f = (int)(host_time * 10)%6;
@@ -1816,7 +1832,7 @@ void M_Setup_Draw (void)
 {
 
     if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
+		Draw_PicIndex (0, 0, 480, 272, menu_bk);
 
 	if (setup_cursor == 0)
 		M_Print (64, 72,  "Access Point");
@@ -2013,7 +2029,7 @@ void M_ServerList_Draw (void)
 	int	serv, line;
 
     if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
+		Draw_PicIndex (0, 0, 480, 272, menu_bk);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 
@@ -2203,7 +2219,7 @@ void M_SEdit_Draw (void)
 {
 
     if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
+		Draw_PicIndex (0, 0, 480, 272, menu_bk);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 
@@ -2358,7 +2374,7 @@ void M_Net_Draw (void)
 	int		f;
 
     if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
+		Draw_PicIndex (0, 0, 480, 272, menu_bk);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 
@@ -2691,7 +2707,7 @@ void M_Screen_Draw (void)
 
 	// Background
 	if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
+		Draw_PicIndex (0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
@@ -2874,7 +2890,7 @@ void M_Audio_Draw (void)
 	float	 r;
 
 	if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
+		Draw_PicIndex (0, 0, 480, 272, menu_bk);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 
@@ -2986,7 +3002,7 @@ void M_Gameplay_Draw (void)
 
 	// Background
 	if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
+		Draw_PicIndex (0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
@@ -3166,7 +3182,7 @@ void M_Options_Draw (void)
 {
 	// Background
 	if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
+		Draw_PicIndex (0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
@@ -3400,7 +3416,7 @@ void M_Keys_Draw (void)
 
 	// Background
 	if (key_dest != key_menu_pause)
-		Draw_Pic(0, 0, menu_bk);
+		Draw_PicIndex(0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
@@ -3550,7 +3566,7 @@ void M_Menu_Credits_f (void)
 void M_Credits_Draw (void)
 {
    	// Background
-	Draw_Pic(0, 0, menu_bk);
+	Draw_PicIndex(0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
@@ -3739,7 +3755,7 @@ void M_Quit_Draw (void)
 	if (wasInMenus)
 	{
 		if (key_dest != key_menu_pause)
-			Draw_Pic (0, 0, menu_bk);
+			Draw_PicIndex (0, 0, 480, 272, menu_bk);
 		//else
 			//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 
@@ -4047,7 +4063,7 @@ void M_SerialConfig_Draw (void)
 	char	*directModem;
 
     if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
+		Draw_PicIndex(0, 0, 480, 272, menu_bk);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 
@@ -4301,7 +4317,7 @@ void M_ModemConfig_Draw (void)
 	int		basex;
 
     if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
+		Draw_PicIndex(0, 0, 480, 272, menu_bk);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 
@@ -4488,7 +4504,7 @@ void M_LanConfig_Draw (void)
 	char	*protocol;
 
     if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
+		Draw_PicIndex(0, 0, 480, 272, menu_bk);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 
@@ -4897,7 +4913,7 @@ void M_GameOptions_Draw (void)
 	int		x;
 
     if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
+		Draw_PicIndex(0, 0, 480, 272, menu_bk);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 
@@ -5162,7 +5178,7 @@ void M_Search_Draw (void)
 	int x;
 
     if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
+		Draw_PicIndex(0, 0, 480, 272, menu_bk);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 

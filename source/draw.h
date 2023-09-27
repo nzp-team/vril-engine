@@ -25,6 +25,7 @@ void Draw_Init (void);
 void Draw_Character (int x, int y, int num);
 void Draw_DebugChar (char num);
 void Draw_Pic (int x, int y, qpic_t *pic);
+void Draw_PicIndex (int x, int y, int width, int height, int texture_index);
 void Draw_StretchPic (int x, int y, qpic_t *pic, int x_value, int y_value);
 void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float a);
 void Draw_ColoredString (int x, int y, char *text, float r, float g, float b, float a, int scale);
@@ -47,6 +48,5 @@ extern int loading_step;
 extern char loading_name[32];
 extern float loading_num_step;
 
-qpic_t *Draw_PicFromWad (char *name);
 qpic_t *Draw_CachePic (char *path);
 qpic_t *Draw_CacheImg (char *path);

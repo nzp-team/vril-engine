@@ -498,8 +498,6 @@ void Host_ClearMemory (void)
 {
 	Con_DPrintf ("Clearing memory\n");
 
-	D_FlushCaches ();
-
 	Mod_ClearAll ();
 
 	if (host_hunklevel)
@@ -706,7 +704,8 @@ void _Host_Frame (float time)
 					pass1+pass2+pass3, pass1, pass2, pass3);
 	}
 
-    //Con_Printf ("%dkB free \n", pspSdkTotalFreeUserMemSize()/1024);
+	// Debug log free memory
+	// if ((host_framecount % 120) == 0) Con_Printf ("%.2fkB free \n", pspSdkTotalFreeUserMemSize()/1024.f);
 
 	//frame speed counter
 	fps_count++;//muff

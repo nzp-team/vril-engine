@@ -56,6 +56,8 @@ int GL_LoadPalTex (const char *identifier, int width, int height, const byte *da
 int GL_LoadPalletedTexture (byte *in, char *identifier, int width, int height, int mode);
 
 void GL_UnloadTexture (const int texture_index);
+void GL_UnloadAllTextures ();
+void GL_MarkTextureAsPermanent (const int texture_index);
 
 extern	int glx, gly, glwidth, glheight;
 
@@ -169,7 +171,6 @@ typedef struct particle2_s
 
 
 extern	entity_t	r_worldentity;
-extern	qboolean	r_cache_thrash;		// compatability
 extern	vec3_t		modelorg, r_entorigin;
 extern	entity_t	*currententity;
 extern	int			r_visframecount;	// ??? what difs?

@@ -45,12 +45,19 @@ void	R_InitOtherTextures (void)
 {
 	//static decals
 	decal_blood1  = loadtextureimage ("textures/decals/blood_splat01", 0, 0, qfalse, GU_LINEAR);
+	GL_MarkTextureAsPermanent(decal_blood1);
 	decal_blood2  = loadtextureimage ("textures/decals/blood_splat02", 0, 0, qfalse, GU_LINEAR);
+	GL_MarkTextureAsPermanent(decal_blood2);
 	decal_blood3  = loadtextureimage ("textures/decals/blood_splat03", 0, 0, qfalse, GU_LINEAR);
+	GL_MarkTextureAsPermanent(decal_blood3);
     decal_q3blood = loadtextureimage ("textures/decals/blood_stain", 0, 0, qfalse, GU_LINEAR);
+	GL_MarkTextureAsPermanent(decal_blood1);
 	decal_burn	  = loadtextureimage ("textures/decals/explo_burn01", 0, 0, qfalse, GU_LINEAR);
+	GL_MarkTextureAsPermanent(decal_burn);
 	decal_mark	  = loadtextureimage ("textures/decals/particle_burn01", 0, 0, qfalse, GU_LINEAR);
+	GL_MarkTextureAsPermanent(decal_mark);
 	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, qfalse, GU_LINEAR);
+	GL_MarkTextureAsPermanent(decal_glow);
 }
 
 /*
@@ -350,7 +357,7 @@ void R_Init (void)
 	Cvar_RegisterVariable (&r_runqmbparticles);
 
 	R_InitParticles ();
-	R_InitParticleTexture ();
+	// R_InitParticleTexture ();
 	R_InitOtherTextures ();
 	R_InitDecals ();
 	Sky_Init (); //johnfitz
@@ -450,9 +457,4 @@ void R_TimeRefresh_f (void)
 
 	GL_EndRendering ();
 }
-
-void D_FlushCaches (void)
-{
-}
-
 

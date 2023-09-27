@@ -36,10 +36,6 @@ extern "C"
 #include "video_hardware_hlmdl.h"
 #include "video_hardware_images.h"
 
-#include <list>
-
-std::list<int> mapTextureNameList;
-
 int LIGHTMAP_BYTES;
 
 model_t	*loadmodel;
@@ -227,32 +223,18 @@ void Mod_ClearAll (void)
 
 	ent_file = NULL; //~~~~
 
-	// maybe we should check if it is new map or not
-	// (so we dont unload textures unnecessary)
-	while (mapTextureNameList.size() > 0)
-	{
-		texture_index = mapTextureNameList.front();
-		mapTextureNameList.pop_front();
-		GL_UnloadTexture(texture_index);
-	}
+	GL_UnloadAllTextures();
+
 	solidskytexture	= -1;
 	alphaskytexture	= -1;
 
 	//purge old sky textures
 	for (i=0; i<6; i++)
-	{
-	    if (skyimage[i] && skyimage[i] != solidskytexture)
-            GL_UnloadTexture(skyimage[i]);
 		skyimage[i] = NULL;
-	}
 
 	//purge old lightmaps
 	for (i=0; i<MAX_LIGHTMAPS; i++)
-	{
-	    if (lightmap_index[i] && lightmap_index[i] != 0)
-            GL_UnloadTexture(lightmap_index[i]);
 		lightmap_index[i] = NULL;
-	}
 }
 
 /*
@@ -474,7 +456,6 @@ int GL_LoadTexturePixels (byte *data, char *identifier, int width, int height, i
 							 (loadmodel->bspversion == HL_BSPVERSION && (name)[0] == '!') ||	\
 							 (loadmodel->bspversion == NZP_BSPVERSION && (name)[0] == '!'))
 
-extern int detail_texture;
 extern int nonetexture;
 /*
 =================
@@ -553,8 +534,6 @@ void Mod_LoadTextures (lump_t *l)
     if (loadmodel->bspversion != HL_BSPVERSION && loadmodel->bspversion != NZP_BSPVERSION && ISSKYTEX(tx->name))
 	{
 		R_InitSky (tx_pixels);
-		mapTextureNameList.push_back(solidskytexture);
-		mapTextureNameList.push_back(alphaskytexture);
  	}
 	else
 	{
@@ -582,7 +561,6 @@ void Mod_LoadTextures (lump_t *l)
 					com_netpath[0] = 0;
 					tx->gl_texturenum = index;
 					tx->fullbright = -1;
-					mapTextureNameList.push_back(tx->gl_texturenum);
 					tx->dt_texturenum = 0;
 
 	//				if(tx_pixels = WAD3_LoadTexture(mt))
@@ -612,7 +590,6 @@ void Mod_LoadTextures (lump_t *l)
 					h = *((int*)(f + 8));
 
 					tx->gl_texturenum = GL_LoadTexture4(mt->name, w, h, (byte*)(f + 16), GU_LINEAR, qfalse);
-					mapTextureNameList.push_back(tx->gl_texturenum);
 				}
 	
 			}
@@ -625,7 +602,6 @@ void Mod_LoadTextures (lump_t *l)
 			{
 				tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(tx_pixels), qtrue, GU_LINEAR, level);
 			}
-			mapTextureNameList.push_back(tx->gl_texturenum);
 /*
 		          //Crow_bar mult detail textures
 				  sprintf (detname, "gfx/detail/%s", mt->name);
@@ -645,7 +621,6 @@ void Mod_LoadTextures (lump_t *l)
 				// load the fullbright pixels version of the texture
 				tx->fullbright =
 			        GL_LoadTexture (fbr_mask_name, tx->width, tx->height, (byte *)(tx_pixels), qtrue, GU_LINEAR, level);
-				mapTextureNameList.push_back(tx->fullbright);
 			}
 			else
 				tx->fullbright = -1; // because 0 is a potentially valid texture number
@@ -2042,7 +2017,7 @@ void Mod_FloodFillSkin( byte *skin, int skinwidth, int skinheight )
 
 qboolean model_is_gun(char name[MAX_QPATH])
 {
-	char* wep_path = static_cast<char*>(malloc(sizeof(char)*15));
+	char wep_path[15];
 
 	for (int i = 0; i < 15; i++) {
 		wep_path[i] = name[i];
@@ -2111,7 +2086,6 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 
 	if (model_is_zombie(loadmodel->name) == qtrue) {
 		Mod_FloodFillSkin(skin, pheader->skinwidth, pheader->skinheight);
-
 		// force-fill 4 skin slots
 		for (int i = 0; i < 4; i++) {
 			switch(i) {
@@ -2171,14 +2145,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_0", 0, 0, qtrue, GU_LINEAR);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				} else if (!has_perk_revive && i == 0) {
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				}
 				if (i == 1 && has_perk_juggernog) {
 					pheader->gl_texturenum[i][0] =
@@ -2186,14 +2158,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_1", 0, 0, qtrue, GU_LINEAR);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				} else if (!has_perk_juggernog && i == 1) {
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				}
 				if (i == 2 && has_perk_speedcola) {
 					pheader->gl_texturenum[i][0] =
@@ -2201,14 +2171,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_2", 0, 0, qtrue, GU_LINEAR);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				} else if (!has_perk_speedcola && i == 2) {
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				}
 				if (i == 3 && has_perk_doubletap) {
 					pheader->gl_texturenum[i][0] =
@@ -2216,14 +2184,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_3", 0, 0, qtrue, GU_LINEAR);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				} else if (!has_perk_doubletap && i == 3) {
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				}
 				if (i == 4 && has_perk_staminup) {
 					pheader->gl_texturenum[i][0] =
@@ -2231,14 +2197,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_4", 0, 0, qtrue, GU_LINEAR);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				} else if (!has_perk_staminup && i == 4) {
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				}
 				if (i == 5 && has_perk_flopper) {
 					pheader->gl_texturenum[i][0] =
@@ -2246,14 +2210,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_5", 0, 0, qtrue, GU_LINEAR);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				} else if (!has_perk_flopper && i == 5) {
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				}
 				if (i == 6 && has_perk_deadshot) {
 					pheader->gl_texturenum[i][0] =
@@ -2261,14 +2223,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_6", 0, 0, qtrue, GU_LINEAR);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				} else if (!has_perk_deadshot && i == 6) {
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				}
 				if (i == 7 && has_perk_mulekick) {
 					pheader->gl_texturenum[i][0] =
@@ -2276,14 +2236,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_7", 0, 0, qtrue, GU_LINEAR);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				} else if (!has_perk_mulekick && i == 7) {
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-					mapTextureNameList.push_back(pheader->gl_texturenum[i][i]); 
 				}
 			}
 
@@ -2338,9 +2296,6 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 				pheader->gl_texturenum[i][3] = loadrgbafrompal(name, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1));
 			}
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-			/* Crow_bar Memory Leak Fixed   One Work not used       */
-			mapTextureNameList.push_back(pheader->gl_texturenum[i][i]);
-			/* Crow_bar Memory Leak Fixed                           */
 		}
 		else
 		{
@@ -2375,9 +2330,6 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					}
 				}
 				pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
-				/* Crow_bar Memory Leak Fixed*/
-				mapTextureNameList.push_back(pheader->gl_texturenum[i][j&3]);
-				/* Crow_bar Memory Leak Fixed*/
 			}
 			k = j;
 			for (/* */; j < 4; j++)
@@ -2823,9 +2775,6 @@ void Mod_LoadQ2AliasModel (model_t *mod, void *buffer)
 		{
 			pheader->gl_texturenum[i] = loadtextureimage (pinskins, 0, 0, qtrue, GU_LINEAR);
 			pinskins += MD2MAX_SKINNAME;
-            /* Crow_bar Memory Leak Fixed                           */
-			mapTextureNameList.push_back(pheader->gl_texturenum[i]);
-            /* Crow_bar Memory Leak Fixed                           */
 		}
 	}
 
@@ -3090,8 +3039,6 @@ void Mod_LoadQ3ModelTexture (char *identifier, int flags, int *gl_texnum)
 		Q_snprintfz (loadpath, sizeof(loadpath), "maps/%s", identifier);
 		*gl_texnum = loadtextureimage (loadpath, 0, 0, qtrue, GU_LINEAR);
 	}
-
-	mapTextureNameList.push_back(*gl_texnum);
 }
 
 //==============================================================================
@@ -3652,10 +3599,6 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum, 
 		Sys_Error("Mod_LoadSpriteFrame: Non sprite type");
 	}
 
-	/* Crow_bar Memory Leak Fixed                           */
-	mapTextureNameList.push_back(pspriteframe->gl_texturenum);
-	/* Crow_bar Memory Leak Fixed                           */
-
 	return (void *)((byte *)pinframe + sizeof (dspriteframe_t) + size);
 }
 
@@ -3972,7 +3915,6 @@ qboolean Mod_LoadQ2SpriteModel (model_t *mod, void *buffer)
 		frame = psprite->frames[i].frameptr = static_cast<mspriteframe_t*>(Hunk_AllocName(sizeof(mspriteframe_t), loadname));
 
 		frame->gl_texturenum = loadtextureimage (pframetype->name, 0, 0, qtrue, GU_LINEAR);
-        mapTextureNameList.push_back(frame->gl_texturenum);
 
 		frame->width = LittleLong(pframetype->width);
 		frame->height = LittleLong(pframetype->height);

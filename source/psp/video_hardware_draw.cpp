@@ -47,7 +47,6 @@ qpic_t		*sniper_scope;
 
 int			translate_texture;
 int			char_texture;
-int			detail_texture;
 //int			zombie_skins[3][8];
 int			zombie_skins[2][2];
 int         ref_texture;
@@ -101,6 +100,7 @@ void VID_SetPalette4(unsigned char* clut4pal);
 #define	MAX_GLTEXTURES	1024
 gltexture_t	gltextures[MAX_GLTEXTURES];
 bool 		gltextures_used[MAX_GLTEXTURES];
+bool 		gltextures_is_permanent[MAX_GLTEXTURES];
 int			numgltextures;
 
 typedef struct
@@ -131,6 +131,7 @@ void GL_InitTextureUsage ()
 {
 	for (int i=0; i<MAX_GLTEXTURES; i++) {
 		gltextures_used[i] = false;
+		gltextures_is_permanent[i] = false;
 	}
 	numgltextures = 0;
 }
@@ -323,19 +324,6 @@ static int GL_LoadPicTexture (qpic_t *pic)
 	return GL_LoadTexture ("", pic->width, pic->height, pic->data, qfalse, GU_NEAREST, 0);
 }
 
-qpic_t *Draw_PicFromWad (char *name)
-{
-	qpic_t	*p;
-	glpic_t	*gl;
-
-	p = static_cast<qpic_t*>(W_GetLumpName (name));
-	gl = (glpic_t *)p->data;
-	gl->index = GL_LoadPicTexture (p);
-
-	return p;
-}
-
-
 /*
 ================
 Draw_CachePic
@@ -372,7 +360,8 @@ qpic_t	*Draw_CachePic (char *path)
 		gltextures[index].islmp = qfalse;
 		gl = (glpic_t *)pic->pic.data;
 		gl->index = index;
-
+		GL_MarkTextureAsPermanent(gl->index);
+	
 		return &pic->pic;
 	}
 
@@ -395,6 +384,7 @@ qpic_t	*Draw_CachePic (char *path)
 
 	gl = (glpic_t *)pic->pic.data;
 	gl->index = GL_LoadPicTexture (dat);
+	GL_MarkTextureAsPermanent(gl->index);
 
 	gltextures[gl->index].islmp = qtrue;
 	return &pic->pic;
@@ -402,7 +392,7 @@ qpic_t	*Draw_CachePic (char *path)
 
 /*
 ================
-Draw_CachePic
+Draw_CacheImg
 ================
 */
 qpic_t	*Draw_CacheImg (char *path)
@@ -433,6 +423,7 @@ qpic_t	*Draw_CacheImg (char *path)
 
 		gl = (glpic_t *)pic->pic.data;
 		gl->index = index;
+		GL_MarkTextureAsPermanent(gl->index);
 
 		return &pic->pic;
 	}
@@ -453,6 +444,7 @@ qpic_t	*Draw_CacheImg (char *path)
 
 	gl = (glpic_t *)pic->pic.data;
 	gl->index = GL_LoadPicTexture (dat);
+	GL_MarkTextureAsPermanent(gl->index);
 
 	return &pic->pic;
 }
@@ -528,32 +520,20 @@ void Draw_Init (void)
 	// it into a texture
 
 	nonetexture = GL_LoadTexture ("nonetexture", 8, 8, (byte*)nontexdt, qfalse, GU_NEAREST, 0);
+	GL_MarkTextureAsPermanent(nonetexture);
 	R_CreateDlightImage();
 
 	// now turn them into textures
 	char_texture = loadtextureimage ("gfx/charset", 0, 0, qfalse, GU_NEAREST);
+	GL_MarkTextureAsPermanent(char_texture);
 	if (char_texture == 0)// did not find a matching TGA...
 		Sys_Error ("Could not load charset, make sure you have every folder and file installed properly\nDouble check that all of your files are in their correct places\nAnd that you have installed the game properly.\nRefer to the readme.txt file for help\n");
 
-	detail_texture = loadtextureimage ("gfx/detail", 0, 0, qfalse, GU_LINEAR);
-
-	if (detail_texture == 0)// did not find a matching TGA...
-	{
-		detail = static_cast<byte*>(COM_LoadTempFile ("gfx/detail.lmp"));
-		if (!detail)
-		{
-			//Con_Printf ("Couldn't load gfx/detail \n"); FIXME no point?
-			detail_texture = nonetexture;
-		}
-		else
-			detail_texture = GL_LoadTexture ("Detail", 256, 256, detail, qfalse, GU_LINEAR, 3);
-	}
-
 	sniper_scope = Draw_CachePic ("gfx/hud/scope_256");
-	
+	// GL_MarkTextureAsPermanent(sniper_scope);
+
 	zombie_skins[0][0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
-
-
+	GL_MarkTextureAsPermanent(zombie_skins[0][0]);
 	// PSP PHAT: Only have 1 Zombie skin.. this saves 192kB of VRAM, well worth it.
 
 #ifdef SLIM
@@ -561,13 +541,13 @@ void Draw_Init (void)
 	zombie_skins[0][1] = loadtextureimage ("models/ai/zfull.mdl_1", 0, 0, qtrue, GU_LINEAR);
 	zombie_skins[1][0] = loadtextureimage ("models/ai/zfull.mdl_2", 0, 0, qtrue, GU_LINEAR);
 	zombie_skins[1][1] = loadtextureimage ("models/ai/zfull.mdl_3", 0, 0, qtrue, GU_LINEAR);
-
+	GL_MarkTextureAsPermanent(zombie_skins[0][1]);
+	GL_MarkTextureAsPermanent(zombie_skins[1][0]);
+	GL_MarkTextureAsPermanent(zombie_skins[1][1]);
 #else
-
-	zombie_skins[0][1] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
-	zombie_skins[1][0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
-	zombie_skins[1][1] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
-
+	zombie_skins[0][1] = zombie_skins[0][0];
+	zombie_skins[1][0] = zombie_skins[0][0];
+	zombie_skins[1][1] = zombie_skins[0][0];
 #endif // SLIM
 	
 	Clear_LoadingFill ();
@@ -759,6 +739,53 @@ void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha)
 		sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 	}
 }
+
+/*
+=============
+Draw_AlphaPicIndex
+=============
+*/
+void Draw_PicIndex (int x, int y, int width, int height, int texture_index)
+{
+	GL_Bind(texture_index);
+
+	struct vertex
+	{
+		short			u, v;
+		short			x, y, z;
+	};
+
+	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
+
+   	vertices[0].u		= 0;
+	vertices[0].v		= 0;
+	vertices[0].x		= x;
+	vertices[0].y		= y;
+	vertices[0].z		= 0;
+
+	const gltexture_t& glt = gltextures[texture_index];
+	if (gltextures[texture_index].islmp)
+	{
+		vertices[1].u	= glt.original_width;
+		vertices[1].v	= glt.original_height;
+	}
+	else
+	{
+		vertices[1].u 	= glt.width;
+		vertices[1].v 	= glt.height;
+	}
+	vertices[1].x		= x + width;
+	vertices[1].y		= y + height;
+	vertices[1].z		= 0;
+
+	sceGuColor(0xffffffff);
+
+	sceGuDrawArray(
+		GU_SPRITES,
+		GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D,
+		2, 0, vertices);
+}
+
 
 
 /*
@@ -2464,81 +2491,87 @@ GL_UnloadTexture
 */
 void GL_UnloadTexture(int texture_index)
 {
+	if (gltextures_used[texture_index] == false) return;
+	if (gltextures_is_permanent[texture_index]) return;
 
-	if (gltextures_used[texture_index] == true)
-	{
-		gltexture_t& texture = gltextures[texture_index];
+	gltexture_t& texture = gltextures[texture_index];
 
-		Con_DPrintf("Unloading: %s,%d\n",texture.identifier, texture.bpp);
-		// Source.
-		strcpy(texture.identifier,"");
-		texture.original_width = 0;
-		texture.original_height = 0;
-		texture.stretch_to_power_of_two = qfalse;
+	// Con_Printf("Unloading: %s,%d\n",texture.identifier, texture.bpp);
+	// Source.
+	strcpy(texture.identifier,"");
+	texture.original_width = 0;
+	texture.original_height = 0;
+	texture.stretch_to_power_of_two = qfalse;
 
-        // Fill in the texture description.
-		texture.format  = GU_PSM_T8;
-        texture.bpp     = 0;
-		texture.filter  = GU_LINEAR;
-		texture.width   = 0;
-		texture.height  = 0;
-		texture.mipmaps = 0;
-		texture.swizzle = 0;
+	// Fill in the texture description.
+	texture.format  = GU_PSM_T8;
+	texture.bpp     = 0;
+	texture.filter  = GU_LINEAR;
+	texture.width   = 0;
+	texture.height  = 0;
+	texture.mipmaps = 0;
+	texture.swizzle = 0;
 #ifdef STATIC_PAL
-		memset(texture.palette, 0, sizeof(texture.palette));
+	memset(texture.palette, 0, sizeof(texture.palette));
 #else
-        if (texture.palette != NULL)
-		{
-            free(texture.palette);
-            texture.palette = NULL;
-        }
-		if (texture.palette_2 != NULL)
-		{
-            free(texture.palette_2);
-            texture.palette_2 = NULL;
-        }
+	if (texture.palette != NULL)
+	{
+		free(texture.palette);
+		texture.palette = NULL;
+	}
+	if (texture.palette_2 != NULL)
+	{
+		free(texture.palette_2);
+		texture.palette_2 = NULL;
+	}
 #endif
-		texture.palette_active = qfalse;
-		if (texture.palette != NULL)
-		{
-			free(texture.palette);
-			texture.palette = NULL;
-		}
-		if (texture.palette_2 != NULL)
-		{
-			free(texture.palette_2);
-			texture.palette_2 = NULL;
-		}
-		
-		// Buffers.
-		if (texture.ram != NULL)
-		{
-			free(texture.ram);
-			texture.ram = NULL;
-		}
-		if (texture.vram != NULL)
-		{
-			vfree(texture.vram);
-			texture.vram = NULL;
-		}
-
+	texture.palette_active = qfalse;
+	if (texture.palette != NULL)
+	{
+		free(texture.palette);
+		texture.palette = NULL;
+	}
+	if (texture.palette_2 != NULL)
+	{
+		free(texture.palette_2);
+		texture.palette_2 = NULL;
+	}
+	
+	// Buffers.
+	if (texture.ram != NULL)
+	{
+		free(texture.ram);
+		texture.ram = NULL;
+	}
+	if (texture.vram != NULL)
+	{
+		vfree(texture.vram);
+		texture.vram = NULL;
 	}
 
 	gltextures_used[texture_index] = false;
 	numgltextures--;
-	
+}
+
+void GL_UnloadAllTextures() {
+	for (int i = 0; i < MAX_GLTEXTURES; i++) {
+		GL_UnloadTexture(i);
+	}
 }
 
 /*
-================
-GL_LoadTexture
-================
+For marking textures as something that should never be cleaned up, like fonts, zombie, etc.
+There should never be need to change anything back from permanent.
 */
-int GL_LoadTexture (const char *identifier, int width, int height, const byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level)
-{
-	int texture_index = -1;
+void GL_MarkTextureAsPermanent(int texture_index) {
+	if (gltextures_used[texture_index] == false) {
+		Sys_Error("Tried to mark an empty texture as permanent!\n");
+	}
 
-	tex_scale_down = r_tex_scale_down.value == qtrue;
+	gltextures_is_permanent[texture_index] = true;
+}
+
+int GL_TextureForName(const char * identifier) {
 	// See if the texture is already present.
 	if (identifier[0])
 	{
@@ -2554,26 +2587,52 @@ int GL_LoadTexture (const char *identifier, int width, int height, const byte *d
 			}
 		}
 	}
+	return -1;
+}
 
+int GL_GetTextureIndex() {
 	// Out of textures?
 	if (numgltextures == MAX_GLTEXTURES)
 	{
-		Sys_Error("Out of OpenGL textures");
+		Sys_Error("Out of gl textures");
 	}
 
-	// Use the next available texture.
 	numgltextures++;
-	texture_index = numgltextures;
+	int texture_index = -1;
 
 	for (int i = 0; i < MAX_GLTEXTURES; ++i)
 	{
-		if (gltextures_used[i] == false) {
+		if (gltextures_used[i] == false)
+		{
 			texture_index = i;
 			break;
 		}
 	}
-	gltexture_t& texture = gltextures[texture_index];
+
+	if (texture_index < 0) {
+		Sys_Error("Could not find a free gl texture!\n");
+	}
+
 	gltextures_used[texture_index] = true;
+
+	return texture_index;
+}
+
+/*
+================
+GL_LoadTexture
+================
+*/
+int GL_LoadTexture (const char *identifier, int width, int height, const byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level)
+{
+	int texture_index = GL_TextureForName(identifier);
+	if (texture_index >= 0) return texture_index;
+
+	tex_scale_down = r_tex_scale_down.value == qtrue;
+	
+	texture_index = GL_GetTextureIndex();
+
+	gltexture_t& texture = gltextures[texture_index];
 
 	// Fill in the source data.
 	strcpy(texture.identifier, identifier);
@@ -2660,46 +2719,14 @@ GL_LoadPalTex
 */
 int GL_LoadPalTex (const char *identifier, int width, int height, const byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, byte *palette, int paltype)
 {
-	
-	int texture_index = -1;
+	int texture_index = GL_TextureForName(identifier);
+	if (texture_index >= 0) return texture_index;
 
 	tex_scale_down = r_tex_scale_down.value == qtrue;
-	// See if the texture is already present.
-	if (identifier[0])
-	{
-		for (int i = 0; i < MAX_GLTEXTURES; ++i)
-		{
-			if (gltextures_used[i] == true)
-			{
-				const gltexture_t& texture = gltextures[i];
-				if (!strcmp (identifier, texture.identifier))
-				{
-					return i;
-				}
-			}
-		}
-	}
+	
+	texture_index = GL_GetTextureIndex();
 
-	// Out of textures?
-	if (numgltextures == MAX_GLTEXTURES)
-	{
-		Sys_Error("Out of OpenGL textures");
-	}
-
-	// Use the next available texture.
-	numgltextures++;
-	texture_index = numgltextures;
-
-	for (int i = 0; i < MAX_GLTEXTURES; ++i)
-	{
-		if (gltextures_used[i] == false)
-		{
-			texture_index = i;
-			break;
-		}
-	}
 	gltexture_t& texture = gltextures[texture_index];
-	gltextures_used[texture_index] = true;
 
 	// Fill in the source data.
 	strcpy(texture.identifier, identifier);
@@ -2845,51 +2872,14 @@ GL_LoadTextureLM
 int GL_LoadTextureLM (const char *identifier, int width, int height, const byte *data, int bpp, int filter, qboolean update, int forcopy)
 {
 	tex_scale_down = r_tex_scale_down.value == qtrue;
-	int texture_index = -1;
-	// See if the texture is already present.
-	if (identifier[0])
-	{
-		for (int i = 0; i < MAX_GLTEXTURES; ++i)
-		{
-			if (gltextures_used[i] == true)
-			{
-				const gltexture_t& texture = gltextures[i];
-				if (!strcmp (identifier, texture.identifier))
-				{
-					if (update == qfalse)
-					{
-						return i;
-					}
-					else
-					{
-						texture_index = i;
-						break;
-					}
-				}
-			}
-		}
+	int texture_index = GL_TextureForName(identifier);
+	if (texture_index >= 0 && update == qfalse) {
+		return texture_index;
 	}
 
 	if (update == qfalse || texture_index == -1)
 	{
-		// Out of textures?
-		if (numgltextures == MAX_GLTEXTURES)
-		{
-			Sys_Error("Out of OpenGL textures");
-		}
-
-		// Use the next available texture.
-		numgltextures++;
-		texture_index = numgltextures;
-
-		for (int i = 0; i < MAX_GLTEXTURES; ++i)
-		{
-			if (gltextures_used[i] == false)
-			{
-				texture_index = i;
-				break;
-			}
-		}
+		texture_index = GL_GetTextureIndex();
 		gltexture_t& texture = gltextures[texture_index];
 		gltextures_used[texture_index] = true;
 
@@ -3073,47 +3063,14 @@ GL_LoadImages
 int total_overbudget_texturemem;
 int GL_LoadImages (const char *identifier, int width, int height, const byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp)
 {
-	int texture_index = -1;
+	int texture_index = GL_TextureForName(identifier);
+	if (texture_index >= 0) return texture_index;
 
 	tex_scale_down = r_tex_scale_down.value == qtrue;
 	
-	// See if the texture is already present.
-	if (identifier[0])
-	{
-		for (int i = 0; i < MAX_GLTEXTURES; ++i)
-		{
-			if (gltextures_used[i] == true)
-			{
-				const gltexture_t& texture = gltextures[i];
-				if (!strcmp (identifier, texture.identifier))
-				{
-					return i;
-				}
-			}
-		}
-	}
-	
-	// Out of textures?
-	if (numgltextures == MAX_GLTEXTURES)
-	{		Sys_Error("Out of OpenGL textures");
-	}
+	texture_index = GL_GetTextureIndex();
 
-	// Use the next available texture.
-	numgltextures++;
-	texture_index = numgltextures;
-
-	for (int i = 0; i < MAX_GLTEXTURES; ++i)
-	{
-		if (gltextures_used[i] == false)
-		{
-			texture_index = i;
-			break;
-		}
-	}
-	
 	gltexture_t& texture = gltextures[texture_index];
-	gltextures_used[texture_index] = true;
-
 	// Fill in the source data.
 	strcpy(texture.identifier, identifier);
 	texture.original_width			= width;
@@ -3263,6 +3220,7 @@ int GL_LoadImages (const char *identifier, int width, int height, const byte *da
 	//FIXME: this isn't completely clearing out the normal ram stuff :s
 	if (texture.vram && texture.ram)
 	{
+		Con_Printf("Put %s into VRAM (%dkB)\n", identifier, buffer_size/1024);
 		free(texture.ram);
 		texture.ram = NULL;
 	} else {
@@ -3356,42 +3314,11 @@ void GL_Upload4(int texture_index, const byte *data, int width, int height)
 
 int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, const byte *data, int filter, qboolean swizzled)
 {
-	int texture_index = -1;
-	
-	if (identifier[0])
-	{
-		for (int i = 0; i < MAX_GLTEXTURES; ++i)
-		{
-			if (gltextures_used[i] == true)
-			{
-				const gltexture_t& texture = gltextures[i];
-				if (!strcmp(identifier, texture.identifier))
-				{
-					return i;
-				}
-			}
-		}
-	}
+	int texture_index = GL_TextureForName(identifier);
+	if (texture_index >= 0) return texture_index;
 
-	// Out of textures?
-	if (numgltextures == MAX_GLTEXTURES)
-	{
-		Sys_Error("Out of OpenGL textures");
-	}
-
-	// Use the next available texture.
-	numgltextures++;
-	texture_index = numgltextures;
-
-	for (int i = 0; i < MAX_GLTEXTURES; ++i)
-	{
-		if (gltextures_used[i] == false) {
-			texture_index = i;
-			break;
-		}
-	}
+	texture_index = GL_GetTextureIndex();
 	gltexture_t& texture = gltextures[texture_index];
-	gltextures_used[texture_index] = true;
 
 	// Fill in the source data.
 	strcpy(texture.identifier, identifier);
