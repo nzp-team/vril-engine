@@ -36,6 +36,7 @@ int GL_LoadTextureLM (const char *identifier, int width, int height, const byte 
 int GL_LoadImages (const char *identifier, int width, int height, const byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp);
 int GL_LoadTexturePixels (byte *data, char *identifier, int width, int height, int mode);
 int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
+int loadskyboxsideimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
 int GL_LoadPaletteTexture (const char *identifier, int width, int height, const byte *data, byte *palette, int paltype, qboolean stretch_to_power_of_two, int filter, int mipmap_level);
 
 //Crow_bar
@@ -195,7 +196,7 @@ extern	mleaf_t		*r_viewleaf, *r_oldviewleaf;
 extern	texture_t	*r_notexture_mip;
 extern	int		d_lightstylevalue[256];	// 8.8 fraction of base light value
 
-extern  int	    skyimage[6]; // Where sky images are stored
+extern  int	    skyimage[5]; // Where sky images are stored
 extern  int 	lightmap_index[MAX_LIGHTMAPS]; // Where lightmaps are stored
 
 extern  int     reloaded_pallete;
@@ -239,6 +240,7 @@ extern  cvar_t  r_asynch;
 extern  cvar_t  cl_loadmapcfg;
 extern  cvar_t  r_fastsky;
 extern  cvar_t  r_skycolor;
+extern  cvar_t  r_skyfogblend;
 extern	cvar_t	r_waterripple;
 extern	cvar_t	r_norefresh;
 extern	cvar_t	r_drawentities;
@@ -422,6 +424,7 @@ int 	      D_DrawParticleBuffered (psp_particle* vertices, particle2_t *pparticl
 
 
 extern int			zombie_skins[2][2];
+extern qpic_t*		sniper_scope;
 
 extern int faces_rejected, faces_checked, faces_clipped;
 

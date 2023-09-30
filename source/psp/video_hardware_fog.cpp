@@ -239,7 +239,7 @@ Fog_SetupFrame
 called at the beginning of each frame
 =============
 */
-void Fog_SetupFrame (void)
+void Fog_SetupFrame (bool worldgeom)
 {
 	float c[4];
 	float f, s, e;
@@ -268,7 +268,11 @@ void Fog_SetupFrame (void)
 	if(e == 0)
 		e = -1;
 
-	sceGuFog ( s, e, GU_COLOR( c[0]* 0.01f, c[1]* 0.01f, c[2]* 0.01f, c[3] ) );
+	// If we have normal color fog for world geom + lightmap, then the resulting color when fully fogged is wrong.
+	// If we have exactly 0.5 0.5 0.5 gray for world game and normal fog for lightmap, the end result of fully fogged
+	// stuff is the actual fog color.
+	unsigned int color = worldgeom ? GU_COLOR(0.5f, 0.5f, 0.5f, c[3]) : GU_COLOR(c[0]* 0.01f, c[1]* 0.01f, c[2]* 0.01f, c[3]);
+	sceGuFog(s, e, color);
 
 	if(s == 0 || e < 0)
 		sceGuDisable(GU_FOG);

@@ -38,7 +38,7 @@ using namespace quake;
 //prototypes
 extern "C" void V_CalcBlend (void);
 
-void Fog_SetupFrame (void);
+void Fog_SetupFrame (bool worldgeom);
 void Fog_EnableGFog (void); 
 void Fog_DisableGFog (void);
 void R_DrawDecals (void);
@@ -141,6 +141,7 @@ cvar_t  r_showbboxes_full     = {"r_showbboxes_full",         "0",qtrue};
 cvar_t	r_showtris            = {"r_showtris",                "0"};
 cvar_t	r_showtris_full       = {"r_showtris_full",           "0",qtrue};
 cvar_t	r_polyblend	          = {"r_polyblend",               "1",qtrue};
+cvar_t r_skyfogblend = {"r_skyfogblend", "0.6", qtrue}; 
 
 //QMB
 cvar_t  r_explosiontype     = {"r_explosiontype",    "0",qtrue};
@@ -3693,7 +3694,7 @@ void R_RenderScene (void)
 	vrect_t* renderrect = &r_refdef.vrect;
 
 	//setupframe
-	Fog_SetupFrame();
+	Fog_SetupFrame(false);
 	R_AnimateLight();
 	++r_framecount;
 
@@ -3789,7 +3790,8 @@ void R_RenderScene (void)
 		}
 	}
 
-	sceGumPerspective(fovy, fovx, 4, r_maxrange.value);
+	float farplanedist = (r_refdef.fog_start == 0 || r_refdef.fog_end < 0) ? 4096 : (r_refdef.fog_end + 16); 
+	sceGumPerspective(fovy, fovx, 4, farplanedist);
 
 	if (mirror)
 	{
@@ -3839,7 +3841,7 @@ void R_RenderScene (void)
 
 	sceGumMatrixMode(GU_PROJECTION);
 	sceGumLoadIdentity();
-	sceGumPerspective(fovy, fovx, 4, r_maxrange.value);
+	sceGumPerspective(fovy, fovx, 4, farplanedist);
 	sceGumUpdateMatrix();
 	sceGumMatrixMode(GU_MODEL);
 
