@@ -895,7 +895,7 @@ void M_Map_Draw (void)
 		if (m_map_cursor == i) {
 
 			if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
-				Draw_PicIndex(256, 45, 175, 100, custom_maps[i].thumbnail_index);
+				Draw_PicIndex(256, 45, 175, 100, custom_maps[i + multiplier].thumbnail_index);
 			}
 			
 			if (custom_maps[i + multiplier].map_name_pretty != 0)
