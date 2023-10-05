@@ -62,6 +62,9 @@ qboolean	con_initialized;
 
 int			con_notifylines;		// scan lines to clear for notify lines
 
+#define MAXGAMEDIRLEN	1000
+char debuglogfile[MAXGAMEDIRLEN + 1];
+
 extern void M_Menu_Main_f (void);
 
 void M_OSK_Draw (void);
@@ -218,8 +221,6 @@ Con_Init
 */
 void Con_Init (void)
 {
-#define MAXGAMEDIRLEN	1000
-	char	temp[MAXGAMEDIRLEN+1];
 	char	*t2 = "/condebug.log";
 
 	con_debuglog = COM_CheckParm("-condebug");
@@ -228,8 +229,8 @@ void Con_Init (void)
 	{
 		if (strlen (com_gamedir) < (MAXGAMEDIRLEN - strlen (t2)))
 		{
-			sprintf (temp, "%s%s", com_gamedir, t2);
-			unlink (temp);
+			sprintf (debuglogfile, "%s%s", com_gamedir, t2);
+			unlink (debuglogfile);
 		}
 	}
 
@@ -396,7 +397,7 @@ void Con_Printf (char *fmt, ...)
 
 // log all messages to file
 	if (con_debuglog)
-		Con_DebugLog(va("%s/condebug.log",com_gamedir), "%s", msg);
+		Con_DebugLog(debuglogfile, "%s", msg);
 
 	if (!con_initialized)
 		return;

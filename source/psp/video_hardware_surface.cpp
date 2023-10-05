@@ -93,6 +93,8 @@ void 	VID_SetPaletteLM();
 void 	VID_SetPaletteTX();
 // switch palette for textures
 
+void Fog_SetupFrame (bool worldgeom);
+
 /*
 ===============
 R_AddDynamicLights
@@ -1117,7 +1119,7 @@ static void DrawTextureChains (void)
 		if (!s)
 			continue;
 		if (i == skytexturenum)
-			R_DrawSkyChain (s);
+			continue; // R_DrawSkyChain (s);
 		else if (i == mirrortexturenum && r_mirroralpha.value != 1.0)
 		{
 			R_MirrorChain (s);
@@ -1586,20 +1588,21 @@ void R_DrawWorld (void)
 	num_lightmapped_faces = 0;
 
 	R_ClearSkyBox ();
+	if (strcmp(skybox_name, "") != 0)
+		R_DrawSkyBox();
 
 	R_RecursiveWorldNode (cl.worldmodel->nodes, false);
 
 	R_AddStaticBrushModelsToChains ();
 
+	Fog_SetupFrame(true);
 	DrawTextureChains ();
-
+	Fog_SetupFrame(false);
 	R_BlendLightmaps ();
 
 	//dr_mabuse1981: commented out, this was the one who caused the epic lag
     //DrawFullBrightTextures (cl.worldmodel->surfaces, cl.worldmodel->numsurfaces);
 	//dr_mabuse1981: commented out, this was the one who caused the epic lag
-	if (strcmp(skybox_name, "") != 0)
-		R_DrawSkyBox();
 }
 
 

@@ -528,27 +528,6 @@ void Draw_Init (void)
 	GL_MarkTextureAsPermanent(char_texture);
 	if (char_texture == 0)// did not find a matching TGA...
 		Sys_Error ("Could not load charset, make sure you have every folder and file installed properly\nDouble check that all of your files are in their correct places\nAnd that you have installed the game properly.\nRefer to the readme.txt file for help\n");
-
-	sniper_scope = Draw_CachePic ("gfx/hud/scope_256");
-	// GL_MarkTextureAsPermanent(sniper_scope);
-
-	zombie_skins[0][0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
-	GL_MarkTextureAsPermanent(zombie_skins[0][0]);
-	// PSP PHAT: Only have 1 Zombie skin.. this saves 192kB of VRAM, well worth it.
-
-#ifdef SLIM
-
-	zombie_skins[0][1] = loadtextureimage ("models/ai/zfull.mdl_1", 0, 0, qtrue, GU_LINEAR);
-	zombie_skins[1][0] = loadtextureimage ("models/ai/zfull.mdl_2", 0, 0, qtrue, GU_LINEAR);
-	zombie_skins[1][1] = loadtextureimage ("models/ai/zfull.mdl_3", 0, 0, qtrue, GU_LINEAR);
-	GL_MarkTextureAsPermanent(zombie_skins[0][1]);
-	GL_MarkTextureAsPermanent(zombie_skins[1][0]);
-	GL_MarkTextureAsPermanent(zombie_skins[1][1]);
-#else
-	zombie_skins[0][1] = zombie_skins[0][0];
-	zombie_skins[1][0] = zombie_skins[0][0];
-	zombie_skins[1][1] = zombie_skins[0][0];
-#endif // SLIM
 	
 	Clear_LoadingFill ();
 }
@@ -3114,7 +3093,7 @@ int GL_LoadImages (const char *identifier, int width, int height, const byte *da
 		}
 		break;
 	}
-
+	
 	// HACK HACK: Force use of DXT5 for the mbox glow
 	char specChar = identifier[strlen(identifier) - 7];
 	if (specChar == '$')
@@ -3220,7 +3199,6 @@ int GL_LoadImages (const char *identifier, int width, int height, const byte *da
 	//FIXME: this isn't completely clearing out the normal ram stuff :s
 	if (texture.vram && texture.ram)
 	{
-		Con_Printf("Put %s into VRAM (%dkB)\n", identifier, buffer_size/1024);
 		free(texture.ram);
 		texture.ram = NULL;
 	} else {

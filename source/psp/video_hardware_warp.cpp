@@ -40,10 +40,11 @@ int		alphaskytexture	= -1;
 
 float	speedscale;		// for top sky and bottom sky
 
-int	    skytexorder[6] = {0,2,1,3,4,5};
-int	    skyimage[6]; // Where sky images are stored
+int	    skytexorder[5] = {0,2,1,3,4};
+int	    skyimage[5]; // Where sky images are stored
 char	skybox_name[32] = ""; //name of current skybox, or "" if no skybox
-char	*suf[6] = {"rt", "bk", "lf", "ft", "up", "dn"};
+// cut off down for half skybox
+char	*suf[5] = {"rt", "bk", "lf", "ft", "up" };
 
 msurface_t	*warpface;
 
@@ -871,7 +872,7 @@ void R_DrawFlat_SkyChain (msurface_t *s)
 */
 void UnloadSkyTexture (void)
 {
-	for (int i = 0; i < 6; i++)
+	for (int i = 0; i < 5; i++)
 	{
 	    if (skyimage[i])
             GL_UnloadTexture(skyimage[i]);
@@ -888,6 +889,9 @@ extern int nonetexture;
 void Sky_LoadSkyBox (char *name)
 {
 
+// shpuld: is this still actually needed?
+// vram use has been reduced a lot, all textures including skybox already fit vram
+// on ndu for example. ram difference shouldn't then make a difference
 #ifdef SLIM
 
 	if (strcmp(skybox_name, name) == 0)
@@ -910,15 +914,16 @@ void Sky_LoadSkyBox (char *name)
 		return;
 	}
 
-    for (int i = 0; i < 6; i++)
+	// Do sides one way and top another, bottom is not done
+    for (int i = 0; i < 4; i++)
     {
         int mark = Hunk_LowMark ();
 
-		if(!(skyimage[i] = loadtextureimage (va("gfx/env/%s%s", name, suf[i]), 0, 0, qfalse, GU_LINEAR)) &&
-           !(skyimage[i] = loadtextureimage (va("gfx/env/%s_%s", name, suf[i]), 0, 0, qfalse, GU_LINEAR)))
+		if(!(skyimage[i] = loadskyboxsideimage (va("gfx/env/%s%s", name, suf[i]), 0, 0, qfalse, GU_LINEAR)) &&
+           !(skyimage[i] = loadskyboxsideimage (va("gfx/env/%s_%s", name, suf[i]), 0, 0, qfalse, GU_LINEAR)))
 		{
 			Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[i]);
-		    if(!(skyimage[i] = loadtextureimage (va("gfx/env/skybox%s", suf[i]), 0, 0, qfalse, GU_LINEAR)))
+		    if(!(skyimage[i] = loadskyboxsideimage (va("gfx/env/skybox%s", suf[i]), 0, 0, qfalse, GU_LINEAR)))
 		    {
 			    Sys_Error("STD SKY NOT FOUND!");
 			}
@@ -926,6 +931,20 @@ void Sky_LoadSkyBox (char *name)
 		}
         Hunk_FreeToLowMark (mark);
     }
+
+	int mark = Hunk_LowMark ();
+	if(!(skyimage[4] = loadtextureimage (va("gfx/env/%sup", name), 0, 0, qfalse, GU_LINEAR)) &&
+		!(skyimage[4] = loadtextureimage (va("gfx/env/%s_up", name), 0, 0, qfalse, GU_LINEAR)))
+	{
+		Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[4]);
+		if(!(skyimage[4] = loadtextureimage (va("gfx/env/skybox%s", suf[4]), 0, 0, qfalse, GU_LINEAR)))
+		{
+			Sys_Error("STD SKY NOT FOUND!");
+		}
+
+	}
+	Hunk_FreeToLowMark (mark);
+
     strcpy(skybox_name, name);
 
 #endif // SLIM
@@ -1029,7 +1048,7 @@ void Sky_Init (void)
 
 	Cmd_AddCommand ("sky",Sky_SkyCommand_f);
 
-	for (i=0; i<6; i++)
+	for (i=0; i<5; i++)
 		skyimage[i] = NULL;
 }
 
@@ -1278,11 +1297,115 @@ void Fog_EnableGFog (void);
 void Fog_DisableGFog (void);
 void Fog_SetColorForSkyS (void);
 void Fog_SetColorForSkyE (void);
+
+void DrawSkyFogBlend (float skydepth) {
+	float skyfogblend = r_skyfogblend.value;
+	if (skyfogblend <= 0) return;
+
+	float endheight = skydepth * skyfogblend;
+	float startheight = MIN(skydepth * 0.075f, endheight * 0.3f);
+
+	sceGuDisable(GU_TEXTURE_2D);
+	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
+	sceGuShadeModel(GU_SMOOTH);
+	sceGuEnable(GU_BLEND);
+
+	float r = MIN(1.0f, r_refdef.fog_red * 0.01f);
+	float g = MIN(1.0f, r_refdef.fog_green * 0.01f);
+	float b = MIN(1.0f, r_refdef.fog_blue * 0.01f);
+	unsigned int fogcol1 = GU_COLOR(r, g, b, 1.0f);
+	unsigned int fogcol2 = GU_COLOR(r, g, b, 0.0f);
+
+	for (int i = -2; i < 2; i++) {
+		for (int j = 0; j < 2; j++) {
+			// Allocate memory for fake fog polys.
+			struct fogvert {
+				unsigned int color;
+				vec3_t xyz;
+			};
+			const int unclipped_vertex_count = 4;
+			fogvert* const	verts = static_cast<fogvert*>(sceGuGetMemory(sizeof(fogvert) * unclipped_vertex_count));
+
+			vec3_t angles, forward, right;
+			angles[PITCH] = 0.f;
+			angles[YAW] = r_refdef.viewangles[YAW];
+			angles[ROLL] = 0.f;
+			AngleVectors(angles, forward, right, NULLVEC);
+
+			float forwardamount = skydepth * (0.7f - abs(i*i) * 0.15f); 
+			float forwardamount2 = skydepth * (0.7f - abs((i + 1)*(i + 1)) * 0.15f); 
+			unsigned int uppercolor = j > 0 ? fogcol2 : fogcol1;
+			
+			float bottomheight = j > 0 ? startheight : -1.0f;
+			float topheight = j > 0 ? endheight : startheight;
+		
+			verts[0].xyz[0] = r_origin[0] + forward[0] * forwardamount + i * right[0] * skydepth;
+			verts[0].xyz[1] = r_origin[1] + forward[1] * forwardamount + i * right[1] * skydepth;
+			verts[0].xyz[2] = r_origin[2] + forward[2] * forwardamount + i * right[2] * skydepth + bottomheight;
+			verts[0].color = fogcol1;
+
+			verts[1].xyz[0] = r_origin[0] + forward[0] * forwardamount + i * right[0] * skydepth;
+			verts[1].xyz[1] = r_origin[1] + forward[1] * forwardamount + i * right[1] * skydepth;
+			verts[1].xyz[2] = r_origin[2] + forward[2] * forwardamount + i * right[2] * skydepth + topheight;
+			verts[1].color = uppercolor;
+		
+			verts[2].xyz[0] = r_origin[0] + forward[0] * forwardamount2 + (i + 1) * right[0] * skydepth;
+			verts[2].xyz[1] = r_origin[1] + forward[1] * forwardamount2 + (i + 1) * right[1] * skydepth;
+			verts[2].xyz[2] = r_origin[2] + forward[2] * forwardamount2 + (i + 1) * right[2] * skydepth + topheight;
+			verts[2].color = uppercolor;
+
+			verts[3].xyz[0] = r_origin[0] + forward[0] * forwardamount2 + (i + 1) * right[0] * skydepth;
+			verts[3].xyz[1] = r_origin[1] + forward[1] * forwardamount2 + (i + 1) * right[1] * skydepth;
+			verts[3].xyz[2] = r_origin[2] + forward[2] * forwardamount2 + (i + 1) * right[2] * skydepth + bottomheight;
+			verts[3].color = fogcol1;
+
+			// Draw the poly directly.
+			sceGuDrawArray(
+				GU_TRIANGLE_FAN,
+				GU_COLOR_8888 | GU_VERTEX_32BITF,
+				unclipped_vertex_count, 0, verts);
+		}
+	}
+	sceGuEnable(GU_TEXTURE_2D);
+	sceGuDisable(GU_BLEND);
+    //sceGuDepthRange(0, 65535);
+	Fog_SetColorForSkyE(); //setup for Sky
+	Fog_EnableGFog(); //setup for Sky
+
+	sceGuDepthMask(false);
+	sceGuEnable(GU_DEPTH_TEST);
+}
+
 /*
 ==============
 R_DrawSkyBox
 ==============
 */
+
+float skynormals[5][3] = {
+	{ 1.f, 0.f, 0.f },
+	{ -1.f, 0.f, 0.f },
+	{ 0.f, 1.f, 0.f },
+	{ 0.f, -1.f, 0.f },
+	{ 0.f, 0.f, 1.f }
+};
+
+float skyrt[5][3] = {
+	{ 0.f, -1.f, 0.f },
+	{ 0.f, 1.f, 0.f },
+	{ 1.f, 0.f, 0.f },
+	{ -1.f, 0.f, 0.f },
+	{ 0.f, -1.f, 0.f }
+};
+
+float skyup[5][3] = {
+	{ 0.f, 0.f, 1.f },
+	{ 0.f, 0.f, 1.f },
+	{ 0.f, 0.f, 1.f },
+	{ 0.f, 0.f, 1.f },
+	{ -1.f, 0.f, 0.f }
+};
+
 void R_DrawSkyBox (void)
 {
     int		i;
@@ -1291,51 +1414,55 @@ void R_DrawSkyBox (void)
 	Fog_SetColorForSkyS(); //setup for Sky
 
 	//sceGuDepthRange(32767, 65535); //not used
+	sceGuDepthMask(true);
+	sceGuDisable(GU_DEPTH_TEST);
 
-	for (i=0 ; i<6 ; i++)
+	float skydepth = 256.f;
+
+	for (i=0 ; i<5 ; i++)
 	{
 		// Allocate memory for this polygon.
 		const int		unclipped_vertex_count	= 4;
 		glvert_t* const	unclipped_vertices  =
 			static_cast<glvert_t*>(sceGuGetMemory(sizeof(glvert_t) * unclipped_vertex_count));
 
-		if (skymins[0][i] >= skymaxs[0][i]
-		|| skymins[1][i] >= skymaxs[1][i])
-			continue;
-
+		// check if poly needs to be drawn at all
+		float dot = DotProduct(skynormals[i], vpn);
+		// < 0 check would work at fov 90 or less, just guess a value that's high enough?
+		if (dot < -0.25f) continue;
+		
         GL_Bind (skyimage[skytexorder[i]]);
 
-		MakeSkyVec (skymins[0][i], skymins[1][i], i);
+		// if direction is not up, cut "down" vector to zero to only render half cube
+		float upnegfact = i == 4 ? 1.0f : 0.0f;
 
-        unclipped_vertices[0].st[0]	    = s_axis;
-        unclipped_vertices[0].st[1]	    = t_axis;
-        unclipped_vertices[0].xyz[0]	= v_axis[0];
-        unclipped_vertices[0].xyz[1]	= v_axis[1];
-        unclipped_vertices[0].xyz[2]	= v_axis[2];
+		float skyboxtexsize = 256.f;
+		// move ever so slightly less towards forward to make edges overlap a bit, just to not have shimmering pixels between sky edges
+		float forwardfact = 0.99f;
 
-	    MakeSkyVec (skymins[0][i], skymaxs[1][i], i);
+		unclipped_vertices[0].st[0] = 0.5f / skyboxtexsize;
+		unclipped_vertices[0].st[1] = (skyboxtexsize - .5f) / skyboxtexsize;
+		unclipped_vertices[0].xyz[0] = r_origin[0] + (forwardfact * skynormals[i][0] - skyrt[i][0] - skyup[i][0] * upnegfact) * skydepth;
+		unclipped_vertices[0].xyz[1] = r_origin[1] + (forwardfact * skynormals[i][1] - skyrt[i][1] - skyup[i][1] * upnegfact) * skydepth;
+		unclipped_vertices[0].xyz[2] = r_origin[2] + (forwardfact * skynormals[i][2] - skyrt[i][2] - skyup[i][2] * upnegfact) * skydepth;
 
-        unclipped_vertices[1].st[0]	    = s_axis;
-        unclipped_vertices[1].st[1]	    = t_axis;
-        unclipped_vertices[1].xyz[0]	= v_axis[0];
-        unclipped_vertices[1].xyz[1]	= v_axis[1];
-        unclipped_vertices[1].xyz[2]	= v_axis[2];
+		unclipped_vertices[1].st[0] = 0.5f / skyboxtexsize;
+		unclipped_vertices[1].st[1] = 0.5f / skyboxtexsize;
+		unclipped_vertices[1].xyz[0] = r_origin[0] + (forwardfact * skynormals[i][0] - skyrt[i][0] + skyup[i][0]) * skydepth;
+		unclipped_vertices[1].xyz[1] = r_origin[1] + (forwardfact * skynormals[i][1] - skyrt[i][1] + skyup[i][1]) * skydepth;
+		unclipped_vertices[1].xyz[2] = r_origin[2] + (forwardfact * skynormals[i][2] - skyrt[i][2] + skyup[i][2]) * skydepth;
 
-        MakeSkyVec (skymaxs[0][i], skymaxs[1][i], i);
+		unclipped_vertices[2].st[0] = (skyboxtexsize - .5f) / skyboxtexsize;
+		unclipped_vertices[2].st[1] = 0.5f / skyboxtexsize;
+		unclipped_vertices[2].xyz[0] = r_origin[0] + (forwardfact * skynormals[i][0] + skyrt[i][0] + skyup[i][0]) * skydepth;
+		unclipped_vertices[2].xyz[1] = r_origin[1] + (forwardfact * skynormals[i][1] + skyrt[i][1] + skyup[i][1]) * skydepth;
+		unclipped_vertices[2].xyz[2] = r_origin[2] + (forwardfact * skynormals[i][2] + skyrt[i][2] + skyup[i][2]) * skydepth;
 
-        unclipped_vertices[2].st[0]	    = s_axis;
-        unclipped_vertices[2].st[1]	    = t_axis;
-        unclipped_vertices[2].xyz[0]	= v_axis[0];
-        unclipped_vertices[2].xyz[1]	= v_axis[1];
-        unclipped_vertices[2].xyz[2]	= v_axis[2];
-
-		MakeSkyVec (skymaxs[0][i], skymins[1][i], i);
-
-        unclipped_vertices[3].st[0]	    = s_axis;
-        unclipped_vertices[3].st[1]	    = t_axis;
-        unclipped_vertices[3].xyz[0]	= v_axis[0];
-        unclipped_vertices[3].xyz[1]	= v_axis[1];
-        unclipped_vertices[3].xyz[2]	= v_axis[2];
+		unclipped_vertices[3].st[0] = (skyboxtexsize - .5f) / skyboxtexsize;
+		unclipped_vertices[3].st[1] = (skyboxtexsize - .5f) / skyboxtexsize;
+		unclipped_vertices[3].xyz[0] = r_origin[0] + (forwardfact * skynormals[i][0] + skyrt[i][0] - skyup[i][0] * upnegfact) * skydepth;
+		unclipped_vertices[3].xyz[1] = r_origin[1] + (forwardfact * skynormals[i][1] + skyrt[i][1] - skyup[i][1] * upnegfact) * skydepth;
+		unclipped_vertices[3].xyz[2] = r_origin[2] + (forwardfact * skynormals[i][2] + skyrt[i][2] - skyup[i][2] * upnegfact) * skydepth;
 
         if (clipping::is_clipping_required(
             unclipped_vertices,
@@ -1374,10 +1501,12 @@ void R_DrawSkyBox (void)
                 unclipped_vertex_count, 0, unclipped_vertices);
         }
     }
-    //sceGuDepthRange(0, 65535);
+
+	DrawSkyFogBlend(skydepth);
+
+	//sceGuDepthRange(0, 65535);
 	Fog_SetColorForSkyE(); //setup for Sky
 	Fog_EnableGFog(); //setup for Sky
-
 }
 
 //===============================================================

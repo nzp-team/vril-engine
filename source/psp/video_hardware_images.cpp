@@ -1088,6 +1088,34 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	return texture_index;
 }
 
+// Hacky thing to only load a top half of an image for skybox sides, hard to imagine other use for this
+int loadskyboxsideimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter)
+{
+	int texture_index;
+	byte *data;
+
+	int hunk_start = Hunk_LowMark();
+	data = loadimagepixels (filename, complain, matchwidth, matchheight);
+	int hunk_stop = Hunk_LowMark();
+
+	if(!data)
+	{
+		return 0;
+	}
+
+	int newheight = image_height * 0.5;
+	
+	texture_index = GL_LoadImages (filename, image_width, newheight, data, qtrue, filter, 0, 4);
+
+	// Only free the hunk if it was used.
+	if (hunk_start != hunk_stop)
+		Hunk_FreeToLowMark(hunk_start);
+	else
+		free(data);
+
+	return texture_index;
+}
+
 /*
 =============
 loadrgbafrompal
