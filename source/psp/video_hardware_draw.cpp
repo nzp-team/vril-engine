@@ -1298,7 +1298,7 @@ void Draw_Crosshair (void)
 	}
 
 
-	if (cl.stats[STAT_HEALTH] < 20)
+	if (!crosshair.value)
 		return;
 
 	if (!crosshair_opacity)
