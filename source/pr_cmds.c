@@ -3255,6 +3255,20 @@ void PF_GrenadePulse(void)
 	MSG_WriteByte (&client->message, svc_pulse);
 }
 
+/*
+=================
+PF_MaxZombies
+
+Returns the total number of zombies
+the platform can have out at once.
+
+nzp_maxai()
+=================
+*/
+void PF_MaxZombies(void)
+{
+	G_FLOAT(OFS_RETURN) = 12;
+}
 
 /*
 =================
@@ -3591,7 +3605,8 @@ ebfs_builtin_t pr_ebfs_builtins[] =
 
   { 500, "songegg", PF_SongEgg },
   {	501, "nzp_maxammo", PF_MaxAmmo },
-  { 502, "grenade_pulse", PF_GrenadePulse }
+  { 502, "grenade_pulse", PF_GrenadePulse },
+  { 503, "nzp_maxai", PF_MaxZombies }
 
 // 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  end
 
