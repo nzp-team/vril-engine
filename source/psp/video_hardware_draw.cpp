@@ -1319,7 +1319,7 @@ void Draw_Crosshair (void)
         Draw_Pic ((vid.width - hitmark->width)/2,(vid.height - hitmark->height)/2, hitmark);
 
 	// Make sure to do this after hitmark drawing.
-	if (cl.stats[STAT_ZOOM] == 2)
+	if (cl.stats[STAT_ZOOM] == 2 || cl.stats[STAT_ZOOM] == 1)
 		return;
 
 	if (!crosshair_opacity)
@@ -1421,22 +1421,22 @@ void Draw_Crosshair (void)
 		// Left
 		x_value = x_center - crosshair_offset_step;
 		y_value = y_center;
-		Draw_FillByColor(x_value, y_value, 3, 1, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
+		Draw_FillByColor(x_value, y_value, 3, 1, GU_RGBA(255, 255, 255, 255));
 
 		// Right
 		x_value = x_center + crosshair_offset_step - 2;
 		y_value = y_center;
-		Draw_FillByColor(x_value, y_value, 3, 1, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
+		Draw_FillByColor(x_value, y_value, 3, 1, GU_RGBA(255, 255, 255, 255));
 
 		// Top
 		x_value = x_center;
 		y_value = y_center - crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
+		Draw_FillByColor(x_value, y_value, 1, 3, GU_RGBA(255, 255, 255, 255));
 
 		// Bottom
 		x_value = x_center;
 		y_value = y_center + crosshair_offset_step - 3;
-		Draw_FillByColor(x_value, y_value, 1, 3, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
+		Draw_FillByColor(x_value, y_value, 1, 3, GU_RGBA(255, 255, 255, 255));
 	}
 }
 
