@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern 	cvar_t	bgmtype;
 
 extern 	qboolean 	domaxammo;
+qboolean 			crosshair_pulse_grenade;
 
 extern int EN_Find(int num,char *string);
 
@@ -79,6 +80,7 @@ char *svc_strings[] =
     "svc_bspdecal", //42     // [string] name [byte] decal_size [coords] pos
     "svc_achievement", //43
 	"svc_maxammo" //44
+	//"svc_pulse" //45
 };
 
 //=============================================================================
@@ -1225,6 +1227,11 @@ void CL_ParseServerMessage (void)
 		case svc_maxammo:
 			domaxammo = true;
 			break;
+
+		case svc_pulse:
+			crosshair_pulse_grenade = true;
+			break;
+
 		case svc_stufftext:
 			Cbuf_AddText (MSG_ReadString ());
 			break;

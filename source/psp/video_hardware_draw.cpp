@@ -1290,6 +1290,8 @@ Draw_Crosshair
 
 extern float crosshair_opacity;
 extern cvar_t cl_crosshair_debug;
+extern cvar_t crosshair;
+extern qboolean crosshair_pulse_grenade;
 void Draw_Crosshair (void)
 {
 	if (cl_crosshair_debug.value) {
@@ -1297,8 +1299,27 @@ void Draw_Crosshair (void)
 		Draw_FillByColor(0, vid.height/2, 480, 1, GU_RGBA(0, 255, 0, 255));
 	}
 
+	if (cl.stats[STAT_HEALTH] <= 20)
+		return;
 
-	if (!crosshair.value)
+	// The scope was originally a 480x272 graphic to fit the screen..
+	// but this is a total waste of VRAM.. 1mB down to 256kB lmao
+	if (cl.stats[STAT_ZOOM] == 2) {
+		// Draw the Scope
+		Draw_Pic (112, 7, sniper_scope);
+
+		// And its borders
+		Draw_FillByColor(0, 0, 480, 7, GU_RGBA(0, 0, 0, 255)); // Top
+		Draw_FillByColor(0, 263, 480, 9, GU_RGBA(0, 0, 0, 255)); // Bottom
+		Draw_FillByColor(0, 7, 112, 256, GU_RGBA(0, 0, 0, 255)); // Left
+		Draw_FillByColor(368, 7, 112, 256, GU_RGBA(0, 0, 0, 255)); // Right
+	}
+		
+   	if (Hitmark_Time > sv.time)
+        Draw_Pic ((vid.width - hitmark->width)/2,(vid.height - hitmark->height)/2, hitmark);
+
+	// Make sure to do this after hitmark drawing.
+	if (cl.stats[STAT_ZOOM] == 2)
 		return;
 
 	if (!crosshair_opacity)
@@ -1333,19 +1354,16 @@ void Draw_Crosshair (void)
 		}
     }
 
-	if (cl.stats[STAT_ACTIVEWEAPON] == W_M2 || cl.stats[STAT_ACTIVEWEAPON] == W_TESLA || cl.stats[STAT_ACTIVEWEAPON] == W_DG3)
-	{
-		Draw_CharacterRGBA((vid.width)/2-4, (vid.height)/2, 'O', 255, col, col, crosshair_opacity);
-	}
-	else if (crosshair.value == 1 && cl.stats[STAT_ZOOM] != 1 && cl.stats[STAT_ZOOM] != 2 && cl.stats[STAT_ACTIVEWEAPON] != W_PANZER)
-    {
-        int x_value, y_value;
-		int x_center, y_center;
+	int x_value, y_value;
+	int x_center, y_center;
+	int crosshair_offset;
 
+	// Standard crosshair (+)
+	if (crosshair.value == 1) {
 		x_center = vid.width/2;
 		y_center = vid.height/2;
 
-        int crosshair_offset = CrossHairWeapon() + cur_spread;
+        crosshair_offset = CrossHairWeapon() + cur_spread;
 		if (CrossHairMaxSpread() < crosshair_offset || croshhairmoving)
 			crosshair_offset = CrossHairMaxSpread();
 
@@ -1369,32 +1387,57 @@ void Draw_Crosshair (void)
 
 		// Top
 		x_value = x_center;
-		y_value = y_center - crosshair_offset;
+		y_value = y_center - crosshair_offset_step;
 		Draw_FillByColor(x_value, y_value, 1, 3, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
 
 		// Bottom
 		x_value = x_center;
-		y_value = y_center + crosshair_offset - 3;
+		y_value = y_center + crosshair_offset_step - 3;
 		Draw_FillByColor(x_value, y_value, 1, 3, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
-    }
-    else if (crosshair.value && cl.stats[STAT_ZOOM] != 1 && cl.stats[STAT_ZOOM] != 2)
-		Draw_CharacterRGBA((vid.width - 8)/2, (vid.height - 8)/2, '.', 255, col, col, crosshair_opacity);
-
-	// The scope was originally a 480x272 graphic to fit the screen..
-	// but this is a total waste of VRAM.. 1mB down to 256kB lmao
-	if (cl.stats[STAT_ZOOM] == 2) {
-		// Draw the Scope
-		Draw_Pic (112, 7, sniper_scope);
-
-		// And its borders
-		Draw_FillByColor(0, 0, 480, 7, GU_RGBA(0, 0, 0, 255)); // Top
-		Draw_FillByColor(0, 263, 480, 9, GU_RGBA(0, 0, 0, 255)); // Bottom
-		Draw_FillByColor(0, 7, 112, 256, GU_RGBA(0, 0, 0, 255)); // Left
-		Draw_FillByColor(368, 7, 112, 256, GU_RGBA(0, 0, 0, 255)); // Right
 	}
-		
-   	if (Hitmark_Time > sv.time)
-        Draw_Pic ((vid.width - hitmark->width)/2,(vid.height - hitmark->height)/2, hitmark);
+	// Area of Effect (o)
+	else if (crosshair.value == 2) {
+		Draw_CharacterRGBA((vid.width)/2-4, (vid.height)/2, 'O', 255, col, col, crosshair_opacity);
+	}
+	// Dot crosshair (.)
+	else if (crosshair.value == 3) {
+		Draw_CharacterRGBA((vid.width - 8)/2, (vid.height - 8)/2, '.', 255, col, col, crosshair_opacity);
+	}
+	// Grenade crosshair
+	else if (crosshair.value == 4) {
+		x_center = vid.width/2;
+		y_center = vid.height/2;
+
+		if (crosshair_pulse_grenade) {
+			crosshair_offset_step = 0;
+			cur_spread = 2;
+		}
+
+		crosshair_pulse_grenade = qfalse;
+
+        crosshair_offset = 12 + cur_spread;
+		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5;
+
+		// Left
+		x_value = x_center - crosshair_offset_step;
+		y_value = y_center;
+		Draw_FillByColor(x_value, y_value, 3, 1, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
+
+		// Right
+		x_value = x_center + crosshair_offset_step - 2;
+		y_value = y_center;
+		Draw_FillByColor(x_value, y_value, 3, 1, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
+
+		// Top
+		x_value = x_center;
+		y_value = y_center - crosshair_offset_step;
+		Draw_FillByColor(x_value, y_value, 1, 3, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
+
+		// Bottom
+		x_value = x_center;
+		y_value = y_center + crosshair_offset_step - 3;
+		Draw_FillByColor(x_value, y_value, 1, 3, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
+	}
 }
 
 /*

@@ -3232,6 +3232,29 @@ void PF_MaxAmmo(void)
 	MSG_WriteByte(&sv.reliable_datagram, svc_maxammo);
 }
 
+/*
+=================
+PF_GrenadePulse
+
+pulses grenade crosshair
+
+grenade_pulse()
+=================
+*/
+void PF_GrenadePulse(void)
+{
+	client_t	*client;
+	int			entnum;
+
+	entnum = G_EDICTNUM(OFS_PARM0);
+
+	if (entnum < 1 || entnum > svs.maxclients)
+		return;
+
+	client = &svs.clients[entnum-1];
+	MSG_WriteByte (&client->message, svc_pulse);
+}
+
 
 /*
 =================
@@ -3567,7 +3590,8 @@ ebfs_builtin_t pr_ebfs_builtins[] =
   { 442, "argv", PF_ArgV },
 
   { 500, "songegg", PF_SongEgg },
-  {	501, "nzp_maxammo", PF_MaxAmmo }
+  {	501, "nzp_maxammo", PF_MaxAmmo },
+  { 502, "grenade_pulse", PF_GrenadePulse }
 
 // 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  end
 
