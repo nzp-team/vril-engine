@@ -636,7 +636,7 @@ void HUD_Rounds (void)
 		HUD_WorldText(value2);
 		
 		if (has_chaptertitle == false)
-			Draw_ColoredString(6, vid.height/2 + 40, "'Nazi Zombies'", 255, 255, 255, value2, 1);
+			Draw_ColoredString(6, vid.height/2 + 50, "'Nazi Zombies'", 255, 255, 255, value2, 1);
 		
 		value -= cl.time * 0.4;
 		value2 += cl.time * 0.4;
@@ -652,7 +652,7 @@ void HUD_Rounds (void)
 		HUD_WorldText(255);
 		
 		if (has_chaptertitle == false)
-			Draw_ColoredString(4, vid.height/2 + 40, "'Nazi Zombies'", 255, 255, 255, 255, 1);
+			Draw_ColoredString(4, vid.height/2 + 50, "'Nazi Zombies'", 255, 255, 255, 255, 1);
 
 		value2 += cl.time * 0.4;
 
@@ -666,7 +666,7 @@ void HUD_Rounds (void)
 		HUD_WorldText(value2);
 		
 		if (has_chaptertitle == false)
-			Draw_ColoredString(4, vid.height/2 + 40, "'Nazi Zombies'", 255, 255, 255, value2, 1);
+			Draw_ColoredString(4, vid.height/2 + 50, "'Nazi Zombies'", 255, 255, 255, value2, 1);
 
 		value2 -= cl.time * 0.4;
 
