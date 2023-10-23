@@ -3870,6 +3870,7 @@ void R_RenderScene (void)
 R_Clear
 =============
 */
+extern char	skybox_name[32];
 void R_Clear (void)
 {
     if(r_refdef.fog_end > 0 && r_skyfog.value)
@@ -3877,7 +3878,15 @@ void R_Clear (void)
         sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
         sceGuClearColor(GU_COLOR(r_refdef.fog_red * 0.01f,r_refdef.fog_green * 0.01f,r_refdef.fog_blue * 0.01f,1.0f));
     }
-    else sceGuClear(GU_DEPTH_BUFFER_BIT);
+    else
+	{
+		if (!skybox_name[0]) {
+			byte *sky_color = StringToRGB (r_skycolor.string);
+			sceGuClearColor(GU_RGBA(sky_color[0], sky_color[1], sky_color[2], 255));
+		}
+
+		sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
+	}
 
 	if(r_shadows.value)
 	{

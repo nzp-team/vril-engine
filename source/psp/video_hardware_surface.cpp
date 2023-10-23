@@ -1588,7 +1588,9 @@ void R_DrawWorld (void)
 	num_lightmapped_faces = 0;
 
 	R_ClearSkyBox ();
-	if (strcmp(skybox_name, "") != 0)
+
+	// cypress -- was a strcmp, changed for speed.
+	if (skybox_name[0])
 		R_DrawSkyBox();
 
 	R_RecursiveWorldNode (cl.worldmodel->nodes, false);
