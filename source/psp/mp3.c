@@ -58,6 +58,7 @@ static int mp3_src_size = 0;
 
 static int decode_thread(SceSize args, void *argp);
 
+extern int cd_loop;
 
 static void psp_sem_lock(SceUID sem)
 {
@@ -96,12 +97,17 @@ static int read_next_frame(int which_buffer)
       mp3_src_pos += bytes_read;
       if (bytes_read < MIN_INFRAME_SIZE)
       {
-         // Baker: end of file hit, restart + re-read
-         mp3_src_pos = 0;
-         sceIoLseek32(mp3_handle, mp3_src_pos, PSP_SEEK_SET);
-         bytes_read = sceIoRead(mp3_handle, mp3_src_buffer[which_buffer], sizeof(mp3_src_buffer[which_buffer]));
-         mp3_src_pos += bytes_read;
+		// cypress -- don't always loop.
+		if (cd_loop == 0) {
+			mp3_job_started = 0;
+			return 0;
+		}
 
+        // Baker: end of file hit, restart + re-read
+        mp3_src_pos = 0;
+        sceIoLseek32(mp3_handle, mp3_src_pos, PSP_SEEK_SET);
+        bytes_read = sceIoRead(mp3_handle, mp3_src_buffer[which_buffer], sizeof(mp3_src_buffer[which_buffer]));
+        mp3_src_pos += bytes_read;
       }
       frame_offset = find_sync_word(mp3_src_buffer[which_buffer], bytes_read);
       if (frame_offset < 0) {

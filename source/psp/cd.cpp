@@ -53,13 +53,14 @@ namespace quake
 		static bool	 paused   = false;
 		static bool	 enabled  = false;
 		static float cdvolume = 0;
-		static int   cd_loop = 0;
 		static char* last_track_string = "";
 	}
 }
 
 using namespace quake;
 using namespace quake::cd;
+
+int cd_loop = 0;
 
 static void CD_f (void)
 {
