@@ -1226,7 +1226,7 @@ void Mod_LoadFaces (lump_t *l)
 		else
 			out->samples = loadmodel->lightdata + (i);
 
-		// motolegacy -- moved from video_hardware_surface
+		// cypress -- moved from video_hardware_surface
 		// modified to use new TEXFLAG hacky fields and have
 		// surfs use the same shabang.
 		const char* tex_name = out->texinfo->texture->name;
@@ -1269,7 +1269,7 @@ void Mod_LoadFaces (lump_t *l)
 
 			continue;
 		}
-		// motolegacy -- end modification
+		// cypress -- end modification
 	}
 }
 
@@ -2512,7 +2512,7 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	end = Hunk_LowMark ();
 	total = end - start;
 
-	// motolegacy -- in rare instances the viewmodel is able to fuck this
+	// cypress -- in rare instances the viewmodel is able to fuck this
 	// up and try to allocate.. again.. let's tell it no and add this bound
 	if (!mod->cache.data)
 		Cache_Alloc (&mod->cache, total, loadname);

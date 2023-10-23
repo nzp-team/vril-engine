@@ -299,7 +299,7 @@ extern  cvar_t	r_decal_sparks;
 extern  cvar_t	r_decal_explosions;
 extern  cvar_t  r_coronas;
 
-// MotoLegacy - simplified cvars for decals/particles (5/27/2020)
+// cypress - simplified cvars for decals/particles (5/27/2020)
 // almost 3 years, wowza! - ivy~ (03 feb 2023)
 extern cvar_t 	r_runqmbparticles;
 

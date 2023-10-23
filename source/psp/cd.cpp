@@ -158,7 +158,7 @@ static void CD_f (void)
 		Con_Printf("Based On sceMp3 Lib\n");
 		Con_Printf("Additional fixed by\n");
 		Con_Printf("dr_mabuse1981 and Baker.\n");
-		Con_Printf("string support: motolegacy.\n");
+		Con_Printf("string support: cypress.\n");
 		Con_Printf("\n");
 		return;
 	}

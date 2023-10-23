@@ -60,11 +60,6 @@ int 	sys_psp_model;
 
 void Sys_ReadCommandLineFile (char* netpath);
 
-/*
-	MOTO - Can't go above heap of 10MB on PHAT models.. which is an issue, in theory 
-	we should be able to cap at a heap size 14MB.. oh well.
-*/
-
 #define printf	pspDebugScreenPrintf
 #define MIN_HEAP_MB	6
 #define MAX_HEAP_MB (PSP_HEAP_SIZE_MB-1)

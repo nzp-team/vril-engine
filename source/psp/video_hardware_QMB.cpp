@@ -2421,7 +2421,7 @@ float pap_detr(int weapon)
 	return 0;
 }
 
-// MotoLegacy - Raygun barrel trail
+// cypress - Raygun barrel trail
 void QMB_RayFlash(vec3_t org, float weapon)
 {
 	// if we're ADS, just flat out end here to avoid useless calcs/defs

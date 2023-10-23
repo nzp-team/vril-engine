@@ -609,7 +609,7 @@ void HUD_Rounds (void)
 	x_offset = 0;
 	savex = 0;
 
-	// Round and Title text - moto
+	// Round and Title text - cypress
 	// extra creds to scatterbox for some x/y vals
 	// ------------------
 	// First, fade from white to red, ~3s duration
@@ -676,7 +676,7 @@ void HUD_Rounds (void)
 		}
 	}
 	// ------------------
-	// End Round and Title text - moto
+	// End Round and Title text - cypress
 
 	if (cl.stats[STAT_ROUNDCHANGE] == 1)//this is the rounds icon at the middle of the screen
 	{

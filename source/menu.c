@@ -3584,7 +3584,7 @@ void M_Credits_Draw (void)
 	Draw_ColoredString(10, 75, "Biodude:         Sounds", 255, 255, 255, 255, 1);
 	Draw_ColoredString(10, 85, "Dr_Mabuse1981:   Coding", 255, 255, 255, 255, 1);
 	Draw_ColoredString(10, 95, "Naievil:         Coding, NX Maintaining", 255, 255, 255, 255, 1);
-	Draw_ColoredString(10, 105, "MotoLegacy:      Coding, GFX, Music", 255, 255, 255, 255, 1);
+	Draw_ColoredString(10, 105, "Cypress:      Coding, GFX, Music", 255, 255, 255, 255, 1);
 	Draw_ColoredString(10, 115, "Derped_Crusader: Models, GFX", 255, 255, 255, 255, 1);
 
 	Draw_ColoredString(10, 135, "Special Thanks:", 255, 255, 255, 255, 1);

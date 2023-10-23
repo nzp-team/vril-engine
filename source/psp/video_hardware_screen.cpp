@@ -969,7 +969,7 @@ char *ReturnLoadingtex (void)
             return  "Also check out \"No Bugs Allowed\" for the PSP!";
             break;
         case 35:
-            return 	"MotoLegacy, or \"Ivy\", is from the USA.";
+            return 	"Cypress, or \"Ivy\", is from the USA.";
             break;
         case 36:
             return  "Zombies don't like bullets.";

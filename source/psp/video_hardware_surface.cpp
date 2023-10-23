@@ -935,7 +935,7 @@ void R_RenderBrushPoly (msurface_t *fa)
 	if (verts_count <= 0)
 		return;
 
-	// motolegacy -- use our new texflag hack
+	// cypress -- use our new texflag hack
 	if (fa->flags & TEXFLAG_NODRAW)
 		return;
 
@@ -948,7 +948,7 @@ void R_RenderBrushPoly (msurface_t *fa)
 			DrawGLPoly(fa->polys); 
 			break;
 	}
-	// motolegacy -- end texflags
+	// cypress -- end texflags
 
 	// Manage lightmap chain
 	if (num_lightmapped_faces < MAX_VISIBLE_LIGHTMAPPED_FACES)

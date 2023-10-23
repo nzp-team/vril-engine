@@ -163,7 +163,7 @@ cvar_t	r_flametype	        = {"r_flametype",        "2",qtrue};
 //Shpuld
 cvar_t  r_model_brightness = { "r_model_brightness", "1", qtrue};   // Toggle high brightness model lighting
 
-//MotoLegacy
+//cypress
 cvar_t 	r_runqmbparticles = {"r_runqmbparticles", 	"1", qtrue};
 
 extern cvar_t cl_maxfps;
@@ -1262,7 +1262,7 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 	}
 
 	// HACK: if we're a certain distance away, don't bother blending
-	// motolegacy -- Lets not care about Z (up).. chances are they're out of the frustum anyway
+	// cypress -- Lets not care about Z (up).. chances are they're out of the frustum anyway
 	int dist_x = (cl.viewent.origin[0] - e->origin[0]);
 	int dist_y = (cl.viewent.origin[1] - e->origin[1]);
 	int distance_from_client = (int)((dist_x) * (dist_x) + (dist_y) * (dist_y)); // no use sqrting, just slows us down.

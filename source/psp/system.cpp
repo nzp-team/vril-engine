@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 //
 // 12/5/2020 - Use ADQuake's system.cpp and its move from std to sceIO for file I/O
-// because std::fclose() is bunked -- motolegacy
+// because std::fclose() is bunked -- cypress
 // creds to st1x51
 //
 

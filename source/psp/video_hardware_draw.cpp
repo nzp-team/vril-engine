@@ -589,7 +589,7 @@ void Draw_Character (int x, int y, int num)
 Draw_CharacterRGBA
 
 This is the same as Draw_Character, but with RGBA color codes.
-- MotoLegacy
+- cypress
 ================
 */
 extern cvar_t scr_coloredtext;
@@ -1458,7 +1458,7 @@ static int HexToInt(char c)
 		return -1;
 }
 
-// Creds to UP Team for scale code - Moto
+// Creds to UP Team for scale code - cypress
 void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, float a, int scale)
 {
 	int num;
@@ -1480,7 +1480,7 @@ void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, flo
 	for ( ; *text; text++)
 	{
 
-		// MotoLegacy - Added 0-255 RGBA support (5/26/2020)
+		// cypress - Added 0-255 RGBA support (5/26/2020)
 		sceGuColor(GU_COLOR(r/255, g/255, b/255, a/255));
 
 		num = *text & 255;

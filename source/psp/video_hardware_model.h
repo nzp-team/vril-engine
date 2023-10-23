@@ -371,7 +371,7 @@ typedef struct {
 	maliasframedesc_t	frames[1];	// variable sized
 } aliashdr_t;
 
-// MOTO - ADQuake has MAXALIASVERTS set to 5120.. why?
+// cypress - ADQuake has MAXALIASVERTS set to 5120.. why?
 #define	MAXALIASVERTS	2048
 #define	MAXALIASFRAMES	256
 #define	MAXALIASTRIS	2048
