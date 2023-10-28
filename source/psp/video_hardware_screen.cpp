@@ -353,6 +353,32 @@ char *GetUseButtonL ()
 	return " ";
 }
 
+char *GetGrenadeButtonL ()
+{
+	int		j;
+	int		l;
+	char	*b;
+	l = strlen("+grenade");
+
+	for (j=0 ; j<256 ; j++)
+	{
+		b = keybindings[j];
+		if (!b)
+			continue;
+		if (!strncmp (b, "+grenade", l) )
+		{
+			if (!strcmp(Key_KeynumToString(j), "SELECT") ||
+				!strcmp(Key_KeynumToString(j), "LTRIGGER") ||
+				!strcmp(Key_KeynumToString(j), "RTRIGGER") ||
+				!strcmp(Key_KeynumToString(j), "HOME"))
+				return "  ";
+			else
+				return " ";
+		}
+	}
+	return " ";
+}
+
 char *GetPerkName (int perk)
 {
 	switch (perk)

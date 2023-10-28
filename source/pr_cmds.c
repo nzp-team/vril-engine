@@ -3257,6 +3257,31 @@ void PF_GrenadePulse(void)
 
 /*
 =================
+PF_BettyPrompt
+
+draws status on hud on
+how to use bouncing
+betty.
+
+nzp_bettyprompt()
+=================
+*/
+void PF_BettyPrompt(void)
+{
+	client_t	*client;
+	int			entnum;
+
+	entnum = G_EDICTNUM(OFS_PARM0);
+
+	if (entnum < 1 || entnum > svs.maxclients)
+		return;
+
+	client = &svs.clients[entnum-1];
+	MSG_WriteByte (&client->message, svc_bettyprompt);
+}
+
+/*
+=================
 PF_MaxZombies
 
 Returns the total number of zombies
@@ -3606,7 +3631,8 @@ ebfs_builtin_t pr_ebfs_builtins[] =
   { 500, "songegg", PF_SongEgg },
   {	501, "nzp_maxammo", PF_MaxAmmo },
   { 502, "grenade_pulse", PF_GrenadePulse },
-  { 503, "nzp_maxai", PF_MaxZombies }
+  { 503, "nzp_maxai", PF_MaxZombies },
+  { 504, "nzp_bettyprompt", PF_BettyPrompt }
 
 // 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  end
 
