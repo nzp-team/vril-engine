@@ -1383,6 +1383,36 @@ void PF_stof (void)
 
 /*
 =================
+PF_strtolower
+
+string strtolower (string)
+=================
+*/
+void PF_strtolower(void)
+{
+	char *s;
+
+	s = G_STRING(OFS_PARM0);
+
+	pr_string_temp[0] = 0;
+	if (strlen(s) < PR_MAX_TEMPSTRING)
+	{
+		strcpy(pr_string_temp, s);
+	}
+	else
+	{
+		strncpy(pr_string_temp, s, PR_MAX_TEMPSTRING);
+		pr_string_temp[PR_MAX_TEMPSTRING-1] = 0;
+	}
+
+	for(int i = 0; i < strlen(s); i++)
+  		pr_string_temp[i] = tolower(pr_string_temp[i]);
+
+	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
+}
+
+/*
+=================
 PF_stov
 
 vector stov (string)
@@ -3627,6 +3657,7 @@ ebfs_builtin_t pr_ebfs_builtins[] =
 	{ 432, "vectorvectors", PF_... },*/
   { 441, "tokenize", PF_tokenize },
   { 442, "argv", PF_ArgV },
+  { 480, "strtolower", PF_strtolower },
 
   { 500, "songegg", PF_SongEgg },
   {	501, "nzp_maxammo", PF_MaxAmmo },
