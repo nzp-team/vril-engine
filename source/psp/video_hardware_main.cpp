@@ -1990,7 +1990,7 @@ void R_DrawAliasModel (entity_t *e)
 	
 
 	// Special handling of view model to keep FOV from altering look.  Pretty good.  Not perfect but rather close.
-	if (e == &cl.viewent && scr_fov_viewmodel.value) {
+	if ((e == &cl.viewent || e == &cl.viewent2) && scr_fov_viewmodel.value) {
 		float scale = 1.0f / tan (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
 
 		const ScePspFVector3 translation = {
