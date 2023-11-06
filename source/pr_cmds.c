@@ -1250,8 +1250,8 @@ void PF_strtrim (void)
 	
   char *c;
   c = m; 
-  
-  while (c != '\0' && *c == ' ')
+
+  while (c == ' ' || c == '\t' || c == '\n' || c == '\r')
     c++;
   m = c;
   
