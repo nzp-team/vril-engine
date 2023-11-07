@@ -276,11 +276,23 @@ void CL_AdjustAngles (void)
 	//speed = speed*final_fov/original_fov;
 	//shpuld end
 
+	// ==== Aim Assist + ====
+	// cut look speed in half when facing enemy, unless
+	// mag is empty
+	if ((in_aimassist.value) && (sv_player->v.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0) {
+		speed *= 0.5;
+	}
+	// additionally, slice look speed when ADS/scopes
+	if (cl.stats[STAT_ZOOM] == 1)
+		speed *= 0.5;
+	else if (cl.stats[STAT_ZOOM] == 2)
+		speed *= 0.25;
+
 
 	if (!(in_strafe.state & 1))
 	{
-		cl.viewangles[YAW] -= speed*cl_yawspeed.value*CL_KeyState (&in_right);
-		cl.viewangles[YAW] += speed*cl_yawspeed.value*CL_KeyState (&in_left);
+		cl.viewangles[YAW] -= speed*cl_yawspeed.value*CL_KeyState (&in_right) * in_sensitivity.value;
+		cl.viewangles[YAW] += speed*cl_yawspeed.value*CL_KeyState (&in_left) * in_sensitivity.value;
 		cl.viewangles[YAW] = anglemod(cl.viewangles[YAW]);
 	}
 	if (in_klook.state & 1)
@@ -290,8 +302,8 @@ void CL_AdjustAngles (void)
 		cl.viewangles[PITCH] += speed*cl_pitchspeed.value * CL_KeyState (&in_back);
 	}
 
-	up = CL_KeyState (&in_lookup);
-	down = CL_KeyState(&in_lookdown);
+	up = CL_KeyState (&in_lookup) * in_sensitivity.value;
+	down = CL_KeyState(&in_lookdown) * in_sensitivity.value;
 
 	cl.viewangles[PITCH] -= speed*cl_pitchspeed.value * up;
 	cl.viewangles[PITCH] += speed*cl_pitchspeed.value * down;
