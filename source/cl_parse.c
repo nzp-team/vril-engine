@@ -1237,6 +1237,11 @@ void CL_ParseServerMessage (void)
 			bettyprompt_time = sv.time + 4;
 			break;
 
+		case svc_playername:
+			nameprint_time = sv.time + 11;
+			strcpy(player_name, MSG_ReadString());
+			break;
+
 		case svc_stufftext:
 			Cbuf_AddText (MSG_ReadString ());
 			break;

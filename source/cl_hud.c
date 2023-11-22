@@ -72,6 +72,9 @@ void M_DrawPic (int x, int y, qpic_t *pic);
 
 double HUD_Change_time;//hide hud when not chagned
 double bettyprompt_time;
+double nameprint_time;
+
+char player_name[16];
 
 extern cvar_t waypoint_mode;
 
@@ -1432,6 +1435,21 @@ void HUD_BettyPrompt (void)
 
 /*
 ===============
+HUD_PlayerName
+===============
+*/
+void HUD_PlayerName (void)
+{
+	int alpha = 255;
+
+	if (nameprint_time - sv.time < 1)
+		alpha = (int)((nameprint_time - sv.time)*255);
+
+	Draw_ColoredString(70, 203, player_name, 255, 255, 255, alpha, 1);
+}
+
+/*
+===============
 HUD_Draw
 ===============
 */
@@ -1466,6 +1484,9 @@ void HUD_Draw (void)
 
 	if (bettyprompt_time > sv.time)
 		HUD_BettyPrompt();
+
+	if (nameprint_time > sv.time)
+		HUD_PlayerName();
 
 	HUD_Blood();
 	HUD_Rounds();

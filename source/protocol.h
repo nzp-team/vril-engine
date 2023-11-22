@@ -152,6 +152,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define svc_maxammo 		45
 #define svc_pulse 			46
 #define svc_bettyprompt		47
+#define svc_playername 		48
 
 
 //

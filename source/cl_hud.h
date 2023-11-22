@@ -49,5 +49,7 @@ typedef struct achievement_list_s
 void Achievement_Init (void);
 extern achievement_list_t achievement_list[MAX_ACHIEVEMENTS];
 extern qpic_t *achievement_locked;
+extern char player_name[16];
+extern double nameprint_time;
 
 void HUD_Parse_Achievement (int ach);
