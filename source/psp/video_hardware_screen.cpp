@@ -1555,6 +1555,9 @@ void SCR_UpdateScreen (void)
 
 	GL_Set2D ();
 
+	if (v_gamma.value < 1)
+		Draw_FillByColor(0, 0, 480, 272, GU_RGBA(255, 255, 255, (int)((1 - v_gamma.value)*255)));
+
 	Draw_Crosshair ();
 
 	//muff - to show FPS on screen
