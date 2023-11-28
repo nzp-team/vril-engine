@@ -1300,7 +1300,19 @@ void Fog_SetColorForSkyE (void);
 
 void DrawSkyFogBlend (float skydepth) {
 	float skyfogblend = r_skyfogblend.value;
-	if (skyfogblend <= 0) return;
+
+	// Don't do anything if the map doesnt have fog
+	if ((skyfogblend <= 0) || (r_refdef.fog_start <= 0 && r_refdef.fog_end <= 0)) {
+		sceGuEnable(GU_TEXTURE_2D);
+		sceGuDisable(GU_BLEND);
+		//sceGuDepthRange(0, 65535);
+		Fog_SetColorForSkyE(); //setup for Sky
+		Fog_EnableGFog(); //setup for Sky
+
+		sceGuDepthMask(false);
+		sceGuEnable(GU_DEPTH_TEST);
+		return;
+	}
 
 	float endheight = skydepth * skyfogblend;
 	float startheight = MIN(skydepth * 0.075f, endheight * 0.3f);
