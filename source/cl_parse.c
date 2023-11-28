@@ -1143,6 +1143,7 @@ CL_ParseServerMessage
 =====================
 */
 extern double bettyprompt_time;
+extern qboolean doubletap_has_damage_buff;
 void CL_ParseServerMessage (void)
 {
 	int			cmd;
@@ -1231,6 +1232,10 @@ void CL_ParseServerMessage (void)
 
 		case svc_pulse:
 			crosshair_pulse_grenade = true;
+			break;
+
+		case svc_doubletap:
+			doubletap_has_damage_buff = MSG_ReadByte();
 			break;
 
 		case svc_bettyprompt:

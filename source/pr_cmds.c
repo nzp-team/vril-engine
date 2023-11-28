@@ -3301,6 +3301,34 @@ void PF_GrenadePulse(void)
 
 /*
 =================
+PF_SetDoubleTapVersion
+
+Server tells client which HUD icon
+to draw for Double-Tap (damage buff
+v.s. just rate of fire enhancement).
+
+nzp_setdoubletapver()
+=================
+*/
+void PF_SetDoubleTapVersion(void)
+{
+	client_t	*client;
+	int			entnum;
+	int 		state;
+
+	entnum = G_EDICTNUM(OFS_PARM0);
+	state = G_FLOAT(OFS_PARM1);
+
+	if (entnum < 1 || entnum > svs.maxclients)
+		return;
+
+	client = &svs.clients[entnum-1];
+	MSG_WriteByte (&client->message, svc_doubletap);
+	MSG_WriteByte (&client->message, state);
+}
+
+/*
+=================
 PF_BettyPrompt
 
 draws status on hud on
@@ -3707,7 +3735,8 @@ ebfs_builtin_t pr_ebfs_builtins[] =
   { 502, "grenade_pulse", PF_GrenadePulse },
   { 503, "nzp_maxai", PF_MaxZombies },
   { 504, "nzp_bettyprompt", PF_BettyPrompt },
-  { 505, "nzp_setplayername", PF_SetPlayerName }
+  { 505, "nzp_setplayername", PF_SetPlayerName },
+  { 506, "nzp_setdoubletapver", PF_SetDoubleTapVersion }
 
 // 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  end
 
