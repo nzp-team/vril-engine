@@ -1971,7 +1971,7 @@ void R_DrawAliasModel (entity_t *e)
 	//
 	if(doZHack && specChar == '%')
 	{
-		if(clmodel->name[strlen(clmodel->name) - 6] == 'c')
+		if(clmodel->name[12] == 'c')
 			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zcfull.mdl"));
 		else
 			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zfull.mdl"));
