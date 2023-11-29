@@ -2354,6 +2354,9 @@ float pap_detr(int weapon)
 	case W_PULVERIZER:
 		return 1;
 		break;
+	case W_KOLLIDER:
+		return 1;
+		break;
     case W_M1000:
       return 1;
       break;
