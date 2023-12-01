@@ -1372,23 +1372,27 @@ void W_stov (char *v, vec3_t out)
 
 
 waypoint_ai waypoints[MAX_WAYPOINTS];
-void Load_Waypoint ()
-{
+int n_waypoints;
+
+void Load_Waypoint () {
 	char temp[64];
-	int i, p, s;
+	int p, s;
 	vec3_t d;
 	int h = 0;
 
 	h = W_fopen();
 
 	w_string_temp = Z_Malloc(128);
-	if (h == -1)
-	{
+	if (h == -1) {
 		Con_DPrintf("No waypoint file (%s/maps/%s.way) found\n", com_gamedir, sv.name);
 		return;
 	}
-	for (i = 0; i < MAX_WAYPOINTS; i++)
-	{
+	
+	// ---------------------------------------
+	// Clear the structs
+	// ---------------------------------------
+	n_waypoints = 0;
+	for (int i = 0; i < MAX_WAYPOINTS; i++) {
 		waypoints[i].used = 0;
 		waypoints[i].id = -1;
 		for (p = 0; p < 8; p++) {
@@ -1396,44 +1400,39 @@ void Load_Waypoint ()
 			waypoints[i].target_id[p] = -1;
 		}
 	}
-
-	for (i = 0; i < MAX_EDICTS; i++)
-	{
+	for (int i = 0; i < MAX_EDICTS; i++) {
 		closest_waypoints[i] = -1;
 	}
+	// ---------------------------------------
 
-	i = 0;
+
+	int i;
 	Con_DPrintf("Loading waypoints\n");
-	while (1)
-	{
-		if (strncmp(W_fgets (h), "Waypoint", 8))
-		{
+	while (1) {
+		if (strncmp(W_fgets (h), "Waypoint", 8)) {
 			Con_DPrintf("Last waypoint\n");
 			break;
 		}
-		else
-		{
+		else {
 			W_fgets (h);
-
 			W_stov (W_substring (W_fgets (h), 9, 20), d);
-
 			strcpy(temp, W_substring (W_fgets (h), 5, 20));
-
 			i = atoi (temp);
-
-			if (i >= MAX_WAYPOINTS)
+			if (i >= MAX_WAYPOINTS) {
 				Sys_Error ("Waypoint with id %d past MAX_WAYPOINTS {%i)\n", i, MAX_WAYPOINTS);
+			}
 
 			// what's the point of id and index being the same?
 			waypoints[i].id = i;
 			VectorCopy (d, waypoints[i].origin);
-
 			strcpy(waypoints[i].special, W_substring (W_fgets (h), 10, 20));
 
-			if (waypoints[i].special[0])
+			if (waypoints[i].special[0]) {
 				waypoints[i].open = 0;
-			else
+			}
+			else {
 				waypoints[i].open = 1;
+			}
 			
 			// Note: this block makes sure that empty/invalid neighbors are always packed to the end
 			// In other words, when iterating from start, first empty means rest are empty too.
@@ -1447,69 +1446,68 @@ void Load_Waypoint ()
 					slot++;
 				}
 			}
-
 			W_fgets (h);
 			W_fgets (h);
 			waypoints[i].used = 1;
-
-
 			Con_DPrintf("Waypoint (%i) id: %i, tag: %s, open: %i, target: %i, target2: %i, target3: %i, target4: %i, target5: %i, target6: %i, target7: %i, target8: %i\n",
-			i,
-			waypoints[i].id,
-			waypoints[i].special,
-			waypoints[i].open,
-			waypoints[i].target[0],
-			waypoints[i].target[1],
-			waypoints[i].target[2],
-			waypoints[i].target[3],
-			waypoints[i].target[4],
-			waypoints[i].target[5],
-			waypoints[i].target[6],
-			waypoints[i].target[7]);
+				i,
+				waypoints[i].id,
+				waypoints[i].special,
+				waypoints[i].open,
+				waypoints[i].target[0],
+				waypoints[i].target[1],
+				waypoints[i].target[2],
+				waypoints[i].target[3],
+				waypoints[i].target[4],
+				waypoints[i].target[5],
+				waypoints[i].target[6],
+				waypoints[i].target[7]
+			);
 		}
 	}
-	Con_DPrintf("Total waypoints: %i\n", i);
-	for (i = 0; i < MAX_WAYPOINTS; i++) //for sake of saving time later we are now going to save each targets array position and distace to each waypoint
-	{
-		for (p = 0; waypoints[i].target[p]; p++)
-		{
-			if (waypoints[i].target[p] < 0) break;
+	n_waypoints = i;
+	Con_DPrintf("Total waypoints: %i\n", n_waypoints);
 	
-			for (s = 0; s < MAX_WAYPOINTS; s++)
-			{
-				if (waypoints[i].target[p] == s)
-				{
+	//for sake of saving time later we are now going to save each targets array position and distace to each waypoint
+	for (i = 0; i < MAX_WAYPOINTS; i++) {
+		for (p = 0; waypoints[i].target[p]; p++) {
+			if (waypoints[i].target[p] < 0) {
+				break;
+			}
+			for (s = 0; s < MAX_WAYPOINTS; s++) {
+				if (waypoints[i].target[p] == s) {
 					waypoints[i].dist[p] = VecLength2(waypoints[s].origin, waypoints[i].origin);
 					break;
 				}
 			}
 		}
 		Con_DPrintf("Waypoint (%i)\n target: %i (%i, %f),\n target2: %i (%i, %f),\n target3: %i (%i, %f),\n target4: %i (%i, %f),\n target5: %i (%i, %f),\n target6: %i (%i, %f),\n target7: %i (%i, %f),\n target8: %i (%i, %f)\n",
-		waypoints[i].id,
-		waypoints[i].target[0],
-		waypoints[i].target_id[0],
-		waypoints[i].dist[0],
-		waypoints[i].target[1],
-		waypoints[i].target_id[1],
-		waypoints[i].dist[1],
-		waypoints[i].target[2],
-		waypoints[i].target_id[2],
-		waypoints[i].dist[2],
-		waypoints[i].target[3],
-		waypoints[i].target_id[3],
-		waypoints[i].dist[3],
-		waypoints[i].target[4],
-		waypoints[i].target_id[4],
-		waypoints[i].dist[4],
-		waypoints[i].target[5],
-		waypoints[i].target_id[5],
-		waypoints[i].dist[5],
-		waypoints[i].target[6],
-		waypoints[i].target_id[6],
-		waypoints[i].dist[6],
-		waypoints[i].target[7],
-		waypoints[i].target_id[7],
-		waypoints[i].dist[7]);
+			waypoints[i].id,
+			waypoints[i].target[0],
+			waypoints[i].target_id[0],
+			waypoints[i].dist[0],
+			waypoints[i].target[1],
+			waypoints[i].target_id[1],
+			waypoints[i].dist[1],
+			waypoints[i].target[2],
+			waypoints[i].target_id[2],
+			waypoints[i].dist[2],
+			waypoints[i].target[3],
+			waypoints[i].target_id[3],
+			waypoints[i].dist[3],
+			waypoints[i].target[4],
+			waypoints[i].target_id[4],
+			waypoints[i].dist[4],
+			waypoints[i].target[5],
+			waypoints[i].target_id[5],
+			waypoints[i].dist[5],
+			waypoints[i].target[6],
+			waypoints[i].target_id[6],
+			waypoints[i].dist[6],
+			waypoints[i].target[7],
+			waypoints[i].target_id[7],
+			waypoints[i].dist[7]
+		);
 	}
 	W_fclose(h);
 	//Z_Free (w_string_temp);
