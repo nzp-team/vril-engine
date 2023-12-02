@@ -1407,6 +1407,9 @@ void Load_Waypoint () {
 
 
 	int i;
+	// Keep track of the waypoint with the highest index we've loaded
+	int max_waypoint_idx = -1;
+	int n_waypoints_parsed = 0;
 	Con_DPrintf("Loading waypoints\n");
 	while (1) {
 		if (strncmp(W_fgets (h), "Waypoint", 8)) {
@@ -1424,6 +1427,10 @@ void Load_Waypoint () {
 
 			// what's the point of id and index being the same?
 			waypoints[i].id = i;
+			n_waypoints_parsed += 1;
+			if(i > max_waypoint_idx) {
+				max_waypoint_idx = i;
+			}
 			VectorCopy (d, waypoints[i].origin);
 			strcpy(waypoints[i].special, W_substring (W_fgets (h), 10, 20));
 
@@ -1465,8 +1472,9 @@ void Load_Waypoint () {
 			);
 		}
 	}
-	n_waypoints = i;
-	Con_DPrintf("Total waypoints: %i\n", n_waypoints);
+	Con_DPrintf("Total waypoints: %i, num parsed: %i\n", max_waypoint_idx, n_waypoints_parsed);
+	// Store in global `n_waypoints`
+	n_waypoints = max_waypoint_idx;
 	
 	//for sake of saving time later we are now going to save each targets array position and distace to each waypoint
 	for (i = 0; i < MAX_WAYPOINTS; i++) {

@@ -1607,6 +1607,7 @@ void sv_way_add_way_to_set(char set, int waypoint_idx) {
 		int max = openset_length;
 		int test;
 		float way_f_score = waypoints[waypoint_idx].f_score;
+		float test_f_score;
 
 		// Binary insert into the open set
 		while(max > min) {
@@ -1618,15 +1619,17 @@ void sv_way_add_way_to_set(char set, int waypoint_idx) {
 				openset_waypoints[max] = waypoint_idx;
 				openset_length += 1;
 				// sv_way_print_sorted_open_set(); // For debug only
+				break;
 			}
 			test = (int)((min + max)/2);
-			if(way_f_score > waypoints[openset_waypoints[test]].f_score) {
+			test_f_score = waypoints[openset_waypoints[test]].f_score;
+			if(way_f_score > test_f_score) {
 				min = test;
 			}
-			else if(way_f_score < waypoints[openset_waypoints[test]].f_score) {
+			else if(way_f_score < test_f_score) {
 				max = test;
 			}
-			if(way_f_score == waypoints[openset_waypoints[test]].f_score) {
+			else if(way_f_score == test_f_score) {
 				max = test;
 				min = test - 1;
 			}
@@ -1689,9 +1692,6 @@ int process_list_length;
 // Follows the path found by `Pathfind()` invocation, storing result path i global `process_list`
 //
 void sv_way_reconstruct_path(int start_node, int current_node) {
-	Con_DPrintf ("reconstruct_path:\n");
-	Con_DPrintf ("\tstart_node = %i, current_node = %i\n", start_node, current_node);
-
 	process_list_length = 0;
 
 	// loop through the waypoints on the path
@@ -1702,7 +1702,6 @@ void sv_way_reconstruct_path(int start_node, int current_node) {
 		process_list_length++;
 
 		if (current_node == start_node) {
-			Con_DPrintf("\tFound start node. Finished reconstructing path\n");
 			break;
 		}
 		current_node = waypoints[current_node].came_from;
@@ -1718,13 +1717,12 @@ void sv_way_reconstruct_path(int start_node, int current_node) {
 //
 int sv_way_pathfind(int start_way, int end_way) {
 	int current;
-	int last_way = 0;
 	float tentative_g_score, tentative_f_score;
 	int i;
 	// -------------–-------------–-------------–-------------–
 	// Clear the path data for all waypoints
 	// -------------–-------------–-------------–-------------–
-	for (i = 0; i < n_waypoints;i++) {
+	for (i = 0; i < n_waypoints; i++) {
 		waypoint_set[i] = WAYPOINT_SET_NONE;
 		waypoints[i].f_score = 0;
 		waypoints[i].g_score = 0;
@@ -1736,7 +1734,7 @@ int sv_way_pathfind(int start_way, int end_way) {
 	// Cost from start along best known path.
 	waypoints[start_way].g_score = 0; 
 	// Estimated total cost from start to goal through y
-	waypoints[start_way].f_score = waypoints[start_way].g_score + heuristic_cost_estimate(start_way, end_way);
+	waypoints[start_way].f_score = waypoints[start_way].g_score + sv_way_heuristic_cost_estimate(start_way, end_way);
 
 	// The set of tentative nodes to be evaluated, initially containing the start node
 	sv_way_add_way_to_set(WAYPOINT_SET_OPEN, start_way);
@@ -1746,7 +1744,6 @@ int sv_way_pathfind(int start_way, int end_way) {
 
 		//Con_DPrintf("Pathfind current: %i, f_score: %f, g_score: %f\n", current, waypoints[current].f_score, waypoints[current].g_score);
 		if (current == end_way) {
-			Con_DPrintf("Pathfind goal reached\n");
 			sv_way_reconstruct_path(start_way, end_way);
 			return 1;
 		}
@@ -1755,46 +1752,46 @@ int sv_way_pathfind(int start_way, int end_way) {
 
 		// Add each neighbor to the open set
 		for (i = 0;i < 8; i++) {
-			//Con_DPrintf("Pathfind for start\n");
-			if (waypoints[current].target_id[i] < 0) {
+			int neighbor_waypoint_idx = waypoints[current].target_id[i];
+
+			// Skip unused neighbor slots
+			if (neighbor_waypoint_idx < 0) {
 				break;
 			}
 
 			// Check if waypoint is enabled (e.g. door waypoints)
-			if (!waypoints[waypoints[current].target_id[i]].open) {
+			if (!waypoints[neighbor_waypoint_idx].open) {
 				//if (waypoints[current].target_id[i])
 					//Con_DPrintf("Pathfind for: %i, waypoints[waypoints[current].target_id[i]].open = %i, current = %i\n", waypoints[current].target_id[i], waypoints[waypoints[current].target_id[i]].open, current);
 				continue;
 			}
 
 			tentative_g_score = waypoints[current].g_score + waypoints[current].dist[i];
-			tentative_f_score = tentative_g_score + sv_way_heuristic_cost_estimate(waypoints[current].target_id[i], end_way);
-			//Con_DPrintf("Pathfind for: %i, t_f_score: %f, t_g_score: %f\n", waypoints[current].target_id[i], tentative_f_score, tentative_g_score);
+			tentative_f_score = tentative_g_score + sv_way_heuristic_cost_estimate(neighbor_waypoint_idx, end_way);
 			
 
 			// If this waypoint is already in the closed set, skip it
-			if (sv_way_in_set(WAYPOINT_SET_CLOSED, waypoints[current].target_id[i])) {
-				//Con_DPrintf("Pathfind: waypoint %i in closed list\n", waypoints[current].target_id[i]);
+			if (sv_way_in_set(WAYPOINT_SET_CLOSED, neighbor_waypoint_idx)) {
 				continue;
 			}
 
-			if(tentative_f_score < waypoints[waypoints[current].target_id[i]].f_score) {
-				//Con_DPrintf("Pathfind waypoint is better\n");
-				waypoints[waypoints[current].target_id[i]].g_score = tentative_g_score;
-				waypoints[waypoints[current].target_id[i]].f_score = tentative_f_score;
+			if (sv_way_in_set(WAYPOINT_SET_OPEN, neighbor_waypoint_idx)) {
+				if(tentative_f_score < waypoints[neighbor_waypoint_idx].f_score) {
+					waypoints[neighbor_waypoint_idx].g_score = tentative_g_score;
+					waypoints[neighbor_waypoint_idx].f_score = tentative_f_score;
+					waypoints[neighbor_waypoint_idx].came_from = current;
+					// The score has been updated, remove and re-insert into its new location in the sorted open-set
+					sv_way_remove_way_from_set(WAYPOINT_SET_OPEN, neighbor_waypoint_idx);
+					sv_way_add_way_to_set(WAYPOINT_SET_OPEN, neighbor_waypoint_idx);
+				}
 			}
-
-			if (!sv_way_in_set(WAYPOINT_SET_OPEN, waypoints[current].target_id[i])) {
-				//Con_DPrintf("Pathfind waypoint not in list\n");
-				waypoints[waypoints[current].target_id[i]].g_score = tentative_g_score;
-				waypoints[waypoints[current].target_id[i]].f_score = tentative_f_score;
-
-				waypoints[waypoints[current].target_id[i]].came_from = current;
-				sv_way_add_way_to_set(WAYPOINT_SET_OPEN, waypoints[current].target_id[i]);
-				//Con_DPrintf("Pathfind: %i added to the openset with waypoints[current].came_from = %i, current = %i\n", waypoints[current].target_id[i], waypoints[current].came_from, current);
+			else {
+				waypoints[neighbor_waypoint_idx].g_score = tentative_g_score;
+				waypoints[neighbor_waypoint_idx].f_score = tentative_f_score;
+				waypoints[neighbor_waypoint_idx].came_from = current;
+				sv_way_add_way_to_set(WAYPOINT_SET_OPEN, neighbor_waypoint_idx);
 			}
 		}
-		last_way = current;
 	}
 	return 0;
 }
@@ -1845,9 +1842,8 @@ Open_Waypoint
 void Open_Waypoint (string, string, string, string, string, string, string, string)
 =================
 */
-void Open_Waypoint (void)
-{
-	int i, t;
+void Open_Waypoint (void) {
+	int i;
 	char *p = G_STRING(OFS_PARM0);
 
 	//Con_DPrintf("Open_Waypoint\n");
@@ -1857,7 +1853,6 @@ void Open_Waypoint (void)
 			if (!strcmp(p, waypoints[i].special)) {
 				waypoints[i].open = 1;
 				//Con_DPrintf("Open_Waypoint: %i, opened\n", i);
-				t = 1;
 			}
 			else {	
 				continue;
@@ -1879,9 +1874,8 @@ void Close_Waypoint (string, string, string, string, string, string, string, str
 cypress - basically a carbon copy of open_waypoint lol
 =================
 */
-void Close_Waypoint (void)
-{
-	int i, t;
+void Close_Waypoint (void) {
+	int i;
 	char *p = G_STRING(OFS_PARM0);
 
 	for (i = 0; i < MAX_WAYPOINTS; i++) {
@@ -1889,7 +1883,6 @@ void Close_Waypoint (void)
 		if (waypoints[i].special[0]) {
 			if (!strcmp(p, waypoints[i].special)) {
 				waypoints[i].open = 0;
-				t = 1;
 			}
 			else {
 				continue;
@@ -2004,7 +1997,8 @@ void Do_Pathfind (void) {
 		}
 	}
 
-	for (i = 0; i < MAX_WAYPOINTS; i++) {
+	for (i = 0; i < n_waypoints; i++) {
+		// Skip unused waypoint slots / inactive waypoints
 		if (!waypoints[i].used || !waypoints[i].open)
 			continue;
 		
@@ -2037,7 +2031,7 @@ void Do_Pathfind (void) {
 	closest_waypoints[target_entnum] = best_e;
 
 	Con_DPrintf("\tStarting waypoint: %i, Ending waypoint: %i\n", best_z, best_e);
-	if (Pathfind(best_z, best_e)) {
+	if (sv_way_pathfind(best_z, best_e)) {
 
 		// --------------------------------------------------------------------
 		// Debug print zombie path
@@ -2115,13 +2109,12 @@ vector Get_Next_Waypoint (entity)
 */
 void Get_Next_Waypoint (void) {
 	int i;
-	int s = 0;
 	int entnum;
 	edict_t *ent;
 	// vec3_t move;
 	vec3_t start;
-	vec3_t mins;
-	vec3_t maxs;
+	// vec3_t mins;
+	// vec3_t maxs;
 
 	// Initialize to world origin
 	// VectorCopy(vec3_origin, move);
@@ -2129,8 +2122,8 @@ void Get_Next_Waypoint (void) {
 	entnum = G_EDICTNUM(OFS_PARM0);
 	ent = G_EDICT(OFS_PARM0);
 	VectorCopy(G_VECTOR(OFS_PARM1), start);
-	VectorCopy(G_VECTOR(OFS_PARM2), mins);
-	VectorCopy(G_VECTOR(OFS_PARM3), maxs);
+	// VectorCopy(G_VECTOR(OFS_PARM2), mins);
+	// VectorCopy(G_VECTOR(OFS_PARM3), maxs);
 
 
 	edict_t *goal_ent = PROG_TO_EDICT(ent->v.enemy);
