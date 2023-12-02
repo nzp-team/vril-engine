@@ -868,21 +868,46 @@ int tracepath(vec3_t start, vec3_t angles, vec3_t end, int type, edict_t *ent) {
 
 	vec3_t right_ofs;
 	VectorScale(v_right, bbox_half_width, right_ofs);
+	vec3_t up_ofs   = {0,0,32};
+	vec3_t down_ofs = {0,0,-24};
 	vec3_t ofs_start;
 	vec3_t ofs_end;
 	trace_t trace;
 
 	
-	// Trace a line along the right edge of the bounding box
+	// Trace a line along the bottom right edge of the bounding box
 	VectorAdd(start, right_ofs, ofs_start);
 	VectorAdd(end, right_ofs, ofs_end);
+	VectorAdd(ofs_start, down_ofs, ofs_start);
+	VectorAdd(ofs_end, down_ofs, ofs_end);
 	trace = SV_Move(ofs_start, vec3_origin, vec3_origin, ofs_end, type, ent);
 	if(trace.startsolid || trace.allsolid || trace.fraction < 1.0 ) {
 		return 0;
 	}
-	// Trace a line along the left edge of the bounding box
+	// Trace a line along the bottom left edge of the bounding box
 	VectorSubtract(start, right_ofs, ofs_start);
 	VectorSubtract(end, right_ofs, ofs_end);
+	VectorAdd(ofs_start, down_ofs, ofs_start);
+	VectorAdd(ofs_end, down_ofs, ofs_end);
+	trace = SV_Move(ofs_start, vec3_origin, vec3_origin, ofs_end, type, ent);
+	if(trace.startsolid || trace.allsolid || trace.fraction < 1.0 ) {
+		return 0;
+	}
+	
+	// Trace a line along the top right edge of the bounding box
+	VectorAdd(start, right_ofs, ofs_start);
+	VectorAdd(end, right_ofs, ofs_end);
+	VectorAdd(ofs_start, up_ofs, ofs_start);
+	VectorAdd(ofs_end, up_ofs, ofs_end);
+	trace = SV_Move(ofs_start, vec3_origin, vec3_origin, ofs_end, type, ent);
+	if(trace.startsolid || trace.allsolid || trace.fraction < 1.0 ) {
+		return 0;
+	}
+	// Trace a line along the top left edge of the bounding box
+	VectorSubtract(start, right_ofs, ofs_start);
+	VectorSubtract(end, right_ofs, ofs_end);
+	VectorAdd(ofs_start, up_ofs, ofs_start);
+	VectorAdd(ofs_end, up_ofs, ofs_end);
 	trace = SV_Move(ofs_start, vec3_origin, vec3_origin, ofs_end, type, ent);
 	if(trace.startsolid || trace.allsolid || trace.fraction < 1.0 ) {
 		return 0;
