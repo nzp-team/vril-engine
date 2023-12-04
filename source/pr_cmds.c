@@ -1927,6 +1927,122 @@ float Do_Pathfind (entity zombie, entity target)
 float max_waypoint_distance = 750;
 short closest_waypoints[MAX_EDICTS]; 
 
+
+// 
+// Returns the closest waypoint to an entity that the entity can walk to
+// 
+int get_closest_waypoint(int entnum) {
+	trace_t trace;
+	edict_t *ent = EDICT_NUM(entnum);
+
+	// Keep track of the closest waypoint that...
+	int best_traceline_way = -1; // ... we are able to traceline to
+	int best_tracepath_way = -1; // ... we are able to tracepath to
+	float best_traceline_way_dist = max_waypoint_distance * max_waypoint_distance;
+	float best_tracepath_way_dist = max_waypoint_distance * max_waypoint_distance; 
+
+
+	// Start the search from the last known closest waypoint and its neighbors
+	// Assuming that at least one of the previous waypoint and its neighbors 
+	// is still traceline-able to, we'll easily skip tracelining against most
+	// map waypoints that are farther away.
+	int prev_closest_way = closest_waypoints[entnum];
+
+ 	
+	if(prev_closest_way >= 0) {
+		trace = SV_Move(ent->v.origin, vec3_origin, vec3_origin, waypoints[prev_closest_way].origin, 1, ent);
+		// Try against the prev waypoint first
+		if(trace.fraction >= 1) {
+			best_traceline_way_dist = VectorDistanceSquared(waypoints[prev_closest_way].origin, ent->v.origin);
+			best_traceline_way = prev_closest_way;
+		}
+		// Otherwise, try against its neighbors
+		else {
+			for(int i = 0; i < 8; i++) {
+				int neighbor_way = waypoints[prev_closest_way].target_id[i];
+				// Skip unused neighbor slots / unused waypoint slots / inactive waypoints
+				if (neighbor_way < 0 || !waypoints[neighbor_way].used || !waypoints[neighbor_way].open) {
+					continue;
+				}
+				float dist = VectorDistanceSquared(waypoints[neighbor_way].origin, ent->v.origin);
+				if(dist < best_traceline_way_dist || best_traceline_way == -1) {
+					trace = SV_Move (ent->v.origin, vec3_origin, vec3_origin, waypoints[neighbor_way].origin, 1, ent);
+					if (trace.fraction >= 1) {
+						best_traceline_way_dist = dist;
+						best_traceline_way = neighbor_way;
+					}
+				}
+			}
+		}
+
+		// Try against the prev waypoint first
+		if(tracepath(ent->v.origin, ent->v.angles, waypoints[prev_closest_way].origin, MOVE_NOMONSTERS, ent)) {
+			best_tracepath_way_dist = VectorDistanceSquared(waypoints[prev_closest_way].origin, ent->v.origin);
+			best_tracepath_way = prev_closest_way;
+		}
+		// Otherwise, try against its neighbors
+		else {
+			for(int i = 0; i < 8; i++) {
+				int neighbor_way = waypoints[prev_closest_way].target_id[i];
+				// Skip unused neighbor slots / unused waypoint slots / inactive waypoints
+				if (neighbor_way < 0 || !waypoints[neighbor_way].used || !waypoints[neighbor_way].open) {
+					continue;
+				}
+				float dist = VectorDistanceSquared(waypoints[neighbor_way].origin, ent->v.origin);
+				if(dist < best_tracepath_way_dist || best_tracepath_way == -1) {
+					if(tracepath(ent->v.origin, ent->v.angles, waypoints[prev_closest_way].origin, MOVE_NOMONSTERS, ent)) {
+						best_tracepath_way_dist = dist;
+						best_tracepath_way = neighbor_way;
+					}
+				}
+			}
+		}
+	}
+
+	// Now we may have an initial valid `best_traceline_way` / `best_traceline_way_dist`
+	// We can safely skip all waypoints farther away than this
+
+	for (int i = 0; i < n_waypoints; i++) {
+		// Skip unused waypoint slots / inactive waypoints
+		if (!waypoints[i].used || !waypoints[i].open) {
+			continue;
+		}
+		
+		float dist = VectorDistanceSquared(waypoints[i].origin, ent->v.origin);
+		if(dist < best_traceline_way_dist || best_traceline_way == -1) {
+			trace = SV_Move (ent->v.origin, vec3_origin, vec3_origin, waypoints[i].origin, 1, ent);
+			if (trace.fraction >= 1) {
+				best_traceline_way_dist = dist;
+				best_traceline_way = i;
+			}
+		}
+
+		if(dist < best_tracepath_way_dist || best_tracepath_way == -1) {
+			if(tracepath(ent->v.origin, ent->v.angles, waypoints[i].origin, MOVE_NOMONSTERS, ent)) {
+				best_tracepath_way_dist = dist;
+				best_tracepath_way = i;
+			}
+		}
+	}
+
+	int best_way = -1;
+
+	// If we can tracepath to any waypoint, return the closest one:
+	if(best_tracepath_way >= 0) {
+		best_way = best_tracepath_way;
+	}
+	// Otherwise, return the best waypoint we found that we can traceline to
+	// (which may be none for some if a map's waypoints aren't great)
+	else {
+		best_way = best_traceline_way;
+	}
+
+	// Cache the cloesst waypoint to this entity, so that we start the next search from this same waypoint and its neighbors
+	closest_waypoints[entnum] = best_way;
+	return best_way;
+}
+
+
 void Do_Pathfind (void) {
 	#ifdef MEASURE_PF_PERF
 	u64 t1, t2;
@@ -1936,127 +2052,26 @@ void Do_Pathfind (void) {
 	int i, s;
 	trace_t   trace;
 
-	Con_DPrintf("====================\n"); //we first need to look for closest point for both zombie and the player
-	Con_DPrintf("Starting Do_Pathfind\n"); //we first need to look for closest point for both zombie and the player
-	Con_DPrintf("====================\n"); //we first need to look for closest point for both zombie and the player
+	Con_DPrintf("====================\n");
+	Con_DPrintf("Starting Do_Pathfind\n");
+	Con_DPrintf("====================\n");
 
 	int zombie_entnum = G_EDICTNUM(OFS_PARM0);
 	int target_entnum = G_EDICTNUM(OFS_PARM1);
 	edict_t * zombie = G_EDICT(OFS_PARM0);
 	edict_t * ent = G_EDICT(OFS_PARM1);
 
-	float best_dist_z = max_waypoint_distance * max_waypoint_distance;
-	float dist_z = 0;
-	int best_z = -1;
-	float best_dist_e = max_waypoint_distance * max_waypoint_distance;
-	float dist_e = 0;
-	int best_e = -1;
+	int start_waypoint = get_closest_waypoint(zombie_entnum);
+	int goal_waypoint = get_closest_waypoint(target_entnum);
 
-	// int trace_result;
-
-
-	// Start the search from the last known closest waypoint to the zombie and the player
-	// This way, we can avoid tracelining against most waypoints on the map
-	// in the following section wherein we find the true closest waypoint to the zombie 
-	// and the player
-	int prevclosest = closest_waypoints[zombie_entnum];
-	if (prevclosest >= 0) {
-		// trace_result = TraceMove(zombie->v.origin,zombie->v.mins,zombie->v.maxs,waypoints[prevclosest].origin,MOVE_NOMONSTERS,zombie);
-		// if(trace_result == 1) {
-		// if(tracepath(zombie->v.origin, zombie->v.angles, waypoints[prevclosest].origin, MOVE_NOMONSTERS, zombie)) {
-		trace = SV_Move (zombie->v.origin, vec3_origin, vec3_origin, waypoints[prevclosest].origin, 1, zombie);
-		if (trace.fraction >= 1) {
-			dist_z = VectorDistanceSquared(waypoints[prevclosest].origin, zombie->v.origin);
-			best_dist_z = dist_z;
-			best_z = prevclosest;
-		} else {
-			for (s = 0; s < 8; s++) {
-				int neighbor = waypoints[prevclosest].target_id[s];
-				if (neighbor < 0) break;
-
-				dist_z = VectorDistanceSquared(waypoints[neighbor].origin, zombie->v.origin);
-				if (dist_z < best_dist_z) {
-					// trace_result = TraceMove(zombie->v.origin,zombie->v.mins,zombie->v.maxs,waypoints[neighbor].origin,MOVE_NOMONSTERS,zombie);
-					// if(trace_result == 1) {
-					// if(tracepath(zombie->v.origin, zombie->v.angles, waypoints[neighbor].origin, MOVE_NOMONSTERS, zombie)) {
-					trace = SV_Move (zombie->v.origin, vec3_origin, vec3_origin, waypoints[neighbor].origin, 1, zombie);
-					if (trace.fraction >= 1) {
-						best_dist_z = dist_z;
-						best_z = neighbor;
-						break;
-					}
-				}
-			}
-		}
+	if(start_waypoint == -1 || goal_waypoint == -1) {
+		Con_DPrintf("Pathfind failure. Invalid start or goal waypoint. (Start: %d, Goal: %d)\n", start_waypoint, goal_waypoint);
+		G_FLOAT(OFS_RETURN) = 0;
+		return;
 	}
 
-	// copypasta, forgive me
-	prevclosest = closest_waypoints[target_entnum];
-	if (prevclosest >= 0) {
-		// trace_result = TraceMove(waypoints[prevclosest].origin,zombie->v.mins,zombie->v.maxs,ent->v.origin,MOVE_NOMONSTERS,zombie);
-		// if(trace_result == 1) {
-		// if(tracepath(ent->v.origin, ent->v.angles, waypoints[prevclosest].origin, MOVE_NOMONSTERS, ent)) {
-		trace = SV_Move (ent->v.origin, vec3_origin, vec3_origin, waypoints[prevclosest].origin, 1, ent);
-		if (trace.fraction >= 1) {
-			dist_e = VectorDistanceSquared(waypoints[prevclosest].origin, ent->v.origin);
-			best_dist_e = dist_e;
-			best_e = prevclosest;
-		} else {
-			for (s = 0; s < 8; s++) {
-				int neighbor = waypoints[prevclosest].target_id[s];
-				if (neighbor < 0) break;
-
-				dist_e = VectorDistanceSquared(waypoints[neighbor].origin, ent->v.origin);
-				if (dist_e < best_dist_e) {
-					// trace_result = TraceMove(waypoints[neighbor].origin,zombie->v.mins,zombie->v.maxs,ent->v.origin,MOVE_NOMONSTERS,zombie);
-					// if(trace_result == 1) {
-					// if(tracepath(ent->v.origin, ent->v.angles, waypoints[neighbor].origin, MOVE_NOMONSTERS, ent)) {
-					trace = SV_Move (ent->v.origin, vec3_origin, vec3_origin, waypoints[neighbor].origin, 1, ent);
-					if (trace.fraction >= 1) {
-						best_dist_e = dist_e;
-						best_e = neighbor;
-						break;
-					}
-				}
-			}
-		}
-	}
-
-	for (i = 0; i < n_waypoints; i++) {
-		// Skip unused waypoint slots / inactive waypoints
-		if (!waypoints[i].used || !waypoints[i].open)
-			continue;
-		
-		dist_z = VectorDistanceSquared(waypoints[i].origin, zombie->v.origin);
-		if (dist_z < best_dist_z) {
-			// trace_result = TraceMove(zombie->v.origin,zombie->v.mins,zombie->v.maxs,waypoints[i].origin,MOVE_NOMONSTERS,zombie);
-			// if(trace_result == 1) {
-			// if(tracepath(zombie->v.origin, zombie->v.angles, waypoints[i].origin, MOVE_NOMONSTERS, zombie)) {
-			trace = SV_Move (zombie->v.origin, vec3_origin, vec3_origin, waypoints[i].origin, 1, zombie);
-			if (trace.fraction >= 1) {
-				best_dist_z = dist_z;
-				best_z = i;
-			}
-		}
-
-		dist_e = VectorDistanceSquared(waypoints[i].origin, ent->v.origin);
-		if (dist_e < best_dist_e) {
-			// trace_result = TraceMove(waypoints[i].origin,zombie->v.mins,zombie->v.maxs,ent->v.origin,MOVE_NOMONSTERS,zombie);
-			// if(trace_result == 1) {
-			// if(tracepath(ent->v.origin, ent->v.angles, waypoints[i].origin, MOVE_NOMONSTERS, ent)) {
-			trace = SV_Move (ent->v.origin, vec3_origin, vec3_origin, waypoints[i].origin, 1, ent);
-			if (trace.fraction >= 1) {
-				best_dist_e = dist_e;
-				best_e = i;
-			}
-		}
-	}
-
-	closest_waypoints[zombie_entnum] = best_z;
-	closest_waypoints[target_entnum] = best_e;
-
-	Con_DPrintf("\tStarting waypoint: %i, Ending waypoint: %i\n", best_z, best_e);
-	if (sv_way_pathfind(best_z, best_e)) {
+	Con_DPrintf("\tStarting waypoint: %i, Ending waypoint: %i\n", start_waypoint, goal_waypoint);
+	if (sv_way_pathfind(start_waypoint, goal_waypoint)) {
 
 		// --------------------------------------------------------------------
 		// Debug print zombie path
@@ -2120,7 +2135,7 @@ void Do_Pathfind (void) {
 	Con_Printf("PF time: %f\n", elapsed);
 #endif
 
-	Con_DPrintf("\tPath not found!\n");
+	Con_DPrintf("Pathfind failure. Goal waypoint not reachable.\n");
 	G_FLOAT(OFS_RETURN) = 0;
 }
 
