@@ -1298,7 +1298,7 @@ void R_DrawBrushModel (entity_t *e)
 
 
 	e->angles[0] = -e->angles[0];	// stupid quake bug
-	R_BlendedRotateForEntity  (e, 0);  //blend transform
+	R_BlendedRotateForEntity  (e, 0, e->scale);  //blend transform
 	clipping::begin_brush_model();
 	e->angles[0] = -e->angles[0];	// stupid quake bug
 

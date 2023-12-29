@@ -61,6 +61,7 @@ typedef struct entity_s
     float		rendercolor[3];
     //Crow_bar
 
+	unsigned char 			scale;
   	struct model_s			*model;			// NULL = no model
   	char					old_model[128];			// NULL = no model
 	struct efrag_s			*efrag;			// linked list of efrags

@@ -406,7 +406,7 @@ qboolean R_CullSphere (vec3_t centre, float radius)
 R_RotateForEntity
 =============
 */
-void R_RotateForEntity (entity_t *e, int shadow)
+void R_RotateForEntity (entity_t *e, int shadow, unsigned char scale)
 {
 	// Translate.
 	const ScePspFVector3 translation =
@@ -414,14 +414,6 @@ void R_RotateForEntity (entity_t *e, int shadow)
 		e->origin[0], e->origin[1], e->origin[2]
 	};
 	sceGumTranslate(&translation);
-/*
-	// Scale.
-    const ScePspFVector3 scale =
-	{
-	e->scale, e->scale, e->scale
-	};
-	sceGumScale(&scale);
-*/
 
 	// Rotate.
     sceGumRotateZ(e->angles[YAW] * (GU_PI / 180.0f));
@@ -429,6 +421,16 @@ void R_RotateForEntity (entity_t *e, int shadow)
 	{
 		sceGumRotateY (-e->angles[PITCH] * (GU_PI / 180.0f));
 		sceGumRotateX (e->angles[ROLL] * (GU_PI / 180.0f));
+	}
+
+	// Scale.
+	if (scale != ENTSCALE_DEFAULT) {
+		float scalefactor = ENTSCALE_DECODE(scale);
+		const ScePspFVector3 scale =
+		{
+		scalefactor, scalefactor, scalefactor
+		};
+		sceGumScale(&scale);
 	}
 
 	sceGumUpdateMatrix();
@@ -465,46 +467,6 @@ void R_InterpolateEntity(entity_t *e, int shadow)	// Tomaz - New Shadow
 	//if I get this method to work well, make sure we go back and check for r_i_model_transforms again, (because vmodel and other models that don't use interpolation)
 	//probably go back and edit animations too as I redo the last 2 textures..
 	
-	
-	/*if (e->translate_start_time == 0 || timepassed > 1)
-	{
-		e->translate_start_time = realtime;
-		VectorCopy (e->origin, e->origin1);
-		VectorCopy (e->origin, e->origin2);
-	}
-	
-	//our origin has been updated
-	if (!VectorCompare (e->origin, e->origin2))
-	{
-		e->translate_start_time = realtime;
-		VectorCopy (e->origin2, e->origin1);
-		VectorCopy (e->origin,  e->origin2);
-		blend = 0;
-	}
-	else
-	{
-		blend =  1;
-		if (cl.paused)
-			blend = 0;
-		
-		e->origin1[0] += (blend * 0.25 * (e->origin2[0] - e->origin1[0]));
-		e->origin1[1] += (blend * 0.25 * (e->origin2[1] - e->origin1[1]));
-		e->origin1[2] += (blend * 0.25 * (e->origin2[2] - e->origin1[2]));
-	}
-	
-	//VectorSubtract (e->origin2, e->origin1, deltaVec);
-	
-	// Translate.
-	const ScePspFVector3 translation = 
-	{*/
-		/*e->origin[0] + (blend * deltaVec[0]),
-		e->origin[1] + (blend * deltaVec[1]),
-		e->origin[2] + (blend * deltaVec[2])*/
-		/*
-		e->origin1[0], e->origin1[1], e->origin1[2]
-	};
-	*/
-	
 	if (e->translate_start_time == 0 || timepassed > 1)
 	{
 		e->translate_start_time = realtime;
@@ -538,7 +500,7 @@ void R_InterpolateEntity(entity_t *e, int shadow)	// Tomaz - New Shadow
 		e->origin[2] + (blend * deltaVec[2])
 	};
 	sceGumTranslate(&translation);
-	
+
 	
 	// orientation interpolation (Euler angles, yuck!)
 	timepassed = realtime - e->rotate_start_time;
@@ -599,7 +561,7 @@ R_BlendedRotateForEntity
 fenix@io.com: model transform interpolation
 =============
 */
-void R_BlendedRotateForEntity (entity_t *e, int shadow)	// Tomaz - New Shadow
+void R_BlendedRotateForEntity (entity_t *e, int shadow, unsigned char scale)	// Tomaz - New Shadow
 {
     float timepassed;
     float blend;
@@ -640,15 +602,17 @@ void R_BlendedRotateForEntity (entity_t *e, int shadow)	// Tomaz - New Shadow
     e->origin[2] + (blend * d[2])
     };
     sceGumTranslate(&translation);
-/*
-    // Scale.
-    const ScePspFVector3 scale = {
-    e->scale + (blend * d[0]),
-    e->scale + (blend * d[1]),
-    e->scale + (blend * d[2]
-    };
-    sceGumScale(&scale);
-*/
+
+	// Scale.
+	if (scale != ENTSCALE_DEFAULT) {
+		float scalefactor = ENTSCALE_DECODE(scale);
+		const ScePspFVector3 scale =
+		{
+		scalefactor, scalefactor, scalefactor
+		};
+		sceGumScale(&scale);
+	}
+
     // orientation interpolation (Euler angles, yuck!)
     timepassed = realtime - e->rotate_start_time;
 
@@ -774,6 +738,8 @@ void R_DrawSpriteModel (entity_t *e)
 	mspriteframe_t	*frame;
 	float			*s_up, *s_right;
 	float			angle, sr, cr;
+	float 			scale = ENTSCALE_DECODE(e->scale);
+	if (scale == 0) scale = 1.0f;
 	bool additive = false;
 	bool filter = false;
 
@@ -867,8 +833,8 @@ void R_DrawSpriteModel (entity_t *e)
 	glvert_t* const	vertices =
 		static_cast<glvert_t*>(sceGuGetMemory(sizeof(glvert_t) * 4));
 
-	VectorMA (e->origin, frame->down, s_up, point);
-	VectorMA (point, frame->left, s_right, point);
+	VectorMA (e->origin, frame->down * scale, s_up, point);
+	VectorMA (point, frame->left * scale, s_right, point);
 
 	vertices[0].st[0]	= 0.0f;
 	vertices[0].st[1]	= 1.0f;
@@ -876,8 +842,8 @@ void R_DrawSpriteModel (entity_t *e)
 	vertices[0].xyz[1]	= point[1];
 	vertices[0].xyz[2]	= point[2];
 
-	VectorMA (e->origin, frame->up, s_up, point);
-	VectorMA (point, frame->left, s_right, point);
+	VectorMA (e->origin, frame->up * scale, s_up, point);
+	VectorMA (point, frame->left * scale, s_right, point);
 
 	vertices[1].st[0]	= 0.0f;
 	vertices[1].st[1]	= 0.0f;
@@ -885,8 +851,8 @@ void R_DrawSpriteModel (entity_t *e)
 	vertices[1].xyz[1]	= point[1];
 	vertices[1].xyz[2]	= point[2];
 
-	VectorMA (e->origin, frame->up, s_up, point);
-	VectorMA (point, frame->right, s_right, point);
+	VectorMA (e->origin, frame->up * scale, s_up, point);
+	VectorMA (point, frame->right * scale, s_right, point);
 
 	vertices[2].st[0]	= 1.0f;
 	vertices[2].st[1]	= 0.0f;
@@ -894,8 +860,8 @@ void R_DrawSpriteModel (entity_t *e)
 	vertices[2].xyz[1]	= point[1];
 	vertices[2].xyz[2]	= point[2];
 
-	VectorMA (e->origin, frame->down, s_up, point);
-	VectorMA (point, frame->right, s_right, point);
+	VectorMA (e->origin, frame->down * scale, s_up, point);
+	VectorMA (point, frame->right * scale, s_right, point);
 
 	vertices[3].st[0]	= 1.0f;
 	vertices[3].st[1]	= 1.0f;
@@ -1563,7 +1529,7 @@ void R_SetupQ2AliasFrame (entity_t *e, md2_t *pheader)
 	frame = e->frame;
 
     sceGumPushMatrix ();
-	R_RotateForEntity (e, 0);
+	R_RotateForEntity (e, 0, e->scale);
 
 	if ((frame >= pheader->num_frames) || (frame < 0))
 	{
@@ -1992,6 +1958,7 @@ void R_DrawAliasModel (entity_t *e)
 	// Special handling of view model to keep FOV from altering look.  Pretty good.  Not perfect but rather close.
 	if ((e == &cl.viewent || e == &cl.viewent2) && scr_fov_viewmodel.value) {
 		float scale = 1.0f / tan (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
+		if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) scale *= ENTSCALE_DECODE(e->scale);
 
 		const ScePspFVector3 translation = {
 			paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]
@@ -2003,11 +1970,14 @@ void R_DrawAliasModel (entity_t *e)
 		sceGumTranslate(&translation);
 		sceGumScale(&scaling);
 	} else {
+		float scale = 128.0f;
+		if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) scale *= ENTSCALE_DECODE(e->scale);
+
 		const ScePspFVector3 translation = {
 			paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]
 		};
 		const ScePspFVector3 scaling = {
-			paliashdr->scale[0] * 128.f, paliashdr->scale[1] * 128.f, paliashdr->scale[2] * 128.f
+			paliashdr->scale[0] * scale, paliashdr->scale[1] * scale, paliashdr->scale[2] * scale
 		};
 
 		sceGumTranslate(&translation);
@@ -2962,7 +2932,7 @@ void R_DrawQ3Model (entity_t *ent)
 	if (ent == &cl.viewent)
 		R_RotateForViewEntity (ent);
 	else
-		R_RotateForEntity(ent, 0);
+		R_RotateForEntity(ent, 0, ent->scale);
 
     if ((ent == &cl.viewent) && (scr_fov.value != 0))
 	{
@@ -3044,7 +3014,7 @@ void R_DrawQ3Model (entity_t *ent)
 
 		sceGumPushMatrix ();
 
-		R_RotateForEntity (ent, 0);
+		R_RotateForEntity (ent, 0, ent->scale);
 
 		VectorCopy (ent->origin, downmove);
 		downmove[2] -= farclip;
@@ -3125,7 +3095,7 @@ void R_DrawNullModel(void)
 	sceGuDisable(GU_TEXTURE_2D);
     sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 	sceGuShadeModel (GU_SMOOTH);
-	R_RotateForEntity(currententity, 0);
+	R_RotateForEntity(currententity, 0, currententity->scale);
 	typedef struct VERT_t
 	{
 		float x, y, z;

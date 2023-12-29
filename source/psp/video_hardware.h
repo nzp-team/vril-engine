@@ -343,8 +343,8 @@ int R_FrustumCheckSphere (vec3_t centre, float radius);
 int R_CullBox (vec3_t emins, vec3_t emaxs);
 qboolean R_CullSphere (vec3_t centre, float radius);
 void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
-void R_RotateForEntity (entity_t *e, int shadow);
-void R_BlendedRotateForEntity (entity_t *e, int shadow);
+void R_RotateForEntity (entity_t *e, int shadow, unsigned char scale);
+void R_BlendedRotateForEntity (entity_t *e, int shadow, unsigned char scale);
 void R_RotateForViewEntity (entity_t *ent); //clone (R_RotateForEntity)
 void R_RotateForTagEntity (tagentity_t *tagent, md3tag_t *tag, float *m); //for q3 models
 void R_StoreEfrags (efrag_t **ppefrag);

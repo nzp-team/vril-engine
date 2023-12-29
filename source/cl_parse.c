@@ -666,6 +666,12 @@ void CL_ParseUpdate (int bits)
     else
 	    ent->rendercolor[2] = 0;
 // Tomaz - QC Alpha Scale Glow End
+
+	if (bits & U_SCALE)
+		ent->scale = MSG_ReadByte();
+	else
+		ent->scale = ENTSCALE_DEFAULT;
+
     if ( bits & U_NOLERP )//there's no data for nolerp, it is the value itself
 		ent->forcelink = true;
 
