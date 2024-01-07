@@ -1970,14 +1970,14 @@ void R_DrawAliasModel (entity_t *e)
 		sceGumTranslate(&translation);
 		sceGumScale(&scaling);
 	} else {
-		float scale = 128.0f;
+		float scale = 1.0f;
 		if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) scale *= ENTSCALE_DECODE(e->scale);
 
 		const ScePspFVector3 translation = {
-			paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]
+			paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1] * scale, paliashdr->scale_origin[2] * scale
 		};
 		const ScePspFVector3 scaling = {
-			paliashdr->scale[0] * scale, paliashdr->scale[1] * scale, paliashdr->scale[2] * scale
+			paliashdr->scale[0] * (scale * 128.0f), paliashdr->scale[1] * (scale * 128.0f), paliashdr->scale[2] * (scale * 128.0f)
 		};
 
 		sceGumTranslate(&translation);
