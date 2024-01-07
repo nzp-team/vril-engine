@@ -1293,6 +1293,14 @@ int W_fopen (void)
 	return h;
 }
 
+int W_fopenbeta(void)
+{
+	int h = 0;
+
+	Sys_FileOpenRead (va("%s/data/%s",com_gamedir, sv.name), &h);
+	return h;
+}
+
 void W_fclose (int h)
 {
 	Sys_FileClose(h);
@@ -1379,6 +1387,96 @@ void W_stov (char *v, vec3_t out)
 
 
 waypoint_ai waypoints[MAX_WAYPOINTS];
+
+//
+// Load_Waypoint_NZPBETA
+// Attempts to load an NZ:P Beta formatted
+// Waypoint file.
+//
+void Load_Waypoint_NZPBETA()
+{
+	char temp[64];
+	int i, p, s;
+	int h = 0;
+
+	h = W_fopenbeta();
+
+	if (h == -1) {
+		return; // don't bother notifying..
+	}
+
+	for (i = 0; i < MAX_WAYPOINTS; i++)
+	{
+		waypoints[i].used = 0;
+		waypoints[i].id = -1;
+		for (p = 0; p < 8; p++) {
+			waypoints[i].target[p] = -1;
+			waypoints[i].target_id[p] = -1;
+		}
+	}
+
+	for (i = 0; i < MAX_EDICTS; i++)
+	{
+		closest_waypoints[i] = -1;
+	}
+
+	i = 0;
+	Con_DPrintf("Loading BETA waypoints\n");
+
+	vec3_t way_origin;
+	int way_id;
+
+	while (1)
+	{
+		// End of file.
+		if (!strcmp(W_fgets(h), ""))
+			break;
+
+		W_stov(w_string_temp, way_origin); // <origin>
+		way_id = atoi(W_fgets(h)); // <id>
+
+		if (way_id >= MAX_WAYPOINTS)
+		 	Sys_Error ("Waypoint with id %d past MAX_WAYPOINTS {%i)\n", way_id, MAX_WAYPOINTS);
+
+		waypoints[way_id].id = way_id;
+		VectorCopy(way_origin, waypoints[way_id].origin);
+
+		// <link1> - <link4>, <owner1> - <owner4>
+		for(i = 0; i < 8; i++) {
+			W_fgets(h);
+
+			if (i < 4) {
+				int id = atoi(w_string_temp);
+				if (id > 0) {
+					waypoints[way_id].target[i] = id;
+					waypoints[way_id].target_id[i] = waypoints[way_id].target[i];
+				}
+			}
+		}
+
+		waypoints[way_id].used = 1;
+		waypoints[way_id].open = 1;
+	}
+	Con_DPrintf("Total waypoints: %i\n", way_id);
+	for (i = 0; i < MAX_WAYPOINTS; i++) //for sake of saving time later we are now going to save each targets array position and distace to each waypoint
+	{
+		for (p = 0; waypoints[i].target[p]; p++)
+		{
+			if (waypoints[i].target[p] < 0) break;
+	
+			for (s = 0; s < MAX_WAYPOINTS; s++)
+			{
+				if (waypoints[i].target[p] == s)
+				{
+					waypoints[i].dist[p] = VecLength2(waypoints[s].origin, waypoints[i].origin);
+					break;
+				}
+			}
+		}
+	}
+	W_fclose(h);
+}
+
 void Load_Waypoint ()
 {
 	char temp[64];
@@ -1391,7 +1489,8 @@ void Load_Waypoint ()
 	w_string_temp = Z_Malloc(128);
 	if (h == -1)
 	{
-		Con_DPrintf("No waypoint file (%s/maps/%s.way) found\n", com_gamedir, sv.name);
+		Con_DPrintf("No waypoint file (%s/maps/%s.way) found, trying beta format..\n", com_gamedir, sv.name);
+		Load_Waypoint_NZPBETA();
 		return;
 	}
 	for (i = 0; i < MAX_WAYPOINTS; i++)
