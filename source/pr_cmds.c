@@ -1427,6 +1427,21 @@ void PF_strtolower(void)
 
 /*
 =================
+PF_crc16
+
+float crc16 (float, string)
+=================
+*/
+void PF_crc16(void)
+{
+	int insens = G_FLOAT(OFS_PARM0);
+	char *s = G_STRING(OFS_PARM1);
+
+	G_FLOAT(OFS_RETURN) = (unsigned short) ((insens ? CRC_Block_CaseInsensitive : CRC_Block) ((unsigned char *) s, strlen(s)));
+}
+
+/*
+=================
 PF_stov
 
 vector stov (string)
@@ -3729,6 +3744,7 @@ ebfs_builtin_t pr_ebfs_builtins[] =
   { 441, "tokenize", PF_tokenize },
   { 442, "argv", PF_ArgV },
   { 480, "strtolower", PF_strtolower },
+  { 494, "crc16", PF_crc16 },
 
   { 500, "songegg", PF_SongEgg },
   {	501, "nzp_maxammo", PF_MaxAmmo },
