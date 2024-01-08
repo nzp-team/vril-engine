@@ -3335,6 +3335,9 @@ void R_DrawEntitiesOnList (void)
 			}
 			
 			break;
+		case mod_iqm:
+			R_DrawIQMModel(currententity);
+			break;
 		case mod_md3:
 			R_DrawQ3Model (currententity);
 			break;
@@ -3487,6 +3490,9 @@ void R_DrawViewModel (void)
 			R_DrawAliasModel (currententity);
 			r_i_model_transform.value = old_i_model_transform;
 			break;
+		case mod_iqm:
+			R_DrawIQMModel(currententity);
+			break;
 		case mod_md3:
 			R_DrawQ3Model (currententity);
 			break;
@@ -3558,6 +3564,9 @@ void R_DrawView2Model (void)
         else
             R_DrawAliasModel (currententity);
         r_i_model_transform.value = old_i_model_transform;
+		break;
+	case mod_iqm:
+		R_DrawIQMModel(currententity);
 		break;
     case mod_md3:
 		R_DrawQ3Model (currententity);

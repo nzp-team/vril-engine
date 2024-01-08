@@ -393,7 +393,8 @@ mod_brush,
 mod_sprite,
 mod_alias,
 mod_halflife,
-mod_md3
+mod_md3,
+mod_iqm
 }
 modtype_t;
 

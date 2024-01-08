@@ -201,13 +201,13 @@ void Mod_ClearAll (void)
 	for (i=0 , mod=mod_known ; i<mod_numknown ; i++, mod++)
 	{
 
-		if (mod->type != mod_alias && mod->type != mod_md3 && mod->type != mod_halflife)
+		if (mod->type != mod_alias && mod->type != mod_iqm && mod->type != mod_md3 && mod->type != mod_halflife)
 		{
 			mod->needload = qtrue;
         }
 
 		//Models & Sprite Unloading code By Crow_bar
-		if (mod->type == mod_alias || mod->type == mod_md3 || mod->type == mod_halflife)
+		if (mod->type == mod_alias || mod->type == mod_iqm || mod->type == mod_md3 || mod->type == mod_halflife)
 		{
 			if (Cache_Check (&mod->cache))
 				Cache_Free (&mod->cache);
@@ -293,7 +293,7 @@ void Mod_TouchModel (char *name)
 
 	mod = Mod_FindName (name);
 
-	if (!mod->needload && (mod->type == mod_alias || mod->type == mod_md3 || mod->type == mod_halflife))
+	if (!mod->needload && (mod->type == mod_alias || mod->type == mod_iqm || mod->type == mod_md3 || mod->type == mod_halflife))
 		Cache_Check (&mod->cache);
 
 }
@@ -315,7 +315,7 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 
 	if (!mod->needload)
 	{
-		if (mod->type == mod_alias || mod->type == mod_md3 || mod->type == mod_halflife)
+		if (mod->type == mod_alias || mod->type == mod_iqm || mod->type == mod_md3 || mod->type == mod_halflife)
 		{
 			d = Cache_Check (&mod->cache);
 			if (d)
@@ -386,6 +386,13 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 
 // call the apropriate loader
 	mod->needload = qfalse;
+
+	// Check if the first few bytes are the IQM header
+	if(!strcmp( (char*) buf, IQMHEADER)) {
+		Con_Printf("IQM model loading requested!\n" );
+		Mod_LoadIQMModel(mod, buf);
+		return mod;
+	}
 
 	switch (LittleLong(*(unsigned *)buf))
 	{
