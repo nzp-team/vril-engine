@@ -1244,6 +1244,14 @@ void CL_ParseServerMessage (void)
 			doubletap_has_damage_buff = MSG_ReadByte();
 			break;
 
+		case svc_screenflash:
+			screenflash_color = MSG_ReadByte();
+			screenflash_duration = sv.time + MSG_ReadByte();
+			screenflash_type = MSG_ReadByte();
+			screenflash_worktime = 0;
+			screenflash_starttime = sv.time;
+			break;
+
 		case svc_bettyprompt:
 			bettyprompt_time = sv.time + 4;
 			break;

@@ -3344,6 +3344,44 @@ void PF_SetDoubleTapVersion(void)
 
 /*
 =================
+PF_ScreenFlash
+
+Server tells client to flash on screen
+for a short (but specified) moment.
+
+nzp_screenflash(target, color, duration, type)
+=================
+*/
+void PF_ScreenFlash(void)
+{
+	client_t	*client;
+	int			entnum;
+	int 		color, duration, type;
+
+	entnum = G_EDICTNUM(OFS_PARM0);
+	color = G_FLOAT(OFS_PARM1);
+	duration = G_FLOAT(OFS_PARM2);
+	type = G_FLOAT(OFS_PARM3);
+
+	// Specified world, or something. Send to everyone.
+	if (entnum < 1 || entnum > svs.maxclients) {
+		MSG_WriteByte(&sv.reliable_datagram, svc_screenflash);
+		MSG_WriteByte(&sv.reliable_datagram, color);
+		MSG_WriteByte(&sv.reliable_datagram, duration);
+		MSG_WriteByte(&sv.reliable_datagram, type);
+	} 
+	// Send to specific user
+	else {
+		client = &svs.clients[entnum-1];
+		MSG_WriteByte (&client->message, svc_screenflash);
+		MSG_WriteByte (&client->message, color);
+		MSG_WriteByte (&client->message, duration);
+		MSG_WriteByte (&client->message, type);
+	}
+}
+
+/*
+=================
 PF_BettyPrompt
 
 draws status on hud on
@@ -3752,7 +3790,8 @@ ebfs_builtin_t pr_ebfs_builtins[] =
   { 503, "nzp_maxai", PF_MaxZombies },
   { 504, "nzp_bettyprompt", PF_BettyPrompt },
   { 505, "nzp_setplayername", PF_SetPlayerName },
-  { 506, "nzp_setdoubletapver", PF_SetDoubleTapVersion }
+  { 506, "nzp_setdoubletapver", PF_SetDoubleTapVersion },
+  { 507, "nzp_screenflash", PF_ScreenFlash }
 
 // 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  end
 

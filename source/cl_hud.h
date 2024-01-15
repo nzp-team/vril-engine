@@ -52,4 +52,10 @@ extern qpic_t *achievement_locked;
 extern char player_name[16];
 extern double nameprint_time;
 
+extern int screenflash_color;
+extern double screenflash_duration;
+extern int screenflash_type;
+extern double screenflash_worktime;
+extern double screenflash_starttime;
+
 void HUD_Parse_Achievement (int ach);
