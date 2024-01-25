@@ -88,6 +88,7 @@ HARDWARE_VIDEO_ONLY_OBJS = \
     source/psp/video_hardware_images.o \
     source/psp/video_hardware_fullbright.o \
     source/psp/video_hardware_hlmdl.o \
+    source/psp/video_hardware_iqm.o \
     source/psp/video_hardware_draw.o \
     source/psp/video_hardware_entity_fragment.o \
     source/psp/video_hardware_QMB.o \

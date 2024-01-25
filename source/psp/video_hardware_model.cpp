@@ -35,6 +35,7 @@ extern "C"
 #include "video_hardware_fullbright.h"
 #include "video_hardware_hlmdl.h"
 #include "video_hardware_images.h"
+#include "video_hardware_iqm.h"
 
 int LIGHTMAP_BYTES;
 
