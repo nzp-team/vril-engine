@@ -1224,6 +1224,45 @@ uint32_t count_skel_model_n_bytes(skeletal_model_t *skel_model) {
 }
 
 
+// 
+// Util function for flattening a region of memory
+// Given a region of memory `buffer` that can fit `n_bytes`
+// 1. Copies `n_bytes` bytes from src_ptr into `buffer`
+// 2. Assigns the `dest_ptr` to the start location of that memory
+// 3. Increments the `buffer` pointer to point to the next free location of memory
+// 
+template<typename T>
+void flatten_member(T* &dest_ptr, T *src_ptr, size_t n_bytes, uint8_t* &buffer) {
+    // If src is nullptr, set dest to null_ptr and don't do anything else
+    if(src_ptr == nullptr) {
+        dest_ptr = nullptr;
+        return;
+    }
+    memcpy(buffer, src_ptr, n_bytes);
+    dest_ptr = (T*) buffer;
+    buffer += n_bytes;
+}
+
+// 
+// Util function to use after flattening a region of memory
+// Takes a pointer to memory and sets it to the offset to that region of memory
+// relative to the start of the buffer
+// 
+template<typename T1, typename T2>
+void set_member_to_offset(T1* &dest_ptr, T2 *buffer_start) {
+    // If the pointer is nullptr, don't offset (leave it as 0)
+    if(dest_ptr == nullptr) {
+        return;
+    }
+    dest_ptr = (T1*) ((uint8_t*) dest_ptr - (uint8_t*) buffer_start);
+}
+
+template<typename T1, typename T2>
+T1 *get_member_from_offset(T1 *member_ptr, T2 *buffer_start) {
+    return (T1*) ((uint8_t*) buffer_start + (int) member_ptr);
+}
+
+
 //
 // Copies the data contained in `skel_model` into `relocatable_skel_model` in 
 // such a way that the model memory is fully relocatable. (i.e. all data is 
@@ -1237,96 +1276,29 @@ void make_skeletal_model_relocatable(skeletal_model_t *relocatable_skel_model, s
     // ------------–------------–------------–------------–------------–-------
     // Memcpy each piece of the skeletal model into the corresponding section
     // ------------–------------–------------–------------–------------–-------
-    Con_Printf("Memcopying skeletal_model_t struct... ");
     uint8_t *ptr = (uint8_t*) relocatable_skel_model;
-
-    // 1. Assign the pointer to the memory slot
-    // 2. Copy the memory into the slot
-    // 3. Increment the pointer to point to the next free slot
-    // dest_data, src_data
-
-    memcpy(relocatable_skel_model, skel_model, sizeof(skeletal_model_t));
-    Con_Printf("DONE\n");
-    ptr += sizeof(skeletal_model_t);
-    Con_Printf("Memcopying skeletal_mesh_t array... ");
-    relocatable_skel_model->meshes = (skeletal_mesh_t*) ptr;
-    memcpy(relocatable_skel_model->meshes, skel_model->meshes, sizeof(skeletal_mesh_t) * skel_model->n_meshes);
-    ptr += sizeof(skeletal_mesh_t) * skel_model->n_meshes;
-    Con_Printf("DONE\n");
+    flatten_member(relocatable_skel_model, skel_model, sizeof(skeletal_model_t), ptr);
+    flatten_member(relocatable_skel_model->meshes, skel_model->meshes, sizeof(skeletal_mesh_t) * skel_model->n_meshes, ptr);
 
     for(int i = 0; i < skel_model->n_meshes; i++) {
-        // Con_Printf("Memcopying vertex_t array for mesh %d ... ", i);
-        // relocatable_skel_model->meshes[i].verts = (vertex_t*) ptr;
-        // memcpy(relocatable_skel_model->meshes[i].verts, skel_model->meshes[i].verts, sizeof(vertex_t) * relocatable_skel_model->meshes[i].n_verts);
-        // ptr += sizeof(vertex_t) * relocatable_skel_model->meshes[i].n_verts;
-        // Con_Printf("DONE\n");
-
-        Con_Printf("Memcopying submeshes skeletal_mesh_t array for mesh %d ... ", i);
-        relocatable_skel_model->meshes[i].submeshes = (skeletal_mesh_t*) ptr;
-        memcpy(relocatable_skel_model->meshes[i].submeshes, skel_model->meshes[i].submeshes, sizeof(skeletal_mesh_t) * skel_model->meshes[i].n_submeshes);
-        ptr += sizeof(skeletal_mesh_t) * skel_model->meshes[i].n_submeshes;
-        Con_Printf("DONE\n");
-
+        flatten_member(relocatable_skel_model->meshes[i].submeshes, skel_model->meshes[i].submeshes, sizeof(skeletal_mesh_t) * skel_model->meshes[i].n_submeshes, ptr);
         for(int j = 0; j < skel_model->meshes[i].n_submeshes; j++) {
             if(skel_model->meshes[i].submeshes[j].vert8s != nullptr) {
-                Con_Printf("Memcopying vert8s array for mesh %d submesh %d... ", i, j);
-                relocatable_skel_model->meshes[i].submeshes[j].vert8s = (skel_vertex_i8_t*) ptr;
-                memcpy(relocatable_skel_model->meshes[i].submeshes[j].vert8s, skel_model->meshes[i].submeshes[j].vert8s, sizeof(skel_vertex_i8_t) * skel_model->meshes[i].submeshes[j].n_verts);
-                ptr += sizeof(skel_vertex_i8_t) * skel_model->meshes[i].submeshes[j].n_verts;
-                Con_Printf("DONE\n");
+                flatten_member(relocatable_skel_model->meshes[i].submeshes[j].vert8s, skel_model->meshes[i].submeshes[j].vert8s, sizeof(skel_vertex_i8_t) * skel_model->meshes[i].submeshes[j].n_verts, ptr);
             }
             if(skel_model->meshes[i].submeshes[j].vert16s != nullptr) {
-                Con_Printf("Memcopying vert16s array for mesh %d submesh %d... ", i, j);
-                relocatable_skel_model->meshes[i].submeshes[j].vert16s = (skel_vertex_i16_t*) ptr;
-                memcpy(relocatable_skel_model->meshes[i].submeshes[j].vert16s, skel_model->meshes[i].submeshes[j].vert16s, sizeof(skel_vertex_i16_t) * skel_model->meshes[i].submeshes[j].n_verts);
-                ptr += sizeof(skel_vertex_i16_t) * skel_model->meshes[i].submeshes[j].n_verts;
-                Con_Printf("DONE\n");
+                flatten_member(relocatable_skel_model->meshes[i].submeshes[j].vert16s, skel_model->meshes[i].submeshes[j].vert16s, sizeof(skel_vertex_i16_t) * skel_model->meshes[i].submeshes[j].n_verts, ptr);
             }
         }
-
-        // Con_Printf("Memcopying tri_verts uint16_t array for mesh %d ... ", i);
-        // relocatable_skel_model->meshes[i].tri_verts = (uint16_t*) ptr;
-        // memcpy(relocatable_skel_model->meshes[i].tri_verts, skel_model->meshes[i].tri_verts, sizeof(uint16_t) * relocatable_skel_model->meshes[i].n_tris * 3);
-        // ptr += sizeof(uint16_t) * skel_model->meshes[i].n_tris * 3;
-        // Con_Printf("DONE\n");
     }
     // -- bones --
-    Con_Printf("Memcopying bone_name char* array ... ");
-    relocatable_skel_model->bone_name = (char**) ptr;
-    memcpy(relocatable_skel_model->bone_name, skel_model->bone_name, sizeof(char*) * skel_model->n_bones);
-    ptr += sizeof(char*) * skel_model->n_bones;
-    Con_Printf("DONE\n");
-
-    Con_Printf("Memcopying bone_parent_idx int16_t array ... ");
-    relocatable_skel_model->bone_parent_idx = (int16_t*) ptr;
-    memcpy(relocatable_skel_model->bone_parent_idx, skel_model->bone_parent_idx, sizeof(int16_t) * skel_model->n_bones);
-    ptr += sizeof(int16_t) * skel_model->n_bones;
-    Con_Printf("DONE\n");
-
-    Con_Printf("Memcopying bone_rest_pos vec3_t array ... ");
-    relocatable_skel_model->bone_rest_pos = (vec3_t*) ptr;
-    memcpy(relocatable_skel_model->bone_rest_pos, skel_model->bone_rest_pos, sizeof(vec3_t) * skel_model->n_bones);
-    ptr += sizeof(vec3_t) * skel_model->n_bones;
-    Con_Printf("DONE\n");
-
-    Con_Printf("Memcopying bone_rest_rot quat_t array ... ");
-    relocatable_skel_model->bone_rest_rot = (quat_t*) ptr;
-    memcpy(relocatable_skel_model->bone_rest_rot, skel_model->bone_rest_rot, sizeof(quat_t) * skel_model->n_bones);
-    ptr += sizeof(quat_t) * skel_model->n_bones;
-    Con_Printf("DONE\n");
-
-    Con_Printf("Memcopying bone_rest_scale vec3_t array ... ");
-    relocatable_skel_model->bone_rest_scale = (vec3_t*) ptr;
-    memcpy(relocatable_skel_model->bone_rest_scale, skel_model->bone_rest_scale, sizeof(vec3_t) * skel_model->n_bones);
-    ptr += sizeof(vec3_t) * skel_model->n_bones;
-    Con_Printf("DONE\n");
-
+    flatten_member(relocatable_skel_model->bone_name, skel_model->bone_name, sizeof(char*) * skel_model->n_bones, ptr);
+    flatten_member(relocatable_skel_model->bone_parent_idx, skel_model->bone_parent_idx, sizeof(int16_t) * skel_model->n_bones, ptr);
+    flatten_member(relocatable_skel_model->bone_rest_pos, skel_model->bone_rest_pos, sizeof(vec3_t) * skel_model->n_bones, ptr);
+    flatten_member(relocatable_skel_model->bone_rest_rot, skel_model->bone_rest_rot, sizeof(vec4_t) * skel_model->n_bones, ptr);
+    flatten_member(relocatable_skel_model->bone_rest_scale, skel_model->bone_rest_scale, sizeof(vec3_t) * skel_model->n_bones, ptr);
     for(int i = 0; i < skel_model->n_bones; i++) {
-        Con_Printf("Memcopying bone_name char array for bone %d ... ", i);
-        relocatable_skel_model->bone_name[i] = (char*) ptr;
-        memcpy(relocatable_skel_model->bone_name[i], skel_model->bone_name[i], sizeof(char) * (strlen(skel_model->bone_name[i]) + 1));
-        ptr += sizeof(char) * (strlen(skel_model->bone_name[i]) + 1);
-        Con_Printf("DONE\n");
+        flatten_member(relocatable_skel_model->bone_name[i], skel_model->bone_name[i], sizeof(char) * (strlen(skel_model->bone_name[i]) + 1), ptr);
     }
     // ------------–------------–------------–------------–------------–-------
 
@@ -1334,55 +1306,26 @@ void make_skeletal_model_relocatable(skeletal_model_t *relocatable_skel_model, s
     // Clean up all pointers to be relative to model start location in memory
     // ------------–------------–------------–------------–------------–-------
     for(int i = 0; i < skel_model->n_bones; i++) {
-        Con_Printf("Shifting bone_name char array for bone %d ... ", i);
-        relocatable_skel_model->bone_name[i] = (char*) ((uint8_t*)(relocatable_skel_model->bone_name[i]) - (uint8_t*)relocatable_skel_model);
-        Con_Printf("DONE\n");
+        set_member_to_offset(relocatable_skel_model->bone_name[i], relocatable_skel_model);
     }
-    Con_Printf("Shifting bone_name char* array ... ");
-    relocatable_skel_model->bone_name = (char**) ((uint8_t*)(relocatable_skel_model->bone_name) - (uint8_t*)relocatable_skel_model);
-    Con_Printf("DONE\n");
-    Con_Printf("Shifting bone_parent_idx int16_t array ... ");
-    relocatable_skel_model->bone_parent_idx = (int16_t*) ((uint8_t*)(relocatable_skel_model->bone_parent_idx) - (uint8_t*)relocatable_skel_model);
-    Con_Printf("DONE\n");
-    Con_Printf("Shifting bone_rest_pos vec3_t array ... ");
-    relocatable_skel_model->bone_rest_pos = (vec3_t*) ((uint8_t*)(relocatable_skel_model->bone_rest_pos) - (uint8_t*)relocatable_skel_model);
-    Con_Printf("DONE\n");
-    Con_Printf("Shifting bone_rest_rot quat_t array ... ");
-    relocatable_skel_model->bone_rest_rot = (quat_t*) ((uint8_t*)(relocatable_skel_model->bone_rest_rot) - (uint8_t*)relocatable_skel_model);
-    Con_Printf("DONE\n");
-    Con_Printf("Shifting bone_rest_scale vec3_t array ... ");
-    relocatable_skel_model->bone_rest_scale = (vec3_t*) ((uint8_t*)(relocatable_skel_model->bone_rest_scale) - (uint8_t*)relocatable_skel_model);
-    Con_Printf("DONE\n");
+
+    set_member_to_offset(relocatable_skel_model->bone_rest_scale, relocatable_skel_model);
+    set_member_to_offset(relocatable_skel_model->bone_rest_rot, relocatable_skel_model);
+    set_member_to_offset(relocatable_skel_model->bone_rest_pos, relocatable_skel_model);
+    set_member_to_offset(relocatable_skel_model->bone_parent_idx, relocatable_skel_model);
+    set_member_to_offset(relocatable_skel_model->bone_name, relocatable_skel_model);
 
     for(int i = 0; i < skel_model->n_meshes; i++) {
         for(int j = 0; j < skel_model->meshes[i].n_submeshes; j++) {
-            if(skel_model->meshes[i].submeshes[j].vert8s != nullptr) {
-                Con_Printf("Shifting vert8s array pointer for mesh %d submesh %d ... ", i, j);
-                relocatable_skel_model->meshes[i].submeshes[j].vert8s = (skel_vertex_i8_t*) ((uint8_t*)(relocatable_skel_model->meshes[i].submeshes[j].vert8s) - (uint8_t*)relocatable_skel_model);
-                Con_Printf("DONE\n");
-            }
-            if(skel_model->meshes[i].submeshes[j].vert16s != nullptr) {
-                Con_Printf("Shifting vert16s array pointer for mesh %d submesh %d ... ", i, j);
-                relocatable_skel_model->meshes[i].submeshes[j].vert16s = (skel_vertex_i16_t*) ((uint8_t*)(relocatable_skel_model->meshes[i].submeshes[j].vert16s) - (uint8_t*)relocatable_skel_model);
-                Con_Printf("DONE\n");
-            }
+            set_member_to_offset(relocatable_skel_model->meshes[i].submeshes[j].vert8s, relocatable_skel_model);
+            set_member_to_offset(relocatable_skel_model->meshes[i].submeshes[j].vert16s, relocatable_skel_model);
         }
-
-        Con_Printf("Shifting submesh array pointer for mesh %d ... ", i);
-        relocatable_skel_model->meshes[i].submeshes = (skeletal_mesh_t*) ((uint8_t*)(relocatable_skel_model->meshes[i].submeshes) - (uint8_t*)relocatable_skel_model);
-        Con_Printf("DONE\n");
-        // Con_Printf("Shifting vertex_t array pointer for mesh %d ... ", i);
-        // relocatable_skel_model->meshes[i].verts = (vertex_t*) ((uint8_t*)(relocatable_skel_model->meshes[i].verts) - (uint8_t*)relocatable_skel_model);
-        // Con_Printf("DONE\n");
-        // Con_Printf("Shifting tri_verts uint16_t array pointer for mesh %d ... ", i);
-        // relocatable_skel_model->meshes[i].tri_verts = (uint16_t*) ((uint8_t*)(relocatable_skel_model->meshes[i].tri_verts) - (uint8_t*)relocatable_skel_model);
-        // Con_Printf("DONE\n");
+        set_member_to_offset(relocatable_skel_model->meshes[i].submeshes, relocatable_skel_model);
     }
-    Con_Printf("Shifting skeletal_mesh_t array pointer... ");
-    relocatable_skel_model->meshes = (skeletal_mesh_t*) ((uint8_t*)(relocatable_skel_model->meshes) - (uint8_t*)relocatable_skel_model);
-    Con_Printf("DONE\n");
+    set_member_to_offset(relocatable_skel_model->meshes, relocatable_skel_model);
     // ------------–------------–------------–------------–------------–-------
 }
+
 
 //
 // Completely deallocates a skeletal_model_t struct, pointers and all.
@@ -1574,14 +1517,14 @@ void R_DrawIQMModel(entity_t *ent) {
     //     sceGumDrawArray(GU_TRIANGLES,GU_INDEX_16BIT|GU_TEXTURE_32BITF|GU_NORMAL_32BITF|GU_VERTEX_32BITF|GU_TRANSFORM_3D, mesh->n_tris * 3, mesh_tri_verts, mesh_verts);
     // }
 
-    skeletal_mesh_t *meshes = (skeletal_mesh_t *) ((uint8_t*) skel_model + (int) skel_model->meshes);
+    skeletal_mesh_t *meshes = get_member_from_offset(skel_model->meshes, skel_model);
 
 
     for(int i = 0; i < skel_model->n_meshes; i++) {
         Con_Printf("Drawing mesh %d\n", i);
         skeletal_mesh_t *mesh = &meshes[i];
         Con_Printf("\tn_submeshes: %d\n", mesh->n_submeshes);
-        skeletal_mesh_t *submeshes = (skeletal_mesh_t *) ((uint8_t*) skel_model + (int) mesh->submeshes);
+        skeletal_mesh_t *submeshes = get_member_from_offset(mesh->submeshes, skel_model);
         for(int j = 0; j < mesh->n_submeshes; j++) {
             Con_Printf("Drawing mesh %d submesh %d\n", i, j);
             skeletal_mesh_t *submesh = &submeshes[j];
@@ -1592,8 +1535,8 @@ void R_DrawIQMModel(entity_t *ent) {
             sceGumTranslate(&verts_ofs);
             sceGumScale(&verts_scale);
 
-            skel_vertex_i8_t *vert8s = (skel_vertex_i8_t *) ((uint8_t*) skel_model + (int) submesh->vert8s);
-            skel_vertex_i16_t *vert16s = (skel_vertex_i16_t *) ((uint8_t*) skel_model + (int) submesh->vert16s);
+            skel_vertex_i8_t *vert8s = get_member_from_offset(submesh->vert8s, skel_model);
+            skel_vertex_i16_t *vert16s = get_member_from_offset(submesh->vert16s, skel_model);
 
             // FIXME - for now, bind identity matrixes for each of the 8 hw-skinning bone mats:
             // FIXME - Need to bind proper matrices for this submesh
@@ -1629,11 +1572,11 @@ void R_DrawIQMModel(entity_t *ent) {
 
     // Draw bones
     // Con_Printf("------------------------------\n");
-    char **bone_names = (char**) ((uint8_t*) skel_model + (int) skel_model->bone_name);
-    vec3_t *bone_rest_pos = (vec3_t*) ((uint8_t*)skel_model + (int)skel_model->bone_rest_pos);
-    quat_t *bone_rest_rot = (quat_t*) ((uint8_t*)skel_model + (int)skel_model->bone_rest_rot);
-    vec3_t *bone_rest_scale = (vec3_t*) ((uint8_t*)skel_model + (int)skel_model->bone_rest_scale);
-    int16_t *bone_parent_idx = (int16_t*) ((uint8_t*)skel_model + (int)skel_model->bone_parent_idx);
+    char **bone_names = get_member_from_offset(skel_model->bone_name, skel_model);
+    vec3_t *bone_rest_pos = get_member_from_offset(skel_model->bone_rest_pos, skel_model);
+    quat_t *bone_rest_rot = get_member_from_offset(skel_model->bone_rest_rot, skel_model);
+    vec3_t *bone_rest_scale = get_member_from_offset(skel_model->bone_rest_scale, skel_model);
+    int16_t *bone_parent_idx = get_member_from_offset(skel_model->bone_parent_idx, skel_model);
 
     // TODO - Move this into the model struct...?
     mat3x4_t bone_rest_transforms[25];
