@@ -172,23 +172,70 @@ typedef struct iqm_ext_fte_skin_meshskin_s {
 } iqm_ext_fte_skin_meshskin_t;
 
 
-typedef struct vertex_s {
+typedef struct skel_vertex_f32_s {
     float u, v;
     // uint32_t color; - NOTE - Removed
     float nor_x, nor_y, nor_z;
     float x,y,z;
-} vertex_t;
+} skel_vertex_f32_t;
+
+
+typedef struct skel_vertex_i16_s {
+    // Bone skinning weights, one per bone.
+    int8_t bone_weights[8];
+    int16_t u,v;
+    int16_t nor_x, nor_y, nor_z;
+    int16_t x,y,z;
+} skel_vertex_i16_t;
+
+
+typedef struct skel_vertex_i8_s {
+    // Bone skinning weights, one per bone.
+    int8_t bone_weights[8];
+    int8_t u,v;
+    int8_t nor_x, nor_y, nor_z;
+    int8_t x,y,z;
+} skel_vertex_i8_t;
+
+
+
+
+
 
 typedef struct skeletal_mesh_s {
-    uint32_t n_verts; // Number of unique vertices in this mesh
-    // vec3_t *vert_rest_positions; // Contains the rest position of all vertices
-    vertex_t *verts = nullptr; // Vertex struct passed to GU for drawing
-    // skinning_vertex_t *skinning_verts = nullptr; // Vertex struct used for hardware skinning (has 8 skinning weights)
+    uint32_t n_verts;               // Number of vertices in this mesh
+    uint32_t n_tris;                // Number of triangles in this mesh
+    // ------------------------------------------------------------------------
+    // Pointers to use to stash temporary data during model loading
+    // ------------------------------------------------------------------------
+    vec3_t *vert_rest_positions;    // Vert xyz coordinates
+    vec2_t *vert_uvs;               // Vert UV coordinates
+    vec3_t *vert_rest_normals;      // Vert normals
+    float  *vert_bone_weights;      // 4 bone weights per vertex
+    uint8_t *vert_bone_idxs;        // 4 bone indices per vertex
+    float *vert_skinning_weights;   // 8 weights per vertex (Used for mesh -> submesh splitting)
+    uint16_t *tri_verts;            // (3 * n_tris) indices to verts that define triangles
+    // ------------------------------------------------------------------------
 
-    uint32_t n_tris; // Number of triangles in mesh
-    uint16_t *tri_verts = nullptr; // Contains the vertex indices for each triangle
+    // ------------------------------------------------------------------------
+    // Pointers to data structures holding the hardware-skinning vertex data
+    // NOTE - These are only assigned at the submesh level
+    // ------------------------------------------------------------------------
+    // skel_vertex_f32_t *verts   = nullptr;    // float32 Vertex struct
+    skel_vertex_i16_t *vert16s = nullptr;       // int16 Vertex struct
+    skel_vertex_i8_t  *vert8s  = nullptr;       // int8 Vertex struct
+    uint8_t n_skinning_bones = 0;               // Number of hardware skinning bones (<= 8)
+    uint8_t skinning_bone_idxs[8];              // Model bone indices to use for hardware skinning
+    vec3_t verts_ofs;                           // Offset for vertex quantization grid
+    vec3_t verts_scale;                         // Scale for vertex quantization grid
+    // ------------------------------------------------------------------------
 
+
+    uint8_t n_submeshes = 0;
+    struct skeletal_mesh_s *submeshes = nullptr;
 } skeletal_mesh_t;
+
+
 
 typedef struct skeletal_model_s {
     // Model mins / maxs across all animation frames
@@ -201,6 +248,14 @@ typedef struct skeletal_model_s {
     skeletal_mesh_t *meshes;
 
 
+    // List of bones
+    uint32_t n_bones;
+    char **bone_name;
+    int16_t *bone_parent_idx;
+
+    vec3_t *bone_rest_pos;
+    quat_t *bone_rest_rot;
+    vec3_t *bone_rest_scale;
 } skeletal_model_t;
 
 
