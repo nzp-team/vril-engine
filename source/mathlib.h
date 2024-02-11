@@ -221,6 +221,10 @@ extern const matrix3x4	matrix3x4_identity;
 extern const matrix4x4	matrix4x4_identity;
 
 void VectorTransform (const vec3_t in1, matrix3x4 in2, vec3_t out);
+void AngleQuaternion( const vec3_t angles, vec4_t quaternion );
+void QuaternionMatrix( const vec4_t quaternion, float (*matrix)[4] );
+void QuaternionSlerp( const vec4_t p, vec4_t q, float t, vec4_t qt );
+
 
 // Prototypes added by PM.
 void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, float degrees );

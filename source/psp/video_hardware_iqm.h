@@ -256,7 +256,61 @@ typedef struct skeletal_model_s {
     vec3_t *bone_rest_pos;
     quat_t *bone_rest_rot;
     vec3_t *bone_rest_scale;
+
+
+    // The per-bone transform that takes us from rest-pose model-space to bone local space
+    // These are static, so compute them once
+    mat3x4_t *bone_rest_transforms;
+    mat3x4_t *inv_bone_rest_transforms;
+    
+
+    // Animation frames data
+    uint16_t n_frames;
+    // TODO - IQM has a parent index for each pose, do we need it? is it always the same as the parent's bone parent idx?
+    vec3_t *frames_bone_pos;
+    quat_t *frames_bone_rot;
+    vec3_t *frames_bone_scale;
+
+
+    // Animation framegroup data
+    uint16_t n_framegroups;
+    char **framegroup_name;
+    uint32_t *framegroup_start_frame;
+    uint32_t *framegroup_n_frames;
+    float *framegroup_fps;
+    bool *framegroup_loop;
+
+
 } skeletal_model_t;
+
+
+
+typedef struct skeletal_skeleton_s {
+    const skeletal_model_t *model; // Animation / skeleton data is pulled from this model
+
+    // ------------------------------------------------------------------------
+    // Skeleton State Variables
+    // ------------------------------------------------------------------------
+    // The following state variables are set whenever a pose is applied to a 
+    // skeleton object.
+    // ------------------------------------------------------------------------
+    const skeletal_model_t *anim_model; // Which skeletal model the animation data was read from
+    mat3x4_t *bone_transforms; // Transforms bone's local-space to model-space
+    mat3x4_t *bone_rest_to_pose_transforms; // Transforms bone's rest-pose model-space to posed model-space
+    mat3x3_t *bone_rest_to_pose_normal_transforms; // 3x3 inverse-transpose of `bone_transforms` for vertex normals
+    int32_t *anim_bone_idx; // anim_bone_idx[i] = j : skeleton bone i reads data from animation bone j. If j == -1, bone i is not animated.
+    // ------------------------------------------------------------------------
+} skeletal_skeleton_t;
+
+
+
+#define MAX_SKELETONS 256
+skeletal_skeleton_t sv_skeletons[MAX_SKELETONS]; // Server-side skeleton objects
+skeletal_skeleton_t cl_skeletons[MAX_SKELETONS]; // Client-side skeleton objects
+int sv_n_skeletons = 0;
+int cl_n_skeletons = 0;
+
+
 
 
 skeletal_model_t *load_iqm_file(const char*file_path);

@@ -1142,7 +1142,7 @@ skeletal_model_t *load_iqm_file(void *iqm_data) {
 
 
     // --------------------------------------------------
-    // Parse bones
+    // Parse bones and their rest transforms
     // --------------------------------------------------
     Con_Printf("Parsing joints...\n");
     skel_model->n_bones = iqm_header->n_joints ? iqm_header->n_joints : iqm_header->n_poses;
@@ -1184,6 +1184,131 @@ skeletal_model_t *load_iqm_file(void *iqm_data) {
             return nullptr;
         }
     }
+    // --------------------------------------------------
+
+
+    // --------------------------------------------------
+    // Calculate static bone transforms that will be reused often
+    // --------------------------------------------------
+    // Build the transform that takes us from model-space to each bone's bone-space for the rest pose.
+    // This is static, so compute once and cache
+
+    // First build the bone-space --> model-space transform for each bone (We will invert it later)
+    skel_model->bone_rest_transforms = (mat3x4_t*) malloc(sizeof(mat3x4_t) * skel_model->n_bones);
+    skel_model->inv_bone_rest_transforms = (mat3x4_t*) malloc(sizeof(mat3x4_t) * skel_model->n_bones);
+    for(uint32_t i = 0; i < skel_model->n_bones; i++) {
+        // Rest bone-space transform (relative to parent)
+        Matrix3x4_scale_rotate_translate(
+            skel_model->bone_rest_transforms[i],
+            skel_model->bone_rest_scale[i],
+            skel_model->bone_rest_rot[i],
+            skel_model->bone_rest_pos[i]
+        );
+        // If we have a parent, concat parent transform to get model-space transform
+        int parent_bone_idx = skel_model->bone_parent_idx[i];
+        if(parent_bone_idx >= 0) {
+            mat3x4_t temp;
+            Matrix3x4_ConcatTransforms( temp, skel_model->bone_rest_transforms[parent_bone_idx], skel_model->bone_rest_transforms[i]);
+            Matrix3x4_Copy(skel_model->bone_rest_transforms[i], temp);
+        }
+        // If we don't have a parent, the bone-space transform _is_ the model-space transform
+    }
+    // Next, invert the transforms to get the model-space --> bone-space transform
+    for(uint32_t i = 0; i < skel_model->n_bones; i++) {
+        Matrix3x4_Invert_Simple( skel_model->inv_bone_rest_transforms[i], skel_model->bone_rest_transforms[i]);
+    }
+
+    // Debug -- print cached bone rest transforms
+    // Con_Printf("==============================================\n");
+    // Con_Printf("Bone rest transform @ inverse bone rest transform\n");
+    // Con_Printf("==============================================\n");
+    // for(uint32_t i = 0; i < skel_model->n_bones; i++) {
+    //     mat3x4_t temp;
+    //     Matrix3x4_ConcatTransforms(temp, skel_model->inv_bone_rest_transforms[i], skel_model->bone_rest_transforms[i]);
+    //     Con_Printf("\tBone %d", i);
+    //     Con_Printf("\t\t[  %.2f  %.2f  %.2f  %.2f  ]\n", temp[0][0], temp[0][1], temp[0][2], temp[0][3]);
+    //     Con_Printf("\t\t[  %.2f  %.2f  %.2f  %.2f  ]\n", temp[1][0], temp[1][1], temp[1][2], temp[1][3]);
+    //     Con_Printf("\t\t[  %.2f  %.2f  %.2f  %.2f  ]\n", temp[2][0], temp[2][1], temp[2][2], temp[2][3]);
+    // }
+    // Con_Printf("==============================================\n");
+
+
+    // --------------------------------------------------
+
+
+    // --------------------------------------------------
+    // Parse all frames (poses)
+    // --------------------------------------------------
+    skel_model->n_frames = iqm_header->n_frames;
+    Con_Printf("\tBones: %d\n",skel_model->n_bones);
+    Con_Printf("\tFrames: %d\n",iqm_header->n_frames);
+    Con_Printf("\tPoses: %d\n",iqm_header->n_poses);
+    skel_model->frames_bone_pos = (vec3_t *) malloc(sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames);
+    skel_model->frames_bone_rot = (quat_t *) malloc(sizeof(quat_t) * skel_model->n_bones * skel_model->n_frames);
+    skel_model->frames_bone_scale = (vec3_t *) malloc(sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames);
+
+    const uint16_t *frames_data = (const uint16_t*)((uint8_t*) iqm_data + iqm_header->ofs_frames);
+    int frames_data_ofs = 0;
+    const iqm_pose_quaternion_t *iqm_poses = (const iqm_pose_quaternion_t*) ((uint8_t*) iqm_data + iqm_header->ofs_poses);
+
+    // Iterate over actual frames in IQM file:
+    for(uint32_t i = 0; i < iqm_header->n_frames; i++) {
+        // Iterate over pose (a pose is a bone orientation, one pose per bone)
+        for(uint32_t j = 0; j < iqm_header->n_poses; j++) {
+            // Read data for all 10 channels
+            float pose_data[10] = {0};
+            for(uint32_t k = 0; k < 10; k++) {
+                pose_data[k] = iqm_poses[j].channel_ofs[k];
+                if(iqm_poses[j].mask & (1 << k)) {
+                    pose_data[k] += frames_data[frames_data_ofs++] * iqm_poses[j].channel_scale[k];
+                }
+            }
+            int frame_bone_idx = i * skel_model->n_bones + j;
+            skel_model->frames_bone_pos[frame_bone_idx][0] = pose_data[0];
+            skel_model->frames_bone_pos[frame_bone_idx][1] = pose_data[1];
+            skel_model->frames_bone_pos[frame_bone_idx][2] = pose_data[2];
+            skel_model->frames_bone_rot[frame_bone_idx][0] = pose_data[3];
+            skel_model->frames_bone_rot[frame_bone_idx][1] = pose_data[4];
+            skel_model->frames_bone_rot[frame_bone_idx][2] = pose_data[5];
+            skel_model->frames_bone_rot[frame_bone_idx][3] = pose_data[6];
+            skel_model->frames_bone_scale[frame_bone_idx][0] = pose_data[7];
+            skel_model->frames_bone_scale[frame_bone_idx][1] = pose_data[8];
+            skel_model->frames_bone_scale[frame_bone_idx][2] = pose_data[9];
+        }
+    }
+    // --------------------------------------------------
+
+    // --------------------------------------------------
+    // Parse animations (framegroups)
+    // --------------------------------------------------
+    skel_model->n_framegroups = iqm_header->n_anims;
+    skel_model->framegroup_name = (char**) malloc(sizeof(char*) * skel_model->n_framegroups);
+    skel_model->framegroup_start_frame = (uint32_t*) malloc(sizeof(uint32_t) * skel_model->n_framegroups);
+    skel_model->framegroup_n_frames = (uint32_t*) malloc(sizeof(uint32_t) * skel_model->n_framegroups);
+    skel_model->framegroup_fps = (float*) malloc(sizeof(float) * skel_model->n_framegroups);
+    skel_model->framegroup_loop = (bool*) malloc(sizeof(bool) * skel_model->n_framegroups);
+
+    if(iqm_header->n_anims > 0) {
+        const iqm_anim_t *iqm_framegroups = (const iqm_anim_t*)((uint8_t*) iqm_data + iqm_header->ofs_anims);
+        for(uint32_t i = 0; i < iqm_header->n_anims; i++) {
+            const char* framegroup_name = (const char*) ((uint8_t*) iqm_data + iqm_header->ofs_text + iqm_framegroups[i].name);
+            skel_model->framegroup_name[i] = (char*) malloc(sizeof(char) * (strlen(framegroup_name) + 1));
+            strcpy(skel_model->framegroup_name[i], framegroup_name);
+            skel_model->framegroup_start_frame[i] = iqm_framegroups[i].first_frame;
+            skel_model->framegroup_n_frames[i] = iqm_framegroups[i].n_frames;
+            skel_model->framegroup_fps[i] = iqm_framegroups[i].framerate;
+            // skel_model->framegroup_fps[i] = 20.0f;
+            skel_model->framegroup_loop[i] = iqm_framegroups[i].flags & (uint32_t) iqm_anim_flag::IQM_ANIM_FLAG_LOOP;
+            // FOR DEBUG ONLY: Force-loop all animations:
+            skel_model->framegroup_loop[i] = true;
+        }
+    }
+    Con_Printf("\tParsed %d framegroups.\n", skel_model->n_framegroups);
+    // --------------------------------------------------
+
+
+
+
 
 
     return skel_model;
@@ -1219,6 +1344,22 @@ uint32_t count_skel_model_n_bytes(skeletal_model_t *skel_model) {
     skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
     for(int i = 0; i < skel_model->n_bones; i++) {
         skel_model_n_bytes += sizeof(char) * (strlen(skel_model->bone_name[i]) + 1);
+    }
+    // -- cached bone rest transforms --
+    skel_model_n_bytes += sizeof(mat3x4_t) * skel_model->n_bones;
+    skel_model_n_bytes += sizeof(mat3x4_t) * skel_model->n_bones;
+    // -- animation frames -- 
+    skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames;
+    skel_model_n_bytes += sizeof(quat_t) * skel_model->n_bones * skel_model->n_frames;
+    skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames;
+    // -- animation framegroups --
+    skel_model_n_bytes += sizeof(char*) * skel_model->n_framegroups;
+    skel_model_n_bytes += sizeof(uint32_t) * skel_model->n_framegroups;
+    skel_model_n_bytes += sizeof(uint32_t) * skel_model->n_framegroups;
+    skel_model_n_bytes += sizeof(float) * skel_model->n_framegroups;
+    skel_model_n_bytes += sizeof(bool) * skel_model->n_framegroups;
+    for(int i = 0; i < skel_model->n_framegroups; i++) {
+        skel_model_n_bytes += sizeof(char) * (strlen(skel_model->framegroup_name[i]) + 1);
     }
     return skel_model_n_bytes;
 }
@@ -1300,15 +1441,48 @@ void make_skeletal_model_relocatable(skeletal_model_t *relocatable_skel_model, s
     for(int i = 0; i < skel_model->n_bones; i++) {
         flatten_member(relocatable_skel_model->bone_name[i], skel_model->bone_name[i], sizeof(char) * (strlen(skel_model->bone_name[i]) + 1), ptr);
     }
+    // -- cached bone rest transforms --
+    flatten_member(relocatable_skel_model->bone_rest_transforms, skel_model->bone_rest_transforms, sizeof(mat3x4_t) * skel_model->n_bones, ptr);
+    flatten_member(relocatable_skel_model->inv_bone_rest_transforms, skel_model->inv_bone_rest_transforms, sizeof(mat3x4_t) * skel_model->n_bones, ptr);
+    // -- frames --
+    flatten_member(relocatable_skel_model->frames_bone_pos, skel_model->frames_bone_pos, sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames, ptr);
+    flatten_member(relocatable_skel_model->frames_bone_rot, skel_model->frames_bone_rot, sizeof(quat_t) * skel_model->n_bones * skel_model->n_frames, ptr);
+    flatten_member(relocatable_skel_model->frames_bone_scale, skel_model->frames_bone_scale, sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames, ptr);
+    // -- framegroups --
+    flatten_member(relocatable_skel_model->framegroup_name, skel_model->framegroup_name, sizeof(char*) * skel_model->n_framegroups, ptr);
+    flatten_member(relocatable_skel_model->framegroup_start_frame, skel_model->framegroup_start_frame, sizeof(uint32_t) * skel_model->n_framegroups, ptr);
+    flatten_member(relocatable_skel_model->framegroup_n_frames, skel_model->framegroup_n_frames, sizeof(uint32_t) * skel_model->n_framegroups, ptr);
+    flatten_member(relocatable_skel_model->framegroup_fps, skel_model->framegroup_fps, sizeof(float) * skel_model->n_framegroups, ptr);
+    flatten_member(relocatable_skel_model->framegroup_loop, skel_model->framegroup_loop, sizeof(bool) * skel_model->n_framegroups, ptr);
+    for(int i = 0; i < skel_model->n_framegroups; i++) {
+        flatten_member(relocatable_skel_model->framegroup_name[i], skel_model->framegroup_name[i], sizeof(char) * (strlen(skel_model->framegroup_name[i]) + 1), ptr);
+    }
     // ------------–------------–------------–------------–------------–-------
 
     // ------------–------------–------------–------------–------------–-------
     // Clean up all pointers to be relative to model start location in memory
+    // NOTE - Must deconstruct in reverse order to avoid undoing offsets
     // ------------–------------–------------–------------–------------–-------
+    // -- framegroups --
+    for(int i = 0; i < skel_model->n_framegroups; i++) {
+        set_member_to_offset(relocatable_skel_model->framegroup_name[i], relocatable_skel_model);
+    }
+    set_member_to_offset(relocatable_skel_model->framegroup_loop, relocatable_skel_model);
+    set_member_to_offset(relocatable_skel_model->framegroup_fps, relocatable_skel_model);
+    set_member_to_offset(relocatable_skel_model->framegroup_n_frames, relocatable_skel_model);
+    set_member_to_offset(relocatable_skel_model->framegroup_start_frame, relocatable_skel_model);
+    set_member_to_offset(relocatable_skel_model->framegroup_name, relocatable_skel_model);
+    // -- frames --
+    set_member_to_offset(relocatable_skel_model->frames_bone_scale, relocatable_skel_model);
+    set_member_to_offset(relocatable_skel_model->frames_bone_rot, relocatable_skel_model);
+    set_member_to_offset(relocatable_skel_model->frames_bone_pos, relocatable_skel_model);
+    // -- cached bone rest transforms --
+    set_member_to_offset(relocatable_skel_model->inv_bone_rest_transforms, relocatable_skel_model);
+    set_member_to_offset(relocatable_skel_model->bone_rest_transforms, relocatable_skel_model);
+    // -- bones --
     for(int i = 0; i < skel_model->n_bones; i++) {
         set_member_to_offset(relocatable_skel_model->bone_name[i], relocatable_skel_model);
     }
-
     set_member_to_offset(relocatable_skel_model->bone_rest_scale, relocatable_skel_model);
     set_member_to_offset(relocatable_skel_model->bone_rest_rot, relocatable_skel_model);
     set_member_to_offset(relocatable_skel_model->bone_rest_pos, relocatable_skel_model);
@@ -1332,14 +1506,33 @@ void make_skeletal_model_relocatable(skeletal_model_t *relocatable_skel_model, s
 // NOTE - This should not be used on a relocatable skeletal_model_t object.
 //
 void free_skeletal_model(skeletal_model_t *skel_model) {
-    for(int i = 0; i < skel_model->n_bones; i++) {
-        free(skel_model->bone_name[i]);
+    // Free fields in reverse order to avoid losing references
+
+    // -- framegroups --
+    for(int i = 0; i < skel_model->n_framegroups; i++) {
+        free_pointer_and_clear(skel_model->framegroup_name[i]);
     }
-    free(skel_model->bone_name);
-    free(skel_model->bone_parent_idx);
-    free(skel_model->bone_rest_pos);
-    free(skel_model->bone_rest_rot);
-    free(skel_model->bone_rest_scale);
+    free_pointer_and_clear(skel_model->framegroup_loop);
+    free_pointer_and_clear(skel_model->framegroup_fps);
+    free_pointer_and_clear(skel_model->framegroup_n_frames);
+    free_pointer_and_clear(skel_model->framegroup_start_frame);
+    free_pointer_and_clear(skel_model->framegroup_name);
+    // -- frames --
+    free_pointer_and_clear(skel_model->frames_bone_scale);
+    free_pointer_and_clear(skel_model->frames_bone_rot);
+    free_pointer_and_clear(skel_model->frames_bone_pos);
+    // -- cached bone rest transforms --
+    free_pointer_and_clear(skel_model->inv_bone_rest_transforms);
+    free_pointer_and_clear(skel_model->bone_rest_transforms);
+    // -- bones --
+    for(int i = 0; i < skel_model->n_bones; i++) {
+        free_pointer_and_clear(skel_model->bone_name[i]);
+    }
+    free_pointer_and_clear(skel_model->bone_name);
+    free_pointer_and_clear(skel_model->bone_parent_idx);
+    free_pointer_and_clear(skel_model->bone_rest_pos);
+    free_pointer_and_clear(skel_model->bone_rest_rot);
+    free_pointer_and_clear(skel_model->bone_rest_scale);
     for(int i = 0; i < skel_model->n_meshes; i++) {
         for(int j = 0; j < skel_model->meshes[i].n_submeshes; j++) {
             // These submesh struct members are expected to be nullptr:
@@ -1497,9 +1690,166 @@ void Mod_LoadIQMModel (model_t *model, void *buffer) {
 }
 
 
+    Con_Printf("build_skel: framegroup %d frames lerp(%d,%d,%.2f) for t=%.2f\n", framegroup_idx, frame1_idx, frame2_idx, lerpfrac, frametime);
+    int16_t *bone_parent_idx = get_member_from_offset(skeleton->model->bone_parent_idx, skeleton->model);
+    mat3x4_t *bone_rest_transforms = get_member_from_offset(skeleton->model->bone_rest_transforms, skeleton->model);
+    mat3x4_t *inv_bone_rest_transforms = get_member_from_offset(skeleton->model->inv_bone_rest_transforms, skeleton->model);
+
+    vec3_t *anim_model_frames_bone_pos = get_member_from_offset(anim_model->frames_bone_pos, anim_model);
+    quat_t *anim_model_frames_bone_rot = get_member_from_offset(anim_model->frames_bone_rot, anim_model);
+    vec3_t *anim_model_frames_bone_scale = get_member_from_offset(anim_model->frames_bone_scale, anim_model);
+
+    // Build the transform that takes us from model-space to each bone's bone-space for the current pose.
+    for(uint32_t i = 0; i < skeleton->model->n_bones; i++) {
+        const int anim_bone_idx = skeleton->anim_bone_idx[i];
+        // If this bone is not present in the model's animation data, skip it.
+        if(anim_bone_idx == -1) {
+            Matrix3x4_Copy(skeleton->bone_transforms[i], bone_rest_transforms[i]);
+            continue;
+        }
+
+
+        vec3_t *frame1_pos = &(anim_model_frames_bone_pos[anim_model->n_bones * frame1_idx + anim_bone_idx]);
+        vec3_t *frame2_pos = &(anim_model_frames_bone_pos[anim_model->n_bones * frame2_idx + anim_bone_idx]);
+        quat_t *frame1_rot = &(anim_model_frames_bone_rot[anim_model->n_bones * frame1_idx + anim_bone_idx]);
+        quat_t *frame2_rot = &(anim_model_frames_bone_rot[anim_model->n_bones * frame2_idx + anim_bone_idx]);
+        vec3_t *frame1_scale = &(anim_model_frames_bone_scale[anim_model->n_bones * frame1_idx + anim_bone_idx]);
+        vec3_t *frame2_scale = &(anim_model_frames_bone_scale[anim_model->n_bones * frame2_idx + anim_bone_idx]);
+
+        // Get local bone transforms (relative to parent space)
+        vec3_t bone_local_pos;
+        quat_t bone_local_rot;
+        vec3_t bone_local_scale;
+        VectorInterpolate(  *frame1_pos,     lerpfrac,   *frame2_pos,     bone_local_pos);
+        QuaternionSlerp(    *frame1_rot,     *frame2_rot, lerpfrac,       bone_local_rot);
+        VectorInterpolate(  *frame1_scale,   lerpfrac,   *frame2_scale,   bone_local_scale);
+
+        // Current pose bone-space transform (relative to parent)
+        Matrix3x4_scale_rotate_translate(skeleton->bone_transforms[i], bone_local_scale, bone_local_rot, bone_local_pos);
+
+        // If we have a parent, concat parent transform to get model-space transform
+        int parent_bone_idx = bone_parent_idx[i];
+        if(parent_bone_idx >= 0) {
+            mat3x4_t temp; 
+            Matrix3x4_ConcatTransforms(temp, skeleton->bone_transforms[parent_bone_idx], skeleton->bone_transforms[i]);
+            Matrix3x4_Copy(skeleton->bone_transforms[i], temp);
+        }
+        // If we don't have a parent, the bone-space transform _is_ the model-space transform
+    }
+
+    // Now that all bone transforms have been computed for the current pose, multiply in the inverse rest pose transforms
+    // These transforms will take the vertices from model-space to each bone's local-space:
+    for(uint32_t i = 0; i < anim_model->n_bones; i++) {
+        Matrix3x4_ConcatTransforms( skeleton->bone_rest_to_pose_transforms[i], skeleton->bone_transforms[i], inv_bone_rest_transforms[i]);
+
+        // Con_Printf("==============================================\n");
+        // Con_Printf("Bone Rest to Pose transform after calc:\n");
+        // Con_Printf("==============================================\n");
+        // Con_Printf("\tBone %d", i);
+        // Con_Printf("\t\t[  %.2f  %.2f  %.2f  %.2f  ]\n", skeleton->bone_rest_to_pose_transforms[i][0][0], skeleton->bone_rest_to_pose_transforms[i][0][1], skeleton->bone_rest_to_pose_transforms[i][0][2], skeleton->bone_rest_to_pose_transforms[i][0][3]);
+        // Con_Printf("\t\t[  %.2f  %.2f  %.2f  %.2f  ]\n", skeleton->bone_rest_to_pose_transforms[i][1][0], skeleton->bone_rest_to_pose_transforms[i][1][1], skeleton->bone_rest_to_pose_transforms[i][1][2], skeleton->bone_rest_to_pose_transforms[i][1][3]);
+        // Con_Printf("\t\t[  %.2f  %.2f  %.2f  %.2f  ]\n", skeleton->bone_rest_to_pose_transforms[i][2][0], skeleton->bone_rest_to_pose_transforms[i][2][1], skeleton->bone_rest_to_pose_transforms[i][2][2], skeleton->bone_rest_to_pose_transforms[i][2][3]);
+
+        // Invert-transpose the upper-left 3x3 matrix to get the transform that is applied to vertex normals
+        Matrix3x3_Invert_Transposed_Matrix3x4(skeleton->bone_rest_to_pose_normal_transforms[i], skeleton->bone_rest_to_pose_transforms[i]);
+        // Con_Printf("Bone Rest to Pose transform after invert_transposed calc:\n");
+        // Con_Printf("\tBone %d", i);
+        // Con_Printf("\t\t[  %.2f  %.2f  %.2f  %.2f  ]\n", skeleton->bone_rest_to_pose_transforms[i][0][0], skeleton->bone_rest_to_pose_transforms[i][0][1], skeleton->bone_rest_to_pose_transforms[i][0][2], skeleton->bone_rest_to_pose_transforms[i][0][3]);
+        // Con_Printf("\t\t[  %.2f  %.2f  %.2f  %.2f  ]\n", skeleton->bone_rest_to_pose_transforms[i][1][0], skeleton->bone_rest_to_pose_transforms[i][1][1], skeleton->bone_rest_to_pose_transforms[i][1][2], skeleton->bone_rest_to_pose_transforms[i][1][3]);
+        // Con_Printf("\t\t[  %.2f  %.2f  %.2f  %.2f  ]\n", skeleton->bone_rest_to_pose_transforms[i][2][0], skeleton->bone_rest_to_pose_transforms[i][2][1], skeleton->bone_rest_to_pose_transforms[i][2][2], skeleton->bone_rest_to_pose_transforms[i][2][3]);
+        // Con_Printf("==============================================\n");
+    }
+
+
+
+
+
+}
+
+
+void bind_submesh_bones(skeletal_mesh_t *submesh, skeletal_skeleton_t *skeleton) {
+
+    // Transform matrix that undoes int16 quantization scale + ofs
+    ScePspFMatrix4 undo_quantization;
+    gumLoadIdentity(&undo_quantization);
+    ScePspFVector3 undo_ofs = {submesh->verts_ofs[0],submesh->verts_ofs[1],submesh->verts_ofs[2]};
+    ScePspFVector3 undo_scale = {submesh->verts_scale[0],submesh->verts_scale[1],submesh->verts_scale[2]};
+    gumTranslate(&undo_quantization, &undo_ofs);
+    gumScale(&undo_quantization, &undo_scale);
+    
+    // // Transform matrix that reapplies int16 quantization scale + ofs
+    // ScePspFMatrix4 redo_quantization;
+    // gumLoadIdentity(&redo_quantization);
+    // ScePspFVector3 redo_ofs = {-submesh->verts_ofs[0],-submesh->verts_ofs[1],-submesh->verts_ofs[2]};
+    // ScePspFVector3 redo_scale = {1.0f/submesh->verts_scale[0],1.0f/submesh->verts_scale[1],1.0f/submesh->verts_scale[2]};
+    // gumScale(&redo_quantization, &redo_scale);
+    // gumTranslate(&redo_quantization, &redo_ofs);
+
+    // Debug
+    // mat3x4_t *bone_rest_transforms = get_member_from_offset(skeleton->model->bone_rest_transforms, skeleton->model);
+    // Con_Printf("==============================================\n");
+    // Con_Printf("Bone Rest transforms at draw\n");
+    // Con_Printf("==============================================\n");
+    // for(uint32_t i = 0; i < skeleton->model->n_bones; i++) {
+    //     Con_Printf("\tBone %d", i);
+    //     Con_Printf("\t\t[  %.2f  %.2f  %.2f  %.2f  ]\n", bone_rest_transforms[i][0][0], bone_rest_transforms[i][0][1], bone_rest_transforms[i][0][2], bone_rest_transforms[i][0][3]);
+    //     Con_Printf("\t\t[  %.2f  %.2f  %.2f  %.2f  ]\n", bone_rest_transforms[i][1][0], bone_rest_transforms[i][1][1], bone_rest_transforms[i][1][2], bone_rest_transforms[i][1][3]);
+    //     Con_Printf("\t\t[  %.2f  %.2f  %.2f  %.2f  ]\n", bone_rest_transforms[i][2][0], bone_rest_transforms[i][2][1], bone_rest_transforms[i][2][2], bone_rest_transforms[i][2][3]);
+    // }
+    // Con_Printf("==============================================\n");
+
+
+    for(int submesh_bone_idx = 0; submesh_bone_idx < submesh->n_skinning_bones; submesh_bone_idx++) {
+        // Get the index into the skeleton list of bones:
+        int bone_idx = submesh->skinning_bone_idxs[submesh_bone_idx];
+        // mat3x4_t *bone_mat3x4 = &bone_rest_transforms[bone_idx];
+        mat3x4_t *bone_mat3x4 = &(skeleton->bone_rest_to_pose_transforms[bone_idx]);
+
+        // Translate the mat3x4_t bone transform matrix to ScePspFMatrix4
+        ScePspFMatrix4 bone_mat;
+        bone_mat.x.x = (*bone_mat3x4)[0][0];   bone_mat.y.x = (*bone_mat3x4)[0][1];   bone_mat.z.x = (*bone_mat3x4)[0][2];   bone_mat.w.x = (*bone_mat3x4)[0][3];
+        bone_mat.x.y = (*bone_mat3x4)[1][0];   bone_mat.y.y = (*bone_mat3x4)[1][1];   bone_mat.z.y = (*bone_mat3x4)[1][2];   bone_mat.w.y = (*bone_mat3x4)[1][3];
+        bone_mat.x.z = (*bone_mat3x4)[2][0];   bone_mat.y.z = (*bone_mat3x4)[2][1];   bone_mat.z.z = (*bone_mat3x4)[2][2];   bone_mat.w.z = (*bone_mat3x4)[2][3];
+        bone_mat.x.w = 0.0f;                 bone_mat.y.w = 0.0f;                 bone_mat.z.w = 0.0f;                 bone_mat.w.w = 1.0f;
+
+        // bone_mat = redo_quantization * bone_mat * undo_quantization
+        gumMultMatrix(&bone_mat, &bone_mat, &undo_quantization);
+        // gumMultMatrix(&bone_mat, &redo_quantization, &bone_mat);
+        sceGuBoneMatrix(submesh_bone_idx, &bone_mat);
+    }
+}
+
 
 void R_DrawIQMModel(entity_t *ent) {
-    Con_Printf("IQM model draw!\n");
+    // Con_Printf("IQM model draw!\n");
+
+    // --------------–--------------–--------------–--------------–------------
+    // Build the skeleton
+    // --------------–--------------–--------------–--------------–------------
+    skeletal_model_t *skel_model = (skeletal_model_t*) Mod_Extradata(ent->model);
+    // FIXME - Hardcoded skeleton index...
+    int cl_skel_idx = 0;
+
+    if(cl_n_skeletons == 0){
+        Con_Printf("Client has zero skeletons, building one!\n");
+        cl_n_skeletons++;
+        cl_skeletons[cl_skel_idx].model = skel_model;
+        cl_skeletons[cl_skel_idx].anim_model = nullptr;
+        // cl_skeletons[cl_skel_idx].bone_transforms = nullptr;
+        // cl_skeletons[cl_skel_idx].bone_normal_transforms = nullptr;
+        // cl_skeletons[cl_skel_idx].anim_bone_idx = nullptr;
+
+        cl_skeletons[cl_skel_idx].bone_transforms = (mat3x4_t*) malloc(sizeof(mat3x4_t) * skel_model->n_bones);
+        cl_skeletons[cl_skel_idx].bone_rest_to_pose_transforms = (mat3x4_t*) malloc(sizeof(mat3x4_t) * skel_model->n_bones);
+        cl_skeletons[cl_skel_idx].bone_rest_to_pose_normal_transforms = (mat3x3_t*) malloc(sizeof(mat3x3_t) * skel_model->n_bones);
+        cl_skeletons[cl_skel_idx].anim_bone_idx = (int32_t*) malloc(sizeof(int32_t) * skel_model->n_bones);
+    }
+
+    int framegroup_idx = 0;
+    float frametime = sv.time;
+    build_skeleton(&cl_skeletons[cl_skel_idx], skel_model, framegroup_idx, frametime);
+    // --------------–--------------–--------------–--------------–------------
+
 
     sceGumPushMatrix();
     R_BlendedRotateForEntity(ent, 0, ent->scale);
@@ -1507,7 +1857,6 @@ void R_DrawIQMModel(entity_t *ent) {
     sceGuDisable(GU_TEXTURE_2D);
     sceGuColor(0x000000);
 
-    skeletal_model_t *skel_model = (skeletal_model_t*) Mod_Extradata(ent->model);
     // FIXME - Update this to draw meshes and submeshes
     // for(int i = 0; i < skel_model->n_meshes; i++) {
     //     skeletal_mesh_t *mesh = &((skeletal_mesh_t*) ((uint8_t*)skel_model + (int)skel_model->meshes))[i];
@@ -1521,31 +1870,25 @@ void R_DrawIQMModel(entity_t *ent) {
 
 
     for(int i = 0; i < skel_model->n_meshes; i++) {
-        Con_Printf("Drawing mesh %d\n", i);
+        // Con_Printf("Drawing mesh %d\n", i);
         skeletal_mesh_t *mesh = &meshes[i];
-        Con_Printf("\tn_submeshes: %d\n", mesh->n_submeshes);
+        // Con_Printf("\tn_submeshes: %d\n", mesh->n_submeshes);
         skeletal_mesh_t *submeshes = get_member_from_offset(mesh->submeshes, skel_model);
         for(int j = 0; j < mesh->n_submeshes; j++) {
-            Con_Printf("Drawing mesh %d submesh %d\n", i, j);
+            // Con_Printf("Drawing mesh %d submesh %d\n", i, j);
             skeletal_mesh_t *submesh = &submeshes[j];
 
-            sceGumPushMatrix();
-            ScePspFVector3 verts_ofs = {submesh->verts_ofs[0],submesh->verts_ofs[1],submesh->verts_ofs[2]};
-            ScePspFVector3 verts_scale = {submesh->verts_scale[0],submesh->verts_scale[1],submesh->verts_scale[2]};
-            sceGumTranslate(&verts_ofs);
-            sceGumScale(&verts_scale);
+            // sceGumPushMatrix();
+            // ScePspFVector3 verts_ofs = {submesh->verts_ofs[0],submesh->verts_ofs[1],submesh->verts_ofs[2]};
+            // ScePspFVector3 verts_scale = {submesh->verts_scale[0],submesh->verts_scale[1],submesh->verts_scale[2]};
+            // sceGumTranslate(&verts_ofs);
+            // sceGumScale(&verts_scale);
 
             skel_vertex_i8_t *vert8s = get_member_from_offset(submesh->vert8s, skel_model);
             skel_vertex_i16_t *vert16s = get_member_from_offset(submesh->vert16s, skel_model);
 
-            // FIXME - for now, bind identity matrixes for each of the 8 hw-skinning bone mats:
-            // FIXME - Need to bind proper matrices for this submesh
-            for(int k = 0; k < SUBMESH_BONES; k++) {
-                ScePspFMatrix4 bone_mat;
-                gumLoadIdentity(&bone_mat);
-                sceGuBoneMatrix(k, &bone_mat);
-            }
-            
+            bind_submesh_bones(submesh, &cl_skeletons[cl_skel_idx]);
+
             sceGumDrawArray(
                 GU_TRIANGLES,GU_WEIGHTS(8)|GU_WEIGHT_8BIT|GU_TEXTURE_16BIT|GU_NORMAL_16BIT|GU_VERTEX_16BIT|GU_TRANSFORM_3D, 
                 submesh->n_tris * 3, 
@@ -1558,7 +1901,7 @@ void R_DrawIQMModel(entity_t *ent) {
             //     nullptr, 
             //     vert8s
             // );
-            sceGumPopMatrix();
+            // sceGumPopMatrix();
         }
     //     skeletal_mesh_t *mesh = &((skeletal_mesh_t*) ((uint8_t*)skel_model + (int)skel_model->meshes))[i];
     //     // FIXME
@@ -1572,28 +1915,25 @@ void R_DrawIQMModel(entity_t *ent) {
 
     // Draw bones
     // Con_Printf("------------------------------\n");
-    char **bone_names = get_member_from_offset(skel_model->bone_name, skel_model);
-    vec3_t *bone_rest_pos = get_member_from_offset(skel_model->bone_rest_pos, skel_model);
-    quat_t *bone_rest_rot = get_member_from_offset(skel_model->bone_rest_rot, skel_model);
-    vec3_t *bone_rest_scale = get_member_from_offset(skel_model->bone_rest_scale, skel_model);
-    int16_t *bone_parent_idx = get_member_from_offset(skel_model->bone_parent_idx, skel_model);
+    // char **bone_names = get_member_from_offset(skel_model->bone_name, skel_model);
 
-    // TODO - Move this into the model struct...?
-    mat3x4_t bone_rest_transforms[25];
-    mat3x4_t inv_bone_rest_transforms[25];
+    mat3x4_t *bone_transforms = cl_skeletons[cl_skel_idx].bone_transforms;
+    // FIXME - bone_rest_transforms now look good...
+    mat3x4_t *bone_rest_transforms = get_member_from_offset(cl_skeletons[cl_skel_idx].model->bone_rest_transforms, cl_skeletons[cl_skel_idx].model);
+    // mat3x4_t debug_bone_rest_transforms[25];
+    // vec3_t *bone_rest_pos = get_member_from_offset(skel_model->bone_rest_pos, skel_model);
+    // quat_t *bone_rest_rot = get_member_from_offset(skel_model->bone_rest_rot, skel_model);
+    // vec3_t *bone_rest_scale = get_member_from_offset(skel_model->bone_rest_scale, skel_model);
+    // int16_t *bone_parent_idx = get_member_from_offset(skel_model->bone_parent_idx, skel_model);
+    // for(int i = 0; i < skel_model->n_bones; i++) {
+    //     Matrix3x4_scale_rotate_translate( debug_bone_rest_transforms[i], bone_rest_scale[i], bone_rest_rot[i], bone_rest_pos[i]);
+    //     if(bone_parent_idx[i] >= 0) {
+    //         mat3x4_t temp;
+    //         Matrix3x4_ConcatTransforms( temp, debug_bone_rest_transforms[bone_parent_idx[i]], debug_bone_rest_transforms[i]);
+    //         Matrix3x4_Copy(debug_bone_rest_transforms[i], temp);
+    //     }
+    // }
 
-    for(int i = 0; i < skel_model->n_bones; i++) {
-        Matrix3x4_scale_rotate_translate( bone_rest_transforms[i], bone_rest_scale[i], bone_rest_rot[i], bone_rest_pos[i]);
-
-        if(bone_parent_idx[i] >= 0) {
-            mat3x4_t temp;
-            Matrix3x4_ConcatTransforms( temp, bone_rest_transforms[bone_parent_idx[i]], bone_rest_transforms[i]);
-            Matrix3x4_Copy(bone_rest_transforms[i], temp);
-        }
-    }
-    for(int i = 0; i < skel_model->n_bones; i++) {
-        Matrix3x4_Invert_Simple( inv_bone_rest_transforms[i], bone_rest_transforms[i]);
-    }
 
     sceGuDisable(GU_DEPTH_TEST);
     sceGuDisable(GU_TEXTURE_2D);
@@ -1601,11 +1941,16 @@ void R_DrawIQMModel(entity_t *ent) {
         float line_verts_x[6] = {0,0,0,     1,0,0}; // Verts for x-axis
         float line_verts_y[6] = {0,0,0,     0,1,0}; // Verts for y-axis
         float line_verts_z[6] = {0,0,0,     0,0,1}; // Verts for z-axis
+
+        // mat3x4_t *bone_transform = &cl_skeletons[cl_skel_idx].bone_transforms[i];
+        // mat3x4_t *bone_transform = &bone_rest_transforms[i];
+        // mat3x4_t *bone_transform = &debug_bone_rest_transforms[i];
+
         ScePspFMatrix4 bone_mat;
-        bone_mat.x.x = bone_rest_transforms[i][0][0];   bone_mat.y.x = bone_rest_transforms[i][0][1];   bone_mat.z.x = bone_rest_transforms[i][0][2];   bone_mat.w.x = bone_rest_transforms[i][0][3];
-        bone_mat.x.y = bone_rest_transforms[i][1][0];   bone_mat.y.y = bone_rest_transforms[i][1][1];   bone_mat.z.y = bone_rest_transforms[i][1][2];   bone_mat.w.y = bone_rest_transforms[i][1][3];
-        bone_mat.x.z = bone_rest_transforms[i][2][0];   bone_mat.y.z = bone_rest_transforms[i][2][1];   bone_mat.z.z = bone_rest_transforms[i][2][2];   bone_mat.w.z = bone_rest_transforms[i][2][3];
-        bone_mat.x.w = 0.0f;                bone_mat.y.w = 0.0f;                bone_mat.z.w = 0.0f;                bone_mat.w.w = 1.0f;
+        bone_mat.x.x = bone_transforms[i][0][0];   bone_mat.y.x = bone_transforms[i][0][1];   bone_mat.z.x = bone_transforms[i][0][2];   bone_mat.w.x = bone_transforms[i][0][3];
+        bone_mat.x.y = bone_transforms[i][1][0];   bone_mat.y.y = bone_transforms[i][1][1];   bone_mat.z.y = bone_transforms[i][1][2];   bone_mat.w.y = bone_transforms[i][1][3];
+        bone_mat.x.z = bone_transforms[i][2][0];   bone_mat.y.z = bone_transforms[i][2][1];   bone_mat.z.z = bone_transforms[i][2][2];   bone_mat.w.z = bone_transforms[i][2][3];
+        bone_mat.x.w = 0.0f;                    bone_mat.y.w = 0.0f;                    bone_mat.z.w = 0.0f;                    bone_mat.w.w = 1.0f;
         sceGumPushMatrix();
         sceGumMultMatrix(&bone_mat);
         sceGuColor(0x0000ff); // red
