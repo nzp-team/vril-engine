@@ -1,4 +1,4 @@
-/*
+ /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
 This program is free software; you can redistribute it and/or
@@ -60,6 +60,8 @@ extern int ShowBlslogo;
 extern char* loadname2;
 extern char* loadnamespec;
 extern qboolean loadscreeninit;
+
+char* game_build_date;
 
 // Backgrounds
 int menu_bk;
@@ -595,7 +597,7 @@ void M_Main_Draw (void)
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
 
 	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
+	Draw_ColoredString((vid.width - (strlen(game_build_date) * 8)) + 4, 5, game_build_date, 255, 255, 255, 255, 1);
 
 	// Header
 	Draw_ColoredString(10, 10, "MAIN MENU", 255, 255, 255, 255, 2);
@@ -874,9 +876,6 @@ void M_Map_Draw (void)
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
-
-	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
 
 	// Header
 	Draw_ColoredString(10, 10, "CUSTOM MAPS", 255, 255, 255, 255, 2);
@@ -1524,9 +1523,6 @@ void M_Achievement_Draw (void)
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
-
-	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
 
     if (!m_achievement_selected)
     {
@@ -2735,9 +2731,6 @@ void M_Screen_Draw (void)
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
 
-	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
-
 	// Header
 	Draw_ColoredString(10, 10, "GRAPHICS SETTINGS", 255, 255, 255, 255, 2);
 
@@ -3030,9 +3023,6 @@ void M_Gameplay_Draw (void)
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
 
-	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
-
 	// Header
 	Draw_ColoredString(10, 10, "CONTROL SETTINGS", 255, 255, 255, 255, 2);
 
@@ -3209,9 +3199,6 @@ void M_Options_Draw (void)
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
-
-	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
 
 	// Header
 	Draw_ColoredString(10, 10, "SETTINGS", 255, 255, 255, 255, 2);
@@ -3444,9 +3431,6 @@ void M_Keys_Draw (void)
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
 
-	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
-
 	// Header
 	Draw_ColoredString(10, 10, "CONTROLS", 255, 255, 255, 255, 2);
 
@@ -3593,9 +3577,6 @@ void M_Credits_Draw (void)
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
-
-	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
 
 	// Header
 	Draw_ColoredString(10, 10, "CREDITS", 255, 255, 255, 255, 2);
@@ -5361,6 +5342,25 @@ void M_Init (void)
 	Cmd_AddCommand ("menu_quit", M_Menu_Quit_f);
 	Cmd_AddCommand ("savea", Save_Achivements);
 	Cmd_AddCommand ("loada", Load_Achivements);
+
+	// Snag the game version
+	long length;
+	FILE* f = fopen(va("%s/version.txt", com_gamedir), "rb");
+
+	if (f)
+	{
+		fseek (f, 0, SEEK_END);
+		length = ftell (f);
+		fseek (f, 0, SEEK_SET);
+		game_build_date = malloc(length);
+
+		if (game_build_date)
+			fread (game_build_date, 1, length, f);
+
+		fclose (f);
+	} else {
+		game_build_date = "version.txt not found.";
+	}
 
 	Map_Finder();
 
