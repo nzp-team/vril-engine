@@ -63,7 +63,7 @@ typedef struct glRect_s
 qboolean	lightmap_modified[MAX_LIGHTMAPS];
 glRect_t	lightmap_rectchange[MAX_LIGHTMAPS];
 
-#define MAX_VISIBLE_LIGHTMAPPED_FACES 1024
+#define MAX_VISIBLE_LIGHTMAPPED_FACES 6000
 // contains references to every msurface_t that's getting rendered.
 // in testing 512 is not enough for bigger complicated areas (like parts of dm2).
 // consider doubling to 2048 or somewhere inbetween.
