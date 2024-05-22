@@ -3,6 +3,7 @@ on: [push]
 jobs:
   Compile-EBOOTs:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     container:
       image: pspdev/pspdev
     steps:

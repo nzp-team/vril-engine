@@ -388,8 +388,9 @@ void SND_Spatialize(channel_t *ch)
     vec3_t source_vec;
 	sfx_t *snd;
 
-// anything coming from the view entity will always be full volume
-	if (ch->entnum == cl.viewentity)
+	// anything coming from the view entity will always be full volume
+	// cypress -- added full volume for no attenuation.
+	if (ch->entnum == cl.viewentity || ch->dist_mult == 0)
 	{
 		ch->leftvol = ch->master_vol;
 		ch->rightvol = ch->master_vol;

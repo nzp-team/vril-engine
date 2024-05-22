@@ -79,3 +79,24 @@ unsigned short CRC_Value(unsigned short crcvalue)
 {
 	return crcvalue ^ CRC_XOR_VALUE;
 }
+
+//
+// taken from darkplaces -- just a shortcut for initialization for
+// use with string-hashing (just progs, likely). -- cypress (07 jan 2024)
+//
+
+unsigned short CRC_Block(const unsigned char *data, size_t size)
+{
+	unsigned short crc = CRC_INIT_VALUE;
+	while (size--)
+		crc = (crc << 8) ^ crctable[(crc >> 8) ^ (*data++)];
+	return crc ^ CRC_XOR_VALUE;
+}
+
+unsigned short CRC_Block_CaseInsensitive(const unsigned char *data, size_t size)
+{
+	unsigned short crc = CRC_INIT_VALUE;
+	while (size--)
+		crc = (crc << 8) ^ crctable[(crc >> 8) ^ (tolower(*data++))];
+	return crc ^ CRC_XOR_VALUE;
+}

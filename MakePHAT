@@ -3,7 +3,6 @@ PSPSDK = $(shell psp-config --pspsdk-path)
 PSPLIBSDIR = $(PSPSDK)/..
 
 TARGET = nzportable
-
 PSP_EBOOT_TITLE = Nazi Zombies: Portable
 
 PSP_EBOOT_ICON	= source/psp/pics/icon.png

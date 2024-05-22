@@ -666,6 +666,12 @@ void CL_ParseUpdate (int bits)
     else
 	    ent->rendercolor[2] = 0;
 // Tomaz - QC Alpha Scale Glow End
+
+	if (bits & U_SCALE)
+		ent->scale = MSG_ReadByte();
+	else
+		ent->scale = ENTSCALE_DEFAULT;
+
     if ( bits & U_NOLERP )//there's no data for nolerp, it is the value itself
 		ent->forcelink = true;
 
@@ -1236,6 +1242,14 @@ void CL_ParseServerMessage (void)
 
 		case svc_doubletap:
 			doubletap_has_damage_buff = MSG_ReadByte();
+			break;
+
+		case svc_screenflash:
+			screenflash_color = MSG_ReadByte();
+			screenflash_duration = sv.time + MSG_ReadByte();
+			screenflash_type = MSG_ReadByte();
+			screenflash_worktime = 0;
+			screenflash_starttime = sv.time;
 			break;
 
 		case svc_bettyprompt:

@@ -694,7 +694,7 @@ void R_DrawHLModel(entity_t	*curent)
 	shadevector[2] = 1;
 	VectorNormalize (shadevector);
 
-	R_BlendedRotateForEntity(curent, 0);
+	R_BlendedRotateForEntity(curent, 0, curent->scale);
 
     HL_SetupBones(&model);	/* Setup the bones */
     SetupLighting(&model);	/* Setup the light */

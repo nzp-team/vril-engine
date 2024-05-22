@@ -1339,7 +1339,7 @@ void SV_Physics_Walk(edict_t 	*ent)
 	trace_t	downtrace;
 	vec3_t	groundlocation;
 	VectorCopy(ent->v.origin,groundlocation);
-	groundlocation[2] = -STEPSIZE + ent->v.velocity[2]*host_frametime;
+	groundlocation[2] += -STEPSIZE + ent->v.velocity[2]*host_frametime;
 	
 	downtrace = SV_Move(ent->v.origin,ent->v.mins,ent->v.maxs,groundlocation, MOVE_NOMONSTERS,ent);
 

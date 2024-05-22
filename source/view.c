@@ -123,24 +123,57 @@ float V_CalcBob (float speed,float which)//0 = regular, 1 = side bobbing
 	float bob = 0;
 	float sprint = 1;
 
-	if(cl.stats[STAT_ZOOM] == 3)
-		sprint = 1.8;
-	
-	if(cl.stats[STAT_ZOOM] == 2)
-		return 0;
+	if (cl.stats[STAT_ZOOM] == 2)
+		return;
 
-	//12.048 -> 4.3 = 100 -> 36ish, so replace 100 with 36
-	#ifdef PSP_VFPU
-	if(which == 0)
-		bob = cl_bobup.value * 36 * speed * (sprint * sprint) * vfpu_sinf((cl.time * 12.5 * sprint));//Pitch Bobbing 10
-	else if(which == 1)
-		bob = cl_bobside.value * 36 * speed * (sprint * sprint * sprint) * vfpu_sinf((cl.time * 6.25 * sprint) - (M_PI * 0.25));//Yaw Bobbing 5
-	#else
+	// Bob idle-y, instead of presenting as if in-motion.
+	if (speed < 0.1) {
+		if(cl.stats[STAT_ZOOM] == 1)
+			speed = 0.05;
+		else
+			speed = 0.25;
+
+#ifdef PSP_VFPU
+
+		if (which == 0)
+            bob = cl_bobup.value * 10 * speed * (sprint * sprint) * vfpu_sinf(cl.time * 3.25 * sprint);
+        else
+            bob = cl_bobside.value * 50 * speed * (sprint * sprint * sprint) * vfpu_sinf((cl.time * sprint) - (M_PI * 0.25));
+
+#else
+
+		if (which == 0)
+            bob = cl_bobup.value * 10 * speed * (sprint * sprint) * sin(cl.time * 3.25 * sprint);
+        else
+            bob = cl_bobside.value * 50 * speed * (sprint * sprint * sprint) * sin((cl.time * sprint) - (M_PI * 0.25));
+
+#endif // PSP_VFPU
+
+	} 
+	// Normal walk/sprint bob.
+	else {
+		if(cl.stats[STAT_ZOOM] == 3)
+			sprint = 1.8; //this gets sprinting speed in comparison to walk speed per weapon
+
+		//12.048 -> 4.3 = 100 -> 36ish, so replace 100 with 36
+
+#ifdef PSP_VFPU
+
 		if(which == 0)
-		bob = cl_bobup.value * 36 * speed * (sprint * sprint) * sin((cl.time * 12.5 * sprint));//Pitch Bobbing 10
-	else if(which == 1)
-		bob = cl_bobside.value * 36 * speed * (sprint * sprint * sprint) * sin((cl.time * 6.25 * sprint) - (M_PI * 0.25));//Yaw Bobbing 5
-	#endif
+			bob = cl_bobup.value * 36 * speed * (sprint * sprint) * vfpu_sinf((cl.time * 12.5 * sprint));//Pitch Bobbing 10
+		else if(which == 1)
+			bob = cl_bobside.value * 36 * speed * (sprint * sprint * sprint) * vfpu_sinf((cl.time * 6.25 * sprint) - (M_PI * 0.25));//Yaw Bobbing 5
+
+#else
+
+		if(which == 0)
+			bob = cl_bobup.value * 36 * speed * (sprint * sprint) * sin((cl.time * 12.5 * sprint));//Pitch Bobbing 10
+		else if(which == 1)
+			bob = cl_bobside.value * 36 * speed * (sprint * sprint * sprint) * sin((cl.time * 6.25 * sprint) - (M_PI * 0.25));//Yaw Bobbing 5
+
+#endif // PSP_VFPU 
+
+	}
 
 	return bob;
 }

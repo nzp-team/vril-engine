@@ -1,4 +1,4 @@
-/*
+ /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
 This program is free software; you can redistribute it and/or
@@ -61,12 +61,15 @@ extern char* loadname2;
 extern char* loadnamespec;
 extern qboolean loadscreeninit;
 
+char* game_build_date;
+
 // Backgrounds
 int menu_bk;
 
 // Map screens
 int menu_ndu;
 int menu_wh;
+int menu_wh2;
 //qpic_t *menu_kn;
 int menu_ch;
 //qpic_t *menu_wn;
@@ -452,7 +455,8 @@ void M_Load_Menu_Pics ()
 	menu_bk = loadtextureimage("gfx/menu/menu_background", 0, 0, false, GU_LINEAR);
 	menu_ndu 	= loadtextureimage("gfx/menu/nacht_der_untoten", 0, 0, false, GU_LINEAR);
 	//menu_kn 	= Draw_CacheImg("gfx/menu/kino_der_toten");
-	menu_wh 	= loadtextureimage("gfx/menu/warehouse", 0, 0, false, GU_LINEAR);
+	menu_wh 	= loadtextureimage("gfx/menu/nzp_warehouse", 0, 0, false, GU_LINEAR);
+	menu_wh2 	= loadtextureimage("gfx/menu/nzp_warehouse2", 0, 0, false, GU_LINEAR);
 	//menu_wn 	= Draw_CacheImg("gfx/menu/wahnsinn");
 	menu_ch 	= loadtextureimage("gfx/menu/christmas_special", 0, 0, false, GU_LINEAR);
 	menu_custom = loadtextureimage("gfx/menu/custom", 0, 0, false, GU_LINEAR);
@@ -593,7 +597,7 @@ void M_Main_Draw (void)
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
 
 	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
+	Draw_ColoredString((vid.width - (strlen(game_build_date) * 8)) + 4, 5, game_build_date, 255, 255, 255, 255, 1);
 
 	// Header
 	Draw_ColoredString(10, 10, "MAIN MENU", 255, 255, 255, 255, 2);
@@ -873,9 +877,6 @@ void M_Map_Draw (void)
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
 
-	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
-
 	// Header
 	Draw_ColoredString(10, 10, "CUSTOM MAPS", 255, 255, 255, 255, 2);
 
@@ -1072,7 +1073,7 @@ void M_Map_Key (int key)
 /* SINGLE PLAYER MENU */
 
 int	m_singleplayer_cursor;
-#define	SINGLEPLAYER_ITEMS	5
+#define	SINGLEPLAYER_ITEMS	6
 
 
 void M_Menu_SinglePlayer_f (void)
@@ -1091,9 +1092,6 @@ void M_SinglePlayer_Draw (void)
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
 
-	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
-
 	// Header
 	Draw_ColoredString(10, 10, "SOLO", 255, 255, 255, 255, 2);
 
@@ -1103,8 +1101,8 @@ void M_SinglePlayer_Draw (void)
 	else
 		Draw_ColoredString(10, 45, "Nacht der Untoten", 255, 255, 255, 255, 1);
 
-	// Kino der Toten
-	Draw_ColoredString(10, 55, "Kino der Toten", 128, 128, 128, 255, 1);
+	// Divider
+	Draw_FillByColor(10, 58, 160, 2, GU_RGBA(130, 130, 130, 255));
 
 	// Warehouse
 	if (m_singleplayer_cursor == 1)
@@ -1112,11 +1110,14 @@ void M_SinglePlayer_Draw (void)
 	else
 		Draw_ColoredString(10, 65, "Warehouse", 255, 255, 255, 255, 1);
 
-	// Wahnsinn
-	Draw_ColoredString(10, 75, "Wahnsinn", 128, 128, 128, 255, 1);
+	// Warehouse (Classic)
+	if (m_singleplayer_cursor == 2)
+		Draw_ColoredString(10, 75, "Warehouse (Classic)", 255, 0, 0, 255, 1);
+	else
+		Draw_ColoredString(10, 75, "Warehouse (Classic)", 255, 255, 255, 255, 1);
 
 	// Christmas Special
-	if (m_singleplayer_cursor == 2)
+	if (m_singleplayer_cursor == 3)
 		Draw_ColoredString(10, 85, "Christmas Special", 255, 0, 0, 255, 1);
 	else
 		Draw_ColoredString(10, 85, "Christmas Special", 255, 255, 255, 255, 1);
@@ -1125,13 +1126,13 @@ void M_SinglePlayer_Draw (void)
 	Draw_FillByColor(10, 98, 160, 2, GU_RGBA(130, 130, 130, 255));
 
 	// Custom Maps
-	if (m_singleplayer_cursor == 3)
+	if (m_singleplayer_cursor == 4)
 		Draw_ColoredString(10, 105, "Custom Maps", 255, 0, 0, 255, 1);
 	else
 		Draw_ColoredString(10, 105, "Custom Maps", 255, 255, 255, 255, 1);
 
 	// Back
-	if (m_singleplayer_cursor == 4)
+	if (m_singleplayer_cursor == 5)
 		Draw_ColoredString(10, 250, "Back", 255, 0, 0, 255, 1);
 	else
 		Draw_ColoredString(10, 250, "Back", 255, 255, 255, 255, 1);
@@ -1150,22 +1151,31 @@ void M_SinglePlayer_Draw (void)
 			Draw_ColoredString(215, 225, "to the overwhelming onslaught?", 255, 255, 255, 255, 1);
 			break;
 		case 1:
+			Draw_PicIndex(256, 45, 175, 100, menu_wh2);
+			Draw_ColoredString(215, 155, "Four nameless marines find them-", 255, 255, 255, 255, 1);
+			Draw_ColoredString(215, 165, "selves at a forsaken warehouse,", 255, 255, 255, 255, 1);
+			Draw_ColoredString(215, 175, "or is it something more? Fight", 255, 255, 255, 255, 1);
+			Draw_ColoredString(215, 185, "your way to uncovering its sec-", 255, 255, 255, 255, 1);
+			Draw_ColoredString(215, 195, "rets, though you may not like", 255, 255, 255, 255, 1);
+			Draw_ColoredString(215, 205, "what you find..", 255, 255, 255, 255, 1);
+			break;
+		case 2:
 			Draw_PicIndex(256, 45, 175, 100, menu_wh);
 			Draw_ColoredString(215, 155, "Old Warehouse full of Zombies!", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 165, "Fight your way to the Power", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 175, "Switch through the Hordes!", 255, 255, 255, 255, 1);
 			break;
-		case 2:
+		case 3:
 			Draw_PicIndex(256, 45, 175, 100, menu_ch);
 			Draw_ColoredString(215, 155, "No Santa this year. Though we're", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 165, "sure you will get presents from", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 175, "the undead! Will you accept them?", 255, 255, 255, 255, 1);
 			break;
-		case 3:
+		case 4:
 			Draw_PicIndex(256, 45, 175, 100, menu_custom);
 			Draw_ColoredString(215, 155, "Custom Maps made by Community", 255, 255, 255, 255, 1);
 			Draw_ColoredString(215, 165, "Members on the Fourm and on", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 175, "Discord!", 255, 255, 255, 255, 1);
+			Draw_ColoredString(215, 175, "GitHub Discussions!", 255, 255, 255, 255, 1);
 			break;
 	}
 }
@@ -1214,13 +1224,25 @@ void M_SinglePlayer_Key (int key)
 						Cbuf_AddText ("disconnect\n");
 					Cbuf_AddText ("maxplayers 1\n");
 					Cbuf_AddText ("cd stop\n");
-					Cbuf_AddText ("map warehouse\n");
+					Cbuf_AddText ("map nzp_warehouse2\n");
 					Cbuf_Execute ();
 					loadingScreen = 1;
-					loadname2 = "warehouse";
+					loadname2 = "nzp_warehouse2";
 					loadnamespec = "Warehouse";
 					break;
 				case 2:
+					key_dest = key_game;
+					if (sv.active)
+						Cbuf_AddText ("disconnect\n");
+					Cbuf_AddText ("maxplayers 1\n");
+					Cbuf_AddText ("cd stop\n");
+					Cbuf_AddText ("map nzp_warehouse\n");
+					Cbuf_Execute ();
+					loadingScreen = 1;
+					loadname2 = "nzp_warehouse";
+					loadnamespec = "Warehouse (Classic)";
+					break;
+				case 3:
 					key_dest = key_game;
 					if (sv.active)
 						Cbuf_AddText ("disconnect\n");
@@ -1232,10 +1254,10 @@ void M_SinglePlayer_Key (int key)
 					loadname2 = "christmas_special";
 					loadnamespec = "Christmas Special";
 					break;
-				case 3:
+				case 4:
 					M_Menu_Map_f ();
 					break;
-				case 4:
+				case 5:
 					M_Menu_Main_f ();
 					break;
 			}
@@ -1501,9 +1523,6 @@ void M_Achievement_Draw (void)
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
-
-	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
 
     if (!m_achievement_selected)
     {
@@ -2712,9 +2731,6 @@ void M_Screen_Draw (void)
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
 
-	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
-
 	// Header
 	Draw_ColoredString(10, 10, "GRAPHICS SETTINGS", 255, 255, 255, 255, 2);
 
@@ -3007,9 +3023,6 @@ void M_Gameplay_Draw (void)
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
 
-	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
-
 	// Header
 	Draw_ColoredString(10, 10, "CONTROL SETTINGS", 255, 255, 255, 255, 2);
 
@@ -3186,9 +3199,6 @@ void M_Options_Draw (void)
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
-
-	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
 
 	// Header
 	Draw_ColoredString(10, 10, "SETTINGS", 255, 255, 255, 255, 2);
@@ -3421,9 +3431,6 @@ void M_Keys_Draw (void)
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
 
-	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
-
 	// Header
 	Draw_ColoredString(10, 10, "CONTROLS", 255, 255, 255, 255, 2);
 
@@ -3570,9 +3577,6 @@ void M_Credits_Draw (void)
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
-
-	// Version String
-	Draw_ColoredString(vid.width - 40, 5, "v1.0", 255, 255, 255, 255, 1);
 
 	// Header
 	Draw_ColoredString(10, 10, "CREDITS", 255, 255, 255, 255, 2);
@@ -5338,6 +5342,25 @@ void M_Init (void)
 	Cmd_AddCommand ("menu_quit", M_Menu_Quit_f);
 	Cmd_AddCommand ("savea", Save_Achivements);
 	Cmd_AddCommand ("loada", Load_Achivements);
+
+	// Snag the game version
+	long length;
+	FILE* f = fopen(va("%s/version.txt", com_gamedir), "rb");
+
+	if (f)
+	{
+		fseek (f, 0, SEEK_END);
+		length = ftell (f);
+		fseek (f, 0, SEEK_SET);
+		game_build_date = malloc(length);
+
+		if (game_build_date)
+			fread (game_build_date, 1, length, f);
+
+		fclose (f);
+	} else {
+		game_build_date = "version.txt not found.";
+	}
 
 	Map_Finder();
 
