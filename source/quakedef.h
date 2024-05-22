@@ -343,10 +343,8 @@ typedef struct
 typedef struct
 {
 	vec3_t origin;
-	int id;
 	float g_score, f_score;
 	int open; // Determine if the waypoint is "open" a.k.a avaible
-	int target_id [8]; // Targets array number
 	char special[64]; //special tag is required for the closed waypoints
 	int target [8]; //Each waypoint can have up to 8 targets
 	float dist [8]; // Distance to the next waypoints

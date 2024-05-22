@@ -850,75 +850,6 @@ int TraceMove(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, edic
 }
 
 
-// 
-// Given a start location, determine if ent can walk from `start` to `end` given its bbox size.
-// Two tracelines are performs, one to the right and one to the left of the entity origin
-// This implementation is much cheaper than `TraceMove`
-// 
-int tracepath(vec3_t start, vec3_t angles, vec3_t end, int type, edict_t *ent) {
-	if(start[0] == end[0] && start[1] == end[1] && start[2] == end[2]) {
-		return 1;
-	}
-
-	vec3_t v_forward, v_right, v_up;
-	AngleVectors(angles, v_forward, v_right, v_up);
-
-	// Player / zombie hulls are 32x32. Distance from center to edge is 16. Add 2 for buffer to account for diagonals.
-	float bbox_half_width = 16.0f + 2.0f;
-
-	vec3_t right_ofs;
-	VectorScale(v_right, bbox_half_width, right_ofs);
-	vec3_t up_ofs   = {0,0,32};
-	vec3_t down_ofs = {0,0,-24};
-	vec3_t ofs_start;
-	vec3_t ofs_end;
-	trace_t trace;
-
-	
-	// Trace a line along the bottom right edge of the bounding box
-	VectorAdd(start, right_ofs, ofs_start);
-	VectorAdd(end, right_ofs, ofs_end);
-	VectorAdd(ofs_start, down_ofs, ofs_start);
-	VectorAdd(ofs_end, down_ofs, ofs_end);
-	trace = SV_Move(ofs_start, vec3_origin, vec3_origin, ofs_end, type, ent);
-	if(trace.startsolid || trace.allsolid || trace.fraction < 1.0 ) {
-		return 0;
-	}
-	// Trace a line along the bottom left edge of the bounding box
-	VectorSubtract(start, right_ofs, ofs_start);
-	VectorSubtract(end, right_ofs, ofs_end);
-	VectorAdd(ofs_start, down_ofs, ofs_start);
-	VectorAdd(ofs_end, down_ofs, ofs_end);
-	trace = SV_Move(ofs_start, vec3_origin, vec3_origin, ofs_end, type, ent);
-	if(trace.startsolid || trace.allsolid || trace.fraction < 1.0 ) {
-		return 0;
-	}
-	
-	// Trace a line along the top right edge of the bounding box
-	VectorAdd(start, right_ofs, ofs_start);
-	VectorAdd(end, right_ofs, ofs_end);
-	VectorAdd(ofs_start, up_ofs, ofs_start);
-	VectorAdd(ofs_end, up_ofs, ofs_end);
-	trace = SV_Move(ofs_start, vec3_origin, vec3_origin, ofs_end, type, ent);
-	if(trace.startsolid || trace.allsolid || trace.fraction < 1.0 ) {
-		return 0;
-	}
-	// Trace a line along the top left edge of the bounding box
-	VectorSubtract(start, right_ofs, ofs_start);
-	VectorSubtract(end, right_ofs, ofs_end);
-	VectorAdd(ofs_start, up_ofs, ofs_start);
-	VectorAdd(ofs_end, up_ofs, ofs_end);
-	trace = SV_Move(ofs_start, vec3_origin, vec3_origin, ofs_end, type, ent);
-	if(trace.startsolid || trace.allsolid || trace.fraction < 1.0 ) {
-		return 0;
-	}
-	return 1;
-}
-
-
-
-
-
 void PF_tracemove(void)//progs side
 {
 	float   *start, *end, *mins, *maxs;
@@ -1792,7 +1723,7 @@ int sv_way_pathfind(int start_way, int end_way) {
 
 		// Add each neighbor to the open set
 		for (i = 0;i < 8; i++) {
-			int neighbor_waypoint_idx = waypoints[current].target_id[i];
+			int neighbor_waypoint_idx = waypoints[current].target[i];
 
 			// Skip unused neighbor slots
 			if (neighbor_waypoint_idx < 0) {
@@ -1943,6 +1874,25 @@ float max_waypoint_distance = 750;
 short closest_waypoints[MAX_EDICTS]; 
 
 
+
+// 
+// Returns true iff we can tracebox from (start + [0,0,ofs]) to (end + [0,0,ofs])
+//
+bool ofs_tracebox(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, edict_t *ignore_ent) {
+	trace_t trace;
+	vec3_t start_ofs;
+	vec3_t end_ofs;
+	VectorCopy(start, start_ofs);
+	VectorCopy(end, end_ofs);
+	start_ofs[2] += 8; // Move 8qu up to work better on uneven terrain
+	end_ofs[2] += 8;
+	trace = SV_Move(start_ofs, mins, maxs, end_ofs, MOVE_NOMONSTERS, ignore_ent);
+	return (trace.fraction >= 1);
+}
+
+
+
+
 // 
 // Returns the closest waypoint to an entity that the entity can walk to
 // 
@@ -1952,9 +1902,9 @@ int get_closest_waypoint(int entnum) {
 
 	// Keep track of the closest waypoint that...
 	int best_traceline_way = -1; // ... we are able to traceline to
-	int best_tracepath_way = -1; // ... we are able to tracepath to
+	int best_tracebox_way = -1; // ... we are able to tracepath to
 	float best_traceline_way_dist = max_waypoint_distance * max_waypoint_distance;
-	float best_tracepath_way_dist = max_waypoint_distance * max_waypoint_distance; 
+	float best_tracebox_way_dist = max_waypoint_distance * max_waypoint_distance; 
 
 
 	// Start the search from the last known closest waypoint and its neighbors
@@ -1965,8 +1915,8 @@ int get_closest_waypoint(int entnum) {
 
  	
 	if(prev_closest_way >= 0) {
-		trace = SV_Move(ent->v.origin, vec3_origin, vec3_origin, waypoints[prev_closest_way].origin, 1, ent);
 		// Try against the prev waypoint first
+		trace = SV_Move(ent->v.origin, vec3_origin, vec3_origin, waypoints[prev_closest_way].origin, MOVE_NOMONSTERS, ent);
 		if(trace.fraction >= 1) {
 			best_traceline_way_dist = VectorDistanceSquared(waypoints[prev_closest_way].origin, ent->v.origin);
 			best_traceline_way = prev_closest_way;
@@ -1974,14 +1924,14 @@ int get_closest_waypoint(int entnum) {
 		// Otherwise, try against its neighbors
 		else {
 			for(int i = 0; i < 8; i++) {
-				int neighbor_way = waypoints[prev_closest_way].target_id[i];
+				int neighbor_way = waypoints[prev_closest_way].target[i];
 				// Skip unused neighbor slots / unused waypoint slots / inactive waypoints
 				if (neighbor_way < 0 || !waypoints[neighbor_way].used || !waypoints[neighbor_way].open) {
 					continue;
 				}
 				float dist = VectorDistanceSquared(waypoints[neighbor_way].origin, ent->v.origin);
 				if(dist < best_traceline_way_dist || best_traceline_way == -1) {
-					trace = SV_Move (ent->v.origin, vec3_origin, vec3_origin, waypoints[neighbor_way].origin, 1, ent);
+					trace = SV_Move(ent->v.origin, vec3_origin, vec3_origin, waypoints[neighbor_way].origin, MOVE_NOMONSTERS, ent);
 					if (trace.fraction >= 1) {
 						best_traceline_way_dist = dist;
 						best_traceline_way = neighbor_way;
@@ -1991,23 +1941,23 @@ int get_closest_waypoint(int entnum) {
 		}
 
 		// Try against the prev waypoint first
-		if(tracepath(ent->v.origin, ent->v.angles, waypoints[prev_closest_way].origin, MOVE_NOMONSTERS, ent)) {
-			best_tracepath_way_dist = VectorDistanceSquared(waypoints[prev_closest_way].origin, ent->v.origin);
-			best_tracepath_way = prev_closest_way;
+		if(ofs_tracebox(ent->v.origin, ent->v.mins, ent->v.maxs, waypoints[prev_closest_way].origin, MOVE_NOMONSTERS, ent)) {
+			best_tracebox_way_dist = VectorDistanceSquared(waypoints[prev_closest_way].origin, ent->v.origin);
+			best_tracebox_way = prev_closest_way;
 		}
 		// Otherwise, try against its neighbors
 		else {
 			for(int i = 0; i < 8; i++) {
-				int neighbor_way = waypoints[prev_closest_way].target_id[i];
+				int neighbor_way = waypoints[prev_closest_way].target[i];
 				// Skip unused neighbor slots / unused waypoint slots / inactive waypoints
 				if (neighbor_way < 0 || !waypoints[neighbor_way].used || !waypoints[neighbor_way].open) {
 					continue;
 				}
 				float dist = VectorDistanceSquared(waypoints[neighbor_way].origin, ent->v.origin);
-				if(dist < best_tracepath_way_dist || best_tracepath_way == -1) {
-					if(tracepath(ent->v.origin, ent->v.angles, waypoints[prev_closest_way].origin, MOVE_NOMONSTERS, ent)) {
-						best_tracepath_way_dist = dist;
-						best_tracepath_way = neighbor_way;
+				if(dist < best_tracebox_way_dist || best_tracebox_way == -1) {
+					if(ofs_tracebox(ent->v.origin, ent->v.mins, ent->v.maxs, waypoints[neighbor_way].origin, MOVE_NOMONSTERS, ent)) {
+						best_tracebox_way_dist = dist;
+						best_tracebox_way = neighbor_way;
 					}
 				}
 			}
@@ -2017,9 +1967,9 @@ int get_closest_waypoint(int entnum) {
 	// Now we may have an initial valid `best_traceline_way` / `best_traceline_way_dist`
 	// We can safely skip all waypoints farther away than this
 
-	for (int i = 0; i < n_waypoints; i++) {
+	for(int i = 0; i < n_waypoints; i++) {
 		// Skip unused waypoint slots / inactive waypoints
-		if (!waypoints[i].used || !waypoints[i].open) {
+		if(!waypoints[i].used || !waypoints[i].open) {
 			continue;
 		}
 		
@@ -2032,10 +1982,10 @@ int get_closest_waypoint(int entnum) {
 			}
 		}
 
-		if(dist < best_tracepath_way_dist || best_tracepath_way == -1) {
-			if(tracepath(ent->v.origin, ent->v.angles, waypoints[i].origin, MOVE_NOMONSTERS, ent)) {
-				best_tracepath_way_dist = dist;
-				best_tracepath_way = i;
+		if(dist < best_tracebox_way_dist || best_tracebox_way == -1) {
+			if(ofs_tracebox(ent->v.origin, ent->v.mins, ent->v.maxs, waypoints[i].origin, MOVE_NOMONSTERS, ent)) {
+				best_tracebox_way_dist = dist;
+				best_tracebox_way = i;
 			}
 		}
 	}
@@ -2043,8 +1993,8 @@ int get_closest_waypoint(int entnum) {
 	int best_way = -1;
 
 	// If we can tracepath to any waypoint, return the closest one:
-	if(best_tracepath_way >= 0) {
-		best_way = best_tracepath_way;
+	if(best_tracebox_way >= 0) {
+		best_way = best_tracebox_way;
 	}
 	// Otherwise, return the best waypoint we found that we can traceline to
 	// (which may be none for some if a map's waypoints aren't great)

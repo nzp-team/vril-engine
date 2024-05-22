@@ -1447,7 +1447,7 @@ void Load_Waypoint_NZPBETA() {
 		}
 
 		// waypoints[waypoint_idx].id = way_id;
-		VectorCopy(way_origin, waypoints[way_id].origin);
+		VectorCopy(way_origin, waypoints[waypoint_idx].origin);
 
 		// [link1, link2, link3, link4, owner1, owner2, owner3, owner4]
 		for(i = 0; i < 8; i++) {
@@ -1467,8 +1467,8 @@ void Load_Waypoint_NZPBETA() {
 			}
 		}
 
-		waypoints[way_id].used = 1;
-		waypoints[way_id].open = 1;
+		waypoints[waypoint_idx].used = 1;
+		waypoints[waypoint_idx].open = 1;
 	}
 	Con_DPrintf("Total waypoints: %i, num parsed: %i\n", max_waypoint_idx, n_waypoints_parsed);
 	// Store in global `n_waypoints`
