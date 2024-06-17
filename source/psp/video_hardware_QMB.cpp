@@ -2938,7 +2938,7 @@ void QMB_LaserSight (void)
 			switch ((int)r_laserpoint.value)
 			{
 				case 1:
-					color[0] = color[0] = 000;color[1] = 000;color[2] = 255;color[3] = 50;//B
+					color[0] = 000;color[1] = 000;color[2] = 255;color[3] = 50;//B
 					c = lt_blue;
 					break;
 				case 2:
