@@ -478,36 +478,36 @@ HUD_Blood
 */
 void HUD_Blood (void)
 {
-    float alpha;
+	float alpha;
 	//blubswillrule:
 	//this function scales linearly from health = 0 to health = 100
 	//alpha = (100.0 - (float)cl.stats[STAT_HEALTH])/100*255;
 	//but we want the picture to be fully visible at health = 20, so use this function instead
 	alpha = (100.0 - ((1.25 * (float) cl.stats[STAT_HEALTH]) - 25))/100*255;
 	
-    if (alpha <= 0.0)
-        return;
+	if (alpha <= 0.0)
+		return;
     
 	#ifdef PSP_VFPU
 	float modifier = (vfpu_sinf(cl.time * 10) * 20) - 20;//always negative
 	#else
-    float modifier = (sin(cl.time * 10) * 20) - 20;//always negative
+	float modifier = (sin(cl.time * 10) * 20) - 20;//always negative
 	#endif
 
-    if(modifier < -35.0)
-	modifier = -35.0;
+	if(modifier < -35.0)
+		modifier = -35.0;
     
-    alpha += modifier;
+	alpha += modifier;
     
-    if(alpha < 0.0)
-	    return;
-    float color = 255.0 + modifier;
+	if(alpha < 0.0)
+		return;
+	float color = 255.0 + modifier;
     
-    Draw_ColorPic(0,0,fx_blood_lu,color,color,color,alpha);
-    //Draw_ColorPic (0, 0, fx_blood_lu, 82, 6, 6, alpha);
-    /*Draw_ColorPic (0, vid.height - fx_blood_ru->height, fx_blood_ld, 82, 6, 6, alpha);
-    Draw_ColorPic (vid.width - fx_blood_ru->width, 0, fx_blood_ru, 82, 6, 6, alpha);
-    Draw_ColorPic (vid.width - fx_blood_ru->width, vid.height - fx_blood_ru->height, fx_blood_rd, 82, 6, 6, alpha);*/
+	Draw_ColorPic(0,0,fx_blood_lu,color,color,color,alpha);
+	//Draw_ColorPic (0, 0, fx_blood_lu, 82, 6, 6, alpha);
+	/*Draw_ColorPic (0, vid.height - fx_blood_ru->height, fx_blood_ld, 82, 6, 6, alpha);
+	Draw_ColorPic (vid.width - fx_blood_ru->width, 0, fx_blood_ru, 82, 6, 6, alpha);
+	Draw_ColorPic (vid.width - fx_blood_ru->width, vid.height - fx_blood_ru->height, fx_blood_rd, 82, 6, 6, alpha);*/
 }
 
 /*
