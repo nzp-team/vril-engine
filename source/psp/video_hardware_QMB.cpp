@@ -391,8 +391,8 @@ void QMB_AllocParticles (void)
 	//if (particles)
 	//	Con_Printf("QMB_AllocParticles: internal error >particles<\n");
 
-    if(r_numparticles < 1)
-        Con_Printf("QMB_AllocParticles: internal error >num particles<\n");
+	if(r_numparticles < 1)
+		Con_Printf("QMB_AllocParticles: internal error >num particles<\n");
 
 	// can't alloc on Hunk, using native memory
 	// why??????? why not?????? where's the context :$
