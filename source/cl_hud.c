@@ -1265,8 +1265,8 @@ void HUD_Achievement (void)
 
 void HUD_Parse_Achievement (int ach)
 {
-    if (achievement_list[ach].unlocked)
-        return;
+	if (achievement_list[ach].unlocked)
+		return;
 
 	achievement_unlocked = 1;
 	smallsec = 0;
