@@ -1184,7 +1184,11 @@ inline static void QMB_UpdateParticles(void)
 					{
 						TraceLineN(oldorg, p->org, stop, normal);
 
-						if ((stop != p->org)&&(VectorLength(stop)!=0))
+						if (    (stop[0] != p->org[0])
+						     && (stop[1] != p->org[1])
+						     && (stop[2] != p->org[2])
+						     && VectorLength(stop)!=0)
+
 						{
 							vec3_t tangent;
 							VectorCopy(stop, p->org);
@@ -1222,7 +1226,10 @@ inline static void QMB_UpdateParticles(void)
 					{
 						TraceLineN(oldorg, p->org, stop, normal);
 
-						if ((stop != p->org)&&(VectorLength(stop)!=0))
+						if (    (stop[0] != p->org[0])
+						     && (stop[1] != p->org[1])
+						     && (stop[2] != p->org[2])
+						     && VectorLength(stop)!=0)
 						{
 							vec3_t tangent;
 
