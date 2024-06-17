@@ -457,7 +457,7 @@ byte *W_GetTextureHL(char *name)
 	char		texname[17];
 	int			i, j;
 	FILE		*file;
-	miptex_t	*tex;
+	miptex_t	*tex = NULL;
 	byte		*data;
 
 	texname[16] = 0;
