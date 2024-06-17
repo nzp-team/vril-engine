@@ -779,7 +779,7 @@ void R_DrawSpriteModel (entity_t *e)
 		s_right = v_right;
 		break;
 	case SPR_VP_PARALLEL_ORIENTED: //faces view plane, but obeys roll value
-		angle = currententity->angles[ROLL] * M_PI_DIV_180;
+		angle = DEG2RAD(currententity->angles[ROLL]);
 		#ifdef PSP_VFPU
 		sr = vfpu_sinf(angle);
 		cr = vfpu_cosf(angle);
@@ -3753,9 +3753,9 @@ void R_RenderScene (void)
 			//what a mess!
 			//fovx = atan(tan(DEG2RAD(r_refdef.fov_x) / 2) * (0.97 + sin(cl.time * 1) * 0.04)) * 2 / M_PI_DIV_180;
 			#ifdef PSP_VFPU
-			fovy = vfpu_atanf(vfpu_tanf(DEG2RAD(r_refdef.fov_y) / 2) * (1.03 - vfpu_sinf(cl.time * 2) * 0.04)) * 2 / M_PI_DIV_180;
+			fovy = RAD2DEG(vfpu_atanf(vfpu_tanf(DEG2RAD(r_refdef.fov_y) / 2) * (1.03 - vfpu_sinf(cl.time * 2) * 0.04)));
 			#else
-			fovy = atan(tan(DEG2RAD(r_refdef.fov_y) / 2) * (1.03 - sin(cl.time * 2) * 0.04)) * 2 / M_PI_DIV_180;
+			fovy = RAD2DEG(atan(tan(DEG2RAD(r_refdef.fov_y) / 2) * (1.03 - sin(cl.time * 2) * 0.04)));
 			#endif
 		}
 	}
