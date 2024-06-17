@@ -124,7 +124,7 @@ float V_CalcBob (float speed,float which)//0 = regular, 1 = side bobbing
 	float sprint = 1;
 
 	if (cl.stats[STAT_ZOOM] == 2)
-		return;
+		return bob;
 
 	// Bob idle-y, instead of presenting as if in-motion.
 	if (speed < 0.1) {
@@ -136,16 +136,16 @@ float V_CalcBob (float speed,float which)//0 = regular, 1 = side bobbing
 #ifdef PSP_VFPU
 
 		if (which == 0)
-            bob = cl_bobup.value * 10 * speed * (sprint * sprint) * vfpu_sinf(cl.time * 3.25 * sprint);
-        else
-            bob = cl_bobside.value * 50 * speed * (sprint * sprint * sprint) * vfpu_sinf((cl.time * sprint) - (M_PI * 0.25));
+			bob = cl_bobup.value * 10 * speed * (sprint * sprint) * vfpu_sinf(cl.time * 3.25 * sprint);
+		else
+			bob = cl_bobside.value * 50 * speed * (sprint * sprint * sprint) * vfpu_sinf((cl.time * sprint) - (M_PI * 0.25));
 
 #else
 
 		if (which == 0)
-            bob = cl_bobup.value * 10 * speed * (sprint * sprint) * sin(cl.time * 3.25 * sprint);
-        else
-            bob = cl_bobside.value * 50 * speed * (sprint * sprint * sprint) * sin((cl.time * sprint) - (M_PI * 0.25));
+			bob = cl_bobup.value * 10 * speed * (sprint * sprint) * sin(cl.time * 3.25 * sprint);
+		else
+			bob = cl_bobside.value * 50 * speed * (sprint * sprint * sprint) * sin((cl.time * sprint) - (M_PI * 0.25));
 
 #endif // PSP_VFPU
 
