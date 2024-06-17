@@ -3485,7 +3485,7 @@ void R_DrawViewModel (void)
 			R_DrawMD2Model (currententity);
 		else
 			R_DrawAliasModel (currententity);
-			r_i_model_transform.value = old_i_model_transform;
+		r_i_model_transform.value = old_i_model_transform;
 			break;
 		case mod_md3:
 			R_DrawQ3Model (currententity);
