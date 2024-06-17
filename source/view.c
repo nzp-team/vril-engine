@@ -124,7 +124,7 @@ float V_CalcBob (float speed,float which)//0 = regular, 1 = side bobbing
 	float sprint = 1;
 
 	if (cl.stats[STAT_ZOOM] == 2)
-		return;
+		return bob;
 
 	// Bob idle-y, instead of presenting as if in-motion.
 	if (speed < 0.1) {
@@ -136,16 +136,16 @@ float V_CalcBob (float speed,float which)//0 = regular, 1 = side bobbing
 #ifdef PSP_VFPU
 
 		if (which == 0)
-            bob = cl_bobup.value * 10 * speed * (sprint * sprint) * vfpu_sinf(cl.time * 3.25 * sprint);
-        else
-            bob = cl_bobside.value * 50 * speed * (sprint * sprint * sprint) * vfpu_sinf((cl.time * sprint) - (M_PI * 0.25));
+			bob = cl_bobup.value * 10 * speed * (sprint * sprint) * vfpu_sinf(cl.time * 3.25 * sprint);
+		else
+			bob = cl_bobside.value * 50 * speed * (sprint * sprint * sprint) * vfpu_sinf((cl.time * sprint) - (M_PI * 0.25));
 
 #else
 
 		if (which == 0)
-            bob = cl_bobup.value * 10 * speed * (sprint * sprint) * sin(cl.time * 3.25 * sprint);
-        else
-            bob = cl_bobside.value * 50 * speed * (sprint * sprint * sprint) * sin((cl.time * sprint) - (M_PI * 0.25));
+			bob = cl_bobup.value * 10 * speed * (sprint * sprint) * sin(cl.time * 3.25 * sprint);
+		else
+			bob = cl_bobside.value * 50 * speed * (sprint * sprint * sprint) * sin((cl.time * sprint) - (M_PI * 0.25));
 
 #endif // PSP_VFPU
 
@@ -1264,26 +1264,26 @@ void V_CalcRefdef (void)
 
 	VectorAdd (r_refdef.viewangles, cl.gun_kick, r_refdef.viewangles);
 
-// smooth out stair step ups
-if (cl.onground && ent->origin[2] - oldz > 0)
-{
-	float steptime;
+	// smooth out stair step ups
+	if (cl.onground && ent->origin[2] - oldz > 0)
+	{
+		float steptime;
 
-	steptime = cl.time - cl.oldtime;
-	if (steptime < 0)
-//FIXME		I_Error ("steptime < 0");
-		steptime = 0;
+		steptime = cl.time - cl.oldtime;
+		if (steptime < 0)
+	//FIXME		I_Error ("steptime < 0");
+			steptime = 0;
 
-	oldz += steptime * 80;
-	if (oldz > ent->origin[2])
+		oldz += steptime * 80;
+		if (oldz > ent->origin[2])
+			oldz = ent->origin[2];
+		if (ent->origin[2] - oldz > 12)
+			oldz = ent->origin[2] - 12;
+		r_refdef.vieworg[2] += oldz - ent->origin[2];
+		view->origin[2] += oldz - ent->origin[2];
+	}
+	else
 		oldz = ent->origin[2];
-	if (ent->origin[2] - oldz > 12)
-		oldz = ent->origin[2] - 12;
-	r_refdef.vieworg[2] += oldz - ent->origin[2];
-	view->origin[2] += oldz - ent->origin[2];
-}
-else
-	oldz = ent->origin[2];
 
 	if (chase_active.value)
 		Chase_Update ();

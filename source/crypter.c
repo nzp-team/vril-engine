@@ -39,27 +39,23 @@ char decrypt(char c, int key)
 
 }
 
+void* Q_malloc(size_t);
+
 char *strencrypt(char *s, int key, int len)
 {
-    int i;
+	int i;
 	char *result = Q_malloc(len);
 	for(i = 0; i < len; i++)
-	{
-        result[i] = encrypt(s[i], key);
-
-    }
-    return result;
-
+		result[i] = encrypt(s[i], key);
+	return result;
 }
 
 char *strdecrypt(char *s, int key, int len)
 {
-    int i;
+	int i;
 	char *result = Q_malloc(len);
 	for(i = 0; i < len; i++)
-	{
-       result[i] = decrypt(s[i], -key);
-	}
+		result[i] = decrypt(s[i], -key);
 	return result;
 }
 

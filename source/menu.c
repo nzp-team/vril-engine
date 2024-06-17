@@ -417,6 +417,25 @@ void M_ToggleMenu_f (void)
 int M_Start_Cusor;
 #define Max_Start_Iteams 5
 
+
+void M_Load_Menu_Pics ()
+{
+	menu_bk = loadtextureimage("gfx/menu/menu_background", 0, 0, false, GU_LINEAR);
+	menu_ndu 	= loadtextureimage("gfx/menu/nacht_der_untoten", 0, 0, false, GU_LINEAR);
+	//menu_kn 	= Draw_CacheImg("gfx/menu/kino_der_toten");
+	menu_wh 	= loadtextureimage("gfx/menu/nzp_warehouse", 0, 0, false, GU_LINEAR);
+	menu_wh2 	= loadtextureimage("gfx/menu/nzp_warehouse2", 0, 0, false, GU_LINEAR);
+	//menu_wn 	= Draw_CacheImg("gfx/menu/wahnsinn");
+	menu_ch 	= loadtextureimage("gfx/menu/christmas_special", 0, 0, false, GU_LINEAR);
+	menu_custom = loadtextureimage("gfx/menu/custom", 0, 0, false, GU_LINEAR);
+	for (int i = 0; i < MAX_CUSTOM_MAPS; i++) {
+		if (custom_maps[i].occupied == false) continue;
+		if (custom_maps[i].map_use_thumbnail == false) continue;
+		custom_maps[i].thumbnail_index = loadtextureimage(custom_maps[i].map_thumbnail_path, 0, 0, false, GU_LINEAR);
+	}
+}
+
+
 void M_Start_Menu_f ()
 {
 	Load_Achivements();
@@ -447,23 +466,6 @@ void M_Start_Key (int key)
 			Cbuf_AddText("cd playstring tensioned_by_the_damned 1\n");
 			Cbuf_AddText("togglemenu\n");
 			break;
-	}
-}
-
-void M_Load_Menu_Pics ()
-{
-	menu_bk = loadtextureimage("gfx/menu/menu_background", 0, 0, false, GU_LINEAR);
-	menu_ndu 	= loadtextureimage("gfx/menu/nacht_der_untoten", 0, 0, false, GU_LINEAR);
-	//menu_kn 	= Draw_CacheImg("gfx/menu/kino_der_toten");
-	menu_wh 	= loadtextureimage("gfx/menu/nzp_warehouse", 0, 0, false, GU_LINEAR);
-	menu_wh2 	= loadtextureimage("gfx/menu/nzp_warehouse2", 0, 0, false, GU_LINEAR);
-	//menu_wn 	= Draw_CacheImg("gfx/menu/wahnsinn");
-	menu_ch 	= loadtextureimage("gfx/menu/christmas_special", 0, 0, false, GU_LINEAR);
-	menu_custom = loadtextureimage("gfx/menu/custom", 0, 0, false, GU_LINEAR);
-	for (int i = 0; i < MAX_CUSTOM_MAPS; i++) {
-		if (custom_maps[i].occupied == false) continue;
-		if (custom_maps[i].map_use_thumbnail == false) continue;
-		custom_maps[i].thumbnail_index = loadtextureimage(custom_maps[i].map_thumbnail_path, 0, 0, false, GU_LINEAR);
 	}
 }
 

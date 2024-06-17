@@ -245,8 +245,8 @@ void SCR_CheckDrawCenterString (void)
 		return;
 	if (key_dest != key_game)
 		return;
-    if (cl.stats[STAT_HEALTH] <= 0)
-        return;
+	if (cl.stats[STAT_HEALTH] <= 0)
+		return;
 
 	SCR_DrawCenterString ();
 }
@@ -557,8 +557,8 @@ void SCR_CheckDrawUseString (void)
 		return;
 	if (key_dest != key_game)
 		return;
-    if (cl.stats[STAT_HEALTH] <= 0)
-        return;
+	if (cl.stats[STAT_HEALTH] <= 0)
+		return;
 
 	SCR_DrawUseString ();
 }

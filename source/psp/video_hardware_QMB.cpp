@@ -391,8 +391,8 @@ void QMB_AllocParticles (void)
 	//if (particles)
 	//	Con_Printf("QMB_AllocParticles: internal error >particles<\n");
 
-    if(r_numparticles < 1)
-        Con_Printf("QMB_AllocParticles: internal error >num particles<\n");
+	if(r_numparticles < 1)
+		Con_Printf("QMB_AllocParticles: internal error >num particles<\n");
 
 	// can't alloc on Hunk, using native memory
 	// why??????? why not?????? where's the context :$
@@ -1184,7 +1184,11 @@ inline static void QMB_UpdateParticles(void)
 					{
 						TraceLineN(oldorg, p->org, stop, normal);
 
-						if ((stop != p->org)&&(VectorLength(stop)!=0))
+						if (    (stop[0] != p->org[0])
+						     && (stop[1] != p->org[1])
+						     && (stop[2] != p->org[2])
+						     && VectorLength(stop)!=0)
+
 						{
 							vec3_t tangent;
 							VectorCopy(stop, p->org);
@@ -1222,7 +1226,10 @@ inline static void QMB_UpdateParticles(void)
 					{
 						TraceLineN(oldorg, p->org, stop, normal);
 
-						if ((stop != p->org)&&(VectorLength(stop)!=0))
+						if (    (stop[0] != p->org[0])
+						     && (stop[1] != p->org[1])
+						     && (stop[2] != p->org[2])
+						     && VectorLength(stop)!=0)
 						{
 							vec3_t tangent;
 
@@ -2931,7 +2938,7 @@ void QMB_LaserSight (void)
 			switch ((int)r_laserpoint.value)
 			{
 				case 1:
-					color[0] = color[0] = 000;color[1] = 000;color[2] = 255;color[3] = 50;//B
+					color[0] = 000;color[1] = 000;color[2] = 255;color[3] = 50;//B
 					c = lt_blue;
 					break;
 				case 2:
