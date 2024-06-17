@@ -245,7 +245,7 @@ void R_ReadPointFile_f (void)
 				Sys_Error("Line buffer overflow when reading point file");
 			}
 
-			if (!Sys_FileRead(f, &line[chars++], 1) != 1)
+			if (Sys_FileRead(f, &line[chars++], 1) == 0)
 			{
 				break;
 			}
