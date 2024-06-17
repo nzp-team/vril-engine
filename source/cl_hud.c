@@ -1185,7 +1185,7 @@ HUD_Powerups
 */
 void HUD_Powerups (void)
 {
-	int count;
+	int count = 0;
 
 	// horrible way to offset check :)))))))))))))))))) :DDDDDDDD XOXO
 
