@@ -47,26 +47,6 @@ struct mplane_s;
 extern vec3_t vec3_origin;
 extern	int nanmask;
 
-/*
-#ifndef M_PI
-#define M_PI		3.14159265358979323846	// matches value in gcc v2 math.h
-#endif
-
-#define M_PI_DIV_180 (M_PI / 180.0) //johnfitz
-//#define DEG2RAD( a ) ( a * M_PI ) / 180.0F
-#define DEG2RAD( a ) ( (a) * M_PI_DIV_180 ) //johnfitz
-
-//#else
-*/
-#ifndef M_PI
-#define M_PI = GU_PI	// matches value in gcc v2 math.h
-#endif
-
-#define M_PI_DIV_180 (M_PI / 180.0) //johnfitz
-//#define DEG2RAD( a ) ( a * M_PI ) / 180.0F
-#define DEG2RAD( a ) ( (a) * M_PI_DIV_180 ) //johnfitz
-//#endif
-
 #define CLAMP(min, x, max) ((x) < (min) ? (min) : (x) > (max) ? (max) : (x)) //johnfitz
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
