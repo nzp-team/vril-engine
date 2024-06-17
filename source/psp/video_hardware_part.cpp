@@ -298,10 +298,10 @@ void R_ParseParticleEffect (void)
 	msgcount = MSG_ReadByte ();
 	color = MSG_ReadByte ();
 
-if (msgcount == 255)
-	count = 1024;
-else
-	count = msgcount;
+	if (msgcount == 255)
+		count = 1024;
+	else
+		count = msgcount;
 
 	R_RunParticleEffect (org, dir, color, count);
 }
