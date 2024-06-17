@@ -1424,7 +1424,7 @@ void Load_Waypoint_NZPBETA()
 	Con_DPrintf("Loading BETA waypoints\n");
 
 	vec3_t way_origin;
-	int way_id;
+	int way_id = 0;
 
 	while (1)
 	{
