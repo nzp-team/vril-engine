@@ -1244,6 +1244,11 @@ void CL_ParseServerMessage (void)
 			doubletap_has_damage_buff = MSG_ReadByte();
 			break;
 
+		case svc_lockviewmodel:
+			// This platform doesn't use this.
+			MSG_ReadByte();
+			break;
+
 		case svc_screenflash:
 			screenflash_color = MSG_ReadByte();
 			screenflash_duration = sv.time + MSG_ReadByte();
