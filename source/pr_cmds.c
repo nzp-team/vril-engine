@@ -3408,6 +3408,39 @@ void PF_LockViewmodel(void)
 
 /*
 =================
+PF_Rumble
+
+Server tells client to rumble their
+GamePad.
+
+nzp_rumble()
+=================
+*/
+void PF_Rumble(void)
+{
+	client_t	*client;
+	int			entnum;
+	int 		low_frequency;
+	int 		high_frequency;
+	int 		duration;
+
+	entnum = G_EDICTNUM(OFS_PARM0);
+	low_frequency = G_FLOAT(OFS_PARM1);
+	high_frequency = G_FLOAT(OFS_PARM2);
+	duration = G_FLOAT(OFS_PARM3);
+
+	if (entnum < 1 || entnum > svs.maxclients)
+		return;
+
+	client = &svs.clients[entnum-1];
+	MSG_WriteByte (&client->message, svc_rumble);
+	MSG_WriteShort (&client->message, low_frequency);
+	MSG_WriteShort (&client->message, high_frequency);
+	MSG_WriteShort (&client->message, duration);
+}
+
+/*
+=================
 PF_BettyPrompt
 
 draws status on hud on
@@ -3818,7 +3851,8 @@ ebfs_builtin_t pr_ebfs_builtins[] =
   { 505, "nzp_setplayername", PF_SetPlayerName },
   { 506, "nzp_setdoubletapver", PF_SetDoubleTapVersion },
   { 507, "nzp_screenflash", PF_ScreenFlash },
-  { 508, "nzp_lockviewmodel", PF_LockViewmodel }
+  { 508, "nzp_lockviewmodel", PF_LockViewmodel },
+  { 509, "nzp_rumble", PF_Rumble }
 
 // 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  end
 
