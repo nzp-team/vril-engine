@@ -3325,6 +3325,66 @@ void PF_ScreenFlash(void)
 
 /*
 =================
+PF_LockViewmodel
+
+Server tells client to lock their
+viewmodel in place, if applicable.
+
+nzp_lockviewmodel()
+=================
+*/
+void PF_LockViewmodel(void)
+{
+	client_t	*client;
+	int			entnum;
+	int 		state;
+
+	entnum = G_EDICTNUM(OFS_PARM0);
+	state = G_FLOAT(OFS_PARM1);
+
+	if (entnum < 1 || entnum > svs.maxclients)
+		return;
+
+	client = &svs.clients[entnum-1];
+	MSG_WriteByte (&client->message, svc_lockviewmodel);
+	MSG_WriteByte (&client->message, state);
+}
+
+/*
+=================
+PF_Rumble
+
+Server tells client to rumble their
+GamePad.
+
+nzp_rumble()
+=================
+*/
+void PF_Rumble(void)
+{
+	client_t	*client;
+	int			entnum;
+	int 		low_frequency;
+	int 		high_frequency;
+	int 		duration;
+
+	entnum = G_EDICTNUM(OFS_PARM0);
+	low_frequency = G_FLOAT(OFS_PARM1);
+	high_frequency = G_FLOAT(OFS_PARM2);
+	duration = G_FLOAT(OFS_PARM3);
+
+	if (entnum < 1 || entnum > svs.maxclients)
+		return;
+
+	client = &svs.clients[entnum-1];
+	MSG_WriteByte (&client->message, svc_rumble);
+	MSG_WriteShort (&client->message, low_frequency);
+	MSG_WriteShort (&client->message, high_frequency);
+	MSG_WriteShort (&client->message, duration);
+}
+
+/*
+=================
 PF_BettyPrompt
 
 draws status on hud on
@@ -3389,7 +3449,7 @@ nzp_maxai()
 */
 void PF_MaxZombies(void)
 {
-	G_FLOAT(OFS_RETURN) = 12;
+	G_FLOAT(OFS_RETURN) = MaxZombies;
 }
 
 /*
@@ -3734,7 +3794,9 @@ ebfs_builtin_t pr_ebfs_builtins[] =
   { 504, "nzp_bettyprompt", PF_BettyPrompt },
   { 505, "nzp_setplayername", PF_SetPlayerName },
   { 506, "nzp_setdoubletapver", PF_SetDoubleTapVersion },
-  { 507, "nzp_screenflash", PF_ScreenFlash }
+  { 507, "nzp_screenflash", PF_ScreenFlash },
+  { 508, "nzp_lockviewmodel", PF_LockViewmodel },
+  { 509, "nzp_rumble", PF_Rumble }
 
 // 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  end
 

@@ -457,7 +457,7 @@ byte *W_GetTextureHL(char *name)
 	char		texname[17];
 	int			i, j;
 	FILE		*file;
-	miptex_t	*tex;
+	miptex_t	*tex = NULL;
 	byte		*data;
 
 	texname[16] = 0;
@@ -496,13 +496,13 @@ byte *W_GetTextureHL(char *name)
 				data = W_ConvertWAD3TextureHL(tex);
 
 				free(tex);
-                fclose(file);
+				fclose(file);
 				return data;
 			}
 		}
 		else
 			break;
 	}
-	tex->width = tex->width = 0;
+	tex->width = tex->height = 0;
 	return NULL;
 }

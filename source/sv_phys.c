@@ -765,11 +765,11 @@ void SV_Physics_Pusher (edict_t *ent)
 
 
 
-		if (ent->v.avelocity[0] || ent->v.avelocity[1] || ent->v.avelocity[2])
-            SV_PushRotate (ent, host_frametime);
+	if (ent->v.avelocity[0] || ent->v.avelocity[1] || ent->v.avelocity[2])
+		SV_PushRotate (ent, host_frametime);
 
         if (movetime)
-            SV_PushMove (ent, movetime);	// advances ent->v.ltime if not blocked
+		SV_PushMove (ent, movetime);	// advances ent->v.ltime if not blocked
 
 
 	if (thinktime > oldltime && thinktime <= ent->v.ltime)

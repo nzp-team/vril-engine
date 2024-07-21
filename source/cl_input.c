@@ -491,9 +491,9 @@ void CL_Aim_Snap(void)
 			}
 		}
 		if (cl.perks & 64)
-		  	znum = EN_Find(znum,"ai_zombie_head");
-    	else
-      		znum = EN_Find(znum,"ai_zombie");
+			znum = EN_Find(znum,"ai_zombie_head");
+		else
+			znum = EN_Find(znum,"ai_zombie");
 		z = EDICT_NUM(znum);
 	}
 
