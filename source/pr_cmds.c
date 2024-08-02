@@ -1737,14 +1737,12 @@ int sv_way_pathfind(int start_way, int end_way) {
 				continue;
 			}
 
-			tentative_g_score = waypoints[current].g_score + waypoints[current].dist[i];
-			tentative_f_score = tentative_g_score + sv_way_heuristic_cost_estimate(neighbor_waypoint_idx, end_way);
-			
-
 			// If this waypoint is already in the closed set, skip it
 			if (sv_way_in_set(WAYPOINT_SET_CLOSED, neighbor_waypoint_idx)) {
 				continue;
 			}
+			tentative_g_score = waypoints[current].g_score + waypoints[current].dist[i];
+			tentative_f_score = tentative_g_score + sv_way_heuristic_cost_estimate(neighbor_waypoint_idx, end_way);
 
 			if (sv_way_in_set(WAYPOINT_SET_OPEN, neighbor_waypoint_idx)) {
 				if(tentative_f_score < waypoints[neighbor_waypoint_idx].f_score) {
@@ -1878,7 +1876,12 @@ short closest_waypoints[MAX_EDICTS];
 // 
 // Returns true iff we can tracebox from (start + [0,0,ofs]) to (end + [0,0,ofs])
 //
-bool ofs_tracebox(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, edict_t *ignore_ent) {
+
+// Dynamic hull sizes for hit detection cause chaos on movement code. Treat all AI ents as same size as player hull for movement
+vec3_t ai_hull_mins = {-16, -16, -36};
+vec3_t ai_hull_maxs = { 16,  16,  40};
+
+qboolean ofs_tracebox(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, edict_t *ignore_ent) {
 	trace_t trace;
 	vec3_t start_ofs;
 	vec3_t end_ofs;
@@ -1886,125 +1889,49 @@ bool ofs_tracebox(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, edict_t *i
 	VectorCopy(end, end_ofs);
 	start_ofs[2] += 8; // Move 8qu up to work better on uneven terrain
 	end_ofs[2] += 8;
-	trace = SV_Move(start_ofs, mins, maxs, end_ofs, MOVE_NOMONSTERS, ignore_ent);
+	trace = SV_Move(start_ofs, mins, maxs, end_ofs, type, ignore_ent);
 	return (trace.fraction >= 1);
 }
 
 
 
 
-// 
-// Returns the closest waypoint to an entity that the entity can walk to
-// 
+//
+// Returns the clsoest waypoint to an entity that the entity can walk to
+// Sorts all waypoints by distance, returns first waypoint we can tracebox to
+//
 int get_closest_waypoint(int entnum) {
-	trace_t trace;
 	edict_t *ent = EDICT_NUM(entnum);
 
-	// Keep track of the closest waypoint that...
-	int best_traceline_way = -1; // ... we are able to traceline to
-	int best_tracebox_way = -1; // ... we are able to tracepath to
-	float best_traceline_way_dist = max_waypoint_distance * max_waypoint_distance;
-	float best_tracebox_way_dist = max_waypoint_distance * max_waypoint_distance; 
+	vec3_t ent_mins;
+	vec3_t ent_maxs;
+	// VectorMin(ent->v.mins, ai_hull_mins, ent_mins);
+	// VectorMax(ent->v.maxs, ai_hull_maxs, ent_maxs);
+	VectorCopy(ai_hull_mins, ent_mins);
+	VectorCopy(ai_hull_maxs, ent_maxs);
 
-
-	// Start the search from the last known closest waypoint and its neighbors
-	// Assuming that at least one of the previous waypoint and its neighbors 
-	// is still traceline-able to, we'll easily skip tracelining against most
-	// map waypoints that are farther away.
-	int prev_closest_way = closest_waypoints[entnum];
-
- 	
-	if(prev_closest_way >= 0) {
-		// Try against the prev waypoint first
-		trace = SV_Move(ent->v.origin, vec3_origin, vec3_origin, waypoints[prev_closest_way].origin, MOVE_NOMONSTERS, ent);
-		if(trace.fraction >= 1) {
-			best_traceline_way_dist = VectorDistanceSquared(waypoints[prev_closest_way].origin, ent->v.origin);
-			best_traceline_way = prev_closest_way;
-		}
-		// Otherwise, try against its neighbors
-		else {
-			for(int i = 0; i < 8; i++) {
-				int neighbor_way = waypoints[prev_closest_way].target[i];
-				// Skip unused neighbor slots / unused waypoint slots / inactive waypoints
-				if (neighbor_way < 0 || !waypoints[neighbor_way].used || !waypoints[neighbor_way].open) {
-					continue;
-				}
-				float dist = VectorDistanceSquared(waypoints[neighbor_way].origin, ent->v.origin);
-				if(dist < best_traceline_way_dist || best_traceline_way == -1) {
-					trace = SV_Move(ent->v.origin, vec3_origin, vec3_origin, waypoints[neighbor_way].origin, MOVE_NOMONSTERS, ent);
-					if (trace.fraction >= 1) {
-						best_traceline_way_dist = dist;
-						best_traceline_way = neighbor_way;
-					}
-				}
-			}
-		}
-
-		// Try against the prev waypoint first
-		if(ofs_tracebox(ent->v.origin, ent->v.mins, ent->v.maxs, waypoints[prev_closest_way].origin, MOVE_NOMONSTERS, ent)) {
-			best_tracebox_way_dist = VectorDistanceSquared(waypoints[prev_closest_way].origin, ent->v.origin);
-			best_tracebox_way = prev_closest_way;
-		}
-		// Otherwise, try against its neighbors
-		else {
-			for(int i = 0; i < 8; i++) {
-				int neighbor_way = waypoints[prev_closest_way].target[i];
-				// Skip unused neighbor slots / unused waypoint slots / inactive waypoints
-				if (neighbor_way < 0 || !waypoints[neighbor_way].used || !waypoints[neighbor_way].open) {
-					continue;
-				}
-				float dist = VectorDistanceSquared(waypoints[neighbor_way].origin, ent->v.origin);
-				if(dist < best_tracebox_way_dist || best_tracebox_way == -1) {
-					if(ofs_tracebox(ent->v.origin, ent->v.mins, ent->v.maxs, waypoints[neighbor_way].origin, MOVE_NOMONSTERS, ent)) {
-						best_tracebox_way_dist = dist;
-						best_tracebox_way = neighbor_way;
-					}
-				}
-			}
-		}
-	}
-
-	// Now we may have an initial valid `best_traceline_way` / `best_traceline_way_dist`
-	// We can safely skip all waypoints farther away than this
-
+	// Get all waypoint indices sorted by distance to ent
+	argsort_entry_t waypoint_sort_values[MAX_WAYPOINTS];
 	for(int i = 0; i < n_waypoints; i++) {
-		// Skip unused waypoint slots / inactive waypoints
-		if(!waypoints[i].used || !waypoints[i].open) {
-			continue;
-		}
-		
-		float dist = VectorDistanceSquared(waypoints[i].origin, ent->v.origin);
-		if(dist < best_traceline_way_dist || best_traceline_way == -1) {
-			trace = SV_Move (ent->v.origin, vec3_origin, vec3_origin, waypoints[i].origin, 1, ent);
-			if (trace.fraction >= 1) {
-				best_traceline_way_dist = dist;
-				best_traceline_way = i;
-			}
-		}
+		waypoint_sort_values[i].index = i;
+		waypoint_sort_values[i].value = VectorDistanceSquared(waypoints[i].origin, ent->v.origin);
+	}
+	qsort(waypoint_sort_values, n_waypoints, sizeof(argsort_entry_t), argsort_comparator);
 
-		if(dist < best_tracebox_way_dist || best_tracebox_way == -1) {
-			if(ofs_tracebox(ent->v.origin, ent->v.mins, ent->v.maxs, waypoints[i].origin, MOVE_NOMONSTERS, ent)) {
-				best_tracebox_way_dist = dist;
-				best_tracebox_way = i;
-			}
+	
+
+	int best_waypoint_idx = -1;
+	// Sweep through waypoints from closest to farthest, stop when we can tracebox to one
+	for(int i = 0; i < n_waypoints; i++) {
+		int waypoint_idx = waypoint_sort_values[i].index;
+
+		if(ofs_tracebox(ent->v.origin, ent_mins, ent_maxs, waypoints[waypoint_idx].origin, MOVE_NOMONSTERS, ent)) {
+			best_waypoint_idx = waypoint_idx;
+			break;
 		}
 	}
 
-	int best_way = -1;
-
-	// If we can tracepath to any waypoint, return the closest one:
-	if(best_tracebox_way >= 0) {
-		best_way = best_tracebox_way;
-	}
-	// Otherwise, return the best waypoint we found that we can traceline to
-	// (which may be none for some if a map's waypoints aren't great)
-	else {
-		best_way = best_traceline_way;
-	}
-
-	// Cache the cloesst waypoint to this entity, so that we start the next search from this same waypoint and its neighbors
-	closest_waypoints[entnum] = best_way;
-	return best_way;
+	return best_waypoint_idx;
 }
 
 
@@ -2026,7 +1953,13 @@ void Do_Pathfind (void) {
 	edict_t * zombie = G_EDICT(OFS_PARM0);
 	edict_t * ent = G_EDICT(OFS_PARM1);
 
+	if(developer.value == 3) {
+		Con_Printf("Finding start waypoint\n");
+	}
 	int start_waypoint = get_closest_waypoint(zombie_entnum);
+	if(developer.value == 3) {
+		Con_Printf("Finding goal waypoint\n");
+	}
 	int goal_waypoint = get_closest_waypoint(target_entnum);
 
 	if(start_waypoint == -1 || goal_waypoint == -1) {
@@ -2041,12 +1974,28 @@ void Do_Pathfind (void) {
 		// --------------------------------------------------------------------
 		// Debug print zombie path
 		// --------------------------------------------------------------------
-		Con_DPrintf("\tPrinting zombie path: [");
-		for(i = process_list_length - 1; i >= 0; i--) {
-			Con_DPrintf("%d, ", process_list[i]);
-		}
-		Con_DPrintf("]\n");
+		if(developer.value == 3) {
+			Con_Printf("\tPrinting zombie (%d) (%d --> %d) path: [", zombie_entnum, start_waypoint, goal_waypoint);
+			for(i = process_list_length - 1; i >= 0; i--) {
+				Con_Printf("%d, ", process_list[i]);
+			}
+			Con_Printf("]\n");
 
+			Con_Printf("\tWaypoint path distances: [");
+			for(i = process_list_length - 1; i >= 0; i--) {
+				float waypoint_dist = VectorDistanceSquared(zombie->v.origin, waypoints[process_list[i]].origin);
+				Con_Printf("%.2f, ", waypoint_dist);
+			}
+			Con_Printf("]\n");
+
+			Con_Printf("\tWaypoint path traceboxes: [");
+			for(i = process_list_length - 1; i >= 0; i--) {
+				int waypoint_tracebox_result = ofs_tracebox(zombie->v.origin, ai_hull_mins, ai_hull_maxs, waypoints[process_list[i]].origin, MOVE_NOMONSTERS, ent);
+				Con_Printf("%d, ", waypoint_tracebox_result);
+			}
+			Con_Printf("]\n");
+		}
+		
 		// --------------------------------------------------------------------
 
 		int zombie_slot = -1;
@@ -2085,11 +2034,11 @@ void Do_Pathfind (void) {
 			if(zombie_list[zombie_slot].pathlist_length == 1) {
 				Con_DPrintf("\tWe are at player's waypoint already!\n");
 				G_FLOAT(OFS_RETURN) = -1;
-				return;
+			} 
+			else {
+				Con_DPrintf("\tPath found!\n");
+				G_FLOAT(OFS_RETURN) = 1;
 			}
-
-			Con_DPrintf("\tPath found!\n");
-			G_FLOAT(OFS_RETURN) = 1;
 			return;
 		}
 	}
@@ -2104,6 +2053,41 @@ void Do_Pathfind (void) {
 	G_FLOAT(OFS_RETURN) = 0;
 }
 
+//
+// Returns distance (squared) between point q and the line segment (a,b)
+//
+// https://www.desmos.com/calculator/pwabcrtil0
+//
+float dist_to_line_segment(vec3_t a, vec3_t b, vec3_t q) {
+
+	vec3_t ab;
+	VectorSubtract(b,a,ab); // ab = b - a
+	vec3_t aq;
+	VectorSubtract(q,a,aq); // aq = q - a
+
+	float aq_dot_ab = DotProduct(aq,ab);
+	float ab_dot_ab = DotProduct(ab,ab);
+
+	// Compute fraction along line segment (a,b) closest to point q
+	float t = aq_dot_ab / ab_dot_ab;
+	
+	// If t < 0, return distance to point a
+	if(t < 0) {
+		return VectorDistanceSquared(q,a);
+	}
+	// If t > 1, return distance to point b
+	if(t > 1) {
+		return VectorDistanceSquared(q,b);
+	}
+
+	// Otherwise, return distance to point on a,b at fraction t
+	vec3_t point_on_ab;
+	VectorLerp(a, t, b, point_on_ab);
+	return VectorDistanceSquared(q, point_on_ab);
+}
+
+
+
 
 /*
 =================
@@ -2113,7 +2097,6 @@ vector Get_Next_Waypoint (entity)
 =================
 */
 void Get_Next_Waypoint (void) {
-	int i;
 	int entnum;
 	edict_t *ent;
 	// vec3_t move;
@@ -2135,10 +2118,14 @@ void Get_Next_Waypoint (void) {
 	vec3_t goal;
 	VectorCopy(goal_ent->v.origin, goal);
 
-	Con_DPrintf("Get_Next_Waypoint\n");
+	if(developer.value == 3){
+		Con_Printf("Get_Next_Waypoint for ent %d\n", entnum);
+		Con_Printf("\tEnt origin: (%f, %f, %f)\n", ent->v.origin[0], ent->v.origin[1], ent->v.origin[2]);
+		Con_Printf("\tSearch start origin: (%f, %f, %f)\n", start[0], start[1], start[2]);
+	}
 
 	int zombie_idx = -1;
-	for (i = 0; i < MaxZombies; i++) {
+	for (int i = 0; i < MaxZombies; i++) {
 		if(entnum == zombie_list[i].zombienum) {
 			zombie_idx = i;
 			break;
@@ -2147,131 +2134,238 @@ void Get_Next_Waypoint (void) {
 
 	// If we didn't find the ent in our list of data, stop. Return the enemy ent's origin
 	if(zombie_idx == -1) {
+		if(developer.value == 3){
+			Con_Printf("Warning: no pathing data found for ent %d.\n", entnum);
+		}
 		VectorCopy(goal, G_VECTOR(OFS_RETURN));
-		Con_DPrintf("Warning: AI ent not found in list of AI ent pathing data.\n");
 		return;
 	}
 
-	// Remove the first waypoint from the list:
-	zombie_list[zombie_idx].pathlist_length -= 1;
+
+	if(developer.value == 3){
+		// Print path (stored in reverse order from zombie to target ent)
+		Con_Printf("\tpath before: [");
+		for(int i = zombie_list[zombie_idx].pathlist_length - 1; i >= 0; i--) {
+			Con_Printf(" %d,", zombie_list[zombie_idx].pathlist[i]);
+		}
+		Con_Printf("]\n");
+	}
+
+
+	// if(developer.value == 3){
+	// 	float dist;
+	// 	if(zombie_list[zombie_idx].pathlist_length > 0) {
+	// 		int first_waypoint_idx = zombie_list[zombie_idx].pathlist[zombie_list[zombie_idx].pathlist_length - 1];
+	// 		dist = VectorDistanceSquared(ent->v.origin, waypoints[first_waypoint_idx].origin);
+	// 		Con_Printf("\tDist squared to first waypoint (%d): %.2f\n", first_waypoint_idx, dist);
+	// 		Con_Printf("\t\tEnt pos: (%.2f, %.2f, %.2f)\n", ent->v.origin[0], ent->v.origin[1], ent->v.origin[2]);
+	// 		Con_Printf("\t\tFirst waypoint pos: (%.2f, %.2f, %.2f)\n", waypoints[first_waypoint_idx].origin[0], waypoints[first_waypoint_idx].origin[1], waypoints[first_waypoint_idx].origin[2]);
+	// 	}
+	// 	dist = VectorDistanceSquared(ent->v.origin, goal_ent->v.origin);
+	// 	Con_Printf("\tDist squared to goal ent: %.2f\n", dist);
+	// }
 
 
 	// Check if our path is now empty.
 	// If it's empty, we have no more waypoints to chase, follow the enemy entity.
 	if(zombie_list[zombie_idx].pathlist_length < 1) {
+		if(developer.value == 3){
+			Con_Printf("\tZombie path length: %d, returning enemy origin.\n", zombie_list[zombie_idx].pathlist_length);
+		}
 		// The zombie's path is empty, return the enemy origin
 		VectorCopy(goal, G_VECTOR(OFS_RETURN));
-		Con_DPrintf("\tZombie path length: %d, returning enemy origin.\n", zombie_list[zombie_idx].pathlist_length);
 		return;
 	}
+
+
+	// ---------------–---------------–---------------–---------------–
+	// 
+	// There is an unfortunate edge case in the following situation:
+	// 
+	// On uneven terrain, tracebox may fail for the true closest waypoint, 
+	// yielding a nonoptimal path we instead go for a waypoint farther than 
+	// the one we should've gone for.
+	// 
+	// In some instances, this causes us to run away from the optimal path
+	// to some start waypoint, only to run through back through the point
+	// we were originally standing on.
+	//
+	// To attempt to catch this edge case, check the distance from where we are
+	// standing to the closest point on each edge along the waypoint path, 
+	// to see if we are already somewhere along the path.
+	// if so, skip waypoints up to the point we are standing.
+	// 
+	// ---------------–---------------–---------------–---------------–
+	float dist_threshold = 400; // Max distance squared to path
+	// --
+	float best_edge_idx = -2; // -2 = None, -1 = Closest to edge connecting final waypoint and goal
+	float best_edge_dist = INFINITY;
+
+
+	for(int i = zombie_list[zombie_idx].pathlist_length - 1; i >= 0; i--) {
+		float dist;
+		if(i > 0) {
+			dist = dist_to_line_segment(waypoints[zombie_list[zombie_idx].pathlist[i]].origin, waypoints[zombie_list[zombie_idx].pathlist[i-1]].origin, start);
+		}
+		// If on i == 0, endpoint of edge is the goal position
+		else {
+			dist = dist_to_line_segment(waypoints[zombie_list[zombie_idx].pathlist[i]].origin, goal, start);
+		}
+		if(dist < best_edge_dist) {
+			best_edge_idx = i;
+			best_edge_dist = dist;
+		}
+	}
+
+	// If we are within the threshold of a waypoint edge, drop all waypoints up to and including the start waypoint for that edge
+	if(best_edge_dist <= dist_threshold) {
+		zombie_list[zombie_idx].pathlist_length = best_edge_idx;
+	}
+
+	if(developer.value == 3){
+		// Print path (stored in reverse order from zombie to target ent)
+		Con_Printf("\tpath after pruning: [");
+		for(int i = zombie_list[zombie_idx].pathlist_length - 1; i >= 0; i--) {
+			Con_Printf(" %d,", zombie_list[zombie_idx].pathlist[i]);
+		}
+		Con_Printf("]\n");
+	}
+
+	// ---------------–---------------–---------------–---------------–
+
+
+	// ---------------–---------------–---------------–---------------–
+	// FIXME - Check if we are already somewhere along the path
+	// Check distance to each line segment
+	// If distance < 40qu, we're going to consider ourselves already on that edge, and skip the initial waypoints
+
 
 
 	// ---------------–---------------–---------------–---------------–
 	// Check to see if we can walk directly to any waypoints farther
 	// along the path.
 	// ---------------–---------------–---------------–---------------–
-	// Initialize to empty
-	int cur_node_idx = -1;
-	// Get the 1st waypoint in the path list
-	int next_node_idx = zombie_list[zombie_idx].pathlist_length - 1;
+	vec3_t ent_mins;
+	vec3_t ent_maxs;
+	VectorCopy(ai_hull_mins, ent_mins);
+	VectorCopy(ai_hull_maxs, ent_maxs);
 
-	qboolean can_walk_to_cur = false;
-	qboolean can_walk_to_next = false;
 
-	// Find the farthest point along the path that we can walk directly to:
-	while(1) {
-		// If next_node_idx is a valid index, it refers to a waypoint
-		if(next_node_idx >= 0) {
-			// Check if we can walk directly to that waypoint
-			if(tracepath(start, ent->v.angles, waypoints[zombie_list[zombie_idx].pathlist[next_node_idx]].origin, MOVE_NOMONSTERS, ent)) {
-				// Advance to next waypoint, mark that we can walk to this waypoint
-				cur_node_idx = next_node_idx;
-				can_walk_to_cur = true;
-				next_node_idx -= 1;
-				can_walk_to_next = false;
-				// Check next path waypoint
-				continue;
-			}
+	// Get the index of the farthest waypoint we can walk to in the path:
+	int farthest_walkable_path_node_idx = -2; // -2 means no waypoints were walkable, -1 means we can walk to goal ent position
+	for(int i = zombie_list[zombie_idx].pathlist_length - 1; i >= 0; i--) {
+		if(ofs_tracebox(start, ent_mins, ent_maxs, waypoints[zombie_list[zombie_idx].pathlist[i]].origin, MOVE_NOMONSTERS, ent)) {
+			farthest_walkable_path_node_idx = i;
+			continue;
 		}
-		// If next_node_idx is less than 0, treat next_node as the goal ent position
-		else {
-			if(tracepath(start, ent->v.angles, goal, MOVE_NOMONSTERS, ent)) {
-				can_walk_to_next = true;
-				break;
-			}
-		}
-		// Otherwise, we found a path node we cannot walk to, stop here.
-		can_walk_to_next = false;
 		break;
 	}
 
-	Con_DPrintf("\tCur path node: %d (can walk to: %d), next path node: %d (can walk to: %d)\n", cur_node_idx, can_walk_to_cur, next_node_idx, can_walk_to_next);
+	// If we were able to walk all the way to the final waypoint, check if we can walk to the goal entity position
+	if(farthest_walkable_path_node_idx == 0) {
+		if(ofs_tracebox(start, ent_mins, ent_maxs, goal, MOVE_NOMONSTERS, ent)) {
+			farthest_walkable_path_node_idx = -1;
+		}
+	}
 
 
-	// If we cannot walk to `cur_node_idx`, we weren't able to skip any waypoints.
-	// Return the first path node location
-	if(!can_walk_to_cur) {
-		// Get the first node on the path
+	// If weren't able to walk to any waypoints, return first waypoint in path
+	if(farthest_walkable_path_node_idx == -2) {
 		int waypoint_idx = zombie_list[zombie_idx].pathlist[zombie_list[zombie_idx].pathlist_length - 1];
-		Con_DPrintf("\tReturning walk to first path node. (path node: %d, waypoint: %d)\n", zombie_list[zombie_idx].pathlist_length - 1, waypoint_idx);
-		VectorCopy(waypoints[waypoint_idx].origin, G_VECTOR(OFS_RETURN));
-		// Remove that node from the path
+
+		// Remove first waypoint from path
 		zombie_list[zombie_idx].pathlist_length -= 1;
 
+
+		if(developer.value == 3){
+			Con_Printf("\tReturning walk to first path node. (path node: %d, waypoint: %d)\n", (zombie_list[zombie_idx].pathlist_length - 1) + 1, waypoint_idx);
+			Con_Printf("\tpath after: [");
+			for(int i = zombie_list[zombie_idx].pathlist_length - 1; i >= 0; i--) {
+				Con_Printf(" %d,", zombie_list[zombie_idx].pathlist[i]);
+			}
+			Con_Printf("]\n");
+		}
+
+
+		VectorCopy(waypoints[waypoint_idx].origin, G_VECTOR(OFS_RETURN));
 		return;
 	}
 
-	// If we can walk to `next_node_idx`
-	if(can_walk_to_next) {
-		// If `next_node_idx` is the goal entity, return the goal ent origin
-	 	if(next_node_idx == -1) {
-			Con_DPrintf("\tReturning can walk to goal. (path node: %d)\n", next_node_idx);
-			VectorCopy(goal, G_VECTOR(OFS_RETURN));
-			// Remove all nodes from the path
-			zombie_list[zombie_idx].pathlist_length = 0;
+	// If we were able to walk all the way to goal entity, return that point, clear the path
+	if(farthest_walkable_path_node_idx == -1) {
+		if(developer.value == 3){
+			Con_Printf("\tReturning can walk to goal. (path node: %d)\n", farthest_walkable_path_node_idx);
 		}
-		// Otherwise, return the waypoint location for `next_node_idx`
-		else {
-			int waypoint_idx = zombie_list[zombie_idx].pathlist[next_node_idx];
-			Con_DPrintf("\tReturning walk to next node. (path node: %d, waypoint: %d)\n", next_node_idx, waypoint_idx);
-			VectorCopy(waypoints[waypoint_idx].origin, G_VECTOR(OFS_RETURN));
-			// Remove all nodes up to and including that point in the path
-			zombie_list[zombie_idx].pathlist_length = next_node_idx - 1;
-		}
+		VectorCopy(goal, G_VECTOR(OFS_RETURN));
+		// Remove all nodes from the path
+		zombie_list[zombie_idx].pathlist_length = 0;
 		return;
 	}
 
-	// Otherwise, we can walk to `cur_node_idx` and _cannot_ walk to `next_node_idx`
-	// Perform binary search to see how far along the path we can walk
+
+	if(developer.value == 3){
+		Con_Printf("Farthest walkable path node: %d (waypoint: %d)\n",
+			(zombie_list[zombie_idx].pathlist_length - 1) - farthest_walkable_path_node_idx,
+			zombie_list[zombie_idx].pathlist[farthest_walkable_path_node_idx]
+		);
+	}
+
+	// Otherwise, we were able to walk to at least one node. 
+	// Binary search
+
+	// Perform a binary search along the edge from cur to next
+	int edge_start_waypoint_idx;
+	int edge_end_waypoint_idx;
+	vec3_t edge_start;
+	vec3_t edge_end;
+
+	if(farthest_walkable_path_node_idx > 0) {
+		edge_start_waypoint_idx = zombie_list[zombie_idx].pathlist[farthest_walkable_path_node_idx];
+		edge_end_waypoint_idx = zombie_list[zombie_idx].pathlist[farthest_walkable_path_node_idx - 1];
+		if(developer.value == 3){
+			Con_Printf("\tPerforming binary search between waypoint %d (%d in path, can walk: 1) and %d (%d in path, can walk: 0)\n", 
+				edge_start_waypoint_idx, (zombie_list[zombie_idx].pathlist_length - 1) - farthest_walkable_path_node_idx,
+				edge_end_waypoint_idx, ((zombie_list[zombie_idx].pathlist_length - 1) - farthest_walkable_path_node_idx) + 1
+			);
+		}
+		VectorCopy(waypoints[edge_start_waypoint_idx].origin, edge_start);
+		VectorCopy(waypoints[edge_end_waypoint_idx].origin, edge_end);
+	}
+	else {
+		edge_start_waypoint_idx = zombie_list[zombie_idx].pathlist[farthest_walkable_path_node_idx];
+		edge_end_waypoint_idx = -1;
+
+		if(developer.value == 3){
+			Con_Printf("\tPerforming binary search between waypoint %d (%d in path, can walk: 1) and goal ent pos\n", 
+				edge_start_waypoint_idx, (zombie_list[zombie_idx].pathlist_length - 1) - farthest_walkable_path_node_idx
+			);
+		}
+		VectorCopy(waypoints[edge_start_waypoint_idx].origin, edge_start);
+		VectorCopy(goal, edge_end);
+	}
+
+
 	int n_iters = 3;
 	int cur_frac_numerator = 1;
 	float cur_frac;
 
-	// Perform a binary search along the edge from cur to next
-	vec3_t edge_start;
-	vec3_t edge_end;
-	VectorCopy(waypoints[zombie_list[zombie_idx].pathlist[cur_node_idx]].origin, edge_start);
-	VectorCopy(waypoints[zombie_list[zombie_idx].pathlist[next_node_idx]].origin, edge_end);
-	vec3_t edge_ofs;
-	VectorSubtract(edge_end, edge_start, edge_ofs);
 	vec3_t cur_point;
 	vec3_t best_point;
 	VectorCopy(edge_start, best_point);
+	float best_point_frac = 0;
 
-	for(i = 0; i < n_iters; i++) {
+	for(int i = 0; i < n_iters; i++) {
 		// Calculate the number in [0,1] corresponding to how far along the edge we are checking
 		cur_frac = ((float) cur_frac_numerator) / (2 << i);
-
-		Con_DPrintf("\tBinary search iter: %d/%d, frac: %f\n", i, n_iters, cur_frac);
-
-		// Equivalent to the following (non-C++) line:
-		// cur_point = lerp(a=edge_start, b=edge_end, frac=cur_frac);
-		VectorScale(edge_ofs, cur_frac, cur_point);
-		VectorAdd(edge_start, cur_point, cur_point);
+		if(developer.value == 3){
+			Con_Printf("\tBinary search iter: %d/%d, frac: %f\n", i, n_iters, cur_frac);
+		}
+		VectorLerp(edge_start, cur_frac, edge_end, cur_point);
 
 		// Check if we can walk from the ent's current location directly to `cur_point`
-		if(tracepath(start, ent->v.angles, cur_point, MOVE_NOMONSTERS, ent)) {
+		if(ofs_tracebox(start, ent_mins, ent_maxs, cur_point, MOVE_NOMONSTERS, ent)) {
 			cur_frac_numerator = (cur_frac_numerator * 2) + 1;
+			best_point_frac = cur_frac;
 			VectorCopy(cur_point, best_point);
 		}
 		else {
@@ -2279,9 +2373,65 @@ void Get_Next_Waypoint (void) {
 		}
 	}
 
+	if(developer.value == 3){
+		Con_Printf("\tpath after binary search: (%f x between waypoints (%d,%d), then [", 
+			best_point_frac, 
+			edge_start_waypoint_idx, 
+			edge_end_waypoint_idx
+		);
+		for(int i = farthest_walkable_path_node_idx - 1; i >= 0; i--) {
+			Con_Printf(" %d,", zombie_list[zombie_idx].pathlist[i]);
+		}
+		Con_Printf("]\n");
+	}
+	// Remove all points up to and including `farthest_walkable_path_node_idx` from the path
+	zombie_list[zombie_idx].pathlist_length = farthest_walkable_path_node_idx;
+
+
+
+	// ------------------------------------------------------------------------
+	// If we're already incredibly close to the goal point along the path
+	//
+	// Get_Next_Waypoint should've returned somewhere farther along the path,
+	// but is running into tricky edge cases regarding tracebox. 
+	// For this case, force-advance to the next waypoint / goal along the path
+	// ------------------------------------------------------------------------
+	if(VectorDistanceSquared(start,best_point) < 64) {
+		// If trying to walk to the next waypoint already, skip a waypoint on the path
+		if(best_point_frac >= 1.0) {
+			zombie_list[zombie_idx].pathlist_length -= 1;
+		}
+
+		// If we have at least one waypoint, walk directly to it, pop from path
+		if(zombie_list[zombie_idx].pathlist_length > 0) {
+			int waypoint_idx = zombie_list[zombie_idx].pathlist[zombie_list[zombie_idx].pathlist_length - 1];
+			VectorCopy(waypoints[waypoint_idx].origin, best_point);
+			zombie_list[zombie_idx].pathlist_length -= 1;
+		}
+		// If we have no waypoints on the path, walk to goal, clear the path
+		else {
+			zombie_list[zombie_idx].pathlist_length = 0;
+			VectorCopy(goal, best_point);
+		}
+
+		if(developer.value == 3) {
+			Con_Printf("\tForce-truncated path to %d waypoints.\n", zombie_list[zombie_idx].pathlist_length);
+		}
+	}
+	// ------------------------------------------------------------------------
+
+
+	if(developer.value == 3){
+		Con_Printf("\tfinal path [");
+		for(int i = zombie_list[zombie_idx].pathlist_length - 1; i >= 0; i--) {
+			Con_Printf(" %d,", zombie_list[zombie_idx].pathlist[i]);
+		}
+		Con_Printf("]\n");
+
+		Con_Printf("\tFinal best point: (%f, %f, %f)\n", best_point[0], best_point[1], best_point[2]);
+	}
+
 	VectorCopy(best_point, G_VECTOR(OFS_RETURN));
-	// Remove all points up to and including `cur_node_idx` from the path
-	zombie_list[zombie_idx].pathlist_length = cur_node_idx - 1;
 	return;
 }
 

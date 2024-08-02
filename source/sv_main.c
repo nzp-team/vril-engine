@@ -1498,6 +1498,59 @@ void Load_Waypoint_NZPBETA() {
 	}
 	W_fclose(h);
 }
+//
+// Some waypoint slots in the global list may not have been loaded
+// Look for these empty slots, and shift all waypoints down to fill them
+// This also fixes waypoint reference links
+// 
+void cleanup_waypoints() {
+	int new_n_waypoints = 0;
+
+	for(int i = 0; i < MAX_WAYPOINTS; i++) {
+		// If waypoint slot is used, count it
+		if(waypoints[i].used) { 
+			new_n_waypoints += 1;
+		}
+		// If waypoint slot is unused...
+		else {
+			// Update all waypoint link references greater than this waypoint slot index down one
+			for(int j = 0; j < MAX_WAYPOINTS; j++) {
+				if(waypoints[j].used) {
+					for(int k = 0; k < 8; k++) {
+						if(waypoints[j].target[k] > i) {
+							waypoints[j].target[k] -= 1;
+						}
+					}
+				}
+			}
+
+			// Move all waypoints after this down one slot:
+			for(int j = i; j < MAX_WAYPOINTS - 1; j++) {
+				memcpy(&(waypoints[j]), &(waypoints[j+1]), sizeof(waypoint_ai));
+			}
+			// Mark waypoint slot at the end of the list as unused
+			waypoints[MAX_WAYPOINTS-1].used = 0;
+
+			// Count how many used waypoint slots are to the right of index `i`
+			int n_remaining_waypoints = 0;
+			for(int j = i; j < MAX_WAYPOINTS - 1; j++) {
+				if(waypoints[j].used) {
+					n_remaining_waypoints += 1;
+				}
+			}
+			// If no remaining used waypoint slots, stop
+			if(n_remaining_waypoints == 0) {
+				break;
+			}
+
+			// Search this index again
+			i -= 1;
+		}
+	}
+
+	n_waypoints = new_n_waypoints;
+}
+
 
 void Load_Waypoint () {
 	char temp[64];
@@ -1505,15 +1558,6 @@ void Load_Waypoint () {
 	vec3_t d;
 	int h = 0;
 
-	h = W_fopen();
-
-	w_string_temp = Z_Malloc(128);
-	if (h == -1) {
-		Con_DPrintf("No waypoint file (%s/maps/%s.way) found, trying beta format..\n", com_gamedir, sv.name);
-		Load_Waypoint_NZPBETA();
-		return;
-	}
-	
 	// ---------------------------------------
 	// Clear the structs
 	// ---------------------------------------
@@ -1531,6 +1575,17 @@ void Load_Waypoint () {
 	}
 	// ---------------------------------------
 
+
+	h = W_fopen();
+
+	w_string_temp = Z_Malloc(128);
+	if (h == -1) {
+		Con_DPrintf("No waypoint file (%s/maps/%s.way) found, trying beta format..\n", com_gamedir, sv.name);
+		Load_Waypoint_NZPBETA();
+		cleanup_waypoints();
+		return;
+	}
+	
 
 	int i;
 	// Keep track of the waypoint with the highest index we've loaded
@@ -1621,4 +1676,10 @@ void Load_Waypoint () {
 	}
 	W_fclose(h);
 	//Z_Free (w_string_temp);
+	cleanup_waypoints();
+
+
+// Util for qsort
+int argsort_comparator(const void *lhs, const void *rhs) {
+	return ((argsort_entry_t*)lhs)->value - ((argsort_entry_t*)rhs)->value;
 }
