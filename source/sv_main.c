@@ -1677,7 +1677,7 @@ void Load_Waypoint () {
 	W_fclose(h);
 	//Z_Free (w_string_temp);
 	cleanup_waypoints();
-
+}
 
 // Util for qsort
 int argsort_comparator(const void *lhs, const void *rhs) {
