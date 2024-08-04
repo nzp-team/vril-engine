@@ -356,11 +356,6 @@ extern waypoint_ai waypoints[MAX_WAYPOINTS];
 extern int n_waypoints;
 extern short closest_waypoints[MAX_EDICTS];
 
-extern int waypoints_kdtree_root_node;
-extern int waypoints_kdtree_left_child_node[MAX_WAYPOINTS];
-extern int waypoints_kdtree_right_child_node[MAX_WAYPOINTS];
-extern int waypoints_kdtree_axis[MAX_WAYPOINTS];
-
 
 
 // thread structs

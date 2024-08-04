@@ -1388,11 +1388,6 @@ void W_stov (char *v, vec3_t out)
 
 waypoint_ai waypoints[MAX_WAYPOINTS];
 int n_waypoints;
-int waypoints_kdtree_root_node;
-int waypoints_kdtree_left_child_node[MAX_WAYPOINTS];
-int waypoints_kdtree_right_child_node[MAX_WAYPOINTS];
-int waypoints_kdtree_axis[MAX_WAYPOINTS];
-
 
 
 //
@@ -1505,157 +1500,6 @@ void Load_Waypoint_NZPBETA() {
 	W_fclose(h);
 }
 
-
-
-
-
-
-int build_waypoints_kdsubtree(int *sublist_waypoint_idxs, int sublist_n_waypoints, int *kdtree_left_child_nodes, int *kdtree_right_child_nodes, int *kdtree_axis, int level) {
-	if(sublist_n_waypoints <= 0) {
-		return -1;
-	}
-	// int axis = level % 3; // At each level, iterate through 3D space axes (x,y,z)
-	int axis;
-
-	// ------------------------------------------------------------------------
-	// Determine which axis to split on: Whichever has the largest spatial extent
-	// ------------------------------------------------------------------------
-	// axis = level % 3;
-	// -----------------
-	vec3_t mins;
-	vec3_t maxs;
-	VectorCopy(waypoints[sublist_waypoint_idxs[0]].origin, mins);
-	VectorCopy(waypoints[sublist_waypoint_idxs[0]].origin, maxs);
-	for(int i = 1; i < sublist_n_waypoints; i++) {
-		int waypoint_idx = sublist_waypoint_idxs[i];
-		VectorMin(mins, waypoints[waypoint_idx].origin, mins);
-		VectorMax(maxs, waypoints[waypoint_idx].origin, maxs);
-	}
-	vec3_t spatial_extent;
-	VectorSubtract(maxs, mins, spatial_extent);
-
-	// Pick largest axis:
-	float max_extent = fmax(spatial_extent[0], fmax(spatial_extent[1], spatial_extent[2]));
-	axis = (spatial_extent[0] >= max_extent) ? 0 : (spatial_extent[1] >= max_extent) ? 1 : 2;
-	// ------------------------------------------------------------------------
-
-
-
-	// Con_Printf("kdtree - building subtree at level: %d\n", level);
-
-	// ------------------------------------------------------------------------
-	// The root node for this subtree will bee the median waypoint along the axis
-	// 
-	// To find the median, sort the waypoints by their value along the axis
-	// and take the middle waypoint
-	// ------------------------------------------------------------------------
-	argsort_entry_t waypoint_sort_values[MAX_WAYPOINTS];
-	for(int i = 0; i < sublist_n_waypoints; i++) {
-		waypoint_sort_values[i].index = sublist_waypoint_idxs[i];
-		waypoint_sort_values[i].value = waypoints[sublist_waypoint_idxs[i]].origin[axis];
-	}
-	// Con_Printf("\tkdtree - about to call qsort for %d waypoints\n", sublist_n_waypoints);
-	qsort(waypoint_sort_values, sublist_n_waypoints, sizeof(argsort_entry_t), argsort_comparator);
-	// Con_Printf("\tkdtree - qsort done\n");
-	// Con_Printf("\tkdtree - qsort list: [");
-	// for(int i = 0; i < sublist_n_waypoints; i++) {
-	// 	Con_Printf("(%d, %d, %.2f), ", i, waypoint_sort_values[i].index, waypoint_sort_values[i].value);
-	// }
-	// Con_Printf("]\n");
-	int median_waypoint_idx = waypoint_sort_values[sublist_n_waypoints / 2].index;
-	// Con_Printf("\tkdtree - qsort done, median waypoint idx: %d\n", median_waypoint_idx);
-	// ------------------------------------------------------------------------
-
-
-	// Split all waypoints in this subtree into left / right half-spaces
-	int left_waypoint_idxs[MAX_WAYPOINTS];
-	int right_waypoint_idxs[MAX_WAYPOINTS];
-	int n_left_waypoints = 0;
-	int n_right_waypoints = 0;
-
-	for(int i = 0; i < sublist_n_waypoints; i++) {
-		int waypoint_idx = sublist_waypoint_idxs[i];
-		if(waypoint_idx == median_waypoint_idx) {
-			continue;
-		}
-		if(waypoints[waypoint_idx].origin[axis] <= waypoints[median_waypoint_idx].origin[axis]) {
-			// Con_Printf("\t\tkdtree - (%d, %.2f) <= (%d, %.2f)\n", waypoint_idx, waypoints[waypoint_idx].origin[axis], median_waypoint_idx, waypoints[median_waypoint_idx].origin[axis]);
-			left_waypoint_idxs[n_left_waypoints++] = waypoint_idx;
-		}
-		else {
-			// Con_Printf("\t\tkdtree - (%d, %.2f) > (%d, %.2f)\n", waypoint_idx, waypoints[waypoint_idx].origin[axis], median_waypoint_idx, waypoints[median_waypoint_idx].origin[axis]);
-			right_waypoint_idxs[n_right_waypoints++] = waypoint_idx;
-		}
-	}
-
-	// Con_Printf("\tkdtree - Left subtree: %d, Right subtree: %d\n", n_left_waypoints, n_right_waypoints);
-
-	kdtree_left_child_nodes[median_waypoint_idx] = build_waypoints_kdsubtree(left_waypoint_idxs, n_left_waypoints, kdtree_left_child_nodes, kdtree_right_child_nodes, kdtree_axis, level+1);
-	kdtree_right_child_nodes[median_waypoint_idx] = build_waypoints_kdsubtree(right_waypoint_idxs, n_right_waypoints, kdtree_left_child_nodes, kdtree_right_child_nodes, kdtree_axis, level+1);
-	kdtree_axis[median_waypoint_idx] = axis;
-	return median_waypoint_idx;
-}
-
-
-//
-// Constructs a K-D tree from the loaded waypoints for efficient nearest-neighbor lookup
-//
-void build_waypoints_kdtree() {
-	int n_waypoint_idxs = 0;
-	int all_waypoint_idxs[MAX_WAYPOINTS];
-
-	// Build a contiguous list of valid waypoint indices in the global waypoints array
-	for(int i = 0; i < MAX_WAYPOINTS; i++) {
-		// Skip empty waypoint slots in waypoints list
-		if(waypoints[i].used) {
-			all_waypoint_idxs[n_waypoint_idxs++] = i;
-		}
-
-		// Initialize values:
-		waypoints_kdtree_left_child_node[i] = -1;
-		waypoints_kdtree_right_child_node[i] = -1;
-		waypoints_kdtree_axis[i] = 0;
-
-	}
-	// Con_Printf("About to build waypoints KD tree\n");
-	waypoints_kdtree_root_node = build_waypoints_kdsubtree(all_waypoint_idxs, n_waypoint_idxs, waypoints_kdtree_left_child_node, waypoints_kdtree_right_child_node, waypoints_kdtree_axis, 0);
-
-	Con_Printf("Root waypoint idx: %d\n", waypoints_kdtree_root_node);
-	for(int i = 0; i < n_waypoints; i++) {
-		Con_Printf("{'waypoint_idx': %d, 'pos': [%.2f, %.2f, %.2f], 'axis': %d, 'left_child_idx': %d, 'right_child_idx': %d}\n", 
-			i, 
-			waypoints[i].origin[0], waypoints[i].origin[1], waypoints[i].origin[2], 
-			waypoints_kdtree_axis[i],
-			waypoints_kdtree_left_child_node[i],
-			waypoints_kdtree_right_child_node[i]
-		);
-	}
-}
-
-extern int get_closest_waypoint(int entnum);
-
-void benchmark_waypoints() {
-	Con_Printf("============== Benchmark Start ==============\n");
-
-	int n_iters = 100;
-	for(int i = 0; i < n_waypoints; i++) {
-		for(int j = 0; j < n_iters; j++) {
-			vec3_t query_point;
-			// Move 50 qu along x-axis
-			VectorCopy(waypoints[i].origin, query_point);
-			query_point[0] += 50;
-
-			// Yes, this is cursed, but I need to set query point
-			int entnum = 1;
-			edict_t *ent = EDICT_NUM(entnum);
-			VectorCopy(query_point, ent->v.origin);
-
-			int closest_waypoint = get_closest_waypoint(entnum);
-		}
-	}
-	Con_Printf("============== Benchmark Done ==============\n");
-}
-
 //
 // Some waypoint slots in the global list may not have been loaded
 // Look for these empty slots, and shift all waypoints down to fill them
@@ -1741,7 +1585,6 @@ void Load_Waypoint () {
 		Con_DPrintf("No waypoint file (%s/maps/%s.way) found, trying beta format..\n", com_gamedir, sv.name);
 		Load_Waypoint_NZPBETA();
 		cleanup_waypoints();
-		build_waypoints_kdtree();
 		return;
 	}
 	
@@ -1836,8 +1679,6 @@ void Load_Waypoint () {
 	W_fclose(h);
 	//Z_Free (w_string_temp);
 	cleanup_waypoints();
-	build_waypoints_kdtree();
-	benchmark_waypoints();
 }
 
 
