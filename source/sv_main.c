@@ -1387,17 +1387,23 @@ void W_stov (char *v, vec3_t out)
 
 
 waypoint_ai waypoints[MAX_WAYPOINTS];
+int n_waypoints;
+
 
 //
 // Load_Waypoint_NZPBETA
 // Attempts to load an NZ:P Beta formatted
 // Waypoint file.
 //
-void Load_Waypoint_NZPBETA()
-{
+void Load_Waypoint_NZPBETA() {
 	char temp[64];
 	int i, p, s;
 	int h = 0;
+
+	// Keep track of the waypoint with the highest index we've loaded
+	int max_waypoint_idx = -1;
+	int n_waypoints_parsed = 0;
+
 
 	h = W_fopenbeta();
 
@@ -1405,18 +1411,16 @@ void Load_Waypoint_NZPBETA()
 		return; // don't bother notifying..
 	}
 
-	for (i = 0; i < MAX_WAYPOINTS; i++)
-	{
+	for (i = 0; i < MAX_WAYPOINTS; i++) {
 		waypoints[i].used = 0;
-		waypoints[i].id = -1;
+		// waypoints[i].id = -1;
 		for (p = 0; p < 8; p++) {
 			waypoints[i].target[p] = -1;
-			waypoints[i].target_id[p] = -1;
+			// waypoints[i].target_id[p] = -1;
 		}
 	}
 
-	for (i = 0; i < MAX_EDICTS; i++)
-	{
+	for (i = 0; i < MAX_EDICTS; i++) {
 		closest_waypoints[i] = -1;
 	}
 
@@ -1426,120 +1430,197 @@ void Load_Waypoint_NZPBETA()
 	vec3_t way_origin;
 	int way_id = 0;
 
-	while (1)
-	{
+	while (1) {
 		// End of file.
-		if (!strcmp(W_fgets(h), ""))
+		if(!strcmp(W_fgets(h), "")) {
 			break;
+		}
 
 		W_stov(w_string_temp, way_origin); // <origin>
-		way_id = atoi(W_fgets(h)); // <id>
+		int waypoint_idx = atoi(W_fgets(h)) - 1; // <id> (1-based index, swap to 0-based)
 
-		if (way_id >= MAX_WAYPOINTS)
-		 	Sys_Error ("Waypoint with id %d past MAX_WAYPOINTS {%i)\n", way_id, MAX_WAYPOINTS);
+		n_waypoints_parsed += 1;
+		if(i > max_waypoint_idx) {
+			max_waypoint_idx = i;
+		}
 
-		waypoints[way_id].id = way_id;
-		VectorCopy(way_origin, waypoints[way_id].origin);
+		if(waypoint_idx >= MAX_WAYPOINTS) {
+		 	Sys_Error ("Waypoint with idx %d past MAX_WAYPOINTS {%i)\n", waypoint_idx, MAX_WAYPOINTS);
+		}
 
-		// <link1> - <link4>, <owner1> - <owner4>
+		// waypoints[waypoint_idx].id = way_id;
+		VectorCopy(way_origin, waypoints[waypoint_idx].origin);
+
+		// [link1, link2, link3, link4, owner1, owner2, owner3, owner4]
 		for(i = 0; i < 8; i++) {
 			W_fgets(h);
-
-			if (i < 4) {
-				int id = atoi(w_string_temp);
-				if (id > 0) {
-					waypoints[way_id].target[i] = id;
-					waypoints[way_id].target_id[i] = waypoints[way_id].target[i];
+			// Skip "link1..link4"
+			// Parse "owner1..owner4"
+			if (i >= 4) {
+				int src_waypoint_idx = atoi(w_string_temp) - 1; // Fix 0-based index
+				if (src_waypoint_idx >= 0) {
+					// Search for an empty slot in waypoint `src_waypoint_idx`
+					for(int j = 0; j < 8; j++) {
+						if(waypoints[src_waypoint_idx].target[j] < 0) {
+							waypoints[src_waypoint_idx].target[j] = waypoint_idx;
+						}
+					}
 				}
 			}
 		}
 
-		waypoints[way_id].used = 1;
-		waypoints[way_id].open = 1;
+		waypoints[waypoint_idx].used = 1;
+		waypoints[waypoint_idx].open = 1;
 	}
-	Con_DPrintf("Total waypoints: %i\n", way_id);
-	for (i = 0; i < MAX_WAYPOINTS; i++) //for sake of saving time later we are now going to save each targets array position and distace to each waypoint
-	{
-		for (p = 0; waypoints[i].target[p]; p++)
-		{
-			if (waypoints[i].target[p] < 0) break;
+	Con_DPrintf("Total waypoints: %i, num parsed: %i\n", max_waypoint_idx, n_waypoints_parsed);
+	// Store in global `n_waypoints`
+	n_waypoints = max_waypoint_idx;
 	
-			for (s = 0; s < MAX_WAYPOINTS; s++)
-			{
-				if (waypoints[i].target[p] == s)
-				{
-					waypoints[i].dist[p] = VecLength2(waypoints[s].origin, waypoints[i].origin);
-					break;
-				}
+	// Cache distance between waypoints
+	for(i = 0; i < MAX_WAYPOINTS; i++) {
+		for(p = 0; p < 8; p++) {
+			if(waypoints[i].target[p] < 0) {
+				continue;
 			}
+			float dist = VecLength2(waypoints[s].origin, waypoints[i].origin);
+			waypoints[i].dist[p] = dist;
 		}
+		Con_DPrintf("Waypoint (%i)\n target1: (%i, %f),\n target2: (%i, %f),\n target3: (%i, %f),\n target4: (%i, %f),\n target5: (%i, %f),\n target6: (%i, %f),\n target7: (%i, %f),\n target8: (%i, %f)\n",
+			i,
+			waypoints[i].target[0], waypoints[i].dist[0],
+			waypoints[i].target[1], waypoints[i].dist[1],
+			waypoints[i].target[2], waypoints[i].dist[2],
+			waypoints[i].target[3], waypoints[i].dist[3],
+			waypoints[i].target[4], waypoints[i].dist[4],
+			waypoints[i].target[5], waypoints[i].dist[5],
+			waypoints[i].target[6], waypoints[i].dist[6],
+			waypoints[i].target[7], waypoints[i].dist[7]
+		);
 	}
 	W_fclose(h);
 }
 
-void Load_Waypoint ()
-{
+//
+// Some waypoint slots in the global list may not have been loaded
+// Look for these empty slots, and shift all waypoints down to fill them
+// This also fixes waypoint reference links
+// 
+void cleanup_waypoints() {
+	int new_n_waypoints = 0;
+
+	for(int i = 0; i < MAX_WAYPOINTS; i++) {
+		// If waypoint slot is used, count it
+		if(waypoints[i].used) { 
+			new_n_waypoints += 1;
+		}
+		// If waypoint slot is unused...
+		else {
+			// Update all waypoint link references greater than this waypoint slot index down one
+			for(int j = 0; j < MAX_WAYPOINTS; j++) {
+				if(waypoints[j].used) {
+					for(int k = 0; k < 8; k++) {
+						if(waypoints[j].target[k] > i) {
+							waypoints[j].target[k] -= 1;
+						}
+					}
+				}
+			}
+
+			// Move all waypoints after this down one slot:
+			for(int j = i; j < MAX_WAYPOINTS - 1; j++) {
+				memcpy(&(waypoints[j]), &(waypoints[j+1]), sizeof(waypoint_ai));
+			}
+			// Mark waypoint slot at the end of the list as unused
+			waypoints[MAX_WAYPOINTS-1].used = 0;
+
+			// Count how many used waypoint slots are to the right of index `i`
+			int n_remaining_waypoints = 0;
+			for(int j = i; j < MAX_WAYPOINTS - 1; j++) {
+				if(waypoints[j].used) {
+					n_remaining_waypoints += 1;
+				}
+			}
+			// If no remaining used waypoint slots, stop
+			if(n_remaining_waypoints == 0) {
+				break;
+			}
+
+			// Search this index again
+			i -= 1;
+		}
+	}
+
+	n_waypoints = new_n_waypoints;
+}
+
+
+void Load_Waypoint () {
 	char temp[64];
-	int i, p, s;
+	int p, s;
 	vec3_t d;
 	int h = 0;
+
+	// ---------------------------------------
+	// Clear the structs
+	// ---------------------------------------
+	n_waypoints = 0;
+	for (int i = 0; i < MAX_WAYPOINTS; i++) {
+		waypoints[i].used = 0;
+		// waypoints[i].id = -1;
+		for (p = 0; p < 8; p++) {
+			waypoints[i].target[p] = -1;
+			// waypoints[i].target_id[p] = -1;
+		}
+	}
+	for (int i = 0; i < MAX_EDICTS; i++) {
+		closest_waypoints[i] = -1;
+	}
+	// ---------------------------------------
+
 
 	h = W_fopen();
 
 	w_string_temp = Z_Malloc(128);
-	if (h == -1)
-	{
+	if (h == -1) {
 		Con_DPrintf("No waypoint file (%s/maps/%s.way) found, trying beta format..\n", com_gamedir, sv.name);
 		Load_Waypoint_NZPBETA();
+		cleanup_waypoints();
 		return;
 	}
-	for (i = 0; i < MAX_WAYPOINTS; i++)
-	{
-		waypoints[i].used = 0;
-		waypoints[i].id = -1;
-		for (p = 0; p < 8; p++) {
-			waypoints[i].target[p] = -1;
-			waypoints[i].target_id[p] = -1;
-		}
-	}
+	
 
-	for (i = 0; i < MAX_EDICTS; i++)
-	{
-		closest_waypoints[i] = -1;
-	}
-
-	i = 0;
+	int i;
+	// Keep track of the waypoint with the highest index we've loaded
+	int max_waypoint_idx = -1;
+	int n_waypoints_parsed = 0;
 	Con_DPrintf("Loading waypoints\n");
-	while (1)
-	{
-		if (strncmp(W_fgets (h), "Waypoint", 8))
-		{
+	while (1) {
+		if (strncmp(W_fgets (h), "Waypoint", 8)) {
 			Con_DPrintf("Last waypoint\n");
 			break;
 		}
-		else
-		{
+		else {
 			W_fgets (h);
-
 			W_stov (W_substring (W_fgets (h), 9, 20), d);
-
 			strcpy(temp, W_substring (W_fgets (h), 5, 20));
-
 			i = atoi (temp);
-
-			if (i >= MAX_WAYPOINTS)
+			if (i >= MAX_WAYPOINTS) {
 				Sys_Error ("Waypoint with id %d past MAX_WAYPOINTS {%i)\n", i, MAX_WAYPOINTS);
+			}
 
-			// what's the point of id and index being the same?
-			waypoints[i].id = i;
+			n_waypoints_parsed += 1;
+			if(i > max_waypoint_idx) {
+				max_waypoint_idx = i;
+			}
 			VectorCopy (d, waypoints[i].origin);
-
 			strcpy(waypoints[i].special, W_substring (W_fgets (h), 10, 20));
 
-			if (waypoints[i].special[0])
+			if (waypoints[i].special[0]) {
 				waypoints[i].open = 0;
-			else
+			}
+			else {
 				waypoints[i].open = 1;
+			}
 			
 			// Note: this block makes sure that empty/invalid neighbors are always packed to the end
 			// In other words, when iterating from start, first empty means rest are empty too.
@@ -1549,74 +1630,59 @@ void Load_Waypoint ()
 				strcpy(temp, W_substring (W_fgets (h), start, 20));
 				if (isdigit(temp[0])) {
 					waypoints[i].target[slot] = atoi (temp);
-					waypoints[i].target_id[slot] = waypoints[i].target[slot];
 					slot++;
 				}
 			}
-
 			W_fgets (h);
 			W_fgets (h);
 			waypoints[i].used = 1;
-
-
-			Con_DPrintf("Waypoint (%i) id: %i, tag: %s, open: %i, target: %i, target2: %i, target3: %i, target4: %i, target5: %i, target6: %i, target7: %i, target8: %i\n",
-			i,
-			waypoints[i].id,
-			waypoints[i].special,
-			waypoints[i].open,
-			waypoints[i].target[0],
-			waypoints[i].target[1],
-			waypoints[i].target[2],
-			waypoints[i].target[3],
-			waypoints[i].target[4],
-			waypoints[i].target[5],
-			waypoints[i].target[6],
-			waypoints[i].target[7]);
+			Con_DPrintf("Waypoint (%i), tag: %s, open: %i, target1: %i, target2: %i, target3: %i, target4: %i, target5: %i, target6: %i, target7: %i, target8: %i\n",
+				i,
+				waypoints[i].special,
+				waypoints[i].open,
+				waypoints[i].target[0],
+				waypoints[i].target[1],
+				waypoints[i].target[2],
+				waypoints[i].target[3],
+				waypoints[i].target[4],
+				waypoints[i].target[5],
+				waypoints[i].target[6],
+				waypoints[i].target[7]
+			);
 		}
 	}
-	Con_DPrintf("Total waypoints: %i\n", i);
-	for (i = 0; i < MAX_WAYPOINTS; i++) //for sake of saving time later we are now going to save each targets array position and distace to each waypoint
-	{
-		for (p = 0; waypoints[i].target[p]; p++)
-		{
-			if (waypoints[i].target[p] < 0) break;
+	Con_DPrintf("Total waypoints: %i, num parsed: %i\n", max_waypoint_idx, n_waypoints_parsed);
+	// Store in global `n_waypoints`
+	n_waypoints = max_waypoint_idx;
 	
-			for (s = 0; s < MAX_WAYPOINTS; s++)
-			{
-				if (waypoints[i].target[p] == s)
-				{
-					waypoints[i].dist[p] = VecLength2(waypoints[s].origin, waypoints[i].origin);
-					break;
-				}
+	// Cache distance between waypoints
+	for(i = 0; i < MAX_WAYPOINTS; i++) {
+		for(p = 0; p < 8; p++) {
+			if(waypoints[i].target[p] < 0) {
+				continue;
 			}
+			float dist = VecLength2(waypoints[s].origin, waypoints[i].origin);
+			waypoints[i].dist[p] = dist;
 		}
-		Con_DPrintf("Waypoint (%i)\n target: %i (%i, %f),\n target2: %i (%i, %f),\n target3: %i (%i, %f),\n target4: %i (%i, %f),\n target5: %i (%i, %f),\n target6: %i (%i, %f),\n target7: %i (%i, %f),\n target8: %i (%i, %f)\n",
-		waypoints[i].id,
-		waypoints[i].target[0],
-		waypoints[i].target_id[0],
-		waypoints[i].dist[0],
-		waypoints[i].target[1],
-		waypoints[i].target_id[1],
-		waypoints[i].dist[1],
-		waypoints[i].target[2],
-		waypoints[i].target_id[2],
-		waypoints[i].dist[2],
-		waypoints[i].target[3],
-		waypoints[i].target_id[3],
-		waypoints[i].dist[3],
-		waypoints[i].target[4],
-		waypoints[i].target_id[4],
-		waypoints[i].dist[4],
-		waypoints[i].target[5],
-		waypoints[i].target_id[5],
-		waypoints[i].dist[5],
-		waypoints[i].target[6],
-		waypoints[i].target_id[6],
-		waypoints[i].dist[6],
-		waypoints[i].target[7],
-		waypoints[i].target_id[7],
-		waypoints[i].dist[7]);
+		Con_DPrintf("Waypoint (%i)\n target1: (%i, %f),\n target2: (%i, %f),\n target3: (%i, %f),\n target4: (%i, %f),\n target5: (%i, %f),\n target6: (%i, %f),\n target7: (%i, %f),\n target8: (%i, %f)\n",
+			i,
+			waypoints[i].target[0], waypoints[i].dist[0],
+			waypoints[i].target[1], waypoints[i].dist[1],
+			waypoints[i].target[2], waypoints[i].dist[2],
+			waypoints[i].target[3], waypoints[i].dist[3],
+			waypoints[i].target[4], waypoints[i].dist[4],
+			waypoints[i].target[5], waypoints[i].dist[5],
+			waypoints[i].target[6], waypoints[i].dist[6],
+			waypoints[i].target[7], waypoints[i].dist[7]
+		);
 	}
 	W_fclose(h);
 	//Z_Free (w_string_temp);
+	cleanup_waypoints();
+}
+
+
+// Util for qsort
+int argsort_comparator(const void *lhs, const void *rhs) {
+	return ((argsort_entry_t*)lhs)->value - ((argsort_entry_t*)rhs)->value;
 }

@@ -336,25 +336,26 @@ void Chase_Update (void);
 typedef struct
 {
 	int pathlist [MAX_WAYPOINTS];
+	int pathlist_length;
 	int zombienum;
 } zombie_ai;
 
 typedef struct
 {
 	vec3_t origin;
-	int id;
 	float g_score, f_score;
-	int open; // Determine if the waypoint is "open" a.k.a avaible
-	int target_id [8]; // Targets array number
+	int open; // Determine if the waypoint is "open" a.k.a active
 	char special[64]; //special tag is required for the closed waypoints
 	int target [8]; //Each waypoint can have up to 8 targets
 	float dist [8]; // Distance to the next waypoints
 	int came_from; // Used for pathfinding store where we got here to this
-	qboolean used; //if the waypoint is in use
+	qboolean used; // Set to `qtrue` if this waypoint contains valid data (not an empty slot in a list)
 } waypoint_ai;
 
 extern waypoint_ai waypoints[MAX_WAYPOINTS];
+extern int n_waypoints;
 extern short closest_waypoints[MAX_EDICTS];
+
 
 
 // thread structs
@@ -366,3 +367,27 @@ typedef struct
 	vec3_t up;
 	qboolean ready;
 } soundstruct_t;
+
+
+
+// ----------------------------------------------------------------------------
+// Utils for using cstdlib qsort (Quick sort)
+//
+// Usage:
+//		argsort_entry_t sort_values[10];
+//	
+//		for(int i = 0; i < 10; i++) {
+//			sort_values[i].index = i;
+//			sort_values[i].value = something;
+//		}
+//	
+//		qsort(sort_values, 10, sizeof(argsort_entry_t), argsort_comparator);
+// 
+// ----------------------------------------------------------------------------
+// Struct used for sorting a list of indices by some value
+typedef struct argsort_entry_s {
+	int index;
+	float value;
+} argsort_entry_t;
+extern int argsort_comparator(const void *lhs, const void *rhs);
+// ----------------------------------------------------------------------------
