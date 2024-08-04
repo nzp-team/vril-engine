@@ -1488,7 +1488,7 @@ This is where the magic happens
 */
 
 
-#define MaxZombies 16
+#define MaxZombies 12
 
 
 #define WAYPOINT_SET_NONE 	0
@@ -1896,6 +1896,130 @@ qboolean ofs_tracebox(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int ty
 
 
 
+typedef struct nearest_walkable_waypoint_results_s {
+	int best_tracebox_waypoint_idx;
+	float best_tracebox_waypoint_dist_squared;
+	int best_traceline_waypoint_idx;
+	float best_tracline_waypoint_dist_squared;
+} nearest_walkable_waypoint_results_t;
+
+
+// 
+// Recursive K-D tree nearest-neighbor lookup on waypoints
+// Searches the subtree with node `waypoint_idx` as the root
+//
+void nearest_walkable_waypoint_kdtree(int waypoint_idx, edict_t *ent, int debug_level, nearest_walkable_waypoint_results_t *result) {
+	float waypoint_dist_squared = VectorDistanceSquared(ent->v.origin, waypoints[waypoint_idx].origin);
+	if(waypoint_dist_squared < result->best_tracebox_waypoint_dist_squared) {
+		if(ofs_tracebox(ent->v.origin, ai_hull_mins, ai_hull_maxs, waypoints[waypoint_idx].origin, MOVE_NOMONSTERS, ent)) {
+			result->best_tracebox_waypoint_dist_squared = waypoint_dist_squared;
+			result->best_tracebox_waypoint_idx = waypoint_idx;
+		}
+	}
+
+
+	if(developer.value == 3) {
+		for(int i = -1; i < debug_level; i++) {
+			Con_Printf("\t");
+		}
+		Con_Printf("kd after checking node %d with dist: %.2f, cur best: %d with dist: %.2f\n",
+			waypoint_idx,
+			waypoint_dist_squared,
+			result->best_tracebox_waypoint_idx,
+			result->best_tracebox_waypoint_dist_squared
+		);
+	}
+
+
+	int axis = waypoints_kdtree_axis[waypoint_idx];
+	int halfspace_child_idx;
+	int other_halfspace_child_idx;
+
+	if(ent->v.origin[axis] <= waypoints[waypoint_idx].origin[axis]) {
+		halfspace_child_idx = waypoints_kdtree_left_child_node[waypoint_idx];
+		other_halfspace_child_idx = waypoints_kdtree_right_child_node[waypoint_idx];
+	}
+	else {
+		halfspace_child_idx = waypoints_kdtree_right_child_node[waypoint_idx];
+		other_halfspace_child_idx = waypoints_kdtree_left_child_node[waypoint_idx];
+	}
+
+
+
+	if(developer.value == 3) {
+		for(int i = -1; i < debug_level; i++) {
+			Con_Printf("\t");
+		}
+		if(ent->v.origin[axis] <= waypoints[waypoint_idx].origin[axis]) {
+			Con_Printf("kd - Query point (%.2f, %.2f, %.2f) in left half-space of node %d at (%.2f, %.2f, %.2f) on axis %d. Left child: %d, Right child: %d\n",
+				ent->v.origin[0], ent->v.origin[1], ent->v.origin[2],
+				waypoint_idx,
+				waypoints[waypoint_idx].origin[0], waypoints[waypoint_idx].origin[1], waypoints[waypoint_idx].origin[2],
+				axis,
+				waypoints_kdtree_left_child_node[waypoint_idx],
+				waypoints_kdtree_right_child_node[waypoint_idx]
+			);
+		}
+		else {
+			Con_Printf("kd - Query point (%.2f, %.2f, %.2f) in right half-space of node %d at (%.2f, %.2f, %.2f) on axis %d. Left child: %d, Right child: %d\n",
+				ent->v.origin[0], ent->v.origin[1], ent->v.origin[2],
+				waypoint_idx,
+				waypoints[waypoint_idx].origin[0], waypoints[waypoint_idx].origin[1], waypoints[waypoint_idx].origin[2],
+				axis,
+				waypoints_kdtree_left_child_node[waypoint_idx],
+				waypoints_kdtree_right_child_node[waypoint_idx]
+			);
+		}
+	}
+
+
+
+
+
+	if(halfspace_child_idx >= 0) {
+		nearest_walkable_waypoint_kdtree(halfspace_child_idx, ent, debug_level + 1, result);
+	}
+
+	// // Check if the other half-space is closer than the best point so far
+	if(other_halfspace_child_idx >= 0) {
+		float other_halfspace_dist_squared = (ent->v.origin[axis] - waypoints[waypoint_idx].origin[axis]);
+		other_halfspace_dist_squared *= other_halfspace_dist_squared;
+		if(other_halfspace_dist_squared < result->best_tracebox_waypoint_dist_squared) {
+
+			if(developer.value == 3) {
+				for(int i = -1; i < debug_level; i++) {
+					Con_Printf("\t");
+				}
+				Con_Printf("kd - Query point (%.2f, %.2f, %.2f) dist to half-space plane of node %d at (%.2f, %.2f, %.2f) on axis %d = %.2f < cur best node dist: %.2f -- checking opposite half-space\n",
+					ent->v.origin[0], ent->v.origin[1], ent->v.origin[2],
+					waypoint_idx,
+					waypoints[waypoint_idx].origin[0], waypoints[waypoint_idx].origin[1], waypoints[waypoint_idx].origin[2],
+					axis,
+					other_halfspace_dist_squared,
+					result->best_tracebox_waypoint_dist_squared
+				);
+			}
+
+			nearest_walkable_waypoint_kdtree(other_halfspace_child_idx, ent, debug_level + 1, result);
+		}
+	}
+
+
+
+	if(developer.value == 3) {
+		for(int i = -1; i < debug_level; i++) {
+			Con_Printf("\t");
+		}
+		Con_Printf("kd after checking node %d children: cur best: %d with dist: %.2f\n",
+			result->best_tracebox_waypoint_idx,
+			result->best_tracebox_waypoint_dist_squared
+		);
+	}
+
+	// return best_waypoint_idx;
+}
+
+
 //
 // Returns the clsoest waypoint to an entity that the entity can walk to
 // Sorts all waypoints by distance, returns first waypoint we can tracebox to
@@ -1932,6 +2056,216 @@ int get_closest_waypoint(int entnum) {
 	}
 
 	return best_waypoint_idx;
+}
+
+//
+// Returns the clsoest waypoint to an entity that the entity can walk to
+// Uses K-D tree lookup
+//
+int get_closest_waypoint_v1(int entnum) {
+	trace_t trace;
+	edict_t *ent = EDICT_NUM(entnum);
+	int waypoint_idx = -1;
+
+
+	nearest_walkable_waypoint_results_t nearest_waypoint_result;
+	nearest_waypoint_result.best_tracebox_waypoint_idx = -1;
+	nearest_waypoint_result.best_tracebox_waypoint_dist_squared = INFINITY;
+	nearest_waypoint_result.best_traceline_waypoint_idx = -1;
+	nearest_waypoint_result.best_tracline_waypoint_dist_squared = INFINITY;
+
+
+	vec3_t ent_mins;
+	vec3_t ent_maxs;
+	VectorCopy(ai_hull_mins, ent_mins);
+	VectorCopy(ai_hull_maxs, ent_maxs);
+
+	if(developer.value == 3) {
+		Con_Printf("get_closest_waypoint -- For ent: %d at (%.2f, %.2f, %.2f), prev cloest way: %d, cur dist: %.2f \n", 
+			entnum,
+			ent->v.origin[0], ent->v.origin[1], ent->v.origin[2],
+			closest_waypoints[entnum],
+			closest_waypoints[entnum] < 0 ? NAN : VectorDistanceSquared(ent->v.origin, waypoints[closest_waypoints[entnum]].origin)
+		);
+	}
+
+
+	int prev_closest_way = closest_waypoints[entnum];
+	// Check if the prior closest waypoint is still walkable, if so set that as upper limit when comparing against other waypoints
+	if(prev_closest_way >= 0) {
+		// Try against the prev waypoint first
+		if(ofs_tracebox(ent->v.origin, ent_mins, ent_maxs, waypoints[prev_closest_way].origin, MOVE_NOMONSTERS, ent)) {
+			nearest_waypoint_result.best_tracebox_waypoint_idx = prev_closest_way;
+			nearest_waypoint_result.best_tracebox_waypoint_dist_squared = VectorDistanceSquared(waypoints[prev_closest_way].origin, ent->v.origin);
+
+
+			if(developer.value == 3) {
+				Con_Printf("\tget_closest_waypoint -- Can walk to prev waypoint %d at dist: %.2f\n",
+					nearest_waypoint_result.best_tracebox_waypoint_idx,
+					nearest_waypoint_result.best_tracebox_waypoint_dist_squared
+				);
+			}
+
+
+		}
+	}
+
+
+
+	if(waypoints_kdtree_root_node >= 0) {
+		nearest_walkable_waypoint_kdtree( waypoints_kdtree_root_node, ent, 0, &nearest_waypoint_result);
+		waypoint_idx = nearest_waypoint_result.best_tracebox_waypoint_idx;
+	}
+
+
+	if(developer.value == 3) {
+		Con_Printf("\tget_closest_waypoint -- Final best waypoint %d at dist: %.2f\n",
+			nearest_waypoint_result.best_tracebox_waypoint_idx,
+			nearest_waypoint_result.best_tracebox_waypoint_dist_squared
+		);
+	}
+
+	closest_waypoints[entnum] = waypoint_idx;
+	return waypoint_idx;
+}
+
+
+
+
+
+// 
+// Returns the closest waypoint to an entity that the entity can walk to
+// 
+int get_closest_waypoint_v0(int entnum) {
+// int get_closest_waypoint(int entnum) {
+	trace_t trace;
+	edict_t *ent = EDICT_NUM(entnum);
+
+	// Keep track of the closest waypoint that...
+	int best_traceline_way = -1; // ... we are able to traceline to
+	int best_tracebox_way = -1; // ... we are able to tracebox to
+	float best_traceline_way_dist = max_waypoint_distance * max_waypoint_distance;
+	float best_tracebox_way_dist = max_waypoint_distance * max_waypoint_distance; 
+
+
+	// Start the search from the last known closest waypoint and its neighbors
+	// Assuming that at least one of the previous waypoint and its neighbors 
+	// is still traceline-able to, we'll easily skip tracelining against most
+	// map waypoints that are farther away.
+	int prev_closest_way = closest_waypoints[entnum];
+
+
+	// ------------------------------------------------------------------------
+	// New logic:
+	// ------------------------------------------------------------------------
+	// Try traceboxing against prev waypoint / its neighbors
+	// If we traceboxed against any, that's the best and skip to checking against all
+	// Successful tracebox implies successful traceline
+	// 
+	// If we have a waypoint we've traceboxed against, don't bother tracelining
+	// against waypoints, we already know which we're going to return in the 
+	// worst-case.
+	// ------------------------------------------------------------------------
+
+ 	
+	if(prev_closest_way >= 0) {
+		// Try against the prev waypoint first
+		trace = SV_Move(ent->v.origin, vec3_origin, vec3_origin, waypoints[prev_closest_way].origin, MOVE_NOMONSTERS, ent);
+		if(trace.fraction >= 1) {
+			best_traceline_way_dist = VectorDistanceSquared(waypoints[prev_closest_way].origin, ent->v.origin);
+			best_traceline_way = prev_closest_way;
+		}
+		// Otherwise, try against its neighbors
+		else {
+			for(int i = 0; i < 8; i++) {
+				int neighbor_way = waypoints[prev_closest_way].target[i];
+				// Skip unused neighbor slots / unused waypoint slots / inactive waypoints
+				if (neighbor_way < 0 || !waypoints[neighbor_way].used || !waypoints[neighbor_way].open) {
+					continue;
+				}
+				float dist = VectorDistanceSquared(waypoints[neighbor_way].origin, ent->v.origin);
+				if(dist < best_traceline_way_dist || best_traceline_way == -1) {
+					trace = SV_Move(ent->v.origin, vec3_origin, vec3_origin, waypoints[neighbor_way].origin, MOVE_NOMONSTERS, ent);
+					if (trace.fraction >= 1) {
+						best_traceline_way_dist = dist;
+						best_traceline_way = neighbor_way;
+					}
+				}
+			}
+		}
+
+		// Try against the prev waypoint first
+		if(ofs_tracebox(ent->v.origin, ent->v.mins, ent->v.maxs, waypoints[prev_closest_way].origin, MOVE_NOMONSTERS, ent)) {
+			best_tracebox_way_dist = VectorDistanceSquared(waypoints[prev_closest_way].origin, ent->v.origin);
+			best_tracebox_way = prev_closest_way;
+		}
+		// Otherwise, try against its neighbors
+		else {
+			for(int i = 0; i < 8; i++) {
+				int neighbor_way = waypoints[prev_closest_way].target[i];
+				// Skip unused neighbor slots / unused waypoint slots / inactive waypoints
+				if (neighbor_way < 0 || !waypoints[neighbor_way].used || !waypoints[neighbor_way].open) {
+					continue;
+				}
+				float dist = VectorDistanceSquared(waypoints[neighbor_way].origin, ent->v.origin);
+				if(dist < best_tracebox_way_dist || best_tracebox_way == -1) {
+					if(ofs_tracebox(ent->v.origin, ent->v.mins, ent->v.maxs, waypoints[neighbor_way].origin, MOVE_NOMONSTERS, ent)) {
+						best_tracebox_way_dist = dist;
+						best_tracebox_way = neighbor_way;
+					}
+				}
+			}
+		}
+	}
+
+	// Now we may have an initial valid `best_traceline_way` / `best_traceline_way_dist`
+	// We can safely skip all waypoints farther away than this
+
+	for(int i = 0; i < n_waypoints; i++) {
+		// Skip unused waypoint slots / inactive waypoints
+		if(!waypoints[i].used || !waypoints[i].open) {
+			continue;
+		}
+		
+		float dist = VectorDistanceSquared(waypoints[i].origin, ent->v.origin);
+
+		// If we have a `best_tracebox_way`, that will take precedence as a return value over any traceline-able waypoint.
+		// Therefore, if we know of a waypoint that we can tracebox to, skip all traceline checks against all waypoints
+		if(best_tracebox_way == -1) {
+			if((i != best_traceline_way && dist < best_traceline_way_dist) || best_traceline_way == -1) {
+				trace = SV_Move(ent->v.origin, vec3_origin, vec3_origin, waypoints[i].origin, MOVE_NOMONSTERS, ent);
+				if(trace.fraction >= 1) {
+					best_traceline_way_dist = dist;
+					best_traceline_way = i;
+				}
+			}
+		}
+
+		if((i != best_tracebox_way && dist < best_tracebox_way_dist) || best_tracebox_way == -1) {
+			if(ofs_tracebox(ent->v.origin, ent->v.mins, ent->v.maxs, waypoints[i].origin, MOVE_NOMONSTERS, ent)) {
+				best_tracebox_way_dist = dist;
+				best_tracebox_way = i;
+			}
+		}
+
+	}
+
+	int best_way = -1;
+
+	// If we can tracebox to any waypoint, return the closest one:
+	if(best_tracebox_way >= 0) {
+		best_way = best_tracebox_way;
+	}
+	// Otherwise, return the best waypoint we found that we can traceline to
+	// (which may be none for some if a map's waypoints aren't great)
+	else {
+		best_way = best_traceline_way;
+	}
+
+	// Cache the closest waypoint to this entity, so that we start the next search from this same waypoint and its neighbors
+	closest_waypoints[entnum] = best_way;
+
+	return best_way;
 }
 
 
