@@ -291,7 +291,7 @@ void HUD_EndScreen (void)
 
 	l = scoreboardlines;
 
-	Draw_ColoredString((vid.width - 9*8)/2, 40, "GAME OVER", 255, 0, 0, 255, 1);
+	Draw_ColoredStringCentered(40, "GAME OVER", 255, 0, 0, 255, 1);
 
 	sprintf (str,"You survived %3i rounds", cl.stats[STAT_ROUNDS]);
 	Draw_String ((vid.width - strlen (str)*8)/2, 52, str);
@@ -415,7 +415,7 @@ void HUD_Points (void)
 		}
 
 		Draw_Pic (x, y, sb_moneyback);
-		xplus = strlen(va("%i", current_points))*8;
+		xplus = getTextWidth(va("%i", current_points), 1);
 		Draw_String (((64 - xplus)/2)+5, y + 3, va("%i", current_points));
 
 		if (old_points != f)
@@ -588,7 +588,7 @@ void HUD_MaxAmmo(void)
 	maxammoy -= cl.time * 0.003;
 	maxammoopac -= 5;
 
-	Draw_ColoredString(vid.width/2 - strlen("MAX AMMO!")*4, maxammoy, "MAX AMMO!", 255, 255, 255, maxammoopac, 1);
+	Draw_ColoredStringCentered(maxammoy, "MAX AMMO!", 255, 255, 255, maxammoopac, 1);
 
 	if (maxammoopac <= 0) {
 		domaxammo = false;
@@ -630,7 +630,7 @@ void HUD_Rounds (void)
 		if (!value)
 			value = 255;
 
-		Draw_ColoredString(vid.width/2 - strlen("Round")*8, 80, "Round", 255, value, value, 255, 2);
+		Draw_ColoredStringCentered(80, "Round", 255, value, value, 255, 2);
 		
 		value -= cl.time * 0.4;
 
@@ -644,7 +644,7 @@ void HUD_Rounds (void)
 	// Now, fade out, and start fading worldtext in
 	// ~3s for fade out, 
 	else if (textstate == 1) {
-		Draw_ColoredString(vid.width/2 - strlen("Round")*8, 80, "Round", 255, 0, 0, value, 2);
+		Draw_ColoredStringCentered(80, "Round", 255, 0, 0, value, 2);
 
 		HUD_WorldText(value2);
 		
@@ -1316,16 +1316,16 @@ void HUD_Ammo (void)
 	char* magstring;
 	int reslen;
 
-	reslen = strlen(va("/%i", cl.stats[STAT_AMMO]));
+	reslen = getTextWidth(va("/%i", cl.stats[STAT_AMMO]), 1);
 
 	//
 	// Magazine
 	//
 	magstring = va("%i", cl.stats[STAT_CURRENTMAG]);
 	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG]) {
-		Draw_ColoredString((422 -(reslen*8)) - strlen(magstring)*8, 247, magstring, 255, 0, 0, 255, 1);
+		Draw_ColoredString((422 -(reslen)) - getTextWidth(magstring, 1), 247, magstring, 255, 0, 0, 255, 1);
 	} else {
-		Draw_ColoredString((422 -(reslen*8)) - strlen(magstring)*8, 247, magstring, 255, 255, 255, 255, 1);
+		Draw_ColoredString((422 -(reslen)) - getTextWidth(magstring, 1), 247, magstring, 255, 255, 255, 255, 1);
 	}
 
 	//
@@ -1333,9 +1333,9 @@ void HUD_Ammo (void)
 	//
 	magstring = va("/%i", cl.stats[STAT_AMMO]);
 	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_AMMO]) {
-		Draw_ColoredString(422 - strlen(magstring)*8, 247, magstring, 255, 0, 0, 255, 1);
+		Draw_ColoredString(422 - getTextWidth(magstring, 1), 247, magstring, 255, 0, 0, 255, 1);
 	} else {
-		Draw_ColoredString(422 - strlen(magstring)*8, 247, magstring, 255, 255, 255, 255, 1);
+		Draw_ColoredString(422 - getTextWidth(magstring, 1), 247, magstring, 255, 255, 255, 255, 1);
 	}
 
 	//
@@ -1364,14 +1364,11 @@ void HUD_AmmoString (void)
 		int x;
 
 		if (0 < cl.stats[STAT_AMMO] && cl.stats[STAT_CURRENTMAG] >= 0) {
-			x = (vid.width - strlen("Reload")*8)/2;
-			Draw_ColoredString (x, 164, "Reload", 255, 255, 255, 255, 1);
+			Draw_ColoredStringCentered(164, "Reload", 255, 255, 255, 255, 1);
 		} else if (0 < cl.stats[STAT_CURRENTMAG]) {
-			x = (vid.width - strlen("LOW AMMO")*8)/2;
-			Draw_ColoredString (x, 164, "LOW AMMO", 255, 255, 0, 255, 1);
+			Draw_ColoredStringCentered(164, "LOW AMMO", 255, 255, 0, 255, 1);
 		} else {
-			x = (vid.width - strlen("NO AMMO")*8)/2;
-			Draw_ColoredString (x, 164, "NO AMMO", 255, 0, 0, 255, 1);
+			Draw_ColoredStringCentered(164, "NO AMMO", 255, 0, 0, 255, 1);
 		}
 	}
 }
@@ -1421,7 +1418,7 @@ void HUD_Weapon (void)
 	strcpy(str, pr_strings+sv_player->v.Weapon_Name);
 	l = strlen(str);
 
-	x_value = 422 - l*8;
+	x_value = 422 - getTextWidth(str, 1);
 	Draw_String (x_value, y_value, str);
 }
 
@@ -1435,17 +1432,20 @@ void HUD_BettyPrompt (void)
 	char str[64];
 	char str2[32];
 
-	strcpy(str, va("Double-tap %s then press %s\n", GetUseButtonL(), GetGrenadeButtonL()));
+	strcpy(str, va("Double-tap  %s  then press  %s \n", GetUseButtonL(), GetGrenadeButtonL()));
 	strcpy(str2, "to place a Bouncing Betty\n");
 
-	int x, x2;
-	x = (vid.width - strlen(str)*8)/2;
-	x2 = (vid.width - strlen(str2)*8)/2;
+	int x;
+	x = (vid.width - getTextWidth(str, 1))/2;
 
-	Draw_String(x, 60, str);
-	Draw_String(x2, 70, str2);
-	Draw_Pic (x + 11*8, 60, GetButtonIcon("+use"));
-	Draw_Pic (x + 25*8, 60, GetButtonIcon("+grenade"));
+	Draw_ColoredStringCentered(60, str, 255, 255, 255, 255, 1);
+	Draw_ColoredStringCentered(70, str2, 255, 255, 255, 255, 1);
+
+	// Draw_Pic (x + 11*8, 60, GetButtonIcon("+use"));
+	// Draw_Pic (x + 25*8, 60, GetButtonIcon("+grenade"));
+
+	Draw_Pic (x + getTextWidth("Double-tap  ", 1) - 4, 60, GetButtonIcon("+use"));
+	Draw_Pic (x + getTextWidth("Double-tap     then press   ", 1) - 4, 60, GetButtonIcon("+grenade"));
 }
 
 /*

@@ -454,7 +454,7 @@ static void M_Start_Menu_Draw ()
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
 
-	Draw_ColoredString((vid.width)/2 - 44, (vid.height - 64), "Press Start", 255, 0, 0, 255, 1);
+	Draw_ColoredStringCentered(vid.height - 64, "Press Start", 255, 0, 0, 255, 1);
 }
 
 void M_Start_Key (int key)
@@ -599,7 +599,7 @@ void M_Main_Draw (void)
 	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
 
 	// Version String
-	Draw_ColoredString((vid.width - (strlen(game_build_date) * 8)) + 4, 5, game_build_date, 255, 255, 255, 255, 1);
+	Draw_ColoredString((vid.width - getTextWidth(game_build_date, 1)) + 4, 5, game_build_date, 255, 255, 255, 255, 1);
 
 	// Header
 	Draw_ColoredString(10, 10, "MAIN MENU", 255, 255, 255, 255, 2);
@@ -898,7 +898,7 @@ void M_Map_Draw (void)
 		if (m_map_cursor == i) {
 
 			if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
-				Draw_PicIndex(256, 45, 175, 100, custom_maps[i + multiplier].thumbnail_index);
+				Draw_PicIndex(246, 45, 175, 100, custom_maps[i + multiplier].thumbnail_index);
 			}
 			
 			if (custom_maps[i + multiplier].map_name_pretty != 0)
@@ -908,55 +908,55 @@ void M_Map_Draw (void)
 
 			if (custom_maps[i + multiplier].map_desc_1 != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_desc_1, " ") != 0) {
-					Draw_ColoredString(215, 155, custom_maps[i + multiplier].map_desc_1, 255, 255, 255, 255, 1);
+					Draw_ColoredString(235, 155, custom_maps[i + multiplier].map_desc_1, 255, 255, 255, 255, 1);
 				}
 			}
 			if (custom_maps[i + multiplier].map_desc_2 != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_desc_2, " ") != 0) {
 					line_increment++;
-					Draw_ColoredString(215, 165, custom_maps[i + multiplier].map_desc_2, 255, 255, 255, 255, 1);
+					Draw_ColoredString(235, 165, custom_maps[i + multiplier].map_desc_2, 255, 255, 255, 255, 1);
 				}
 			}
 			if (custom_maps[i + multiplier].map_desc_3 != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_desc_3, " ") != 0) {
 					line_increment++;
-					Draw_ColoredString(215, 175, custom_maps[i + multiplier].map_desc_3, 255, 255, 255, 255, 1);
+					Draw_ColoredString(235, 175, custom_maps[i + multiplier].map_desc_3, 255, 255, 255, 255, 1);
 				}
 			}
 			if (custom_maps[i + multiplier].map_desc_4 != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_desc_4, " ") != 0) {
 					line_increment++;
-					Draw_ColoredString(215, 185, custom_maps[i + multiplier].map_desc_4, 255, 255, 255, 255, 1);
+					Draw_ColoredString(235, 185, custom_maps[i + multiplier].map_desc_4, 255, 255, 255, 255, 1);
 				}
 			}
 			if (custom_maps[i + multiplier].map_desc_5 != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_desc_5, " ") != 0) {
 					line_increment++;
-					Draw_ColoredString(215, 195, custom_maps[i + multiplier].map_desc_5, 255, 255, 255, 255, 1);
+					Draw_ColoredString(235, 195, custom_maps[i + multiplier].map_desc_5, 255, 255, 255, 255, 1);
 				}
 			}
 			if (custom_maps[i + multiplier].map_desc_6 != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_desc_6, " ") != 0) {
 					line_increment++;
-					Draw_ColoredString(215, 205, custom_maps[i + multiplier].map_desc_6, 255, 255, 255, 255, 1);
+					Draw_ColoredString(235, 205, custom_maps[i + multiplier].map_desc_6, 255, 255, 255, 255, 1);
 				}
 			}
 			if (custom_maps[i + multiplier].map_desc_7 != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_desc_7, " ") != 0) {
 					line_increment++;
-					Draw_ColoredString(215, 215, custom_maps[i + multiplier].map_desc_7, 255, 255, 255, 255, 1);
+					Draw_ColoredString(235, 215, custom_maps[i + multiplier].map_desc_7, 255, 255, 255, 255, 1);
 				}
 			}
 			if (custom_maps[i + multiplier].map_desc_8 != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_desc_8, " ") != 0) {
 					line_increment++;
-					Draw_ColoredString(215, 225, custom_maps[i + multiplier].map_desc_8, 255, 255, 255, 255, 1);
+					Draw_ColoredString(235, 225, custom_maps[i + multiplier].map_desc_8, 255, 255, 255, 255, 1);
 				}
 			}
 			if (custom_maps[i + multiplier].map_author != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_author, " ") != 0) {
 					int y = 165 + (10 * line_increment);
-					Draw_ColoredString(215, y, custom_maps[i + multiplier].map_author, 255, 255, 0, 255, 1);
+					Draw_ColoredString(235, y, custom_maps[i + multiplier].map_author, 255, 255, 0, 255, 1);
 				}
 			}
 		} else {
@@ -1142,42 +1142,42 @@ void M_SinglePlayer_Draw (void)
 	// Map description & pic
 	switch(m_singleplayer_cursor) {
 		case 0:
-			Draw_PicIndex(256, 45, 175, 100, menu_ndu);
-			Draw_ColoredString(215, 155, "Desolate bunker located on a Ge-", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 165, "rman airfield, stranded after a", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 175, "brutal plane crash surrounded by", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 185, "hordes of undead. Exploit myste-", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 195, "rious forces at play and hold o-", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 205, "ut against relentless waves. Der", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 215, "Anstieg ist jetzt. Will you fall", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 225, "to the overwhelming onslaught?", 255, 255, 255, 255, 1);
+			Draw_PicIndex(246, 45, 175, 100, menu_ndu);
+			Draw_ColoredString(235, 155, "Desolate bunker located on a Ge-", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 165, "rman airfield, stranded after a", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 175, "brutal plane crash surrounded by", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 185, "hordes of undead. Exploit myste-", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 195, "rious forces at play and hold o-", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 205, "ut against relentless waves. Der", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 215, "Anstieg ist jetzt. Will you fall", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 225, "to the overwhelming onslaught?", 255, 255, 255, 255, 1);
 			break;
 		case 1:
-			Draw_PicIndex(256, 45, 175, 100, menu_wh2);
-			Draw_ColoredString(215, 155, "Four nameless marines find them-", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 165, "selves at a forsaken warehouse,", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 175, "or is it something more? Fight", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 185, "your way to uncovering its sec-", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 195, "rets, though you may not like", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 205, "what you find..", 255, 255, 255, 255, 1);
+			Draw_PicIndex(246, 45, 175, 100, menu_wh2);
+			Draw_ColoredString(235, 155, "Four nameless marines find them-", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 165, "selves at a forsaken warehouse,", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 175, "or is it something more? Fight", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 185, "your way to uncovering its sec-", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 195, "rets, though you may not like", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 205, "what you find..", 255, 255, 255, 255, 1);
 			break;
 		case 2:
-			Draw_PicIndex(256, 45, 175, 100, menu_wh);
-			Draw_ColoredString(215, 155, "Old Warehouse full of Zombies!", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 165, "Fight your way to the Power", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 175, "Switch through the Hordes!", 255, 255, 255, 255, 1);
+			Draw_PicIndex(246, 45, 175, 100, menu_wh);
+			Draw_ColoredString(235, 155, "Old Warehouse full of Zombies!", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 165, "Fight your way to the Power", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 175, "Switch through the Hordes!", 255, 255, 255, 255, 1);
 			break;
 		case 3:
-			Draw_PicIndex(256, 45, 175, 100, menu_ch);
-			Draw_ColoredString(215, 155, "No Santa this year. Though we're", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 165, "sure you will get presents from", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 175, "the undead! Will you accept them?", 255, 255, 255, 255, 1);
+			Draw_PicIndex(246, 45, 175, 100, menu_ch);
+			Draw_ColoredString(235, 155, "No Santa this year. Though we're", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 165, "sure you will get presents from", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 175, "the undead! Will you accept them?", 255, 255, 255, 255, 1);
 			break;
 		case 4:
-			Draw_PicIndex(256, 45, 175, 100, menu_custom);
-			Draw_ColoredString(215, 155, "Custom Maps made by Community", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 165, "Members on the Fourm and on", 255, 255, 255, 255, 1);
-			Draw_ColoredString(215, 175, "GitHub Discussions!", 255, 255, 255, 255, 1);
+			Draw_PicIndex(246, 45, 175, 100, menu_custom);
+			Draw_ColoredString(235, 155, "Custom Maps made by Community", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 165, "Members on the Fourm and on", 255, 255, 255, 255, 1);
+			Draw_ColoredString(235, 175, "GitHub Discussions!", 255, 255, 255, 255, 1);
 			break;
 	}
 }

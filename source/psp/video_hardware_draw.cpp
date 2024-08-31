@@ -504,6 +504,40 @@ static void R_CreateDlightImage( void )
 	ref_texture = GL_LoadTexture ("reftexture", DLIGHT_SIZE, DLIGHT_SIZE, (byte*)data, qfalse, GU_LINEAR, 0);
 }
 
+// ! " # $ % & ' ( ) * _ , - . / 0
+// 1 2 3 4 5 6 7 8 9 : ; < = > ? @
+// A B C D E F G H I J K L M N O P
+// Q R S T U V W X Y Z [ \ ] ^ _ `
+// a b c d e f g h i j k l m n o p
+// q r s t u v w x y z { | } ~
+int font_kerningamount[96];
+
+void InitKerningMap(void)
+{
+	// Initialize the kerning amount as 8px for each
+	// char in the event we cant load the file.
+	for(int i = 0; i < 96; i++) {
+		font_kerningamount[i] = 8;
+	}
+
+    FILE *kerning_map = fopen(va("%s/gfx/kerning_map.txt", com_gamedir), "r");
+    if (kerning_map == NULL) {
+        return;
+    }
+
+    char buffer[1024];
+    if (fgets(buffer, sizeof(buffer), kerning_map) != NULL) {
+        char *token = strtok(buffer, ",");
+        int i = 0;
+        while (token != NULL && i < 96) {
+            font_kerningamount[i++] = atoi(token);
+            token = strtok(NULL, ",");
+        }
+    }
+
+    fclose(kerning_map);
+}
+
 /*
 ===============
 Draw_Init
@@ -530,6 +564,8 @@ void Draw_Init (void)
 		Sys_Error ("Could not load charset, make sure you have every folder and file installed properly\nDouble check that all of your files are in their correct places\nAnd that you have installed the game properly.\nRefer to the readme.txt file for help\n");
 	
 	Clear_LoadingFill ();
+
+	InitKerningMap();
 }
 
 
@@ -582,7 +618,6 @@ void Draw_Character (int x, int y, int num)
 
 	sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D, 2, 0, vertices);
 }
-
 
 /*
 ================
@@ -650,8 +685,16 @@ void Draw_String (int x, int y, char *str)
 	while (*str)
 	{
 		Draw_Character (x, y, *str);
+
+		// Hooray for variable-spacing!
+		if (*str == ' ')
+			x += 4;
+        else if ((int)*str < 33 || (int)*str > 126)
+            x += 8;
+        else
+            x += (font_kerningamount[(int)(*str - 33)] + 1);
+
 		str++;
-		x += 8;
 	}
 }
 
@@ -1017,8 +1060,7 @@ void Draw_LoadingFill(void)
 		default: text = "Initializing.."; break;
 	}
 
-	l = strlen (text);
-	Draw_String((vid.width - l*8)/2, y, text);
+	Draw_ColoredStringCentered(y, text, 255, 255, 255, 255, 1);
 
 	loading_cur_step_bk = loading_cur_step;
 }
@@ -1514,7 +1556,14 @@ void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, flo
 
 	        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D, 2, 0, vertices);
 		}
-		x += 8*scale;
+
+		// Hooray for variable-spacing!
+		if (*text == ' ')
+			x += 4 * scale;
+        else if ((int)*text < 33 || (int)*text > 126)
+            x += 8 * scale;
+        else
+            x += (font_kerningamount[(int)(*text - 33)] + 1) * scale;
 	}
 
 	if (!white)
@@ -1522,6 +1571,29 @@ void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, flo
 
 	if (scr_coloredtext.value)
         sceGuTexFunc(GU_TFX_REPLACE , GU_TCC_RGBA);
+}
+
+int getTextWidth(char *str, int scale)
+{
+	int width = 0;
+
+    for (int i = 0; i < strlen(str); i++) {
+        // Hooray for variable-spacing!
+		if (str[i] == ' ')
+			width += 4 * scale;
+        else if ((int)str[i] < 33 || (int)str[i] > 126)
+            width += 8 * scale;
+        else
+            width += (font_kerningamount[(int)(str[i] - 33)] + 1) * scale;
+    }
+
+	return width;
+}
+
+
+void Draw_ColoredStringCentered(int y, char *str, float r, float g, float b, float a, int scale)
+{
+	Draw_ColoredString((vid.width - getTextWidth(str, scale))/2, y, str, r, g, b, a, scale);
 }
 
 //=============================================================================

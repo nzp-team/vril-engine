@@ -29,6 +29,7 @@ void Draw_PicIndex (int x, int y, int width, int height, int texture_index);
 void Draw_StretchPic (int x, int y, qpic_t *pic, int x_value, int y_value);
 void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float a);
 void Draw_ColoredString (int x, int y, char *text, float r, float g, float b, float a, int scale);
+void Draw_ColoredStringCentered(int y, char *text, float r, float g, float b, float a, int scale);
 void Draw_TransPic (int x, int y, qpic_t *pic);
 void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation);
 void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha);
@@ -38,6 +39,7 @@ void Draw_Fill (int x, int y, int w, int h, int c);
 void Draw_FillByColor (int x, int y, int w, int h, unsigned int c);
 void Draw_FadeScreen (void);
 void Draw_String (int x, int y, char *str);
+int getTextWidth(char *str, int scale);
 
 //other
 void Clear_LoadingFill (void);
@@ -47,6 +49,7 @@ extern float loading_cur_step;
 extern int loading_step;
 extern char loading_name[32];
 extern float loading_num_step;
+extern int font_kerningamount[96];
 
 qpic_t *Draw_CachePic (char *path);
 qpic_t *Draw_CacheImg (char *path);
