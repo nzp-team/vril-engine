@@ -406,16 +406,9 @@ void SND_Spatialize(channel_t *ch)
 
 	dot = DotProduct(listener_right, source_vec);
 
-	if (shm->channels == 1)
-	{
-		rscale = 1.0;
-		lscale = 1.0;
-	}
-	else
-	{
-		rscale = 1.0 + dot;
-		lscale = 1.0 - dot;
-	}
+	int dot_index = (dot + 1) * 63;
+	rscale = SND_InverseSpatializationRScaleLUT[dot_index];
+	lscale = SND_InverseSpatializationLScaleLUT[dot_index];
 
 // add in distance effect
 	scale = (1.0 - dist) * rscale;
