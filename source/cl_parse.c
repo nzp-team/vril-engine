@@ -941,11 +941,8 @@ void CL_ParseClientdata (int bits)
 		cl.stats[STAT_WEAPONSKIN] = 0;
 
 
-	if (bits & SU_WEAPON)
-		i = MSG_ReadShort ();
-	else
-		i = 0;
-
+	// Weapon model index
+	i = MSG_ReadShort();
 	if (cl.stats[STAT_WEAPON] != i)
 		cl.stats[STAT_WEAPON] = i;
 

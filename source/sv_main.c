@@ -712,8 +712,8 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	if (ent->v.weaponskin)
 		bits |= SU_WEAPONSKIN;
 
-	if (ent->v.weapon)
-		bits |= SU_WEAPON;
+	// if (ent->v.weapon)
+	// 	bits |= SU_WEAPON;
 
 	//if (ent->v.perks)
 	//	bits |= SU_PERKS;
@@ -755,8 +755,8 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 		MSG_WriteByte (msg, ent->v.weaponframe);
 	if (bits & SU_WEAPONSKIN)
 		MSG_WriteByte (msg, ent->v.weaponskin);
-	if (bits & SU_WEAPON)
-		MSG_WriteShort (msg, SV_ModelIndex(pr_strings+ent->v.weaponmodel));
+
+	MSG_WriteShort (msg, SV_ModelIndex(pr_strings+ent->v.weaponmodel));
 
 	if (bits & SU_GRENADES)
 		MSG_WriteLong (msg, ent->v.grenades);
