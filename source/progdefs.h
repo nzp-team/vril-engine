@@ -165,4 +165,5 @@ typedef struct
 	float   	maxspeed;
 	float 		facingenemy;
 	float 		scale;
+	float		light_lev;
 } entvars_t;
