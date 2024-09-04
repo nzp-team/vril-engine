@@ -1,5 +1,6 @@
 /*
-Copyright (C) 1996-1997 Id Software, Inc.
+Copyright (C) 1996-2001 Id Software, Inc.
+Copyright (C) 2010-2014 QuakeSpasm developers
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -8,7 +9,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -18,17 +19,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#ifndef __PR_COMP_H
+#define __PR_COMP_H
+
 // this file is shared by quake and qcc
 
 typedef int	func_t;
 typedef int	string_t;
 
-typedef enum {ev_void, ev_string, ev_float, ev_vector, ev_entity, ev_field, ev_function, ev_pointer} etype_t;
-
+typedef enum
+{
+	ev_bad = -1,
+	ev_void = 0,
+	ev_string,
+	ev_float,
+	ev_vector,
+	ev_entity,
+	ev_field,
+	ev_function,
+	ev_pointer
+} etype_t;
 
 #define	OFS_NULL		0
 #define	OFS_RETURN		1
-#define	OFS_PARM0		4		// leave 3 ofs for each parm to hold vectors
+#define	OFS_PARM0		4	// leave 3 ofs for each parm to hold vectors
 #define	OFS_PARM1		7
 #define	OFS_PARM2		10
 #define	OFS_PARM3		13
@@ -39,7 +53,8 @@ typedef enum {ev_void, ev_string, ev_float, ev_vector, ev_entity, ev_field, ev_f
 #define	RESERVED_OFS	28
 
 
-enum {
+enum
+{
 	OP_DONE,
 	OP_MUL_F,
 	OP_MUL_V,
@@ -50,19 +65,19 @@ enum {
 	OP_ADD_V,
 	OP_SUB_F,
 	OP_SUB_V,
-	
+
 	OP_EQ_F,
 	OP_EQ_V,
 	OP_EQ_S,
 	OP_EQ_E,
 	OP_EQ_FNC,
-	
+
 	OP_NE_F,
 	OP_NE_V,
 	OP_NE_S,
 	OP_NE_E,
 	OP_NE_FNC,
-	
+
 	OP_LE,
 	OP_GE,
 	OP_LT,
@@ -112,25 +127,25 @@ enum {
 	OP_GOTO,
 	OP_AND,
 	OP_OR,
-	
+
 	OP_BITAND,
 	OP_BITOR
 };
 
-
 typedef struct statement_s
 {
 	unsigned short	op;
-	short	a,b,c;
+	short	a, b, c;
 } dstatement_t;
 
 typedef struct
 {
-	unsigned short	type;		// if DEF_SAVEGLOBGAL bit is set
-								// the variable needs to be saved in savegames
+	unsigned short	type;	// if DEF_SAVEGLOBAL bit is set
+				// the variable needs to be saved in savegames
 	unsigned short	ofs;
-	int			s_name;
+	int		s_name;
 } ddef_t;
+
 #define	DEF_SAVEGLOBAL	(1<<15)
 
 #define	MAX_PARMS	8
@@ -139,13 +154,13 @@ typedef struct
 {
 	int		first_statement;	// negative numbers are builtins
 	int		parm_start;
-	int		locals;				// total ints of parms + locals
-	
+	int		locals;			// total ints of parms + locals
+
 	int		profile;		// runtime
-	
+
 	int		s_name;
 	int		s_file;			// source file defined in
-	
+
 	int		numparms;
 	byte	parm_size[MAX_PARMS];
 } dfunction_t;
@@ -155,26 +170,28 @@ typedef struct
 typedef struct
 {
 	int		version;
-	int		crc;			// check of header file
-	
+	int		crc;		// check of header file
+
 	int		ofs_statements;
 	int		numstatements;	// statement 0 is an error
 
 	int		ofs_globaldefs;
 	int		numglobaldefs;
-	
+
 	int		ofs_fielddefs;
 	int		numfielddefs;
-	
+
 	int		ofs_functions;
 	int		numfunctions;	// function 0 is an empty
-	
+
 	int		ofs_strings;
-	int		numstrings;		// first string is a null string
+	int		numstrings;	// first string is a null string
 
 	int		ofs_globals;
 	int		numglobals;
-	
+
 	int		entityfields;
 } dprograms_t;
+
+#endif	/* __PR_COMP_H */
 
