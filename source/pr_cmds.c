@@ -20,6 +20,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
+#ifdef _3DS
+extern bool new3ds_flag;
+#endif  // _3DS
+
 #define PR_MAX_TEMPSTRING 2048	// 2001-10-25 Enhanced temp string handling by Maddes
 #define	RETURN_EDICT(e) (((int *)pr_globals)[OFS_RETURN] = EDICT_TO_PROG(e))
 
@@ -961,7 +965,12 @@ int PF_newcheckclient (int check)
 	VectorAdd (ent->v.origin, ent->v.view_ofs, org);
 	leaf = Mod_PointInLeaf (org, sv.worldmodel);
 	pvs = Mod_LeafPVS (leaf, sv.worldmodel);
+
+#ifdef __PSP__
 	memcpy_vfpu(checkpvs, pvs, (sv.worldmodel->numleafs+7)>>3 );
+#else
+	memcpy(checkpvs, pvs, (sv.worldmodel->numleafs+7)>>3 );
+#endif // __PSP__
 
 	return i;
 }
@@ -1487,8 +1496,11 @@ This is where the magic happens
 =================
 */
 
-
+#ifdef __PSP__
 #define MaxZombies 12
+#else
+#define MaxZombies 18
+#endif
 
 
 #define WAYPOINT_SET_NONE 	0
@@ -3601,7 +3613,14 @@ nzp_maxai()
 */
 void PF_MaxZombies(void)
 {
+#ifdef __PSP__
 	G_FLOAT(OFS_RETURN) = MaxZombies;
+#else
+	if (new3ds_flag)
+		G_FLOAT(OFS_RETURN) = MaxZombies;
+	else
+		G_FLOAT(OFS_RETURN) = 12;
+#endif // __PSP__
 }
 
 /*

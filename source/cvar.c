@@ -59,7 +59,7 @@ void Cvar_List_f (void)
 	count = 0;
 	for (cvar = cvar_vars ; cvar ; cvar = cvar->next)
 	{
-		if (partial && Q_strncmp(partial, cvar->name, len))
+		if (partial && strncmp(partial, cvar->name, len))
 		{
 			continue;
 		}
@@ -360,7 +360,7 @@ const char *Cvar_CompleteVariable (const char *partial)
 // check functions
 	for (cvar = cvar_vars ; cvar ; cvar = cvar->next)
 	{
-		if (!Q_strncmp(partial, cvar->name, len))
+		if (!strncmp(partial, cvar->name, len))
 			return cvar->name;
 	}
 
