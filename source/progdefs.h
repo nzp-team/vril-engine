@@ -79,7 +79,6 @@ typedef struct
 	string_t	model;
 	float		frame;
 	float		skin;
-	float       iframetime;
 	float		effects;
 	vec3_t		mins;
 	vec3_t		maxs;

@@ -1246,10 +1246,6 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 
 		if (numposes > 1)
 		{
-			//Con_Printf("numposes (%i) > 1: %s, %i\n", numposes, e->model->name, frame); FIXME-Jukkiwashere (not sure if this was something you were working on blubs)
-			//if (e->iframetime)
-			//	e->frame_interval = e->iframetime;
-			//else
 			e->frame_interval = paliashdr->frames[frame].interval;
 			pose += (int)(cl.time / e->frame_interval) % numposes;
 		}
@@ -1261,11 +1257,7 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 			shorter then things will still be smoothed partly, and the jumps will be
 			less noticable because of the shorter time.  So, this is probably a good
 			assumption. */
-			//Jukki, except that this is not good for us. We need to control it better
-			//if (e->iframetime)
-			//	e->frame_interval = e->iframetime;
-			//else
-				e->frame_interval = 0.1;
+			e->frame_interval = 0.1;
 		}
 
 		if (e->pose2 != pose)

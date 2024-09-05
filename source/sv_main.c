@@ -262,8 +262,14 @@ void SV_ConnectClient (int clientnum)
 // set up the client_t
 	netconnection = client->netconnection;
 
-	if (sv.loadgame)
+	if (sv.loadgame) {
+#ifdef PSP_VFPU
 		memcpy_vfpu(spawn_parms, client->spawn_parms, sizeof(spawn_parms));
+#else
+		memcpy(spawn_parms, client->spawn_parms, sizeof(spawn_parms));
+#endif // PSP_VFPU
+	}
+
 	memset (client, 0, sizeof(*client));
 	client->netconnection = netconnection;
 
@@ -277,8 +283,13 @@ void SV_ConnectClient (int clientnum)
 
 	client->privileged = false;
 
-	if (sv.loadgame)
+	if (sv.loadgame) {
+#ifdef PSP_VFPU
 		memcpy_vfpu(client->spawn_parms, spawn_parms, sizeof(spawn_parms));
+#else
+		memcpy(client->spawn_parms, spawn_parms, sizeof(spawn_parms));
+#endif // PSP_VFPU
+	}
 	else
 	{
 	// call the progs to get default spawn parms for the new client
@@ -503,9 +514,6 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg, qboolean nomap)
 		if (ent->baseline.skin != ent->v.skin)
 			bits |= U_SKIN;
 
-		if (ent->v.iframetime != 0.1)
-			bits |= U_FRAMETIME;
-
 		if (ent->baseline.frame != ent->v.frame)
 			bits |= U_FRAME;
 
@@ -594,13 +602,11 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg, qboolean nomap)
 		if (bits & U_MODEL)
 			MSG_WriteShort (msg, ent->v.modelindex);
 		if (bits & U_FRAME)
-			MSG_WriteShort (msg, ent->v.frame);
+			MSG_WriteByte (msg, ent->v.frame);
 		if (bits & U_COLORMAP)
 			MSG_WriteByte (msg, ent->v.colormap);
 		if (bits & U_SKIN)
 			MSG_WriteByte (msg, ent->v.skin);
-		if (bits & U_FRAMETIME)
-			MSG_WriteFloat (msg, ent->v.iframetime);
 		if (bits & U_EFFECTS)
 			MSG_WriteShort (msg, ent->v.effects);
 		if (bits & U_ORIGIN1)

@@ -580,7 +580,7 @@ void CL_ParseUpdate (int bits)
 	}
 
 	if (bits & U_FRAME)
-		ent->frame = MSG_ReadShort ();
+		ent->frame = MSG_ReadByte ();
 	else
 		ent->frame = ent->baseline.frame;
 
@@ -600,11 +600,6 @@ void CL_ParseUpdate (int bits)
 		ent->skinnum = MSG_ReadByte();
 	else
 		ent->skinnum = ent->baseline.skin;
-
-	if (bits & U_FRAMETIME)
-		ent->iframetime = MSG_ReadFloat();
-	else
-		ent->iframetime = 0.1;
 
 	if (bits & U_EFFECTS)
 		ent->effects = MSG_ReadShort();

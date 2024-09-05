@@ -71,7 +71,6 @@ typedef struct entity_s
     int						examp;		// for Alias models
 	int						effects;		// light, particals, etc
 	int						skinnum;		// for Alias models
-	int						iframetime;		// for Alias models
 	int						visframe;		// last frame this entity was
 
 	// fenix@io.com: model transform interpolation
