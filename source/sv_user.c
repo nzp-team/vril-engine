@@ -385,9 +385,9 @@ void SV_ClientThink (void)
 		return;
 
 	if ((int)sv_player->v.flags & FL_ONGROUND)
-		onground = qtrue;
+		onground = true;
 	else
-		onground = qfalse;
+		onground = false;
 
 	origin = sv_player->v.origin;
 	velocity = sv_player->v.velocity;
