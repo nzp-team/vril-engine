@@ -48,6 +48,7 @@ typedef struct
 void Cache_FreeLow (int new_low_hunk);
 void Cache_FreeHigh (int new_high_hunk);
 
+#ifdef PSP_VFPU
 void* memcpy_vfpu( void* dst, void* src, unsigned int size )
 {
 	u8* src8 = (u8*)src;
@@ -381,6 +382,7 @@ bytecopy:
 
 	return (dst);
 }
+#endif //PSP_VFPU
 
 /*
 ===================
