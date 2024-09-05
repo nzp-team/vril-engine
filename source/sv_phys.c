@@ -68,10 +68,7 @@ void SV_CheckAllEnts (void)
 		if (check->v.movetype == MOVETYPE_PUSH
 		|| check->v.movetype == MOVETYPE_NONE
 		|| check->v.movetype == MOVETYPE_FOLLOW
-		|| check->v.movetype == MOVETYPE_NOCLIP
-		|| check->v.movetype == MOVETYPE_LARM
-		|| check->v.movetype == MOVETYPE_RARM
-		|| check->v.movetype == MOVETYPE_HEAD)
+		|| check->v.movetype == MOVETYPE_NOCLIP)
 			continue;
 
 		if (SV_TestEntityPosition (check))
@@ -639,10 +636,7 @@ edict_t * SV_PushRotate (edict_t *pusher, float movetime)
 		if (check->v.movetype == MOVETYPE_PUSH
 		|| check->v.movetype == MOVETYPE_NONE
 		|| check->v.movetype == MOVETYPE_FOLLOW
-		|| check->v.movetype == MOVETYPE_NOCLIP
-		|| check->v.movetype == MOVETYPE_LARM
-		|| check->v.movetype == MOVETYPE_RARM
-		|| check->v.movetype == MOVETYPE_HEAD)
+		|| check->v.movetype == MOVETYPE_NOCLIP)
 			continue;
 
 		// if the entity is standing on the pusher, it will definately be moved
@@ -1476,22 +1470,6 @@ void SV_Physics_Follow (edict_t *ent)
 	VectorAdd (PROG_TO_EDICT(ent->v.aiment)->v.origin, ent->v.v_angle, ent->v.origin);
 	SV_LinkEdict (ent, true);
 }
-/*
-=============
-SV_Physics_Limbs
-
-Entities that are "stuck" to another entity
-=============
-*/
-void SV_Physics_Limbs (edict_t *ent)
-{
-// regular thinking
-	SV_RunThink (ent);
-	//VectorAdd (PROG_TO_EDICT(ent->v.aiment)->v.origin, ent->v.v_angle, ent->v.origin);
-
-	SV_LinkEdict (ent, true);
-}
-
 
 /*
 =============
@@ -1758,8 +1736,6 @@ void SV_Physics (void)
 			SV_Physics_Follow (ent);
 		else if(ent->v.movetype == MOVETYPE_WALK)
 			SV_Physics_Walk(ent);
-		else if (ent->v.movetype == MOVETYPE_HEAD || ent->v.movetype == MOVETYPE_RARM || ent->v.movetype == MOVETYPE_LARM)
-			SV_Physics_Limbs (ent);
 		else if (ent->v.movetype == MOVETYPE_NOCLIP)
 			SV_Physics_Noclip (ent);
 		else if (ent->v.movetype == MOVETYPE_STEP)
