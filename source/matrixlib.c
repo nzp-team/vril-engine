@@ -248,6 +248,7 @@ const matrix4x4 matrix4x4_identity =
 */
 void Matrix4x4_VectorTransform( const matrix4x4 in, const float v[3], float out[3] )
 {
+#ifdef __PSP__
 	__asm__ (
 		".set			push\n"					// save assembler option
 		".set			noreorder\n"			// suppress reordering
@@ -267,15 +268,16 @@ void Matrix4x4_VectorTransform( const matrix4x4 in, const float v[3], float out[
 		: "=m"( *out )
 		: "m"( *in ), "m"( *v )
 	);
-	/*
+#else
 	out[0] = v[0] * in[0][0] + v[1] * in[0][1] + v[2] * in[0][2] + in[0][3];
 	out[1] = v[0] * in[1][0] + v[1] * in[1][1] + v[2] * in[1][2] + in[1][3];
 	out[2] = v[0] * in[2][0] + v[1] * in[2][1] + v[2] * in[2][2] + in[2][3];
-	*/
+#endif // __PSP__
 }
 
 void Matrix4x4_VectorITransform( const matrix4x4 in, const float v[3], float out[3] )
 {
+#ifdef __PSP__
 	__asm__ (
 		".set			push\n"					// save assembler option
 		".set			noreorder\n"			// suppress reordering
@@ -300,7 +302,7 @@ void Matrix4x4_VectorITransform( const matrix4x4 in, const float v[3], float out
 		: "=m"( *out )
 		: "m"( *in ), "m"( *v )
 	);
-	/*
+#else
 	vec3_t	dir;
 
 	dir[0] = v[0] - in[0][3];
@@ -310,7 +312,7 @@ void Matrix4x4_VectorITransform( const matrix4x4 in, const float v[3], float out
 	out[0] = dir[0] * in[0][0] + dir[1] * in[1][0] + dir[2] * in[2][0];
 	out[1] = dir[0] * in[0][1] + dir[1] * in[1][1] + dir[2] * in[2][1];
 	out[2] = dir[0] * in[0][2] + dir[1] * in[1][2] + dir[2] * in[2][2];
-	*/
+#endif // __PSP__
 }
 
 void Matrix4x4_VectorRotate( const matrix4x4 in, const float v[3], float out[3] )
@@ -329,6 +331,7 @@ void Matrix4x4_VectorIRotate( const matrix4x4 in, const float v[3], float out[3]
 
 void Matrix4x4_ConcatTransforms( matrix4x4 out, const matrix4x4 in1, const matrix4x4 in2 )
 {
+#ifdef __PSP__
 	__asm__ (
 		".set			push\n"					// save assembler option
 		".set			noreorder\n"			// suppress reordering
@@ -348,7 +351,7 @@ void Matrix4x4_ConcatTransforms( matrix4x4 out, const matrix4x4 in1, const matri
 		: "=m"( *out )
 		: "m"( *in1 ), "m"( *in2 )
 	);
-	/*
+#else
 	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] + in1[0][2] * in2[2][0];
 	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] + in1[0][2] * in2[2][1];
 	out[0][2] = in1[0][0] * in2[0][2] + in1[0][1] * in2[1][2] + in1[0][2] * in2[2][2];
@@ -361,7 +364,7 @@ void Matrix4x4_ConcatTransforms( matrix4x4 out, const matrix4x4 in1, const matri
 	out[2][1] = in1[2][0] * in2[0][1] + in1[2][1] * in2[1][1] + in1[2][2] * in2[2][1];
 	out[2][2] = in1[2][0] * in2[0][2] + in1[2][1] * in2[1][2] + in1[2][2] * in2[2][2];
 	out[2][3] = in1[2][0] * in2[0][3] + in1[2][1] * in2[1][3] + in1[2][2] * in2[2][3] + in1[2][3];
-	*/
+#endif // __PSP__
 }
 
 void Matrix4x4_SetOrigin( matrix4x4 out, float x, float y, float z )
@@ -520,6 +523,7 @@ void Matrix4x4_ConvertToEntity( const matrix4x4 in, vec3_t angles, vec3_t origin
 
 void Matrix4x4_TransformPositivePlane( const matrix4x4 in, const vec3_t normal, float d, vec3_t out, float *dist )
 {
+#ifdef __PSP__
 	__asm__ (
 		".set			push\n"					// save assembler option
 		".set			noreorder\n"			// suppress reordering
@@ -546,7 +550,7 @@ void Matrix4x4_TransformPositivePlane( const matrix4x4 in, const vec3_t normal, 
 		: "=m"( *out ), "=m"( *dist )
 		: "m"( *in ), "m"( *normal ), "m"( d )
 	);
-	/*
+#else
 	float	scale = sqrt( in[0][0] * in[0][0] + in[0][1] * in[0][1] + in[0][2] * in[0][2] );
 	float	iscale = 1.0f / scale;
 
@@ -554,11 +558,12 @@ void Matrix4x4_TransformPositivePlane( const matrix4x4 in, const vec3_t normal, 
 	out[1] = (normal[0] * in[1][0] + normal[1] * in[1][1] + normal[2] * in[1][2]) * iscale;
 	out[2] = (normal[0] * in[2][0] + normal[1] * in[2][1] + normal[2] * in[2][2]) * iscale;
 	*dist = d * scale + ( out[0] * in[0][3] + out[1] * in[1][3] + out[2] * in[2][3] );
-	*/
+#endif // __PSP__
 }
 
 void Matrix4x4_TransformStandardPlane( const matrix4x4 in, const vec3_t normal, float d, vec3_t out, float *dist )
 {
+#ifdef __PSP__
 	__asm__ (
 		".set			push\n"					// save assembler option
 		".set			noreorder\n"			// suppress reordering
@@ -585,7 +590,7 @@ void Matrix4x4_TransformStandardPlane( const matrix4x4 in, const vec3_t normal, 
 		: "=m"( *out ), "=m"( *dist )
 		: "m"( *in ), "m"( *normal ), "m"( d )
 	);
-	/*
+#else
 	float scale = sqrt( in[0][0] * in[0][0] + in[0][1] * in[0][1] + in[0][2] * in[0][2] );
 	float iscale = 1.0f / scale;
 
@@ -593,7 +598,7 @@ void Matrix4x4_TransformStandardPlane( const matrix4x4 in, const vec3_t normal, 
 	out[1] = (normal[0] * in[1][0] + normal[1] * in[1][1] + normal[2] * in[1][2]) * iscale;
 	out[2] = (normal[0] * in[2][0] + normal[1] * in[2][1] + normal[2] * in[2][2]) * iscale;
 	*dist = d * scale - ( out[0] * in[0][3] + out[1] * in[1][3] + out[2] * in[2][3] );
-	*/
+#endif // __PSP__
 }
 
 void Matrix4x4_Invert_Simple( matrix4x4 out, const matrix4x4 in1 )
