@@ -424,8 +424,8 @@ void Cvar_SetQuick (cvar_t *var, const char *value)
 	}
 	//johnfitz
 
-	if (var->callback)
-		var->callback (var);
+	//if (var->callback)
+	//	var->callback (var);
 }
 
 void Cvar_SetValueQuick (cvar_t *var, const float value)
