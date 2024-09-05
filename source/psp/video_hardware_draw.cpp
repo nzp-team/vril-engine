@@ -1130,12 +1130,12 @@ void Draw_Fill (int x, int y, int w, int h, int c)
 	sceGuEnable(GU_TEXTURE_2D);
 }
 
-byte *StringToRGB (char *s)
+byte *StringToRGB (const char *s)
 {
 	byte		*col;
 	static	byte	rgb[4];
 
-	Cmd_TokenizeString (s);
+	Cmd_TokenizeString ((char*)s);
 	if (Cmd_Argc() == 3)
 	{
 		rgb[0] = (byte)Q_atoi(Cmd_Argv(0));
@@ -1144,7 +1144,7 @@ byte *StringToRGB (char *s)
 	}
 	else
 	{
-		col = (byte *)&d_8to24table[(byte)Q_atoi(s)];
+		col = (byte *)&d_8to24table[(byte)Q_atoi((char*)s)];
 		rgb[0] = col[0];
 		rgb[1] = col[1];
 		rgb[2] = col[2];

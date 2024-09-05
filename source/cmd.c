@@ -539,51 +539,6 @@ void Cmd_List_f (void)
 }
 // 2000-01-09 CmdList command by Maddes  end
 
-// 2000-01-09 CvarList command by Maddes  start
-/*
-=========
-Cvar_List
-=========
-*/
-void Cvar_List_f (void)
-{
-	cvar_t		*cvar;
-	char 		*partial;
-	int		len;
-	int		count;
-
-	if (Cmd_Argc() > 1)
-	{
-		partial = Cmd_Argv (1);
-		len = Q_strlen(partial);
-	}
-	else
-	{
-		partial = NULL;
-		len = 0;
-	}
-
-	count=0;
-	for (cvar=cvar_vars ; cvar ; cvar=cvar->next)
-	{
-		if (partial && Q_strncmp (partial,cvar->name, len))
-		{
-			continue;
-		}
-		Con_Printf ("\"%s\" is \"%s\"\n", cvar->name, cvar->string);
-		count++;
-	}
-
-	Con_Printf ("%i cvar(s)", count);
-	if (partial)
-	{
-		Con_Printf (" beginning with \"%s\"", partial);
-	}
-	Con_Printf ("\n");
-}
-// 2000-01-09 CvarList command by Maddes  end
-
-
 /*
 ============
 Cmd_Init
@@ -595,7 +550,6 @@ void Cmd_Init (void)
 // register our commands
 //
     Cmd_AddCommand ("cmdlist", Cmd_List_f);	// 2000-01-09 CmdList command by Maddes
-    Cmd_AddCommand ("cvarlist", Cvar_List_f);	// 2000-01-09 CvarList command by Maddes
 	Cmd_AddCommand ("stuffcmds",Cmd_StuffCmds_f);
 	Cmd_AddCommand ("exec",Cmd_Exec_f);
 	Cmd_AddCommand ("echo",Cmd_Echo_f);

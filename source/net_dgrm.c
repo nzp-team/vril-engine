@@ -842,31 +842,14 @@ static qsocket_t *_Datagram_CheckNewConnections (void)
 
 	if (command == CCREQ_RULE_INFO)
 	{
-		char	*prevCvarName;
-		cvar_t	*var;
+		const char	*prevCvarName;
+		cvar_t			*var;
 
 		// find the search start location
 		prevCvarName = MSG_ReadString();
-		if (*prevCvarName)
-		{
-			var = Cvar_FindVar (prevCvarName);
-			if (!var)
-				return NULL;
-			var = var->next;
-		}
-		else
-			var = cvar_vars;
-
-		// search for the next server cvar
-		while (var)
-		{
-			if (var->server)
-				break;
-			var = var->next;
-		}
+		var = Cvar_FindVarAfter (prevCvarName, CVAR_SERVERINFO);
 
 		// send the response
-
 		SZ_Clear(&net_message);
 		// save space for the header, filled in later
 		MSG_WriteLong(&net_message, 0);

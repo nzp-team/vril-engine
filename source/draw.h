@@ -43,7 +43,7 @@ int getTextWidth(char *str, int scale);
 
 //other
 void Clear_LoadingFill (void);
-byte *StringToRGB (char *s);
+byte *StringToRGB (const char *s);
 
 extern float loading_cur_step;
 extern int loading_step;
