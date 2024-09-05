@@ -87,7 +87,7 @@ void Cbuf_AddText (char *text)
 {
 	int		l;
 	
-	l = Q_strlen (text);
+	l = strlen (text);
 
 	if (cmd_text.cursize + l >= cmd_text.maxsize)
 	{
@@ -95,7 +95,7 @@ void Cbuf_AddText (char *text)
 		return;
 	}
 
-	SZ_Write (&cmd_text, text, Q_strlen (text));
+	SZ_Write (&cmd_text, text, strlen (text));
 }
 
 
@@ -163,8 +163,12 @@ void Cbuf_Execute (void)
 				break;
 		}
 			
-				
+#ifdef PSP_VFPU
 		memcpy_vfpu(line, text, i);
+#else
+		memcpy(line, text, i);
+#endif // PSP_VFPU
+
 		line[i] = 0;
 		
 // delete the text from the command buffer and move remaining commands down
@@ -392,6 +396,7 @@ void Cmd_Alias_f (void)
 	a->value = CopyString (cmd);
 }
 
+#ifdef __PSP__
 /*
 ===============
 Cmd_Maps_f
@@ -449,11 +454,7 @@ void Cmd_Maps_f (void)
 					 	    Con_Printf("%s\n",dirent.d_name);
 							break;
 			            }
-#if 0
-						if(toupper(dirent.d_name[i]) != toupper(s[i]))
-#else
 						if(dirent.d_name[i] != s[i])
-#endif
 					    {
 							break;
 						}
@@ -466,6 +467,7 @@ void Cmd_Maps_f (void)
     sceIoDclose(dir);
 
 }
+#endif // __PSP__
 
 /*
 =============================================================================
@@ -511,7 +513,7 @@ void Cmd_List_f (void)
 	if (Cmd_Argc() > 1)
 	{
 		partial = Cmd_Argv (1);
-		len = Q_strlen(partial);
+		len = strlen(partial);
 	}
 	else
 	{
@@ -522,7 +524,7 @@ void Cmd_List_f (void)
 	count=0;
 	for (cmd=cmd_functions ; cmd ; cmd=cmd->next)
 	{
-		if (partial && Q_strncmp (partial,cmd->name, len))
+		if (partial && strncmp (partial,cmd->name, len))
 		{
 			continue;
 		}
@@ -556,7 +558,13 @@ void Cmd_Init (void)
 	Cmd_AddCommand ("alias",Cmd_Alias_f);
 	Cmd_AddCommand ("cmd", Cmd_ForwardToServer);
 	Cmd_AddCommand ("wait", Cmd_Wait_f);
+
+#ifdef __PSP__
+
 	Cmd_AddCommand ("maps", Cmd_Maps_f); //Crow_bar
+
+#endif // __PSP__
+
 }
 
 /*
@@ -711,14 +719,14 @@ char *Cmd_CompleteCommand (char *partial)
 	cmd_function_t	*cmd;
 	int				len;
 	
-	len = Q_strlen(partial);
+	len = strlen(partial);
 	
 	if (!len)
 		return NULL;
 		
 // check functions
 	for (cmd=cmd_functions ; cmd ; cmd=cmd->next)
-		if (!Q_strncmp (partial,cmd->name, len))
+		if (!strncmp (partial,cmd->name, len))
 			return cmd->name;
 
 	return NULL;
@@ -749,7 +757,7 @@ void	Cmd_ExecuteString (char *text, cmd_source_t src)
 // check functions
 	for (cmd=cmd_functions ; cmd ; cmd=cmd->next)
 	{
-		if (!Q_strcasecmp (cmd_argv[0],cmd->name))
+		if (!strcasecmp (cmd_argv[0],cmd->name))
 		{
 			cmd->function ();
 			return;
@@ -759,7 +767,7 @@ void	Cmd_ExecuteString (char *text, cmd_source_t src)
 // check alias
 	for (a=cmd_alias ; a ; a=a->next)
 	{
-		if (!Q_strcasecmp (cmd_argv[0], a->name))
+		if (!strcasecmp (cmd_argv[0], a->name))
 		{
 			Cbuf_InsertText (a->value);
 			return;
@@ -792,7 +800,7 @@ void Cmd_ForwardToServer (void)
 		return;		// not really connected
 
 	MSG_WriteByte (&cls.message, clc_stringcmd);
-	if (Q_strcasecmp(Cmd_Argv(0), "cmd") != 0)
+	if (strcasecmp(Cmd_Argv(0), "cmd") != 0)
 	{
 		SZ_Print (&cls.message, Cmd_Argv(0));
 		SZ_Print (&cls.message, " ");
@@ -821,7 +829,7 @@ int Cmd_CheckParm (char *parm)
 		Sys_Error ("Cmd_CheckParm: NULL");
 
 	for (i = 1; i < Cmd_Argc (); i++)
-		if (! Q_strcasecmp (parm, Cmd_Argv (i)))
+		if (! strcasecmp (parm, Cmd_Argv (i)))
 			return i;
 			
 	return 0;
