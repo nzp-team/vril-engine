@@ -453,8 +453,7 @@ int GL_LoadTexturePixels (byte *data, char *identifier, int width, int height, i
 #define ISSKYTEX(name)		((name)[0] == 's' && (name)[1] == 'k' && (name)[2] == 'y')
 
 #define ISTURBTEX(name)		((loadmodel->bspversion == BSPVERSION && (name)[0] == '*') ||	\
-							 (loadmodel->bspversion == HL_BSPVERSION && (name)[0] == '!') ||	\
-							 (loadmodel->bspversion == NZP_BSPVERSION && (name)[0] == '!'))
+							 (loadmodel->bspversion == HL_BSPVERSION && (name)[0] == '!')
 
 extern int nonetexture;
 /*
@@ -531,13 +530,13 @@ void Mod_LoadTextures (lump_t *l)
 			level = 3;
 
     //if (loadmodel->isworldmodel && loadmodel->bspversion != HL_BSPVERSION && ISSKYTEX(tx->name))
-    if (loadmodel->bspversion != HL_BSPVERSION && loadmodel->bspversion != NZP_BSPVERSION && ISSKYTEX(tx->name))
+    if (loadmodel->bspversion != HL_BSPVERSION)
 	{
 		R_InitSky (tx_pixels);
  	}
 	else
 	{
-		if (loadmodel->bspversion == HL_BSPVERSION || loadmodel->bspversion == NZP_BSPVERSION)
+		if (loadmodel->bspversion == HL_BSPVERSION)
 		{
 			
 			char filename[64];		// Filename to check r4w file
@@ -744,7 +743,7 @@ void Mod_LoadLighting (lump_t *l)
 
 	loadmodel->lightdata = NULL;
 	
-	if (loadmodel->bspversion == HL_BSPVERSION || loadmodel->bspversion == NZP_BSPVERSION)
+	if (loadmodel->bspversion == HL_BSPVERSION)
 	{
 		if (!l->filelen)
 		{
@@ -957,7 +956,7 @@ void Mod_LoadEntities (lump_t *l)
 	loadmodel->entities = static_cast<char*>(Hunk_AllocName ( l->filelen, entfilename));
 	memcpy_vfpu(loadmodel->entities, mod_base + l->fileofs, l->filelen);
 
-	if (loadmodel->bspversion == HL_BSPVERSION || loadmodel->bspversion == NZP_BSPVERSION)
+	if (loadmodel->bspversion == HL_BSPVERSION)
 		Mod_ParseWadsFromEntityLump(loadmodel->entities);
 }
 
@@ -1216,7 +1215,7 @@ void Mod_LoadFaces (lump_t *l)
 		for (i=0 ; i<MAXLIGHTMAPS ; i++)
 			out->styles[i] = in->styles[i];
 		
-		if (loadmodel->bspversion == HL_BSPVERSION || loadmodel->bspversion == NZP_BSPVERSION)
+		if (loadmodel->bspversion == HL_BSPVERSION)
 			i = LittleLong(in->lightofs);
 		else
 			i = LittleLong(in->lightofs * 3);
@@ -1409,7 +1408,7 @@ void Mod_LoadClipnodes (lump_t *l)
 	loadmodel->clipnodes = out;
 	loadmodel->numclipnodes = count;
 
-	if (loadmodel->bspversion == HL_BSPVERSION || loadmodel->bspversion == NZP_BSPVERSION)
+	if (loadmodel->bspversion == HL_BSPVERSION)
 	{
 		hull = &loadmodel->hulls[1];
 		hull->clipnodes = out;
@@ -1649,7 +1648,7 @@ void Mod_LoadBrushModel (model_t *mod, void *buffer)
 
 	mod->bspversion = LittleLong (header->version);
 
-    if (mod->bspversion != BSPVERSION && mod->bspversion != HL_BSPVERSION && mod->bspversion != NZP_BSPVERSION)
+    if (mod->bspversion != BSPVERSION && mod->bspversion != HL_BSPVERSION)
 		Host_Error ("Mod_LoadBrushModel: %s has wrong version number (%i should be %i (Quake) or %i (HalfLife))", mod->name, mod->bspversion, BSPVERSION, HL_BSPVERSION);
 
     //loadmodel->isworldmodel = !strcmp(loadmodel->name, va("maps/%s.bsp", mapname.string));
@@ -1698,7 +1697,7 @@ void Mod_LoadBrushModel (model_t *mod, void *buffer)
 	Mod_LoadTextures (&header->lumps[LUMP_TEXTURES]);
 
 
-	if(mod->bspversion == HL_BSPVERSION || mod->bspversion == NZP_BSPVERSION) // dr_mabuse1981
+	if(mod->bspversion == HL_BSPVERSION) // dr_mabuse1981
 	{
 		Mod_HL_LoadLighting (&header->lumps[LUMP_LIGHTING]);
 	}

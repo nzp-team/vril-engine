@@ -53,10 +53,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //=============================================================================
 
 
-#define BSPVERSION	    29
-#define HL_BSPVERSION    30
-#define NZP_BSPVERSION    1337
-#define	TOOLVERSION	    2
+#define BSPVERSION	29
+#define HL_BSPVERSION 30
+#define	TOOLVERSION	2
 
 typedef struct
 {
@@ -78,6 +77,7 @@ typedef struct
 #define	LUMP_EDGES		12
 #define	LUMP_SURFEDGES	13
 #define	LUMP_MODELS		14
+
 #define	HEADER_LUMPS	15
 
 typedef struct
@@ -306,7 +306,6 @@ typedef struct
 	int			numbrushes;
 	epair_t		*epairs;
 } entity_t;
-
 
 extern	int			num_entities;
 extern	entity_t	entities[MAX_MAP_ENTITIES];
