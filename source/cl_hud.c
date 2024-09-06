@@ -64,7 +64,6 @@ qpic_t      *fx_blood_ld;
 qpic_t      *fx_blood_rd;
 
 qboolean	sb_showscores;
-qboolean 	domaxammo;
 qboolean 	has_chaptertitle;
 qboolean 	doubletap_has_damage_buff;
 
@@ -75,6 +74,8 @@ void M_DrawPic (int x, int y, qpic_t *pic);
 double HUD_Change_time;//hide hud when not chagned
 double bettyprompt_time;
 double nameprint_time;
+double hud_maxammo_starttime;
+double hud_maxammo_endtime;
 
 char player_name[16];
 
@@ -585,14 +586,38 @@ int maxammoopac;
 
 void HUD_MaxAmmo(void)
 {
-	maxammoy -= cl.time * 0.003;
-	maxammoopac -= 5;
+	char* maxammo_string = "Max Ammo!";
 
-	Draw_ColoredStringCentered(maxammoy, "MAX AMMO!", 255, 255, 255, maxammoopac, 1);
+	int start_y = 55;
+	int end_y = 45;
+	int diff_y = end_y - start_y;
 
-	if (maxammoopac <= 0) {
-		domaxammo = false;
+	float text_alpha = 1.0f;
+
+	int pos_y;
+
+	double start_time, end_time;
+
+	// For the first 0.5s, stay still while we fade in
+	if (hud_maxammo_endtime > sv.time + 1.5) {
+		start_time = hud_maxammo_starttime;
+		end_time = hud_maxammo_starttime + 0.5;
+
+		text_alpha = (sv.time - start_time) / (end_time - start_time);
+		pos_y = start_y;
 	}
+	// For the remaining 1.5s, fade out while we fly upwards.
+	else {
+		start_time = hud_maxammo_starttime + 0.5;
+		end_time = hud_maxammo_endtime;
+
+		float percent_time = (sv.time - start_time) / (end_time - start_time);
+
+		pos_y = start_y + diff_y * percent_time;
+		text_alpha = 1 - percent_time;
+	}
+
+	Draw_ColoredStringCentered(pos_y, maxammo_string, 255, 255, 255, (int)(255 * text_alpha), 1);
 }
 
 /*
@@ -1596,13 +1621,8 @@ void HUD_Draw (void)
 	HUD_Point_Change();
 	HUD_Achievement();
 
-	if (domaxammo == true) {
-		if (maxammoopac <= 0) {
-			maxammoopac = 255;
-			maxammoy = 48;
-		}
+	if (hud_maxammo_endtime > sv.time)
 		HUD_MaxAmmo();
-	}
 
 	// This should always come last!
 	if (screenflash_duration > sv.time)
