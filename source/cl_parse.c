@@ -21,8 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-extern 	cvar_t	bgmtype;
-
 extern 	qboolean 	domaxammo;
 qboolean 			crosshair_pulse_grenade;
 
@@ -161,6 +159,7 @@ Crow_bar.
 */
 void CL_ParseBSPDecal (void)
 {
+#ifdef __PSP__
 	vec3_t		pos;
 	int			decal_size;
 	char        *texname;
@@ -177,6 +176,7 @@ void CL_ParseBSPDecal (void)
 	Con_Printf("BSPDECAL[tex: %s size: %i pos: %f %f %f]\n", texname, decal_size, pos[0], pos[1], pos[2]);
 
 	R_SpawnDecalBSP(pos, texname, decal_size);
+#endif // __PSP__
 }
 
 /*
@@ -208,7 +208,11 @@ void CL_KeepaliveMessage (void)
 
 // read messages from server, should just be nops
 	old = net_message;
+#ifdef PSP_VFPU
 	memcpy_vfpu(olddata, net_message.data, net_message.cursize);
+#else
+	memcpy(olddata, net_message.data, net_message.cursize);
+#endif // PSP_VFPU
 
 	do
 	{
@@ -230,7 +234,11 @@ void CL_KeepaliveMessage (void)
 	} while (ret);
 
 	net_message = old;
+#ifdef PSP_VFPU
 	memcpy_vfpu(net_message.data, olddata, net_message.cursize);
+#else
+	memcpy(net_message.data, olddata, net_message.cursize);
+#endif // PSP_VFPU
 
 // check time
 	time = Sys_FloatTime ();
@@ -269,7 +277,6 @@ void CL_ParseServerInfo (void)
 	int		nummodels, numsounds;
 	char	model_precache[MAX_MODELS][MAX_QPATH];
 	char	sound_precache[MAX_SOUNDS][MAX_QPATH];
-	extern qboolean r_loadq3player;
 
 	//void R_PreMapLoad (char *);
 
@@ -347,28 +354,6 @@ void CL_ParseServerInfo (void)
 			return;
 		}
 
-		if (r_loadq3models.value)
-		{
-			if (!strcmp(str, "models/player.mdl") &&
-			    FS_FindFile("models/player/head.md3") &&
-			    FS_FindFile("models/player/upper.md3") &&
-			    FS_FindFile("models/player/lower.md3"))
-			{
-				Q_strncpyz (tempname, "models/player/lower.md3", MAX_QPATH);
-				str = tempname;
-				cl_modelindex[mi_player] = nummodels;
-				r_loadq3player = true;
-			}
-			else
-			{
-				COM_StripExtension (str, tempname);
-				strcat (tempname, ".md3");
-
-				if (FS_FindFile(tempname))
-					str = tempname;
-			}
-		}
-
 		Q_strncpyz (model_precache[nummodels], str, sizeof(model_precache[nummodels]));
 		//Con_Printf("%i,",nummodels);
 
@@ -381,23 +366,6 @@ void CL_ParseServerInfo (void)
 		else if (!strcmp(model_precache[nummodels], "progs/flame2.mdl"))
 			cl_modelindex[mi_flame2] = nummodels;
   }
-	//Con_Printf("...\n");
-
-    if (r_loadq3player)
-	{
-		if (nummodels + 1 >= MAX_MODELS)
-		{
-			Con_Printf ("Server sent too many model precaches -> can't load Q3 player model\n");
-			Q_strncpyz (model_precache[cl_modelindex[mi_player]], cl_modelnames[mi_player], sizeof(model_precache[cl_modelindex[mi_player]]));
-		}
-		else
-		{
-			Q_strncpyz (model_precache[nummodels], "models/player/upper.md3", sizeof(model_precache[nummodels]));
-			cl_modelindex[mi_q3torso] = nummodels++;
-			Q_strncpyz (model_precache[nummodels], "models/player/head.md3", sizeof(model_precache[nummodels]));
-			cl_modelindex[mi_q3head] = nummodels++;
-		}
-	}
 
 // precache sounds
 	//Con_Printf("Got Sounds to load: ");
@@ -1375,16 +1343,6 @@ void CL_ParseServerMessage (void)
 		case svc_cdtrack:
 			cl.cdtrack = MSG_ReadByte ();
 			cl.looptrack = MSG_ReadByte ();
-
-			if (strcasecmp(bgmtype.string,"cd") == 0)
-			{
-				if ( (cls.demoplayback || cls.demorecording) && (cls.forcetrack != -1) )
-					CDAudio_Play ((byte)cls.forcetrack, true);
-				else
-					CDAudio_Play ((byte)cl.cdtrack, true);
-			}
-			else
-			   CDAudio_Stop();
 			break;
 
 		case svc_intermission:
