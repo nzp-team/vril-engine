@@ -1106,8 +1106,8 @@ void SCR_DrawLoadScreen (void)
 		if (lscreen_index > 0)
 			Draw_PicIndex(scr_vrect.x, scr_vrect.y, 480, 272, lscreen_index);
 
-		Draw_FillByColor(0, 0, 480, 24, GU_RGBA(0, 0, 0, 150));
-		Draw_FillByColor(0, 248, 480, 24, GU_RGBA(0, 0, 0, 150));
+		Draw_FillByColor(0, 0, 480, 24, 0, 0, 0, 150);
+		Draw_FillByColor(0, 248, 480, 24, 0, 0, 0, 150);
 
 		Draw_ColoredString(2, 4, loadnamespec, 255, 255, 0, 255, 2);
 	}
@@ -1561,7 +1561,7 @@ void SCR_UpdateScreen (void)
 	GL_Set2D ();
 
 	if (v_gamma.value < 1)
-		Draw_FillByColor(0, 0, 480, 272, GU_RGBA(255, 255, 255, (int)((1 - v_gamma.value)*255)));
+		Draw_FillByColor(0, 0, 480, 272, 255, 255, 255, (int)((1 - v_gamma.value)*255));
 
 	Draw_Crosshair ();
 

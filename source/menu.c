@@ -452,7 +452,7 @@ static void M_Start_Menu_Draw ()
 	Draw_PicIndex (0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
+	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
 
 	Draw_ColoredStringCentered(vid.height - 64, "Press Start", 255, 0, 0, 255, 1);
 }
@@ -487,7 +487,7 @@ void M_Paused_Menu_f ()
 static void M_Paused_Menu_Draw ()
 {
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
+	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
 
 	// Header
 	Draw_ColoredString(10, 10, "PAUSED", 255, 255, 255, 255, 2);
@@ -596,7 +596,7 @@ void M_Main_Draw (void)
 	Draw_PicIndex (0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
+	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
 
 	// Version String
 	Draw_ColoredString((vid.width - getTextWidth(game_build_date, 1)) + 4, 5, game_build_date, 255, 255, 255, 255, 1);
@@ -615,7 +615,7 @@ void M_Main_Draw (void)
 	Draw_ColoredString(10, 55, "Co-Op (Coming Soon!)", 128, 128, 128, 255, 1);
 
 	// Divider
-	Draw_FillByColor(10, 68, 160, 2, GU_RGBA(130, 130, 130, 255));
+	Draw_FillByColor(10, 68, 160, 2, 130, 130, 130, 255);
 
 	if (m_main_cursor == 1)
 		Draw_ColoredString(10, 75, "Settings", 255, 0, 0, 255, 1);
@@ -628,7 +628,7 @@ void M_Main_Draw (void)
 		Draw_ColoredString(10, 85, "Achievements", 255, 255, 255, 255, 1);
 
 	// Divider
-	Draw_FillByColor(10, 98, 160, 2, GU_RGBA(130, 130, 130, 255));
+	Draw_FillByColor(10, 98, 160, 2, 130, 130, 130, 255);
 
 	if (m_main_cursor == 3)
 		Draw_ColoredString(10, 105, "Credits", 255, 0, 0, 255, 1);
@@ -636,7 +636,7 @@ void M_Main_Draw (void)
 		Draw_ColoredString(10, 105, "Credits", 255, 255, 255, 255, 1);
 
 	// Divider
-	Draw_FillByColor(10, 118, 160, 2, GU_RGBA(130, 130, 130, 255));
+	Draw_FillByColor(10, 118, 160, 2, 130, 130, 130, 255);
 
 	if (m_main_cursor == 4)
 		Draw_ColoredString(10, 125, "Exit", 255, 0, 0, 255, 1);
@@ -877,7 +877,7 @@ void M_Map_Draw (void)
 	Draw_PicIndex(0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
+	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
 
 	// Header
 	Draw_ColoredString(10, 10, "CUSTOM MAPS", 255, 255, 255, 255, 2);
@@ -1092,7 +1092,7 @@ void M_SinglePlayer_Draw (void)
 	Draw_PicIndex(0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
+	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
 
 	// Header
 	Draw_ColoredString(10, 10, "SOLO", 255, 255, 255, 255, 2);
@@ -1104,7 +1104,7 @@ void M_SinglePlayer_Draw (void)
 		Draw_ColoredString(10, 45, "Nacht der Untoten", 255, 255, 255, 255, 1);
 
 	// Divider
-	Draw_FillByColor(10, 58, 160, 2, GU_RGBA(130, 130, 130, 255));
+	Draw_FillByColor(10, 58, 160, 2, 130, 130, 130, 255);
 
 	// Warehouse
 	if (m_singleplayer_cursor == 1)
@@ -1125,7 +1125,7 @@ void M_SinglePlayer_Draw (void)
 		Draw_ColoredString(10, 85, "Christmas Special", 255, 255, 255, 255, 1);
 
 	// Divider
-	Draw_FillByColor(10, 98, 160, 2, GU_RGBA(130, 130, 130, 255));
+	Draw_FillByColor(10, 98, 160, 2, 130, 130, 130, 255);
 
 	// Custom Maps
 	if (m_singleplayer_cursor == 4)
@@ -1524,16 +1524,16 @@ void M_Achievement_Draw (void)
 		Draw_PicIndex (0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
+	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
 
     if (!m_achievement_selected)
     {
-        Draw_FillByColor(15, 8, 225, 12, GU_RGBA(204, 0, 0, 100));
-        Draw_FillByColor(240, 8, 225, 12, GU_RGBA(0, 0, 0, 100));
+        Draw_FillByColor(15, 8, 225, 12, 204, 0, 0, 100);
+        Draw_FillByColor(240, 8, 225, 12, 0, 0, 0, 100);
 
         if (total_unlocked_achievements <= 0)
         {
-            Draw_FillByColor(15, 25, vid.width - 30, 60, GU_RGBA (0, 0, 0, 100));
+            Draw_FillByColor(15, 25, vid.width - 30, 60, 0, 0, 0, 100);
             Draw_Pic (20, 30 + y, achievement_locked);
             Draw_String (125, 30 + y, "No achievements unlocked :(");
         }
@@ -1543,7 +1543,7 @@ void M_Achievement_Draw (void)
             {
                 if (unlocked_achievement[i + m_achievement_scroll[0]] >= 0)
                 {
-                    Draw_FillByColor(15, 25 + y, vid.width - 30, 60, GU_RGBA (0, 0, 0, 100));
+                    Draw_FillByColor(15, 25 + y, vid.width - 30, 60, 0, 0, 0, 100);
 
                     Draw_Pic (20, 30 + y, achievement_list[unlocked_achievement[i + m_achievement_scroll[0]]].img);
                     Draw_String (125, 30 + y, achievement_list[unlocked_achievement[i + m_achievement_scroll[0]]].name);
@@ -1570,19 +1570,19 @@ void M_Achievement_Draw (void)
     {
         if (total_locked_achievements <= 0)
         {
-            Draw_FillByColor(15, 25, vid.width - 30, 60, GU_RGBA (0, 0, 0, 100));
+            Draw_FillByColor(15, 25, vid.width - 30, 60, 0, 0, 0, 100);
             Draw_Pic (20, 30 + y, achievement_locked);
             Draw_String (125, 30 + y, "All achievements unlocked :)");
         }
 
-        Draw_FillByColor(15, 8, 225, 12, GU_RGBA(0, 0, 0, 100));
-        Draw_FillByColor(240, 8, 225, 12, GU_RGBA(204, 0, 0, 100));
+        Draw_FillByColor(15, 8, 225, 12, 0, 0, 0, 100);
+        Draw_FillByColor(240, 8, 225, 12, 204, 0, 0, 100);
 
         for (i = 0; i < 3; i++)
         {
             if (locked_achievement[i + m_achievement_scroll[1]] >= 0)
             {
-                Draw_FillByColor(15, 25 + y, vid.width - 30, 60, GU_RGBA (0, 0, 0, 100));
+                Draw_FillByColor(15, 25 + y, vid.width - 30, 60, 0, 0, 0, 100);
 
                 Draw_Pic (20, 30 + y, achievement_locked);
                 Draw_String (125, 30 + y, achievement_list[locked_achievement[i + m_achievement_scroll[1]]].name);
@@ -2731,7 +2731,7 @@ void M_Screen_Draw (void)
 		Draw_PicIndex (0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
+	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
 
 	// Header
 	Draw_ColoredString(10, 10, "GRAPHICS SETTINGS", 255, 255, 255, 255, 2);
@@ -3023,7 +3023,7 @@ void M_Gameplay_Draw (void)
 		Draw_PicIndex (0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
+	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
 
 	// Header
 	Draw_ColoredString(10, 10, "CONTROL SETTINGS", 255, 255, 255, 255, 2);
@@ -3200,7 +3200,7 @@ void M_Options_Draw (void)
 		Draw_PicIndex (0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
+	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
 
 	// Header
 	Draw_ColoredString(10, 10, "SETTINGS", 255, 255, 255, 255, 2);
@@ -3224,7 +3224,7 @@ void M_Options_Draw (void)
 		Draw_ColoredString(10, 65, "Control Settings", 255, 255, 255, 255, 1);
 
 	// Divider
-	Draw_FillByColor(10, 78, 160, 2, GU_RGBA(130, 130, 130, 255));
+	Draw_FillByColor(10, 78, 160, 2, 130, 130, 130, 255);
 
 	// Console
 	if (options_cursor == 3)
@@ -3431,7 +3431,7 @@ void M_Keys_Draw (void)
 		Draw_PicIndex(0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
+	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
 
 	// Header
 	Draw_ColoredString(10, 10, "CONTROLS", 255, 255, 255, 255, 2);
@@ -3578,7 +3578,7 @@ void M_Credits_Draw (void)
 	Draw_PicIndex(0, 0, 480, 272, menu_bk);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 480, 272, GU_RGBA(0, 0, 0, 102));
+	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
 
 	// Header
 	Draw_ColoredString(10, 10, "CREDITS", 255, 255, 255, 255, 2);

@@ -931,6 +931,65 @@ void Draw_StretchPic (int x, int y, qpic_t *pic, int x_value, int y_value)
 	sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D, 2, 0, vertices);
 
 }
+
+/*
+=============
+Draw_ColoredStretchPic
+=============
+*/
+void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value, int r, int g, int b, int a)
+{
+	sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
+
+	glpic_t			*gl;
+
+	gl = (glpic_t *)pic->data;
+	if (!gl->index)
+        GL_Bind (nonetexture);
+	else
+        GL_Bind (gl->index);
+
+	struct vertex
+	{
+		unsigned short			u, v;
+		short			x, y, z;
+	};
+
+
+	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
+	const gltexture_t& glt = gltextures[gl->index];
+	vertices[0].u = 0;
+	vertices[0].v = 0;
+	vertices[0].x = x;
+	vertices[0].y = y;
+	vertices[0].z = 0;
+
+	if (gltextures[gl->index].islmp)
+	{
+		vertices[1].u		= glt.original_width;
+		vertices[1].v		= glt.original_height;
+	}
+	else
+	{
+		vertices[1].u = glt.width;
+		vertices[1].v = glt.height;
+	}
+	vertices[1].x = x + x_value;
+	vertices[1].y = y + y_value;
+	vertices[1].z = 0;
+
+		sceGuColor(GU_RGBA(
+	static_cast<unsigned int>(r),
+	static_cast<unsigned int>(g),
+	static_cast<unsigned int>(b),
+	static_cast<unsigned int>(a)));
+
+	sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D, 2, 0, vertices);
+
+	sceGuColor(0xffffffff);
+	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
+}
+
 /*
 =============
 Draw_TransPic
@@ -1049,8 +1108,8 @@ void Draw_LoadingFill(void)
 		loading_cur_step = loading_cur_step_bk;
 
     float loadsize = loading_cur_step * (max_step / loading_num_step);
-	Draw_FillByColor (x - 2, y - 2, max_step + 4, size + 4, GU_RGBA(69, 69, 69, 255));
-	Draw_FillByColor (x, y, loadsize, size, GU_RGBA(0, 0, 0, 200));
+	Draw_FillByColor (x - 2, y - 2, max_step + 4, size + 4, 69, 69, 69, 255);
+	Draw_FillByColor (x, y, loadsize, size, 0, 0, 0, 200);
 
 	switch(loading_step) {
 		case 1: text = "Loading Models.."; break;
@@ -1082,8 +1141,10 @@ Draw_FillByColor
 Fills a box of pixels with a single color
 =============
 */
-void Draw_FillByColor (int x, int y, int w, int h, unsigned int c)
+void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a)
 {
+	unsigned int c = GU_RGBA(r, g, b, a);
+
 	struct vertex
 	{
 		short x, y, z;
@@ -1337,8 +1398,8 @@ extern qboolean crosshair_pulse_grenade;
 void Draw_Crosshair (void)
 {
 	if (cl_crosshair_debug.value) {
-		Draw_FillByColor(vid.width/2, 0, 1, 272, GU_RGBA(255, 0, 0, 255));
-		Draw_FillByColor(0, vid.height/2, 480, 1, GU_RGBA(0, 255, 0, 255));
+		Draw_FillByColor(vid.width/2, 0, 1, 272, 255, 0, 0, 255);
+		Draw_FillByColor(0, vid.height/2, 480, 1, 0, 255, 0, 255);
 	}
 
 	if (cl.stats[STAT_HEALTH] <= 20)
@@ -1351,10 +1412,10 @@ void Draw_Crosshair (void)
 		Draw_Pic (112, 7, sniper_scope);
 
 		// And its borders
-		Draw_FillByColor(0, 0, 480, 7, GU_RGBA(0, 0, 0, 255)); // Top
-		Draw_FillByColor(0, 263, 480, 9, GU_RGBA(0, 0, 0, 255)); // Bottom
-		Draw_FillByColor(0, 7, 112, 256, GU_RGBA(0, 0, 0, 255)); // Left
-		Draw_FillByColor(368, 7, 112, 256, GU_RGBA(0, 0, 0, 255)); // Right
+		Draw_FillByColor(0, 0, 480, 7, 0, 0, 0, 255); // Top
+		Draw_FillByColor(0, 263, 480, 9, 0, 0, 0, 255); // Bottom
+		Draw_FillByColor(0, 7, 112, 256, 0, 0, 0, 255); // Left
+		Draw_FillByColor(368, 7, 112, 256, 0, 0, 0, 255); // Right
 	}
 		
    	if (Hitmark_Time > sv.time)
@@ -1420,22 +1481,22 @@ void Draw_Crosshair (void)
 		// Left
 		x_value = x_center - crosshair_offset_step;
 		y_value = y_center;
-		Draw_FillByColor(x_value, y_value, 3, 1, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
+		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		// Right
 		x_value = x_center + crosshair_offset_step - 3;
 		y_value = y_center;
-		Draw_FillByColor(x_value, y_value, 3, 1, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
+		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		// Top
 		x_value = x_center;
 		y_value = y_center - crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
+		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		// Bottom
 		x_value = x_center;
 		y_value = y_center + crosshair_offset_step - 3;
-		Draw_FillByColor(x_value, y_value, 1, 3, GU_RGBA(255, (int)col, (int)col, (int)crosshair_opacity));
+		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
 	}
 	// Area of Effect (o)
 	else if (crosshair.value == 2) {
@@ -1463,22 +1524,22 @@ void Draw_Crosshair (void)
 		// Left
 		x_value = x_center - crosshair_offset_step;
 		y_value = y_center;
-		Draw_FillByColor(x_value, y_value, 3, 1, GU_RGBA(255, 255, 255, 255));
+		Draw_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
 
 		// Right
 		x_value = x_center + crosshair_offset_step - 2;
 		y_value = y_center;
-		Draw_FillByColor(x_value, y_value, 3, 1, GU_RGBA(255, 255, 255, 255));
+		Draw_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
 
 		// Top
 		x_value = x_center;
 		y_value = y_center - crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, GU_RGBA(255, 255, 255, 255));
+		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
 
 		// Bottom
 		x_value = x_center;
 		y_value = y_center + crosshair_offset_step - 3;
-		Draw_FillByColor(x_value, y_value, 1, 3, GU_RGBA(255, 255, 255, 255));
+		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
 	}
 }
 

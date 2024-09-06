@@ -620,6 +620,7 @@ void PF_sound (void)
 	attenuation = G_FLOAT(OFS_PARM4);
 
 	// AWFUL AWFUL HACK for limiting zombie sound variations
+#ifndef _3DS
 #ifndef SLIM
 	char* s = sample;
 
@@ -641,6 +642,7 @@ void PF_sound (void)
 	}
 
 #endif // SLIM
+#endif // _3DS
 
 	if (volume < 0 || volume > 255)
 		Sys_Error ("SV_StartSound: volume = %i", volume);
