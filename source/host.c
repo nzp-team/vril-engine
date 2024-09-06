@@ -20,10 +20,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // host.c -- coordinates spawning and killing of local servers
 
 #include "quakedef.h"
+
+#ifdef __PSP__
 #include "thread.h"
 #include "psp/module.h"
 #include <pspge.h>
 #include <pspsysevent.h>
+#endif // __PSP__
 
 /*
 
@@ -70,7 +73,11 @@ cvar_t	samelevel = {"samelevel","0"};
 
 cvar_t	show_fps = {"show_fps","0", true};	// set for running times - muff
 cvar_t	cl_maxfps = {"cl_maxfps", "30", true}; // dr_mabuse1981: maxfps setting
+
+#ifdef __PSP__
 cvar_t	show_bat = {"show_bat","0"};	// test
+#endif // __PSP__
+
 int			fps_count;
 
 cvar_t	developer = {"developer","0"};
@@ -226,7 +233,10 @@ void Host_InitLocal (void)
 	Cvar_RegisterVariable (&sys_ticrate);
 	Cvar_RegisterVariable (&serverprofile);
 
+#ifdef __PSP__
     Cvar_RegisterVariable (&show_bat); // Crow_bar battery info
+#endif // __PSP__
+
 	Cvar_RegisterVariable (&show_fps); // muff
 	Cvar_RegisterVariable (&cl_maxfps); // dr_mabuse1981: maxfps setting
 	Cvar_RegisterVariable (&fraglimit);
@@ -877,11 +887,22 @@ void Host_Init (quakeparms_t *parms)
 	Mod_Init ();
 	NET_Init ();
 	SV_Init ();
+
+#ifdef __PSP__
 	Con_Printf ("PSP NZP v%4.1f (PBP: "__TIME__" "__DATE__")\n", (float)(VERSION));
-	Con_Printf ("%4.1f megabyte heap \n",parms->memsize/ (1024*1024.0));
 	Con_Printf ("%4.1f megabyte PSP application heap \n",1.0f*PSP_HEAP_SIZE_MB);
 	Con_Printf ("PSP Model: %s\n", Sys_GetPSPModel());
 	Con_Printf ("VRAM Size: %i bytes\n", sceGeEdramGetSize());
+#elif __3DS
+	Con_Printf ("3DS NZP v%4.1f (3DSX: "__TIME__" "__DATE__")\n", (float)(VERSION));
+
+	if (new3ds_flag)
+		Con_Printf ("3DS Model: NEW Nintendo 3DS\n");
+	else
+		Con_Printf ("3DS Model: Nintendo 3DS\n");
+#endif // __PSP__, _3DS
+
+	Con_Printf ("%4.1f megabyte Quake hunk \n",parms->memsize/ (1024*1024.0));
 
 	R_InitTextures ();		// needed even for dedicated servers
 	if (cls.state != ca_dedicated)
@@ -894,6 +915,7 @@ void Host_Init (quakeparms_t *parms)
 		if (!host_colormap)
 			Sys_Error ("Couldn't load gfx/colormap.lmp");
 
+#ifdef __PSP__
 		host_q2pal = (byte *)COM_LoadHunkFile ("gfx/q2pal.lmp");
 		if (!host_q2pal)
 			Sys_Error ("Couldn't load gfx/q2pal.lmp");
@@ -901,6 +923,7 @@ void Host_Init (quakeparms_t *parms)
 		host_h2pal = (byte *)COM_LoadHunkFile ("gfx/h2pal.lmp");
 		if (!host_h2pal)
 			Sys_Error ("Couldn't load gfx/h2pal.lmp");
+#endif // __PSP__
 
 		IN_Init ();
 		VID_Init (host_basepal);
@@ -920,8 +943,7 @@ void Host_Init (quakeparms_t *parms)
 
 	host_initialized = true;
 	M_Start_Menu_f();
-	Sys_Printf ("========Quake Initialized=========\n");
-	Con_Printf ("==========NZP Initialized=========\n");
+	Sys_Printf ("========Nazi Zombies Portable Initialized=========\n");	
 }
 
 
@@ -952,8 +974,10 @@ void Host_Shutdown(void)
 
 	Host_WriteConfiguration ();
 
+#ifdef __PSP__
 	if (con_initialized)
-	History_Shutdown ();
+		History_Shutdown ();
+#endif // __PSP__
 
 	CDAudio_Shutdown ();
 	NET_Shutdown ();

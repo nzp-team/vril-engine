@@ -406,9 +406,18 @@ void Host_SavegameComment (char *text)
 
 	for (i=0 ; i<SAVEGAME_COMMENT_LENGTH ; i++)
 		text[i] = ' ';
+
+#ifdef PSP_VFPU
 	memcpy_vfpu(text, cl.levelname, strlen(cl.levelname));
+#else
+	memcpy(text, cl.levelname, strlen(cl.levelname));
+#endif // PSP_VFPU
 	sprintf (kills,"kills:%3i/%3i", cl.stats[STAT_INSTA], cl.stats[STAT_ROUNDCHANGE]);
+#ifdef PSP_VFPU
 	memcpy_vfpu(text+22, kills, strlen(kills));
+#else
+	memcpy(text+22, kills, strlen(kills));
+#endif // PSP_VFPU
 // convert space to _ to make stdio happy
 	for (i=0 ; i<SAVEGAME_COMMENT_LENGTH ; i++)
 		if (text[i] == ' ')

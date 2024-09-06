@@ -2678,6 +2678,7 @@ void PF_precache_sound (void)
 	PR_CheckEmptyString (s);
 
 	// AWFUL AWFUL HACK for limiting zombie sound variations
+#ifndef _3DS
 #ifndef SLIM
 
 	if (s[strlen(s) - 6] == 'r' || s[strlen(s) - 6] == 'd' || s[strlen(s) - 6] == 'a' ||
@@ -2699,6 +2700,7 @@ void PF_precache_sound (void)
 	
 
 #endif // SLIM
+#endif // _3DS
 
 
 	for (i=0 ; i<MAX_SOUNDS ; i++)
