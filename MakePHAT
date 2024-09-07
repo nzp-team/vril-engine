@@ -23,7 +23,7 @@ endif
 
 COMMON_OBJS = \
 	source/psp/battery.o \
-	source/thread.o \
+	source/psp/thread.o \
 	source/psp/VramExt.o \
 	source/psp/input.o \
 	source/psp/main.o \

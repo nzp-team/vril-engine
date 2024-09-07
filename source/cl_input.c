@@ -136,7 +136,11 @@ void IN_LeftUp(void) {KeyUp(&in_left);}
 void IN_RightDown(void) {KeyDown(&in_right);}
 void IN_RightUp(void) {KeyUp(&in_right);}
 void IN_ForwardDown(void) {KeyDown(&in_forward);}
-void IN_ForwardUp(void) {KeyUp(&in_forward);Cbuf_AddText("impulse 24\n");}
+void IN_ForwardUp(void) {KeyUp(&in_forward);
+#ifdef __PSP__
+	Cbuf_AddText("impulse 24\n");
+#endif // __PSP__
+}
 void IN_BackDown(void) {KeyDown(&in_back);}
 void IN_BackUp(void) {KeyUp(&in_back);}
 void IN_LookupDown(void) {KeyDown(&in_lookup);}
@@ -291,8 +295,13 @@ void CL_AdjustAngles (void)
 
 	if (!(in_strafe.state & 1))
 	{
+#ifdef __PSP__
 		cl.viewangles[YAW] -= speed*cl_yawspeed.value*CL_KeyState (&in_right) * in_sensitivity.value;
 		cl.viewangles[YAW] += speed*cl_yawspeed.value*CL_KeyState (&in_left) * in_sensitivity.value;
+#else
+		cl.viewangles[YAW] -= speed*cl_yawspeed.value*CL_KeyState (&in_right) * sensitivity.value;
+		cl.viewangles[YAW] += speed*cl_yawspeed.value*CL_KeyState (&in_left) * sensitivity.value;
+#endif // __PSP__
 		cl.viewangles[YAW] = anglemod(cl.viewangles[YAW]);
 	}
 	if (in_klook.state & 1)
@@ -302,8 +311,13 @@ void CL_AdjustAngles (void)
 		cl.viewangles[PITCH] += speed*cl_pitchspeed.value * CL_KeyState (&in_back);
 	}
 
+#ifdef __PSP__
 	up = CL_KeyState (&in_lookup) * in_sensitivity.value;
 	down = CL_KeyState(&in_lookdown) * in_sensitivity.value;
+#else
+	up = CL_KeyState (&in_lookup) * sensitivity.value;
+	down = CL_KeyState(&in_lookdown) * sensitivity.value;
+#endif // __PSP__
 
 	cl.viewangles[PITCH] -= speed*cl_pitchspeed.value * up;
 	cl.viewangles[PITCH] += speed*cl_pitchspeed.value * down;

@@ -36,7 +36,11 @@ cvar_t	cl_lightning_zadjust = {"cl_lightning_zadjust", "0", true};
 
 cvar_t	lookspring = {"lookspring","0", true};
 cvar_t	lookstrafe = {"lookstrafe","0", true};
+#ifdef __PSP__
 cvar_t	in_sensitivity = {"sensitivity","3", true};
+#else
+cvar_t	sensitivity = {"sensitivity","8", true};
+#endif // __PSP__
 cvar_t	in_tolerance = {"tolerance","0.25", true};
 cvar_t	in_acceleration = {"acceleration","1.0", true};
 
@@ -58,7 +62,9 @@ cvar_t  in_y_axis_adjust = {"in_y_axis_adjust", "0", true};
 modelindex_t		cl_modelindex[NUM_MODELINDEX]; //
 char				*cl_modelnames[NUM_MODELINDEX];//
 												   //
+#ifdef __PSP__
 tagentity_t			q3player_body, q3player_head;  //
+#endif // __PSP__
 //=================================================//
 client_static_t	cls;
 client_state_t	cl;
@@ -337,6 +343,7 @@ void SetPal (int i)
 #endif
 }
 
+#ifdef __PSP__
 void CL_CopyPlayerInfo (entity_t *ent, entity_t *player)
 {
 	memcpy_vfpu(&ent->baseline, &player->baseline, sizeof(entity_state_t));
@@ -371,6 +378,7 @@ void CL_CopyPlayerInfo (entity_t *ent, entity_t *player)
     ent->renderamt = player->renderamt;
     //ent->rendercolor = player->rendercolor;
 }
+#endif // __PSP__
 
 /*
 ===============
@@ -960,36 +968,6 @@ void CL_RelinkEntities (void)
 		if ( ent->effects & EF_NODRAW )
 			continue;
 
-        if (qmb_initialized)
-		{
-			/*if (ent->modelindex == cl_modelindex[mi_bubble])
-			{
-				QMB_StaticBubble (ent);
-				continue;
-			}
-			else if (r_part_lightning.value && ent->modelindex == cl_modelindex[mi_shambler] &&  ent->frame >= 65 && ent->frame <= 68)
-			{
-				vec3_t	liteorg;
-
-				VectorCopy (ent->origin, liteorg);
-				liteorg[2] += 32;
-				QMB_ShamblerCharge (liteorg);
-			}
-			else */if (r_part_trails.value && ent->model->modhint == MOD_SPIKE)
-			{
-				if (!ent->traildrawn || !VectorL2Compare(ent->trail_origin, ent->origin, 140))
-				{
-					VectorCopy (ent->origin, oldorg);	//not present last frame or too far away
-					ent->traildrawn = true;
-				}
-				else
-				{
-					VectorCopy (ent->trail_origin, oldorg);
-				}
-				QMB_RocketTrail (oldorg, ent->origin, BUBBLE_TRAIL);
-			}
-		}
-
 		if (cl_numvisedicts < MAX_VISEDICTS)
 		{
 			cl_visedicts[cl_numvisedicts] = ent;
@@ -1129,7 +1107,11 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&cl_gibfilter);
 	Cvar_RegisterVariable (&cl_lightning_zadjust);
     Cvar_RegisterVariable (&cl_truelightning);
+#ifdef __PSP__
 	Cvar_RegisterVariable (&in_sensitivity);
+#else
+	Cvar_RegisterVariable (&sensitivity);
+#endif // __PSP__
     Cvar_RegisterVariable (&in_mlook); //Heffo - mlook cvar
 	Cvar_RegisterVariable (&in_aimassist);
 	Cvar_RegisterVariable (&in_tolerance);

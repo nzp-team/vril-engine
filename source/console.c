@@ -62,15 +62,18 @@ qboolean	con_initialized;
 
 int			con_notifylines;		// scan lines to clear for notify lines
 
+extern void M_Menu_Main_f (void);
+
 #define MAXGAMEDIRLEN	1000
 char debuglogfile[MAXGAMEDIRLEN + 1];
 
-extern void M_Menu_Main_f (void);
-
+#ifdef __PSP__
 void M_OSK_Draw (void);
 void Con_OSK_f (char *input, char *output, int outlen);
 void Con_OSK_Key(int key);
 void Con_DrawOSK(void);
+#endif // __PSP__
+
 extern qboolean console_enabled;
 /*
 ================
@@ -621,10 +624,13 @@ void Con_DrawConsole (int lines, qboolean drawinput)
 // draw the input prompt, user text, and cursor if desired
 	if (drawinput)
 		Con_DrawInput ();
-		
+
+#ifdef __PSP__
 	Con_DrawOSK();	
+#endif // __PSP__
 }
 
+#ifdef __PSP__
 static qboolean	scr_osk_active = false;
 
 
@@ -643,6 +649,7 @@ void Con_DrawOSK(void) {
 		M_OSK_Draw();
 	}
 }
+#endif // __PSP__
 
 /*
 ==================

@@ -20,11 +20,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // view.c -- player eye positioning
 
 #include "quakedef.h"
-#include <pspgu.h>
+#include "r_local.h"
 
-#ifdef PSP_VFPU
+#ifdef __PSP__
+#include <pspgu.h>
 #include <pspmath.h>
-#endif
+#endif // __PSP__
 
 sfx_t			*cl_sfx_step[4];
 
@@ -69,7 +70,7 @@ cvar_t	v_ipitch_level = {"v_ipitch_level", "0.3", false};
 
 cvar_t	v_idlescale = {"v_idlescale", "0", false};
 
-cvar_t	crosshair = {"crosshair", "0", true};
+cvar_t	crosshair = {"crosshair", "1", true};
 
 float	v_dmg_time, v_dmg_roll, v_dmg_pitch;
 
@@ -579,7 +580,11 @@ void V_CalcBlend (void)
 
 	for (j=0 ; j<NUM_CSHIFTS ; j++)
 	{
+#ifdef __PSP__
 		if (!r_polyblend.value)
+#else
+		if (!gl_polyblend.value)
+#endif // __PSP__
 			continue;
 
 		a2 = cl.cshifts[j].percent / 255.0;

@@ -855,6 +855,10 @@ Host_Init
 */
 #include "cl_slist.h"
 
+#ifdef _3DS
+extern bool new3ds_flag;
+#endif // _3DS
+
 void M_Start_Menu_f (void);
 void Host_Init (quakeparms_t *parms)
 {
@@ -893,7 +897,7 @@ void Host_Init (quakeparms_t *parms)
 	Con_Printf ("%4.1f megabyte PSP application heap \n",1.0f*PSP_HEAP_SIZE_MB);
 	Con_Printf ("PSP Model: %s\n", Sys_GetPSPModel());
 	Con_Printf ("VRAM Size: %i bytes\n", sceGeEdramGetSize());
-#elif __3DS
+#elif _3DS
 	Con_Printf ("3DS NZP v%4.1f (3DSX: "__TIME__" "__DATE__")\n", (float)(VERSION));
 
 	if (new3ds_flag)
