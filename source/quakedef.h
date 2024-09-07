@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
 
 See the GNU General Public License for more details.
 
@@ -19,15 +19,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // quakedef.h -- primary header for client
 
+//#define	GLTEST			// experimental stuff
+
+#ifndef __PSP__
+#define qtrue 1
+#define qfalse 0
+#endif // __PSP__
 
 #define	QUAKE_GAME			// as opposed to utilities
 
-#define	VERSION             0.2 //0.11/0.44/0.88/1.0/
+#define	VERSION				2.0
+#define	GLQUAKE_VERSION		1.00
 #define	D3DQUAKE_VERSION	0.01
 #define	WINQUAKE_VERSION	0.996
 #define	LINUX_VERSION		1.30
 #define	X11_VERSION			1.10
-
 
 #define	GAMENAME	"nzp"
 
@@ -37,14 +43,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <stdlib.h>
 #include <setjmp.h>
+#include <stdbool.h>
 #include <ctype.h>
-//#include <assert.h> // For QMB assert
-
-
 
 #define	VID_LockBuffer()
 #define	VID_UnlockBuffer()
-
 
 #if defined __i386__
 #define id386	1
@@ -82,10 +85,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	MAX_OSPATH		128			// max length of a filesystem pathname
 
 #define	ON_EPSILON		0.1			// point on plane side epsilon
-/*
-#define	MAX_MSGLEN		8000		// max length of a reliable message
-#define	MAX_DATAGRAM	1024		// max length of unreliable message
-*/
 
 #define	MAX_MSGLEN		64000		// max length of a reliable message Crow_Bar. UP for PSP
 #define	MAX_DATAGRAM	8000		// max length of unreliable message Crow_Bar. UP for PSP
@@ -95,7 +94,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 #define	MAX_EDICTS		600			// FIXME: ouch! ouch! ouch!
 #define	MAX_LIGHTSTYLES	64
-#define	MAX_MODELS		300			// these are sent over the net as bytes
+#define	MAX_MODELS		300			// motolegacy -- nzp protocol(115), uses memory inefficient shorts for model indexes, yay!
 #define	MAX_SOUNDS		256			// so they cannot be blindly increased
 
 #define	SAVEGAME_COMMENT_LENGTH	39
@@ -110,18 +109,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	STAT_points			1
 #define	STAT_WEAPON			2
 #define	STAT_AMMO			3
+#define	STAT_SECGRENADES	4
 #define	STAT_WEAPONFRAME	5
 #define	STAT_CURRENTMAG		6
 #define	STAT_ZOOM			7
 #define	STAT_WEAPONSKIN		8
+#define	STAT_GRENADES		9
 #define	STAT_ACTIVEWEAPON	10
 #define	STAT_ROUNDS			11
 #define	STAT_ROUNDCHANGE	12
 #define	STAT_X2				13
 #define	STAT_INSTA			14
 #define	STAT_PRIGRENADES	15
-#define	STAT_SECGRENADES	4
-#define	STAT_GRENADES		9
 #define	STAT_WEAPON2		17
 #define	STAT_WEAPON2SKIN	18
 #define	STAT_WEAPON2FRAME	19
@@ -158,7 +157,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define W_KILLU   29 //357
 #define W_COMPRESSOR 30 // Gewehr
 #define W_M1000  31 //garand
-#define W_KOLLIDER  32
+#define W_KOLLIDER  32 // mp5
 #define W_PORTER  33 // Ray
 #define W_WIDDER  34 // M1A1
 #define W_FIW  35 //upgraded flamethrower
@@ -199,12 +198,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	SOUND_CHANNELS		8
 
 
+#ifdef _3DS
+#include "ctr/common.h"
+#include "ctr/vid.h"
+#include "ctr/sys.h"
+#else
 #include "common.h"
-#include "bspfile.h"
 #include "vid.h"
 #include "sys.h"
+#endif // _3DS
 #include "zone.h"
 #include "mathlib.h"
+#include "bspfile.h"
 
 typedef struct
 {
@@ -222,33 +227,67 @@ typedef struct
 	// dr_mabuse1981: HalfLife rendermodes fixed END
 } entity_state_t;
 
+
 #include "wad.h"
 #include "draw.h"
 #include "cvar.h"
+#ifdef _3DS
+#include "ctr/screen.h"
+#include "ctr/net.h"
+#else
 #include "screen.h"
 #include "net.h"
+#endif // _3DS
 #include "protocol.h"
 #include "cmd.h"
+#ifdef _3DS
+#include "ctr/sbar.h"
+#endif // _3DS
 #include "cl_hud.h"
 #include "sound.h"
+#ifdef _3DS
+#include "ctr/render.h"
+#include "ctr/client.h"
+#else
 #include "render.h"
 #include "client.h"
+#endif // _3DS
 #include "progs.h"
+#ifdef _3DS
+#include "ctr/server.h"
+#else
 #include "server.h"
+#endif // _3DS
 
-
+#ifdef _3DS
+#include "ctr/gl/gl_model.h"
+#include "ctr/gl/gl_decal.h"
+#else
 #include "psp/video_hardware_model.h"
+#endif
 
 #include "input.h"
 #include "world.h"
+#ifdef _3DS
+#include "ctr/keys.h"
+#else
 #include "keys.h"
+#endif
 #include "console.h"
 #include "view.h"
+#ifdef _3DS
+#include "ctr/menu.h"
+#else
 #include "menu.h"
+#endif
 #include "crc.h"
 #include "cdaudio.h"
 
+#ifdef _3DS
+#include "ctr/glquake.h"
+#else
 #include "psp/video_hardware.h"
+#endif
 
 //=============================================================================
 
@@ -287,8 +326,10 @@ extern	qboolean	host_initialized;		// true if into command execution
 extern	double		host_frametime;
 extern	byte		*host_basepal;
 extern	byte		*host_colormap;
+#ifdef __PSP__
 extern	byte		*host_q2pal;
 extern	byte		*host_h2pal;
+#endif // __PSP__
 extern	int			host_framecount;	// incremented every frame, never reset
 extern	double		realtime;			// not bounded in any way, changed at
 										// start of every frame, never reset
@@ -315,11 +356,11 @@ extern qboolean		isDedicated;
 
 extern int			minimum_memory;
 
-extern func_t	EndFrame;
-
 extern	vec3_t	NULLVEC;
 
 #define ISUNDERWATER(x) ((x) == CONTENTS_WATER || (x) == CONTENTS_SLIME || (x) == CONTENTS_LAVA)
+
+int SV_HullPointContents (hull_t *hull, int num, vec3_t p);
 #define TruePointContents(p) SV_HullPointContents(&cl.worldmodel->hulls[0], 0, p)
 
 //
@@ -356,8 +397,6 @@ extern waypoint_ai waypoints[MAX_WAYPOINTS];
 extern int n_waypoints;
 extern short closest_waypoints[MAX_EDICTS];
 
-
-
 // thread structs
 typedef struct
 {
@@ -367,8 +406,6 @@ typedef struct
 	vec3_t up;
 	qboolean ready;
 } soundstruct_t;
-
-
 
 // ----------------------------------------------------------------------------
 // Utils for using cstdlib qsort (Quick sort)
@@ -391,3 +428,13 @@ typedef struct argsort_entry_s {
 } argsort_entry_t;
 extern int argsort_comparator(const void *lhs, const void *rhs);
 // ----------------------------------------------------------------------------
+
+extern func_t	EndFrame;
+
+
+#ifdef _3DS
+#define VERTEXARRAYSIZE 18360
+extern float gVertexBuffer[VERTEXARRAYSIZE];
+extern float gColorBuffer[VERTEXARRAYSIZE];
+extern float gTexCoordBuffer[VERTEXARRAYSIZE];
+#endif // _3DS
