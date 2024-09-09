@@ -895,7 +895,14 @@ void Host_Init (quakeparms_t *parms)
 #ifdef __PSP__
 	Con_Printf ("PSP NZP v%4.1f (PBP: "__TIME__" "__DATE__")\n", (float)(VERSION));
 	Con_Printf ("%4.1f megabyte PSP application heap \n",1.0f*PSP_HEAP_SIZE_MB);
-	Con_Printf ("PSP Model: %s\n", Sys_GetPSPModel());
+
+	switch(psp_system_model) {
+		case PSP_MODEL_PHAT: Con_Printf("PSP Model: PSP-1000 model unit\n"); break;
+		case PSP_MODEL_SLIM: Con_Printf("PSP Model: PSP-SLIM model unit\n"); break;
+		case PSP_MODEL_PSVITA: Con_Printf("PSP Model: PS VITA model unit\n"); break;
+		default: break;
+	}
+
 	Con_Printf ("VRAM Size: %i bytes\n", sceGeEdramGetSize());
 #elif _3DS
 	Con_Printf ("3DS NZP v%4.1f (3DSX: "__TIME__" "__DATE__")\n", (float)(VERSION));

@@ -26,6 +26,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define qfalse 0
 #endif // __PSP__
 
+#ifdef __PSP__
+#define PSP_MODEL_PHAT		0
+#define PSP_MODEL_SLIM 		1
+#define PSP_MODEL_PSVITA 	2
+
+extern int psp_system_model;
+#endif // __PSP__
+
 #define	QUAKE_GAME			// as opposed to utilities
 
 #define	VERSION				2.0
@@ -202,10 +210,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ctr/common.h"
 #include "ctr/vid.h"
 #include "ctr/sys.h"
-#else
-#include "common.h"
-#include "vid.h"
-#include "sys.h"
+#elif __PSP__
+#include "psp/common.h"
+#include "psp/vid.h"
+#include "psp/sys.h"
 #endif // _3DS
 #include "zone.h"
 #include "mathlib.h"
@@ -234,9 +242,9 @@ typedef struct
 #ifdef _3DS
 #include "ctr/screen.h"
 #include "ctr/net.h"
-#else
-#include "screen.h"
-#include "net.h"
+#elif __PSP__
+#include "psp/screen.h"
+#include "psp/net.h"
 #endif // _3DS
 #include "protocol.h"
 #include "cmd.h"
@@ -248,37 +256,37 @@ typedef struct
 #ifdef _3DS
 #include "ctr/render.h"
 #include "ctr/client.h"
-#else
-#include "render.h"
-#include "client.h"
+#elif __PSP__
+#include "psp/render.h"
+#include "psp/client.h"
 #endif // _3DS
 #include "progs.h"
 #ifdef _3DS
 #include "ctr/server.h"
-#else
-#include "server.h"
+#elif __PSP__
+#include "psp/server.h"
 #endif // _3DS
 
 #ifdef _3DS
 #include "ctr/gl/gl_model.h"
 #include "ctr/gl/gl_decal.h"
 #else
-#include "psp/video_hardware_model.h"
+#include "psp/gu/gu_model.h"
 #endif
 
 #include "input.h"
 #include "world.h"
 #ifdef _3DS
 #include "ctr/keys.h"
-#else
-#include "keys.h"
+#elif __PSP__
+#include "psp/keys.h"
 #endif
 #include "console.h"
 #include "view.h"
 #ifdef _3DS
 #include "ctr/menu.h"
-#else
-#include "menu.h"
+#elif __PSP__
+#include "psp/menu.h"
 #endif
 #include "crc.h"
 #include "cdaudio.h"
@@ -286,7 +294,7 @@ typedef struct
 #ifdef _3DS
 #include "ctr/glquake.h"
 #else
-#include "psp/video_hardware.h"
+#include "psp/gu/gu_psp.h"
 #endif
 
 //=============================================================================

@@ -619,31 +619,6 @@ void PF_sound (void)
 	volume = G_FLOAT(OFS_PARM3) * 255;
 	attenuation = G_FLOAT(OFS_PARM4);
 
-	// AWFUL AWFUL HACK for limiting zombie sound variations
-#ifndef _3DS
-#ifndef SLIM
-	char* s = sample;
-
-	if (s[strlen(s) - 6] == 'r' || s[strlen(s) - 6] == 'd' || s[strlen(s) - 6] == 'a' ||
-	s[strlen(s) - 6] == 't' || s[strlen(s) - 6] == 'w') {
-		if (s[strlen(s) - 5] == '1' || s[strlen(s) - 5] == '2' || 
-		s[strlen(s) - 5] == '3' || s[strlen(s) - 5] == '4' || 
-		s[strlen(s) - 5] == '5' || s[strlen(s) - 5] == '6' ||
-		s[strlen(s) - 5] == '7' || s[strlen(s) - 5] == '8' ||
-		s[strlen(s) - 5] == '9') {
-
-			if (s[strlen(s) - 6] == 'r') {
-				sample[strlen(sample) - 6] = 'w';
-				sample[strlen(sample) - 5] = '1';
-			} else {
-				sample[strlen(sample) - 5] = '0';
-			}
-		}
-	}
-
-#endif // SLIM
-#endif // _3DS
-
 	if (volume < 0 || volume > 255)
 		Sys_Error ("SV_StartSound: volume = %i", volume);
 
@@ -2676,32 +2651,6 @@ void PF_precache_sound (void)
 	s = G_STRING(OFS_PARM0);
 	G_INT(OFS_RETURN) = G_INT(OFS_PARM0);
 	PR_CheckEmptyString (s);
-
-	// AWFUL AWFUL HACK for limiting zombie sound variations
-#ifndef _3DS
-#ifndef SLIM
-
-	if (s[strlen(s) - 6] == 'r' || s[strlen(s) - 6] == 'd' || s[strlen(s) - 6] == 'a' ||
-	s[strlen(s) - 6] == 't' || s[strlen(s) - 6] == 'w') {
-		if (s[strlen(s) - 5] == '1' || s[strlen(s) - 5] == '2' || 
-		s[strlen(s) - 5] == '3' || s[strlen(s) - 5] == '4' || 
-		s[strlen(s) - 5] == '5' || s[strlen(s) - 5] == '6' ||
-		s[strlen(s) - 5] == '7' || s[strlen(s) - 5] == '8' ||
-		s[strlen(s) - 5] == '9') {
-
-			if (s[strlen(s) - 6] == 'r') {
-				s[strlen(s) - 6] = 'w';
-				s[strlen(s) - 5] = '1';
-			} else 
-				s[strlen(s) - 5] = '0';
-		}
-	}
-
-	
-
-#endif // SLIM
-#endif // _3DS
-
 
 	for (i=0 ; i<MAX_SOUNDS ; i++)
 	{
