@@ -1,4 +1,4 @@
-#MAKEFLAGS+="-j -l $(shell grep -c ^processor /proc/cpuinfo) "
+MAKEFLAGS+="-j -l $(shell grep -c ^processor /proc/cpuinfo) "
 PSPSDK = $(shell psp-config --pspsdk-path)
 PSPLIBSDIR = $(PSPSDK)/..
 
@@ -127,17 +127,13 @@ clean:
 	rm source/psp/*.o
 	rm source/*.o
 
-clean-keep-eboot:
-	rm -rf build/exec/
-	rm source/psp/*.o
-	rm source/*.o
-
 install: EBOOT.PBP
-	mkdir -p build/exec/
-	mv EBOOT.PBP build/
+	mkdir -p build/psp/
+	mkdir -p build/psp/bin
+	mv EBOOT.PBP build/psp/bin/
 ifeq ($(DEBUG),1)
-	mv *.prx build/exec/
+	mv *.prx build/psp/
 endif
-	mv *.elf build/exec/
-	mv *.SFO build/exec/
+	mv *.elf build/psp/
+	mv *.SFO build/psp/
 	@echo DONE
