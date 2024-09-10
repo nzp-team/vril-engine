@@ -2405,7 +2405,10 @@ void QMB_MuzzleFlash(vec3_t org)
 			color[2] = 255;
 		}
 
-		red_or_blue_pap = !red_or_blue_pap;
+		if (red_or_blue_pap == true)
+			red_or_blue_pap = false;
+		else
+			red_or_blue_pap = true;
 	}
 
 	// Weapon overrides for muzzleflash color
