@@ -2174,29 +2174,6 @@ float pap_detr(int weapon)
 	}
 }
 
-// cypress - Raygun barrel trail
-void QMB_RayFlash(vec3_t org, float weapon)
-{
-	// if we're ADS, just flat out end here to avoid useless calcs/defs
-	if (cl.stats[STAT_ZOOM] || !qmb_initialized)
-		return;
-
-	col_t 	color;
-	vec3_t 	endorg;
-
-	// green trail
-	if (weapon == W_RAY) {
-		color[0] = 0;
-		color[1] = 255;
-	} else { // red trail
-		color[0] = 255;
-		color[1] = 0;
-	}
-	color[2] = 0;
-
-	QMB_MuzzleFlash(org);
-}
-
 //R00k added particle muzzleflashes
 qboolean red_or_blue_pap;
 void QMB_MuzzleFlash(vec3_t org)

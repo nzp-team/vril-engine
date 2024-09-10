@@ -2378,81 +2378,84 @@ float pap_detr(int weapon)
 	return 0;
 }
 
-// cypress - Raygun barrel trail
-void QMB_RayFlash(vec3_t org, float weapon)
-{
-	// if we're ADS, just flat out end here to avoid useless calcs/defs
-	if (cl.stats[STAT_ZOOM] || !qmb_initialized)
-		return;
-
-	col_t 	color;
-	vec3_t 	endorg;
-
-	// green trail
-	if (weapon == W_RAY) {
-		color[0] = 0;
-		color[1] = 255;
-	} else { // red trail
-		color[0] = 255;
-		color[1] = 0;
-	}
-	color[2] = 0;
-
-	QMB_MuzzleFlash(org);
-}
-
 //R00k added particle muzzleflashes
+qboolean red_or_blue_pap;
 void QMB_MuzzleFlash(vec3_t org)
 {
-	if (!qmb_initialized) {
-		return;
-	}
-
-	float	frametime = fabs(cl.ctime - cl.oldtime);
+	double	frametime = fabs(cl.time - cl.oldtime);
 	col_t	color;
 
-	// change color if PaP
-	if (pap_detr(cl.stats[STAT_ACTIVEWEAPON]) == 0) {
-    	color[0] = color[1] = color[2] = 255;
-	} else {
-	  color[0] = 132;
-	  color[1] = 44;
-	  color[2] = 139;
+	// No muzzleflash for the Panzerschreck or the Flamethrower
+	if (cl.stats[STAT_ACTIVEWEAPON] == W_PANZER || cl.stats[STAT_ACTIVEWEAPON] == W_LONGINUS ||
+	cl.stats[STAT_ACTIVEWEAPON] == W_M2 || cl.stats[STAT_ACTIVEWEAPON] == W_FIW)
+		return;
+
+	// Start fully colored
+	color[0] = color[1] = color[2] = 255;
+
+	// Alternate red and blue if it's a Pack-a-Punched weapon
+	if (pap_detr(cl.stats[STAT_ACTIVEWEAPON])) {
+		if (red_or_blue_pap) {
+			color[0] = 255;
+			color[1] = 10;
+			color[2] = 22;
+		} else {
+			color[0] = 22;
+			color[1] = 10;
+			color[2] = 255;
+		}
+
+		red_or_blue_pap = !red_or_blue_pap;
 	}
 
-	// lower origin based on player stance
-	if (sv_player->v.view_ofs[2] >= 0)
-		org[2] -= 32 - sv_player->v.view_ofs[2];
-	else
-		org[2] -= 32 + abs(sv_player->v.view_ofs[2]);
-	/*if (sv_player->v.view_ofs[2] == 8) {
-		org[2] -= 24;
-	} else if (sv_player->v.view_ofs[2] == -10) {
-		org[2] -= 42;
-	}*/
+	// Weapon overrides for muzzleflash color
+	switch(cl.stats[STAT_ACTIVEWEAPON]) {
+		case W_RAY:
+			color[0] = 0;
+			color[1] = 255;
+			color[2] = 0;
+			break;
+		case W_PORTER:
+			color[0] = 255;
+			color[1] = 0;
+			color[2] = 0;
+			break;
+		case W_TESLA:
+			color[0] = 22;
+			color[1] = 139;
+			color[2] = 255;
+			break;
+		case W_DG3:
+			color[0] = 255;
+			color[1] = 89;
+			color[2] = 22;
+			break;
+	}
 
-	float size;
+	float size, timemod;
+
+	timemod = 0.08;
 
 	if(!(ISUNDERWATER(TruePointContents(org))))
 	{
 		size = sv_player->v.Flash_Size;
-		
+
 		if(size == 0 || cl.stats[STAT_ZOOM] == 2)
 			return;
 
         switch(rand() % 3 + 1)
         {
             case 1:
-                AddParticle (p_muzzleflash, org, 1, size, 0.04 * frametime, color, zerodir);
+                AddParticle (p_muzzleflash, org, 1, size, timemod * frametime, color, zerodir);
                 break;
             case 2:
-                AddParticle (p_muzzleflash2, org, 1, size, 0.04 * frametime, color, zerodir);
+                AddParticle (p_muzzleflash2, org, 1, size, timemod * frametime, color, zerodir);
                 break;
             case 3:
-                AddParticle (p_muzzleflash3, org, 1, size, 0.04 * frametime, color, zerodir);
+                AddParticle (p_muzzleflash3, org, 1, size, timemod * frametime, color, zerodir);
                 break;
             default:
-                AddParticle (p_muzzleflash, org, 1, size, 0.04 * frametime, color, zerodir);
+                AddParticle (p_muzzleflash, org, 1, size, timemod * frametime, color, zerodir);
                 break;
         }
 	}

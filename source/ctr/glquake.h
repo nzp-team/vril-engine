@@ -359,7 +359,6 @@ void QMB_LightningBeam (vec3_t start, vec3_t end);
 //void QMB_GenSparks (vec3_t org, byte col[3], float count, float size, float life);
 void QMB_EntityParticles (entity_t *ent);
 void QMB_MuzzleFlash (vec3_t org);
-void QMB_RayFlash (vec3_t org, float weapon);
 void QMB_MuzzleFlashLG (vec3_t org);
 void QMB_Q3Gunshot (vec3_t org, int skinnum, float alpha);
 void QMB_Q3Teleport (vec3_t org, float alpha);
