@@ -274,7 +274,7 @@ int has_perk_deadshot;
 int has_perk_mulekick;
 void CL_ParseServerInfo (void)
 {
-	char	*str, tempname[MAX_QPATH];;
+	char	*str;
 	int		i;
 	int		nummodels, numsounds;
 	char	model_precache[MAX_MODELS][MAX_QPATH];
