@@ -2379,7 +2379,7 @@ float pap_detr(int weapon)
 }
 
 //R00k added particle muzzleflashes
-qboolean red_or_blue_pap;
+bool red_or_blue_pap;
 void QMB_MuzzleFlash(vec3_t org)
 {
 	double	frametime = fabs(cl.time - cl.oldtime);
