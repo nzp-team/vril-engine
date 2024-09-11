@@ -40,7 +40,10 @@ void Draw_ConsoleBackground (int lines);
 void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha);
 void Draw_Fill (int x, int y, int w, int h, int c);
 void Draw_LoadingFill(void);
-#endif // __PSP__
+#elif __WII__
+void Draw_TileClear (int x, int y, int w, int h);
+void Draw_Fill (int x, int y, int w, int h, float r, float g, float b, float a);
+#endif
 void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a);
 void Draw_FadeScreen (void);
 void Draw_String (int x, int y, char *str);
@@ -61,4 +64,6 @@ extern int font_kerningamount[96];
 qpic_t *Draw_CachePic (char *path);
 #ifdef __PSP__
 qpic_t *Draw_CacheImg (char *path);
-#endif // __PSP__
+#elif __WII__
+qpic_t *Draw_LMP (char *path);
+#endif
