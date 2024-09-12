@@ -22,7 +22,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef _3DS
 extern bool new3ds_flag;
-#endif  // _3DS
+#elif __WII__
+#include <ogc/lwp_watchdog.h>
+#include <wiiuse/wpad.h>
+#include <ctype.h>
+extern double time_wpad_off;
+extern int rumble_on;
+extern cvar_t  rumble;
+#endif // _3DS, __WII__
 
 #define PR_MAX_TEMPSTRING 2048	// 2001-10-25 Enhanced temp string handling by Maddes
 #define	RETURN_EDICT(e) (((int *)pr_globals)[OFS_RETURN] = EDICT_TO_PROG(e))
@@ -1475,9 +1482,11 @@ This is where the magic happens
 
 #ifdef __PSP__
 #define MaxZombies 12
-#else
+#elif _3DS
 #define MaxZombies 18
-#endif
+#elif __WII__
+#define MaxZombies 24
+#endif //__PSP__, _3DS, __WII__
 
 
 #define WAYPOINT_SET_NONE 	0
@@ -3479,6 +3488,7 @@ nzp_rumble()
 */
 void PF_Rumble(void)
 {
+#ifndef __WII__
 	client_t	*client;
 	int			entnum;
 	int 		low_frequency;
@@ -3498,6 +3508,23 @@ void PF_Rumble(void)
 	MSG_WriteShort (&client->message, low_frequency);
 	MSG_WriteShort (&client->message, high_frequency);
 	MSG_WriteShort (&client->message, duration);
+#else
+	client_t	*client;
+	int			entnum;
+	
+	entnum = G_EDICTNUM(OFS_PARM0);	
+	if (entnum < 1 || entnum > svs.maxclients)
+		return;
+	
+	if (!rumble.value) return;
+	double rumble_time;
+	rumble_time = G_FLOAT(OFS_PARM3) / 1000.0;
+	
+	//it switches rumble on for rumble_time milliseconds  
+	WPAD_Rumble(0, true);
+	rumble_on=1;
+	time_wpad_off = Sys_FloatTime() + rumble_time;
+#endif
 }
 
 /*
@@ -3566,14 +3593,14 @@ nzp_maxai()
 */
 void PF_MaxZombies(void)
 {
-#ifdef __PSP__
-	G_FLOAT(OFS_RETURN) = MaxZombies;
-#else
+#ifdef _3DS
 	if (new3ds_flag)
 		G_FLOAT(OFS_RETURN) = MaxZombies;
 	else
 		G_FLOAT(OFS_RETURN) = 12;
-#endif // __PSP__
+#else
+	G_FLOAT(OFS_RETURN) = MaxZombies;
+#endif
 }
 
 /*
