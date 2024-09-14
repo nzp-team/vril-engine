@@ -56,6 +56,11 @@ cvar_t	cl_bobside = {"cl_bobside","0.02"};
 cvar_t	cl_bobsidecycle = {"cl_bobsidecycle","0.9"};
 cvar_t	cl_bobsideup = {"cl_bobsideup","0.5"};
 
+#ifdef __WII__
+cvar_t	cl_crossx = {"cl_crossx", "0", false};
+cvar_t	cl_crossy = {"cl_crossy", "0", false};
+#endif
+
 cvar_t	v_kicktime = {"v_kicktime", "0.5", false};
 cvar_t	v_kickroll = {"v_kickroll", "0.6", false};
 cvar_t	v_kickpitch = {"v_kickpitch", "0.6", false};
@@ -721,6 +726,12 @@ CalcGunAngle
 static float OldYawTheta;
 static float OldPitchTheta;
 
+#ifdef __WII__
+int lock_viewmodel; 
+extern float centerdrift_offset_yaw;
+extern float centerdrift_offset_pitch;
+extern qboolean aimsnap;
+#endif
 
 static vec3_t cADSOfs;
 
@@ -781,6 +792,7 @@ void CalcGunAngle (void)
 	side = V_CalcRoll (cl_entities[cl.viewentity].angles, cl.velocity);
 	cl.viewent.angles[ROLL] = angledelta(cl.viewent.angles[ROLL] - ((cl.viewent.angles[ROLL] - (side * 5)) * 0.5));
 
+#ifndef __WII__
 	//^^^ Model swaying
 	if(cl.stats[STAT_ZOOM] == 1)
 	{
@@ -794,6 +806,66 @@ void CalcGunAngle (void)
 	cl.viewent.angles[PITCH] = -1 * ((r_refdef.viewangles[PITCH] + pitch) - (angledelta((r_refdef.viewangles[PITCH] + pitch) + OldPitchTheta ) * 0.2));
 
 	//cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch);
+#else
+	float xcrossnormal;
+	float ycrossnormal;
+	
+	xcrossnormal = (cl_crossx.value / (vid.width/2) * IR_YAWRANGE);
+	ycrossnormal = (cl_crossy.value / (vid.height/2) * IR_PITCHRANGE);
+	
+	//Con_Printf ("x: %f", xcrossnormal);
+	//Con_Printf ("  y: %f", ycrossnormal);
+	
+	float roll_og_pos;
+	float inroll_smooth;
+	float last_roll = 0.0f;
+	static float smooth_amt = 0.001f;
+	
+	if (aimsnap == false && !(cl.stats[STAT_ZOOM] == 1 && ads_center.value) && lock_viewmodel != 1 && !(cl.stats[STAT_ZOOM] == 2 && sniper_center.value))
+	{
+		cl.viewent.angles[YAW] = (r_refdef.viewangles[YAW]/* + yaw*/) - (xcrossnormal);
+		
+		//cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - ((cl_crossx.value/scr_vrect.width * IR_YAWRANGE) * (centerdrift_offset_yaw) - OldYawTheta);
+		
+		//cl.viewent.angles[PITCH] = - r_refdef.viewangles[PITCH] + pitch + ((cl_crossy.value/scr_vrect.height * IR_PITCHRANGE) * (centerdrift_offset_pitch*-1));
+		cl.viewent.angles[PITCH] = -(r_refdef.viewangles[PITCH]/* + pitch*/) + (ycrossnormal)*-1;
+		//guMtxTrans(temp, viewmod->origin[0] - (r_refdef.viewangles[PITCH]/* + pitch*/) + (ycrossnormal * scr_vrect.width)*-1, viewmod->origin[1], viewmod->origin[2]);
+		
+		//Con_Printf("YAW:%f PITCH%f\n", cl.viewent.angles[YAW], -cl.viewent.angles[PITCH]);
+		//Con_Printf ("viewent origin: %f %f %f\n", cl.viewent.origin[0], cl.viewent.origin[1], cl.viewent.origin[2]);
+		
+		if (cl_weapon_inrollangle.value) {
+			if (cl.stats[STAT_ZOOM] == 0) {	
+				
+				roll_og_pos = in_rollangle;
+				
+				inroll_smooth = /*lin_lerp (in_rollangle, last_roll, smooth_amt)*/roll_og_pos;	
+				
+				if(inroll_smooth > 24.5f)
+					inroll_smooth = 24.5f;
+				else if(inroll_smooth < -24.5f)
+					inroll_smooth = -24.5f;
+				
+				//Con_Printf("roll: %f\n", inroll_smooth);
+				cl.viewent.angles[ROLL] = inroll_smooth;
+				last_roll = roll_og_pos;
+			}
+		}
+	}
+	else
+	{
+		// ELUTODO: Maybe there are other cases besides demo playback
+		if (lock_viewmodel != 1) {
+			cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw;
+			cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch);
+			//Con_Printf ("viewent origin: %f %f %f\n", cl.viewent.origin[0], cl.viewent.origin[1], cl.viewent.origin[2]);
+		} else {
+			cl.viewent.angles[YAW] = r_refdef.viewangles[YAW];
+			cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH]);
+			//Con_Printf ("viewent origin: %f %f %f\n", cl.viewent.origin[0], cl.viewent.origin[1], cl.viewent.origin[2]);
+		}	
+	}
+#endif
 
 	//BLUBS STOPS HERE
 	OldYawTheta = cl.viewent.angles[YAW];
@@ -907,116 +979,6 @@ void V_CalcIntermissionRefdef (void)
 	v_idlescale.value = old;
 }
 
-float ApproxEqual(float A, float B)
-{
-	if((A-B) < -0.001)
-		return 0;
-	if(A-B > 0.001)
-		return 0;
-
-	//Con_Printf ("%f",sinf(M_PI));
-
-	return 1;
-};
-
-/*
-==================
-Weapon ADS Declarations
-==================
-*/
-void GetWeaponADSOfs(vec2_t out)
-{
-	switch(cl.stats[STAT_ACTIVEWEAPON])
-	{
-		case W_COLT:
-		{
-			//out[0] = -15.281;
-			//out[1] =  5.0677;
-			out[0] = -5.4792;
-			out[1] = 1.6500;
-			return;
-		}
-		case W_KAR:
-		{
-			//out[0] =  -15.4472;
-			//out[1] = 8.75790;
-			out[0] = -5.4959;
-			out[1] = 3.1869;
-			return;
-		}
-		case W_KAR_SCOPE:
-		{
-			//out[0] =  -15.4472;
-			//out[1] = 1.8985;
-			out[0] = -5.2860;
-			out[1] = 0.7061;
-			return;
-		}
-		case W_THOMPSON:
-		{
-			//out[0] = -14.0936;
-			//out[1] = 6.7265;
-			out[0] = -6.0693;
-			out[1] = 3.0076;
-			return;
-		}
-		case W_TRENCH:
-		{
-			//out[0] = -20.5952;
-			//out[1] = 10.1903;
-			out[0] = -5.5271;
-			out[1] = 2.8803;
-			return;
-		}
-		case W_357:
-		{
-			//out[0] = -15.3425;
-			//out[1] =  3.7888;
-			out[0] = -8.3065;
-			out[1] = 0.8792;
-			return;
-		}
-		case W_MG:
-		{
-			out[0] = -6.6437;
-			out[1] = 3.5092;
-			return;
-		}
-		case W_DB:
-		{
-			out[0] = -5.8017;
-			out[1] = 2.9121;
-			return;
-		}
-		case W_SAWNOFF:
-		{
-			out[0] = -5.8017;
-			out[1] = 2.9121;
-			return;
-		}
-		case W_M1A1:
-		{
-			out[0] = -5.3878;
-			out[1] = 3.6719;
-			return;
-		}
-		case W_BAR:
-		{
-			out[0] = -3.8833;
-			//out[1] = 2.3745;
-			out[1] = 2.6745;
-			return;
-		}
-		default:
-		{
-			//Large values > 20ish cause weapon to flicker, scale model down if we encounter!
-			//Scale better be 4.3, or else viewbobbing is going to be inaccurate.
-			out[0] = -5.4792;
-			out[1] = 1.6500;
-			return;
-		}
-	}
-};
 /*
 ==================
 V_CalcRefdef
@@ -1752,6 +1714,12 @@ void V_Init (void)
 	Cvar_RegisterVariable (&cl_bobside);
 	Cvar_RegisterVariable (&cl_bobsidecycle);
 	Cvar_RegisterVariable (&cl_bobsideup);
+	
+#ifdef __WII__
+	Cvar_RegisterVariable (&cl_crossx);
+	Cvar_RegisterVariable (&cl_crossy);
+	Cvar_RegisterVariable (&cl_weapon_inrollangle);
+#endif
 
 	Cvar_RegisterVariable (&v_kicktime);
 	Cvar_RegisterVariable (&v_kickroll);

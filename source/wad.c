@@ -93,8 +93,10 @@ void W_LoadWadFile (char *filename)
 		lump_p->filepos = LittleLong(lump_p->filepos);
 		lump_p->size = LittleLong(lump_p->size);
 		W_CleanupName (lump_p->name, lump_p->name);
+#ifndef __WII__
 		if (lump_p->type == TYP_QPIC)
 			SwapPic ( (qpic_t *)(wad_base + lump_p->filepos));
+#endif
 	}
 }
 
@@ -162,7 +164,7 @@ void SwapPic (qpic_t *pic)
 WAD3 Texture Loading for BSP 3.0 Support From Baker		--Diabolickal HLBSP
 =============================================================================
 */
-#ifdef _3DS
+#ifndef __PSP__
 
 #define TEXWAD_MAXIMAGES 16384
 
@@ -316,4 +318,4 @@ byte *WAD3_LoadTexture(miptex_t *mt) {
    }
    return NULL;
 }
-#endif // _3DS
+#endif // _3DS, WII
