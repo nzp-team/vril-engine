@@ -26,9 +26,6 @@ extern bool new3ds_flag;
 #include <ogc/lwp_watchdog.h>
 #include <wiiuse/wpad.h>
 #include <ctype.h>
-extern double time_wpad_off;
-extern int rumble_on;
-extern cvar_t  rumble;
 #endif // _3DS, __WII__
 
 #define PR_MAX_TEMPSTRING 2048	// 2001-10-25 Enhanced temp string handling by Maddes
@@ -3488,7 +3485,6 @@ nzp_rumble()
 */
 void PF_Rumble(void)
 {
-#ifndef __WII__
 	client_t	*client;
 	int			entnum;
 	int 		low_frequency;
@@ -3508,23 +3504,6 @@ void PF_Rumble(void)
 	MSG_WriteShort (&client->message, low_frequency);
 	MSG_WriteShort (&client->message, high_frequency);
 	MSG_WriteShort (&client->message, duration);
-#else
-	client_t	*client;
-	int			entnum;
-	
-	entnum = G_EDICTNUM(OFS_PARM0);	
-	if (entnum < 1 || entnum > svs.maxclients)
-		return;
-	
-	if (!rumble.value) return;
-	double rumble_time;
-	rumble_time = G_FLOAT(OFS_PARM3) / 1000.0;
-	
-	//it switches rumble on for rumble_time milliseconds  
-	WPAD_Rumble(0, true);
-	rumble_on=1;
-	time_wpad_off = Sys_FloatTime() + rumble_time;
-#endif
 }
 
 /*
