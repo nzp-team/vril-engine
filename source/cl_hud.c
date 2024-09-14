@@ -230,6 +230,9 @@ void HUD_NewMap (void)
 
 	round_center_x = (vid.width - sb_round[0]->width) /2;
 	round_center_y = (vid.height - sb_round[0]->height) /2;
+	
+	hud_maxammo_starttime = 0;
+	hud_maxammo_endtime = 0;
 }
 
 
