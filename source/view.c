@@ -59,6 +59,7 @@ cvar_t	cl_bobsideup = {"cl_bobsideup","0.5"};
 #ifdef __WII__
 cvar_t	cl_crossx = {"cl_crossx", "0", false};
 cvar_t	cl_crossy = {"cl_crossy", "0", false};
+cvar_t	cl_weapon_inrollangle = {"cl_weapon_inrollangle", "0", true};
 #endif
 
 cvar_t	v_kicktime = {"v_kicktime", "0.5", false};

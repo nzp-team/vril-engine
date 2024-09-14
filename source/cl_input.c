@@ -167,7 +167,6 @@ void IN_AttackUp(void) {KeyUp(&in_attack);}
 
 void IN_UseDown (void) {
 	KeyDown(&in_use);
-	
 #ifdef __WII__
 	// 
 	// sB this is all hacked in for now.
@@ -661,14 +660,14 @@ void CL_SendMove (usercmd_t *cmd)
 	
 	// sB lock crosshair in the center of screen
 	if(aimsnap == true || (cl.stats[STAT_ZOOM] == 1 && ads_center.value) || sniper_center.value) {
-		MSG_WriteAngle (&buf, tempv[PITCH]/* + (cl_crossy.value/vid.height) * IR_PITCHRANGE*/);
-		MSG_WriteAngle (&buf, tempv[YAW]/* - (cl_crossx.value/vid.width - 1) * IR_YAWRANGE*/);
-		MSG_WriteAngle (&buf, tempv[ROLL]);
+		MSG_WriteFloat (&buf, tempv[PITCH]/* + (cl_crossy.value/vid.height) * IR_PITCHRANGE*/);
+		MSG_WriteFloat (&buf, tempv[YAW]/* - (cl_crossx.value/vid.width - 1) * IR_YAWRANGE*/);
+		MSG_WriteFloat (&buf, tempv[ROLL]);
 	} else {
 		//sBTODO figure out how to make this way more accurate than it is
-		MSG_WriteAngle (&buf, tempv[PITCH] + ycrossnormal);
-		MSG_WriteAngle (&buf, tempv[YAW] - xcrossnormal);
-		MSG_WriteAngle (&buf, tempv[ROLL]);
+		MSG_WriteFloat (&buf, tempv[PITCH] + ycrossnormal);
+		MSG_WriteFloat (&buf, tempv[YAW] - xcrossnormal);
+		MSG_WriteFloat (&buf, tempv[ROLL]);
 	}
 #else
 	for (i=0 ; i<3 ; i++)
