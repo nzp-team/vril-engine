@@ -74,7 +74,7 @@ cvar_t	samelevel = {"samelevel","0"};
 cvar_t	show_fps = {"show_fps","0", true};	// set for running times - muff
 #ifndef __WII__
 cvar_t	cl_maxfps = {"cl_maxfps", "30", true}; // dr_mabuse1981: maxfps setting
-#endif
+#endif // __WII__ creates a timing issue within Dolphin emu - and vsync is always on anyhow
 
 #ifdef __PSP__
 cvar_t	show_bat = {"show_bat","0"};	// test
