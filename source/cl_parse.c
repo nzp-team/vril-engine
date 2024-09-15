@@ -1213,10 +1213,10 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_rumble:
-			// This platform doesn't use this.
 #ifdef __WII__
 			Wiimote_Rumble ((int)MSG_ReadShort(), (int)MSG_ReadShort(), (int)MSG_ReadShort());
 #else
+			// These platforms don't use this.
 			MSG_ReadShort();
 			MSG_ReadShort();
 			MSG_ReadShort();

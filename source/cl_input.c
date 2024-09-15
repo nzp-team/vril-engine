@@ -303,6 +303,7 @@ void CL_AdjustAngles (void)
 {
 	float	speed;
 	float	up, down;
+	float	cl_sensitivity;
 
 	if (in_speed.state & 1)
 		speed = host_frametime * cl_anglespeedkey.value;
@@ -325,20 +326,19 @@ void CL_AdjustAngles (void)
 		speed *= 0.5;
 	else if (cl.stats[STAT_ZOOM] == 2)
 		speed *= 0.25;
-
+	
+#ifdef __PSP__
+	cl_sensitivity = in_sensitivity.value
+#elif _3DS
+	cl_sensitivity = sensitivity.value
+#else
+	cl_sensitivity = 1.0f;
+#endif
 
 	if (!(in_strafe.state & 1))
 	{
-#ifdef __PSP__
-		cl.viewangles[YAW] -= speed*cl_yawspeed.value*CL_KeyState (&in_right) * in_sensitivity.value;
-		cl.viewangles[YAW] += speed*cl_yawspeed.value*CL_KeyState (&in_left) * in_sensitivity.value;
-#elif _3DS
-		cl.viewangles[YAW] -= speed*cl_yawspeed.value*CL_KeyState (&in_right) * sensitivity.value;
-		cl.viewangles[YAW] += speed*cl_yawspeed.value*CL_KeyState (&in_left) * sensitivity.value;
-#else 
-		cl.viewangles[YAW] -= speed*cl_yawspeed.value*CL_KeyState (&in_right);
-		cl.viewangles[YAW] += speed*cl_yawspeed.value*CL_KeyState (&in_left);
-#endif
+		cl.viewangles[YAW] -= speed*cl_yawspeed.value*CL_KeyState (&in_right) * cl_sensitivity;
+		cl.viewangles[YAW] += speed*cl_yawspeed.value*CL_KeyState (&in_left) * cl_sensitivity;
 		cl.viewangles[YAW] = anglemod(cl.viewangles[YAW]);
 	}
 	if (in_klook.state & 1)
@@ -348,16 +348,8 @@ void CL_AdjustAngles (void)
 		cl.viewangles[PITCH] += speed*cl_pitchspeed.value * CL_KeyState (&in_back);
 	}
 
-#ifdef __PSP__
-	up = CL_KeyState (&in_lookup) * in_sensitivity.value;
-	down = CL_KeyState(&in_lookdown) * in_sensitivity.value;
-#elif _3DS
-	up = CL_KeyState (&in_lookup) * sensitivity.value;
-	down = CL_KeyState(&in_lookdown) * sensitivity.value;
-#else
-	up = CL_KeyState (&in_lookup);
-	down = CL_KeyState(&in_lookdown);
-#endif // __PSP__
+	up = CL_KeyState (&in_lookup) * cl_sensitivity;
+	down = CL_KeyState(&in_lookdown) * cl_sensitivity;
 
 	cl.viewangles[PITCH] -= speed*cl_pitchspeed.value * up;
 	cl.viewangles[PITCH] += speed*cl_pitchspeed.value * down;

@@ -958,9 +958,7 @@ void Host_Init (quakeparms_t *parms)
 		SCR_Init ();
 		R_Init ();
 		S_Init ();
-#ifndef __WII__
 		CDAudio_Init ();
-#endif
 		HUD_Init ();
 		CL_Init ();
 	}

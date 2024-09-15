@@ -39,11 +39,6 @@ typedef	int	fixed16_t;
 #define M_PI		3.14159265358979323846	// matches value in gcc v2 math.h
 #endif
 
-#ifdef __WII__
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#endif
-
 #define RAD2DEG( x )	((float)(x) * (float)(180.f / M_PI))
 #define DEG2RAD( x )	((float)(x) * (float)(M_PI / 180.f))
 

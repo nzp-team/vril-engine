@@ -873,11 +873,7 @@ void CL_RelinkEntities (void)
 
 		if (ent->effects & EF_RAYGREEN)
 		{
-#ifdef __WII__
-			QMB_RocketTrail(oldorg, ent->origin, RAYGREEN_TRAIL);
-#else
 			R_RocketTrail (oldorg, ent->origin, 12);
-#endif
 			dl = CL_AllocDlight (i);
 			VectorCopy (ent->origin, dl->origin);
 			dl->radius = 25;
@@ -891,11 +887,7 @@ void CL_RelinkEntities (void)
 
 		if (ent->effects & EF_RAYRED)
 		{
-#ifdef __WII__
-			QMB_RocketTrail(oldorg, ent->origin, RAYRED_TRAIL);
-#else
 			R_RocketTrail (oldorg, ent->origin, 13);
-#endif
 			dl = CL_AllocDlight (i);
 			VectorCopy (ent->origin, dl->origin);
 			dl->radius = 25;
