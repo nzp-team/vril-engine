@@ -31,8 +31,8 @@ void Draw_PicIndex (int x, int y, int width, int height, int texture_index);
 void Draw_StretchPic (int x, int y, qpic_t *pic, int x_value, int y_value);
 void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float a);
 void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value, int r, int g, int b, int a);
-void Draw_ColoredString (int x, int y, char *text, float r, float g, float b, float a, int scale);
-void Draw_ColoredStringCentered(int y, char *text, float r, float g, float b, float a, int scale);
+void Draw_ColoredString (int x, int y, char *text, float r, float g, float b, float a, float scale);
+void Draw_ColoredStringCentered(int y, char *text, float r, float g, float b, float a, float scale);
 void Draw_TransPic (int x, int y, qpic_t *pic);
 void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation);
 void Draw_ConsoleBackground (int lines);
@@ -40,14 +40,11 @@ void Draw_ConsoleBackground (int lines);
 void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha);
 void Draw_Fill (int x, int y, int w, int h, int c);
 void Draw_LoadingFill(void);
-#elif __WII__
-void Draw_TileClear (int x, int y, int w, int h);
-void Draw_Fill (int x, int y, int w, int h, float r, float g, float b, float a);
 #endif
 void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a);
 void Draw_FadeScreen (void);
 void Draw_String (int x, int y, char *str);
-int getTextWidth(char *str, int scale);
+int getTextWidth(char *str, float scale);
 
 //other
 void Clear_LoadingFill (void);

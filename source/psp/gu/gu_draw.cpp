@@ -1562,7 +1562,7 @@ static int HexToInt(char c)
 }
 
 // Creds to UP Team for scale code - cypress
-void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, float a, int scale)
+void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, float a, float scale)
 {
 	int num;
 	qboolean white = qtrue;
@@ -1611,8 +1611,8 @@ void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, flo
 
 	        vertices[1].u = (fcol + 1) * 8;
 	        vertices[1].v = (frow + 1) * 8;
-	        vertices[1].x = x + (8*scale);
-	        vertices[1].y = y + (8*scale);
+	        vertices[1].x = x + (8*(int)scale);
+	        vertices[1].y = y + (8*(int)scale);
 	        vertices[1].z = 0;
 
 	        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D, 2, 0, vertices);
@@ -1620,11 +1620,11 @@ void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, flo
 
 		// Hooray for variable-spacing!
 		if (*text == ' ')
-			x += 4 * scale;
+			x += 4 * (int)scale;
         else if ((int)*text < 33 || (int)*text > 126)
-            x += 8 * scale;
+            x += 8 * (int)scale;
         else
-            x += (font_kerningamount[(int)(*text - 33)] + 1) * scale;
+            x += (font_kerningamount[(int)(*text - 33)] + 1) * (int)scale;
 	}
 
 	if (!white)
@@ -1634,25 +1634,25 @@ void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, flo
         sceGuTexFunc(GU_TFX_REPLACE , GU_TCC_RGBA);
 }
 
-int getTextWidth(char *str, int scale)
+int getTextWidth(char *str, float scale)
 {
 	int width = 0;
 
     for (int i = 0; i < strlen(str); i++) {
         // Hooray for variable-spacing!
 		if (str[i] == ' ')
-			width += 4 * scale;
+			width += 4 * (int)scale;
         else if ((int)str[i] < 33 || (int)str[i] > 126)
-            width += 8 * scale;
+            width += 8 * (int)scale;
         else
-            width += (font_kerningamount[(int)(str[i] - 33)] + 1) * scale;
+            width += (font_kerningamount[(int)(str[i] - 33)] + 1) * (int)scale;
     }
 
 	return width;
 }
 
 
-void Draw_ColoredStringCentered(int y, char *str, float r, float g, float b, float a, int scale)
+void Draw_ColoredStringCentered(int y, char *str, float r, float g, float b, float a, float scale)
 {
 	Draw_ColoredString((vid.width - getTextWidth(str, scale))/2, y, str, r, g, b, a, scale);
 }
