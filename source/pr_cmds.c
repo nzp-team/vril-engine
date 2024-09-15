@@ -2467,6 +2467,11 @@ void PF_fopen (void)
 	{
 		case 0: // read
 			Sys_FileOpenRead (va("%s/%s",com_gamedir, p), &h);
+			// protection against crash on Wii
+			if(h <= 0) {
+				G_FLOAT(OFS_RETURN) = -1;
+				return;
+			}
 			G_FLOAT(OFS_RETURN) = (float) h;
 			return;
 		case 1: // append -- this is nasty
@@ -2504,7 +2509,9 @@ void fclose (float)
 void PF_fclose (void)
 {
 	int h = (int)G_FLOAT(OFS_PARM0);
-	Sys_FileClose(h);
+	if (h > 0) { // stop crashing on Wii HW
+		Sys_FileClose(h);
+	}
 }
 
 /*
@@ -2525,6 +2532,7 @@ void PF_fgets (void)
 	h = (int)G_FLOAT(OFS_PARM0);
 
 	count = Sys_FileRead(h, &buffer, 1);
+	
 	if (count && buffer == '\r')	// carriage return
 	{
 		count = Sys_FileRead(h, &buffer, 1);	// skip
