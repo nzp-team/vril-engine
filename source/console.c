@@ -67,12 +67,12 @@ extern void M_Menu_Main_f (void);
 #define MAXGAMEDIRLEN	1000
 char debuglogfile[MAXGAMEDIRLEN + 1];
 
-#ifdef __PSP__
+#ifndef _3DS
 void M_OSK_Draw (void);
 void Con_OSK_f (char *input, char *output, int outlen);
 void Con_OSK_Key(int key);
 void Con_DrawOSK(void);
-#endif // __PSP__
+#endif // __PSP__, __WII__
 
 extern qboolean console_enabled;
 /*
@@ -625,12 +625,12 @@ void Con_DrawConsole (int lines, qboolean drawinput)
 	if (drawinput)
 		Con_DrawInput ();
 
-#ifdef __PSP__
+#ifndef _3DS
 	Con_DrawOSK();	
 #endif // __PSP__
 }
 
-#ifdef __PSP__
+#ifndef _3DS
 static qboolean	scr_osk_active = false;
 
 
@@ -676,6 +676,9 @@ void Con_NotifyBox (char *text)
 		t1 = Sys_FloatTime ();
 		SCR_UpdateScreen ();
 		Sys_SendKeyEvents ();
+#ifdef __WII__
+		IN_Commands ();
+#endif
 		t2 = Sys_FloatTime ();
 		realtime += t2-t1;		// make the cursor blink
 	} while (key_count < 0);
