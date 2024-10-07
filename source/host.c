@@ -951,8 +951,9 @@ void Host_Init (quakeparms_t *parms)
 		if (!host_h2pal)
 			Sys_Error ("Couldn't load gfx/h2pal.lmp");
 #endif // __PSP__
-
+#ifndef __WII__
 		IN_Init ();
+#endif
 		VID_Init (host_basepal);
 		Draw_Init ();
 		SCR_Init ();
@@ -961,6 +962,9 @@ void Host_Init (quakeparms_t *parms)
 		CDAudio_Init ();
 		HUD_Init ();
 		CL_Init ();
+#ifdef __WII__
+		IN_Init ();
+#endif //the Wii requires initialization of input AFTER client is initializd 
 	}
 	Preload();
 	Cbuf_InsertText ("exec nzp.rc\n");

@@ -622,12 +622,14 @@ void Con_DrawConsole (int lines, qboolean drawinput)
 	}
 
 // draw the input prompt, user text, and cursor if desired
+#ifndef __WII__
 	if (drawinput)
 		Con_DrawInput ();
+#endif // __WII__
 
 #ifndef _3DS
 	Con_DrawOSK();	
-#endif // __PSP__
+#endif // __PSP__, __WII__
 }
 
 #ifndef _3DS
@@ -649,7 +651,7 @@ void Con_DrawOSK(void) {
 		M_OSK_Draw();
 	}
 }
-#endif // __PSP__
+#endif // __PSP__, __WII__
 
 /*
 ==================

@@ -57,8 +57,8 @@ cvar_t	cl_bobsidecycle = {"cl_bobsidecycle","0.9"};
 cvar_t	cl_bobsideup = {"cl_bobsideup","0.5"};
 
 #ifdef __WII__
-cvar_t	cl_crossx = {"cl_crossx", "0", false};
-cvar_t	cl_crossy = {"cl_crossy", "0", false};
+cvar_t	cl_crossx = {"cl_crossx", "0"};
+cvar_t	cl_crossy = {"cl_crossy", "0"};
 cvar_t	cl_weapon_inrollangle = {"cl_weapon_inrollangle", "0", true};
 #endif
 
@@ -819,8 +819,8 @@ void CalcGunAngle (void)
 	
 	float roll_og_pos;
 	float inroll_smooth;
-	float last_roll = 0.0f;
-	static float smooth_amt = 0.001f;
+	//float last_roll = 0.0f;
+	//static float smooth_amt = 0.001f;
 	
 	if (aimsnap == false && !(cl.stats[STAT_ZOOM] == 1 && ads_center.value) && lock_viewmodel != 1 && !(cl.stats[STAT_ZOOM] == 2 && sniper_center.value))
 	{
@@ -849,7 +849,7 @@ void CalcGunAngle (void)
 				
 				//Con_Printf("roll: %f\n", inroll_smooth);
 				cl.viewent.angles[ROLL] = inroll_smooth;
-				last_roll = roll_og_pos;
+				//last_roll = roll_og_pos;
 			}
 		}
 	}
