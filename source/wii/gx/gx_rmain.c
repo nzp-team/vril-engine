@@ -353,7 +353,7 @@ float	shadelight, ambientlight;
 // precalculated dot products for quantized angles
 #define SHADEDOT_QUANT 16
 float	r_avertexnormal_dots[SHADEDOT_QUANT][256] =
-#include "anorm_dots.h"
+#include "../../anorm_dots.h"
 ;
 
 float	*shadedots = r_avertexnormal_dots[0];
