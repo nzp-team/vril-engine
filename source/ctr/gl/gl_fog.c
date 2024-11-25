@@ -44,6 +44,11 @@ update internal variables
 */
 void Fog_Update (float start, float end, float red, float green, float blue, float time)
 {
+	if (start <= 0.01f || end <= 0.01f) {
+		start = 0.0f;
+		end = 0.0f;
+	}
+
 	//save previous settings for fade
 	if (time > 0)
 	{
@@ -98,6 +103,11 @@ void Fog_ParseServerMessage (void)
 	green = MSG_ReadByte() / 255.0;
 	blue = MSG_ReadByte() / 255.0;
 	time = MSG_ReadShort() / 100.0;
+
+	if (start < 0.01f || end < 0.01f) {
+		start = 0.0f;
+		end = 0.0f;
+	}
 
 	Fog_Update (start, end, red, green, blue, time);
 }
@@ -242,6 +252,11 @@ void Fog_ParseWorldspawn (void)
 		}
 
 		fog_density_gl = ((fog_start / fog_end))/3.5;
+	}
+
+	if (r_refdef.fog_start <= 0.01 || r_refdef.fog_end <= 0.01) {
+		r_refdef.fog_start = 0.0f;
+		r_refdef.fog_end = 0.0f;
 	}
 }
 
