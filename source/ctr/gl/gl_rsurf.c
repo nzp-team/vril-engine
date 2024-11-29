@@ -35,7 +35,7 @@ unsigned		blocklights[3*18*18]; // LordHavoc: .lit support (*3 for RGB) to the d
 #define	BLOCK_WIDTH		128
 #define	BLOCK_HEIGHT	128
 
-#define	MAX_LIGHTMAPS	64
+#define	MAX_LIGHTMAPS	128
 int			active_lightmaps;
 
 typedef struct glRect_s {
@@ -1516,15 +1516,23 @@ void R_MarkLeaves (void)
 =============================================================================
 */
 
-// returns a texture number and the position inside it
+/*
+========================
+AllocBlock -- returns a texture number and the position inside it
+========================
+*/
 int AllocBlock (int w, int h, int *x, int *y)
 {
 	int		i, j;
 	int		best, best2;
-	int		bestx;
 	int		texnum;
 
-	for (texnum=0 ; texnum<MAX_LIGHTMAPS ; texnum++)
+	// ericw -- rather than searching starting at lightmap 0 every time,
+	// start at the last lightmap we allocated a surface in.
+	// This makes AllocBlock much faster on large levels (can shave off 3+ seconds
+	// of load time on a level with 180 lightmaps), at a cost of not quite packing
+	// lightmaps as tightly vs. not doing this (uses ~5% more lightmaps)
+	for (texnum=last_lightmap_allocated ; texnum<MAX_LIGHTMAPS ; texnum++, last_lightmap_allocated++)
 	{
 		best = BLOCK_HEIGHT;
 
@@ -1556,6 +1564,7 @@ int AllocBlock (int w, int h, int *x, int *y)
 	}
 
 	Sys_Error ("AllocBlock: full");
+	return 0; //johnfitz -- shut up compiler
 }
 
 
