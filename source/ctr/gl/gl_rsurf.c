@@ -1521,6 +1521,7 @@ void R_MarkLeaves (void)
 AllocBlock -- returns a texture number and the position inside it
 ========================
 */
+int last_lightmap_allocated; // ericw -- optimization: remember the index of the last lightmap AllocBlock stored a surf in
 int AllocBlock (int w, int h, int *x, int *y)
 {
 	int		i, j;
