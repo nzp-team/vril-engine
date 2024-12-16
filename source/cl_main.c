@@ -38,8 +38,10 @@ cvar_t	lookspring = {"lookspring","0", true};
 cvar_t	lookstrafe = {"lookstrafe","0", true};
 #ifdef __PSP__
 cvar_t	in_sensitivity = {"sensitivity","3", true};
-#else
+#elif _3DS
 cvar_t	sensitivity = {"sensitivity","8", true};
+#else
+cvar_t	sensitivity = {"sensitivity","3", true};
 #endif // __PSP__
 cvar_t	in_tolerance = {"tolerance","0.25", true};
 cvar_t	in_acceleration = {"acceleration","1.0", true};
@@ -750,13 +752,13 @@ void CL_RelinkEntities (void)
 
 				AngleVectors (tempangles, v_forward, v_right, v_up);
 				VectorCopy (cl_entities[cl.viewentity].origin, smokeorg);
-				smokeorg[2] += 32;
+				smokeorg[2] += cl.viewheight; // account for beta maps
 				VectorCopy(smokeorg,start);
 
 				right_offset	 = sv_player->v.Flash_Offset[0];
 				up_offset		 = sv_player->v.Flash_Offset[1];
 				forward_offset 	 = sv_player->v.Flash_Offset[2];
-				
+				 
 				right_offset	= right_offset/1000;
 				up_offset		= up_offset/1000;
 				forward_offset  = forward_offset/1000;
@@ -765,7 +767,6 @@ void CL_RelinkEntities (void)
 				VectorMA (smokeorg, up_offset, v_up ,smokeorg);
 				VectorMA (smokeorg, right_offset, v_right ,smokeorg);
 				VectorAdd(smokeorg,CWeaponOffset,smokeorg);
-
 				QMB_MuzzleFlash (smokeorg);
 			}
 
@@ -880,7 +881,8 @@ void CL_RelinkEntities (void)
 	        dl->color[0] = 0;
 			dl->color[1] = 255;
 			dl->color[2] = 0;
-	        dl->type = SetDlightColor (2, lt_rocket, true);
+			//DLight color 4 is green
+	        dl->type = SetDlightColor (4, lt_rocket, true);
 		}
 
 		if (ent->effects & EF_RAYRED)
@@ -893,7 +895,8 @@ void CL_RelinkEntities (void)
 	        dl->color[0] = 255;
 			dl->color[1] = 0;
 			dl->color[2] = 0;
-	        dl->type = SetDlightColor (2, lt_rocket, true);
+			//DLight color 1 is red
+	        dl->type = SetDlightColor (1, lt_rocket, true);
 		}
 
 		if (!strcmp(ent->model->name, "progs/flame2.mdl"))
@@ -1116,7 +1119,11 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&in_analog_strafe);
 	Cvar_RegisterVariable (&in_x_axis_adjust);
 	Cvar_RegisterVariable (&in_y_axis_adjust);
-
+	
+#ifdef __WII__
+	Cvar_RegisterVariable (&ads_center);
+	Cvar_RegisterVariable (&sniper_center);
+#endif
 
 	Cvar_RegisterVariable (&m_pitch);
 	Cvar_RegisterVariable (&m_yaw);

@@ -20,6 +20,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // sv_main.c -- server main program
 
 #include "quakedef.h"
+#ifdef __WII__
+#include <ctype.h>
+void SV_SendNop (client_t *client);
+#endif
 
 server_t		sv;
 server_static_t	svs;
@@ -1296,7 +1300,14 @@ int W_fopen (void)
 	int h = 0;
 
 	Sys_FileOpenRead (va("%s/maps/%s.way",com_gamedir, sv.name), &h);
+#ifdef __WII__
+	if (h > 0)
+		return h;
+	else 
+		return -1;
+#else
 	return h;
+#endif
 }
 
 int W_fopenbeta(void)
@@ -1304,7 +1315,14 @@ int W_fopenbeta(void)
 	int h = 0;
 
 	Sys_FileOpenRead (va("%s/data/%s",com_gamedir, sv.name), &h);
+#ifdef __WII__
+	if (h > 0)
+		return h;
+	else 
+		return -1;
+#else
 	return h;
+#endif
 }
 
 void W_fclose (int h)

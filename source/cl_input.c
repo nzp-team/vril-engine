@@ -45,7 +45,10 @@ state bit 2 is edge triggered on the down to up transition
 ===============================================================================
 */
 
-
+#ifdef __WII__
+kbutton_t	in_vlock;
+extern float scr_usetime_off;
+#endif
 kbutton_t	in_klook;//Heffo - mlook cvar
 kbutton_t	in_left, in_right, in_forward, in_back;
 kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
@@ -119,14 +122,16 @@ qboolean croshhairmoving = false;
 
 void IN_KLookDown (void) {KeyDown(&in_klook);}
 void IN_KLookUp (void) {KeyUp(&in_klook);}
-
+#ifdef __WII__
+void IN_VLockDown (void) {KeyDown(&in_vlock);}
+void IN_VLockUp (void) {KeyUp(&in_vlock);}
+#endif
 /*void IN_MLookDown (void) {KeyDown(&in_mlook);}
 void IN_MLookUp (void){
 KeyUp(&in_mlook);
 if ( !(in_mlook.state&1) &&  lookspring.value)
 	V_StartPitchDrift();
 } Heffo - mlook cvar*/
-
 void IN_UpDown(void) {KeyDown(&in_up);}
 void IN_UpUp(void) {KeyUp(&in_up);}
 void IN_DownDown(void) {KeyDown(&in_down);}
@@ -160,8 +165,33 @@ void IN_StrafeUp(void) {KeyUp(&in_strafe);}
 void IN_AttackDown(void) {KeyDown(&in_attack);}
 void IN_AttackUp(void) {KeyUp(&in_attack);}
 
-void IN_UseDown (void) {KeyDown(&in_use);}
-void IN_UseUp (void) {KeyUp(&in_use);}
+void IN_UseDown (void) {
+	KeyDown(&in_use);
+#ifdef __WII__
+	// 
+	// sB this is all hacked in for now.
+	// the real concern is that there are now 
+	// 3 binds all hardcoded to '+ use'
+	// this is not ideal for a number of reasons :/
+	// 
+	if (scr_usetime_off <= 0) {
+		KeyDown(&in_vlock);
+	}
+	// if moving HACK
+	if (croshhairmoving == 1) {
+		if (cl.stats[STAT_ZOOM] != 1 && cl.stats[STAT_ZOOM] != 2) {
+			KeyUp(&in_vlock);
+			Cbuf_AddText("impulse 23\n"); // sprinting impulse - "impulse 23"
+		}
+	}
+#endif
+}
+void IN_UseUp (void) {
+	KeyUp(&in_use);
+#ifdef __WII__
+	KeyUp(&in_vlock);
+#endif
+}
 void IN_JumpDown (void) {KeyDown(&in_jump);}
 void IN_JumpUp (void) {KeyUp(&in_jump);}
 void IN_GrenadeDown (void) {KeyDown(&in_grenade);}
@@ -251,6 +281,10 @@ cvar_t	cl_anglespeedkey = {"cl_anglespeedkey","1.5"};
 cvar_t	in_mlook = {"in_mlook", "1", true}; //Heffo - mlook cvar
 cvar_t	in_aimassist = {"in_aimassist", "1", true};
 
+#ifdef __WII__
+cvar_t	ads_center = {"ads_center", "0", true};
+cvar_t	sniper_center = {"sniper_center", "0", true};
+#endif
 
 //Shpuld - Porting over lower sens for lower fov
 extern cvar_t scr_fov;
@@ -269,6 +303,7 @@ void CL_AdjustAngles (void)
 {
 	float	speed;
 	float	up, down;
+	float	cl_sensitivity;
 
 	if (in_speed.state & 1)
 		speed = host_frametime * cl_anglespeedkey.value;
@@ -291,17 +326,19 @@ void CL_AdjustAngles (void)
 		speed *= 0.5;
 	else if (cl.stats[STAT_ZOOM] == 2)
 		speed *= 0.25;
-
+	
+#ifdef __PSP__
+	cl_sensitivity = in_sensitivity.value;
+#elif _3DS
+	cl_sensitivity = sensitivity.value;
+#else
+	cl_sensitivity = 1.0f;
+#endif
 
 	if (!(in_strafe.state & 1))
 	{
-#ifdef __PSP__
-		cl.viewangles[YAW] -= speed*cl_yawspeed.value*CL_KeyState (&in_right) * in_sensitivity.value;
-		cl.viewangles[YAW] += speed*cl_yawspeed.value*CL_KeyState (&in_left) * in_sensitivity.value;
-#else
-		cl.viewangles[YAW] -= speed*cl_yawspeed.value*CL_KeyState (&in_right) * sensitivity.value;
-		cl.viewangles[YAW] += speed*cl_yawspeed.value*CL_KeyState (&in_left) * sensitivity.value;
-#endif // __PSP__
+		cl.viewangles[YAW] -= speed*cl_yawspeed.value*CL_KeyState (&in_right) * cl_sensitivity;
+		cl.viewangles[YAW] += speed*cl_yawspeed.value*CL_KeyState (&in_left) * cl_sensitivity;
 		cl.viewangles[YAW] = anglemod(cl.viewangles[YAW]);
 	}
 	if (in_klook.state & 1)
@@ -311,13 +348,8 @@ void CL_AdjustAngles (void)
 		cl.viewangles[PITCH] += speed*cl_pitchspeed.value * CL_KeyState (&in_back);
 	}
 
-#ifdef __PSP__
-	up = CL_KeyState (&in_lookup) * in_sensitivity.value;
-	down = CL_KeyState(&in_lookdown) * in_sensitivity.value;
-#else
-	up = CL_KeyState (&in_lookup) * sensitivity.value;
-	down = CL_KeyState(&in_lookdown) * sensitivity.value;
-#endif // __PSP__
+	up = CL_KeyState (&in_lookup) * cl_sensitivity;
+	down = CL_KeyState(&in_lookdown) * cl_sensitivity;
 
 	cl.viewangles[PITCH] -= speed*cl_pitchspeed.value * up;
 	cl.viewangles[PITCH] += speed*cl_pitchspeed.value * down;
@@ -454,6 +486,9 @@ int EN_Find(int num,char *string)
 	return 0;
 }
 
+#ifdef __WII__
+extern qboolean aimsnap;
+#endif
 void CL_Aim_Snap(void)
 {
 	edict_t *z,*bz,*player;
@@ -524,8 +559,13 @@ void CL_Aim_Snap(void)
 
 		if(distVec[0] < -70 || distVec[0] > 80)
 			return;
-
+#ifdef __WII__
+		aimsnap = true;
+#endif
 		VectorCopy(distVec,cl.viewangles);
+#ifdef __WII__
+		aimsnap = false;
+#endif
 	}
 }
 
@@ -538,9 +578,11 @@ CL_SendMove
 int zoom_snap;
 float angledelta(float a);
 float deltaPitch,deltaYaw;
+#ifdef __WII__
+extern cvar_t cl_crossx, cl_crossy;
+#endif
 void CL_SendMove (usercmd_t *cmd)
 {
-	int		i;
 	long int		bits;
 	sizebuf_t	buf;
 	byte	data[128];
@@ -548,6 +590,7 @@ void CL_SendMove (usercmd_t *cmd)
 	buf.maxsize = 128;
 	buf.cursize = 0;
 	buf.data = data;
+	int i;
 
 	cl.cmd = *cmd;
 
@@ -561,8 +604,12 @@ void CL_SendMove (usercmd_t *cmd)
 			zoom_snap = 1;
 		}
 	}
-	else
+	else {
 		zoom_snap = 0;
+#ifdef __WII__
+		aimsnap = false;
+#endif
+	}
 
 	//==== Sniper Scope Swaying ====
 	if(cl.stats[STAT_ZOOM] == 2 && !(cl.perks & 64))
@@ -599,8 +646,26 @@ void CL_SendMove (usercmd_t *cmd)
 	MSG_WriteFloat (&buf, cl.mtime[0]);	// so server can get ping times
 
 	VectorAdd(cl.gun_kick, cl.viewangles, tempv);
+#ifdef __WII__
+	float xcrossnormal, ycrossnormal;
+	xcrossnormal = (cl_crossx.value / (vid.width/2)) * IR_YAWRANGE;
+	ycrossnormal = (cl_crossy.value / (vid.height/2)) * IR_PITCHRANGE;
+	
+	// sB lock crosshair in the center of screen
+	if(aimsnap == true || (cl.stats[STAT_ZOOM] == 1 && ads_center.value) || (cl.stats[STAT_ZOOM] == 2 && sniper_center.value)) {
+		MSG_WriteFloat (&buf, tempv[PITCH]/* + (cl_crossy.value/vid.height) * IR_PITCHRANGE*/);
+		MSG_WriteFloat (&buf, tempv[YAW]/* - (cl_crossx.value/vid.width - 1) * IR_YAWRANGE*/);
+		MSG_WriteFloat (&buf, tempv[ROLL]);
+	} else {
+		//sBTODO figure out how to make this way more accurate than it is
+		MSG_WriteFloat (&buf, tempv[PITCH] + ycrossnormal);
+		MSG_WriteFloat (&buf, tempv[YAW] - xcrossnormal);
+		MSG_WriteFloat (&buf, tempv[ROLL]);
+	}
+#else
 	for (i=0 ; i<3 ; i++)
 		MSG_WriteFloat (&buf, tempv[i]);
+#endif
 
     MSG_WriteShort (&buf, cmd->forwardmove);
     MSG_WriteShort (&buf, cmd->sidemove);
@@ -718,8 +783,10 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("impulse", IN_Impulse);
 	Cmd_AddCommand ("+klook", IN_KLookDown);
 	Cmd_AddCommand ("-klook", IN_KLookUp);
-
-
+#ifdef __WII__
+	Cmd_AddCommand ("+vlock", IN_VLockDown);
+	Cmd_AddCommand ("-vlock", IN_VLockUp);
+#endif
 
 }
 

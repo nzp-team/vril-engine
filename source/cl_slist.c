@@ -124,9 +124,15 @@ void SList_Switch (int a, int b)
 	if (b >= MAX_SERVER_LIST || b < 0)
 		Sys_Error ("SList_Switch: Bad index %d", b);
 
+#ifdef __PSP__
 	memcpy_vfpu(&temp, &slist[a], sizeof(temp));
 	memcpy_vfpu(&slist[a], &slist[b], sizeof(temp));
 	memcpy_vfpu(&slist[b], &temp, sizeof(temp));
+#else
+	memcpy(&temp, &slist[a], sizeof(temp));
+	memcpy(&slist[a], &slist[b], sizeof(temp));
+	memcpy(&slist[b], &temp, sizeof(temp));
+#endif
 }
 
 int SList_Length (void)

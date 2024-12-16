@@ -1775,8 +1775,11 @@ trace_t SV_Trace_Toss (edict_t *ent, edict_t *ignore)
 
 	save_frametime = host_frametime;
 	host_frametime = 0.05;
-
+#ifdef __PSP__
 	memcpy_vfpu(&tempent, ent, sizeof(edict_t));
+#else
+	memcpy(&tempent, ent, sizeof(edict_t));
+#endif
 	tent = &tempent;
 
 	while (1)
