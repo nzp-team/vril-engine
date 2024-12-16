@@ -8,13 +8,13 @@ Building requires a full install of [psptoolchain](https://github.com/pspdev/psp
 
 With the psptoolchain installed, you now need to install `libpspmath`, which we have included in the GitHub repository:
 ```bash
-cd source/libpspmath
+cd source/psp/libpspmath
 make && make install
 ```
 Now you can navigate back to the root of the repository and build an `EBOOT`.
 
 ```bash
-cd ../../
+cd ../../../
 make -f Makefile.psp install
 ```
 

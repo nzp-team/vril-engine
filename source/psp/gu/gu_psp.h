@@ -106,7 +106,7 @@ half-life Render Modes. Crow_bar
 
 #define BACKFACE_EPSILON	0.01
 
-#define MAX_LIGHTMAPS       64
+#define MAX_LIGHTMAPS       128
 
 
 void R_TimeRefresh_f (void);
