@@ -328,9 +328,9 @@ void CL_AdjustAngles (void)
 		speed *= 0.25;
 	
 #ifdef __PSP__
-	cl_sensitivity = in_sensitivity.value
+	cl_sensitivity = in_sensitivity.value;
 #elif _3DS
-	cl_sensitivity = sensitivity.value
+	cl_sensitivity = sensitivity.value;
 #else
 	cl_sensitivity = 1.0f;
 #endif
@@ -590,6 +590,7 @@ void CL_SendMove (usercmd_t *cmd)
 	buf.maxsize = 128;
 	buf.cursize = 0;
 	buf.data = data;
+	int i;
 
 	cl.cmd = *cmd;
 
