@@ -72,7 +72,7 @@ void M_OSK_Draw (void);
 void Con_OSK_f (char *input, char *output, int outlen);
 void Con_OSK_Key(int key);
 void Con_DrawOSK(void);
-#endif // __PSP__, __WII__
+#endif // __PSP__, _3DS, __WII__
 
 extern qboolean console_enabled;
 /*
@@ -629,7 +629,7 @@ void Con_DrawConsole (int lines, qboolean drawinput)
 
 #ifndef _3DS
 	Con_DrawOSK();	
-#endif // __PSP__, __WII__
+#endif // __PSP__, _3DS, __WII__
 }
 
 #ifndef _3DS

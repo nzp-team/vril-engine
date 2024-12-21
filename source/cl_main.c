@@ -38,10 +38,8 @@ cvar_t	lookspring = {"lookspring","0", true};
 cvar_t	lookstrafe = {"lookstrafe","0", true};
 #ifdef __PSP__
 cvar_t	in_sensitivity = {"sensitivity","3", true};
-#elif _3DS
-cvar_t	sensitivity = {"sensitivity","8", true};
 #else
-cvar_t	sensitivity = {"sensitivity","3", true};
+cvar_t	sensitivity = {"sensitivity","8", true};
 #endif // __PSP__
 cvar_t	in_tolerance = {"tolerance","0.25", true};
 cvar_t	in_acceleration = {"acceleration","1.0", true};
@@ -439,24 +437,6 @@ void CL_NewDlight (int key, vec3_t origin, float radius, float time, int type)
 	dl->die = cl.time + time;
 	dl->type = type;
 
-}
-
-dlighttype_t SetDlightColor (float f, dlighttype_t def, qboolean random)
-{
-	dlighttype_t	colors[NUM_DLIGHTTYPES-4] = {lt_red, lt_blue, lt_redblue, lt_green};
-
-	if ((int)f == 1)
-		return lt_red;
-	else if ((int)f == 2)
-		return lt_blue;
-	else if ((int)f == 3)
-		return lt_redblue;
-	else if ((int)f == 4)
-		return lt_green;
-	else if (((int)f == NUM_DLIGHTTYPES - 3) && random)
-		return colors[rand()%(NUM_DLIGHTTYPES-4)];
-	else
-		return def;
 }
 
 /*
@@ -881,8 +861,6 @@ void CL_RelinkEntities (void)
 	        dl->color[0] = 0;
 			dl->color[1] = 255;
 			dl->color[2] = 0;
-			//DLight color 4 is green
-	        dl->type = SetDlightColor (4, lt_rocket, true);
 		}
 
 		if (ent->effects & EF_RAYRED)
@@ -895,8 +873,6 @@ void CL_RelinkEntities (void)
 	        dl->color[0] = 255;
 			dl->color[1] = 0;
 			dl->color[2] = 0;
-			//DLight color 1 is red
-	        dl->type = SetDlightColor (1, lt_rocket, true);
 		}
 
 		if (!strcmp(ent->model->name, "progs/flame2.mdl"))
@@ -937,7 +913,6 @@ void CL_RelinkEntities (void)
 	            dl->color[0] = 0.2;
 				dl->color[1] = 0.1;
 				dl->color[2] = 0.5;
-	            dl->type = SetDlightColor (2, lt_rocket, true);
 			}
 			else if (ent->model->flags & EF_GRENADE)
 				R_RocketTrail (oldorg, ent->origin, 1);
