@@ -814,32 +814,22 @@ void CalcGunAngle (void)
 	xcrossnormal = (cl_crossx.value / (vid.width/2) * IR_YAWRANGE);
 	ycrossnormal = (cl_crossy.value / (vid.height/2) * IR_PITCHRANGE);
 	
-	//Con_Printf ("x: %f", xcrossnormal);
-	//Con_Printf ("  y: %f", ycrossnormal);
-	
 	float roll_og_pos;
 	float inroll_smooth;
-	//float last_roll = 0.0f;
-	//static float smooth_amt = 0.001f;
 	
 	if (aimsnap == false && !(cl.stats[STAT_ZOOM] == 1 && ads_center.value) && lock_viewmodel != 1 && !(cl.stats[STAT_ZOOM] == 2 && sniper_center.value))
 	{
-		cl.viewent.angles[YAW] = (r_refdef.viewangles[YAW]/* + yaw*/) - (xcrossnormal);
+		// change viewmodel rotation based on wiimote position inside of screen space. 
+		cl.viewent.angles[YAW] = (r_refdef.viewangles[YAW]) - (xcrossnormal);
+		cl.viewent.angles[PITCH] = -(r_refdef.viewangles[PITCH]) + (ycrossnormal)*-1;
 		
-		//cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - ((cl_crossx.value/scr_vrect.width * IR_YAWRANGE) * (centerdrift_offset_yaw) - OldYawTheta);
-		
-		//cl.viewent.angles[PITCH] = - r_refdef.viewangles[PITCH] + pitch + ((cl_crossy.value/scr_vrect.height * IR_PITCHRANGE) * (centerdrift_offset_pitch*-1));
-		cl.viewent.angles[PITCH] = -(r_refdef.viewangles[PITCH]/* + pitch*/) + (ycrossnormal)*-1;
-		//guMtxTrans(temp, viewmod->origin[0] - (r_refdef.viewangles[PITCH]/* + pitch*/) + (ycrossnormal * scr_vrect.width)*-1, viewmod->origin[1], viewmod->origin[2]);
-		
-		//Con_Printf("YAW:%f PITCH%f\n", cl.viewent.angles[YAW], -cl.viewent.angles[PITCH]);
-		//Con_Printf ("viewent origin: %f %f %f\n", cl.viewent.origin[0], cl.viewent.origin[1], cl.viewent.origin[2]);
-		
+		// is the roll cvar enabled? if so we will rotate the viewangles to match Wiimote position
+		// This is capped to mitiagte exessive rolling 
 		if (cl_weapon_inrollangle.value) {
 			if (cl.stats[STAT_ZOOM] == 0) {	
 				
 				roll_og_pos = in_rollangle;
-				
+				// WIP roll smoothing, which will also be applied to weapon rotation angles when completed. 
 				inroll_smooth = /*lin_lerp (in_rollangle, last_roll, smooth_amt)*/roll_og_pos;	
 				
 				if(inroll_smooth > 24.5f)
@@ -849,21 +839,20 @@ void CalcGunAngle (void)
 				
 				//Con_Printf("roll: %f\n", inroll_smooth);
 				cl.viewent.angles[ROLL] = inroll_smooth;
-				//last_roll = roll_og_pos;
 			}
 		}
 	}
 	else
 	{
-		// ELUTODO: Maybe there are other cases besides demo playback
+		// if the viewmodel position is NOT locked to center 
+		// we will account for yaw/pitch of the Wiimote
 		if (lock_viewmodel != 1) {
 			cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw;
 			cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch);
-			//Con_Printf ("viewent origin: %f %f %f\n", cl.viewent.origin[0], cl.viewent.origin[1], cl.viewent.origin[2]);
+		// else..
 		} else {
 			cl.viewent.angles[YAW] = r_refdef.viewangles[YAW];
 			cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH]);
-			//Con_Printf ("viewent origin: %f %f %f\n", cl.viewent.origin[0], cl.viewent.origin[1], cl.viewent.origin[2]);
 		}	
 	}
 #endif
