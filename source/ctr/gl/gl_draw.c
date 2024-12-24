@@ -519,43 +519,43 @@ void Draw_String (int x, int y, char *str)
 	Draw_ColoredString(x, y, str, 255, 255, 255, 255, 1); 
 }
 
-void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, float a, int scale) 
+void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, float a, float scale) 
 {
 	while (*str)
 	{
-		Draw_CharacterRGBA (x, y, *str, r, g, b, a, scale);
+		Draw_CharacterRGBA (x, y, *str, r, g, b, a, (int)scale);
 
 		// Hooray for variable-spacing!
 		if (*str == ' ')
-			x += 4 * scale;
+			x += 4 * (int)scale;
         else if ((int)*str < 33 || (int)*str > 126)
-            x += 8 * scale;
+            x += 8 * (int)scale;
         else
-            x += (font_kerningamount[(int)(*str - 33)] + 1) * scale;
+            x += (font_kerningamount[(int)(*str - 33)] + 1) * (int)scale;
 		
 		str++;
 	}
 }
 
-int getTextWidth(char *str, int scale)
+int getTextWidth(char *str, float scale)
 {
 	int width = 0;
 
     for (int i = 0; i < strlen(str); i++) {
         // Hooray for variable-spacing!
 		if (str[i] == ' ')
-			width += 4 * scale;
+			width += 4 * (int)scale;
         else if ((int)str[i] < 33 || (int)str[i] > 126)
-            width += 8 * scale;
+            width += 8 * (int)scale;
         else
-            width += (font_kerningamount[(int)(str[i] - 33)] + 1) * scale;
+            width += (font_kerningamount[(int)(str[i] - 33)] + 1) * (int)scale;
     }
 
 	return width;
 }
 
 
-void Draw_ColoredStringCentered(int y, char *str, float r, float g, float b, float a, int scale)
+void Draw_ColoredStringCentered(int y, char *str, float r, float g, float b, float a, float scale)
 {
 	Draw_ColoredString((vid.width - getTextWidth(str, scale))/2, y, str, r, g, b, a, scale);
 }

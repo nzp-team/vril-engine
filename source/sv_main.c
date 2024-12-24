@@ -1296,7 +1296,11 @@ int W_fopen (void)
 	int h = 0;
 
 	Sys_FileOpenRead (va("%s/maps/%s.way",com_gamedir, sv.name), &h);
-	return h;
+
+	if (h > 0)
+		return h;
+	else 
+		return -1;
 }
 
 int W_fopenbeta(void)
@@ -1304,7 +1308,11 @@ int W_fopenbeta(void)
 	int h = 0;
 
 	Sys_FileOpenRead (va("%s/data/%s",com_gamedir, sv.name), &h);
-	return h;
+
+	if (h > 0)
+		return h;
+	else 
+		return -1;
 }
 
 void W_fclose (int h)

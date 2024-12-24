@@ -274,7 +274,7 @@ int has_perk_deadshot;
 int has_perk_mulekick;
 void CL_ParseServerInfo (void)
 {
-	char	*str, tempname[MAX_QPATH];;
+	char	*str;
 	int		i;
 	int		nummodels, numsounds;
 	char	model_precache[MAX_MODELS][MAX_QPATH];
@@ -1213,10 +1213,14 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_rumble:
-			// This platform doesn't use this.
+#ifdef __WII__
+			Wiimote_Rumble ((int)MSG_ReadShort(), (int)MSG_ReadShort(), (int)MSG_ReadShort());
+#else
+			// These platforms don't use this.
 			MSG_ReadShort();
 			MSG_ReadShort();
 			MSG_ReadShort();
+#endif
 			break;
 
 		case svc_screenflash:

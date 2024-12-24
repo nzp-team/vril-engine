@@ -409,12 +409,11 @@ void CL_UpdateTEnts (void)
 		if (!b->model || b->endtime < cl.time)
 			continue;
 
-#ifdef __PSP__
 		// if coming from the player, update the start position
 		if (b->entity == cl.viewentity)
 		{
 			VectorCopy (cl_entities[cl.viewentity].origin, b->start);
-
+#ifdef __PSP__
 			b->start[2] += cl.crouch + bound(-7, scr_ofsy.value, 4);
 			b->start[2] += bound(0, cl_lightning_zadjust.value, 20);//progs.dat aims from 20 for traceline
 
@@ -458,9 +457,9 @@ void CL_UpdateTEnts (void)
 				if (!SV_RecursiveHullCheck(cl.worldmodel->hulls, 0, org, b->end, &trace))
 					VectorCopy(trace.endpos, b->end);
 			}
-		}
 #endif // __PSP__
 
+		}
 	// calculate pitch and yaw
 		VectorSubtract (b->end, b->start, dist);
 

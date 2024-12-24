@@ -214,7 +214,11 @@ extern int psp_system_model;
 #include "psp/common.h"
 #include "psp/vid.h"
 #include "psp/sys.h"
-#endif // _3DS
+#elif __WII__
+#include "wii/common.h"
+#include "wii/vid.h"
+#include "wii/sys.h"
+#endif // _3DS, __PSP__, __WII__
 #include "zone.h"
 #include "mathlib.h"
 #include "bspfile.h"
@@ -245,11 +249,16 @@ typedef struct
 #elif __PSP__
 #include "psp/screen.h"
 #include "psp/net.h"
+#elif __WII__
+#include "wii/screen.h"
+#include "wii/net.h"
 #endif // _3DS
 #include "protocol.h"
 #include "cmd.h"
 #ifdef _3DS
 #include "ctr/sbar.h"
+#elif __WII__
+#include "wii/sbar.h"
 #endif // _3DS
 #include "cl_hud.h"
 #include "sound.h"
@@ -259,17 +268,24 @@ typedef struct
 #elif __PSP__
 #include "psp/render.h"
 #include "psp/client.h"
+#elif __WII__
+#include "wii/render.h"
+#include "wii/client.h"
 #endif // _3DS
 #include "progs.h"
 #ifdef _3DS
 #include "ctr/server.h"
 #elif __PSP__
 #include "psp/server.h"
+#elif __WII__
+#include "wii/server.h"
 #endif // _3DS
 
 #ifdef _3DS
 #include "ctr/gl/gl_model.h"
 #include "ctr/gl/gl_decal.h"
+#elif __WII__
+#include "wii/gx/gx_model.h"
 #else
 #include "psp/gu/gu_model.h"
 #endif
@@ -280,6 +296,8 @@ typedef struct
 #include "ctr/keys.h"
 #elif __PSP__
 #include "psp/keys.h"
+#elif __WII__
+#include "wii/keys.h"
 #endif
 #include "console.h"
 #include "view.h"
@@ -287,12 +305,16 @@ typedef struct
 #include "ctr/menu.h"
 #elif __PSP__
 #include "psp/menu.h"
+#elif __WII__
+#include "wii/menu.h"
 #endif
 #include "crc.h"
 #include "cdaudio.h"
 
 #ifdef _3DS
 #include "ctr/glquake.h"
+#elif __WII__
+#include "wii/gx/gxquake.h"
 #else
 #include "psp/gu/gu_psp.h"
 #endif

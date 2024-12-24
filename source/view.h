@@ -27,6 +27,10 @@ extern float v_blend[4];
 
 extern cvar_t lcd_x;
 
+#ifdef __WII__
+#define IR_YAWRANGE	30.0f
+#define IR_PITCHRANGE	20.0f
+#endif
 
 extern vec3_t CWeaponOffset;//blubs declared this
 extern vec3_t CWeaponRot;

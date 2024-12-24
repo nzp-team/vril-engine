@@ -35,3 +35,7 @@ void IN_ClearStates (void);
 #ifdef _3DS
 void IN_SwitchKeyboard (void);
 #endif // _3DS
+
+#ifdef __WII__
+void Wiimote_Rumble (int low_frequency, int high_frequency, int duration);
+#endif // __WII__

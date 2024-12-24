@@ -72,7 +72,9 @@ cvar_t	teamplay = {"teamplay","0",false,true};
 cvar_t	samelevel = {"samelevel","0"};
 
 cvar_t	show_fps = {"show_fps","0", true};	// set for running times - muff
+#ifndef __WII__
 cvar_t	cl_maxfps = {"cl_maxfps", "30", true}; // dr_mabuse1981: maxfps setting
+#endif // __WII__ creates a timing issue within Dolphin emu - and vsync is always on anyhow
 
 #ifdef __PSP__
 cvar_t	show_bat = {"show_bat","0"};	// test
@@ -238,7 +240,9 @@ void Host_InitLocal (void)
 #endif // __PSP__
 
 	Cvar_RegisterVariable (&show_fps); // muff
+#ifndef __WII__
 	Cvar_RegisterVariable (&cl_maxfps); // dr_mabuse1981: maxfps setting
+#endif
 	Cvar_RegisterVariable (&fraglimit);
 	Cvar_RegisterVariable (&timelimit);
 	Cvar_RegisterVariable (&teamplay);
@@ -272,7 +276,7 @@ void Host_WriteConfiguration (void)
 
 // dedicated servers initialize the host but don't parse and set the
 // config.cfg cvars
-	if (host_initialized & !isDedicated)
+	if (host_initialized && !isDedicated)
 	{
 		f = fopen (va("%s/config.cfg",com_gamedir), "w");
 		if (!f)
@@ -282,7 +286,9 @@ void Host_WriteConfiguration (void)
 		}
 
 		Key_WriteBindings (f);
+
 		Key_WriteDTBindings (f);
+
 		Cvar_WriteVariables (f);
 
 		fclose (f);
@@ -507,6 +513,10 @@ extern float crosshair_offset_step;
 void Host_ClearMemory (void)
 {
 	Con_DPrintf ("Clearing memory\n");
+	
+#ifdef __WII__
+	GL_ClearTextureCache();
+#endif
 
 	Mod_ClearAll ();
 
@@ -547,10 +557,14 @@ Returns false if the time is too short to run a frame
 qboolean Host_FilterTime (float time)
 {
 	realtime += time;
-
+#ifndef __WII__
    if (cl_maxfps.value < 1) Cvar_SetValue("cl_maxfps", 30);
    if (!cls.timedemo && realtime - oldrealtime < 1.0/cl_maxfps.value)
 		return false;		// framerate is too high
+#else
+	if (!cls.timedemo && realtime - oldrealtime < 1.0f/60.0f)
+		return false;		// framerate is too high
+#endif
 
 	host_frametime = realtime - oldrealtime;
 	oldrealtime = realtime;
@@ -911,6 +925,8 @@ void Host_Init (quakeparms_t *parms)
 		Con_Printf ("3DS Model: NEW Nintendo 3DS\n");
 	else
 		Con_Printf ("3DS Model: Nintendo 3DS\n");
+#elif __WII__
+	Con_Printf ("WII NZP v%4.1f (DOL: "__TIME__" "__DATE__")\n", (float)(VERSION));
 #endif // __PSP__, _3DS
 
 	Con_Printf ("%4.1f megabyte Quake hunk \n",parms->memsize/ (1024*1024.0));
@@ -935,8 +951,6 @@ void Host_Init (quakeparms_t *parms)
 		if (!host_h2pal)
 			Sys_Error ("Couldn't load gfx/h2pal.lmp");
 #endif // __PSP__
-
-		IN_Init ();
 		VID_Init (host_basepal);
 		Draw_Init ();
 		SCR_Init ();
@@ -945,6 +959,7 @@ void Host_Init (quakeparms_t *parms)
 		CDAudio_Init ();
 		HUD_Init ();
 		CL_Init ();
+		IN_Init ();
 	}
 	Preload();
 	Cbuf_InsertText ("exec nzp.rc\n");
@@ -953,6 +968,9 @@ void Host_Init (quakeparms_t *parms)
 	host_hunklevel = Hunk_LowMark ();
 
 	host_initialized = true;
+#ifdef __WII__
+	VIDEO_SetBlack(false);
+#endif
 	M_Start_Menu_f();
 	Sys_Printf ("========Nazi Zombies Portable Initialized=========\n");	
 }

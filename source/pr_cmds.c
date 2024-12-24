@@ -22,7 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef _3DS
 extern bool new3ds_flag;
-#endif  // _3DS
+#elif __WII__
+#include <ogc/lwp_watchdog.h>
+#include <wiiuse/wpad.h>
+#include <ctype.h>
+#endif // _3DS, __WII__
 
 #define PR_MAX_TEMPSTRING 2048	// 2001-10-25 Enhanced temp string handling by Maddes
 #define	RETURN_EDICT(e) (((int *)pr_globals)[OFS_RETURN] = EDICT_TO_PROG(e))
@@ -1475,9 +1479,11 @@ This is where the magic happens
 
 #ifdef __PSP__
 #define MaxZombies 12
-#else
+#elif _3DS
 #define MaxZombies 18
-#endif
+#elif __WII__
+#define MaxZombies 24
+#endif //__PSP__, _3DS, __WII__
 
 
 #define WAYPOINT_SET_NONE 	0
@@ -2461,6 +2467,11 @@ void PF_fopen (void)
 	{
 		case 0: // read
 			Sys_FileOpenRead (va("%s/%s",com_gamedir, p), &h);
+			// protection against crash on Wii
+			if(h <= 0) {
+				G_FLOAT(OFS_RETURN) = -1;
+				return;
+			}
 			G_FLOAT(OFS_RETURN) = (float) h;
 			return;
 		case 1: // append -- this is nasty
@@ -2498,7 +2509,9 @@ void fclose (float)
 void PF_fclose (void)
 {
 	int h = (int)G_FLOAT(OFS_PARM0);
-	Sys_FileClose(h);
+	if (h > 0) { // stop crashing on Wii HW
+		Sys_FileClose(h);
+	}
 }
 
 /*
@@ -2519,6 +2532,7 @@ void PF_fgets (void)
 	h = (int)G_FLOAT(OFS_PARM0);
 
 	count = Sys_FileRead(h, &buffer, 1);
+	
 	if (count && buffer == '\r')	// carriage return
 	{
 		count = Sys_FileRead(h, &buffer, 1);	// skip
@@ -3566,14 +3580,14 @@ nzp_maxai()
 */
 void PF_MaxZombies(void)
 {
-#ifdef __PSP__
-	G_FLOAT(OFS_RETURN) = MaxZombies;
-#else
+#ifdef _3DS
 	if (new3ds_flag)
 		G_FLOAT(OFS_RETURN) = MaxZombies;
 	else
 		G_FLOAT(OFS_RETURN) = 12;
-#endif // __PSP__
+#else
+	G_FLOAT(OFS_RETURN) = MaxZombies;
+#endif
 }
 
 /*

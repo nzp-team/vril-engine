@@ -439,24 +439,6 @@ void CL_NewDlight (int key, vec3_t origin, float radius, float time, int type)
 
 }
 
-dlighttype_t SetDlightColor (float f, dlighttype_t def, qboolean random)
-{
-	dlighttype_t	colors[NUM_DLIGHTTYPES-4] = {lt_red, lt_blue, lt_redblue, lt_green};
-
-	if ((int)f == 1)
-		return lt_red;
-	else if ((int)f == 2)
-		return lt_blue;
-	else if ((int)f == 3)
-		return lt_redblue;
-	else if ((int)f == 4)
-		return lt_green;
-	else if (((int)f == NUM_DLIGHTTYPES - 3) && random)
-		return colors[rand()%(NUM_DLIGHTTYPES-4)];
-	else
-		return def;
-}
-
 /*
 ===============
 CL_DecayLights
@@ -750,13 +732,13 @@ void CL_RelinkEntities (void)
 
 				AngleVectors (tempangles, v_forward, v_right, v_up);
 				VectorCopy (cl_entities[cl.viewentity].origin, smokeorg);
-				smokeorg[2] += 32;
+				smokeorg[2] += cl.viewheight; // account for beta maps
 				VectorCopy(smokeorg,start);
 
 				right_offset	 = sv_player->v.Flash_Offset[0];
 				up_offset		 = sv_player->v.Flash_Offset[1];
 				forward_offset 	 = sv_player->v.Flash_Offset[2];
-				
+				 
 				right_offset	= right_offset/1000;
 				up_offset		= up_offset/1000;
 				forward_offset  = forward_offset/1000;
@@ -765,7 +747,6 @@ void CL_RelinkEntities (void)
 				VectorMA (smokeorg, up_offset, v_up ,smokeorg);
 				VectorMA (smokeorg, right_offset, v_right ,smokeorg);
 				VectorAdd(smokeorg,CWeaponOffset,smokeorg);
-
 				QMB_MuzzleFlash (smokeorg);
 			}
 
@@ -880,7 +861,6 @@ void CL_RelinkEntities (void)
 	        dl->color[0] = 0;
 			dl->color[1] = 255;
 			dl->color[2] = 0;
-	        dl->type = SetDlightColor (2, lt_rocket, true);
 		}
 
 		if (ent->effects & EF_RAYRED)
@@ -893,7 +873,6 @@ void CL_RelinkEntities (void)
 	        dl->color[0] = 255;
 			dl->color[1] = 0;
 			dl->color[2] = 0;
-	        dl->type = SetDlightColor (2, lt_rocket, true);
 		}
 
 		if (!strcmp(ent->model->name, "progs/flame2.mdl"))
@@ -934,7 +913,6 @@ void CL_RelinkEntities (void)
 	            dl->color[0] = 0.2;
 				dl->color[1] = 0.1;
 				dl->color[2] = 0.5;
-	            dl->type = SetDlightColor (2, lt_rocket, true);
 			}
 			else if (ent->model->flags & EF_GRENADE)
 				R_RocketTrail (oldorg, ent->origin, 1);
@@ -1116,7 +1094,11 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&in_analog_strafe);
 	Cvar_RegisterVariable (&in_x_axis_adjust);
 	Cvar_RegisterVariable (&in_y_axis_adjust);
-
+	
+#ifdef __WII__
+	Cvar_RegisterVariable (&ads_center);
+	Cvar_RegisterVariable (&sniper_center);
+#endif
 
 	Cvar_RegisterVariable (&m_pitch);
 	Cvar_RegisterVariable (&m_yaw);
