@@ -1634,7 +1634,7 @@ void COM_CloseFile (int h)
 ============
 COM_LoadFile
 
-Filename are reletive to the quake directory.
+Filename are relative to the quake directory.
 Allways appends a 0 byte.
 ============
 */

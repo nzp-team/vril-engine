@@ -20,7 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-#define PR_MAX_TEMPSTRING 2048	// 2001-10-25 Enhanced temp string handling by Maddes
 #define	RETURN_EDICT(e) (((int *)pr_globals)[OFS_RETURN] = EDICT_TO_PROG(e))
 
 /*
@@ -696,11 +695,17 @@ void PF_traceline (void)
 	pr_global_struct->trace_inopen = trace.inopen;
 	VectorCopy (trace.endpos, pr_global_struct->trace_endpos);
 	VectorCopy (trace.plane.normal, pr_global_struct->trace_plane_normal);
-	pr_global_struct->trace_plane_dist =  trace.plane.dist;
-	if (trace.ent)
+	pr_global_struct->trace_plane_dist = trace.plane.dist;
+	if (trace.ent) {
 		pr_global_struct->trace_ent = EDICT_TO_PROG(trace.ent);
-	else
+		pr_global_struct->trace_bone_idx = trace.bone_idx;
+		pr_global_struct->trace_bone_tag = trace.bone_tag;
+	}
+	else {
 		pr_global_struct->trace_ent = EDICT_TO_PROG(sv.edicts);
+		pr_global_struct->trace_bone_idx = -1;
+		pr_global_struct->trace_bone_tag = 0;
+	}
 }
 
 
@@ -3454,16 +3459,16 @@ PF_updateLimb(zombieent, value. limbent)
 */
 void PF_updateLimb (void)
 {
-	int		limb;
-	int		zombieent, limbent;
+	// int		limb;
+	// int		zombieent, limbent;
 
-	zombieent = G_EDICTNUM(OFS_PARM0);
-	limb = G_FLOAT(OFS_PARM1);
-	limbent = G_EDICTNUM(OFS_PARM2);
-	MSG_WriteByte (&sv.reliable_datagram,   svc_limbupdate);
-	MSG_WriteByte (&sv.reliable_datagram,  limb);
-	MSG_WriteShort (&sv.reliable_datagram,  zombieent);
-	MSG_WriteShort (&sv.reliable_datagram,  limbent);
+	// zombieent = G_EDICTNUM(OFS_PARM0);
+	// limb = G_FLOAT(OFS_PARM1);
+	// limbent = G_EDICTNUM(OFS_PARM2);
+	// MSG_WriteByte (&sv.reliable_datagram,   svc_limbupdate);
+	// MSG_WriteByte (&sv.reliable_datagram,  limb);
+	// MSG_WriteShort (&sv.reliable_datagram,  zombieent);
+	// MSG_WriteShort (&sv.reliable_datagram,  limbent);
 }
 
 // 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes  start
@@ -3635,12 +3640,37 @@ ebfs_builtin_t pr_ebfs_builtins[] =
 	{  88, "Get_First_Waypoint", Get_First_Waypoint },//Get the first waypoint in the list
 	{  89, "Close_Waypoint", Close_Waypoint }, //Closes a waypoint
 
-// 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  start
-// not implemented yet
-
-
+	// 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  start
+	// not implemented yet
 	{  90, "tracebox", PF_tracebox },
 	{  99, "tracemove", PF_tracemove },//blubs improved tracebox
+	// {  91, "randomvec", PF_randomvec },
+	// {  92, "getlight", PF_GetLight },	// not implemented yet
+	// {  93, "cvar_create", PF_cvar_create },		// 2001-09-18 New BuiltIn Function: cvar_create() by Maddes
+	// {  94, "fmin", PF_fmin },
+	// {  95, "fmax", PF_fmax },
+	// {  96, "fbound", PF_fbound },
+	// {  97, "fpow", PF_fpow },
+	{  98, "findfloat", PF_FindFloat },
+
+	{  601, "skel_create", PF_skeleton_create },								// blubs -- Gets free server skeleton index
+	{  602, "skel_destroy", PF_skeleton_destroy },								// blubs -- Frees server skeleton at index
+	{  603, "skel_build", PF_skeleton_build },									// blubs -- Build server skeleton at index
+	{  604, "getmodelindex", PF_getmodelindex },								// blubs -- Get modelindex for a given model name (Returns 0 if unrecognized)
+	{  605, "getframeduration", PF_getframeduration },							// blubs -- Get animation framegroup duration in seconds
+	{  606, "processmodelevents", PF_processmodelevents },						// blubs -- Execute IQM FTE anim events from t_start to t_stop
+	{  607, "getmovedistance", PF_getmovedistance },							// blubs -- Returns animation movement distance between two times
+
+	{  608, "skel_get_bonename", PF_skel_get_bonename },						// blubs -- Get bone name for skeleton's bone at index
+	{  609, "skel_get_boneparent", PF_skel_get_boneparent },					// blubs -- Get bone parent bone index for skeleton 
+	{  610, "skel_find_bone", PF_skel_find_bone },								// blubs -- Get bone index for skeleton bone with matching name
+	{  611, "skel_set_bone_hitbox_enabled", PF_skel_set_bone_hitbox_enabled },	// blubs -- Set bone hitbox `enabled` field for skeleton bone(s)
+	{  612, "skel_set_bone_hitbox_ofs", PF_skel_set_bone_hitbox_ofs },			// blubs -- Set bone hitbox `ofs` field for skeleton bone(s)
+	{  613, "skel_set_bone_hitbox_scale", PF_skel_set_bone_hitbox_scale },		// blubs -- Set bone hitbox `scale` field for skeleton bone(s)
+	{  614, "skel_set_bone_hitbox_tag", PF_skel_set_bone_hitbox_tag },			// blubs -- Set bone hitbox `tag` field for skeleton bone(s)
+	{  615, "skel_reset_bone_hitboxes", PF_skel_reset_bone_hitboxes },			// blubs -- Resets bone hitbox fields for all skeleton bones
+	{  616, "skel_register_anim", PF_skel_register_anim },						// blubs -- Pre-calculates and caches the AABB for a skeletal model playing a skeletal animation
+
 /*	{  91, "randomvec", PF_randomvec },
 	{  92, "getlight", PF_GetLight },	// not implemented yet
 	{  93, "cvar_create", PF_cvar_create },		// 2001-09-18 New BuiltIn Function: cvar_create() by Maddes
@@ -3675,6 +3705,22 @@ ebfs_builtin_t pr_ebfs_builtins[] =
 
 	{ 109, "ftoe", PF_ftoe },	// 2001-09-25 New BuiltIn Function: ftoe() by Maddes
 */
+	// { PR_DEFAULT_FUNCNO_EXTENSION_FIND, "extension_find", PF_extension_find },	// 2001-10-20 Extension System by Lord Havoc/Maddes
+	// {   0, "registercvar", PF_cvar_create },	// 0 indicates that this entry is just for remapping (because of name change)
+	// {   0, "checkextension", PF_extension_find },
+
+	// 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  end
+	// { PR_DEFAULT_FUNCNO_BUILTIN_FIND, "builtin_find", PF_builtin_find },	// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes
+	// not implemented yet
+	// { 101, "cmd_find", PF_cmd_find },		// 2001-09-16 New BuiltIn Function: cmd_find() by Maddes
+	// { 102, "cvar_find", PF_cvar_find },		// 2001-09-16 New BuiltIn Function: cvar_find() by Maddes
+	// { 103, "cvar_string", PF_cvar_string },	// 2001-09-16 New BuiltIn Function: cvar_string() by Maddes
+	// { 105, "cvar_free", PF_cvar_free },		// 2001-09-18 New BuiltIn Function: cvar_free() by Maddes
+	// { 106, "NVS_InitSVCMsg", PF_NVS_InitSVCMsg },	// 2000-05-02 NVS SVC by Maddes
+	// { 107, "WriteFloat", PF_WriteFloat },	// 2001-09-16 New BuiltIn Function: WriteFloat() by Maddes
+	// { 108, "etof", PF_etof },	// 2001-09-25 New BuiltIn Function: etof() by Maddes
+	// { 109, "ftoe", PF_ftoe },	// 2001-09-25 New BuiltIn Function: ftoe() by Maddes
+
 
 // 2001-09-20 QuakeC file access by FrikaC/Maddes  start
 // not implemented yet

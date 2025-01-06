@@ -37,35 +37,25 @@ typedef	int	fixed16_t;
 
 #ifndef M_PI
 #define M_PI		3.14159265358979323846	// matches value in gcc v2 math.h
-#endif
+#endif // M_PI
+
+#ifndef M_PI
+#define M_PI = GU_PI	// matches value in gcc v2 math.h
+#endif // M_PI
 
 #define RAD2DEG( x )	((float)(x) * (float)(180.f / M_PI))
-#define DEG2RAD( x )	((float)(x) * (float)(M_PI / 180.f))
+// #define DEG2RAD( x )	((float)(x) * (float)(M_PI / 180.f))
+//#define DEG2RAD( a ) ( a * M_PI ) / 180.0F
+#define M_PI_DIV_180 (M_PI / 180.0) //johnfitz
+#define DEG2RAD( a ) ( (a) * M_PI_DIV_180 ) //johnfitz
 
 struct mplane_s;
 
 extern vec3_t vec3_origin;
 extern	int nanmask;
 
-/*
-#ifndef M_PI
-#define M_PI		3.14159265358979323846	// matches value in gcc v2 math.h
-#endif
 
-#define M_PI_DIV_180 (M_PI / 180.0) //johnfitz
-//#define DEG2RAD( a ) ( a * M_PI ) / 180.0F
-#define DEG2RAD( a ) ( (a) * M_PI_DIV_180 ) //johnfitz
 
-//#else
-*/
-#ifndef M_PI
-#define M_PI = GU_PI	// matches value in gcc v2 math.h
-#endif
-
-#define M_PI_DIV_180 (M_PI / 180.0) //johnfitz
-//#define DEG2RAD( a ) ( a * M_PI ) / 180.0F
-#define DEG2RAD( a ) ( (a) * M_PI_DIV_180 ) //johnfitz
-//#endif
 
 #define CLAMP(min, x, max) ((x) < (min) ? (min) : (x) > (max) ? (max) : (x)) //johnfitz
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -78,8 +68,11 @@ extern	int nanmask;
 #define VectorLerp( v1, lerp, v2, c ) ((c)[0] = (v1)[0] + (lerp) * ((v2)[0] - (v1)[0]), (c)[1] = (v1)[1] + (lerp) * ((v2)[1] - (v1)[1]), (c)[2] = (v1)[2] + (lerp) * ((v2)[2] - (v1)[2]))
 #define DotProduct(x,y) (x[0]*y[0]+x[1]*y[1]+x[2]*y[2])
 #define VectorSubtract(a,b,c) {(c)[0]=(a)[0]-(b)[0];(c)[1]=(a)[1]-(b)[1];(c)[2]=(a)[2]-(b)[2];}
+#define VectorSubtract2D(a,b,c) {(c)[0]=(a)[0]-(b)[0];(c)[1]=(a)[1]-(b)[1];(c)[2]=0;}
 #define VectorAdd(a,b,c) {c[0]=a[0]+b[0];c[1]=a[1]+b[1];c[2]=a[2]+b[2];}
 #define VectorCopy(a,b) {b[0]=a[0];b[1]=a[1];b[2]=a[2];}
+#define VectorMax(a,b,out) {out[0]=a[0]>b[0]?a[0]:b[0]; out[1]=a[1]>b[1]?a[1]:b[1]; out[2]=a[2]>b[2]?a[2]:b[2];}
+#define VectorMin(a,b,out) {out[0]=a[0]<b[0]?a[0]:b[0]; out[1]=a[1]<b[1]?a[1]:b[1]; out[2]=a[2]<b[2]?a[2]:b[2];}
 #define VectorClear(a)		((a)[0] = (a)[1] = (a)[2] = 0)
 #define VectorNegate(a, b)	((b)[0] = -(a)[0], (b)[1] = -(a)[1], (b)[2] = -(a)[2])
 #define VectorSet(v, x, y, z)	((v)[0] = (x), (v)[1] = (y), (v)[2] = (z))
@@ -195,6 +188,7 @@ void Matrix3x4_VectorIRotate( const matrix3x4 in, const float v[3], float out[3]
 void Matrix3x4_ConcatTransforms( matrix3x4 out, const matrix3x4 in1, const matrix3x4 in2 );
 void Matrix3x4_FromOriginQuat( matrix3x4 out, const vec4_t quaternion, const vec3_t origin );
 void Matrix3x4_CreateFromEntity( matrix3x4 out, const vec3_t angles, const vec3_t origin, float scale );
+// void Matrix3x4_CreateFromBlendedEntity(matrix3x4 out, entity_t *ent);
 void Matrix3x4_TransformPositivePlane( const matrix3x4 in, const vec3_t normal, float d, vec3_t out, float *dist );
 void Matrix3x4_SetOrigin( matrix3x4 out, float x, float y, float z );
 void Matrix3x4_Invert_Simple( matrix3x4 out, const matrix3x4 in1 );

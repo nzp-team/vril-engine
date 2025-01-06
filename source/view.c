@@ -1163,30 +1163,30 @@ void V_CalcRefdef (void)
 		bobside = V_CalcBob(speed,1);
 	bob = V_CalcBob (speed,0);
 
-	//============================ Weapon Bobbing Code Block=================================
+	//============================ Weapon Bobbing Code Block =================================
 	for (i=0 ; i<3 ; i++)
 	{
 		if (cl_sidebobbing.value)
 		{
 			view->origin[i] += right[i]*bobside*0.4;
 			view->origin[i] += up[i]*bob*0.5;
-//			view2->origin[i] += right[i]*bobside*0.2;
-//			view2->origin[i] += up[i]*bob*0.2;
-//			mz->origin[i] += right[i]*bobside*0.2;
-//			mz->origin[i] += up[i]*bob*0.2;
+			// view2->origin[i] += right[i]*bobside*0.2;
+			// view2->origin[i] += up[i]*bob*0.2;
+			// mz->origin[i] += right[i]*bobside*0.2;
+			// mz->origin[i] += up[i]*bob*0.2;
 		}
 		else
 		{
 			view->origin[i] += forward[i]*bob*0.4;
-//			view2->origin[i] += forward[i]*bob*0.4;
-//			mz->origin[i] += forward[i]*bob*0.4;
+			// view2->origin[i] += forward[i]*bob*0.4;
+			// mz->origin[i] += forward[i]*bob*0.4;
 		}
 	}
 
 	//view->origin[2] += bob * 2;//Removed  because it added bobbing 2 times, we need to have more control than that, removed all multipliers but
 
-//	view2->origin[2] += bob;
-//	mz->origin[2] += bob;
+	//	view2->origin[2] += bob;
+	//	mz->origin[2] += bob;
 
 	//=============================== Added View Bobbing Code Block (Blubs wuz here)=======================
 	vec3_t vbob;
@@ -1200,14 +1200,14 @@ void V_CalcRefdef (void)
 
 
 
-	//Here we finally set CWeaponOffset by the total weapon model offset, used for mzfl which uses CWeaponOffset variable.
-		CWeaponOffset[0] += view->origin[0];
-		CWeaponOffset[1] += view->origin[1];
-		CWeaponOffset[2] += view->origin[2];
-//I don't know what the comments below this are, but blubs didn't add them...
+	// Here we finally set CWeaponOffset by the total weapon model offset, used for mzfl which uses CWeaponOffset variable.
+	CWeaponOffset[0] += view->origin[0];
+	CWeaponOffset[1] += view->origin[1];
+	CWeaponOffset[2] += view->origin[2];
+	// I don't know what the comments below this are, but blubs didn't add them...
 
-// fudge position around to keep amount of weapon visible
-// roughly equal with different FOV
+	// fudge position around to keep amount of weapon visible
+	// roughly equal with different FOV
 
 	view->model = cl.model_precache[cl.stats[STAT_WEAPON]];
 	view->frame = cl.stats[STAT_WEAPONFRAME];
@@ -1218,7 +1218,7 @@ void V_CalcRefdef (void)
 	view2->frame = cl.stats[STAT_WEAPON2FRAME];
 	view2->skinnum = cl.stats[STAT_WEAPON2SKIN];
 	view2->colormap = vid.colormap;
-// set up the refresh position
+	// set up the refresh position
 
 	//blubs's punchangle interpolation
 	lastPunchAngle[0] += (cl.punchangle[0] - lastPunchAngle[0]) * 0.5;
@@ -1231,29 +1231,33 @@ void V_CalcRefdef (void)
 
 	VectorAdd (r_refdef.viewangles, cl.gun_kick, r_refdef.viewangles);
 
-// smooth out stair step ups
-if (cl.onground && ent->origin[2] - oldz > 0)
-{
-	float steptime;
+	// smooth out stair step ups
+	if (cl.onground && ent->origin[2] - oldz > 0) {
+		float steptime;
 
-	steptime = cl.time - cl.oldtime;
-	if (steptime < 0)
-//FIXME		I_Error ("steptime < 0");
-		steptime = 0;
+		steptime = cl.time - cl.oldtime;
+		if (steptime < 0) {
+			//FIXME - I_Error ("steptime < 0");
+			steptime = 0;
+		}
 
-	oldz += steptime * 80;
-	if (oldz > ent->origin[2])
+		oldz += steptime * 80;
+		if (oldz > ent->origin[2]) {
+			oldz = ent->origin[2];
+		}
+		if (ent->origin[2] - oldz > 12) {
+			oldz = ent->origin[2] - 12;
+		}
+		r_refdef.vieworg[2] += oldz - ent->origin[2];
+		view->origin[2] += oldz - ent->origin[2];
+	}
+	else {
 		oldz = ent->origin[2];
-	if (ent->origin[2] - oldz > 12)
-		oldz = ent->origin[2] - 12;
-	r_refdef.vieworg[2] += oldz - ent->origin[2];
-	view->origin[2] += oldz - ent->origin[2];
-}
-else
-	oldz = ent->origin[2];
+	}
 
-	if (chase_active.value)
+	if (chase_active.value) {
 		Chase_Update ();
+	}
 
 	view2->origin[0] = view->origin[0];
 	view2->origin[1] = view->origin[1];

@@ -478,162 +478,229 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg, qboolean nomap)
 // send an update
 		bits = 0;
 
-		for (i=0 ; i<3 ; i++)
-		{
+		for (i=0 ; i<3 ; i++) {
 			miss = ent->v.origin[i] - ent->baseline.origin[i];
 			if ( miss < -0.1 || miss > 0.1 )
 				bits |= U_ORIGIN1<<i;
 		}
 
-		if ( ent->v.angles[0] != ent->baseline.angles[0] )
+		if ( ent->v.angles[0] != ent->baseline.angles[0] ) {
 			bits |= U_ANGLE1;
+		}
 
-		if ( ent->v.angles[1] != ent->baseline.angles[1] )
+		if ( ent->v.angles[1] != ent->baseline.angles[1] ) {
 			bits |= U_ANGLE2;
+		}
 
-		if ( ent->v.angles[2] != ent->baseline.angles[2] )
+		if ( ent->v.angles[2] != ent->baseline.angles[2] ) {
 			bits |= U_ANGLE3;
+		}
 
 		//if (ent->v.movetype == MOVETYPE_STEP) JUkki removed to test interploation
 		//	bits |= U_NOLERP;	// don't mess up the step animation
 
-		if (ent->baseline.colormap != ent->v.colormap)
+		if (ent->baseline.colormap != ent->v.colormap) {
 			bits |= U_COLORMAP;
-
-		if (ent->baseline.skin != ent->v.skin)
+		}
+		if (ent->baseline.skin != ent->v.skin) {
 			bits |= U_SKIN;
-
-		if (ent->v.iframetime != 0.1)
+		}
+		if (ent->v.iframetime != 0.1) {
 			bits |= U_FRAMETIME;
-
-		if (ent->baseline.frame != ent->v.frame)
+		}
+		if (ent->baseline.frame != ent->v.frame) {
 			bits |= U_FRAME;
-
-		if (ent->baseline.effects != ent->v.effects)
+		}
+		if (ent->baseline.effects != ent->v.effects) {
 			bits |= U_EFFECTS;
-
-		if (ent->baseline.modelindex != ent->v.modelindex)
+		}
+		if (ent->baseline.modelindex != ent->v.modelindex) {
 			bits |= U_MODEL;
+		}
+		// Con_Printf("Networking ent (%d) with baseline skeletonindex: %d, skeletonindex: %.1f\n", e, ent->baseline.skeletonindex, ent->v.skeletonindex);
+		if (ent->baseline.skeletonindex != ent->v.skeletonindex) {
+			bits |= U_SKELETONINDEX;
+		}
+		// Con_Printf("Networking ent (%d) with baseline skeleton_modelindex: %d, skeleton_modelindex: %.1f\n", e, ent->baseline.skeleton_modelindex, ent->v.skeleton_modelindex);
+		if(ent->baseline.skeleton_modelindex != ent->v.skeleton_modelindex) {
+			bits |= U_SKELETON_MODELINDEX;
+		}
+		if(ent->baseline.skeleton_anim_modelindex != ent->v.skeleton_anim_modelindex) {
+			bits |= U_SKELETON_ANIM_MODELINDEX;
+		}
+		if(ent->baseline.skeleton_anim_framegroup != ent->v.skeleton_anim_framegroup) {
+			bits |= U_SKELETON_ANIM_FRAMEGROUP;
+		}
+		if(ent->baseline.skeleton_anim_start_time != ent->v.skeleton_anim_start_time) {
+			bits |= U_SKELETON_ANIM_START_TIME;
+		}
+		if(ent->baseline.skeleton_anim_speed != ent->v.skeleton_anim_speed) {
+			bits |= U_SKELETON_ANIM_SPEED;
+		}
+		if(ent->baseline.limbs_state != ent->v.limbs_state) {
+			bits |= U_LIMBS_STATE;
+		}
 
 		if (ent->v.scale != ENTSCALE_DEFAULT && ent->v.scale != 0)
 			bits |= U_SCALE;
 
         // Tomaz - QC Alpha Scale Glow Begin
 
-	{
-		//Smal Size
-		if ((val = GETEDICTFIELDVALUE(ent, eval_renderamt)) && val->_float != 255.0) // HalfLife support
-			 renderamt = val->_float / 255.0f;
-
-		if ((val = GETEDICTFIELDVALUE(ent, eval_rendermode)) && val->_float != 0) // HalfLife support
-			rendermode = val->_float;
-
-		if ((val = GETEDICTFIELDVALUE(ent, eval_rendercolor))) // HalfLife support
 		{
-			rendercolor[0] = val->vector[0] / 255.0f;
-			rendercolor[1] = val->vector[1] / 255.0f;
-			rendercolor[2] = val->vector[2] / 255.0f;
+			//Smal Size
+			if ((val = GETEDICTFIELDVALUE(ent, eval_renderamt)) && val->_float != 255.0) // HalfLife support
+				renderamt = val->_float / 255.0f;
+
+			if ((val = GETEDICTFIELDVALUE(ent, eval_rendermode)) && val->_float != 0) // HalfLife support
+				rendermode = val->_float;
+
+			if ((val = GETEDICTFIELDVALUE(ent, eval_rendercolor))) // HalfLife support
+			{
+				rendercolor[0] = val->vector[0] / 255.0f;
+				rendercolor[1] = val->vector[1] / 255.0f;
+				rendercolor[2] = val->vector[2] / 255.0f;
+			}
+
+			if (renderamt > 0) {
+				bits |= U_RENDERAMT;
+			}
+			if (rendermode > 0) {
+				bits |= U_RENDERMODE;
+			}
+			if (rendercolor[0] > 0) {
+				bits |= U_RENDERCOLOR1;
+			}
+			if (rendercolor[1] > 0 ) {
+				bits |= U_RENDERCOLOR2;
+			}
+			if (rendercolor[2] > 0 ) {
+				bits |= U_RENDERCOLOR3;
+			}
 		}
-
-		if (renderamt > 0)
-			bits |= U_RENDERAMT;
-
-		if (rendermode > 0)
-			bits |= U_RENDERMODE;
-
-		if (rendercolor[0] > 0)
-		{
-			bits |= U_RENDERCOLOR1;
-		}
-
-		if (rendercolor[1] > 0 )
-		{
-			bits |= U_RENDERCOLOR2;
-		}
-
-		if (rendercolor[2] > 0 )
-		{
-			bits |= U_RENDERCOLOR3;
-		}
-	}
-
-	// Tomaz - QC Alpha Scale Glow End
-		if (e >= 256)//We have more than 256 entities
-			bits |= U_LONGENTITY;
-
-		if (bits >= 256)//this is we've exceded some old 8-bit message
-			bits |= U_MOREBITS;
-
-		// Tomaz - QC Control Begin
-		if (bits >= 65536)//this is if we've excited the original 16-bit message
-			bits |= U_EXTEND1;
-		if (bits >= 16777216)
-			bits |= U_EXTEND2;
-		// Tomaz - QC Control End
-
-	//
-	// write the message
-	//
-		MSG_WriteByte (msg,bits | U_SIGNAL);
-
-		if (bits & U_MOREBITS)
-			MSG_WriteByte (msg, bits>>8);
-
-		 // Tomaz - QC Control Begin
-		if (bits & U_EXTEND1)
-			MSG_WriteByte (msg, bits>>16);
-		if (bits & U_EXTEND2)
-			MSG_WriteByte (msg, bits>>24);
-		 // Tomaz - QC Control End
-
-		if (bits & U_LONGENTITY)
-			MSG_WriteShort (msg,e);
-		else
-			MSG_WriteByte (msg,e);
-
-		if (bits & U_MODEL)
-			MSG_WriteShort (msg, ent->v.modelindex);
-		if (bits & U_FRAME)
-			MSG_WriteShort (msg, ent->v.frame);
-		if (bits & U_COLORMAP)
-			MSG_WriteByte (msg, ent->v.colormap);
-		if (bits & U_SKIN)
-			MSG_WriteByte (msg, ent->v.skin);
-		if (bits & U_FRAMETIME)
-			MSG_WriteFloat (msg, ent->v.iframetime);
-		if (bits & U_EFFECTS)
-			MSG_WriteShort (msg, ent->v.effects);
-		if (bits & U_ORIGIN1)
-			MSG_WriteCoord (msg, ent->v.origin[0]);
-		if (bits & U_ANGLE1)
-			MSG_WriteAngle(msg, ent->v.angles[0]);
-		if (bits & U_ORIGIN2)
-			MSG_WriteCoord (msg, ent->v.origin[1]);
-		if (bits & U_ANGLE2)
-			MSG_WriteAngle(msg, ent->v.angles[1]);
-		if (bits & U_ORIGIN3)
-			MSG_WriteCoord (msg, ent->v.origin[2]);
-		if (bits & U_ANGLE3)
-			MSG_WriteAngle(msg, ent->v.angles[2]);
-		// Tomaz - QC Alpha Scale Glow Begin
-		if (bits & U_RENDERAMT)
-			MSG_WriteFloat(msg, renderamt);
-
-		if (bits & U_RENDERMODE)
-			MSG_WriteFloat(msg, rendermode);
-
-		if (bits & U_RENDERCOLOR1)
-			MSG_WriteFloat(msg, rendercolor[0]);
-
-		if (bits & U_RENDERCOLOR2)
-			MSG_WriteFloat(msg, rendercolor[1]);
-
-		if (bits & U_RENDERCOLOR3)
-			MSG_WriteFloat(msg, rendercolor[2]);
 		// Tomaz - QC Alpha Scale Glow End
 
-		if (bits & U_SCALE)
+		// If entity index exceeds 1 byte (256)
+		if (e >= (1<<8)) {
+			bits |= U_LONGENTITY;
+		}
+		// If field bitflags exceed 8-bit message
+		if (bits >= (1<<8)) {
+			bits |= U_16BITS;
+		}
+
+		// Tomaz - QC Control Begin
+		// If field bitflags exceed 16-bit message
+		if (bits >= (1<<16)) {
+			bits |= U_24BITS;
+		}
+		// If field bitflags exceed 24-bit message
+		if (bits >= (1<<24)) {
+			bits |= U_32BITS;
+		}
+		// Tomaz - QC Control End
+
+		//
+		// write the message
+		//
+		MSG_WriteByte (msg,bits | U_SIGNAL);
+
+		if (bits & U_16BITS) {
+			MSG_WriteByte (msg, bits>>8);
+		}
+		 // Tomaz - QC Control Begin
+		if (bits & U_24BITS) {
+			MSG_WriteByte (msg, bits>>16);
+		}
+		if (bits & U_32BITS) {
+			MSG_WriteByte (msg, bits>>24);
+		}
+		 // Tomaz - QC Control End
+
+		if (bits & U_LONGENTITY) {
+			MSG_WriteShort (msg,e);
+		}
+		else {
+			MSG_WriteByte (msg,e);
+		}
+		if (bits & U_MODEL) {
+			MSG_WriteShort (msg, ent->v.modelindex);
+		}
+		if(bits & U_SKELETONINDEX) {
+			MSG_WriteShort (msg, ent->v.skeletonindex);
+		}
+		if(bits & U_SKELETON_MODELINDEX) {
+			MSG_WriteShort(msg, ent->v.skeleton_modelindex);
+		}
+		if(bits & U_SKELETON_ANIM_MODELINDEX) {
+			MSG_WriteShort(msg, ent->v.skeleton_anim_modelindex);
+		}
+		if(bits & U_SKELETON_ANIM_FRAMEGROUP) {
+			MSG_WriteByte(msg, ent->v.skeleton_anim_framegroup);
+		}
+		if(bits & U_SKELETON_ANIM_START_TIME) {
+			MSG_WriteFloat(msg, ent->v.skeleton_anim_start_time); // FIXME - Encode byte as float? NVM bad idea
+		}
+		if(bits & U_SKELETON_ANIM_SPEED) {
+			MSG_WriteFloat(msg, ent->v.skeleton_anim_speed); // FIXME - Encode byte as float (good idea here)
+		}
+		if(bits & U_LIMBS_STATE) {
+			MSG_WriteByte(msg, ent->v.limbs_state);
+		}
+
+
+		if (bits & U_FRAME) {
+			MSG_WriteShort (msg, ent->v.frame);
+		}
+		if (bits & U_COLORMAP) {
+			MSG_WriteByte (msg, ent->v.colormap);
+		}
+		if (bits & U_SKIN) {
+			MSG_WriteByte (msg, ent->v.skin);
+		}
+		if (bits & U_FRAMETIME) {
+			MSG_WriteFloat (msg, ent->v.iframetime);
+		}
+		if (bits & U_EFFECTS) {
+			MSG_WriteShort (msg, ent->v.effects);
+		}
+		if (bits & U_ORIGIN1) {
+			MSG_WriteCoord (msg, ent->v.origin[0]);
+		}
+		if (bits & U_ANGLE1) {
+			MSG_WriteAngle(msg, ent->v.angles[0]);
+		}
+		if (bits & U_ORIGIN2) {
+			MSG_WriteCoord (msg, ent->v.origin[1]);
+		}
+		if (bits & U_ANGLE2) {
+			MSG_WriteAngle(msg, ent->v.angles[1]);
+		}
+		if (bits & U_ORIGIN3) {
+			MSG_WriteCoord (msg, ent->v.origin[2]);
+		}
+		if (bits & U_ANGLE3) {
+			MSG_WriteAngle(msg, ent->v.angles[2]);
+		}
+		// Tomaz - QC Alpha Scale Glow Begin
+		if (bits & U_RENDERAMT) {
+			MSG_WriteFloat(msg, renderamt);
+		}
+		if (bits & U_RENDERMODE) {
+			MSG_WriteFloat(msg, rendermode);
+		}
+		if (bits & U_RENDERCOLOR1) {
+			MSG_WriteFloat(msg, rendercolor[0]);
+		}
+		if (bits & U_RENDERCOLOR2) {
+			MSG_WriteFloat(msg, rendercolor[1]);
+		}
+		if (bits & U_RENDERCOLOR3) {
+			MSG_WriteFloat(msg, rendercolor[2]);
+		}
+		// Tomaz - QC Alpha Scale Glow End
+		if (bits & U_SCALE) {
 			MSG_WriteByte(msg, ENTSCALE_ENCODE(ent->v.scale));
+		}
  	}
 }
 
@@ -1038,6 +1105,18 @@ void SV_CreateBaseline (void)
 		VectorCopy (svent->v.angles, svent->baseline.angles);
 		svent->baseline.frame = svent->v.frame;
 		svent->baseline.skin = svent->v.skin;
+		// Con_Printf("Setting baseline skeleton index for ent.\n");
+		// Con_Printf("BEFORE: baseline skeleton index: %d, skeleton index: %f\n", svent->baseline.skeletonindex, svent->v.skeletonindex);
+		svent->baseline.skeletonindex = svent->v.skeletonindex;
+		svent->baseline.skeleton_modelindex = svent->v.skeleton_modelindex;
+		svent->baseline.skeleton_anim_modelindex = svent->v.skeleton_anim_modelindex;
+		svent->baseline.skeleton_anim_framegroup = svent->v.skeleton_anim_framegroup;
+		svent->baseline.skeleton_anim_start_time = svent->v.skeleton_anim_start_time;
+		svent->baseline.skeleton_anim_speed = svent->v.skeleton_anim_speed;
+		svent->baseline.limbs_state = svent->v.limbs_state;
+
+
+		// Con_Printf("AFTER: baseline skeleton index: %d, skeleton index: %f\n", svent->baseline.skeletonindex, svent->v.skeletonindex);
 		if (entnum > 0 && entnum <= svs.maxclients)
 		{
 			svent->baseline.colormap = entnum;
@@ -1057,6 +1136,16 @@ void SV_CreateBaseline (void)
 		MSG_WriteShort (&sv.signon,entnum);
 
 		MSG_WriteShort (&sv.signon, svent->baseline.modelindex);
+		MSG_WriteShort (&sv.signon, svent->baseline.skeletonindex);
+		MSG_WriteShort(&sv.signon, svent->baseline.skeleton_modelindex);
+		MSG_WriteShort(&sv.signon, svent->baseline.skeleton_anim_modelindex);
+		MSG_WriteByte(&sv.signon, svent->baseline.skeleton_anim_framegroup);
+		MSG_WriteFloat(&sv.signon, svent->baseline.skeleton_anim_start_time);
+		MSG_WriteFloat(&sv.signon, svent->baseline.skeleton_anim_speed); // FIXME - Replace with float encoded as byte
+		MSG_WriteByte(&sv.signon, svent->baseline.limbs_state);
+
+
+
 		MSG_WriteByte (&sv.signon, svent->baseline.frame);
 		MSG_WriteByte (&sv.signon, svent->baseline.colormap);
 		MSG_WriteByte (&sv.signon, svent->baseline.skin);
@@ -1236,6 +1325,14 @@ void SV_SpawnServer (char *server)
 	}
 
 //
+// Clear server-side IQM skeleton states
+//
+	Con_Printf("About to clear all skeletons\n");
+	sv_skel_clear_all();
+	Con_Printf("Done clearing all skeletons\n");
+
+
+//
 // load the rest of the entities
 //
 	ent = EDICT_NUM(0);
@@ -1282,7 +1379,7 @@ void SV_SpawnServer (char *server)
 
 
 
-//ZOMBIE AI THINGS BELOVE THIS!!!
+//ZOMBIE AI THINGS BELOW THIS!!!
 #define W_MAX_TEMPSTRING 2048
 char	*w_string_temp;
 int W_fopen (void)
@@ -1340,7 +1437,7 @@ char *W_fgets (int h)
 	};
 	w_string_temp[i] = 0;
 
-	return (w_string_temp);
+	return w_string_temp;
 }
 
 char *W_substring (char *p, int offset, int length)

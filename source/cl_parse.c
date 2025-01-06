@@ -517,18 +517,18 @@ void CL_ParseUpdate (int bits)
 	//Con_Printf("2\n");
 
 
-	if (bits & U_MOREBITS)
+	if (bits & U_16BITS)
 	{
 		i = MSG_ReadByte ();
 		bits |= (i<<8);
 	}
 
 	// Tomaz - QC Control Begin
-	if (bits & U_EXTEND1)
+	if (bits & U_24BITS)
 	{
 		bits |= MSG_ReadByte() << 16;
 
-		if (bits & U_EXTEND2)
+		if (bits & U_32BITS)
 		{
 			bits |= MSG_ReadByte() << 24;
 		}
@@ -553,31 +553,86 @@ void CL_ParseUpdate (int bits)
 
 	ent->msgtime = cl.mtime[0];
 
-	if (bits & U_MODEL)
-	{
+	if (bits & U_MODEL) {
 		modnum = MSG_ReadShort ();
-		if (modnum >= MAX_MODELS)
+		if (modnum >= MAX_MODELS) {
 			Host_Error ("CL_ParseModel: bad modnum");
-	}
-	else
-		modnum = ent->baseline.modelindex;
-
-	model = cl.model_precache[modnum];
-	if (model != ent->model)
-	{
-		ent->model = model;
-	// automatic animation (torches, etc) can be either all together
-	// or randomized
-		if (model)
-		{
-			if (model->synctype == ST_RAND)
-				ent->syncbase = (float)(rand()&0x7fff) / 0x7fff;
-			else
-				ent->syncbase = 0.0;
 		}
-		else
-			forcelink = true;	// hack to make null model players work
 	}
+	else {
+		modnum = ent->baseline.modelindex;
+	}
+
+	ent->modelindex = modnum;
+	model = cl.model_precache[modnum];
+	if (model != ent->model) {
+		ent->model = model;
+		// automatic animation (torches, etc) can be either all together
+		// or randomized
+		if (model) {
+			if (model->synctype == ST_RAND) {
+				ent->syncbase = (float)(rand()&0x7fff) / 0x7fff;
+			}
+			else {
+				ent->syncbase = 0.0;
+			}
+		}
+		else {
+			forcelink = true;	// hack to make null model players work
+		}
+	}
+
+	if(bits & U_SKELETONINDEX) {
+		int skeletonindex = MSG_ReadShort();
+		// TODO - Verify this index is within bounds?
+		ent->skeletonindex = skeletonindex;
+	}
+	else {
+		ent->skeletonindex = ent->baseline.skeletonindex;
+	}
+	if(bits & U_SKELETON_MODELINDEX) {
+		ent->skeleton_modelindex = MSG_ReadShort();
+		// Con_Printf("Client read ent (model: %d) networked skeleton_modelindex: %d\n", modnum, ent->skeleton_modelindex);
+	}
+	else {
+		ent->skeleton_modelindex = ent->baseline.skeleton_modelindex;
+		// Con_Printf("Client reset ent (model: %d) skeleton_modelindex to baseline: %d\n", modnum, ent->baseline.skeleton_modelindex);
+	}
+	if(bits & U_SKELETON_ANIM_MODELINDEX) {
+		ent->skeleton_anim_modelindex = MSG_ReadShort();
+	}
+	else {
+		ent->skeleton_anim_modelindex = ent->baseline.skeleton_anim_modelindex;
+	}
+	if(bits & U_SKELETON_ANIM_FRAMEGROUP) {
+		ent->skeleton_anim_framegroup = MSG_ReadByte();
+	}
+	else {
+		ent->skeleton_anim_framegroup = ent->baseline.skeleton_anim_framegroup;
+	}
+	if(bits & U_SKELETON_ANIM_START_TIME) {
+		ent->skeleton_anim_start_time = MSG_ReadFloat(); // FIXME - Encode byte as float? NVM bad idea
+	}
+	else {
+		ent->skeleton_anim_start_time = ent->baseline.skeleton_anim_start_time;
+	}
+	if(bits & U_SKELETON_ANIM_SPEED) {
+		ent->skeleton_anim_speed = MSG_ReadFloat(); // FIXME - Encode byte as float (good idea here)
+	}
+	else {
+		ent->skeleton_anim_speed = ent->baseline.skeleton_anim_speed;
+	}
+	if(bits & U_LIMBS_STATE) {
+		ent->limbs_state = MSG_ReadByte();
+	}
+	else {
+		ent->limbs_state = ent->baseline.limbs_state;
+	}
+
+
+
+
+
 
 	if (bits & U_FRAME)
 		ent->frame = MSG_ReadShort ();
@@ -692,14 +747,18 @@ CL_ParseBaseline
 */
 void CL_ParseBaseline (entity_t *ent)
 {
-	int			i;
-
 	ent->baseline.modelindex = MSG_ReadShort ();
+	ent->baseline.skeletonindex = MSG_ReadShort ();
+	ent->baseline.skeleton_modelindex = MSG_ReadShort();
+	ent->baseline.skeleton_anim_modelindex = MSG_ReadShort();
+	ent->baseline.skeleton_anim_framegroup = MSG_ReadByte();
+	ent->baseline.skeleton_anim_start_time = MSG_ReadFloat();
+	ent->baseline.skeleton_anim_speed = MSG_ReadFloat(); // FIXME - Replace with float encoded as byte
+	ent->baseline.limbs_state = MSG_ReadByte();
 	ent->baseline.frame = MSG_ReadByte ();
 	ent->baseline.colormap = MSG_ReadByte();
 	ent->baseline.skin = MSG_ReadByte();
-	for (i=0 ; i<3 ; i++)
-	{
+	for (int i=0 ; i<3 ; i++) {
 		ent->baseline.origin[i] = MSG_ReadCoord ();
 		ent->baseline.angles[i] = MSG_ReadAngle ();
 	}
@@ -1120,25 +1179,24 @@ void CL_ParseWeaponFire (void)
 CL_ParseLimbUpdate
 ===================
 */
-void CL_ParseLimbUpdate (void)
-{
-    int limb = MSG_ReadByte();
-    int zombieent = MSG_ReadShort();
-    int limbent = MSG_ReadShort();
-    switch (limb)
-    {
-        case 0://head
-            cl_entities[zombieent].z_head = limbent;
-            break;
-        case 1://larm
-            cl_entities[zombieent].z_larm = limbent;
-            break;
-        case 2://rarm
-            cl_entities[zombieent].z_rarm = limbent;
-            break;
-
-    }
-}
+// void CL_ParseLimbUpdate (void)
+// {
+//     // int limb = MSG_ReadByte();
+//     // int zombieent = MSG_ReadShort();
+//     // int limbent = MSG_ReadShort();
+//     // switch (limb)
+//     // {
+//     //     case 0://head
+//     //         cl_entities[zombieent].z_head = limbent;
+//     //         break;
+//     //     case 1://larm
+//     //         cl_entities[zombieent].z_larm = limbent;
+//     //         break;
+//     //     case 2://rarm
+//     //         cl_entities[zombieent].z_rarm = limbent;
+//     //         break;
+//     // }
+// }
 
 
 #define SHOWNET(x) if(cl_shownet.value==2)Con_Printf ("%3i:%s\n", msg_readcount-1, x);
@@ -1418,9 +1476,9 @@ void CL_ParseServerMessage (void)
 			CL_ParseWeaponFire();
 			break;
 
-		case svc_limbupdate:
-			CL_ParseLimbUpdate();
-			break;
+		// case svc_limbupdate:
+		// 	// CL_ParseLimbUpdate();
+		// 	break;
 
 		case svc_bspdecal:
 			CL_ParseBSPDecal ();

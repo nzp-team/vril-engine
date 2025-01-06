@@ -44,6 +44,8 @@ typedef struct
 	int	trace_ent;
 	float	trace_inopen;
 	float	trace_inwater;
+	float 	trace_bone_idx;
+	float 	trace_bone_tag;
 	int	msg_entity;
 	func_t	main;
 	func_t	StartFrame;
@@ -64,6 +66,13 @@ typedef struct
 typedef struct
 {
 	float		modelindex;
+	float		skeletonindex;
+	float 		skeleton_modelindex;
+	float 		skeleton_anim_modelindex;
+	float 		skeleton_anim_framegroup;
+	float 		skeleton_anim_start_time;
+	float 		skeleton_anim_speed;
+	float		limbs_state;
 	vec3_t		absmin;
 	vec3_t		absmax;
 	float		ltime;
@@ -136,9 +145,9 @@ typedef struct
 	float		ideal_yaw;
 	float		yaw_speed;
 	int			aiment;
-	int 		head;
-	int 		larm;
-	int 		rarm;
+	// int 		head;
+	// int 		larm;
+	// int 		rarm;
 	int			goalentity;
 	float		spawnflags;
 	string_t	target;
@@ -165,6 +174,8 @@ typedef struct
 	float 		maxspeed;
 	float 		facingenemy;
 	float 		scale;
+	string_t	nav_targetname;
+	float		state;
 } entvars_t;
 
 #define PROGHEADER_CRC 14116

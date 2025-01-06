@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	PROTOCOL_VERSION	15
 
 // if the high bit of the servercmd is set, the low bits are fast update flags:
-#define	U_MOREBITS	(1<<0)
+#define	U_16BITS	(1<<0)
 #define	U_ORIGIN1	(1<<1)
 #define	U_ORIGIN2	(1<<2)
 #define	U_ORIGIN3	(1<<3)
@@ -31,27 +31,37 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	U_FRAME		(1<<6)
 #define U_SIGNAL	(1<<7)		// just differentiates from other updates
 
+
 // svc_update can pass all of the fast update bits, plus more
-#define	U_EXTEND1	    (1<<8)
+#define	U_24BITS	(1<<8)
 #define	U_ANGLE1	(1<<9)
 #define	U_ANGLE3	(1<<10)
 #define	U_MODEL		(1<<11)
 #define	U_COLORMAP	(1<<12)
 #define	U_SKIN		(1<<13)
 #define	U_EFFECTS	(1<<14)
+#define	U_LONGENTITY (1<<15)
 
 
-// Tomaz - QC Alpha Scale Glow Control Begin
-#define	U_LONGENTITY (1<<15)//blubs here, U_EXTEND1 used to be here, but it needs to be in the byte above, so moved it to the 1<<8 position, and moved the rest down
 #define	U_RENDERMODE    (1<<16)
 #define	U_RENDERAMT	    (1<<17)
 #define	U_RENDERCOLOR1  (1<<18)
 #define	U_RENDERCOLOR2  (1<<19)
 #define	U_RENDERCOLOR3  (1<<20)
-#define	U_EXTEND2	    (1<<21) // another byte to follow
+#define	U_32BITS	    (1<<21) // another byte to follow
 #define	U_FRAMETIME	    (1<<22) // another byte to follow
-// Tomaz - QC Alpha Scale Glow Control End
 #define U_SCALE 		(1<<23)
+
+
+// FIXME... these bits don't ever get sent, will need to update the protocol to have
+// FIXME    them be included...
+#define U_SKELETONINDEX				(1<<24)
+#define U_SKELETON_MODELINDEX 		(1<<25)
+#define U_SKELETON_ANIM_MODELINDEX 	(1<<26)
+#define U_SKELETON_ANIM_FRAMEGROUP 	(1<<27)
+#define U_SKELETON_ANIM_START_TIME 	(1<<28)
+#define U_SKELETON_ANIM_SPEED 		(1<<29)
+#define U_LIMBS_STATE				(1<<30)
 
 
 #define	SU_VIEWHEIGHT	(1<<0)

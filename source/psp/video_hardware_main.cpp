@@ -32,7 +32,7 @@ float TraceLine (vec3_t start, vec3_t end, vec3_t impact, vec3_t normal);
 #include <pspgum.h>
 
 #include "clipping.hpp"
-#include "video_hardware_iqm.h"
+#include "video_hardware_iqm.hpp"
 
 using namespace quake;
 
@@ -357,7 +357,7 @@ int R_FrustumCheckSphere (vec3_t centre, float radius)
 /*
 =================
 R_CullBox
-Returns true if the box is completely outside the frustom
+Returns true if the box is completely outside the frustum
 =================
 */
 int R_CullBox (vec3_t mins, vec3_t maxs)
@@ -573,22 +573,19 @@ void R_BlendedRotateForEntity (entity_t *e, int shadow, unsigned char scale)	// 
 
     timepassed = realtime - e->translate_start_time;
 
-    if (e->translate_start_time == 0 || timepassed > 1)
-    {
+    if (e->translate_start_time == 0 || timepassed > 1) {
         e->translate_start_time = realtime;
         VectorCopy (e->origin, e->origin1);
         VectorCopy (e->origin, e->origin2);
     }
-
-    if (!VectorCompare (e->origin, e->origin2))
-    {
+	// If e->origin != e->origin2
+    if (!VectorCompare (e->origin, e->origin2)) {
         e->translate_start_time = realtime;
         VectorCopy (e->origin2, e->origin1);
         VectorCopy (e->origin,  e->origin2);
         blend = 0;
     }
-    else
-    {
+    else {
         blend =  timepassed / 0.1;
         if (cl.paused || blend > 1)
             blend = 0;
@@ -598,71 +595,191 @@ void R_BlendedRotateForEntity (entity_t *e, int shadow, unsigned char scale)	// 
 
     // Translate.
     const ScePspFVector3 translation = {
-    e->origin[0] + (blend * d[0]),
-    e->origin[1] + (blend * d[1]),
-    e->origin[2] + (blend * d[2])
+    	e->origin[0] + (blend * d[0]),
+    	e->origin[1] + (blend * d[1]),
+    	e->origin[2] + (blend * d[2])
     };
     sceGumTranslate(&translation);
 
 	// Scale.
 	if (scale != ENTSCALE_DEFAULT) {
 		float scalefactor = ENTSCALE_DECODE(scale);
-		const ScePspFVector3 scale =
-		{
-		scalefactor, scalefactor, scalefactor
-		};
+		const ScePspFVector3 scale = { scalefactor, scalefactor, scalefactor };
 		sceGumScale(&scale);
 	}
 
     // orientation interpolation (Euler angles, yuck!)
     timepassed = realtime - e->rotate_start_time;
 
-    if (e->rotate_start_time == 0 || timepassed > 1)
-    {
+    if (e->rotate_start_time == 0 || timepassed > 1) {
         e->rotate_start_time = realtime;
         VectorCopy (e->angles, e->angles1);
         VectorCopy (e->angles, e->angles2);
     }
 
-    if (!VectorCompare (e->angles, e->angles2))
-    {
+    if (!VectorCompare (e->angles, e->angles2)) {
         e->rotate_start_time = realtime;
         VectorCopy (e->angles2, e->angles1);
         VectorCopy (e->angles,  e->angles2);
         blend = 0;
     }
-    else
-    {
+    else {
         blend = timepassed / 0.1;
-        if (cl.paused || blend > 1)
+        if (cl.paused || blend > 1) {
             blend = 1;
+		}
     }
 
     VectorSubtract (e->angles2, e->angles1, d);
 
     // always interpolate along the shortest path
-    for (i = 0; i < 3; i++)
-    {
-        if (d[i] > 180)
-        {
+	// TODO - Is this faster?
+	// d[0] = (d[0] + 180) % 360 - 180;
+	// d[1] = (d[1] + 180) % 360 - 180;
+	// d[2] = (d[2] + 180) % 360 - 180;
+
+    for (i = 0; i < 3; i++) {
+        if (d[i] > 180) {
             d[i] -= 360;
         }
-        else if (d[i] < -180)
-        {
+        else if (d[i] < -180) {
             d[i] += 360;
         }
     }
 
 	// Rotate.
     sceGumRotateZ((e->angles1[YAW] + ( blend * d[YAW])) * (GU_PI / 180.0f));
-	if (shadow == 0)
-	{
+	if (shadow == 0) {
 		sceGumRotateY ((-e->angles1[PITCH] + (-blend * d[PITCH])) * (GU_PI / 180.0f));
 		sceGumRotateX ((e->angles1[ROLL] + ( blend * d[ROLL])) * (GU_PI / 180.0f));
 	}
 
 	sceGumUpdateMatrix();
 }
+
+
+
+
+//
+// Like `R_BlendedRotateForEntity`, but instead builds and returns a matrix3x4 transform
+//
+void R_BlendedRotateForEntity_2(entity_t *ent, matrix3x4 ent_transform_out) {
+    // Position interpolation
+	vec3_t pos;
+
+    float timepassed = realtime - ent->translate_start_time;
+    if (ent->translate_start_time == 0 || timepassed > 1) {
+        ent->translate_start_time = realtime;
+        VectorCopy(ent->origin, ent->origin1);
+        VectorCopy(ent->origin, ent->origin2);
+		VectorCopy(ent->origin, pos);
+    }
+    else if (!VectorCompare (ent->origin, ent->origin2)) {
+        ent->translate_start_time = realtime;
+        VectorCopy(ent->origin2, ent->origin1);
+        VectorCopy(ent->origin,  ent->origin2);
+		VectorCopy(ent->origin, pos);
+    }
+	else if(cl.paused) {
+		VectorCopy(ent->origin, pos);
+	}
+    else {
+		float lerpfrac = MIN(MAX(0.0f, timepassed / 0.1), 1.0f);
+		VectorInterpolate(ent->origin1, lerpfrac, ent->origin2, pos);
+    }
+
+	// Get Scale value
+	float scale = (ent->scale == ENTSCALE_DEFAULT) ? 1.0f : ENTSCALE_DECODE(ent->scale);
+
+	// Rotation interpolation
+	vec3_t angles;
+
+	timepassed = realtime - ent->rotate_start_time;
+    if(ent->rotate_start_time == 0 || timepassed > 1) {
+        ent->rotate_start_time = realtime;
+        VectorCopy(ent->angles, ent->angles1);
+        VectorCopy(ent->angles, ent->angles2);
+		VectorCopy(ent->angles, angles);
+    }
+    else if (!VectorCompare (ent->angles, ent->angles2)) {
+        ent->rotate_start_time = realtime;
+        VectorCopy (ent->angles2, ent->angles1);
+        VectorCopy (ent->angles,  ent->angles2);
+		VectorCopy(ent->angles, angles);
+    }
+	else if(cl.paused) {
+		VectorCopy(ent->angles, angles);
+	}
+    else {
+		float lerpfrac = MIN(MAX(0.0f, timepassed / 0.1), 1.0f);
+		vec3_t delta_angles;
+		VectorSubtract( ent->angles2, ent->angles1, delta_angles);
+		// Interpolate along the shortest path
+		delta_angles[0] = fmodf(delta_angles[0] + 180.0f, 360.0f) - 180.0f;
+		delta_angles[1] = fmodf(delta_angles[1] + 180.0f, 360.0f) - 180.0f;
+		delta_angles[2] = fmodf(delta_angles[2] + 180.0f, 360.0f) - 180.0f;
+		// Perform lerp
+		angles[0] = ent->angles1[0] + (lerpfrac * delta_angles[0]);
+		angles[1] = ent->angles1[1] + (lerpfrac * delta_angles[1]);
+		angles[2] = ent->angles1[2] + (lerpfrac * delta_angles[2]);
+    }
+
+	// Flip pitch
+	angles[PITCH] *= -1;
+
+	Matrix3x4_CreateFromEntity(ent_transform_out, angles, pos, scale);
+}
+
+
+
+
+
+
+
+// 
+// Calculates an entity's interpolated position vector for the current gametime.
+// This function implements that same logic as `R_BlendedRotateForEntity` but
+// does not produce any side-effects.
+//
+
+// void transform_for_blended_entity(entity_t *ent, vec3_t pos_out, vec3_t angles_out, float *scale_out) {
+// 	// Calculate elapsed time in seconds
+// 	float timepassed = realtime - ent->translate_start_time;
+
+// 	vec3_t pos;
+// 	if (ent->translate_start_time == 0 || timepassed > 1 || !VectorCompare(ent->origin, ent->origin2) || cl.paused) {
+// 		VectorCopy(ent->origin, pos);
+// 	}
+// 	else {
+// 		float lerpfrac = MIN(MAX(0.0f, timepassed / 0.1), 1.0f);
+// 		VectorInterpolate(ent->origin1, lerpfrac, ent->origin2, pos);
+// 	}
+
+// 	float scale = (ent->scale == ENTSCALE_DEFAULT) ? 1.0f : ENTSCALE_DECODE(ent->scale);
+
+// 	vec3_t angles;
+// 	timepassed = realtime - ent->rotate_start_time;
+// 	if (ent->rotate_start_time == 0 || timepassed > 1 || !VectorCompare(ent->origin, ent->origin2) || cl.paused) {
+// 		VectorCopy(ent->angles, angles);
+// 	}
+// 	else {
+// 		float lerpfrac = MIN(MAX(0.0f, timepassed / 0.1), 1.0f);
+// 		vec3_t delta_angles;
+// 		VectorSubtract( ent->angles2, ent->angles1, delta_angles);
+// 		// Interpolate along the shortest path
+// 		delta_angles[0] = fmodf(delta_angles[0] + 180.0f, 360.0f) - 180.0f;
+// 		delta_angles[1] = fmodf(delta_angles[1] + 180.0f, 360.0f) - 180.0f;
+// 		delta_angles[2] = fmodf(delta_angles[2] + 180.0f, 360.0f) - 180.0f;
+// 		angles[0] = ent->angles1[0] + (lerpfrac * delta_angles[0]);
+// 		angles[1] = ent->angles1[1] + (lerpfrac * delta_angles[1]);
+// 		angles[2] = ent->angles1[2] + (lerpfrac * delta_angles[2]);
+// 	}
+// 	Matrix3x4_CreateFromEntity(out, angles, pos, scale);
+// }
+
+
+
+
 
 /*
 =============================================================
@@ -1620,77 +1737,77 @@ R_DrawZombieLimb
 model_t *Mod_FindName (char *name);
 
 
-void R_DrawZombieLimb (entity_t *e,int which)
-{
-	//entity_t *e;
-	model_t		*clmodel;
-	aliashdr_t	*paliashdr;
-	entity_t    *limb_ent;
+// void R_DrawZombieLimb (entity_t *e,int which)
+// {
+// 	//entity_t *e;
+// 	model_t		*clmodel;
+// 	aliashdr_t	*paliashdr;
+// 	entity_t    *limb_ent;
 
-	//e = &cl_entities[ent];
-	//clmodel = e->model;
+// 	//e = &cl_entities[ent];
+// 	//clmodel = e->model;
 
-	if(which == 1)
-		limb_ent = &cl_entities[e->z_head];
-	else if(which == 2)
-		limb_ent = &cl_entities[e->z_larm];
-	else if(which == 3)
-		limb_ent = &cl_entities[e->z_rarm];
-	else
-		return;
+// 	if(which == 1)
+// 		limb_ent = &cl_entities[e->z_head];
+// 	else if(which == 2)
+// 		limb_ent = &cl_entities[e->z_larm];
+// 	else if(which == 3)
+// 		limb_ent = &cl_entities[e->z_rarm];
+// 	else
+// 		return;
 	
-	clmodel = limb_ent->model;
-	if(clmodel == NULL)
-		return;
+// 	clmodel = limb_ent->model;
+// 	if(clmodel == NULL)
+// 		return;
 
-	VectorCopy (e->origin, r_entorigin);
-	VectorSubtract (r_origin, r_entorigin, modelorg);
+// 	VectorCopy (e->origin, r_entorigin);
+// 	VectorSubtract (r_origin, r_entorigin, modelorg);
 
-	// locate the proper data
-	paliashdr = (aliashdr_t *)Mod_Extradata (clmodel);//e->model
-	c_alias_polys += paliashdr->numtris;
+// 	// locate the proper data
+// 	paliashdr = (aliashdr_t *)Mod_Extradata (clmodel);//e->model
+// 	c_alias_polys += paliashdr->numtris;
 
-	sceGumPushMatrix();
+// 	sceGumPushMatrix();
 
 	
-	//movement interpolation by blubs
-	R_InterpolateEntity(e,0);
+// 	//movement interpolation by blubs
+// 	R_InterpolateEntity(e,0);
 	
-	//blubs disabled
-	/*if (r_i_model_transform.value)
-		R_BlendedRotateForEntity (e, 0);
-	else
-		R_RotateForEntity (e, 0);*/
+// 	//blubs disabled
+// 	/*if (r_i_model_transform.value)
+// 		R_BlendedRotateForEntity (e, 0);
+// 	else
+// 		R_RotateForEntity (e, 0);*/
 
-	const ScePspFVector3 translation =
-	{
-		paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]
-	};
-	sceGumTranslate(&translation);
+// 	const ScePspFVector3 translation =
+// 	{
+// 		paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]
+// 	};
+// 	sceGumTranslate(&translation);
 
-	const ScePspFVector3 scaling =
-	{
-		paliashdr->scale[0] * 128.f, paliashdr->scale[1] * 128.f, paliashdr->scale[2] * 128.f
-	};
-	sceGumScale(&scaling);
+// 	const ScePspFVector3 scaling =
+// 	{
+// 		paliashdr->scale[0] * 128.f, paliashdr->scale[1] * 128.f, paliashdr->scale[2] * 128.f
+// 	};
+// 	sceGumScale(&scaling);
 
-	sceGumUpdateMatrix();
+// 	sceGumUpdateMatrix();
 
-	IgnoreInterpolatioFrame(e, paliashdr);
+// 	IgnoreInterpolatioFrame(e, paliashdr);
 
-	// Make sure we never try to do blended frame on models with just single frame
-	if (r_i_model_animation.value && paliashdr->numposes > 1)
-	{
-		R_SetupAliasBlendedFrame (e->frame, paliashdr, e);
-	}
-	else
-	{
-		R_SetupAliasFrame (e->frame, paliashdr);
-	}
-	//t3 += Sys_FloatTime();
-	sceGumPopMatrix();
-	sceGumUpdateMatrix();
-}
+// 	// Make sure we never try to do blended frame on models with just single frame
+// 	if (r_i_model_animation.value && paliashdr->numposes > 1)
+// 	{
+// 		R_SetupAliasBlendedFrame (e->frame, paliashdr, e);
+// 	}
+// 	else
+// 	{
+// 		R_SetupAliasFrame (e->frame, paliashdr);
+// 	}
+// 	//t3 += Sys_FloatTime();
+// 	sceGumPopMatrix();
+// 	sceGumUpdateMatrix();
+// }
 /*
 =================
 R_DrawTransparentAliasModel
@@ -1721,7 +1838,7 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	// get lighting information
 	// LordHavoc: .lit support begin
 	//ambientlight = shadelight = R_LightPoint (e->origin); // LordHavoc: original code, removed shadelight and ambientlight
-	R_LightPoint(e->origin); // LordHavoc: lightcolor is all that matters from this
+	// R_LightPoint(e->origin); // LordHavoc: lightcolor is all that matters from this
 	// LordHavoc: .lit support end
 	lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
 	shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
@@ -1805,7 +1922,7 @@ R_DrawAliasModel
 =================
 */
 
-int doZHack;
+// int doZHack;
 
 void R_DrawAliasModel (entity_t *e)
 {
@@ -1817,7 +1934,7 @@ void R_DrawAliasModel (entity_t *e)
 	int			anim;
 	bool 		force_fullbright, additive;
 
-        clmodel = e->model;
+	clmodel = e->model;
 
 	VectorAdd (e->origin, clmodel->mins, mins);
 	VectorAdd (e->origin, clmodel->maxs, maxs);
@@ -1829,16 +1946,17 @@ void R_DrawAliasModel (entity_t *e)
 	if(ISADDITIVE(e))
 	{
 		float deg = e->renderamt;
-		float alpha_val  = deg;
+		float alpha_val = deg;
 		float alpha_val2 = 1 - deg;
 
 		if(deg <= 0.7)
 		 sceGuDepthMask(GU_TRUE);
 
-		sceGuEnable (GU_BLEND);
+		sceGuEnable(GU_BLEND);
 		sceGuBlendFunc(GU_ADD, GU_FIX, GU_FIX,
-		GU_COLOR(alpha_val,alpha_val,alpha_val,alpha_val),
-		GU_COLOR(alpha_val2,alpha_val2,alpha_val2,alpha_val2));
+			GU_COLOR(alpha_val,alpha_val,alpha_val,alpha_val),
+			GU_COLOR(alpha_val2,alpha_val2,alpha_val2,alpha_val2)
+		);
 	}
 	else if(ISGLOW(e))
 	{
@@ -1855,8 +1973,8 @@ void R_DrawAliasModel (entity_t *e)
 	force_fullbright = false;
 	additive = false;
 
-	VectorCopy (e->origin, r_entorigin);
-	VectorSubtract (r_origin, r_entorigin, modelorg);
+	// VectorCopy (e->origin, r_entorigin);
+	// VectorSubtract (r_origin, r_entorigin, modelorg);
 
 	//
 	// get lighting information
@@ -1864,27 +1982,20 @@ void R_DrawAliasModel (entity_t *e)
 
 	// LordHavoc: .lit support begin
 	//ambientlight = shadelight = R_LightPoint (e->origin); // LordHavoc: original code, removed shadelight and ambientlight
-	R_LightPoint(e->origin); // LordHavoc: lightcolor is all that matters from this
-
-	// LordHavoc: .lit support end
-
-	//blubswillrule: disabled dynamic lights
-	/*for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
-	{
-		if (cl_dlights[lnum].die >= cl.time)
-		{
-			VectorSubtract (e->origin,cl_dlights[lnum].origin,dist);
-			add = cl_dlights[lnum].radius - Length(dist);
-
-			if (add > 0)
-			{
+	// LordHavoc: lightcolor is all that matters from this
+	R_LightPoint(e->origin); 
+	vec3_t dist;
+	for (int lnum=0 ; lnum<MAX_DLIGHTS ; lnum++) {
+		if (cl_dlights[lnum].die >= cl.time) {
+			VectorSubtract (e->origin, cl_dlights[lnum].origin, dist);
+			float add = cl_dlights[lnum].radius - Length(dist);
+			if (add > 0) {
 				lightcolor[0] += add * cl_dlights[lnum].color[0];
 				lightcolor[1] += add * cl_dlights[lnum].color[1];
 				lightcolor[2] += add * cl_dlights[lnum].color[2];
 			}
-			// LordHavoc: .lit support end
 		}
-	}*/
+	}
 
 	//Shpuld
 	if(r_model_brightness.value)
@@ -1894,9 +2005,7 @@ void R_DrawAliasModel (entity_t *e)
 		lightcolor[2] += 32;
 	}
 
-
-	for(int g = 0; g < 3; g++)
-	{
+	for(int g = 0; g < 3; g++) {
 		if(lightcolor[g] < 8)
 			lightcolor[g] = 8;
 		if(lightcolor[g] > 125)
@@ -1919,32 +2028,33 @@ void R_DrawAliasModel (entity_t *e)
 		force_fullbright = true;
 		alphafunc = true;
 	}
-	//t3 += Sys_FloatTime();
-	shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
-
-	// LordHavoc: .lit support begin
 	//shadelight = shadelight / 200.0; // LordHavoc: original code
 	VectorScale(lightcolor, 1.0f / 200.0f, lightcolor);
-	// LordHavoc: .lit support end
 
-   	an = e->angles[1]/180*M_PI;
-	shadevector[0] = cosf(-an);
-	shadevector[1] = sinf(-an);
-	shadevector[2] = 1;
-	VectorNormalize (shadevector);
+	//t3 += Sys_FloatTime();
+
+	// blubs - disabled Q1MDL shadows
+	// shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
+   	// an = e->angles[1]/180*M_PI;
+	// shadevector[0] = cosf(-an);
+	// shadevector[1] = sinf(-an);
+	// shadevector[2] = 1;
+	// VectorNormalize (shadevector);
+
+
 
 	//
 	// locate the proper data
 	//
-	if(doZHack && specChar == '%')
-	{
-		if(clmodel->name[12] == 'c')
-			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zcfull.mdl"));
-		else
-			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zfull.mdl"));
-	}
-	else
-		paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
+	// if(doZHack && specChar == '%')
+	// {
+	// 	if(clmodel->name[12] == 'c')
+	// 		paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zcfull.mdl"));
+	// 	else
+	// 		paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zfull.mdl"));
+	// }
+	// else
+	paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
 
 	c_alias_polys += paliashdr->numtris;
 
@@ -1959,7 +2069,10 @@ void R_DrawAliasModel (entity_t *e)
 	// Special handling of view model to keep FOV from altering look.  Pretty good.  Not perfect but rather close.
 	if ((e == &cl.viewent || e == &cl.viewent2) && scr_fov_viewmodel.value) {
 		float scale = 1.0f / tan (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
-		if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) scale *= ENTSCALE_DECODE(e->scale);
+
+		if(e->scale != ENTSCALE_DEFAULT && e->scale != 0) { 
+			scale *= ENTSCALE_DECODE(e->scale);
+		}
 
 		const ScePspFVector3 translation = {
 			paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]
@@ -1972,8 +2085,9 @@ void R_DrawAliasModel (entity_t *e)
 		sceGumScale(&scaling);
 	} else {
 		float scale = 1.0f;
-		if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) scale *= ENTSCALE_DECODE(e->scale);
-
+		if(e->scale != ENTSCALE_DEFAULT && e->scale != 0) { 
+			scale *= ENTSCALE_DECODE(e->scale);
+		}
 		const ScePspFVector3 translation = {
 			paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1] * scale, paliashdr->scale_origin[2] * scale
 		};
@@ -2039,19 +2153,19 @@ void R_DrawAliasModel (entity_t *e)
 	sceGumPopMatrix();
 	sceGumUpdateMatrix();
 	
-	if (doZHack == 0 && specChar == '%')//if we're drawing zombie, also draw its limbs in one call
-	{
-		if(e->z_head)
-			R_DrawZombieLimb(e,1);
-		if(e->z_larm)
-			R_DrawZombieLimb(e,2);
-		if(e->z_rarm)
-			R_DrawZombieLimb(e,3);
-	}
+	// if (doZHack == 0 && specChar == '%')//if we're drawing zombie, also draw its limbs in one call
+	// {
+	// 	if(e->z_head)
+	// 		R_DrawZombieLimb(e,1);
+	// 	if(e->z_larm)
+	// 		R_DrawZombieLimb(e,2);
+	// 	if(e->z_rarm)
+	// 		R_DrawZombieLimb(e,3);
+	// }
 	//st1x:now quake transparency is working
 	sceGuAlphaFunc(GU_GREATER, 0, 0xff);
 	sceGuDisable(GU_ALPHA_TEST);
-	sceGuTexFunc(GU_TFX_REPLACE , GU_TCC_RGBA);
+	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 	sceGuShadeModel(GU_FLAT);
 
 	//Blubswillrule: disabled the next two calls, they look like duplicates
@@ -2884,16 +2998,11 @@ void R_DrawQ3Model (entity_t *ent)
 	//
 	R_LightPoint(currententity->origin); // LordHavoc: lightcolor is all that matters from this
 
-	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
-	{
-		if (cl_dlights[lnum].die >= cl.time)
-		{
-			VectorSubtract (currententity->origin,
-							cl_dlights[lnum].origin,
-							dist);
+	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++) {
+		if (cl_dlights[lnum].die >= cl.time) {
+			VectorSubtract (currententity->origin,cl_dlights[lnum].origin,dist);
 			add = cl_dlights[lnum].radius - Length(dist);
-			if (add > 0)
-			{
+			if (add > 0) {
 				lightcolor[0] += add * cl_dlights[lnum].color[0];
 				lightcolor[1] += add * cl_dlights[lnum].color[1];
 				lightcolor[2] += add * cl_dlights[lnum].color[2];
@@ -2904,8 +3013,7 @@ void R_DrawQ3Model (entity_t *ent)
 	// clamp lighting so it doesn't overbright as much
     //ColorClamp(lightcolor[0], lightcolor[1], lightcolor[2], 0, 125, 8);
 
-    for(int g = 0; g < 3; g++)
-	{
+    for(int g = 0; g < 3; g++) {
       if(lightcolor[g] < 8)
          lightcolor[g] = 8;
 
@@ -2914,7 +3022,6 @@ void R_DrawQ3Model (entity_t *ent)
 	}
 
 	shadedots = r_avertexnormal_dots[((int)(ent->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
-
 	VectorScale(lightcolor, 1.0f / 200.0f, lightcolor);
 
 
@@ -3278,8 +3385,8 @@ void R_DrawEntitiesOnList (void)
 	//t3 = 0;
 	//t1 -= Sys_FloatTime();
 	
-	int zHackCount = 0;
-	doZHack = 0;
+	// int zHackCount = 0;
+	// doZHack = 0;
 	char specChar;
 
    	// draw sprites seperately, because of alpha blending
@@ -3300,22 +3407,22 @@ void R_DrawEntitiesOnList (void)
 		
 		specChar = currententity->model->name[strlen(currententity->model->name)-5];
 		
-		if(specChar == '(' || specChar == '^')//skip heads and arms: it's faster to do this than a strcmp...
-		{
-			continue;
-		}
-		doZHack = 0;
-		if(specChar == '%')
-		{
-			if(zHackCount > 5 || ((currententity->z_head != 0) && (currententity->z_larm != 0) && (currententity->z_rarm != 0)))
-			{
-				doZHack = 1;
-			}
-			else
-			{
-				zHackCount ++;//drawing zombie piece by piece.
-			}
-		}
+		// if(specChar == '(' || specChar == '^')//skip heads and arms: it's faster to do this than a strcmp...
+		// {
+		// 	continue;
+		// }
+		// doZHack = 0;
+		// if(specChar == '%')
+		// {
+		// 	if(zHackCount > 5 || ((currententity->z_head != 0) && (currententity->z_larm != 0) && (currententity->z_rarm != 0)))
+		// 	{
+		// 		doZHack = 1;
+		// 	}
+		// 	else
+		// 	{
+		// 		zHackCount ++;//drawing zombie piece by piece.
+		// 	}
+		// }
 
 		switch (currententity->model->type)
 		{
@@ -3354,7 +3461,7 @@ void R_DrawEntitiesOnList (void)
 		default:
 			break;
 		}
-		doZHack = 0;
+		// doZHack = 0;
 	}
 
 	for (i=0 ; i<cl_numvisedicts ; i++)
@@ -3432,6 +3539,7 @@ void R_DrawViewModel (void)
 	if (!currententity->model)
 		return;
 
+
 	// Tomaz - QC Alpha Scale Begin
 	currententity->renderamt  = cl_entities[cl.viewentity].renderamt;
     currententity->rendermode = cl_entities[cl.viewentity].rendermode;
@@ -3439,6 +3547,17 @@ void R_DrawViewModel (void)
     currententity->rendercolor[1] = cl_entities[cl.viewentity].rendercolor[1];
     currententity->rendercolor[2] = cl_entities[cl.viewentity].rendercolor[2];
     // Tomaz - QC Alpha Scale End
+
+
+	currententity->skeletonindex = cl_entities[cl.viewentity].skeletonindex;
+	currententity->skeleton_modelindex = cl_entities[cl.viewentity].skeleton_modelindex;
+	currententity->skeleton_anim_modelindex = cl_entities[cl.viewentity].skeleton_anim_modelindex;
+	currententity->skeleton_anim_framegroup = cl_entities[cl.viewentity].skeleton_anim_framegroup;
+	currententity->skeleton_anim_start_time = cl_entities[cl.viewentity].skeleton_anim_start_time;
+	currententity->skeleton_anim_speed = cl_entities[cl.viewentity].skeleton_anim_speed;
+
+	// blubs - This may not be the best place to put this, but it wasn't being set anywhere else (defaulting to 0.0)
+	currententity->scale = ENTSCALE_DEFAULT;
 
 
 /*
@@ -3479,18 +3598,20 @@ void R_DrawViewModel (void)
 		//sceGuDisable(GU_DEPTH_TEST);
 		//sceGuDisable(GU_CULL_FACE);
 		//sceGuDisable(GU_SCISSOR_TEST);
-	switch (currententity->model->type)
-	{
-		case mod_alias:
+	switch (currententity->model->type) {
+		case mod_alias: {
 			// fenix@io.com: model transform interpolation
-		old_i_model_transform = r_i_model_transform.value;
-		r_i_model_transform.value = false;
-		if (currententity->model->aliastype == ALIASTYPE_MD2)
-			R_DrawMD2Model (currententity);
-		else
-			R_DrawAliasModel (currententity);
+			old_i_model_transform = r_i_model_transform.value;
+			r_i_model_transform.value = false;
+			if (currententity->model->aliastype == ALIASTYPE_MD2) {
+				R_DrawMD2Model (currententity);
+			}
+			else {
+				R_DrawAliasModel (currententity);
+			}
 			r_i_model_transform.value = old_i_model_transform;
 			break;
+		}
 		case mod_iqm:
 			R_DrawIQMModel(currententity);
 			break;
@@ -3545,12 +3666,25 @@ void R_DrawView2Model (void)
 	if (!currententity->model)
 		return;
 
+	// blubs - This may not be the best place to put this, but it wasn't being set anywhere else (defaulting to 0.0)
+	currententity->scale = ENTSCALE_DEFAULT;
+
 	// Tomaz - QC Alpha Scale Begin
 	currententity->renderamt  = cl_entities[cl.viewentity].renderamt;
     currententity->rendermode = cl_entities[cl.viewentity].rendermode;
     currententity->rendercolor[0] = cl_entities[cl.viewentity].rendercolor[0];
     currententity->rendercolor[1] = cl_entities[cl.viewentity].rendercolor[1];
     currententity->rendercolor[2] = cl_entities[cl.viewentity].rendercolor[2];
+
+	currententity->skeletonindex = cl_entities[cl.viewentity].skeletonindex;
+	currententity->skeleton_modelindex = cl_entities[cl.viewentity].skeleton_modelindex;
+	currententity->skeleton_anim_modelindex = cl_entities[cl.viewentity].skeleton_anim_modelindex;
+	currententity->skeleton_anim_framegroup = cl_entities[cl.viewentity].skeleton_anim_framegroup;
+	currententity->skeleton_anim_start_time = cl_entities[cl.viewentity].skeleton_anim_start_time;
+	currententity->skeleton_anim_speed = cl_entities[cl.viewentity].skeleton_anim_speed;
+
+	// blubs - This may not be the best place to put this, but it wasn't being set anywhere else (defaulting to 0.0)
+	currententity->scale = ENTSCALE_DEFAULT;
 
 	// hack the depth range to prevent view model from poking into walls
 	sceGuDepthRange(0, 19660);
@@ -3793,6 +3927,37 @@ void R_RenderScene (void)
 
 	sceGumRotateX(-90 * piconst);
 	sceGumRotateZ(90 * piconst);
+
+
+	// Con_Printf("R_RenderScene 2\n");
+
+	// NOTE: inverse(AB) = inverse(B) * inverse(A)
+
+	// ------------------------------------------------------------------------
+	// IQM Animated Camera
+	// ------------------------------------------------------------------------
+	if(cl.viewent.model && cl.viewent.model->type == mod_iqm) {
+		// Con_Printf("R_RenderScene 2.1\n");
+		matrix3x4 camera_anim_view_matrix;
+		entity_t *view_ent = &cl.viewent;
+		// Con_Printf("R_RenderScene 2.2\n");
+		if(cl_get_camera_bone_view_transform(view_ent, camera_anim_view_matrix)) {
+			// Con_Printf("R_RenderScene 2.2.1\n");
+			ScePspFMatrix4 camera_anim_view_mat;
+			// Con_Printf("R_RenderScene 2.2.2\n");
+			Matrix3x4_to_ScePspFMatrix4(&camera_anim_view_mat, &camera_anim_view_matrix);
+			// Con_Printf("R_RenderScene 2.2.3\n");
+			// sceGumPushMatrix();
+			sceGumMultMatrix(&camera_anim_view_mat);
+			// Con_Printf("R_RenderScene 2.2.4\n");
+		}
+		// Con_Printf("R_RenderScene 2.3\n");
+	}
+	// ------------------------------------------------------------------------
+
+
+	// Con_Printf("R_RenderScene 3\n");
+
 	sceGumRotateX(-r_refdef.viewangles[2] * piconst);
 	sceGumRotateY(-r_refdef.viewangles[0] * piconst);
 	sceGumRotateZ(-r_refdef.viewangles[1] * piconst);

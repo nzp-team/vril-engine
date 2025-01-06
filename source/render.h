@@ -35,6 +35,10 @@ typedef struct efrag_s
 	struct efrag_s		*entnext;
 } efrag_t;
 
+
+// TODO - Move this somewhere else
+#define IQM_MAX_GEOMSETS	32
+
 typedef struct entity_s
 {
 	qboolean				forcelink;		// model changed
@@ -116,9 +120,15 @@ typedef struct entity_s
     int                     pose1;
     int                     pose2;
 
-    int                     z_head;
-    int                     z_larm;
-    int                     z_rarm;
+	int 					skeletonindex;
+	int						skeleton_modelindex;
+	int						skeleton_anim_modelindex;
+	int						skeleton_anim_framegroup;
+	float					skeleton_anim_start_time;
+	float					skeleton_anim_speed;
+	int						limbs_state;
+
+	int8_t		iqm_geomsets[IQM_MAX_GEOMSETS]; // i-th index contains the geom ID value to draw for geomset i
 
     // fenix@io.com: model transform interpolation
     //  that splits bmodel, or NULL if
@@ -172,7 +182,7 @@ typedef struct
 	float fog_red;
 	float fog_green;
 	float fog_blue;
-        //float fog_alpha;
+	//float fog_alpha;
 
 } refdef_t;
 

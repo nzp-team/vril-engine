@@ -35,7 +35,7 @@ extern "C"
 #include "video_hardware_fullbright.h"
 #include "video_hardware_hlmdl.h"
 #include "video_hardware_images.h"
-#include "video_hardware_iqm.h"
+#include "video_hardware_iqm.hpp"
 
 int LIGHTMAP_BYTES;
 
@@ -338,39 +338,34 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 //
 // load the file
 //
-    if (r_loadq3models.value)
-	{
+    if (r_loadq3models.value) {
 		COM_StripExtension(mod->name, &strip[0]);
 		sprintf (&md3name[0], "%s.md3", &strip[0]);
 
 		buf = (unsigned *)COM_LoadStackFile (md3name, stackbuf, sizeof(stackbuf));
-		if (!buf)
-		{
+		if (!buf) {
 			buf = (unsigned *)COM_LoadStackFile (mod->name, stackbuf, sizeof(stackbuf));
-			if (!buf)
-			{
-				if (crash)
+			if (!buf) {
+				if (crash) {
 					Sys_Error ("Mod_NumForName: %s not found", mod->name);
+				}
 				return NULL;
 			}
 		}
 	}
-	else
-	{
+	else {
 		buf = (unsigned *)COM_LoadStackFile (mod->name, stackbuf, sizeof(stackbuf));
-	    if (!buf && crash)
-		{
+	    if (!buf && crash) {
 			// Reload with another .mdl
 			buf = (unsigned *)COM_LoadStackFile("progs/missing_model.mdl", stackbuf, sizeof(stackbuf));
-			if (buf)
-			{
+			if (buf) {
 				Con_Printf ("Missing model %s substituted\n", mod->name);
 			}
 		}
-		if (!buf)
-		{
-			if (crash)
+		if (!buf) {
+			if (crash) {
 				Sys_Error ("Mod_NumForName: %s not found", mod->name);
+			}
 			return NULL;
 		}
 	}
@@ -388,7 +383,7 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 // call the apropriate loader
 	mod->needload = qfalse;
 
-	// Check if the first few bytes are the IQM header
+	// Check if the first few bytes indicate an IQM header
 	if(!strcmp( (char*) buf, IQMHEADER)) {
 		Con_Printf("IQM model loading requested!\n" );
 		Mod_LoadIQMModel(mod, buf);
