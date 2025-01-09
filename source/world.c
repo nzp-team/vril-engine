@@ -36,13 +36,14 @@ line of sight checks trace->crosscontent, but bullets don't
 
 typedef struct
 {
-	vec3_t		boxmins, boxmaxs;// enclose the test object along entire move
-	float		*mins, *maxs;	// size of the moving object
-	vec3_t		mins2, maxs2;	// size when clipping against mosnters
-	float		*start, *end;
-	trace_t		trace;
+	vec3_t		boxmins, boxmaxs;	// Giant AABB that encloses the test object along entire move
+	float		*mins, *maxs;		// Size of the moving object
+	vec3_t		mins2, maxs2;		// Size when clipping against monsters
+	float		*start, *end;		// Start and end positions of trace
+	trace_t		trace;				// Trace results stored here
+	qboolean	is_line;			// Set to true if mins / maxs are both [0,0,0]. Cache to only check for them once
 	int			type;
-	edict_t		*passedict;
+	edict_t		*passedict;			// Optional entity to ignore along trace
 } moveclip_t;
 
 
@@ -128,71 +129,99 @@ Offset is filled in to contain the adjustment that must be added to the
 testing object's origin to get a point to use with the returned hull.
 ================
 */
-hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset, edict_t *move_ent)
+hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset, edict_t *move_ent, int clip_type)
 {
 	model_t		*model;
 	vec3_t		size;
 	vec3_t		hullmins, hullmaxs;
 	hull_t		*hull;
 
-// decide which clipping hull to use, based on the size
-	if (ent->v.solid == SOLID_BSP)
-	{	// explicit hulls in the BSP model
-		if (ent->v.movetype != MOVETYPE_PUSH)
+	// decide which clipping hull to use, based on the size
+	if (ent->v.solid == SOLID_BSP) {
+		// explicit hulls in the BSP model
+		if (ent->v.movetype != MOVETYPE_PUSH) {
 			Sys_Error ("SOLID_BSP without MOVETYPE_PUSH");
+		}
 
 		model = sv.models[ (int)ent->v.modelindex ];
 
-		if (!model || model->type != mod_brush)
+		if (!model || model->type != mod_brush) {
+			// TODO - Trigger verbose entity debug log or somehow trigger a restart
+			Con_Printf("------------------------------------\n");
+			Con_Printf("SV_HullForEntity -- About to crash\n");
+			Con_Printf("------------------------------------\n");
+			Con_Printf("ent->v.classname: \"%s\"\n", ent->v.classname);
+			Con_Printf("ent->v.modelindex: %d\n", ent->v.modelindex);
+			Con_Printf("ent model ptr: %d\n", model);
+			if(model) {
+				Con_Printf("ent model name: \"%s\"\n", model->name);
+				Con_Printf("ent model type: \"%d\"\n", model->type);
+			}
+			Con_Printf("ent->v.movetype: %f\n", ent->v.movetype);
+			Con_Printf("ent->v.solid: %f\n", ent->v.solid);
+			Con_Printf("ent->v.mins: (%f, %f, %f) \n", ent->v.mins[0], ent->v.mins[1], ent->v.mins[2]);
+			Con_Printf("ent->v.maxs: (%f, %f, %f) \n", ent->v.maxs[0], ent->v.maxs[1], ent->v.maxs[2]);
+			Con_Printf("ent->v.origin: (%f, %f, %f) \n", ent->v.origin[0], ent->v.origin[1], ent->v.origin[2]);
+			Con_Printf("mins: (%f, %f, %f) \n", mins[0], mins[1], mins[2]);
+			Con_Printf("maxs: (%f, %f, %f) \n", maxs[0], maxs[1], maxs[2]);
+			Con_Printf("offset: (%f, %f, %f) \n", offset[0], offset[1], offset[2]);
+			Con_Printf("move_ent->v.classname: \"%s\"\n", move_ent->v.classname);
+			Con_Printf("------------------------------------\n");
+			
 			Sys_Error ("MOVETYPE_PUSH with a non bsp model");
+		}
 
-		VectorSubtract (maxs, mins, size);
+		VectorSubtract(maxs, mins, size);
 
-		{
-			if (model->bspversion == HL_BSPVERSION)
-			{
-				if (size[0] < 3)
-				{
-					hull = &model->hulls[0]; // 0x0x0
+		// Decide which BSP Hull to use, depending on the tracemove size
+		if (model->bspversion == HL_BSPVERSION) {
+			if (size[0] < 3) {
+				hull = &model->hulls[0]; // 0x0x0
+			}
+			else if (size[0] <= 32) {
+				// pick the nearest of 36 or 72
+				if (size[2] < 54) {
+					hull = &model->hulls[3]; // 32x32x36
 				}
-				else if (size[0] <= 32)
-				{
-					if (size[2] < 54) // pick the nearest of 36 or 72
-						hull = &model->hulls[3]; // 32x32x36
-					else
-						hull = &model->hulls[1]; // 32x32x72
-				}
-				else
-				{
-					hull = &model->hulls[2]; // 64x64x64
+				else {
+					hull = &model->hulls[1]; // 32x32x72
 				}
 			}
-			else
-			{
-				if (size[0] < 3)
-					hull = &model->hulls[0];
-				else if (size[0] <= 32)
-					hull = &model->hulls[1];
-				else if (size[0] <= 32 && size[2] <= 28)  // Crouch
-					hull = &model->hulls[3];
-				else
-					hull = &model->hulls[2];
+			else {
+				hull = &model->hulls[2]; // 64x64x64
 			}
-         }
-// calculate an offset value to center the origin
+		}
+		else {
+			if (size[0] < 3) {
+				hull = &model->hulls[0]; // 0x0x0
+			}
+			else if (size[0] <= 32) {
+				hull = &model->hulls[1]; // 32x32x56
+			}
+			// BLUBS FIXME - Not only will this never trigger (see condition above)
+			// BLUBS FIXME   But Q1BSP only has three clipping hulls, so this is likely not even valid
+			// BLUBS FIXME   unless some custom Q1BSP modification adds a special crouching clipping hull?
+			else if (size[0] <= 32 && size[2] <= 28) {
+				hull = &model->hulls[3]; // Crouch
+			}
+			else {
+				hull = &model->hulls[2]; // 64x64x88
+			}
+		}
+
+		// calculate an offset value to center the origin
 		VectorSubtract (hull->clip_mins, mins, offset);
 		VectorAdd (offset, ent->v.origin, offset);
 	}
-	else
-	{	// create a temp hull from bounding box sizes
-
-		VectorSubtract (ent->v.mins, maxs, hullmins);
-		VectorSubtract (ent->v.maxs, mins, hullmaxs);
+	else {
+		// create a temp hull from bounding box sizes
+		VectorSubtract (ent->v.mins, maxs, hullmins); // blubs note: hullmins = ent->v.mins - maxs
+		VectorSubtract (ent->v.maxs, mins, hullmaxs); // blubs note: hullmaxs = ent->v.maxs - mins
+		// blubs note - Updates `box_planes` global to contain the XYZ mins / maxs planes as distance from offset
+		// blubs note - Returns global `box_hull` for hull (without modifying it... for some reason)
 		hull = SV_HullForBox (hullmins, hullmaxs);
-
 		VectorCopy (ent->v.origin, offset);
 	}
-
 
 	return hull;
 }
@@ -644,7 +673,7 @@ struct rhtctx_s
 Q1BSP_RecursiveHullTrace
 This does the core traceline/tracebox logic.
 This version is from FTE and attempts to be more numerically stable than vanilla.
-This is achieved by recursing at the actual decision points instead of vanilla's habit of vanilla's habit of using points that are outside of the child's volume.
+This is achieved by recursing at the actual decision points instead of vanilla's habit of using points that are outside of the child's volume.
 It also uses itself to test solidity on the other side of the node, which ensures consistent precision.
 The actual collision point is (still) biased by an epsilon, so the end point shouldn't be inside walls either way.
 FTE's version 'should' be more compatible with vanilla than DP's (which doesn't take care with allsolid).
@@ -774,8 +803,8 @@ SV_RecursiveHullCheck
 */
 qboolean SV_RecursiveHullCheck (hull_t *hull, int num, vec3_t p1, vec3_t p2, trace_t *trace)
 {
-	if (p1[0] == p2[0] && p1[1] == p2[1] && p1[2] == p2[2])
-	{
+	// If start == end, we're checking at a point
+	if (p1[0] == p2[0] && p1[1] == p2[1] && p1[2] == p2[2]) {
 		/*points cannot cross planes, so do it faster*/
 		int c = SV_HullPointContents(hull, hull->firstclipnode, p1);
 		//trace->contents = c;
@@ -783,17 +812,19 @@ qboolean SV_RecursiveHullCheck (hull_t *hull, int num, vec3_t p1, vec3_t p2, tra
 		if (c != CONTENTS_SOLID)
 		{
 			trace->allsolid = false;
-			if (num == CONTENTS_EMPTY)
+			if (num == CONTENTS_EMPTY) {
 				trace->inopen = true;
-			else
+			}
+			else {
 				trace->inwater = true;
+			}
 		}
-		else
+		else {	
 			trace->startsolid = true;
+		}
 		return true;
 	}
-	else
-	{
+	else {
 		struct rhtctx_s ctx;
 		VectorCopy(p1, ctx.start);
 		VectorCopy(p2, ctx.end);
@@ -862,7 +893,7 @@ Handles selection or creation of a clipping hull, and offseting (and
 eventually rotation) of the end points
 ==================
 */
-trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, edict_t *move_ent )
+trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, edict_t *move_ent , int clip_type)
 {
 	trace_t		trace;
 	matrix4x4	matrix;
@@ -872,55 +903,65 @@ trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t max
 	int         j;
     qboolean    transform_bbox = true;
 
-// fill in a default trace
+	// fill in a default trace
 	memset (&trace, 0, sizeof(trace_t));
 	VectorCopy (end, trace.endpos);
 	trace.fraction = 1;
 	trace.allsolid = true;
+	trace.bone_idx = -1;
 
-// get the clipping hull
-	hull = SV_HullForEntity (ent, mins, maxs, offset, move_ent);
+
+	// get the clipping hull for this entity (if non-BSP, returns a hull representing the ent's AABB)
+	hull = SV_HullForEntity (ent, mins, maxs, offset, move_ent, clip_type);
 
 	// keep untransformed bbox less than 45 degress or train on subtransit.bsp will stop working
-
-	if(( check_angles( ent->v.angles[0] ) || check_angles( ent->v.angles[2] )) && (mins[0] || mins[1] || mins[2]))
+	// If pitch or roll are pointing in a cartesian direction (multiple of 90º, but not 0º ), and any of the mins dimensions are non-zero
+	// blubs -- This check seems highly suspicious, why are we only transforming a bbox under precisely these angles? 
+	// blubs 	Is it due to the nature of AABBs being axis-aligned? Arbitrary angles not supported? weird...
+	if(( check_angles( ent->v.angles[0] ) || check_angles( ent->v.angles[2] )) && (mins[0] || mins[1] || mins[2])) {
 		transform_bbox = true;
-	else
-	    transform_bbox = false;
+	}
+	else {
+		transform_bbox = false;
+	}
 
 	// rotate start and end into the models frame of reference
-	if (ent->v.solid == SOLID_BSP && (ent->v.angles[0] || ent->v.angles[1] || ent->v.angles[2]))
-	{
+	if (ent->v.solid == SOLID_BSP && (ent->v.angles[0] || ent->v.angles[1] || ent->v.angles[2])) {
 		vec3_t	out_mins, out_maxs;
 
-		if( transform_bbox )
+		if( transform_bbox ) {
 			Matrix4x4_CreateFromEntity( matrix, ent->v.angles, ent->v.origin, 1.0f );
-		else
-		    Matrix4x4_CreateFromEntity( matrix, ent->v.angles, offset, 1.0f );
+		}
+		else {
+			Matrix4x4_CreateFromEntity( matrix, ent->v.angles, offset, 1.0f );
+		}
 
 		Matrix4x4_VectorITransform( matrix, start, start_l );
 		Matrix4x4_VectorITransform( matrix, end, end_l );
 
-		if( transform_bbox )
-		{
+		if(transform_bbox) {
 			SV_WorldTransformAABB( matrix, mins, maxs, out_mins, out_maxs );
 			VectorSubtract( hull->clip_mins, out_mins, offset ); // calc new local offset
 
-			for( j = 0; j < 3; j++ )
-			{
-				if( start_l[j] >= 0.0f )
+			for( j = 0; j < 3; j++ ) {
+				if(start_l[j] >= 0.0f) {
 					start_l[j] -= offset[j];
-				else start_l[j] += offset[j];
-				if( end_l[j] >= 0.0f )
+				}
+				else {
+					start_l[j] += offset[j];
+				}
+				if(end_l[j] >= 0.0f) {
 					end_l[j] -= offset[j];
-				else end_l[j] += offset[j];
+				}
+				else { 
+					end_l[j] += offset[j];
+				}
 			}
 		}
 	}
-	else
-	{
-	    VectorSubtract (start, offset, start_l);
-	    VectorSubtract (end, offset, end_l);
+	else {
+	    VectorSubtract (start, offset, start_l); // blubs note: start_l = start - offset
+	    VectorSubtract (end, offset, end_l); // blubs note: end_l = end - offset
 	}
 
 
@@ -928,26 +969,24 @@ trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t max
 	//(hull_t *hull, int num, vec3_t p1, vec3_t p2, trace_t *trace)
 	SV_RecursiveHullCheck (hull, hull->firstclipnode, start_l, end_l, &trace);
 
-	if( trace.fraction != 1.0f )
-	{
+	if( trace.fraction != 1.0f ) {
 		// compute endpos (generic case)
 		VectorLerp( start, trace.fraction, end, trace.endpos );
 
-		if(ent->v.solid == SOLID_BSP && (ent->v.angles[0] || ent->v.angles[1] || ent->v.angles[2]))
-		{
+		if(ent->v.solid == SOLID_BSP && (ent->v.angles[0] || ent->v.angles[1] || ent->v.angles[2])) {
 			// transform plane
 			VectorCopy( trace.plane.normal, temp );
 			Matrix4x4_TransformPositivePlane( matrix, temp, trace.plane.dist, trace.plane.normal, &trace.plane.dist );
 		}
-		else
-		{
+		else {
 			trace.plane.dist = DotProduct( trace.endpos, trace.plane.normal );
 		}
 	}
 
-	if( trace.fraction < 1.0f || trace.startsolid )
+	if( trace.fraction < 1.0f || trace.startsolid ) {
 		trace.ent = ent;
 
+	}
 	return trace;
 }
 
@@ -960,78 +999,119 @@ SV_ClipToLinks
 Mins and maxs enclose the entire area swept by the move
 ====================
 */
-void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
-{
+void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip ) {
 	link_t		*l, *next;
 	edict_t		*touch;
 	trace_t		trace;
 
 // touch linked edicts
-	for (l = node->solid_edicts.next ; l != &node->solid_edicts ; l = next)
-	{
+	for (l = node->solid_edicts.next ; l != &node->solid_edicts ; l = next) {
+		if(clip->trace.allsolid) {
+			return;
+		}
 		next = l->next;
 		touch = EDICT_FROM_AREA(l);
-		if (touch->v.solid == SOLID_NOT)
+		if(touch->v.solid == SOLID_NOT) {
 			continue;
-		if (touch == clip->passedict)
+		}
+		if(touch == clip->passedict) {
 			continue;
-		if (touch->v.solid == SOLID_TRIGGER)
+		}
+		if(touch->v.solid == SOLID_TRIGGER) {
 			Sys_Error ("Trigger in clipping list");
-
-		if (clip->type == MOVE_NOMONSTERS && touch->v.solid != SOLID_BSP)
+		}
+		if((clip->type & MOVE_NOMONSTERS) && (touch->v.solid != SOLID_BSP)) {
 			continue;
-
-		if (clip->boxmins[0] > touch->v.absmax[0]
-		|| clip->boxmins[1] > touch->v.absmax[1]
-		|| clip->boxmins[2] > touch->v.absmax[2]
-		|| clip->boxmaxs[0] < touch->v.absmin[0]
-		|| clip->boxmaxs[1] < touch->v.absmin[1]
-		|| clip->boxmaxs[2] < touch->v.absmin[2] )
-			continue;
-
-		if (clip->passedict && clip->passedict->v.size[0] && !touch->v.size[0])
-			continue;	// points never interact
-
-	// might intersect, so do an exact clip
-		if (clip->trace.allsolid)
-			return;
-		if (clip->passedict)
-		{
-		 	if (PROG_TO_EDICT(touch->v.owner) == clip->passedict)
-				continue;	// don't clip against own missiles
-			if (PROG_TO_EDICT(clip->passedict->v.owner) == touch)
-				continue;	// don't clip against owner
 		}
 
-		if ((int)touch->v.flags & FL_MONSTER)
-			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins2, clip->maxs2, clip->end, touch);
-		else
-			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins, clip->maxs, clip->end, touch);
 
-		if (trace.allsolid || trace.startsolid ||
-		trace.fraction < clip->trace.fraction)
-		{
-			trace.ent = touch;
-		 	if (clip->trace.startsolid)
-			{
-				clip->trace = trace;
-				clip->trace.startsolid = true;
+		// ---------------------------------------------------------------------
+		// Clip tracelines against ents with skeletal model hitboxes
+		// ---------------------------------------------------------------------
+		model_t *model = sv.models[(int)touch->v.modelindex];
+		if(model && (model->type == mod_iqm) && (clip->is_line) && (clip->type & MOVE_SKEL_HITBOXES)) {
+			// Con_Printf("SV_ClipToLinks -- About to check IQM model\n");
+			float cur_trace_fraction = clip->trace.fraction;
+			int hitbox_trace_bone_idx = -1;
+			int hitbox_trace_bone_tag = 0;
+			qboolean skip_ent = sv_intersect_skeletal_model_ent(touch, clip->start, clip->end, &cur_trace_fraction, &hitbox_trace_bone_idx, &hitbox_trace_bone_tag);
+			// Con_Printf("SV_ClipToLinks -- Done checking IQM model\n");
+
+			// `skip_ent` is false if `sv_intersect_skeletal_model_ent` encountered 
+			// a problem and tracelines against this entity should be handled normally
+			if(skip_ent) {
+				// If cur_trace_fraction was not updated to be closer than current, then either:
+				// 	- no bone hitboxes were hit
+				// 	- or a bone hitbox was hit, but farther away than the current clip->trace hit
+				// 	In either case, this is not a hit. Skip.
+				if(cur_trace_fraction < clip->trace.fraction) {
+					trace.ent = touch;
+					trace.allsolid = false;
+					trace.startsolid = clip->trace.startsolid;
+					trace.fraction = cur_trace_fraction;
+					trace.bone_idx = hitbox_trace_bone_idx;
+					trace.bone_tag = hitbox_trace_bone_tag;
+					clip->trace = trace;
+					// TODO - Should we check for `allsolid` on hitboxes?
+					// TODO - Should we check for `startsolid` on hitboxes?
+				}
+				continue;
 			}
-			else
-				clip->trace = trace;
 		}
-		else if (trace.startsolid)
-			clip->trace.startsolid = true;
+		// ---------------------------------------------------------------------
+
+
+		// Check if the ent's bbox is outside of the entire move AABB as an early-out test
+		// --
+		// clip boxmins / boxmaxs contain an AABB that wraps the entire clip move
+		// Do a quick early-out test to see if this AABB overlaps the `touch` ent
+		qboolean clip_move_overlaps_ent = !(
+			clip->boxmaxs[0] < touch->v.absmin[0] || clip->boxmins[0] > touch->v.absmax[0] || 
+			clip->boxmaxs[1] < touch->v.absmin[1] || clip->boxmins[1] > touch->v.absmax[1] ||
+			clip->boxmaxs[2] < touch->v.absmin[2] || clip->boxmins[2] > touch->v.absmax[2]
+		);
+		// If it doesn't overlap, this move can't touch the ent
+		if(!clip_move_overlaps_ent) {
+			continue;
+		}
+		// If touch ent has 0 width, skip (points never intersect)
+		if (clip->passedict && clip->passedict->v.size[0] && !touch->v.size[0]) {
+			continue;	
+		}
+		if(clip->passedict) {
+		 	if (PROG_TO_EDICT(touch->v.owner) == clip->passedict) {
+				continue;	// don't clip against own missiles
+			}
+			if (PROG_TO_EDICT(clip->passedict->v.owner) == touch) {
+				continue;	// don't clip against owner
+			}
+		}
+		// might intersect, so do an exact clip
+		if((int)touch->v.flags & FL_MONSTER) {
+			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins2, clip->maxs2, clip->end, touch, clip->type);
+		}
+		else {
+			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins, clip->maxs, clip->end, touch, clip->type);
+		}
+		if(trace.allsolid || trace.startsolid || trace.fraction < clip->trace.fraction) {
+			trace.ent = touch;
+			trace.startsolid = clip->trace.startsolid;
+			clip->trace = trace;
+		}
 	}
 
-// recurse down both sides
-	if (node->axis == -1)
+	// recurse down both sides
+	if (node->axis == -1) {
 		return;
+	}
 
-	if ( clip->boxmaxs[node->axis] > node->dist )
-		SV_ClipToLinks ( node->children[0], clip );
-	if ( clip->boxmins[node->axis] < node->dist )
-		SV_ClipToLinks ( node->children[1], clip );
+	// Recurse down the binary tree for this node
+	if(clip->boxmaxs[node->axis] > node->dist) {
+		SV_ClipToLinks( node->children[0], clip);
+	}
+	if(clip->boxmins[node->axis] < node->dist) {
+		SV_ClipToLinks( node->children[1], clip);
+	}
 }
 
 
@@ -1044,23 +1124,17 @@ void SV_MoveBounds (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, vec3_t b
 {
 #if 0
 // debug to test against everything
-boxmins[0] = boxmins[1] = boxmins[2] = -9999;
-boxmaxs[0] = boxmaxs[1] = boxmaxs[2] = 9999;
+	boxmins[0] = boxmins[1] = boxmins[2] = -9999;
+	boxmaxs[0] = boxmaxs[1] = boxmaxs[2] = 9999;
 #else
-	int		i;
-
-	for (i=0 ; i<3 ; i++)
-	{
-		if (end[i] > start[i])
-		{
-			boxmins[i] = start[i] + mins[i] - 1;
-			boxmaxs[i] = end[i] + maxs[i] + 1;
-		}
-		else
-		{
-			boxmins[i] = end[i] + mins[i] - 1;
-			boxmaxs[i] = start[i] + maxs[i] + 1;
-		}
+	// Build AABB from start to end points
+	VectorMin(start,end,boxmins);
+	VectorMax(start,end,boxmaxs);
+	// Grow AABB to fit AABB of size `mins`/`maxs` at both start and end
+	// Grow by 1 unit in each direction to guarantee overlaps
+	for (int i=0 ; i<3 ; i++) {
+		boxmins[i] += mins[i] - 1;
+		boxmaxs[i] += maxs[i] + 1;
 	}
 #endif
 }
@@ -1070,8 +1144,7 @@ boxmaxs[0] = boxmaxs[1] = boxmaxs[2] = 9999;
 SV_Move
 ==================
 */
-trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, edict_t *passedict)
-{
+trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, edict_t *passedict) {
 	moveclip_t	clip;
 	int			i;
 
@@ -1084,28 +1157,27 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 	clip.type = type;
 	clip.passedict = passedict;
 
-// clip to world
-	clip.trace = SV_ClipMoveToEntity( sv.edicts, start, mins, maxs, end, passedict);
+	// If trace is a line, calculate here and stash variable
+	clip.is_line = (mins[0]==0 && mins[1]==0 && mins[2]==0 && maxs[0]==0 && maxs[1]==0 && maxs[2]==0);
 
-	if (type == MOVE_MISSILE)
-	{
-		for (i=0 ; i<3 ; i++)
-		{
-			clip.mins2[i] = -15;
-			clip.maxs2[i] = 15;
-		}
+	// clip to world
+	clip.trace = SV_ClipMoveToEntity( sv.edicts, start, mins, maxs, end, passedict, type);
+
+	if (type & MOVE_MISSILE) {
+		VectorSet(clip.mins2, -15, -15, -15);
+		VectorSet(clip.maxs2,  15,  15,  15);
 	}
-	else
-	{
-		VectorCopy (mins, clip.mins2);
-		VectorCopy (maxs, clip.maxs2);
+	else {
+		VectorCopy(mins, clip.mins2);
+		VectorCopy(maxs, clip.maxs2);
 	}
 
-// create the bounding box of the entire move
-	SV_MoveBounds ( start, clip.mins2, clip.maxs2, end, clip.boxmins, clip.boxmaxs );
+	// create the bounding box of the entire move
+	// This creates one giant AABB around from the start + ofs to the end + ofs
+	SV_MoveBounds( start, clip.mins2, clip.maxs2, end, clip.boxmins, clip.boxmaxs );
 
-// clip to entities
-	SV_ClipToLinks ( sv_areanodes, &clip );
+	// clip to entities
+	SV_ClipToLinks( sv_areanodes, &clip );
 
 	return clip.trace;
 }

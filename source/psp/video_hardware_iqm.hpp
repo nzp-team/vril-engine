@@ -263,10 +263,6 @@ typedef struct skeletal_mesh_s {
     vec3_t verts_scale;                         // Scale for vertex quantization grid
     // ------------------------------------------------------------------------
 
-    // TODO - Geomset identifiers...
-    // TODO - Material identifiers...
-    // TODO - Other vertex attributes (tangents, colors)
-
     uint8_t n_submeshes = 0;
     struct skeletal_mesh_s *submeshes = nullptr;
 } skeletal_mesh_t;
@@ -285,12 +281,12 @@ typedef struct skeletal_material_s {
     // bool color; // For color tinting
 
     bool add_color; // If true, below color is added to texture
+    // TODO - replace with vec3_t color; or vec4_t color?
     float add_color_red;
     float add_color_green;
     float add_color_blue;
     float add_color_alpha;
 
-    // TODO - Given that we want to hold:
 } skeletal_material_t;
 
 
@@ -426,9 +422,6 @@ extern skeletal_skeleton_t sv_skeletons[MAX_SKELETONS]; // Server-side skeleton 
 extern skeletal_skeleton_t cl_skeletons[MAX_SKELETONS]; // Client-side skeleton objects
 extern int sv_n_skeletons;
 extern int cl_n_skeletons;
-
-
-skeletal_model_t *load_iqm_file(const char*file_path);
 
 
 

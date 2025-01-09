@@ -34,12 +34,15 @@ typedef struct
 	vec3_t	endpos;			// final position
 	plane_t	plane;			// surface normal at impact
 	edict_t	*ent;			// entity the surface is on
+	int bone_idx;			// Which bone was hit
+	int bone_tag;			// Tag value for the bone that was hit (default=0)
 } trace_t;
 
 
 #define	MOVE_NORMAL		0
 #define	MOVE_NOMONSTERS	1
 #define	MOVE_MISSILE	2
+#define MOVE_SKEL_HITBOXES 4
 
 
 void SV_ClearWorld (void);
