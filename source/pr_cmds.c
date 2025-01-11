@@ -3669,42 +3669,13 @@ ebfs_builtin_t pr_ebfs_builtins[] =
 	{  613, "skel_set_bone_hitbox_scale", PF_skel_set_bone_hitbox_scale },		// blubs -- Set bone hitbox `scale` field for skeleton bone(s)
 	{  614, "skel_set_bone_hitbox_tag", PF_skel_set_bone_hitbox_tag },			// blubs -- Set bone hitbox `tag` field for skeleton bone(s)
 	{  615, "skel_reset_bone_hitboxes", PF_skel_reset_bone_hitboxes },			// blubs -- Resets bone hitbox fields for all skeleton bones
+	
+// FIXME - Shouldn't disable via macro because we'll need to also remove references to it from QC
+// FIXME   When this macro isn't defined, this function is an empty stub.
+// #ifdef IQM_BBOX_PER_MODEL_PER_ANIM
 	{  616, "skel_register_anim", PF_skel_register_anim },						// blubs -- Pre-calculates and caches the AABB for a skeletal model playing a skeletal animation
+// #endif // IQM_BBOX_PER_MODEL_PER_ANIM
 
-/*	{  91, "randomvec", PF_randomvec },
-	{  92, "getlight", PF_GetLight },	// not implemented yet
-	{  93, "cvar_create", PF_cvar_create },		// 2001-09-18 New BuiltIn Function: cvar_create() by Maddes
-	{  94, "fmin", PF_fmin },
-	{  95, "fmax", PF_fmax },
-	{  96, "fbound", PF_fbound },
-	{  97, "fpow", PF_fpow },
-	*/{  98, "findfloat", PF_FindFloat },/*
-	{ PR_DEFAULT_FUNCNO_EXTENSION_FIND, "extension_find", PF_extension_find },	// 2001-10-20 Extension System by Lord Havoc/Maddes
-	{   0, "registercvar", PF_cvar_create },	// 0 indicates that this entry is just for remapping (because of name change)
-	{   0, "checkextension", PF_extension_find },
-*/
-// 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  end
-
-	{ PR_DEFAULT_FUNCNO_BUILTIN_FIND, "builtin_find", PF_builtin_find },	// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes
-
-// not implemented yet
-/*
-	{ 101, "cmd_find", PF_cmd_find },		// 2001-09-16 New BuiltIn Function: cmd_find() by Maddes
-
-	{ 102, "cvar_find", PF_cvar_find },		// 2001-09-16 New BuiltIn Function: cvar_find() by Maddes
-
-	{ 103, "cvar_string", PF_cvar_string },	// 2001-09-16 New BuiltIn Function: cvar_string() by Maddes
-
-	{ 105, "cvar_free", PF_cvar_free },		// 2001-09-18 New BuiltIn Function: cvar_free() by Maddes
-
-	{ 106, "NVS_InitSVCMsg", PF_NVS_InitSVCMsg },	// 2000-05-02 NVS SVC by Maddes
-
-	{ 107, "WriteFloat", PF_WriteFloat },	// 2001-09-16 New BuiltIn Function: WriteFloat() by Maddes
-
-	{ 108, "etof", PF_etof },	// 2001-09-25 New BuiltIn Function: etof() by Maddes
-
-	{ 109, "ftoe", PF_ftoe },	// 2001-09-25 New BuiltIn Function: ftoe() by Maddes
-*/
 	// { PR_DEFAULT_FUNCNO_EXTENSION_FIND, "extension_find", PF_extension_find },	// 2001-10-20 Extension System by Lord Havoc/Maddes
 	// {   0, "registercvar", PF_cvar_create },	// 0 indicates that this entry is just for remapping (because of name change)
 	// {   0, "checkextension", PF_extension_find },

@@ -37,14 +37,20 @@ void Matrix3x4_VectorTransform( const matrix3x4 in, const float v[3], float out[
 	out[2] = v[0] * in[2][0] + v[1] * in[2][1] + v[2] * in[2][2] + in[2][3];
 }
 
+//
+// Applies inverse affine transform specified by `in` to point `v`
+// NOTE - This method assumes the transform is affine
+// 
 void Matrix3x4_VectorITransform( const matrix3x4 in, const float v[3], float out[3] )
 {
 	vec3_t	dir;
 
+	// Apply the inverse translation from `m`
 	dir[0] = v[0] - in[0][3];
 	dir[1] = v[1] - in[1][3];
 	dir[2] = v[2] - in[2][3];
 
+	// Apply the inverse rotation / scaling upper-left 3x3 matrix from `m`
 	out[0] = dir[0] * in[0][0] + dir[1] * in[1][0] + dir[2] * in[2][0];
 	out[1] = dir[0] * in[0][1] + dir[1] * in[1][1] + dir[2] * in[2][1];
 	out[2] = dir[0] * in[0][2] + dir[1] * in[1][2] + dir[2] * in[2][2];
@@ -94,6 +100,9 @@ void Matrix3x4_OriginFromMatrix( const matrix3x4 in, float *out )
 	out[2] = in[2][3];
 }
 
+//
+// Computes matrix3x4 `out` from rotation quaternion `quaternion` and translation `origin`
+// 
 void Matrix3x4_FromOriginQuat( matrix3x4 out, const vec4_t quaternion, const vec3_t origin )
 {
 	out[0][0] = 1.0f - 2.0f * quaternion[1] * quaternion[1] - 2.0f * quaternion[2] * quaternion[2];

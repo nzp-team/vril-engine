@@ -52,11 +52,15 @@ int cl_n_skeletons = 0;
 
 
 void free_skeletal_model(skeletal_model_t *skel_model);
+
+
+#ifdef IQM_BBOX_PER_MODEL_PER_ANIM
 void calc_skel_model_bounds_for_rest_pose(skeletal_model_t *skel_model, vec3_t model_mins, vec3_t model_maxs);
 void calc_skel_model_bounds_for_anim(skeletal_model_t *skel_model, skeletal_model_t *anim_model, vec3_t model_mins, vec3_t model_maxs);
+void _get_skel_model_bounds(skeletal_model_t *skel_model, skeletal_model_t *skel_anim, int model_idx, int animmodel_idx, vec3_t mins, vec3_t maxs);
+#endif // IQM_BBOX_PER_MODEL_PER_ANIM
 void cl_get_skel_model_bounds(int model_idx, int animmodel_idx, vec3_t mins, vec3_t maxs);
 void sv_get_skel_model_bounds(int model_idx, int animmodel_idx, vec3_t mins, vec3_t maxs);
-void _get_skel_model_bounds(skeletal_model_t *skel_model, skeletal_model_t *skel_anim, int model_idx, int animmodel_idx, vec3_t mins, vec3_t maxs);
 
 
 // 
@@ -1771,6 +1775,8 @@ skeletal_model_t *load_iqm_file(void *iqm_data) {
 #endif // IQMDEBUG_LOADIQM_BONEINFO
 
 
+
+#ifdef IQM_BBOX_PER_MODEL_PER_ANIM
     // --------------------------------------------------
     // Set default skeleton hitbox values
     // These will be calculated properly by`calc_skel_model_bounds_for_rest_pose` 
@@ -1781,6 +1787,7 @@ skeletal_model_t *load_iqm_file(void *iqm_data) {
     VectorSet(skel_model->anim_bone_hitbox_mins, -1, -1, -1);
     VectorSet(skel_model->anim_bone_hitbox_maxs,  1,  1,  1);
     // --------------------------------------------------
+#endif // IQM_BBOX_PER_MODEL_PER_ANIM
 
     // --------------------------------------------------
     // Set default hitbox values for all bones
@@ -3216,6 +3223,7 @@ void Mod_LoadIQMModel (model_t *model, void *buffer) {
     model->type = mod_iqm;
 
 
+#ifdef IQM_BBOX_PER_MODEL_PER_ANIM
     Con_Printf("About to calculate rest pose mins / maxs\n");
     calc_skel_model_bounds_for_rest_pose(relocatable_skel_model, relocatable_skel_model->rest_pose_bone_hitbox_mins, relocatable_skel_model->rest_pose_bone_hitbox_maxs);
     Con_Printf("Done calculating rest pose mins / maxs:\n");
@@ -3226,6 +3234,7 @@ void Mod_LoadIQMModel (model_t *model, void *buffer) {
     Con_Printf("Done calculating anim pose mins / maxs:\n");
     Con_Printf("\tmins: [%f, %f, %f]\n", relocatable_skel_model->anim_bone_hitbox_mins[0], relocatable_skel_model->anim_bone_hitbox_mins[1], relocatable_skel_model->anim_bone_hitbox_mins[2]);
     Con_Printf("\tmaxs: [%f, %f, %f]\n", relocatable_skel_model->anim_bone_hitbox_maxs[0], relocatable_skel_model->anim_bone_hitbox_maxs[1], relocatable_skel_model->anim_bone_hitbox_maxs[2]);
+#endif // IQM_BBOX_PER_MODEL_PER_ANIM
 
 
 #ifdef IQMDEBUG_LOADIQM_RELOCATE
@@ -4412,6 +4421,9 @@ void PF_skeleton_build(void) {
 }
 
 
+
+#ifdef IQM_BBOX_PER_MODEL_PER_ANIM
+
 // 
 // Precalculates a skeletal model's mins / maxs for animations from a given skeletal model
 //
@@ -4454,6 +4466,16 @@ void PF_skel_register_anim(void) {
 
     Con_Printf("PF_skel_register_anim end\n");
 }
+
+#else // IQM_BBOX_PER_MODEL_PER_ANIM
+
+// 
+// If dynamic bbox calculations are disabled, this is a stub
+// (If we remove this function, we'll need to remove references to it from QC)
+//
+void PF_skel_register_anim(void) {};
+
+#endif // IQM_BBOX_PER_MODEL_PER_ANIM
 
 
 
@@ -4517,11 +4539,11 @@ qboolean sv_intersect_skeletal_model_ent(edict_t *ent, vec3_t ray_start, vec3_t 
     // 
     // ------------------------------------------------------------------------
     // Get skeleton model-space AABB
+
     vec3_t skel_model_mins;
     vec3_t skel_model_maxs;
     // Con_Printf("sv_intersect_skeletal_model: skel model: %d, skel anim: %d\n", sv_skeleton->modelindex, sv_skeleton->anim_modelindex);
     sv_get_skel_model_bounds( sv_skeleton->modelindex, sv_skeleton->anim_modelindex, skel_model_mins, skel_model_maxs);
-
 
     // Con_Printf("sv_intersect_skeletal_model skel bounds: (mins: [%.2f, %.2f, %.2f], maxs: [%.2f, %.2f, %.2f])\n",
     //     skel_model_mins[0], skel_model_mins[1], skel_model_mins[2],
@@ -5889,7 +5911,7 @@ void R_DrawIQMModel(entity_t *ent) {
 // animations.
 //
 // ============================================================================
-
+#ifdef IQM_BBOX_PER_MODEL_PER_ANIM
 
 // List of jagged arrays containing indices into `bounds_min` / `bounds_max`
 int16_t *skel_model_bounds_idxs[MAX_MODELS] = {nullptr};
@@ -6104,14 +6126,6 @@ void calc_skel_model_bounds_for_anim(skeletal_model_t *skel_model, skeletal_mode
 
     const int unit_bbox_n_corners = 8;
     static vec3_t unit_bbox_corners[8] = {
-        // {-1,-1,-1}, // Left,  Back,  Bottom
-        // { 1,-1,-1}, // Right, Back,  Bottom
-        // { 1, 1,-1}, // Right, Front, Bottom
-        // {-1, 1,-1}, // Left,  Front, Bottom
-        // {-1,-1, 1}, // Left,  Back,  Top
-        // { 1,-1, 1}, // Right, Back,  Top
-        // { 1, 1, 1}, // Right, Front, Top
-        // {-1, 1, 1}, // Left,  Front, Top
         {-0.5,-0.5,-0.5}, // Left,  Back,  Bottom
         { 0.5,-0.5,-0.5}, // Right, Back,  Bottom
         { 0.5, 0.5,-0.5}, // Right, Front, Bottom
@@ -6409,37 +6423,36 @@ qboolean sv_get_skeleton_bounds(int skel_idx, vec3_t mins, vec3_t maxs) {
     return qtrue;
 }
 
-
-// ----------------------------------------------------------------------------
-
-// Idea 5:
-// Given MAX_MODELS=300
-// int16_t *iqm_model_bounds_idx[MAX_MODELS]; // i'th index contains model i's list of indices
-// int16_t *iqm_model_n_bounds[MAX_MODELS]; // i'th index contains model i's list of indices
-// Each array is allocated up to the highest animmodel index it has seen
-// If len(iqm_model_bounds_idx[i]) < animmodel index, we know it hasn't been ran against it
-// Otherwise, model_bounds_idx[i][animmodel_index] is the index of the bounds...
-//
-// I like this, it has a very constrained memory consumption, and will likely never hit the full 900k size
-// Only if all 300 models are IQM models, and only if animmodel with index 300 is played on all 300 models, a very degenerate case
-// ... lookup is efficient though. An index, followed by a comparison, followed by two more indexes.
+#else // IQM_BBOX_PER_MODEL_PER_ANIM
 
 
-// Idea 6:
-// Just keep a list, there won't be that many anyways. Look through the list of models.
-// I think I like idea 5 better than this... it at least doesn't intermingle animations across models.
+inline void _get_skel_model_bounds(vec3_t mins, vec3_t maxs) {
+    // If dynamic bbox calculations are enabled, treat skeletal model bbox max size as:
+    // ... HLBSP player hull (Option 1)
+    // vec3_t bbox_mins {-16, -16, -36};
+    // vec3_t bbox_maxs { 16,  16,  36};
+
+    // ... 2x HLBSP player hull (Option 2)
+    vec3_t bbox_mins {-32, -32, -72};
+    vec3_t bbox_maxs { 32,  32,  72};
+
+    VectorCopy( bbox_mins, mins);
+    VectorCopy( bbox_maxs, maxs);
+}
 
 
+void cl_get_skel_model_bounds(int model_idx, int animmodel_idx, vec3_t mins, vec3_t maxs) {
+    // Dynamic bbox calculates are disabled, return static size for all skeletal models
+    _get_skel_model_bounds(mins, maxs);
+}
 
-// // 300 * 300 * 2 = 180,000 = 180k bytes... this is... wasteful...
-// uint16_t skel_model_anim_bounds_idx[MAX_MODELS][MAX_MODELS];
-// // TODO - Make each value in this array point to a list of mins / maxs rather than making each field hold both vec3_ts...
-// // TODO - Figure out a hash table setup for this.
-// // TODO - Make a list of maps between anim models and skel models.
-// vec3_t model_anim_bounds_mins;
-// vec3_t model_anim_bounds_maxs;
-// // MAX_MODELS
 
+void sv_get_skel_model_bounds(int model_idx, int animmodel_idx, vec3_t mins, vec3_t maxs) {
+    // Dynamic bbox calculates are disabled, return static size for all skeletal models
+    _get_skel_model_bounds(mins, maxs);
+}
+
+#endif // IQM_BBOX_PER_MODEL_PER_ANIM
 // ============================================================================
 
 

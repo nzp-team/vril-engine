@@ -17,6 +17,18 @@
 
 
 
+// 
+// If defined, enables runtime calculation of skeletal model bbox when playing an arbitrary skeletal anim
+// This bbox is used as an early-out check for raytrace skeleton bone collision detection.
+// If enabled, the early-out bbox will accurately reflect the min / max positions of all bone bboxes across the animation
+// If disabled, the early-out bbox will be static (currently 2x HLBSP player hull). 
+// Any bones outside of this static bbox will not be deetected by raytrace collision detection.
+// 
+// TODO - Profile hit detection with and without this
+// TODO - Profile time spent calculating the AABB for a model
+// #define IQM_BBOX_PER_MODEL_PER_ANIM
+
+
 
 // #define IQM_LOAD_NORMALS    // Uncomment this to load vertex normals
 
@@ -183,6 +195,9 @@ typedef struct iqm_ext_fte_skin_meshskin_s {
 } iqm_ext_fte_skin_meshskin_t;
 
 
+
+
+
 typedef struct skel_vertex_f32_s {
     float u, v;
     // uint32_t color; - NOTE - Removed
@@ -329,6 +344,8 @@ typedef struct skeletal_model_s {
     vec3_t *bone_hitbox_scale;  // Size of the bounding box for each bone
     int *bone_hitbox_tag;       // Tag value returned for ray-hitbox intersections with each bone
 
+
+#ifdef IQM_BBOX_PER_MODEL_PER_ANIM
     // Overall AABB mins / maxs of all bone hitboxes in the model's default hitbox config
     // ... for the model rest pose
     vec3_t rest_pose_bone_hitbox_mins;
@@ -336,7 +353,7 @@ typedef struct skeletal_model_s {
     // ... across all animations and frames in the model
     vec3_t anim_bone_hitbox_mins;
     vec3_t anim_bone_hitbox_maxs;
-
+#endif // IQM_BBOX_PER_MODEL_PER_ANIM
 
 
     // The per-bone transform that takes us from rest-pose model-space to bone local space
@@ -417,7 +434,9 @@ typedef struct skeletal_skeleton_s {
 
 
 
+
 #define MAX_SKELETONS 256
+// TODO - Move these server-side / client-side structs into .cpp file to avoid tampering from any other file?
 extern skeletal_skeleton_t sv_skeletons[MAX_SKELETONS]; // Server-side skeleton objects
 extern skeletal_skeleton_t cl_skeletons[MAX_SKELETONS]; // Client-side skeleton objects
 extern int sv_n_skeletons;
