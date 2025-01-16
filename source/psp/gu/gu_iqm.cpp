@@ -1,5 +1,5 @@
 extern"C" {
-    #include "../quakedef.h"
+    #include "../../quakedef.h"
     void PR_CheckEmptyString (char *s);
 
 }
@@ -12,7 +12,7 @@ extern"C" {
 using json = nlohmann::json;
 
 
-#include "video_hardware_iqm.hpp"
+#include "gu_iqm.hpp"
 
 
 extern vec3_t lightcolor; // LordHavoc: .lit support

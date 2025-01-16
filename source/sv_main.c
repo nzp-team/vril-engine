@@ -516,9 +516,6 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg, qboolean nomap)
 		if (ent->baseline.skin != ent->v.skin) {
 			bits |= U_SKIN;
 		}
-		if (ent->v.iframetime != 0.1) {
-			bits |= U_FRAMETIME;
-		}
 		if (ent->baseline.frame != ent->v.frame) {
 			bits |= U_FRAME;
 		}
@@ -667,9 +664,6 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg, qboolean nomap)
 		}
 		if (bits & U_SKIN) {
 			MSG_WriteByte (msg, ent->v.skin);
-		}
-		if (bits & U_FRAMETIME) {
-			MSG_WriteFloat (msg, ent->v.iframetime);
 		}
 		if (bits & U_EFFECTS) {
 			MSG_WriteShort (msg, ent->v.effects);
