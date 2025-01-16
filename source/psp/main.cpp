@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern "C"
 {
 #include "../quakedef.h"
-#include "../thread.h"
+#include "thread.h"
 #include "m33libs/kubridge.h"
 void VramSetSize(int kb);
 }
@@ -56,7 +56,7 @@ qboolean depthfl = qfalse;
 extern	int  com_argc;
 extern	char **com_argv;
 
-int 	sys_psp_model;
+int psp_system_model;
 
 void Sys_ReadCommandLineFile (char* netpath);
 
@@ -69,21 +69,15 @@ int cpuClockSpeed;
 int ramClockSpeed;
 int busClockSpeed;
 
+#define HEAP_SIZE_SLIM		(30 * 1024 * 1024)
+#define HEAP_SIZE_PHAT 		((11 * 1024 * 1024) + (500 * 1024))
+
 namespace quake
 {
 	namespace main
 	{
-
-#ifdef SLIM
-
 		// How big a heap to allocate.
-		static size_t  heapSize	= 30 * 1024 * 1024;
-
-#else
-
-		static size_t  heapSize	= (11 * 1024 * 1024) + (500 * 1024);
-
-#endif // SLIM
+		static size_t  heapSize;
 
 		// Should the main loop stop running?
 		static volatile bool	quit			= false;
@@ -186,7 +180,7 @@ int CheckParm (char **args, int argc, char *parm)
 
 void StartUpParams(char **args, int argc, char *cmdlinePath, char *currentDirectory, char *gameDirectory)
 {
-
+#if 0
 	if (CheckParm(args, f_argc,"-prompt"))
       {
 		SceCtrlData pad;
@@ -452,6 +446,7 @@ void StartUpParams(char **args, int argc, char *cmdlinePath, char *currentDirect
 		free(cpus[1]);
 		pspDebugScreenClear();
 	}
+#endif
 }
 
 int ctrl_kernel = 0;
@@ -517,6 +512,7 @@ int user_main(SceSize argc, void* argp)
 	// cause problems with firmware 2.0+
 	setUpCallbackThread();
 
+	psp_system_model = Sys_GetPSPModel();
 
 	// Disable floating point exceptions.
 	// If this isn't done, Quake crashes from (presumably) divide by zero
@@ -578,6 +574,14 @@ int user_main(SceSize argc, void* argp)
 
 		heapSize = heapSizeMB * 1024 * 1024;
 	}
+
+	if (heapSize == 0) {
+		if (psp_system_model == PSP_MODEL_PHAT)
+			heapSize = HEAP_SIZE_PHAT;
+		else
+			heapSize = HEAP_SIZE_SLIM;
+	}
+
 	// Allocate the heap.
 	std::vector<unsigned char>	heap(heapSize, 0);
 
@@ -728,39 +732,20 @@ void Sys_ReadCommandLineFile (char* netpath)
 		Sys_FileClose (in);
 }
 
-char* Sys_GetPSPModel(void) 
+int Sys_GetPSPModel(void) 
 {
-	// check for the vita prx
+	// pspemu has this module on its flash0 partition
 	int vitaprx = sceIoOpen("flash0:/kd/registry.prx", PSP_O_RDONLY | PSP_O_WRONLY, 0777);
 
 	if (vitaprx >= 0) {
 		sceIoClose(vitaprx);
-		return "PS Vita (PSP2)";
+		return PSP_MODEL_PSVITA;
 	}
 
-	// normal psp models
-	char* modelstring;
+	int model = kuKernelGetModel();
 
-	sys_psp_model = kuKernelGetModel();
-	switch(sys_psp_model) {
-		case 0:
-			modelstring = "PSP Phat (1000)";
-			break;
-		case 1:
-			modelstring = "PSP Slim (2000)";
-			break;
-		case 2:
-			modelstring = "PSP Brite (3000)";
-			break;
-		case 4:
-			modelstring = "PSP GO (4000)";
-			break;
-		case 10:
-			modelstring = "PSP Street (E1000)";
-			break;
-		default:
-			break;
-	}
+	if (model == 0)
+		return PSP_MODEL_PHAT;
 
-	return modelstring;
+	return PSP_MODEL_SLIM;
 }

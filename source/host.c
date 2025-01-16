@@ -20,10 +20,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // host.c -- coordinates spawning and killing of local servers
 
 #include "quakedef.h"
-#include "thread.h"
+
+#ifdef __PSP__
+#include "psp/thread.h"
 #include "psp/module.h"
 #include <pspge.h>
 #include <pspsysevent.h>
+#endif // __PSP__
 
 /*
 
@@ -69,8 +72,14 @@ cvar_t	teamplay = {"teamplay","0",false,true};
 cvar_t	samelevel = {"samelevel","0"};
 
 cvar_t	show_fps = {"show_fps","0", true};	// set for running times - muff
+#ifndef __WII__
 cvar_t	cl_maxfps = {"cl_maxfps", "30", true}; // dr_mabuse1981: maxfps setting
+#endif // __WII__ creates a timing issue within Dolphin emu - and vsync is always on anyhow
+
+#ifdef __PSP__
 cvar_t	show_bat = {"show_bat","0"};	// test
+#endif // __PSP__
+
 int			fps_count;
 
 cvar_t	developer = {"developer","0"};
@@ -226,9 +235,14 @@ void Host_InitLocal (void)
 	Cvar_RegisterVariable (&sys_ticrate);
 	Cvar_RegisterVariable (&serverprofile);
 
+#ifdef __PSP__
     Cvar_RegisterVariable (&show_bat); // Crow_bar battery info
+#endif // __PSP__
+
 	Cvar_RegisterVariable (&show_fps); // muff
+#ifndef __WII__
 	Cvar_RegisterVariable (&cl_maxfps); // dr_mabuse1981: maxfps setting
+#endif
 	Cvar_RegisterVariable (&fraglimit);
 	Cvar_RegisterVariable (&timelimit);
 	Cvar_RegisterVariable (&teamplay);
@@ -262,7 +276,7 @@ void Host_WriteConfiguration (void)
 
 // dedicated servers initialize the host but don't parse and set the
 // config.cfg cvars
-	if (host_initialized & !isDedicated)
+	if (host_initialized && !isDedicated)
 	{
 		f = fopen (va("%s/config.cfg",com_gamedir), "w");
 		if (!f)
@@ -272,7 +286,9 @@ void Host_WriteConfiguration (void)
 		}
 
 		Key_WriteBindings (f);
+
 		Key_WriteDTBindings (f);
+
 		Cvar_WriteVariables (f);
 
 		fclose (f);
@@ -497,6 +513,10 @@ extern float crosshair_offset_step;
 void Host_ClearMemory (void)
 {
 	Con_DPrintf ("Clearing memory\n");
+	
+#ifdef __WII__
+	GL_ClearTextureCache();
+#endif
 
 	Mod_ClearAll ();
 
@@ -537,10 +557,14 @@ Returns false if the time is too short to run a frame
 qboolean Host_FilterTime (float time)
 {
 	realtime += time;
-
+#ifndef __WII__
    if (cl_maxfps.value < 1) Cvar_SetValue("cl_maxfps", 30);
    if (!cls.timedemo && realtime - oldrealtime < 1.0/cl_maxfps.value)
 		return false;		// framerate is too high
+#else
+	if (!cls.timedemo && realtime - oldrealtime < 1.0f/60.0f)
+		return false;		// framerate is too high
+#endif
 
 	host_frametime = realtime - oldrealtime;
 	oldrealtime = realtime;
@@ -845,6 +869,10 @@ Host_Init
 */
 #include "cl_slist.h"
 
+#ifdef _3DS
+extern bool new3ds_flag;
+#endif // _3DS
+
 void M_Start_Menu_f (void);
 void Host_Init (quakeparms_t *parms)
 {
@@ -877,11 +905,31 @@ void Host_Init (quakeparms_t *parms)
 	Mod_Init ();
 	NET_Init ();
 	SV_Init ();
+
+#ifdef __PSP__
 	Con_Printf ("PSP NZP v%4.1f (PBP: "__TIME__" "__DATE__")\n", (float)(VERSION));
-	Con_Printf ("%4.1f megabyte heap \n",parms->memsize/ (1024*1024.0));
 	Con_Printf ("%4.1f megabyte PSP application heap \n",1.0f*PSP_HEAP_SIZE_MB);
-	Con_Printf ("PSP Model: %s\n", Sys_GetPSPModel());
+
+	switch(psp_system_model) {
+		case PSP_MODEL_PHAT: Con_Printf("PSP Model: PSP-1000 model unit\n"); break;
+		case PSP_MODEL_SLIM: Con_Printf("PSP Model: PSP-SLIM model unit\n"); break;
+		case PSP_MODEL_PSVITA: Con_Printf("PSP Model: PS VITA model unit\n"); break;
+		default: break;
+	}
+
 	Con_Printf ("VRAM Size: %i bytes\n", sceGeEdramGetSize());
+#elif _3DS
+	Con_Printf ("3DS NZP v%4.1f (3DSX: "__TIME__" "__DATE__")\n", (float)(VERSION));
+
+	if (new3ds_flag)
+		Con_Printf ("3DS Model: NEW Nintendo 3DS\n");
+	else
+		Con_Printf ("3DS Model: Nintendo 3DS\n");
+#elif __WII__
+	Con_Printf ("WII NZP v%4.1f (DOL: "__TIME__" "__DATE__")\n", (float)(VERSION));
+#endif // __PSP__, _3DS
+
+	Con_Printf ("%4.1f megabyte Quake hunk \n",parms->memsize/ (1024*1024.0));
 
 	R_InitTextures ();		// needed even for dedicated servers
 	if (cls.state != ca_dedicated)
@@ -894,6 +942,7 @@ void Host_Init (quakeparms_t *parms)
 		if (!host_colormap)
 			Sys_Error ("Couldn't load gfx/colormap.lmp");
 
+#ifdef __PSP__
 		host_q2pal = (byte *)COM_LoadHunkFile ("gfx/q2pal.lmp");
 		if (!host_q2pal)
 			Sys_Error ("Couldn't load gfx/q2pal.lmp");
@@ -901,8 +950,7 @@ void Host_Init (quakeparms_t *parms)
 		host_h2pal = (byte *)COM_LoadHunkFile ("gfx/h2pal.lmp");
 		if (!host_h2pal)
 			Sys_Error ("Couldn't load gfx/h2pal.lmp");
-
-		IN_Init ();
+#endif // __PSP__
 		VID_Init (host_basepal);
 		Draw_Init ();
 		SCR_Init ();
@@ -911,6 +959,7 @@ void Host_Init (quakeparms_t *parms)
 		CDAudio_Init ();
 		HUD_Init ();
 		CL_Init ();
+		IN_Init ();
 	}
 	Preload();
 	Cbuf_InsertText ("exec nzp.rc\n");
@@ -919,9 +968,11 @@ void Host_Init (quakeparms_t *parms)
 	host_hunklevel = Hunk_LowMark ();
 
 	host_initialized = true;
+#ifdef __WII__
+	VIDEO_SetBlack(false);
+#endif
 	M_Start_Menu_f();
-	Sys_Printf ("========Quake Initialized=========\n");
-	Con_Printf ("==========NZP Initialized=========\n");
+	Sys_Printf ("========Nazi Zombies Portable Initialized=========\n");	
 }
 
 
@@ -952,8 +1003,10 @@ void Host_Shutdown(void)
 
 	Host_WriteConfiguration ();
 
+#ifdef __PSP__
 	if (con_initialized)
-	History_Shutdown ();
+		History_Shutdown ();
+#endif // __PSP__
 
 	CDAudio_Shutdown ();
 	NET_Shutdown ();

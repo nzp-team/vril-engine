@@ -327,27 +327,13 @@ void SV_AirMove (void)
 {
 	int			i;
 	vec3_t		wishvel;
-	float		fmove, smove, newmove;
+	float		fmove, smove;
 
 	AngleVectors (sv_player->v.angles, forward, right, up);
 
 	fmove = cmd.forwardmove;
 	smove = cmd.sidemove;
 
-	if (fmove != 0 && smove != 0)
-	{
-		newmove = sqrt(pow(fmove, 2)/2);
-
-		if (fmove < 0)
-			fmove = newmove*-1;
-		else
-			fmove = newmove;
-
-		if (smove < 0)
-			smove = newmove*-1;
-		else
-			smove = newmove;
-	}
 // hack to not let you back into teleporter
 	if (sv.time < sv_player->v.teleport_time && fmove < 0)
 		fmove = 0;
@@ -398,7 +384,10 @@ void SV_ClientThink (void)
 	if (sv_player->v.movetype == MOVETYPE_NONE)
 		return;
 
-	onground = (int)sv_player->v.flags & FL_ONGROUND;
+	if ((int)sv_player->v.flags & FL_ONGROUND)
+		onground = true;
+	else
+		onground = false;
 
 	origin = sv_player->v.origin;
 	velocity = sv_player->v.velocity;

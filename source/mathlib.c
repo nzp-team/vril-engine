@@ -42,7 +42,7 @@ float rsqrt( float number )
 {
 #ifdef PSP_VFPU
 	float d;
-    __asm__ (  //from official pspsdk by sony
+    __asm__ (
 		".set			push\n"					// save assember option
 		".set			noreorder\n"			// suppress reordering
 		"lv.s			s000, %1\n"				// s000 = s
@@ -77,9 +77,13 @@ SinCos
 */
 void SinCos( float radians, float *sine, float *cosine )
 {
-	#ifdef PSP_VFPU
+#ifndef __PSP__
+	sincos(radians, sine, cosine);
+#else
+
+#ifdef PSP_VFPU
 	vfpu_sincos(radians,sine,cosine);
-	#else
+#else
 	__asm__ volatile (
 		"mtv      %2, S002\n"
 		"vcst.s   S003, VFPU_2_PI\n"
@@ -88,7 +92,9 @@ void SinCos( float radians, float *sine, float *cosine )
 		"mfv      %0, S000\n"
 		"mfv      %1, S001\n"
 	: "=r"(*sine), "=r"(*cosine): "r"(radians));
-	#endif
+#endif // PSP_VFPU
+
+#endif // __PSP__
 }
 
 void ProjectPointOnPlane( vec3_t dst, const vec3_t p, const vec3_t normal )
@@ -175,7 +181,15 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, 
 	m[1][2] = vf[1];
 	m[2][2] = vf[2];
 
+#ifdef PSP_VFPU
+
 	memcpy_vfpu( im, m, sizeof( im ) );
+
+#else
+
+	memcpy( im, m, sizeof( im ) );
+
+#endif // PSP_VFPU
 
 	im[0][1] = m[1][0];
 	im[0][2] = m[2][0];
@@ -233,6 +247,9 @@ Returns 1, 2, or 1 + 2
 int BoxOnPlaneSide(vec3_t emins, vec3_t emaxs, mplane_t *p)
 {
 	int	sides;
+
+#ifdef __PSP__
+
 	__asm__ (
 		".set		push\n"					// save assembler option
 		".set		noreorder\n"			// suppress reordering
@@ -405,6 +422,62 @@ int BoxOnPlaneSide(vec3_t emins, vec3_t emaxs, mplane_t *p)
 			[dist]     "m"  ( p->dist )
 		:	"$8"
 	);
+
+#else
+
+	float	dist1, dist2;
+
+// general case
+	switch (p->signbits)
+	{
+	case 0:
+		dist1 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
+		dist2 = p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2];
+		break;
+	case 1:
+		dist1 = p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
+		dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2];
+		break;
+	case 2:
+		dist1 = p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2];
+		dist2 = p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2];
+		break;
+	case 3:
+		dist1 = p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2];
+		dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2];
+		break;
+	case 4:
+		dist1 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2];
+		dist2 = p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2];
+		break;
+	case 5:
+		dist1 = p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2];
+		dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2];
+		break;
+	case 6:
+		dist1 = p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2];
+		dist2 = p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
+		break;
+	case 7:
+		dist1 = p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2];
+		dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
+		break;
+	default:
+		dist1 = dist2 = 0;		// shut up compiler
+		Sys_Error ("BoxOnPlaneSide:  Bad signbits");
+		break;
+	}
+
+	sides = 0;
+	if (dist1 >= p->dist)
+		sides = 1;
+	if (dist2 < p->dist)
+		sides |= 2;
+
+	return sides;
+
+#endif // __PSP__
+
 	return sides;
 }
 

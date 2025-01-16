@@ -48,6 +48,7 @@ typedef struct
 void Cache_FreeLow (int new_low_hunk);
 void Cache_FreeHigh (int new_high_hunk);
 
+#ifdef PSP_VFPU
 void* memcpy_vfpu( void* dst, void* src, unsigned int size )
 {
 	u8* src8 = (u8*)src;
@@ -119,7 +120,7 @@ void* memcpy_vfpu( void* dst, void* src, unsigned int size )
 	// We use uncached dst to use VFPU writeback and free cpu cache for src only
 	u8* udst8 = (u8*)((u32)dst8 | 0x40000000);
 	// We need the 64 byte aligned address to make sure the dcache is invalidated correctly
-	u8* dst64a = ((u32)dst8&~0x3F);
+	u8* dst64a = (u8*)((u32)dst8&~0x3F);
 	// Invalidate the first line that matches up to the dst start
 	if (size>=64)
 	asm(".set	push\n"					// save assembler option
@@ -381,6 +382,7 @@ bytecopy:
 
 	return (dst);
 }
+#endif //PSP_VFPU
 
 /*
 ===================

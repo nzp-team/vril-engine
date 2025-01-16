@@ -20,11 +20,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // cl_hud.c -- status bar code
 
 #include "quakedef.h"
-#include <pspgu.h>
 
-#ifdef PSP_VFPU
+#ifdef __PSP__
+#include <pspgu.h>
 #include <pspmath.h>
-#endif
+#endif // __PSP__
 
 qpic_t		*sb_round[5];
 qpic_t		*sb_round_num[10];
@@ -43,20 +43,44 @@ qpic_t 		*mulepic;
 qpic_t		*fragpic;
 qpic_t		*bettypic;
 
-
+#ifdef __PSP__
 qpic_t 		*b_circle;
 qpic_t 		*b_square;
 qpic_t 		*b_cross;
 qpic_t 		*b_triangle;
+#elif _3DS
+qpic_t 		*b_abutton;
+qpic_t 		*b_bbutton;
+qpic_t 		*b_xbutton;
+qpic_t 		*b_ybutton;
+#elif __WII__
+qpic_t 		*b_abutton;
+qpic_t 		*b_bbutton;
+qpic_t		*b_cbutton;
+qpic_t 		*b_zbutton;
+qpic_t 		*b_minus;
+qpic_t 		*b_plus;
+qpic_t 		*b_one;
+qpic_t 		*b_two;
+qpic_t 		*b_home;
+#endif // __PSP__, _3DS, __WII__
+
 qpic_t 		*b_left;
 qpic_t 		*b_right;
 qpic_t 		*b_up;
 qpic_t 		*b_down;
 qpic_t 		*b_lt;
 qpic_t 		*b_rt;
+
+#ifdef __PSP__
+qpic_t 		*b_home;
+#elif _3DS
+qpic_t 		*b_zlt;
+qpic_t 		*b_zrt;
+#endif // __PSP__, _3DS
+
 qpic_t 		*b_start;
 qpic_t 		*b_select;
-qpic_t 		*b_home;
 
 qpic_t      *fx_blood_lu;
 qpic_t      *fx_blood_ru;
@@ -64,7 +88,6 @@ qpic_t      *fx_blood_ld;
 qpic_t      *fx_blood_rd;
 
 qboolean	sb_showscores;
-qboolean 	domaxammo;
 qboolean 	has_chaptertitle;
 qboolean 	doubletap_has_damage_buff;
 
@@ -72,14 +95,26 @@ int  x_value, y_value;
 
 void M_DrawPic (int x, int y, qpic_t *pic);
 
+#ifdef __WII__
+void HUD_Scoreboard_Down (void);
+void HUD_Scoreboard_Up (void);
+#endif // __WII__
+
 double HUD_Change_time;//hide hud when not chagned
 double bettyprompt_time;
 double nameprint_time;
+double hud_maxammo_starttime;
+double hud_maxammo_endtime;
 
 char player_name[16];
 
 extern cvar_t waypoint_mode;
 
+int screenflash_color;
+double screenflash_duration;
+int screenflash_type;
+double screenflash_worktime;
+double screenflash_starttime;
 
 int old_points;
 int current_points;
@@ -101,6 +136,27 @@ typedef struct
 } point_change_t;
 
 point_change_t point_change[10];
+
+float	hud_scale_factor;
+
+/*
+===============
+HUD_DictateScaleFactor
+===============
+*/
+void HUD_DictateScaleFactor(void)
+{
+	// Platform-dictated text scale.
+#ifdef __WII__
+	hud_scale_factor = 1.5f;
+#elif __PSP__
+	hud_scale_factor = 1.0f;
+#elif _3DS
+	hud_scale_factor = 1.0f;
+#else
+	hud_scale_factor = 1.0f;
+#endif // __WII__, __PSP__, _3DS
+}
 
 /*
 ===============
@@ -139,6 +195,7 @@ void HUD_Init (void)
 	fragpic = Draw_CachePic ("gfx/hud/frag");
 	bettypic = Draw_CachePic ("gfx/hud/betty");
 
+#ifdef __PSP__
 	b_circle = Draw_CachePic ("gfx/butticons/circle");
 	b_square = Draw_CachePic ("gfx/butticons/square");
 	b_cross = Draw_CachePic ("gfx/butticons/cross");
@@ -152,15 +209,49 @@ void HUD_Init (void)
 	b_start = Draw_CachePic ("gfx/butticons/start");
 	b_select = Draw_CachePic ("gfx/butticons/select");
 	b_home = Draw_CachePic ("gfx/butticons/home");
-
+#elif _3DS
+	b_abutton = Draw_CachePic ("gfx/butticons/facebt_a");
+	b_bbutton = Draw_CachePic ("gfx/butticons/facebt_b");
+	b_ybutton = Draw_CachePic ("gfx/butticons/facebt_y");
+	b_xbutton = Draw_CachePic ("gfx/butticons/facebt_x");
+	b_left = Draw_CachePic ("gfx/butticons/dir_left");
+	b_right = Draw_CachePic ("gfx/butticons/dir_right");
+	b_up = Draw_CachePic ("gfx/butticons/dir_up");
+	b_down = Draw_CachePic ("gfx/butticons/dir_down");
+	b_lt = Draw_CachePic ("gfx/butticons/shldr_l");
+	b_rt = Draw_CachePic ("gfx/butticons/shldr_r");
+	b_zlt = Draw_CachePic ("gfx/butticons/shldr_zl");
+	b_zrt = Draw_CachePic ("gfx/butticons/shldr_zr");
+	b_start = Draw_CachePic ("gfx/butticons/func_sta");
+	b_select = Draw_CachePic ("gfx/butticons/func_sel");
+#elif __WII__
+	b_abutton = Draw_CachePic ("gfx/butticons/abutton");
+	b_bbutton = Draw_CachePic ("gfx/butticons/bbutton");
+	b_cbutton = Draw_CachePic ("gfx/butticons/cbutton");
+	b_zbutton = Draw_CachePic ("gfx/butticons/zbutton");
+	b_left = Draw_CachePic ("gfx/butticons/Dleftbutton");
+	b_right = Draw_CachePic ("gfx/butticons/Drightbutton");
+	b_up = Draw_CachePic ("gfx/butticons/Dupbutton");
+	b_down = Draw_CachePic ("gfx/butticons/Ddownbutton");
+	b_minus = Draw_CachePic ("gfx/butticons/-button");
+	b_plus = Draw_CachePic ("gfx/butticons/+button");
+	b_home = Draw_CachePic ("gfx/butticons/homebutton");
+	b_one = Draw_CachePic ("gfx/butticons/1button");
+	b_two = Draw_CachePic ("gfx/butticons/2button");
+#endif // __PSP__, _3DS, __WII__
 
     fx_blood_lu = Draw_CachePic ("gfx/hud/blood");
-    /*fx_blood_lu = Draw_CachePic ("gfx/hud/blood_tl");
-    /fx_blood_ru = Draw_CachePic ("gfx/hud/blood_tr");
-    fx_blood_ld = Draw_CachePic ("gfx/hud/blood_bl");
-    fx_blood_rd = Draw_CachePic ("gfx/hud/blood_br");*/
 
+#ifdef __WII__
+	Cmd_AddCommand ("+showscores", HUD_Scoreboard_Down);
+	Cmd_AddCommand ("-showscores", HUD_Scoreboard_Up);
+#endif // __WII__
+
+#ifdef __PSP__
 	Achievement_Init();
+#endif // __PSP__
+
+	HUD_DictateScaleFactor();
 }
 
 /*
@@ -191,6 +282,12 @@ void HUD_NewMap (void)
 
 	round_center_x = (vid.width - sb_round[0]->width) /2;
 	round_center_y = (vid.height - sb_round[0]->height) /2;
+	
+	bettyprompt_time = 0;
+	nameprint_time = 0;
+	
+	hud_maxammo_starttime = 0;
+	hud_maxammo_endtime = 0;
 }
 
 
@@ -270,6 +367,18 @@ void HUD_Sortpoints (void)
 			}
 }
 
+qboolean showscoreboard = false;
+void HUD_Scoreboard_Down (void) 
+{
+	if (key_dest == key_game)
+		showscoreboard = true;
+}
+
+void HUD_Scoreboard_Up (void) 
+{
+	showscoreboard = false;
+}
+
 /*
 ===============
 HUD_EndScreen
@@ -286,33 +395,56 @@ void HUD_EndScreen (void)
 
 	l = scoreboardlines;
 
-	Draw_ColoredString((vid.width - 9*8)/2, 40, "GAME OVER", 255, 0, 0, 255, 1);
+	if (!showscoreboard) {
+		Draw_ColoredStringCentered(65, "GAME OVER", 255, 0, 0, 255, hud_scale_factor);
 
-	sprintf (str,"You survived %3i rounds", cl.stats[STAT_ROUNDS]);
-	Draw_String ((vid.width - strlen (str)*8)/2, 52, str);
+		sprintf (str,"You survived %3i rounds", cl.stats[STAT_ROUNDS]);
+		Draw_String ((vid.width - strlen (str)*8)/2, 85, str);
+		
+		sprintf (str,"Name           Kills     Points");
+		x = (vid.width - strlen (str)*8)/2;
 
-	sprintf (str,"Name           Kills     Points");
-	x = (vid.width - strlen (str)*8)/2;
+		Draw_String (x, 105, str);
+		y = 0;
+		for (i=0; i<l ; i++)
+		{
+			k = pointsort[i];
+			s = &cl.scores[k];
+			if (!s->name[0])
+				continue;
 
-	Draw_String (x, 68, str);
-	y = 0;
-	for (i=0; i<l ; i++)
-	{
-		k = pointsort[i];
-		s = &cl.scores[k];
-		if (!s->name[0])
-			continue;
+			Draw_String (x, 125 + y, s->name);
 
-		Draw_String (x, 78 + y, s->name);
+			d = strlen (va("%i",s->kills));
+			Draw_String (x + (20 - d)*8, 125 + y, va("%i",s->kills));
 
-		d = strlen (va("%i",s->kills));
-		Draw_String (x + (20 - d)*8, 78 + y, va("%i",s->kills));
+			d = strlen (va("%i",s->points));
+			Draw_String (x + (31 - d)*8, 125 + y, va("%i",s->points));
+			y += 20;
+		}
+	} else {
+		sprintf (str,"Name           Kills     Points");
+		x = (vid.width - strlen (str)*8)/2;
 
-		d = strlen (va("%i",s->points));
-		Draw_String (x + (31 - d)*8, 78 + y, va("%i",s->points));
-		y += 10;
+		Draw_String (x, 105, str);
+		y = 0;
+		for (i=0; i<l ; i++)
+		{
+			k = pointsort[i];
+			s = &cl.scores[k];
+			if (!s->name[0])
+				continue;
+
+			Draw_String (x, 125 + y, s->name);
+
+			d = strlen (va("%i",s->kills));
+			Draw_String (x + (20 - d)*8, 125 + y, va("%i",s->kills));
+
+			d = strlen (va("%i",s->points));
+			Draw_String (x + (31 - d)*8, 125 + y, va("%i",s->points));
+			y += 20;
+		}
 	}
-
 }
 
 
@@ -345,10 +477,10 @@ void HUD_Parse_Point_Change (int points, int negative, int x_start, int y_start)
 	point_change[i].negative = negative;
 
 	f = HUD_itoa (points, str);
-	point_change[i].x = x_start + 10.0 + 8.0*f;
+	point_change[i].x = x_start + (10.0 + 8.0*f * hud_scale_factor);
 	point_change[i].y = y_start;
-	point_change[i].move_x = 1.0;
-	point_change[i].move_y = ((rand ()&0x7fff) / ((float)0x7fff)) - 0.5;
+	point_change[i].move_x = (1.0 * hud_scale_factor);
+	point_change[i].move_y = ((rand ()&0x7fff) / ((float)0x7fff)) - (0.5 * hud_scale_factor);
 
 	point_change[i].alive_time = Sys_FloatTime() + 0.4;
 }
@@ -367,8 +499,8 @@ void HUD_Points (void)
 	l = scoreboardlines;
 
 
-    x = 6;
-    y = 200;
+    x = 6 * hud_scale_factor;
+    y = vid.height - (72 * hud_scale_factor);
 	for (i=0 ; i<l ; i++)
 	{
 		k = pointsort[i];
@@ -409,16 +541,16 @@ void HUD_Points (void)
 			}
 		}
 
-		Draw_Pic (x, y, sb_moneyback);
-		xplus = strlen(va("%i", current_points))*8;
-		Draw_String (((64 - xplus)/2)+5, y + 3, va("%i", current_points));
+		Draw_StretchPic (x, y, sb_moneyback, sb_moneyback->width * hud_scale_factor, sb_moneyback->height * hud_scale_factor);
+		xplus = getTextWidth(va("%i", current_points), hud_scale_factor);
+		Draw_ColoredString((((64 * hud_scale_factor) - xplus)/2) + (5 * hud_scale_factor), y + (3 * hud_scale_factor), va("%i", current_points), 255, 255, 255, 255, hud_scale_factor);
 
 		if (old_points != f)
 		{
 			if (f > old_points)
-				HUD_Parse_Point_Change(f - old_points, 0, ((64 - xplus)/2)+5, y + 3);
+				HUD_Parse_Point_Change(f - old_points, 0, (((64 * hud_scale_factor) - xplus)/2) + (5 * hud_scale_factor), y + (3 * hud_scale_factor));
 			else
-				HUD_Parse_Point_Change(old_points - f, 1, ((64 - xplus)/2)+5, y + 3);
+				HUD_Parse_Point_Change(old_points - f, 1, (((64 * hud_scale_factor) - xplus)/2) + (5 * hud_scale_factor), y + (3 * hud_scale_factor));
 
 			old_points = f;
 		}
@@ -445,9 +577,9 @@ void HUD_Point_Change (void)
 		if (point_change[i].points)
 		{
 			if (point_change[i].negative)
-				Draw_ColoredString (point_change[i].x, point_change[i].y, va ("-%i", point_change[i].points), 255, 0, 0, 255, 1);
+				Draw_ColoredString (point_change[i].x, point_change[i].y, va ("-%i", point_change[i].points), 255, 0, 0, 255, hud_scale_factor);
 			else
-				Draw_ColoredString (point_change[i].x, point_change[i].y, va ("+%i", point_change[i].points), 255, 255, 0, 255, 1);
+				Draw_ColoredString (point_change[i].x, point_change[i].y, va ("+%i", point_change[i].points), 255, 255, 0, 255, hud_scale_factor);
 			point_change[i].y = point_change[i].y + point_change[i].move_y;
 			point_change[i].x = point_change[i].x + point_change[i].move_x;
 			if (point_change[i].alive_time && point_change[i].alive_time < Sys_FloatTime())
@@ -473,36 +605,32 @@ HUD_Blood
 */
 void HUD_Blood (void)
 {
-    float alpha;
+	float alpha;
 	//blubswillrule:
 	//this function scales linearly from health = 0 to health = 100
 	//alpha = (100.0 - (float)cl.stats[STAT_HEALTH])/100*255;
 	//but we want the picture to be fully visible at health = 20, so use this function instead
 	alpha = (100.0 - ((1.25 * (float) cl.stats[STAT_HEALTH]) - 25))/100*255;
 	
-    if (alpha <= 0.0)
-        return;
+	if (alpha <= 0.0)
+		return;
     
-	#ifdef PSP_VFPU
+#ifdef PSP_VFPU
 	float modifier = (vfpu_sinf(cl.time * 10) * 20) - 20;//always negative
-	#else
-    float modifier = (sin(cl.time * 10) * 20) - 20;//always negative
-	#endif
+#else
+	float modifier = (sin(cl.time * 10) * 20) - 20;//always negative
+#endif // PSP_VFPU
 
-    if(modifier < -35.0)
-	modifier = -35.0;
+	if(modifier < -35.0)
+		modifier = -35.0;
     
-    alpha += modifier;
+	alpha += modifier;
     
-    if(alpha < 0.0)
-	    return;
-    float color = 255.0 + modifier;
+	if(alpha < 0.0)
+		return;
+	float color = 255.0 + modifier;
     
-    Draw_ColorPic(0,0,fx_blood_lu,color,color,color,alpha);
-    //Draw_ColorPic (0, 0, fx_blood_lu, 82, 6, 6, alpha);
-    /*Draw_ColorPic (0, vid.height - fx_blood_ru->height, fx_blood_ld, 82, 6, 6, alpha);
-    Draw_ColorPic (vid.width - fx_blood_ru->width, 0, fx_blood_ru, 82, 6, 6, alpha);
-    Draw_ColorPic (vid.width - fx_blood_ru->width, vid.height - fx_blood_ru->height, fx_blood_rd, 82, 6, 6, alpha);*/
+	Draw_ColoredStretchPic(0, 0, fx_blood_lu, vid.width, vid.height, color, color, color, alpha);
 }
 
 /*
@@ -553,19 +681,19 @@ void HUD_WorldText(int alpha)
 		if (!strcmp("chaptertitle", key)) // search for chaptertitle key
 		{
 			has_chaptertitle = true;
-			Draw_ColoredString(6, vid.height/2 + 10, value, 255, 255, 255, alpha, 1);	
+			Draw_ColoredString(6 * hud_scale_factor, vid.height/2 + (10 * hud_scale_factor), value, 255, 255, 255, alpha, hud_scale_factor);	
 		}
 		if (!strcmp("location", key)) // search for location key
 		{
-			Draw_ColoredString(6, vid.height/2 + 20, value, 255, 255, 255, alpha, 1);
+			Draw_ColoredString(6 * hud_scale_factor, vid.height/2 + (20 * hud_scale_factor), value, 255, 255, 255, alpha, hud_scale_factor);
 		}
 		if (!strcmp("date", key)) // search for date key
 		{
-			Draw_ColoredString(6, vid.height/2 + 30, value, 255, 255, 255, alpha, 1);
+			Draw_ColoredString(6 * hud_scale_factor, vid.height/2 + (30 * hud_scale_factor), value, 255, 255, 255, alpha, hud_scale_factor);
 		}
 		if (!strcmp("person", key)) // search for person key
 		{
-			Draw_ColoredString(6, vid.height/2 + 40, value, 255, 255, 255, alpha, 1);
+			Draw_ColoredString(6 * hud_scale_factor, vid.height/2 + (40 * hud_scale_factor), value, 255, 255, 255, alpha, hud_scale_factor);
 		}
 	}
 }
@@ -580,14 +708,38 @@ int maxammoopac;
 
 void HUD_MaxAmmo(void)
 {
-	maxammoy -= cl.time * 0.003;
-	maxammoopac -= 5;
+	char* maxammo_string = "Max Ammo!";
 
-	Draw_ColoredString(vid.width/2 - strlen("MAX AMMO!")*4, maxammoy, "MAX AMMO!", 255, 255, 255, maxammoopac, 1);
+	int start_y = 55 * hud_scale_factor;
+	int end_y = 45 * hud_scale_factor;
+	int diff_y = end_y - start_y;
 
-	if (maxammoopac <= 0) {
-		domaxammo = false;
+	float text_alpha = 1.0f;
+
+	int pos_y;
+
+	double start_time, end_time;
+
+	// For the first 0.5s, stay still while we fade in
+	if (hud_maxammo_endtime > sv.time + 1.5) {
+		start_time = hud_maxammo_starttime;
+		end_time = hud_maxammo_starttime + 0.5;
+
+		text_alpha = (sv.time - start_time) / (end_time - start_time);
+		pos_y = start_y;
 	}
+	// For the remaining 1.5s, fade out while we fly upwards.
+	else {
+		start_time = hud_maxammo_starttime + 0.5;
+		end_time = hud_maxammo_endtime;
+
+		float percent_time = (sv.time - start_time) / (end_time - start_time);
+
+		pos_y = start_y + diff_y * percent_time;
+		text_alpha = 1 - percent_time;
+	}
+
+	Draw_ColoredStringCentered(pos_y, maxammo_string, 255, 255, 255, (int)(255 * text_alpha), hud_scale_factor);
 }
 
 /*
@@ -625,7 +777,7 @@ void HUD_Rounds (void)
 		if (!value)
 			value = 255;
 
-		Draw_ColoredString(vid.width/2 - strlen("Round")*8, 80, "Round", 255, value, value, 255, 2);
+		Draw_ColoredStringCentered(80 * hud_scale_factor, "Round", 255, value, value, 255, hud_scale_factor * 2);
 		
 		value -= cl.time * 0.4;
 
@@ -639,12 +791,12 @@ void HUD_Rounds (void)
 	// Now, fade out, and start fading worldtext in
 	// ~3s for fade out, 
 	else if (textstate == 1) {
-		Draw_ColoredString(vid.width/2 - strlen("Round")*8, 80, "Round", 255, 0, 0, value, 2);
+		Draw_ColoredStringCentered(80 * hud_scale_factor, "Round", 255, 0, 0, value, hud_scale_factor * 2);
 
 		HUD_WorldText(value2);
 		
 		if (has_chaptertitle == false)
-			Draw_ColoredString(6, vid.height/2 + 50, "'Nazi Zombies'", 255, 255, 255, value2, 1);
+			Draw_ColoredString(6 * hud_scale_factor, vid.height/2 + (10 * hud_scale_factor), "'Nazi Zombies'", 255, 255, 255, value2, hud_scale_factor);
 		
 		value -= cl.time * 0.4;
 		value2 += cl.time * 0.4;
@@ -660,7 +812,7 @@ void HUD_Rounds (void)
 		HUD_WorldText(255);
 		
 		if (has_chaptertitle == false)
-			Draw_ColoredString(4, vid.height/2 + 50, "'Nazi Zombies'", 255, 255, 255, 255, 1);
+			Draw_ColoredString(6 * hud_scale_factor, vid.height/2 + (10 * hud_scale_factor), "'Nazi Zombies'", 255, 255, 255, 255, hud_scale_factor);
 
 		value2 += cl.time * 0.4;
 
@@ -674,7 +826,7 @@ void HUD_Rounds (void)
 		HUD_WorldText(value2);
 		
 		if (has_chaptertitle == false)
-			Draw_ColoredString(4, vid.height/2 + 50, "'Nazi Zombies'", 255, 255, 255, value2, 1);
+			Draw_ColoredString(6 * hud_scale_factor, vid.height/2 + (10 * hud_scale_factor), "'Nazi Zombies'", 255, 255, 255, value2, hud_scale_factor);
 
 		value2 -= cl.time * 0.4;
 
@@ -694,7 +846,9 @@ void HUD_Rounds (void)
 			textstate = 0;
 		}
 
-		Draw_ColorPic ((vid.width - sb_round[0]->width) /2, (vid.height - sb_round[0]->height) /2, sb_round[0], 107, 1, 0, alphabling);
+		Draw_ColoredStretchPic ((vid.width - (sb_round[0]->width  * hud_scale_factor))/2, 
+		(vid.height - (sb_round[0]->height * hud_scale_factor))/2, sb_round[0], 
+		sb_round[0]->width * hud_scale_factor, sb_round[0]->height * hud_scale_factor, 107, 1, 0, alphabling);
 
 		alphabling = alphabling + 15;
 
@@ -705,13 +859,14 @@ void HUD_Rounds (void)
 	}
 	else if (cl.stats[STAT_ROUNDCHANGE] == 2)//this is the rounds icon moving from middle
 	{
-		Draw_ColorPic (round_center_x, round_center_y, sb_round[0], 107, 1, 0, 255);
-		round_center_x = round_center_x - (229/108) - 0.2;
-		round_center_y = round_center_y + 1;
-		if (round_center_x <= 5)
-			round_center_x = 5;
-		if (round_center_y >= 220)
-			round_center_y = 220;
+		Draw_ColoredStretchPic(round_center_x, round_center_y, sb_round[0], 
+		sb_round[0]->width * hud_scale_factor, sb_round[0]->height * hud_scale_factor, 107, 1, 0, 255);
+		round_center_x = round_center_x - (229/108) - (0.2 * hud_scale_factor);
+		round_center_y = round_center_y + (0.95 * hud_scale_factor); // don't move y too quickly
+		if (round_center_x <= 5 * hud_scale_factor)
+			round_center_x = 5 * hud_scale_factor;
+		if (round_center_y >= vid.height - (sb_round[0]->height * hud_scale_factor) - 2)
+			round_center_y = vid.height - (sb_round[0]->height * hud_scale_factor) - 2;
 	}
 	else if (cl.stats[STAT_ROUNDCHANGE] == 3)//shift to white
 	{
@@ -742,14 +897,16 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColorPic (5, vid.height - sb_round[4]->height - 4, sb_round[4], (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-					savex = x_offset + 10;
-					x_offset = x_offset + 10;
+					Draw_ColoredStretchPic (5 * hud_scale_factor, vid.height - (sb_round[4]->height * hud_scale_factor) - 4, sb_round[4], 
+					sb_round[4]->width * hud_scale_factor, sb_round[4]->height * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+					savex = x_offset + 10 * hud_scale_factor;
+					x_offset = x_offset + 10 * hud_scale_factor;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColorPic (5 + savex, vid.height - sb_round[4]->height - 4, sb_round[4], (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+					Draw_ColoredStretchPic (5 * hud_scale_factor + savex, vid.height - (sb_round[4]->height * hud_scale_factor) - 4, 
+					sb_round[4], sb_round[4]->width * hud_scale_factor, sb_round[4]->height * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 					continue;
 				}
 				if (i > 4)
@@ -757,9 +914,10 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColorPic (5 + x_offset, vid.height - sb_round[icon_num]->height - 4, sb_round[icon_num], (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (sb_round[icon_num]->height * hud_scale_factor) - 4, 
+				sb_round[icon_num], sb_round[icon_num]->width * hud_scale_factor, sb_round[icon_num]->height * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 
-				x_offset = x_offset + sb_round[icon_num]->width + 3;
+				x_offset = x_offset + (sb_round[icon_num]->width * hud_scale_factor) + 3;
 			}
 		}
 		else
@@ -767,23 +925,26 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[2]]->height - 4, sb_round_num[num[2]], (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-				x_offset = x_offset + sb_round_num[num[2]]->width - 8;
+				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[2]]->height * hud_scale_factor) - 4, sb_round_num[num[2]], 
+				sb_round_num[num[2]]->width * hud_scale_factor, sb_round_num[num[2]]->height * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				x_offset = x_offset + (sb_round_num[num[2]]->width * hud_scale_factor) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[1]]->height - 4, sb_round_num[num[1]], (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-				x_offset = x_offset + sb_round_num[num[1]]->width - 8;
+				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[1]]->height * hud_scale_factor) - 4, 
+				sb_round_num[num[1]], sb_round_num[num[1]]->width * hud_scale_factor, sb_round_num[num[1]]->height * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				x_offset = x_offset + (sb_round_num[num[1]]->width * hud_scale_factor) - 8;
 			}
 			else
 				num[1] = 0;
 
 			num[0] = cl.stats[STAT_ROUNDS] - num[2]*100 - num[1]*10;
-			Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[0]]->height - 4, sb_round_num[num[0]], (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-			x_offset = x_offset + sb_round_num[num[0]]->width - 8;
+			Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[0]]->height * hud_scale_factor) - 4, 
+			sb_round_num[num[0]], sb_round_num[num[0]]->width * hud_scale_factor, sb_round_num[num[0]]->height * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+			x_offset = x_offset + (sb_round_num[num[0]]->width * hud_scale_factor) - 8;
 		}
 	}
 	else if (cl.stats[STAT_ROUNDCHANGE] == 4)//blink white
@@ -804,14 +965,16 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColorPic (5, vid.height - sb_round[4]->height - 4, sb_round[4], 255, 255, 255, blinking);
-					savex = x_offset + 10;
-					x_offset = x_offset + 10;
+					Draw_ColoredStretchPic (5 * hud_scale_factor, vid.height - (sb_round[4]->height * hud_scale_factor) - 4, 
+					sb_round[4], sb_round[4]->width * hud_scale_factor, sb_round[4]->height * hud_scale_factor, 255, 255, 255, blinking);
+					savex = x_offset + 10 * hud_scale_factor;
+					x_offset = x_offset + 10 * hud_scale_factor;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColorPic (5 + savex, vid.height - sb_round[4]->height - 4, sb_round[4], 255, 255, 255, blinking);
+					Draw_ColoredStretchPic (5 * hud_scale_factor + savex, vid.height - (sb_round[4]->height * hud_scale_factor) - 4, 
+					sb_round[4], sb_round[4]->width * hud_scale_factor, sb_round[4]->height * hud_scale_factor, 255, 255, 255, blinking);
 					continue;
 				}
 				if (i > 4)
@@ -819,9 +982,10 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColorPic (5 + x_offset, vid.height - sb_round[icon_num]->height - 4, sb_round[icon_num], 255, 255, 255, blinking);
+				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (sb_round[icon_num]->height * hud_scale_factor) - 4, 
+				sb_round[icon_num], sb_round[icon_num]->width * hud_scale_factor, sb_round[icon_num]->height * hud_scale_factor, 255, 255, 255, blinking);
 
-				x_offset = x_offset + sb_round[icon_num]->width + 3;
+				x_offset = x_offset + (sb_round[icon_num]->width * hud_scale_factor) + 3;
 			}
 		}
 		else
@@ -829,23 +993,26 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[2]]->height - 4, sb_round_num[num[2]], 255, 255, 255, blinking);
-				x_offset = x_offset + sb_round_num[num[2]]->width - 8;
+				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[2]]->height * hud_scale_factor) - 4, 
+				sb_round_num[num[2]], sb_round_num[num[2]]->width * hud_scale_factor, sb_round_num[num[2]]->height * hud_scale_factor, 255, 255, 255, blinking);
+				x_offset = x_offset + (sb_round_num[num[2]]->width * hud_scale_factor) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[1]]->height - 4, sb_round_num[num[1]], 255, 255, 255, blinking);
-				x_offset = x_offset + sb_round_num[num[1]]->width - 8;
+				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[1]]->height * hud_scale_factor) - 4, 
+				sb_round_num[num[1]], sb_round_num[num[1]]->width * hud_scale_factor, sb_round_num[num[1]]->height * hud_scale_factor, 255, 255, 255, blinking);
+				x_offset = x_offset + (sb_round_num[num[1]]->width * hud_scale_factor) - 8;
 			}
 			else
 				num[1] = 0;
 
 			num[0] = cl.stats[STAT_ROUNDS] - num[2]*100 - num[1]*10;
-			Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[0]]->height - 4, sb_round_num[num[0]], 255, 255, 255, blinking);
-			x_offset = x_offset + sb_round_num[num[0]]->width - 8;
+			Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[0]]->height * hud_scale_factor) - 4, 
+			sb_round_num[num[0]], sb_round_num[num[0]]->width * hud_scale_factor, sb_round_num[num[0]]->height * hud_scale_factor, 255, 255, 255, blinking);
+			x_offset = x_offset + (sb_round_num[num[0]]->width * hud_scale_factor) - 8;
 		}
 
 		if (endroundchange == 0) {
@@ -865,14 +1032,16 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColorPic (5, vid.height - sb_round[4]->height - 4, sb_round[4], 255, 255, 255, blinking);
-					savex = x_offset + 10;
-					x_offset = x_offset + 10;
+					Draw_ColoredStretchPic (5 * hud_scale_factor, vid.height - (sb_round[4]->height * hud_scale_factor) - 4, 
+					sb_round[4], sb_round[4]->width * hud_scale_factor, sb_round[4]->height * hud_scale_factor, 255, 255, 255, blinking);
+					savex = x_offset + 10 * hud_scale_factor;
+					x_offset = (x_offset * hud_scale_factor) + 10;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColorPic (5 + savex, vid.height - sb_round[4]->height - 4, sb_round[4], 255, 255, 255, blinking);
+					Draw_ColoredStretchPic (5 * hud_scale_factor + savex, vid.height - (sb_round[4]->height * hud_scale_factor) - 4, 
+					sb_round[4], sb_round[4]->width * hud_scale_factor, sb_round[4]->height * hud_scale_factor, 255, 255, 255, blinking);
 					continue;
 				}
 				if (i > 4)
@@ -880,9 +1049,10 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColorPic (5 + x_offset, vid.height - sb_round[icon_num]->height - 4, sb_round[icon_num], 255, 255, 255, blinking);
+				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (sb_round[icon_num]->height * hud_scale_factor) - 4, 
+				sb_round[icon_num], sb_round[icon_num]->width * hud_scale_factor, sb_round[icon_num]->height * hud_scale_factor, 255, 255, 255, blinking);
 
-				x_offset = x_offset + sb_round[icon_num]->width + 3;
+				x_offset = x_offset + (sb_round[icon_num]->width * hud_scale_factor) + 3;
 			}
 		}
 		else
@@ -890,23 +1060,26 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[2]]->height - 4, sb_round_num[num[2]], 255, 255, 255, blinking);
-				x_offset = x_offset + sb_round_num[num[2]]->width - 8;
+				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[2]]->height * hud_scale_factor) - 4, 
+				sb_round_num[num[2]], sb_round_num[num[2]]->width * hud_scale_factor, sb_round_num[num[2]]->height * hud_scale_factor, 255, 255, 255, blinking);
+				x_offset = x_offset + (sb_round_num[num[2]]->width * hud_scale_factor) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[1]]->height - 4, sb_round_num[num[1]], 255, 255, 255, blinking);
-				x_offset = x_offset + sb_round_num[num[1]]->width - 8;
+				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[1]]->height * hud_scale_factor) - 4, 
+				sb_round_num[num[1]], sb_round_num[num[1]]->width * hud_scale_factor, sb_round_num[num[1]]->height * hud_scale_factor, 255, 255, 255, blinking);
+				x_offset = x_offset + (sb_round_num[num[1]]->width * hud_scale_factor) - 8;
 			}
 			else
 				num[1] = 0;
 
 			num[0] = cl.stats[STAT_ROUNDS] - num[2]*100 - num[1]*10;
-			Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[0]]->height - 4, sb_round_num[num[0]], 255, 255, 255, blinking);
-			x_offset = x_offset + sb_round_num[num[0]]->width - 8;
+			Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[0]]->height * hud_scale_factor) - 4, 
+			sb_round_num[num[0]], sb_round_num[num[0]]->width * hud_scale_factor, sb_round_num[num[0]]->height * hud_scale_factor, 255, 255, 255, blinking);
+			x_offset = x_offset + (sb_round_num[num[0]]->width * hud_scale_factor) - 8;
 		}
 	}
 	else if (cl.stats[STAT_ROUNDCHANGE] == 6)//blink white while fading back
@@ -927,14 +1100,16 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColorPic (5, vid.height - sb_round[4]->height - 4, sb_round[4], 255, 255, 255, blinking);
-					savex = x_offset + 10;
-					x_offset = x_offset + 10;
+					Draw_ColoredStretchPic (5 * hud_scale_factor, vid.height - (sb_round[4]->height * hud_scale_factor) - 4, 
+					sb_round[4], sb_round[4]->width * hud_scale_factor, sb_round[4]->height * hud_scale_factor, 255, 255, 255, blinking);
+					savex = x_offset + 10 * hud_scale_factor;
+					x_offset = x_offset + 10 * hud_scale_factor;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColorPic (5 + savex, vid.height - sb_round[4]->height - 4, sb_round[4], 255, 255, 255, blinking);
+					Draw_ColoredStretchPic (5 * hud_scale_factor + savex, vid.height - (sb_round[4]->height * hud_scale_factor) - 4, 
+					sb_round[4], sb_round[4]->width * hud_scale_factor, sb_round[4]->height * hud_scale_factor, 255, 255, 255, blinking);
 					continue;
 				}
 				if (i > 4)
@@ -942,9 +1117,10 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColorPic (5 + x_offset, vid.height - sb_round[icon_num]->height - 4, sb_round[icon_num], 255, 255, 255, blinking);
+				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (sb_round[icon_num]->height * hud_scale_factor) - 4, 
+				sb_round[icon_num], sb_round[icon_num]->width * hud_scale_factor, sb_round[icon_num]->height * hud_scale_factor, 255, 255, 255, blinking);
 
-				x_offset = x_offset + sb_round[icon_num]->width + 3;
+				x_offset = x_offset + (sb_round[icon_num]->width * hud_scale_factor) + 3;
 			}
 		}
 		else
@@ -952,23 +1128,26 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[2]]->height - 4, sb_round_num[num[2]], 255, 255, 255, blinking);
-				x_offset = x_offset + sb_round_num[num[2]]->width - 8;
+				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[2]]->height * hud_scale_factor) - 4, 
+				sb_round_num[num[2]], sb_round_num[num[2]]->width * hud_scale_factor, sb_round_num[num[2]]->height * hud_scale_factor, 255, 255, 255, blinking);
+				x_offset = x_offset + (sb_round_num[num[2]]->width * hud_scale_factor) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[1]]->height - 4, sb_round_num[num[1]], 255, 255, 255, blinking);
-				x_offset = x_offset + sb_round_num[num[1]]->width - 8;
+				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[1]]->height * hud_scale_factor) - 4, 
+				sb_round_num[num[1]], sb_round_num[num[1]]->width * hud_scale_factor, sb_round_num[num[1]]->height * hud_scale_factor, 255, 255, 255, blinking);
+				x_offset = x_offset + (sb_round_num[num[1]]->width * hud_scale_factor) - 8;
 			}
 			else
 				num[1] = 0;
 
 			num[0] = cl.stats[STAT_ROUNDS] - num[2]*100 - num[1]*10;
-			Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[0]]->height - 4, sb_round_num[num[0]], 255, 255, 255, blinking);
-			x_offset = x_offset + sb_round_num[num[0]]->width - 8;
+			Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[0]]->height * hud_scale_factor) - 4, 
+			sb_round_num[num[0]], sb_round_num[num[0]]->width * hud_scale_factor, sb_round_num[num[0]]->height * hud_scale_factor, 255, 255, 255, blinking);
+			x_offset = x_offset + (sb_round_num[num[0]]->width * hud_scale_factor) - 8;
 		}
 	}
 	else if (cl.stats[STAT_ROUNDCHANGE] == 7)//blink white while fading back
@@ -999,14 +1178,16 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColorPic (5, vid.height - sb_round[4]->height - 4, sb_round[4], (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-					savex = x_offset + 10;
-					x_offset = x_offset + 10;
+					Draw_ColoredStretchPic (5 * hud_scale_factor, vid.height - (sb_round[4]->height * hud_scale_factor) - 4, 
+					sb_round[4], sb_round[4]->width * hud_scale_factor, sb_round[4]->height * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+					savex = x_offset + 10 * hud_scale_factor;
+					x_offset = x_offset + 10 * hud_scale_factor;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColorPic (5 + savex, vid.height - sb_round[4]->height - 4, sb_round[4], (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+					Draw_ColoredStretchPic (5 * hud_scale_factor + savex, vid.height - (sb_round[4]->height * hud_scale_factor) - 4, 
+					sb_round[4], sb_round[4]->width * hud_scale_factor, sb_round[4]->height * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 					continue;
 				}
 				if (i > 4)
@@ -1014,9 +1195,10 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColorPic (5 + x_offset, vid.height - sb_round[icon_num]->height - 4, sb_round[icon_num], (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (sb_round[icon_num]->height * hud_scale_factor) - 4, 
+				sb_round[icon_num], sb_round[icon_num]->width * hud_scale_factor, sb_round[icon_num]->height * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 
-				x_offset = x_offset + sb_round[icon_num]->width + 3;
+				x_offset = x_offset + (sb_round[icon_num]->width * hud_scale_factor) + 3;
 			}
 		}
 		else
@@ -1024,23 +1206,26 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[2]]->height - 4, sb_round_num[num[2]], (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-				x_offset = x_offset + sb_round_num[num[2]]->width - 8;
+				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[2]]->height * hud_scale_factor) - 4, 
+				sb_round_num[num[2]], sb_round_num[num[2]]->width * hud_scale_factor, sb_round_num[num[2]]->height * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				x_offset = x_offset + (sb_round_num[num[2]]->width * hud_scale_factor) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[1]]->height - 4, sb_round_num[num[1]], (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-				x_offset = x_offset + sb_round_num[num[1]]->width - 8;
+				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[1]]->height * hud_scale_factor) - 4, 
+				sb_round_num[num[1]], sb_round_num[num[1]]->width * hud_scale_factor, sb_round_num[num[1]]->height * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				x_offset = x_offset + (sb_round_num[num[1]]->width * hud_scale_factor) - 8;
 			}
 			else
 				num[1] = 0;
 
 			num[0] = cl.stats[STAT_ROUNDS] - num[2]*100 - num[1]*10;
-			Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[0]]->height - 4, sb_round_num[num[0]], (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-			x_offset = x_offset + sb_round_num[num[0]]->width - 8;
+			Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[0]]->height * hud_scale_factor) - 4, 
+			sb_round_num[num[0]], sb_round_num[num[0]]->width * hud_scale_factor, sb_round_num[num[0]]->height * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+			x_offset = x_offset + (sb_round_num[num[0]]->width * hud_scale_factor) - 8;
 		}
 	}
 	else
@@ -1056,14 +1241,16 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColorPic (5, vid.height - sb_round[4]->height - 4, sb_round[4], 107, 1, 0, 255);
-					savex = x_offset + 10;
-					x_offset = x_offset + 10;
+					Draw_ColoredStretchPic (5 * hud_scale_factor, vid.height - (sb_round[4]->height * hud_scale_factor) - 4, 
+					sb_round[4], sb_round[4]->width * hud_scale_factor, sb_round[4]->height * hud_scale_factor, 107, 1, 0, 255);
+					savex = x_offset + 10 * hud_scale_factor;
+					x_offset = x_offset + 10 * hud_scale_factor;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColorPic (5 + savex, vid.height - sb_round[4]->height - 4, sb_round[4], 107, 1, 0, 255);
+					Draw_ColoredStretchPic (5 * hud_scale_factor + savex, vid.height - (sb_round[4]->height * hud_scale_factor) - 4, 
+					sb_round[4], sb_round[4]->width * hud_scale_factor, sb_round[4]->height * hud_scale_factor, 107, 1, 0, 255);
 					continue;
 				}
 				if (i > 4)
@@ -1071,9 +1258,10 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColorPic (5 + x_offset, vid.height - sb_round[icon_num]->height - 4, sb_round[icon_num], 107, 1, 0, 255);
+				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (sb_round[icon_num]->height * hud_scale_factor) - 4, 
+				sb_round[icon_num], sb_round[icon_num]->width * hud_scale_factor, sb_round[icon_num]->height * hud_scale_factor, 107, 1, 0, 255);
 
-				x_offset = x_offset + sb_round[icon_num]->width + 3;
+				x_offset = x_offset + (sb_round[icon_num]->width * hud_scale_factor) + 3;
 			}
 		}
 		else
@@ -1081,16 +1269,18 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[2]]->height - 4, sb_round_num[num[2]], 107, 1, 0, 255);
-				x_offset = x_offset + sb_round_num[num[2]]->width - 8;
+				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[2]]->height * hud_scale_factor) - 4, 
+				sb_round_num[num[2]], sb_round_num[num[2]]->width * hud_scale_factor, sb_round_num[num[2]]->height * hud_scale_factor, 107, 1, 0, 255);
+				x_offset = x_offset + (sb_round_num[num[2]]->width * hud_scale_factor) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[1]]->height - 4, sb_round_num[num[1]], 107, 1, 0, 255);
-				x_offset = x_offset + sb_round_num[num[1]]->width - 8;
+				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[1]]->height * hud_scale_factor) - 4, 
+				sb_round_num[num[1]], sb_round_num[num[1]]->width * hud_scale_factor, sb_round_num[num[1]]->height * hud_scale_factor, 107, 1, 0, 255);
+				x_offset = x_offset + (sb_round_num[num[1]]->width * hud_scale_factor) - 8;
 			}
 			else
 				num[1] = 0;
@@ -1100,8 +1290,9 @@ void HUD_Rounds (void)
 			if(cl.stats[STAT_ROUNDS] == 0)
 				return;
 			
-			Draw_ColorPic (2 + x_offset, vid.height - sb_round_num[num[0]]->height - 4, sb_round_num[num[0]], 107, 1, 0, 255);
-			x_offset = x_offset + sb_round_num[num[0]]->width - 8;
+			Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (sb_round_num[num[0]]->height * hud_scale_factor) - 4, 
+			sb_round_num[num[0]], sb_round_num[num[0]]->width * hud_scale_factor, sb_round_num[num[0]]->height * hud_scale_factor, 107, 1, 0, 255);
+			x_offset = x_offset + (sb_round_num[num[0]]->width * hud_scale_factor) - 8;
 		}
 	}
 }
@@ -1127,9 +1318,9 @@ void HUD_Perks (void)
 {
 	int x, y, scale;
 
-	x = 18;
-	y = 2;
-	scale = 22;
+	x = 18 * hud_scale_factor;
+	y = 2 * hud_scale_factor;
+	scale = 22 * hud_scale_factor;
 
 	// Double-Tap 2.0 specialty icon
 	qpic_t* double_tap_icon;
@@ -1154,8 +1345,8 @@ void HUD_Perks (void)
 		y += scale;
 	}
 
-	x = 6;
-	y = 2;
+	x = 6 * hud_scale_factor;
+	y = 2 * hud_scale_factor;
 
 	// Now the first column.
 	for (int i = 0; i < 4; i++) {
@@ -1180,7 +1371,10 @@ HUD_Powerups
 */
 void HUD_Powerups (void)
 {
-	int count;
+	int count = 0;
+	float scale;
+	
+	scale = 26 * hud_scale_factor;
 
 	// horrible way to offset check :)))))))))))))))))) :DDDDDDDD XOXO
 
@@ -1192,13 +1386,13 @@ void HUD_Powerups (void)
 
 	// both are avail draw fixed order
 	if (count == 2) {
-		Draw_StretchPic(211, 242, x2pic, 28, 28);
-		Draw_StretchPic(240, 242, instapic, 28, 28);
+		Draw_StretchPic((vid.width/2) - (27 * hud_scale_factor), vid.height - (29 * hud_scale_factor), x2pic, scale, scale);
+		Draw_StretchPic((vid.width/2) + (3 * hud_scale_factor), vid.height - (29 * hud_scale_factor), instapic, scale, scale);
 	} else {
 		if (cl.stats[STAT_X2])
-			Draw_StretchPic(226, 242, x2pic, 28, 28);
+			Draw_StretchPic((vid.width/2) - (13 * hud_scale_factor), vid.height - (29 * hud_scale_factor), x2pic, scale, scale);
 		if(cl.stats[STAT_INSTA])
-			Draw_StretchPic (226, 242, instapic, 28, 28);
+			Draw_StretchPic ((vid.width/2) - (13 * hud_scale_factor), vid.height - (29 * hud_scale_factor), instapic, scale, scale);
 	}
 }
 
@@ -1216,8 +1410,8 @@ void HUD_ProgressBar (void)
 		progressbar = 100 - ((cl.progress_bar-sv.time)*10);
 		if (progressbar >= 100)
 			progressbar = 100;
-		Draw_FillByColor  ((vid.width)/2 - 51, vid.height*0.75 - 1, 102, 5, GU_RGBA(0, 0, 0,100));
-		Draw_FillByColor ((vid.width)/2 - 50, vid.height*0.75, progressbar, 3, GU_RGBA(255, 255, 255,100));
+		Draw_FillByColor  ((vid.width)/2 - 51, vid.height*0.75 - 1, 102, 5, 0, 0, 0,100);
+		Draw_FillByColor ((vid.width)/2 - 50, vid.height*0.75, progressbar, 3, 255, 255, 255,100);
 
 		Draw_String ((vid.width - (88))/2, vid.height*0.75 + 10, "Reviving...");
 	}
@@ -1240,6 +1434,8 @@ float smallsec;
 int ach_pic;
 void HUD_Achievement (void)
 {
+#ifndef __WII__
+
 	if (achievement_unlocked == 1)
 	{
 		smallsec = smallsec + 0.7;
@@ -1256,19 +1452,28 @@ void HUD_Achievement (void)
 	{
 		achievement_unlocked = 0;
 	}
+
+#endif // __WII__
 }
 
 void HUD_Parse_Achievement (int ach)
 {
-    if (achievement_list[ach].unlocked)
-        return;
+#ifndef __WII__
+
+	if (achievement_list[ach].unlocked)
+		return;
 
 	achievement_unlocked = 1;
 	smallsec = 0;
 	achievement_time = Sys_FloatTime() + 10;
 	ach_pic = ach;
 	achievement_list[ach].unlocked = 1;
+
+#ifdef __PSP__
 	Save_Achivements();
+#endif // __PSP__
+
+#endif // __WII__
 }
 
 /*
@@ -1311,16 +1516,16 @@ void HUD_Ammo (void)
 	char* magstring;
 	int reslen;
 
-	reslen = strlen(va("/%i", cl.stats[STAT_AMMO]));
+	reslen = getTextWidth(va("/%i", cl.stats[STAT_AMMO]), hud_scale_factor);
 
 	//
 	// Magazine
 	//
 	magstring = va("%i", cl.stats[STAT_CURRENTMAG]);
 	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG]) {
-		Draw_ColoredString((422 -(reslen*8)) - strlen(magstring)*8, 247, magstring, 255, 0, 0, 255, 1);
+		Draw_ColoredString(((vid.width - (55 * hud_scale_factor)) - (reslen)) - getTextWidth(magstring, hud_scale_factor), vid.height - (25 * hud_scale_factor), magstring, 255, 0, 0, 255, hud_scale_factor);
 	} else {
-		Draw_ColoredString((422 -(reslen*8)) - strlen(magstring)*8, 247, magstring, 255, 255, 255, 255, 1);
+		Draw_ColoredString(((vid.width - (55 * hud_scale_factor)) - (reslen)) - getTextWidth(magstring, hud_scale_factor), vid.height - (25 * hud_scale_factor), magstring, 255, 255, 255, 255, hud_scale_factor);
 	}
 
 	//
@@ -1328,9 +1533,9 @@ void HUD_Ammo (void)
 	//
 	magstring = va("/%i", cl.stats[STAT_AMMO]);
 	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_AMMO]) {
-		Draw_ColoredString(422 - strlen(magstring)*8, 247, magstring, 255, 0, 0, 255, 1);
+		Draw_ColoredString((vid.width - (55 * hud_scale_factor)) - getTextWidth(magstring, hud_scale_factor), vid.height - (25 * hud_scale_factor), magstring, 255, 0, 0, 255, hud_scale_factor);
 	} else {
-		Draw_ColoredString(422 - strlen(magstring)*8, 247, magstring, 255, 255, 255, 255, 1);
+		Draw_ColoredString((vid.width - (55 * hud_scale_factor)) - getTextWidth(magstring, hud_scale_factor), vid.height - (25 * hud_scale_factor), magstring, 255, 255, 255, 255, hud_scale_factor);
 	}
 
 	//
@@ -1339,9 +1544,9 @@ void HUD_Ammo (void)
 	if (IsDualWeapon(cl.stats[STAT_ACTIVEWEAPON])) {
 		magstring = va("%i", cl.stats[STAT_CURRENTMAG2]);
 		if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_CURRENTMAG2]) {
-			Draw_ColoredString(388 - strlen(magstring)*8, 247, magstring, 255, 0, 0, 255, 1);
+			Draw_ColoredString((vid.width - (89 * hud_scale_factor)) - getTextWidth(magstring, hud_scale_factor), vid.height - (25 * hud_scale_factor), magstring, 255, 0, 0, 255, hud_scale_factor);
 		} else {
-			Draw_ColoredString(388 - strlen(magstring)*8, 247, magstring, 255, 255, 255, 255, 1);
+			Draw_ColoredString((vid.width - (89 * hud_scale_factor)) - getTextWidth(magstring, hud_scale_factor), vid.height - (25 * hud_scale_factor), magstring, 255, 255, 255, 255, hud_scale_factor);
 		}
 	}
 }
@@ -1359,14 +1564,11 @@ void HUD_AmmoString (void)
 		int x;
 
 		if (0 < cl.stats[STAT_AMMO] && cl.stats[STAT_CURRENTMAG] >= 0) {
-			x = (vid.width - strlen("Reload")*8)/2;
-			Draw_ColoredString (x, 164, "Reload", 255, 255, 255, 255, 1);
+			Draw_ColoredStringCentered(vid.height - (100 * hud_scale_factor), "Reload", 255, 255, 255, 255, hud_scale_factor);
 		} else if (0 < cl.stats[STAT_CURRENTMAG]) {
-			x = (vid.width - strlen("LOW AMMO")*8)/2;
-			Draw_ColoredString (x, 164, "LOW AMMO", 255, 255, 0, 255, 1);
+			Draw_ColoredStringCentered(vid.height - (100 * hud_scale_factor), "LOW AMMO", 255, 255, 0, 255, hud_scale_factor);
 		} else {
-			x = (vid.width - strlen("NO AMMO")*8)/2;
-			Draw_ColoredString (x, 164, "NO AMMO", 255, 0, 0, 255, 1);
+			Draw_ColoredStringCentered(vid.height - (100 * hud_scale_factor), "NO AMMO", 255, 0, 0, 255, hud_scale_factor);
 		}
 	}
 }
@@ -1381,23 +1583,23 @@ HUD_Grenades
 
 void HUD_Grenades (void)
 {
-	Draw_StretchPic (427, 232, fragpic, 22, 22);
+	Draw_StretchPic (vid.width - (53 * hud_scale_factor), vid.height - (40 * hud_scale_factor), fragpic, 22 * hud_scale_factor, 22 * hud_scale_factor);
 
 	if (cl.stats[STAT_GRENADES] & UI_FRAG)
 	{
 		if (cl.stats[STAT_PRIGRENADES] <= 0)
-			Draw_ColoredString (440, 247, va ("%i",cl.stats[STAT_PRIGRENADES]), 255, 0, 0, 255, 1);
+			Draw_ColoredString (vid.width - (40 * hud_scale_factor), vid.height - (25 * hud_scale_factor), va ("%i",cl.stats[STAT_PRIGRENADES]), 255, 0, 0, 255, hud_scale_factor);
 		else
-			Draw_String (440, 247, va ("%i",cl.stats[STAT_PRIGRENADES]));
+			Draw_ColoredString (vid.width - (40 * hud_scale_factor), vid.height - (25 * hud_scale_factor), va ("%i",cl.stats[STAT_PRIGRENADES]), 255, 255, 255, 255, hud_scale_factor);
 	}
 
 	if (cl.stats[STAT_GRENADES] & UI_BETTY)
 	{
-		Draw_StretchPic (448, 233, bettypic, 22, 22);
+		Draw_StretchPic (vid.width - (32 * hud_scale_factor), vid.height - (40 * hud_scale_factor), bettypic, 22 * hud_scale_factor, 22 * hud_scale_factor);
 		if (cl.stats[STAT_PRIGRENADES] <= 0)
-			Draw_ColoredString (463, 247, va ("%i",cl.stats[STAT_SECGRENADES]), 255, 0, 0, 255, 1);
+			Draw_ColoredString (vid.width - (17 * hud_scale_factor), vid.height - (25 * hud_scale_factor), va ("%i",cl.stats[STAT_SECGRENADES]), 255, 0, 0, 255, hud_scale_factor);
 		else
-			Draw_String (463, 247, va ("%i",cl.stats[STAT_SECGRENADES]));
+			Draw_ColoredString (vid.width - (17 * hud_scale_factor), vid.height - (25 * hud_scale_factor), va ("%i",cl.stats[STAT_SECGRENADES]), 255, 255, 255, 255, hud_scale_factor);
 	}
 }
 
@@ -1411,36 +1613,68 @@ void HUD_Weapon (void)
 	char str[32];
 	float l;
 	x_value = vid.width;
-	y_value = 234;
+	y_value = vid.height - (40 * hud_scale_factor);
 
 	strcpy(str, pr_strings+sv_player->v.Weapon_Name);
 	l = strlen(str);
 
-	x_value = 422 - l*8;
-	Draw_String (x_value, y_value, str);
+	x_value = (vid.width - (55 * hud_scale_factor)) - getTextWidth(str, hud_scale_factor);
+	Draw_ColoredString (x_value, y_value, str, 255, 255, 255, 255, hud_scale_factor);
 }
 
-/*
+/*a
 ===============
 HUD_BettyPrompt
 ===============
 */
 void HUD_BettyPrompt (void)
 {
+#ifdef __PSP__
+
 	char str[64];
 	char str2[32];
 
-	strcpy(str, va("Double-tap %s then press %s\n", GetUseButtonL(), GetGrenadeButtonL()));
+	strcpy(str, va("Double-tap  %s  then press  %s \n", GetUseButtonL(), GetGrenadeButtonL()));
 	strcpy(str2, "to place a Bouncing Betty\n");
 
-	int x, x2;
-	x = (vid.width - strlen(str)*8)/2;
-	x2 = (vid.width - strlen(str2)*8)/2;
+	int x;
+	x = (vid.width - getTextWidth(str, 1))/2;
 
-	Draw_String(x, 60, str);
-	Draw_String(x2, 70, str2);
-	Draw_Pic (x + 11*8, 60, GetButtonIcon("+use"));
-	Draw_Pic (x + 25*8, 60, GetButtonIcon("+grenade"));
+	Draw_ColoredStringCentered(60, str, 255, 255, 255, 255, 1);
+	Draw_ColoredStringCentered(70, str2, 255, 255, 255, 255, 1);
+
+	Draw_Pic (x + getTextWidth("Double-tap  ", 1) - 4, 60, GetButtonIcon("+use"));
+	Draw_Pic (x + getTextWidth("Double-tap     then press   ", 1) - 4, 60, GetButtonIcon("+grenade"));
+
+#elif _3DS
+
+	char str[32];
+	char str2[32];
+
+	strcpy(str, va("Tap SWAP then press  %s  to\n", GetGrenadeButtonL()));
+	strcpy(str2, "place a Bouncing Betty\n");
+
+	int x;
+	x = (vid.width - getTextWidth(str, 1))/2;
+
+	Draw_ColoredStringCentered(60, str, 255, 255, 255, 255, 1);
+	Draw_ColoredStringCentered(72, str2, 255, 255, 255, 255, 1);
+
+	Draw_Pic (x + getTextWidth("Tap SWAP then press ", 1) - 4, 56, GetButtonIcon("+grenade"));
+
+#elif __WII__
+
+	char str[32];
+	char str2[32];
+
+	strcpy(str, "Press   to\n");
+	strcpy(str2, "place a Bouncing Betty");
+
+	Draw_ColoredStringCentered((70 * hud_scale_factor), str, 255, 255, 255, 255, hud_scale_factor);
+	Draw_ColoredStringCentered((90 * hud_scale_factor), str2, 255, 255, 255, 255, hud_scale_factor);
+	Draw_Pic (200 * hud_scale_factor + 14, 68 * hud_scale_factor, b_minus);
+
+#endif // __PSP__, _3DS, __WII__
 }
 
 /*
@@ -1455,7 +1689,76 @@ void HUD_PlayerName (void)
 	if (nameprint_time - sv.time < 1)
 		alpha = (int)((nameprint_time - sv.time)*255);
 
-	Draw_ColoredString(70, 203, player_name, 255, 255, 255, alpha, 1);
+	Draw_ColoredString(70 * hud_scale_factor, vid.height - (70 * hud_scale_factor), player_name, 255, 255, 255, alpha, hud_scale_factor);
+}
+
+/*
+===============
+HUD_Screenflash
+===============
+*/
+
+//
+// Types of screen-flashes.
+//
+
+// Colors
+#define SCREENFLASH_COLOR_WHITE			0
+#define SCREENFLASH_COLOR_BLACK			1
+
+// Types
+#define SCREENFLASH_FADE_INANDOUT		0
+#define SCREENFLASH_FADE_IN 			1
+#define SCREENFLASH_FADE_OUT 			2
+
+//
+// invert float takes in float value between 0 and 1, inverts position
+// eg: 0.1 returns 0.9, 0.34 returns 0.66
+float invertfloat(float input) {
+    if (input < 0)
+        return 0; // adjust to lower boundary
+    else if (input > 1)
+        return 1; // adjust to upper boundary
+    else
+        return (1 - input);
+}
+
+void HUD_Screenflash (void)
+{
+	int r, g, b, a;
+	float flash_alpha;
+
+	double percentage_complete = screenflash_worktime / (screenflash_duration - screenflash_starttime);
+
+	// Fade Out
+	if (screenflash_type == SCREENFLASH_FADE_OUT) {
+		flash_alpha = invertfloat((float)percentage_complete);
+	}
+	// Fade In
+	else if (screenflash_type == SCREENFLASH_FADE_IN) {
+		flash_alpha = (float)percentage_complete;
+	}
+	// Fade In + Fade Out
+	else {
+		// Fade In
+		if (percentage_complete < 0.5) {
+			flash_alpha = (float)percentage_complete*2;
+		} 
+		// Fade Out
+		else {
+			flash_alpha = invertfloat((float)percentage_complete)*2;
+		}
+	}
+
+	// Obtain the flash color
+	switch(screenflash_color) {
+		case SCREENFLASH_COLOR_BLACK: r = 0; g = 0; b = 0; a = (int)(flash_alpha * 255); break;
+		case SCREENFLASH_COLOR_WHITE: r = 255; g = 255; b = 255; a = (int)(flash_alpha * 255); break;
+		default: r = 255; g = 0; b = 0; a = 255; break;
+	}
+
+	screenflash_worktime += host_frametime;
+	Draw_FillByColor(0, 0, vid.width, vid.height, r, g, b, a);
 }
 
 /*
@@ -1468,8 +1771,12 @@ void HUD_Draw (void)
 	if (scr_con_current == vid.height)
 		return;		// console is full screen
 
-	if (key_dest == key_menu_pause)
+	if (key_dest == key_menu_pause) {
+		// Make sure we still draw the screen flash.
+		if (screenflash_duration > sv.time)
+			HUD_Screenflash();
 		return;
+	}
 
 	scr_copyeverything = 1;
 
@@ -1486,9 +1793,14 @@ void HUD_Draw (void)
 		return;
 	}
 
-	if (cl.stats[STAT_HEALTH] <= 0)
+	if (cl.stats[STAT_HEALTH] <= 0 || showscoreboard == true)
 	{
 		HUD_EndScreen ();
+		
+		// Make sure we still draw the screen flash.
+		if (screenflash_duration > sv.time)
+			HUD_Screenflash();
+
 		return;
 	}
 
@@ -1514,11 +1826,10 @@ void HUD_Draw (void)
 	HUD_Point_Change();
 	HUD_Achievement();
 
-	if (domaxammo == true) {
-		if (maxammoopac <= 0) {
-			maxammoopac = 255;
-			maxammoy = 48;
-		}
+	if (hud_maxammo_endtime > sv.time)
 		HUD_MaxAmmo();
-	}
+
+	// This should always come last!
+	if (screenflash_duration > sv.time)
+		HUD_Screenflash();
 }

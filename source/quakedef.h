@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
 
 See the GNU General Public License for more details.
 
@@ -19,15 +19,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // quakedef.h -- primary header for client
 
+//#define	GLTEST			// experimental stuff
+
+#ifndef __PSP__
+#define qtrue 1
+#define qfalse 0
+#endif // __PSP__
+
+#ifdef __PSP__
+#define PSP_MODEL_PHAT		0
+#define PSP_MODEL_SLIM 		1
+#define PSP_MODEL_PSVITA 	2
+
+extern int psp_system_model;
+#endif // __PSP__
 
 #define	QUAKE_GAME			// as opposed to utilities
 
-#define	VERSION             0.2 //0.11/0.44/0.88/1.0/
+#define	VERSION				2.0
+#define	GLQUAKE_VERSION		1.00
 #define	D3DQUAKE_VERSION	0.01
 #define	WINQUAKE_VERSION	0.996
 #define	LINUX_VERSION		1.30
 #define	X11_VERSION			1.10
-
 
 #define	GAMENAME	"nzp"
 
@@ -37,14 +51,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <stdlib.h>
 #include <setjmp.h>
+#include <stdbool.h>
 #include <ctype.h>
-//#include <assert.h> // For QMB assert
-
-
 
 #define	VID_LockBuffer()
 #define	VID_UnlockBuffer()
-
 
 #if defined __i386__
 #define id386	1
@@ -82,10 +93,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	MAX_OSPATH		128			// max length of a filesystem pathname
 
 #define	ON_EPSILON		0.1			// point on plane side epsilon
-/*
-#define	MAX_MSGLEN		8000		// max length of a reliable message
-#define	MAX_DATAGRAM	1024		// max length of unreliable message
-*/
 
 #define	MAX_MSGLEN		64000		// max length of a reliable message Crow_Bar. UP for PSP
 #define	MAX_DATAGRAM	8000		// max length of unreliable message Crow_Bar. UP for PSP
@@ -93,9 +100,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 // per-level limits
 //
-#define	MAX_EDICTS		600			// FIXME: ouch! ouch! ouch!
+#define	MAX_EDICTS		1024			// note to myself: don't increase this further, 1024 is more than enough. :P
 #define	MAX_LIGHTSTYLES	64
-#define	MAX_MODELS		300			// these are sent over the net as bytes
+#define	MAX_MODELS		300			// motolegacy -- nzp protocol(115), uses memory inefficient shorts for model indexes, yay!
 #define	MAX_SOUNDS		256			// so they cannot be blindly increased
 
 #define	SAVEGAME_COMMENT_LENGTH	39
@@ -110,18 +117,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	STAT_points			1
 #define	STAT_WEAPON			2
 #define	STAT_AMMO			3
+#define	STAT_SECGRENADES	4
 #define	STAT_WEAPONFRAME	5
 #define	STAT_CURRENTMAG		6
 #define	STAT_ZOOM			7
 #define	STAT_WEAPONSKIN		8
+#define	STAT_GRENADES		9
 #define	STAT_ACTIVEWEAPON	10
 #define	STAT_ROUNDS			11
 #define	STAT_ROUNDCHANGE	12
 #define	STAT_X2				13
 #define	STAT_INSTA			14
 #define	STAT_PRIGRENADES	15
-#define	STAT_SECGRENADES	4
-#define	STAT_GRENADES		9
 #define	STAT_WEAPON2		17
 #define	STAT_WEAPON2SKIN	18
 #define	STAT_WEAPON2FRAME	19
@@ -155,7 +162,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define W_TYPE		24
 
 #define W_BIATCH			28
-#define W_KILLU				29 //357
+#define W_KILLU				29 // 357
 #define W_COMPRESSOR		30 // Gewehr
 #define W_M1000				31 //garand
 #define W_KOLLIDER			32
@@ -199,12 +206,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	SOUND_CHANNELS		8
 
 
-#include "common.h"
-#include "bspfile.h"
-#include "vid.h"
-#include "sys.h"
+#ifdef _3DS
+#include "ctr/common.h"
+#include "ctr/vid.h"
+#include "ctr/sys.h"
+#elif __PSP__
+#include "psp/common.h"
+#include "psp/vid.h"
+#include "psp/sys.h"
+#elif __WII__
+#include "wii/common.h"
+#include "wii/vid.h"
+#include "wii/sys.h"
+#endif // _3DS, __PSP__, __WII__
 #include "zone.h"
 #include "mathlib.h"
+#include "bspfile.h"
 
 typedef struct
 {
@@ -229,34 +246,90 @@ typedef struct
 	// dr_mabuse1981: HalfLife rendermodes fixed END
 } entity_state_t;
 
+
 #include "wad.h"
 #include "draw.h"
 #include "cvar.h"
-#include "screen.h"
-#include "net.h"
+#ifdef _3DS
+#include "ctr/screen.h"
+#include "ctr/net.h"
+#elif __PSP__
+#include "psp/screen.h"
+#include "psp/net.h"
+#elif __WII__
+#include "wii/screen.h"
+#include "wii/net.h"
+#endif // _3DS
 #include "protocol.h"
 #include "cmd.h"
+#ifdef _3DS
+#include "ctr/sbar.h"
+#elif __WII__
+#include "wii/sbar.h"
+#endif // _3DS
 #include "cl_hud.h"
 #include "sound.h"
-#include "render.h"
-#include "client.h"
+#ifdef _3DS
+#include "ctr/render.h"
+#include "ctr/client.h"
+#elif __PSP__
+#include "psp/render.h"
+#include "psp/client.h"
+#elif __WII__
+#include "wii/render.h"
+#include "wii/client.h"
+#endif // _3DS
 #include "progs.h"
-#include "server.h"
 
 
-#include "psp/video_hardware_model.h"
-#include "psp/video_hardware_iqm.h"
+#ifdef _3DS
+#include "ctr/server.h"
+#elif __PSP__
+#include "psp/server.h"
+#elif __WII__
+#include "wii/server.h"
+#endif // _3DS
+
+
+
+#ifdef _3DS
+#include "ctr/gl/gl_model.h"
+#include "ctr/gl/gl_decal.h"
+#elif __WII__
+#include "wii/gx/gx_model.h"
+#else
+#include "psp/gu/gu_model.h"
+#include "psp/gu/gu_iqm.h"
+#endif
 
 #include "input.h"
 #include "world.h"
-#include "keys.h"
+#ifdef _3DS
+#include "ctr/keys.h"
+#elif __PSP__
+#include "psp/keys.h"
+#elif __WII__
+#include "wii/keys.h"
+#endif
 #include "console.h"
 #include "view.h"
-#include "menu.h"
+#ifdef _3DS
+#include "ctr/menu.h"
+#elif __PSP__
+#include "psp/menu.h"
+#elif __WII__
+#include "wii/menu.h"
+#endif
 #include "crc.h"
 #include "cdaudio.h"
 
-#include "psp/video_hardware.h"
+#ifdef _3DS
+#include "ctr/glquake.h"
+#elif __WII__
+#include "wii/gx/gxquake.h"
+#else
+#include "psp/gu/gu_psp.h"
+#endif
 
 //=============================================================================
 
@@ -295,8 +368,10 @@ extern	qboolean	host_initialized;		// true if into command execution
 extern	double		host_frametime;
 extern	byte		*host_basepal;
 extern	byte		*host_colormap;
+#ifdef __PSP__
 extern	byte		*host_q2pal;
 extern	byte		*host_h2pal;
+#endif // __PSP__
 extern	int			host_framecount;	// incremented every frame, never reset
 extern	double		realtime;			// not bounded in any way, changed at
 										// start of every frame, never reset
@@ -323,11 +398,11 @@ extern qboolean		isDedicated;
 
 extern int			minimum_memory;
 
-extern func_t	EndFrame;
-
 extern	vec3_t	NULLVEC;
 
 #define ISUNDERWATER(x) ((x) == CONTENTS_WATER || (x) == CONTENTS_SLIME || (x) == CONTENTS_LAVA)
+
+int SV_HullPointContents (hull_t *hull, int num, vec3_t p);
 #define TruePointContents(p) SV_HullPointContents(&cl.worldmodel->hulls[0], 0, p)
 
 //
@@ -344,26 +419,25 @@ void Chase_Update (void);
 typedef struct
 {
 	int pathlist [MAX_WAYPOINTS];
+	int pathlist_length;
 	int zombienum;
 } zombie_ai;
 
 typedef struct
 {
 	vec3_t origin;
-	int id;
 	float g_score, f_score;
-	int open; // Determine if the waypoint is "open" a.k.a avaible
-	int target_id [8]; // Targets array number
+	int open; // Determine if the waypoint is "open" a.k.a active
 	char special[64]; //special tag is required for the closed waypoints
 	int target [8]; //Each waypoint can have up to 8 targets
 	float dist [8]; // Distance to the next waypoints
 	int came_from; // Used for pathfinding store where we got here to this
-	qboolean used; //if the waypoint is in use
+	qboolean used; // Set to `qtrue` if this waypoint contains valid data (not an empty slot in a list)
 } waypoint_ai;
 
 extern waypoint_ai waypoints[MAX_WAYPOINTS];
+extern int n_waypoints;
 extern short closest_waypoints[MAX_EDICTS];
-
 
 // thread structs
 typedef struct
@@ -377,3 +451,35 @@ typedef struct
 
 #define PR_MAX_TEMPSTRING 2048	// 2001-10-25 Enhanced temp string handling by Maddes
 char *PF_VarString (int	first);
+
+// ----------------------------------------------------------------------------
+// Utils for using cstdlib qsort (Quick sort)
+//
+// Usage:
+//		argsort_entry_t sort_values[10];
+//	
+//		for(int i = 0; i < 10; i++) {
+//			sort_values[i].index = i;
+//			sort_values[i].value = something;
+//		}
+//	
+//		qsort(sort_values, 10, sizeof(argsort_entry_t), argsort_comparator);
+// 
+// ----------------------------------------------------------------------------
+// Struct used for sorting a list of indices by some value
+typedef struct argsort_entry_s {
+	int index;
+	float value;
+} argsort_entry_t;
+extern int argsort_comparator(const void *lhs, const void *rhs);
+// ----------------------------------------------------------------------------
+
+extern func_t	EndFrame;
+
+
+#ifdef _3DS
+#define VERTEXARRAYSIZE 18360
+extern float gVertexBuffer[VERTEXARRAYSIZE];
+extern float gColorBuffer[VERTEXARRAYSIZE];
+extern float gTexCoordBuffer[VERTEXARRAYSIZE];
+#endif // _3DS

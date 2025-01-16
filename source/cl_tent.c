@@ -41,21 +41,9 @@ void CL_InitTEnts (void)
 {
 	cl_sfx_r_exp3 = S_PrecacheSound ("sounds/weapons/r_exp3.wav");
 	cl_sfx_step[0] = S_PrecacheSound ("sounds/player/footstep1.wav");
-
-#ifdef SLIM
-
 	cl_sfx_step[1] = S_PrecacheSound ("sounds/player/footstep2.wav");
 	cl_sfx_step[2] = S_PrecacheSound ("sounds/player/footstep3.wav");
 	cl_sfx_step[3] = S_PrecacheSound ("sounds/player/footstep4.wav");
-
-#else
-
-	cl_sfx_step[1] = S_PrecacheSound ("sounds/player/footstep1.wav");
-	cl_sfx_step[2] = S_PrecacheSound ("sounds/player/footstep1.wav");
-	cl_sfx_step[3] = S_PrecacheSound ("sounds/player/footstep1.wav");
-
-#endif // SLIM
-
 }
 
 /*
@@ -425,7 +413,7 @@ void CL_UpdateTEnts (void)
 		if (b->entity == cl.viewentity)
 		{
 			VectorCopy (cl_entities[cl.viewentity].origin, b->start);
-
+#ifdef __PSP__
 			b->start[2] += cl.crouch + bound(-7, scr_ofsy.value, 4);
 			b->start[2] += bound(0, cl_lightning_zadjust.value, 20);//progs.dat aims from 20 for traceline
 
@@ -469,15 +457,9 @@ void CL_UpdateTEnts (void)
 				if (!SV_RecursiveHullCheck(cl.worldmodel->hulls, 0, org, b->end, &trace))
 					VectorCopy(trace.endpos, b->end);
 			}
-		}
+#endif // __PSP__
 
-/*
-	// if coming from the player, update the start position
-		if (b->entity == cl.viewentity)
-		{
-			VectorCopy (cl_entities[cl.viewentity].origin, b->start);
 		}
-*/
 	// calculate pitch and yaw
 		VectorSubtract (b->end, b->start, dist);
 

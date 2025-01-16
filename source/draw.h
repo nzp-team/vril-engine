@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
 
 See the GNU General Public License for more details.
 
@@ -25,28 +25,42 @@ void Draw_Init (void);
 void Draw_Character (int x, int y, int num);
 void Draw_DebugChar (char num);
 void Draw_Pic (int x, int y, qpic_t *pic);
+#ifdef __PSP__
 void Draw_PicIndex (int x, int y, int width, int height, int texture_index);
+#endif // __PSP__
 void Draw_StretchPic (int x, int y, qpic_t *pic, int x_value, int y_value);
 void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float a);
-void Draw_ColoredString (int x, int y, char *text, float r, float g, float b, float a, int scale);
+void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value, int r, int g, int b, int a);
+void Draw_ColoredString (int x, int y, char *text, float r, float g, float b, float a, float scale);
+void Draw_ColoredStringCentered(int y, char *text, float r, float g, float b, float a, float scale);
 void Draw_TransPic (int x, int y, qpic_t *pic);
 void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation);
-void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha);
 void Draw_ConsoleBackground (int lines);
-void Draw_LoadingFill(void);
+#ifdef __PSP__
+void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha);
 void Draw_Fill (int x, int y, int w, int h, int c);
-void Draw_FillByColor (int x, int y, int w, int h, unsigned int c);
+void Draw_LoadingFill(void);
+#endif
+void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a);
 void Draw_FadeScreen (void);
 void Draw_String (int x, int y, char *str);
+int getTextWidth(char *str, float scale);
 
 //other
 void Clear_LoadingFill (void);
-byte *StringToRGB (char *s);
+#ifdef __PSP__
+byte *StringToRGB (const char *s);
+#endif // __PSP__
 
 extern float loading_cur_step;
 extern int loading_step;
 extern char loading_name[32];
 extern float loading_num_step;
+extern int font_kerningamount[96];
 
 qpic_t *Draw_CachePic (char *path);
+#ifdef __PSP__
 qpic_t *Draw_CacheImg (char *path);
+#elif __WII__
+qpic_t *Draw_LMP (char *path);
+#endif

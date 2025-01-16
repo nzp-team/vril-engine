@@ -229,7 +229,11 @@ void DumpChunks(void)
 	data_p=iff_data;
 	do
 	{
+#ifdef PSP_VFPU
 		memcpy_vfpu(str, data_p, 4);
+#else
+		memcpy(str, data_p, 4);
+#endif // PSP_VFPU
 		data_p += 4;
 		iff_chunk_len = GetLittleLong();
 		Con_Printf ("0x%x : %s (%d)\n", (int)(data_p - 4), str, iff_chunk_len);

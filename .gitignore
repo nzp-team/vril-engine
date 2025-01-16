@@ -7,3 +7,5 @@ build/*
 PARAM.SFO
 EBOOT.PBP
 EBOOT2000.PBP
+*.map
+*.d

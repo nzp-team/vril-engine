@@ -406,9 +406,18 @@ void Host_SavegameComment (char *text)
 
 	for (i=0 ; i<SAVEGAME_COMMENT_LENGTH ; i++)
 		text[i] = ' ';
+
+#ifdef PSP_VFPU
 	memcpy_vfpu(text, cl.levelname, strlen(cl.levelname));
+#else
+	memcpy(text, cl.levelname, strlen(cl.levelname));
+#endif // PSP_VFPU
 	sprintf (kills,"kills:%3i/%3i", cl.stats[STAT_INSTA], cl.stats[STAT_ROUNDCHANGE]);
+#ifdef PSP_VFPU
 	memcpy_vfpu(text+22, kills, strlen(kills));
+#else
+	memcpy(text+22, kills, strlen(kills));
+#endif // PSP_VFPU
 // convert space to _ to make stdio happy
 	for (i=0 ; i<SAVEGAME_COMMENT_LENGTH ; i++)
 		if (text[i] == ' ')
@@ -987,7 +996,6 @@ void Host_Spawn_f (void)
 			Sys_Printf ("%s entered the game\n", host_client->name);
 
 		PR_ExecuteProgram (pr_global_struct->PutClientInServer);
-		S_LocalSound ("sounds/rounds/splash.wav");   // since this won't execute in progs...
 	}
 
 // send all current names, colors, and frag counts

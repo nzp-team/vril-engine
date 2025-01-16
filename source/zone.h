@@ -135,6 +135,8 @@ void *Cache_Alloc (cache_user_t *c, int size, char *name);
 
 void Cache_Report (void);
 
+#ifdef PSP_VFPU
 void* memcpy_vfpu(void* dst, void* src, unsigned int size);
+#endif // PSP_VFPU
 
 #endif	/* __ZZONE_H */
