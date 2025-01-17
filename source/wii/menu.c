@@ -697,6 +697,7 @@ void M_Start_Key (int key)
 		case K_JOY0:
 		case K_JOY5:
 			S_LocalSound ("sounds/menu/enter.wav");
+			Cbuf_AddText("cd playstring tensioned_by_the_damned 1\n");
 			Cbuf_AddText("togglemenu\n");
 			break;
 	}
