@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <ogc/cache.h>
 #include <ogc/system.h>
 #include <ogc/lwp_heap.h>
-#include <ogc/lwp_mutex.h>
+#include <ogc/machine/processor.h>
 
 #include "../../quakedef.h"
 
@@ -46,7 +46,7 @@ void R_InitTextureHeap (void)
 
 	_CPU_ISR_Disable(level);
 	texture_heap_ptr = SYS_GetArena2Lo();
-	texture_heap_size = 12 * 1024 * 1024;
+	texture_heap_size = 13 * 1024 * 1024;
 	if ((u32)texture_heap_ptr + texture_heap_size > (u32)SYS_GetArena2Hi())
 	{
 		_CPU_ISR_Restore(level);
@@ -370,7 +370,7 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 	u32 texbuffs;
 	u32 texbuffs_mip;
 	int max_mip_level;
-	//heap_iblock info;
+	heap_iblock info;
 
 	for (scaled_width = 1 << 5 ; scaled_width < width ; scaled_width<<=1)
 		;
@@ -415,9 +415,11 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 	//get exact buffer size of memory aligned on a 32byte boundery
 	texbuffs = GX_GetTexBufferSize (scaled_width, scaled_height, GX_TF_RGB5A3, mipmap ? GX_TRUE : GX_FALSE, max_mip_level);
 	destination->data = __lwp_heap_allocate(&texture_heap, texbuffs/*scaled_width * scaled_height * 2*/);	
-	//__lwp_heap_getinfo(&texture_heap, &info);
-	//Con_Printf ("tex buff size %d\n", texbuffs);
-	//Con_Printf("Used Heap: %dM\n", info.used_size / (1024*1024));
+	__lwp_heap_getinfo(&texture_heap, &info);
+	if (developer.value) {
+		Con_Printf ("tex buff size %d\n", texbuffs);
+		Con_Printf("Used Heap: %dM\n", info.used_size / (1024*1024));
+	}
 	
 	if (!destination->data)
 		Sys_Error("GL_Upload32: Out of memory.");
