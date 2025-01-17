@@ -45,14 +45,14 @@ u32 wiimote_ir_res_x;
 u32 wiimote_ir_res_y;
 
 // wiimote info
-u32 wpad_previous_keys = 0x0000;
-u32 wpad_keys = 0x0000;
+u32 wpad_previous_keys = 0xf;
+u32 wpad_keys = 0xf;
 
 ir_t pointer;
 orient_t orientation;
 expansion_t expansion;
-nunchuk_t nunchuk; //Shake
-gforce_t gforce;
+nunchuk_t nunchuk; 
+gforce_t gforce;//Nunchuk shake
 
 bool wiimote_connected = true;
 bool nunchuk_connected = false;
@@ -65,8 +65,8 @@ typedef enum   {UP, CENTER_Y, DOWN} stick_y_st_t;
 stick_x_st_t stick_x_st = CENTER_X;
 stick_y_st_t stick_y_st = CENTER_Y;
 
-u16 pad_previous_keys = 0x0000;
-u16 pad_keys = 0x0000;
+u16 pad_previous_keys = 0xf;
+u16 pad_keys = 0xf;
 
 static float clamp(float value, float minimum, float maximum)
 {
@@ -206,42 +206,42 @@ void IN_Commands (void)
 	PAD_ScanPads();
 	WPAD_ScanPads();
 
-	//It manages the nunchunk or classic controller connection
-	//It assigns the pressed buttons to wpad_keys and to pad_keys
+	// Manages the nunchunk or classic controller connection
+	// and assigns the pressed buttons to wpad_keys (wiimote/classic) and pad_keys (gamecube)
 	
 	u32 exp_type;
-	if ( WPAD_Probe(WPAD_CHAN_0, &exp_type) != 0 )
+	if ( WPAD_Probe(WPAD_CHAN_0, &exp_type) != 0 ) {
+		Con_Printf ("No controller detected!\n");
 		exp_type = WPAD_EXP_NONE;
+	}
 
-	if(exp_type == WPAD_EXP_NUNCHUK)
-	{
-		if(!nunchuk_connected)
-			wpad_previous_keys = 0x0000;
+	if(exp_type == WPAD_EXP_NUNCHUK) {
+		//Con_Printf ("Nunchuk detected..\n");
+		if(!nunchuk_connected) {
+			wpad_previous_keys = 0xf;
+		}
 
 		nunchuk_connected = true;
 		classic_connected = false;
 		wpad_keys = WPAD_ButtonsHeld(WPAD_CHAN_0);
-		pad_keys = 0x0000;
-		pad_previous_keys = 0x0000;
-	}
-
-	else if(exp_type == WPAD_EXP_CLASSIC)
-	{
-		if(!classic_connected)
-			wpad_previous_keys = 0x0000;
+		pad_keys = 0xf;
+		pad_previous_keys = 0xf;
+	} else if(exp_type == WPAD_EXP_CLASSIC) {
+		//Con_Printf ("Classic controller detected..\n");
+		if(!classic_connected) {
+			wpad_previous_keys = 0xf;
+		}
 
 		nunchuk_connected = false;
 		classic_connected = true;
 		wpad_keys = WPAD_ButtonsHeld(WPAD_CHAN_0);
-		pad_keys = 0x0000;
-		pad_previous_keys = 0x0000;
-	}
-
-	else
-	//Here neither the classic controller nor the nuncunk are connected
-	{
-		if(classic_connected || nunchuk_connected)
-			wpad_previous_keys = 0x0000;
+		pad_keys = 0xf;
+		pad_previous_keys = 0xf;
+	} else {
+		//Here neither the classic controller nor the nuncunk are connected
+		if(classic_connected || nunchuk_connected) {
+			wpad_previous_keys = 0xf;
+		}
 
 		nunchuk_connected = false;
 		classic_connected = false;
@@ -254,171 +254,138 @@ void IN_Commands (void)
 	WPAD_Expansion(WPAD_CHAN_0, &expansion);
 	WPAD_GForce(WPAD_CHAN_0, &gforce); //Shake to reload
 
-//Send the wireless classic controller buttons events
-	if(classic_connected)
-	{
-		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_LEFT) != (wpad_keys & WPAD_CLASSIC_BUTTON_LEFT))
-		{
+	if(classic_connected) {
+		//Send the wireless classic controller buttons events
+		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_LEFT) != (wpad_keys & WPAD_CLASSIC_BUTTON_LEFT)) {
 			// Send a press event.
 			Key_Event(K_LEFTARROW, ((wpad_keys & WPAD_CLASSIC_BUTTON_LEFT) == WPAD_CLASSIC_BUTTON_LEFT));
 		}
 
-		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_RIGHT) != (wpad_keys & WPAD_CLASSIC_BUTTON_RIGHT))
-		{
+		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_RIGHT) != (wpad_keys & WPAD_CLASSIC_BUTTON_RIGHT)) {
 			// Send a press event.
 			Key_Event(K_RIGHTARROW, ((wpad_keys & WPAD_CLASSIC_BUTTON_RIGHT) == WPAD_CLASSIC_BUTTON_RIGHT));
 		}
 
-		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_DOWN) != (wpad_keys & WPAD_CLASSIC_BUTTON_DOWN))
-		{
+		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_DOWN) != (wpad_keys & WPAD_CLASSIC_BUTTON_DOWN)) {
 			// Send a press event.
 			Key_Event(K_DOWNARROW, ((wpad_keys & WPAD_CLASSIC_BUTTON_DOWN) == WPAD_CLASSIC_BUTTON_DOWN));
 		}
 
-		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_UP) != (wpad_keys & WPAD_CLASSIC_BUTTON_UP))
-		{
+		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_UP) != (wpad_keys & WPAD_CLASSIC_BUTTON_UP)) {
 			// Send a press event.
 			Key_Event(K_UPARROW, ((wpad_keys & WPAD_CLASSIC_BUTTON_UP) == WPAD_CLASSIC_BUTTON_UP));
 		}
 
-		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_A) != (wpad_keys & WPAD_CLASSIC_BUTTON_A))
-		{
+		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_A) != (wpad_keys & WPAD_CLASSIC_BUTTON_A)) {
 			// Send a press event.
 			Key_Event(K_JOY9, ((wpad_keys & WPAD_CLASSIC_BUTTON_A) == WPAD_CLASSIC_BUTTON_A));
 		}
 
-		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_B) != (wpad_keys & WPAD_CLASSIC_BUTTON_B))
-		{
+		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_B) != (wpad_keys & WPAD_CLASSIC_BUTTON_B)) {
 			// Send a press event.
 			Key_Event(K_JOY10, ((wpad_keys & WPAD_CLASSIC_BUTTON_B) == WPAD_CLASSIC_BUTTON_B));
 		}
 
-		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_X) != (wpad_keys & WPAD_CLASSIC_BUTTON_X))
-		{
+		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_X) != (wpad_keys & WPAD_CLASSIC_BUTTON_X)) {
 			// Send a press event.
 			Key_Event(K_JOY11, ((wpad_keys & WPAD_CLASSIC_BUTTON_X) == WPAD_CLASSIC_BUTTON_X));
 		}
 
-		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_Y) != (wpad_keys & WPAD_CLASSIC_BUTTON_Y))
-		{
+		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_Y) != (wpad_keys & WPAD_CLASSIC_BUTTON_Y)) {
 			// Send a press event.
 			Key_Event(K_JOY12, ((wpad_keys & WPAD_CLASSIC_BUTTON_Y) == WPAD_CLASSIC_BUTTON_Y));
 		}
 		
-		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_FULL_L) != (wpad_keys & WPAD_CLASSIC_BUTTON_FULL_L))
-		{
+		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_FULL_L) != (wpad_keys & WPAD_CLASSIC_BUTTON_FULL_L)) {
 			// Send a press event.
 			Key_Event(K_JOY13, ((wpad_keys & WPAD_CLASSIC_BUTTON_FULL_L) == WPAD_CLASSIC_BUTTON_FULL_L));
 		}
 
-		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_FULL_R) != (wpad_keys & WPAD_CLASSIC_BUTTON_FULL_R))
-		{
+		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_FULL_R) != (wpad_keys & WPAD_CLASSIC_BUTTON_FULL_R)) {
 			// Send a press event.
 			Key_Event(K_JOY14, ((wpad_keys & WPAD_CLASSIC_BUTTON_FULL_R) == WPAD_CLASSIC_BUTTON_FULL_R));
 		}
 		
-		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_ZL) != (wpad_keys & WPAD_CLASSIC_BUTTON_ZL))
-		{
+		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_ZL) != (wpad_keys & WPAD_CLASSIC_BUTTON_ZL)) {
 			// Send a press event.
 			Key_Event(K_JOY15, ((wpad_keys & WPAD_CLASSIC_BUTTON_ZL) == WPAD_CLASSIC_BUTTON_ZL));
 		}
 
-		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_ZR) != (wpad_keys & WPAD_CLASSIC_BUTTON_ZR))
-		{
+		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_ZR) != (wpad_keys & WPAD_CLASSIC_BUTTON_ZR)) {
 			// Send a press event.
 			Key_Event(K_JOY16, ((wpad_keys & WPAD_CLASSIC_BUTTON_ZR) == WPAD_CLASSIC_BUTTON_ZR));
 		}
 		
-		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_MINUS) != (wpad_keys & WPAD_CLASSIC_BUTTON_MINUS))
-		{
+		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_MINUS) != (wpad_keys & WPAD_CLASSIC_BUTTON_MINUS)) {
 			// Send a press event.
 			Key_Event(K_JOY17, ((wpad_keys & WPAD_CLASSIC_BUTTON_MINUS) == WPAD_CLASSIC_BUTTON_MINUS));
 		}
 		
-		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_PLUS) != (wpad_keys & WPAD_CLASSIC_BUTTON_PLUS))
-		{
+		if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_PLUS) != (wpad_keys & WPAD_CLASSIC_BUTTON_PLUS)) {
 			// Send a press event.
 			Key_Event(K_JOY18, ((wpad_keys & WPAD_CLASSIC_BUTTON_PLUS) == WPAD_CLASSIC_BUTTON_PLUS));
 		}
-
-	}
-
-	else
-//Send the wiimote button events if the classic controller is not connected	
-	
-	{
-		if ((wpad_previous_keys & WPAD_BUTTON_LEFT) != (wpad_keys & WPAD_BUTTON_LEFT))
-		{
+		
+	} else {
+		//Send the wiimote button events if the classic controller is not connected	
+		if ((wpad_previous_keys & WPAD_BUTTON_LEFT) != (wpad_keys & WPAD_BUTTON_LEFT)) {
 			// Send a press event.
 			Key_Event(K_LEFTARROW, ((wpad_keys & WPAD_BUTTON_LEFT) == WPAD_BUTTON_LEFT));
 		}
 
-		if ((wpad_previous_keys & WPAD_BUTTON_RIGHT) != (wpad_keys & WPAD_BUTTON_RIGHT))
-		{
+		if ((wpad_previous_keys & WPAD_BUTTON_RIGHT) != (wpad_keys & WPAD_BUTTON_RIGHT)) {
 			// Send a press event.
 			Key_Event(K_RIGHTARROW, ((wpad_keys & WPAD_BUTTON_RIGHT) == WPAD_BUTTON_RIGHT));
 		}
 
-		if ((wpad_previous_keys & WPAD_BUTTON_DOWN) != (wpad_keys & WPAD_BUTTON_DOWN))
-		{
+		if ((wpad_previous_keys & WPAD_BUTTON_DOWN) != (wpad_keys & WPAD_BUTTON_DOWN)) {
 			// Send a press event.
 			Key_Event(K_DOWNARROW, ((wpad_keys & WPAD_BUTTON_DOWN) == WPAD_BUTTON_DOWN));
 		}
 
-		if ((wpad_previous_keys & WPAD_BUTTON_UP) != (wpad_keys & WPAD_BUTTON_UP))
-		{
+		if ((wpad_previous_keys & WPAD_BUTTON_UP) != (wpad_keys & WPAD_BUTTON_UP)) {
 			// Send a press event.
 			Key_Event(K_UPARROW, ((wpad_keys & WPAD_BUTTON_UP) == WPAD_BUTTON_UP));
 		}
 		
-		if ((wpad_previous_keys & WPAD_BUTTON_A) != (wpad_keys & WPAD_BUTTON_A))
-		{
+		if ((wpad_previous_keys & WPAD_BUTTON_A) != (wpad_keys & WPAD_BUTTON_A)) {
 			// Send a press event.
 			Key_Event(K_JOY0, ((wpad_keys & WPAD_BUTTON_A) == WPAD_BUTTON_A));
 		}
 
-		if ((wpad_previous_keys & WPAD_BUTTON_B) != (wpad_keys & WPAD_BUTTON_B))
-		{
+		if ((wpad_previous_keys & WPAD_BUTTON_B) != (wpad_keys & WPAD_BUTTON_B)) {
 			// Send a press event.
 			Key_Event(K_JOY1, ((wpad_keys & WPAD_BUTTON_B) == WPAD_BUTTON_B));
 		}
 
-		if ((wpad_previous_keys & WPAD_BUTTON_1) != (wpad_keys & WPAD_BUTTON_1))
-		{
+		if ((wpad_previous_keys & WPAD_BUTTON_1) != (wpad_keys & WPAD_BUTTON_1)) {
 			// Send a press event.
 			Key_Event(K_JOY2, ((wpad_keys & WPAD_BUTTON_1) == WPAD_BUTTON_1));
 		}
 
-		if ((wpad_previous_keys & WPAD_BUTTON_2) != (wpad_keys & WPAD_BUTTON_2))
-		{
+		if ((wpad_previous_keys & WPAD_BUTTON_2) != (wpad_keys & WPAD_BUTTON_2)) {
 			// Send a press event.
 			Key_Event(K_JOY3, ((wpad_keys & WPAD_BUTTON_2) == WPAD_BUTTON_2));
 		}
 		
-		if ((wpad_previous_keys & WPAD_BUTTON_PLUS) != (wpad_keys & WPAD_BUTTON_PLUS))
-		
-		{
+		if ((wpad_previous_keys & WPAD_BUTTON_PLUS) != (wpad_keys & WPAD_BUTTON_PLUS)) {
 			// Send a press event.
 			Key_Event(K_JOY5, ((wpad_keys & WPAD_BUTTON_PLUS) == WPAD_BUTTON_PLUS));
 		}
 		// select:
-		if ((wpad_previous_keys & WPAD_BUTTON_MINUS) != (wpad_keys & WPAD_BUTTON_MINUS))
-		{
+		if ((wpad_previous_keys & WPAD_BUTTON_MINUS) != (wpad_keys & WPAD_BUTTON_MINUS)) {
 			// Send a press event.
 			Key_Event(K_JOY17, ((wpad_keys & WPAD_BUTTON_MINUS) == WPAD_BUTTON_MINUS));
 		}
 		
-//Send nunchunk button events
-		if(nunchuk_connected)
-		{
-			if ((wpad_previous_keys & WPAD_NUNCHUK_BUTTON_Z) != (wpad_keys & WPAD_NUNCHUK_BUTTON_Z))
-			{
+		if(nunchuk_connected) {
+			//Send nunchunk button events	
+			if ((wpad_previous_keys & WPAD_NUNCHUK_BUTTON_Z) != (wpad_keys & WPAD_NUNCHUK_BUTTON_Z)) {
 				// Send a press event.
 				Key_Event(K_JOY7, ((wpad_keys & WPAD_NUNCHUK_BUTTON_Z) == WPAD_NUNCHUK_BUTTON_Z));
 			}
 			
-			if ((wpad_previous_keys & WPAD_NUNCHUK_BUTTON_C) != (wpad_keys & WPAD_NUNCHUK_BUTTON_C))
-			{
+			if ((wpad_previous_keys & WPAD_NUNCHUK_BUTTON_C) != (wpad_keys & WPAD_NUNCHUK_BUTTON_C)) {
 				// Send a press event.
 				Key_Event(K_JOY8, ((wpad_keys & WPAD_NUNCHUK_BUTTON_C) == WPAD_NUNCHUK_BUTTON_C));
 			}
@@ -431,161 +398,120 @@ void IN_Commands (void)
 				Key_Event(K_SHAKE, false);
 			}
 			
-//Emulation of the wimote arrows with the nunchuk stick
-			if(nunchuk_stick_as_arrows.value)
-			{
+			if(nunchuk_stick_as_arrows.value) {
+				//Emulation of the wimote arrows with the nunchuk stick
+				
 				const s8 nunchuk_stick_x = WPAD_StickX(0);
 				const s8 nunchuk_stick_y = WPAD_StickY(0);
-				if (nunchuk_stick_x > 10) 
-				{
-					switch (stick_x_st)
-					{
+				if (nunchuk_stick_x > 10) {
+					switch (stick_x_st) {
 						
 						case CENTER_X : Key_Event(K_RIGHTARROW, true);break;
 						default : break;
-					
 					}
-				stick_x_st = RIGHT;
-				}
-				
-				else if (nunchuk_stick_x < -10) 
-				{
-					switch (stick_x_st)
-					{
+					stick_x_st = RIGHT;
+				} else if (nunchuk_stick_x < -10)  {
+					switch (stick_x_st) {
 						case CENTER_X : Key_Event(K_LEFTARROW, true);break;
 						default: break;
-						
-						
 					}
-				stick_x_st = LEFT;
-				}
-				
-				else
-				{
-					switch (stick_x_st)
-					{
+					stick_x_st = LEFT;
+				} else {
+					switch (stick_x_st) {
 						case LEFT :	Key_Event(K_LEFTARROW, false);break;							
 						case RIGHT: Key_Event(K_RIGHTARROW, false);break;
 						default: break;
 					}
-				stick_x_st = CENTER_X;
+					stick_x_st = CENTER_X;
 				}
 				
-				if (nunchuk_stick_y > 10) 
-				{
-					switch (stick_y_st)
-					{
+				if (nunchuk_stick_y > 10) {
+					switch (stick_y_st) {
 						case CENTER_Y : Key_Event(K_UPARROW, true); break;
 						default: break;	
-						
 					}
-				stick_y_st = UP;
-				}
-				
-				else if (nunchuk_stick_y < -10) 
-				{
-					switch (stick_y_st)
-					{
-						
+					stick_y_st = UP;
+				} else if (nunchuk_stick_y < -10) {
+					switch (stick_y_st) {	
 						case CENTER_Y : Key_Event(K_DOWNARROW, true);break;
 						default: break;
 					}
-				stick_y_st = DOWN;
-				}
-				
-				
-				else
-				{
-					switch (stick_y_st)
-					{
+					stick_y_st = DOWN;
+				} else {
+					switch (stick_y_st) {
 						case DOWN :	Key_Event(K_DOWNARROW, false);break;
 						case UP: Key_Event(K_UPARROW, false);break;
 						default: break;
 					}
-				stick_y_st = CENTER_Y;
-				}
-					
+					stick_y_st = CENTER_Y;
+				}	
 			}	
-			
 		}
 	}
-//Send the gamecube controller button events in the case neither the nunchuk nor the classic controller is connected
-	if(!nunchuk_connected && !classic_connected)
-	{
-		if ((pad_previous_keys & PAD_BUTTON_LEFT) != (pad_keys & PAD_BUTTON_LEFT))
-		{
+
+	if(!nunchuk_connected && !classic_connected) {
+		//Send the gamecube controller button events in the case neither the nunchuk nor the classic controller is connected
+		//Con_Printf ("gamecube dedected\n");	
+		if ((pad_previous_keys & PAD_BUTTON_LEFT) != (pad_keys & PAD_BUTTON_LEFT)) {
 			// Send a press event.
 			Key_Event(K_LEFTARROW, ((pad_keys & PAD_BUTTON_LEFT) == PAD_BUTTON_LEFT));
 		}
 
-		if ((pad_previous_keys & PAD_BUTTON_RIGHT) != (pad_keys & PAD_BUTTON_RIGHT))
-		{
+		if ((pad_previous_keys & PAD_BUTTON_RIGHT) != (pad_keys & PAD_BUTTON_RIGHT)) {
 			// Send a press event.
 			Key_Event(K_RIGHTARROW, ((pad_keys & PAD_BUTTON_RIGHT) == PAD_BUTTON_RIGHT));
 		}
 
-		if ((pad_previous_keys & PAD_BUTTON_DOWN) != (pad_keys & PAD_BUTTON_DOWN))
-		{
+		if ((pad_previous_keys & PAD_BUTTON_DOWN) != (pad_keys & PAD_BUTTON_DOWN)) {
 			// Send a press event.
 			Key_Event(K_DOWNARROW, ((pad_keys & PAD_BUTTON_DOWN) == PAD_BUTTON_DOWN));
 		}
-		if ((pad_previous_keys & PAD_BUTTON_UP) != (pad_keys & PAD_BUTTON_UP))
-		{
+		if ((pad_previous_keys & PAD_BUTTON_UP) != (pad_keys & PAD_BUTTON_UP)) {
 			// Send a press event.
 			Key_Event(K_UPARROW, ((pad_keys & PAD_BUTTON_UP) == PAD_BUTTON_UP));
 		}
 
-		if ((pad_previous_keys & PAD_BUTTON_A) != (pad_keys & PAD_BUTTON_A))
-		{
+		if ((pad_previous_keys & PAD_BUTTON_A) != (pad_keys & PAD_BUTTON_A)) {
 			// Send a press event.
 			Key_Event(K_JOY20, ((pad_keys & PAD_BUTTON_A) == PAD_BUTTON_A));
 		}
 
-		if ((pad_previous_keys & PAD_BUTTON_B) != (pad_keys & PAD_BUTTON_B))
-		{
+		if ((pad_previous_keys & PAD_BUTTON_B) != (pad_keys & PAD_BUTTON_B)) {
 			// Send a press event.
 			Key_Event(K_JOY21, ((pad_keys & PAD_BUTTON_B) == PAD_BUTTON_B));
 		}
 
-		if ((pad_previous_keys & PAD_BUTTON_X) != (pad_keys & PAD_BUTTON_X))
-		{
+		if ((pad_previous_keys & PAD_BUTTON_X) != (pad_keys & PAD_BUTTON_X)) {
 			// Send a press event.
 			Key_Event(K_JOY22, ((pad_keys & PAD_BUTTON_X) == PAD_BUTTON_X));
 		}
 
-		if ((pad_previous_keys & PAD_BUTTON_Y) != (pad_keys & PAD_BUTTON_Y))
-		{
+		if ((pad_previous_keys & PAD_BUTTON_Y) != (pad_keys & PAD_BUTTON_Y)) {
 			// Send a press event.
 			Key_Event(K_JOY23, ((pad_keys & PAD_BUTTON_Y) == PAD_BUTTON_Y));
 		}
 		
-		if ((pad_previous_keys & PAD_TRIGGER_Z) != (pad_keys & PAD_TRIGGER_Z))
-		{
+		if ((pad_previous_keys & PAD_TRIGGER_Z) != (pad_keys & PAD_TRIGGER_Z)) {
 			// Send a press event.
 			Key_Event(K_JOY24, ((pad_keys & PAD_TRIGGER_Z) == PAD_TRIGGER_Z));
 		}
 		
-		if ((pad_previous_keys & PAD_TRIGGER_R) != (pad_keys & PAD_TRIGGER_R))
-		{
+		if ((pad_previous_keys & PAD_TRIGGER_R) != (pad_keys & PAD_TRIGGER_R)) {
 			// Send a press event.
 			Key_Event(K_JOY25, ((pad_keys & PAD_TRIGGER_R) == PAD_TRIGGER_R));
 		}
 
-		if ((pad_previous_keys & PAD_TRIGGER_L) != (pad_keys & PAD_TRIGGER_L))
-		{
+		if ((pad_previous_keys & PAD_TRIGGER_L) != (pad_keys & PAD_TRIGGER_L)) {
 			// Send a press event.
 			Key_Event(K_JOY26, ((pad_keys & PAD_TRIGGER_L) == PAD_TRIGGER_L));
 		}
 
-		if ((pad_previous_keys & PAD_BUTTON_START) != (pad_keys & PAD_BUTTON_START))
-		{
+		if ((pad_previous_keys & PAD_BUTTON_START) != (pad_keys & PAD_BUTTON_START)) {
 			// Send a press event.
 			Key_Event(K_ESCAPE, ((pad_keys & PAD_BUTTON_START) == PAD_BUTTON_START));
 		}
-
 		pad_previous_keys = pad_keys;
 	}
-
 	wpad_previous_keys = wpad_keys;
 }
 
