@@ -26,8 +26,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define TICKS_PER_SEC 268123480.0
 
-int __stacksize__ = 4 * 1024 * 1024; 
-u32 __ctru_linear_heap_size = 28 * 1024 * 1024; 
+#define QUAKE_HUNK_MB			24 		// cypress -- usable quake hunk size in mB
+#define QUAKE_HUNK_MB_NEW3DS	72		// ^^ ditto, but n3ds
+
+#define LINEAR_HEAP_SIZE_MB		16		// cypress -- we lower this as much as possible while still remaining
+										// bootable so we can up the quake hunk and actually viable memory.
+
+int __stacksize__ = 1024 * 1024; 		// down to 1mB from 4mB.. who set this? probably me, whatever.
+
+u32 __ctru_linear_heap_size = LINEAR_HEAP_SIZE_MB * 1024 * 1024; 
 bool new3ds_flag;
 
 extern void Touch_Init();
@@ -310,11 +317,11 @@ int main (int argc, char **argv)
 	chdir("sdmc:/3ds/nzportable");
 
 	if (new3ds_flag == true)
-		parms.memsize = 64 * 1024 * 1024;
+		parms.memsize = QUAKE_HUNK_MB_NEW3DS * 1024 * 1024;
 	else
-		parms.memsize = 16 * 1024 * 1024;
+		parms.memsize = QUAKE_HUNK_MB * 1024 * 1024;
 	
-	parms.membase = malloc (parms.memsize);
+	parms.membase = malloc(parms.memsize);
 	parms.basedir = ".";
 
 	COM_InitArgv (argc, argv);

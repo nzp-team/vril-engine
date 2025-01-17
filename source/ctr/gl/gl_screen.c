@@ -1077,7 +1077,7 @@ char *ReturnLoadingtex (void)
     }
     return "wut wut";
 }
-qboolean load_screen_exists;
+
 void SCR_DrawLoadScreen (void)
 {
 
@@ -1091,24 +1091,16 @@ void SCR_DrawLoadScreen (void)
 	if (loadingScreen) {
 		Draw_FillByColor(0, 0, 400, 240, 0, 0, 0, 255);
 		if (!loadscreeninit) {
-			load_screen_exists = qfalse;
+			lscreen = Draw_CachePic(va("gfx/lscreen/%s", loadname2));
 
-			char* lpath;
-			lpath = (char*)Z_Malloc(sizeof(char)*32);
-			strcpy(lpath, "gfx/lscreen/");
-			strcat(lpath, loadname2);
-
-			lscreen = Draw_CachePic(lpath);
-			awoo = Draw_CachePic("gfx/menu/awoo");
-
-			if (lscreen != NULL)
-				load_screen_exists = qtrue;
+			if (lscreen == NULL || lscreen == 0) {
+				lscreen = Draw_CachePic("gfx/lscreen/lscreen");
+			}
 
 			loadscreeninit = qtrue;
 		}
 
-		if (load_screen_exists == qtrue)
-			Draw_StretchPic(scr_vrect.x, scr_vrect.y, lscreen, 400, 240);
+		Draw_StretchPic(scr_vrect.x, scr_vrect.y, lscreen, 400, 240);
 
 		Draw_FillByColor(0, 0, 480, 24, 0, 0, 0, 175);
 		Draw_FillByColor(0, 216, 480, 24, 0, 0, 0, 175);
@@ -1124,10 +1116,6 @@ void SCR_DrawLoadScreen (void)
 
 	if (key_dest == key_game) {
 		Draw_ColoredStringCentered(225, lodinglinetext, 255, 255, 255, 255, 1);
-
-		if (strcmp(lodinglinetext, "Please help me find the meaning of   . Thanks.") == 0) {
-			Draw_Pic(280, 225, awoo);
-		}
 	}
 }
 
