@@ -104,7 +104,7 @@ static void CD_f (void)
 		Con_Printf("commands:");
 		Con_Printf("on, off, reset, remap, \n");
 		Con_Printf("play, stop, loop, pause, resume\n");
-		Con_Printf("eject, close, info\n");
+		Con_Printf("eject, close, info, playstring\n");
 		return;
 	}
 
@@ -176,6 +176,7 @@ static void CD_f (void)
 		Con_Printf("Additional fixed by\n");
 		Con_Printf("dr_mabuse1981 and Baker.\n");
 		Con_Printf("string support: cypress.\n");
+		Con_Printf("libogc implementation: sb.\n");
 		Con_Printf("\n");
 		return;
 	}
