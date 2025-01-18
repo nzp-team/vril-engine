@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // sB MP3 Playback 
 // will expand to add OGG support in future?
 
-byte* mp3_data;
+byte *mp3buffer;
 qboolean stopmp3 = false;
 qboolean isplaying = false;
 qboolean enabled = false;
@@ -36,7 +36,6 @@ void CDAudio_Play(byte track, qboolean looping)
 void CDAudio_PlayFromString(char* track_name, qboolean looping)
 {
 	stopmp3 = false;
-	byte *mp3buffer;
 	
 	char path[256];
 	sprintf(path, "tracks/%s.mp3", track_name);
@@ -46,10 +45,6 @@ void CDAudio_PlayFromString(char* track_name, qboolean looping)
 		Con_Printf("NULL MP3: %s\n", path);
 		return;
 	}
-	
-	//Con_Printf("PLAYING MP3: %s\n", path);
-	
-	mp3_data = mp3buffer;
 	
 	MP3Player_Volume(255);	
 	MP3Player_PlayBuffer (mp3buffer, com_filesize, NULL);
@@ -61,7 +56,8 @@ void CDAudio_PlayFromString(char* track_name, qboolean looping)
 
 void CDAudio_Stop(void)
 {
-	stopmp3 = true;
+	MP3Player_Stop();
+	free (mp3buffer);
 }
 
 
@@ -72,22 +68,20 @@ void CDAudio_Pause(void)
 
 void CDAudio_Resume(void)
 {
-	stopmp3 = false;
 }
-
 
 void CDAudio_Update(void)
 {
 	isplaying = MP3Player_IsPlaying ();
 	
-	if (isplaying == false) {
-		free (mp3_data);
+	if (isplaying == true) {
+		free(mp3buffer);
 		stopmp3 = true;
 	}
 	
 	if (stopmp3 == true) {
-		if (mp3_data) {
-			free (mp3_data);
+		if (mp3buffer) {
+			free (mp3buffer);
 		}
 	}
 	
