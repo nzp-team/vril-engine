@@ -487,23 +487,18 @@ void CL_ParseUpdate (int bits)
 	//Con_Printf("2\n");
 
 
-	if (bits & U_16BITS)
-	{
-		i = MSG_ReadByte ();
-		bits |= (i<<8);
-	}
+	if (bits & U_16BITS) {
+		bits |= MSG_ReadByte() << 8;
 
-	// Tomaz - QC Control Begin
-	if (bits & U_24BITS)
-	{
-		bits |= MSG_ReadByte() << 16;
+		if (bits & U_24BITS) {
+			bits |= MSG_ReadByte() << 16;
 
-		if (bits & U_32BITS)
-		{
-			bits |= MSG_ReadByte() << 24;
+			if (bits & U_32BITS) {
+				bits |= MSG_ReadByte() << 24;
+			}
 		}
 	}
-	// Tomaz - QC Control End
+
 
 	if (bits & U_LONGENTITY)
 		num = MSG_ReadShort ();
@@ -604,8 +599,9 @@ void CL_ParseUpdate (int bits)
 
 
 
-	if (bits & U_FRAME)
-		ent->frame = MSG_ReadByte ();
+	if (bits & U_FRAME) {
+		ent->frame = MSG_ReadShort();
+	}
 	else
 		ent->frame = ent->baseline.frame;
 
