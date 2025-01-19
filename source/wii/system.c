@@ -88,26 +88,26 @@ void Sys_Error (char *error, ...)
 void Sys_Init_Logfile(void)
 {
 
-//#ifdef LOGFILE	
+#ifdef LOGFILE	
  logfile= fopen("/apps/nzportable/logfile.txt", "w");
-//#endif
+#endif
 }
 
 void Sys_Finish_Logfile(void)
 {
-//#ifdef LOGFILE	
+#ifdef LOGFILE	
  if (logfile) fclose(logfile);
-//#endif
+#endif
 }
 
 void Sys_Printf (const char *fmt, ...)
 {
-//#ifdef LOGFILE	
+#ifdef LOGFILE	
 	va_list args;
 	va_start(args, fmt);
 	if (logfile) vfprintf(logfile, fmt, args);
 	va_end(args);
-//#endif
+#endif
 }
 
 void Sys_Quit (void)
