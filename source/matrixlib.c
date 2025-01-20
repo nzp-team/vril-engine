@@ -641,3 +641,159 @@ void Matrix4x4_Invert_Simple( matrix4x4 out, const matrix4x4 in1 )
 	out[3][2] = 0;
 	out[3][3] = 1;
 }
+
+
+#ifdef __PSP__
+// 
+// Converts a 3x4 mat3x4_t to a 4x4 ScePspFMatrix4
+// 
+void Matrix3x4_to_ScePspFMatrix4(ScePspFMatrix4 *out, mat3x4_t *in) {
+    out->x.x = (*in)[0][0];     out->y.x = (*in)[0][1];     out->z.x = (*in)[0][2];     out->w.x = (*in)[0][3];
+    out->x.y = (*in)[1][0];     out->y.y = (*in)[1][1];     out->z.y = (*in)[1][2];     out->w.y = (*in)[1][3];
+    out->x.z = (*in)[2][0];     out->y.z = (*in)[2][1];     out->z.z = (*in)[2][2];     out->w.z = (*in)[2][3];
+    out->x.w = 0.0f;            out->y.w = 0.0f;            out->z.w = 0.0f;            out->w.w = 1.0f;
+}
+#endif // __PSP__
+
+
+
+//
+// Builds and returns a 3x4 transform matrix from the corresponding translation vector, rotation quaternion, and scale vector
+//
+void Matrix3x4_scale_rotate_translate(mat3x4_t out, const vec3_t scale, const quat_t rotation, const vec3_t translation) {
+    // First scale, then rotate, then translate:
+    mat3x4_t rotate_translate_mat;
+    Matrix3x4_FromOriginQuat(rotate_translate_mat, rotation, translation);
+    mat3x4_t scale_mat;
+    Matrix3x4_LoadIdentity(scale_mat);
+    scale_mat[0][0] = scale[0];
+    scale_mat[1][1] = scale[1];
+    scale_mat[2][2] = scale[2];
+    Matrix3x4_ConcatTransforms(out, rotate_translate_mat, scale_mat);
+}
+
+//
+// Builds and returns a 3x4 transform matrix from the corresponding translation vector, and rotation quaternion
+//
+void Matrix3x4_rotate_translate(mat3x4_t out, const quat_t rotation, const vec3_t translation) {
+    // First scale, then rotate, then translate:
+    mat3x4_t rotate_translate_mat;
+    Matrix3x4_FromOriginQuat(out, rotation, translation);
+}
+
+
+const matrix3x4 matrix3x4_zero = {
+    { 0, 0, 0, 0},
+    { 0, 0, 0, 0},
+    { 0, 0, 0, 0},
+};
+const matrix3x3 matrix3x3_zero = {
+    { 0, 0, 0 },
+    { 0, 0, 0 },
+    { 0, 0, 0 },
+};
+const matrix3x3 matrix3x3_identity = {
+    { 1, 0, 0 },
+    { 0, 1, 0 },
+    { 0, 0, 1 },
+};
+
+#define Matrix3x4_LoadZero( mat )		Matrix3x4_Copy( mat, matrix3x4_zero )
+#define Matrix3x3_Copy( out, in )		memcpy( out, in, sizeof( matrix3x3 ))
+#define Matrix3x3_LoadZero( mat )		Matrix3x3_Copy( mat, matrix3x3_zero )
+#define Matrix3x3_LoadIdentity( mat )		Matrix3x3_Copy( mat, matrix3x3_identity )
+
+//
+// Builds and returns a 3x4 transform matrix from the corresponding translation vector and scale vector
+//
+void Matrix3x4_scale_translate(mat3x4_t out, const vec3_t scale, const vec3_t translation) {
+    // First scale, then translate:
+    mat3x4_t translation_mat;
+    Matrix3x4_LoadIdentity(translation_mat);
+    translation_mat[0][3] = translation[0];
+    translation_mat[1][3] = translation[1];
+    translation_mat[2][3] = translation[2];
+    mat3x4_t scale_mat;
+    Matrix3x4_LoadIdentity(scale_mat);
+    scale_mat[0][0] = scale[0];
+    scale_mat[1][1] = scale[1];
+    scale_mat[2][2] = scale[2];
+    Matrix3x4_ConcatTransforms(out, translation_mat, scale_mat);
+}
+
+
+// 
+// Slightly more expensive version of `Matrix3x4_Invert_Simple` that supports non-uniform scaling
+// This inversion method assumes the transformation is affine
+// 
+// https://stackoverflow.com/a/2625420
+// https://stackoverflow.com/a/18504573
+//
+void Matrix3x4_Invert_Affine( matrix3x4 out, const matrix3x4 in )
+{
+    // ----------------------------------------------------
+    // Invert the upper-left 3x3 matrix
+    // ----------------------------------------------------
+    float det = in[0][0] * (in[1][1] * in[2][2] - in[1][2] * in[2][1]) -
+                in[0][1] * (in[1][0] * in[2][2] - in[1][2] * in[2][0]) +
+                in[0][2] * (in[1][0] * in[2][1] - in[1][1] * in[2][0]);
+    Matrix3x4_LoadZero(out);
+    // If determinant is close to 0, return 0 matrix:
+    if(fabs(det) < 1e-5) {
+        return;
+    }
+    float inv_det = 1.0f / det;
+    out[0][0] = (in[1][1] * in[2][2] - in[2][1] * in[1][2]) * inv_det;
+    out[1][0] = (in[2][0] * in[1][2] - in[1][0] * in[2][2]) * inv_det;
+    out[2][0] = (in[1][0] * in[2][1] - in[2][0] * in[1][1]) * inv_det;
+    out[0][1] = (in[2][1] * in[0][2] - in[0][1] * in[2][2]) * inv_det;
+    out[1][1] = (in[0][0] * in[2][2] - in[2][0] * in[0][2]) * inv_det;
+    out[2][1] = (in[2][0] * in[0][1] - in[0][0] * in[2][1]) * inv_det;
+    out[0][2] = (in[0][1] * in[1][2] - in[1][1] * in[0][2]) * inv_det;
+    out[1][2] = (in[1][0] * in[0][2] - in[0][0] * in[1][2]) * inv_det;
+    out[2][2] = (in[0][0] * in[1][1] - in[1][0] * in[0][1]) * inv_det;
+    // ----------------------------------------------------
+
+    // Invert the rightmost translation column vector
+	out[0][3] = -1.0f * (in[0][3] * out[0][0] + in[1][3] * out[0][1] + in[2][3] * out[0][2]);
+	out[1][3] = -1.0f * (in[0][3] * out[1][0] + in[1][3] * out[1][1] + in[2][3] * out[1][2]);
+	out[2][3] = -1.0f * (in[0][3] * out[2][0] + in[1][3] * out[2][1] + in[2][3] * out[2][2]);
+}
+
+
+
+// 
+// Inverts and transposes the upper-left 3x3 matrix from a 3x4 matrix
+// https://stackoverflow.com/a/18504573
+// 
+void Matrix3x3_Invert_Transposed_Matrix3x4(matrix3x3 out, const matrix3x4 in) {
+    float det = in[0][0] * (in[1][1] * in[2][2] - in[1][2] * in[2][1]) -
+                in[0][1] * (in[1][0] * in[2][2] - in[1][2] * in[2][0]) +
+                in[0][2] * (in[1][0] * in[2][1] - in[1][1] * in[2][0]);
+    // If determinant is close to 0, return 0 matrix:
+    if(fabs(det) < 1e-5) {
+        Matrix3x3_LoadZero(out);
+    }
+    float inv_det = 1.0f / det;
+    // Normal inverse:
+    // out[0][0] = (in[1][1] * in[2][2] - in[2][1] * in[1][2]) * inv_det;
+    // out[1][0] = (in[2][0] * in[1][2] - in[1][0] * in[2][2]) * inv_det;
+    // out[2][0] = (in[1][0] * in[2][1] - in[2][0] * in[1][1]) * inv_det;
+    // out[0][1] = (in[2][1] * in[0][2] - in[0][1] * in[2][2]) * inv_det;
+    // out[1][1] = (in[0][0] * in[2][2] - in[2][0] * in[0][2]) * inv_det;
+    // out[2][1] = (in[2][0] * in[0][1] - in[0][0] * in[2][1]) * inv_det;
+    // out[0][2] = (in[0][1] * in[1][2] - in[1][1] * in[0][2]) * inv_det;
+    // out[1][2] = (in[1][0] * in[0][2] - in[0][0] * in[1][2]) * inv_det;
+    // out[2][2] = (in[0][0] * in[1][1] - in[1][0] * in[0][1]) * inv_det;
+    // Transposed inverse:
+    out[0][0] = (in[1][1] * in[2][2] - in[2][1] * in[1][2]) * inv_det;
+    out[0][1] = (in[2][0] * in[1][2] - in[1][0] * in[2][2]) * inv_det;
+    out[0][2] = (in[1][0] * in[2][1] - in[2][0] * in[1][1]) * inv_det;
+    out[1][0] = (in[2][1] * in[0][2] - in[0][1] * in[2][2]) * inv_det;
+    out[1][1] = (in[0][0] * in[2][2] - in[2][0] * in[0][2]) * inv_det;
+    out[1][2] = (in[2][0] * in[0][1] - in[0][0] * in[2][1]) * inv_det;
+    out[2][0] = (in[0][1] * in[1][2] - in[1][1] * in[0][2]) * inv_det;
+    out[2][1] = (in[1][0] * in[0][2] - in[0][0] * in[1][2]) * inv_det;
+    out[2][2] = (in[0][0] * in[1][1] - in[1][0] * in[0][1]) * inv_det;
+}
+

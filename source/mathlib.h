@@ -225,3 +225,7 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, 
 extern int _mathlib_temp_int1, _mathlib_temp_int2, _mathlib_temp_int3;
 extern float _mathlib_temp_float1, _mathlib_temp_float2, _mathlib_temp_float3;
 extern vec3_t _mathlib_temp_vec1, _mathlib_temp_vec2, _mathlib_temp_vec3;
+
+
+
+void transform_AABB(vec3_t in_mins, vec3_t in_maxs, mat3x4_t transform, vec3_t out_mins, vec3_t out_maxs);

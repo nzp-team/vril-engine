@@ -921,3 +921,28 @@ void QuaternionSlerp( const vec4_t p, vec4_t q, float t, vec4_t qt )
 		}
 	}
 }
+
+
+// 
+// Applies the transformation `transform` to the AABB `in` and produces 
+// an updated world-space AABB `out` that wraps the `in` AABB
+// See: https://realtimecollisiondetection.net/books/rtcd/
+//
+void transform_AABB(vec3_t in_mins, vec3_t in_maxs, mat3x4_t transform, vec3_t out_mins, vec3_t out_maxs) {
+    for(int i = 0; i < 3; i++) {
+        out_mins[i] = transform[i][3];
+        out_maxs[i] = transform[i][3];
+        for(int j = 0; j < 3; j++) {
+            float e = transform[i][j] * in_mins[j];
+            float f = transform[i][j] * in_maxs[j];
+            if(e < f) {
+                out_mins[i] += e;
+                out_maxs[i] += f;
+            }
+            else {
+                out_mins[i] += f;
+                out_maxs[i] += e;
+            }
+        }
+    }
+}
