@@ -600,9 +600,6 @@ static void SCR_CalcRefdef (void)
 	scr_fullupdate = 0;		// force a background redraw
 	vid.recalc_refdef = 0;
 
-// force the status bar to redraw
-	Sbar_Changed ();
-
 //========================================
 	
 // bound viewsize
@@ -1305,7 +1302,6 @@ void SCR_BeginLoadingPlaque (void)
 
 	scr_drawloading = true;
 	scr_fullupdate = 0;
-	Sbar_Changed ();
 	SCR_UpdateScreen ();
 	scr_drawloading = false;
 

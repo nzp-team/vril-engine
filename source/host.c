@@ -878,19 +878,33 @@ void Host_Init (quakeparms_t *parms)
 
 	Memory_Init (parms->membase, parms->memsize);
 	Cbuf_Init ();
+	printf("cbuf\n");
 	Cmd_Init ();
+	printf("cmd\n");
 	V_Init ();
+	printf("v\n");
 	Chase_Init ();
+	printf("chase\n");
 	Host_InitVCR (parms);
+	printf("vcr\n");
 	COM_Init (parms->basedir);
+	printf("com\n");
 	Host_InitLocal ();
+	printf("local\n");
 	Key_Init ();
+	printf("key\n");
 	Con_Init ();
+	printf("con\n");
 	M_Init ();
+	printf("m\n");
 	PR_Init ();
+	printf("pr\n");
 	Mod_Init ();
+	printf("mod\n");
 	NET_Init ();
+	printf("net\n");
 	SV_Init ();
+	printf("sv\n");
 
 #ifdef __PSP__
 	Con_Printf ("PSP NZP v%4.1f (PBP: "__TIME__" "__DATE__")\n", (float)(VERSION));
@@ -937,24 +951,34 @@ void Host_Init (quakeparms_t *parms)
 #endif // __PSP__
 
 		IN_Init ();
+		printf("in\n");
 		VID_Init (host_basepal);
+		printf("vid\n");
 		Draw_Init ();
+		printf("draw\n");
 		SCR_Init ();
+		printf("scr\n");
 		R_Init ();
+		printf("r\n");
 		S_Init ();
+		printf("s\n");
 		CDAudio_Init ();
+		printf("cdaudio\n");
 		HUD_Init ();
+		printf("hud\n");
 		CL_Init ();
+		printf("cl\n");
 	}
-	Preload();
-	Cbuf_InsertText ("exec nzp.rc\n");
+	//Preload();
+	//Cbuf_InsertText ("exec nzp.rc\n");
 
-	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
-	host_hunklevel = Hunk_LowMark ();
+	//Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
+	//host_hunklevel = Hunk_LowMark ();
 
 	host_initialized = true;
-	M_Start_Menu_f();
+	//M_Start_Menu_f();
 	Sys_Printf ("========Nazi Zombies Portable Initialized=========\n");	
+	printf("end of host_init\n");
 }
 
 

@@ -21,10 +21,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 //#define	GLTEST			// experimental stuff
 
-#ifndef __PSP__
+#ifdef __PSP__
+#define PLATFORM_DIR psp
+#elif _3DS
+#define PLATFORM_DIR ctr
+#elif __vita__
+#define PLATFORM_DIR psp2
+#else
+#error "Unknown platform"
+#endif
+
+#define STRINGIFY_MACRO(x) STR(x)
+#define STR(x) #x
+#define EXPAND(x) x
+#define CONCAT(n1, n2, n3) STRINGIFY_MACRO(EXPAND(n1)EXPAND(n2)EXPAND(n3))
+#define PLATFORM_FILE(file) CONCAT(PLATFORM_DIR,/,file)
+
+#ifdef _3DS
 #define qtrue 1
 #define qfalse 0
-#endif // __PSP__
+#endif // _3DS
 
 #ifdef __PSP__
 #define PSP_MODEL_PHAT		0
@@ -205,16 +221,10 @@ extern int psp_system_model;
 
 #define	SOUND_CHANNELS		8
 
+#include PLATFORM_FILE(common.h)
+#include PLATFORM_FILE(vid.h)
+#include PLATFORM_FILE(sys.h)
 
-#ifdef _3DS
-#include "ctr/common.h"
-#include "ctr/vid.h"
-#include "ctr/sys.h"
-#elif __PSP__
-#include "psp/common.h"
-#include "psp/vid.h"
-#include "psp/sys.h"
-#endif // _3DS
 #include "zone.h"
 #include "mathlib.h"
 #include "bspfile.h"
@@ -239,62 +249,50 @@ typedef struct
 #include "wad.h"
 #include "draw.h"
 #include "cvar.h"
-#ifdef _3DS
-#include "ctr/screen.h"
-#include "ctr/net.h"
-#elif __PSP__
-#include "psp/screen.h"
-#include "psp/net.h"
-#endif // _3DS
+
+#include PLATFORM_FILE(screen.h)
+#include PLATFORM_FILE(net.h)
+
 #include "protocol.h"
 #include "cmd.h"
-#ifdef _3DS
-#include "ctr/sbar.h"
-#endif // _3DS
 #include "cl_hud.h"
 #include "sound.h"
-#ifdef _3DS
-#include "ctr/render.h"
-#include "ctr/client.h"
-#elif __PSP__
-#include "psp/render.h"
-#include "psp/client.h"
-#endif // _3DS
+
+#include PLATFORM_FILE(render.h)
+#include PLATFORM_FILE(client.h)
+
 #include "progs.h"
-#ifdef _3DS
-#include "ctr/server.h"
-#elif __PSP__
-#include "psp/server.h"
-#endif // _3DS
+
+#include PLATFORM_FILE(server.h)
 
 #ifdef _3DS
 #include "ctr/gl/gl_model.h"
 #include "ctr/gl/gl_decal.h"
-#else
+#elif __PSP__
 #include "psp/gu/gu_model.h"
+#elif __vita__
+#include "psp2/gl/gl_model.h"
 #endif
 
 #include "input.h"
 #include "world.h"
-#ifdef _3DS
-#include "ctr/keys.h"
-#elif __PSP__
-#include "psp/keys.h"
-#endif
+
+#include PLATFORM_FILE(keys.h)
+
 #include "console.h"
 #include "view.h"
-#ifdef _3DS
-#include "ctr/menu.h"
-#elif __PSP__
-#include "psp/menu.h"
-#endif
+
+#include PLATFORM_FILE(menu.h)
+
 #include "crc.h"
 #include "cdaudio.h"
 
 #ifdef _3DS
 #include "ctr/glquake.h"
-#else
+#elif __PSP__
 #include "psp/gu/gu_psp.h"
+#else
+#include "psp2/glquake.h"
 #endif
 
 //=============================================================================
@@ -446,3 +444,11 @@ extern float gVertexBuffer[VERTEXARRAYSIZE];
 extern float gColorBuffer[VERTEXARRAYSIZE];
 extern float gTexCoordBuffer[VERTEXARRAYSIZE];
 #endif // _3DS
+
+#ifdef __vita__
+extern float *gVertexBuffer;
+extern float *gColorBuffer;
+extern float *gTexCoordBuffer;
+#endif // __vita__
+
+#undef PLATFORM_DIR

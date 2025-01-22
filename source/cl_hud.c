@@ -1308,7 +1308,7 @@ void HUD_Achievement (void)
 		if (smallsec >= 55)
 			smallsec = 55;
 		//Background image
-		//Sbar_DrawPic (176, 5, achievement);
+
 		// The achievement text
 		Draw_AlphaPic (30, smallsec - 50, achievement_list[ach_pic].img, 0.7f);
 	}

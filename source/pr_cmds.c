@@ -1475,8 +1475,10 @@ This is where the magic happens
 
 #ifdef __PSP__
 #define MaxZombies 12
-#else
+#elif _3DS
 #define MaxZombies 18
+#else
+#define MaxZombies 24
 #endif
 
 
@@ -3566,7 +3568,7 @@ nzp_maxai()
 */
 void PF_MaxZombies(void)
 {
-#ifdef __PSP__
+#ifndef _3DS
 	G_FLOAT(OFS_RETURN) = MaxZombies;
 #else
 	if (new3ds_flag)

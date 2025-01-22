@@ -18,22 +18,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-// the status bar is only redrawn if something has changed, but if anything
-// does, the entire thing will be redrawn for the next vid.numpages frames.
+//
+// the net drivers should just set the apropriate bits in m_activenet,
+// instead of having the menu code look through their internal tables
+//
+#define	MNET_IPX		1
+#define	MNET_TCP		2
 
-#define	SBAR_HEIGHT		24
+extern	int	m_activenet;
 
-extern	int			sb_lines;			// scan lines to draw
+//
+// menus
+//
+void M_Init (void);
+void M_Keydown (int key);
+void M_Draw (void);
+void M_ToggleMenu_f (void);
 
-void Sbar_Init (void);
 
-void Sbar_Changed (void);
-// call whenever any of the client stats represented on the sbar changes
-
-void Sbar_Draw (void);
-// called every frame by screen
-
-void Sbar_IntermissionOverlay (void);
-// called each frame after the level has been completed
-
-void Sbar_FinaleOverlay (void);

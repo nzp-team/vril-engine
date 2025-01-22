@@ -1230,8 +1230,6 @@ void Draw_FadeScreen (void)
 	glColor4f (1,1,1,1);
 	glEnable (GL_TEXTURE_2D);
 	glDisable (GL_BLEND);
-
-	Sbar_Changed();
 }
 
 //=============================================================================
