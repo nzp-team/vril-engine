@@ -51,11 +51,11 @@ int		svgalib_inited=0;
 int		UseMouse = 1;
 int		UseKeyboard = 1;
 
-cvar_t vid_mode = {"vid_mode", 5, true};
-cvar_t vid_redrawfull = {"vid_redrawfull", 0, true};
-cvar_t vid_waitforrefresh = {"vid_waitforrefresh", 1, true};
-cvar_t gl_outline = {"gl_outline", 0, true};
-cvar_t gl_mipmap = {"gl_mipmap", 1, true};
+cvar_t vid_mode = {"vid_mode", "5", true};
+cvar_t vid_redrawfull = {"vid_redrawfull", "0", true};
+cvar_t vid_waitforrefresh = {"vid_waitforrefresh", "1", true};
+cvar_t gl_outline = {"gl_outline", "0", true};
+cvar_t gl_mipmap = {"gl_mipmap", "1", true};
 
 int gl_ssaa = 1;
 

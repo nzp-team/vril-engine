@@ -104,10 +104,6 @@ extern	cvar_t	crosshair;
 
 bool	scr_initialized;		// ready to draw
 
-qpic_t		*scr_ram;
-qpic_t		*scr_net;
-qpic_t		*scr_turtle;
-
 int			scr_fullupdate;
 
 int			clearconsole;
@@ -379,105 +375,6 @@ void SCR_Init (void)
 
 	scr_initialized = true;
 }
-
-
-
-/*
-==============
-SCR_DrawRam
-==============
-*/
-void SCR_DrawRam (void)
-{
-	if (!showram.value)
-		return;
-
-	if (!r_cache_thrash)
-		return;
-	
-	Draw_Pic (scr_vrect.x+32, scr_vrect.y, scr_ram);
-}
-
-/*
-==============
-SCR_DrawTurtle
-==============
-*/
-void SCR_DrawTurtle (void)
-{
-	static int	count;
-	
-	if (!showturtle.value)
-		return;
-
-	if (host_frametime < 0.1)
-	{
-		count = 0;
-		return;
-	}
-
-	count++;
-	if (count < 3)
-		return;
-	
-	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
-}
-
-/*
-==============
-SCR_DrawNet
-==============
-*/
-void SCR_DrawNet (void)
-{
-	if (realtime - cl.last_received_message < 0.3)
-		return;
-	if (cls.demoplayback)
-		return;
-
-	Draw_Pic (scr_vrect.x+64, scr_vrect.y, scr_net);
-}
-
-/*
-==============
-DrawPause
-==============
-*/
-void SCR_DrawPause (void)
-{
-	qpic_t	*pic;
-
-	if (!showpause.value)		// turn off for screenshots
-		return;
-
-	if (!cl.paused)
-		return;
-
-	pic = Draw_CachePic ("gfx/pause.lmp");
-	Draw_Pic ( (320 - pic->width)/2, 
-		(240 - 48 - pic->height)/2, pic);
-}
-
-
-
-/*
-==============
-SCR_DrawLoading
-==============
-*/
-void SCR_DrawLoading (void)
-{
-	qpic_t	*pic;
-
-	if (!scr_drawloading)
-		return;
-		
-	pic = Draw_CachePic ("gfx/loading.lmp");
-	Draw_Pic ( (320 - pic->width)/2, 
-		(240 - 48 - pic->height)/2, pic);
-}
-
-
 
 //=============================================================================
 
@@ -858,10 +755,6 @@ void SCR_UpdateScreen (void)
 		SCR_DrawNotifyString ();
 		scr_copyeverything = true;
 	}
-	else if (scr_drawloading)
-	{
-		SCR_DrawLoading ();
-	}
 	else if (cl.intermission == 1 && key_dest == key_game)
 	{
 	}
@@ -873,11 +766,7 @@ void SCR_UpdateScreen (void)
 	{
 		if (crosshair.value)
 			Draw_Crosshair();
-		
-		SCR_DrawRam ();
-		SCR_DrawNet ();
-		SCR_DrawTurtle ();
-		SCR_DrawPause ();
+
 		SCR_CheckDrawCenterString ();
 		SCR_DrawConsole ();	
 		M_Draw ();

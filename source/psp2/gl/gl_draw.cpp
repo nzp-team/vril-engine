@@ -1144,7 +1144,12 @@ typedef struct
 
 glmode_t modes[] = {
 	{"GL_NEAREST", GL_NEAREST, GL_NEAREST},
-	{"GL_LINEAR", GL_LINEAR, GL_LINEAR}
+	{"GL_LINEAR", GL_LINEAR, GL_LINEAR},
+	{"GL_LINEAR", GL_LINEAR, GL_LINEAR},
+	{"GL_NEAREST_MIPMAP_NEAREST", GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST},
+	{"GL_LINEAR_MIPMAP_NEAREST", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR},
+	{"GL_NEAREST_MIPMAP_LINEAR", GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST},
+	{"GL_LINEAR_MIPMAP_LINEAR", GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR}
 };
 
 /*
@@ -1505,8 +1510,8 @@ void Draw_Batched() {
 		vglVertexAttribPointerMapped(0, batched_vbuffer);
 		vglVertexAttribPointerMapped(1, batched_tbuffer);
 		GL_DrawPolygon(GL_TRIANGLES, batched_vertices);
-		is_batching = 0;
 	}
+	is_batching = 0;
 }
 
 /*
