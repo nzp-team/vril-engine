@@ -76,12 +76,13 @@ ddef_t *ED_FindField (char *name);
 
 int FindFieldOffset (char *field)
 {
-	ddef_t	*d;
+	// ddef_t	*d;
 
-	if (!(d = ED_FindField(field)))
-		return 0;
+	// if (!(d = ED_FindField(field)))
+	// 	return 0;
 
-	return d->ofs*4;
+	// return d->ofs*4;
+	return 0;
 }
 
 void FindEdictFieldOffsets (void)

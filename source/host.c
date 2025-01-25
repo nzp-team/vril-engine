@@ -298,7 +298,7 @@ Sends text across to be displayed
 FIXME: make this just a stuffed echo?
 =================
 */
-void SV_ClientPrintf (char *fmt, ...)
+void SV_ClientPrintf (const char *fmt, ...)
 {
 	va_list		argptr;
 	char		string[1024];

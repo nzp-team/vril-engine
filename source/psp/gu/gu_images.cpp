@@ -990,7 +990,7 @@ loadimagepixels
 =============
 */
 										// HACK HACK HACK
-byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int matchheight)
+byte* loadimagepixels (const char* filename, qboolean complain, int matchwidth, int matchheight)
 {
 	FILE	*f;
 	char	basename[128], name[128];
@@ -1054,7 +1054,7 @@ loadtextureimage
 =============
 */
 
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter)
+int loadtextureimage (const char* filename, int matchwidth, int matchheight, qboolean complain, int filter)
 {
 	int texture_index;
 	byte *data;

@@ -94,7 +94,7 @@ typedef struct
 	texel*	vram;
 } gltexture_t;
 
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
+int loadtextureimage (const char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
 void VID_SetPalette4(unsigned char* clut4pal);
 
 #define	MAX_GLTEXTURES	1024

@@ -43,7 +43,7 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);
 void GL_EnableState(GLenum state);
 void GL_DisableState(GLenum state);
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
+int loadtextureimage (const char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
 
 #ifdef _WIN32
 // Function prototypes for the Texture Object Extension routines
@@ -372,3 +372,38 @@ void QMB_MuzzleFlashLG (vec3_t org);
 void QMB_Q3Gunshot (vec3_t org, int skinnum, float alpha);
 void QMB_Q3Teleport (vec3_t org, float alpha);
 void QMB_Q3TorchFlame (vec3_t org, float size);
+
+void Sky_LoadSkyBox(char* name);
+void Fog_ParseServerMessage (void);
+void R_SpawnDecalStatic (vec3_t org, int tex, int size);
+void DrawQuad_NoTex(GLfloat x, GLfloat y, GLfloat w, GLfloat h, GLfloat r, GLfloat g, GLfloat b, GLfloat a);
+void DrawQuad(GLfloat x, GLfloat y, GLfloat w, GLfloat h, GLfloat u, GLfloat v, GLfloat uw, GLfloat vh);
+void GL_SubdivideSurface (msurface_t *fa);
+void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr);
+int R_LightPoint (vec3_t p);
+void R_DrawBrushModel (entity_t *e);
+void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, float degrees );
+void R_AnimateLight (void);
+void V_CalcBlend (void);
+void R_DrawWorld (void);
+void R_RenderDlights(void);
+void R_DrawParticles (void);
+void R_DrawWaterSurfaces (void);
+void R_RenderBrushPoly (msurface_t *fa);
+void R_InitParticles (void);
+void GL_Upload8_EXT (byte *data, int width, int height,  bool mipmap, bool alpha);
+void R_ClearParticles (void);
+void GL_BuildLightmaps (void);
+void EmitWaterPolys (msurface_t *fa);
+void EmitSkyPolys (msurface_t *fa);
+void EmitBothSkyLayers (msurface_t *fa);
+void R_DrawSkyChain (msurface_t *s);
+bool R_CullBox (vec3_t mins, vec3_t maxs);
+void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
+void R_RotateForEntity (entity_t *e);
+void R_StoreEfrags (efrag_t **ppefrag);
+void GL_Set2D (void);
+void GL_DrawFPS(void);
+void GL_DrawBenchmark(void);
+void GL_SelectTexture (GLenum target);
+void Q_strncpyz (char *dest, char *src, size_t size);

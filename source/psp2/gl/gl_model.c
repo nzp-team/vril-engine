@@ -25,6 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../../quakedef.h"
 #include "gl_fullbright.h"
 
+extern void WAD3_LoadTextureWadFile (char *filename);
+extern byte *WAD3_LoadTexture(miptex_t *mt);
+
 model_t	*loadmodel;
 char	loadname[32];	// for hunk tags
 char fbr_mask_name[64]; // for fullbrights
@@ -429,35 +432,35 @@ void Mod_LoadTextures (lump_t *l)
 		tx->luma = false;
 		COM_StripExtension (loadmodel->name + 5, mapname);
 		snprintf(filename, sizeof(filename), "textures/%s/%s%s", mapname, tx->name[0] == '*' ? "#" : "", tx->name);
-		byte *data = Image_LoadImage (filename, &fwidth, &fheight);
-		if (!data) {
-			snprintf(filename, sizeof(filename), "textures/%s%s", tx->name[0] == '*' ? "#" : "", tx->name);
-			data = Image_LoadImage (filename, &fwidth, &fheight);
-			if (!data) {
-				snprintf(filename, sizeof(filename), "textures/bmodels/%s%s", tx->name[0] == '*' ? "#" : "", tx->name);
-				data = Image_LoadImage (filename, &fwidth, &fheight);
-			}
-		}
-		if (data) {
-			tx->gl_texturenum = GL_LoadTexture32 (mt->name, fwidth, fheight, data, true, tx->name[0] == '{', false);
-			free(data);
+//		byte *data = Image_LoadImage (filename, &fwidth, &fheight);
+		// if (!data) {
+		// 	snprintf(filename, sizeof(filename), "textures/%s%s", tx->name[0] == '*' ? "#" : "", tx->name);
+		// 	data = Image_LoadImage (filename, &fwidth, &fheight);
+		// 	if (!data) {
+		// 		snprintf(filename, sizeof(filename), "textures/bmodels/%s%s", tx->name[0] == '*' ? "#" : "", tx->name);
+		// 		data = Image_LoadImage (filename, &fwidth, &fheight);
+		// 	}
+		// }
+		// if (data) {
+		// 	tx->gl_texturenum = GL_LoadTexture32 (mt->name, fwidth, fheight, data, true, tx->name[0] == '{', false);
+		// 	free(data);
 				
 			// Fullbright
-			snprintf (filename2, sizeof(filename2), "%s_luma", filename);
-			data = Image_LoadImage (filename2, &fwidth, &fheight);
-			if (!data) {
-				snprintf (filename2, sizeof(filename2), "%s_glow", filename);
-				data = Image_LoadImage (filename2, &fwidth, &fheight);
-			}
-			if (data) {
-				// get a new name for the fullbright mask to avoid cache mismatches
-				sprintf (fbr_mask_name, "fullbright_mask_%s", mt->name);
-				// load the fullbright pixels version of the texture
-				tx->fullbright = GL_LoadTexture32 (fbr_mask_name, fwidth, fheight, data, true, tx->name[0] == '{', true);
-				tx->luma = true;
-				free(data);
-			}
-		}
+			// snprintf (filename2, sizeof(filename2), "%s_luma", filename);
+			// data = Image_LoadImage (filename2, &fwidth, &fheight);
+			// if (!data) {
+			// 	snprintf (filename2, sizeof(filename2), "%s_glow", filename);
+			// 	data = Image_LoadImage (filename2, &fwidth, &fheight);
+			// }
+			// if (data) {
+			// 	// get a new name for the fullbright mask to avoid cache mismatches
+			// 	sprintf (fbr_mask_name, "fullbright_mask_%s", mt->name);
+			// 	// load the fullbright pixels version of the texture
+			// 	tx->fullbright = GL_LoadTexture32 (fbr_mask_name, fwidth, fheight, data, true, tx->name[0] == '{', true);
+			// 	tx->luma = true;
+			// 	free(data);
+			// }
+		// }
 		
 		// Fallback to original textures
 		if (tx->gl_texturenum == -1) {
@@ -1190,7 +1193,7 @@ Mod_LoadClipnodes
 void Mod_LoadClipnodes (lump_t *l)
 {
 	dclipnode_t *ins;
-	mclipnode_t *out;
+	dclipnode_t *out;
 	int			i, count;
 	hull_t		*hull;
 
@@ -1199,7 +1202,7 @@ void Mod_LoadClipnodes (lump_t *l)
 		Sys_Error ("Mod_LoadClipnodes: funny lump size in %s",loadmodel->name);
 
 	count = l->filelen / sizeof(*ins);
-	out = (mclipnode_t*)Hunk_AllocName ( count*sizeof(*out), loadname);	
+	out = (dclipnode_t*)Hunk_AllocName ( count*sizeof(*out), loadname);	
 
 	loadmodel->clipnodes = out;
 	loadmodel->numclipnodes = count;
@@ -1300,7 +1303,7 @@ Deplicate the drawing hull structure as a clipping hull
 void Mod_MakeHull0 (void)
 {
 	mnode_t		*in, *child;
-	mclipnode_t *out;
+	dclipnode_t *out;
 	int			i, j, count;
 	hull_t		*hull;
 	
@@ -1308,7 +1311,7 @@ void Mod_MakeHull0 (void)
 	
 	in = loadmodel->nodes;
 	count = loadmodel->numnodes;
-	out = (mclipnode_t*)Hunk_AllocName ( count*sizeof(*out), loadname);	
+	out = (dclipnode_t*)Hunk_AllocName ( count*sizeof(*out), loadname);	
 
 	hull->clipnodes = out;
 	hull->firstclipnode = 0;
@@ -1707,13 +1710,13 @@ void Mod_FloodFillSkin( byte *skin, int skinwidth, int skinheight )
 
 static int Mod_LoadExternalSkin(char *identifier)
 {
-	int w, h;
-	byte *data = Image_LoadImage (identifier, &w, &h);
-	if (data) {
-		int r = GL_LoadTexture32 (identifier, w, h, data, false, false, false);
-		free(data);
-		return r;
-	}
+	// int w, h;
+	// byte *data = Image_LoadImage (identifier, &w, &h);
+	// if (data) {
+	// 	int r = GL_LoadTexture32 (identifier, w, h, data, false, false, false);
+	// 	free(data);
+	// 	return r;
+	// }
 	return -1;
 }
 

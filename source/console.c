@@ -385,7 +385,7 @@ Handles cursor positioning, line wrapping, etc
 */
 #define	MAXPRINTMSG	4096
 // FIXME: make a buffer size safe vsprintf?
-void Con_Printf (char *fmt, ...)
+void Con_Printf (const char *fmt, ...)
 {
 	va_list		argptr;
 	char		msg[MAXPRINTMSG];
@@ -432,7 +432,7 @@ Con_DPrintf
 A Con_Printf that only shows up if the "developer" cvar is set
 ================
 */
-void Con_DPrintf (char *fmt, ...)
+void Con_DPrintf (const char *fmt, ...)
 {
 	va_list		argptr;
 	char		msg[MAXPRINTMSG];

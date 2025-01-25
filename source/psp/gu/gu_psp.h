@@ -35,7 +35,7 @@ int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int 
 int GL_LoadTextureLM (const char *identifier, int width, int height, const byte *data, int bpp, int filter, qboolean update, int forcopy);
 int GL_LoadImages (const char *identifier, int width, int height, const byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp);
 int GL_LoadTexturePixels (byte *data, char *identifier, int width, int height, int mode);
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
+int loadtextureimage (const char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
 int loadskyboxsideimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
 int GL_LoadPaletteTexture (const char *identifier, int width, int height, const byte *data, byte *palette, int paltype, qboolean stretch_to_power_of_two, int filter, int mipmap_level);
 

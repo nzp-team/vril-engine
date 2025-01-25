@@ -29,6 +29,7 @@ void SCR_SizeUp (void);
 void SCR_SizeDown (void);
 void SCR_BringDownConsole (void);
 void SCR_CenterPrint (char *str);
+void SCR_UsePrint (int type, int cost, int weapon);
 
 void SCR_BeginLoadingPlaque (void);
 void SCR_EndLoadingPlaque (void);

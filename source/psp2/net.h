@@ -171,7 +171,7 @@ typedef struct
 	int			controlSock;
 	int			(*Init) (void);
 	void		(*Shutdown) (void);
-	void		(*Listen) (bool state);
+	void		(*Listen) (qboolean state);
 	int 		(*OpenSocket) (int port);
 	int 		(*CloseSocket) (int socket);
 	int 		(*Connect) (int socket, struct qsockaddr *addr);
@@ -198,15 +198,15 @@ typedef struct
 	char		*name;
 	bool	initialized;
 	int			(*Init) (void);
-	void		(*Listen) (bool state);
-	void		(*SearchForHosts) (bool xmit);
+	void		(*Listen) (qboolean state);
+	void		(*SearchForHosts) (qboolean xmit);
 	qsocket_t	*(*Connect) (char *host);
 	qsocket_t 	*(*CheckNewConnections) (void);
 	int			(*QGetMessage) (qsocket_t *sock);
 	int			(*QSendMessage) (qsocket_t *sock, sizebuf_t *data);
 	int			(*SendUnreliableMessage) (qsocket_t *sock, sizebuf_t *data);
-	bool	(*CanSendMessage) (qsocket_t *sock);
-	bool	(*CanSendUnreliableMessage) (qsocket_t *sock);
+	qboolean	(*CanSendMessage) (qsocket_t *sock);
+	qboolean	(*CanSendUnreliableMessage) (qsocket_t *sock);
 	void		(*Close) (qsocket_t *sock);
 	void		(*Shutdown) (void);
 	int			controlSock;
@@ -288,7 +288,7 @@ struct qsocket_s	*NET_CheckNewConnections (void);
 struct qsocket_s	*NET_Connect (char *host);
 // called by client to connect to a host.  Returns -1 if not able to
 
-bool NET_CanSendMessage (qsocket_t *sock);
+qboolean NET_CanSendMessage (qsocket_t *sock);
 // Returns true or false if the given qsocket can currently accept a
 // message to be transmitted.
 

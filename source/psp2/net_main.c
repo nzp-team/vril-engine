@@ -679,7 +679,7 @@ Returns true or false if the given qsocket can currently accept a
 message to be transmitted.
 ==================
 */
-bool NET_CanSendMessage (qsocket_t *sock)
+qboolean NET_CanSendMessage (qsocket_t *sock)
 {
 	int		r;
 	

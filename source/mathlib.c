@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // mathlib.c -- math primitives
 
+#define _GNU_SOURCE
+
 #include <math.h>
 #include "quakedef.h"
 
@@ -26,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspmath.h>
 #endif
 
-void Sys_Error (char *error, ...);
+void Sys_Error (const char *error, ...);
 
 vec3_t vec3_origin = {0,0,0};
 int nanmask = 255<<23;
@@ -78,7 +80,7 @@ SinCos
 void SinCos( float radians, float *sine, float *cosine )
 {
 #ifndef __PSP__
-	sincos(radians, sine, cosine);
+	sincosf(radians, sine, cosine);
 #else
 
 #ifdef PSP_VFPU

@@ -242,7 +242,7 @@ void Sys_Quit(void)
 	sceKernelExitProcess(0);
 }
 
-void Sys_Error(char *error, ...)
+void Sys_Error(const char *error, ...)
 {
 
 	va_list         argptr;
@@ -427,6 +427,9 @@ bool CheckForMod(char* dir)
 	return ret;
 }
 
+void IN_ResetInputs(void);
+void IN_StopRumble (void);
+int32_t sceKernelChangeThreadVfpException(int32_t clearMask, int32_t setMask);
 int quake_main (unsigned int argc, void* argv){
 	// cl_entities = malloc(sizeof(entity_t) * MAX_EDICTS);
 	// cl_temp_entities = malloc(sizeof(entity_t) * MAX_TEMP_ENTITIES);

@@ -112,7 +112,7 @@ void AdHoc_Shutdown (void)
 
 //=============================================================================
 
-void AdHoc_Listen (bool state)
+void AdHoc_Listen (qboolean state)
 {
 	Log("AdHoc_Listen");
 	// enable listening

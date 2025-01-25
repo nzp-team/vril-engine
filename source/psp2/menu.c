@@ -255,18 +255,18 @@ void M_Menu_Main_f (void)
 void M_Main_Draw (void)
 {
 	char *MAIN_MENU_ITEMS[MAIN_ITEMS];
-	MAIN_MENU_ITEMS[0] = "Single Player";
-	MAIN_MENU_ITEMS[1] = "Multi Player";
-	MAIN_MENU_ITEMS[2] = "Options";
-	MAIN_MENU_ITEMS[3] = "Help";
-	MAIN_MENU_ITEMS[4] = "Quit";
+	MAIN_MENU_ITEMS[0] = "A";
+	MAIN_MENU_ITEMS[1] = "B";
+	MAIN_MENU_ITEMS[2] = "C";
+	MAIN_MENU_ITEMS[3] = "D";
+	MAIN_MENU_ITEMS[4] = "E";
 
 	for (int i = 0; i < MAIN_ITEMS; i++) {
-		Draw_String(vid.width/4, vid.height/4 + (16 * i), MAIN_MENU_ITEMS[i]);
+		Draw_String(100, 80 * i, MAIN_MENU_ITEMS[i]);
 	}
 
-	Draw_FillByColor(vid.width/4, vid.height/4 - 3 + (16 * m_main_cursor), strlen(MAIN_MENU_ITEMS[m_main_cursor])*8, 1, 255, 255, 255, 255);
-	Draw_FillByColor(vid.width/4, vid.height/4 + 2 + 8 + (16 * m_main_cursor), strlen(MAIN_MENU_ITEMS[m_main_cursor])*8, 1, 255, 255, 255, 255);
+	//Draw_FillByColor(vid.width/4, vid.height/4 - 3 + (16 * m_main_cursor), strlen(MAIN_MENU_ITEMS[m_main_cursor])*8, 1, 255, 255, 255, 255);
+	//Draw_FillByColor(vid.width/4, vid.height/4 + 2 + 8 + (16 * m_main_cursor), strlen(MAIN_MENU_ITEMS[m_main_cursor])*8, 1, 255, 255, 255, 255);
 }
 
 

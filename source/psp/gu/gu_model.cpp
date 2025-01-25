@@ -2693,7 +2693,7 @@ void Mod_LoadH2AliasModel (model_t *mod, void *buffer)
 Mod_LoadQ2AliasModel
 =================
 */
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
+int loadtextureimage (const char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
 
 void Mod_LoadQ2AliasModel (model_t *mod, void *buffer)
 {

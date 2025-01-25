@@ -83,7 +83,7 @@ Cbuf_AddText
 Adds command text at the end of the buffer
 ============
 */
-void Cbuf_AddText (char *text)
+void Cbuf_AddText (const char *text)
 {
 	int		l;
 	
@@ -658,7 +658,7 @@ void Cmd_TokenizeString (char *text)
 Cmd_AddCommand
 ============
 */
-void	Cmd_AddCommand (char *cmd_name, xcommand_t function)
+void	Cmd_AddCommand(const char *cmd_name, xcommand_t function)
 {
 	cmd_function_t	*cmd;
 	

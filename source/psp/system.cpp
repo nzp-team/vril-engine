@@ -332,7 +332,7 @@ void Sys_mkdir (char *path)
 	sceIoMkdir(path, 0x777);
 }
 
-void Sys_Error (char *error, ...)
+void Sys_Error (const char *error, ...)
 {
 	// Clear the sound buffer.
 	S_ClearBuffer();

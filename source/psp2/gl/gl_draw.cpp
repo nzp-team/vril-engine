@@ -983,7 +983,7 @@ byte* LoadSTBI(FILE *f, int width, int height)
 	return image;
 }
 
-byte* loadimagepixels (char* filename, bool complain, int matchwidth, int matchheight)
+byte* loadimagepixels (const char* filename, bool complain, int matchwidth, int matchheight)
 
 {
 	FILE	*f;
@@ -991,7 +991,7 @@ byte* loadimagepixels (char* filename, bool complain, int matchwidth, int matchh
 	byte	*c;
 
 	if (complain == qfalse)
-		COM_StripExtension(filename, basename); // strip the extension to allow TGA
+		COM_StripExtension((char*)filename, basename); // strip the extension to allow TGA
 	else
 		strcpy(basename, filename);
 
@@ -1034,7 +1034,7 @@ byte* loadimagepixels (char* filename, bool complain, int matchwidth, int matchh
 	return NULL;
 }
 
-int loadtextureimage (char* filename, int matchwidth, int matchheight, bool complain, bool mipmap)
+int loadtextureimage (const char* filename, int matchwidth, int matchheight, bool complain, bool mipmap)
 {
 	int texnum;
 	byte *data;
@@ -1109,31 +1109,6 @@ qpic_t	*Draw_CachePic (char *path)
 	gl->texnum = GL_LoadPicTexture (dat);
 
 	return &pic->pic;
-}
-
-
-void Draw_CharToConback (int num, byte *dest)
-{
-	int		row, col;
-	byte	*source;
-	int		drawline;
-	int		x;
-
-	row = num>>4;
-	col = num&15;
-	source = draw_chars + (row<<10) + (col<<3);
-
-	drawline = 8;
-
-	while (drawline--)
-	{
-		for (x=0 ; x<8 ; x++)
-			if (source[x] != 255)
-				dest[x] = 0x60 + source[x];
-		source += 128;
-		dest += 320;
-	}
-
 }
 
 typedef struct
@@ -1250,11 +1225,10 @@ void Draw_Init (void)
 
 	Cmd_AddCommand ("gl_texturemode", &Draw_TextureMode_f);
 
-	// charset loading
-	int charset_width;
-	int charset_height;
-	draw_chars = Image_LoadImage("gfx/charset", &charset_width, &charset_height);
-	char_texture = GL_LoadTexture ("charset", charset_width, charset_width, draw_chars, false, true);
+	// now turn them into textures
+	char_texture = loadtextureimage ("gfx/charset", 0, 0, false, false);
+	if (char_texture == 0)// did not find a matching TGA...
+		Sys_Error ("Could not load charset, make sure you have every folder and file installed properly\nDouble check that all of your files are in their correct places\nAnd that you have installed the game properly.\n");
 
 	// save a texture slot for translated picture
 	translate_texture = texture_extension_number++;
@@ -1347,6 +1321,7 @@ void Draw_String (int x, int y, char *str)
 	float *str_vbuffer = gVertexBuffer;
 	float *str_tbuffer = gTexCoordBuffer;
 	int num_vertices = 0;
+	int scale = 1;
 	
 	while (*str)
 	{
@@ -1360,20 +1335,20 @@ void Draw_String (int x, int y, char *str)
 				row = num>>4;
 				col = num&15;
 
-				frow = row*0.0625;
-				fcol = col*0.0625;
-				size = 0.0625;
+				frow = row * 0.0625;
+				fcol = col * 0.0625;
+				size = 0.0625 * scale;
 				
 				gVertexBuffer[0] = gVertexBuffer[3] = gVertexBuffer[9] = x;
 				gVertexBuffer[1] = gVertexBuffer[10] = gVertexBuffer[13] = y;
-				gVertexBuffer[4] = gVertexBuffer[7] = gVertexBuffer[16] = y + 8;
-				gVertexBuffer[6] = gVertexBuffer[12] = gVertexBuffer[15] = x + 8;
+				gVertexBuffer[4] = gVertexBuffer[7] = gVertexBuffer[16] = y + (8 * scale);
+				gVertexBuffer[6] = gVertexBuffer[12] = gVertexBuffer[15] = x + (8 * scale);
 				gVertexBuffer[2] = gVertexBuffer[5] = gVertexBuffer[8] = gVertexBuffer[11] = gVertexBuffer[14] = gVertexBuffer[17] = 0.5f;
 				
 				gTexCoordBuffer[0] = gTexCoordBuffer[2] = gTexCoordBuffer[6] = fcol;
 				gTexCoordBuffer[1] = gTexCoordBuffer[7] = gTexCoordBuffer[9] = frow;
-				gTexCoordBuffer[3] = gTexCoordBuffer[5] = gTexCoordBuffer[11] = frow+size;
-				gTexCoordBuffer[4] = gTexCoordBuffer[8] = gTexCoordBuffer[10] = fcol+size;
+				gTexCoordBuffer[3] = gTexCoordBuffer[5] = gTexCoordBuffer[11] = frow + (size / scale);
+				gTexCoordBuffer[4] = gTexCoordBuffer[8] = gTexCoordBuffer[10] = fcol + (size / scale);
 		
 				gVertexBuffer += 18;
 				gTexCoordBuffer += 12;

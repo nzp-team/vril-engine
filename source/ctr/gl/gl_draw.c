@@ -2270,7 +2270,7 @@ byte* LoadSTBI(FILE *f, int width, int height)
 	return image;
 }
 
-byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int matchheight)
+byte* loadimagepixels (const char* filename, qboolean complain, int matchwidth, int matchheight)
 
 {
 	FILE	*f;
@@ -2321,7 +2321,7 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 	return NULL;
 }
 
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap)
+int loadtextureimage (const char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap)
 {
 	int texnum;
 	byte *data;
