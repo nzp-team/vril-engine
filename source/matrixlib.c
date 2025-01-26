@@ -698,11 +698,6 @@ const matrix3x3 matrix3x3_identity = {
     { 0, 0, 1 },
 };
 
-#define Matrix3x4_LoadZero( mat )		Matrix3x4_Copy( mat, matrix3x4_zero )
-#define Matrix3x3_Copy( out, in )		memcpy( out, in, sizeof( matrix3x3 ))
-#define Matrix3x3_LoadZero( mat )		Matrix3x3_Copy( mat, matrix3x3_zero )
-#define Matrix3x3_LoadIdentity( mat )		Matrix3x3_Copy( mat, matrix3x3_identity )
-
 //
 // Builds and returns a 3x4 transform matrix from the corresponding translation vector and scale vector
 //

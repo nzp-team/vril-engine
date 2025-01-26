@@ -1,4 +1,34 @@
 #ifndef IQM_H
+#define IQM_H
+
+
+
+// Enable any of these to turn on debug prints
+#define IQMDEBUG_LOADIQM_LOADMESH
+#define IQMDEBUG_LOADIQM_MESHSPLITTING
+// #define IQMDEBUG_LOADIQM_BONEINFO
+#define IQMDEBUG_LOADIQM_ANIMINFO
+// #define IQMDEBUG_LOADIQM_DEBUGSUMMARY
+#define IQMDEBUG_LOADIQM_RELOCATE
+#define IQMDEBUG_SKEL_TRACELINE
+// #define IQMDEBUG_CALC_MODEL_BOUNDS
+
+
+
+
+
+// 
+// If defined, enables runtime calculation of skeletal model bbox when playing an arbitrary skeletal anim
+// This bbox is used as an early-out check for raytrace skeleton bone collision detection.
+// If enabled, the early-out bbox will accurately reflect the min / max positions of all bone bboxes across the animation
+// If disabled, the early-out bbox will be static (currently 2x HLBSP player hull). 
+// Any bones outside of this static bbox will not be deetected by raytrace collision detection.
+// 
+// TODO - Profile hit detection with and without this
+// TODO - Profile time spent calculating the AABB for a model
+// #define IQM_BBOX_PER_MODEL_PER_ANIM
+// #define IQM_LOAD_NORMALS    // Uncomment this to load vertex normals
+
 
 // ----------------------------------------------------------------------------
 // IQM file loading utils
@@ -33,7 +63,7 @@ typedef struct iqm_mesh_s {
     uint32_t first_tri, n_tris;
 } iqm_mesh_t;
 
-enum class iqm_vert_array_type : uint32_t {
+typedef enum {
     IQM_VERT_POS            = 0,
     IQM_VERT_UV             = 1,
     IQM_VERT_NOR            = 2,
@@ -42,9 +72,10 @@ enum class iqm_vert_array_type : uint32_t {
     IQM_VERT_BONE_WEIGHTS   = 5,
     IQM_VERT_COLOR          = 6,
     IQM_VERT_CUSTOM         = 0X10
-};
+} iqm_vert_array_type;
 
-enum class iqm_dtype : uint32_t {
+
+typedef enum {
     IQM_DTYPE_BYTE          = 0,
     IQM_DTYPE_UBYTE         = 1,
     IQM_DTYPE_SHORT         = 2,
@@ -54,7 +85,7 @@ enum class iqm_dtype : uint32_t {
     IQM_DTYPE_HALF          = 6,
     IQM_DTYPE_FLOAT         = 7,
     IQM_DTYPE_DOUBLE        = 8,
-};
+} iqm_dtype;
 
 typedef struct iqm_tri_s {
     uint32_t vert_idxs[3];
@@ -93,9 +124,9 @@ typedef struct iqm_anim_s {
     uint32_t flags;
 } iqm_anim_t;
 
-enum class iqm_anim_flag : uint32_t {
+typedef enum {
     IQM_ANIM_FLAG_LOOP = 1<<0
-};
+} iqm_anim_flag;
 
 typedef struct iqm_vert_array_s {
     uint32_t type; // TODO - iqm_vert_array_type?
@@ -151,9 +182,25 @@ typedef struct iqm_ext_fte_skin_meshskin_s {
 } iqm_ext_fte_skin_meshskin_t;
 
 
+
+typedef struct iqm_model_vertex_arrays_s {
+    vec2_t *verts_uv;
+    vec3_t *verts_pos;
+#ifdef IQM_LOAD_NORMALS
+    vec3_t *verts_nor;
+#endif // IQM_LOAD_NORMALS
+    float *verts_bone_weights;
+    uint8_t *verts_bone_idxs;
+    // TODO - Add loading for these fields?
+    // vec4_t *verts_tan;
+    // vec4_t *verts_color;
+} iqm_model_vertex_arrays_t;
+
+
+uint32_t safe_strsize(char *str);
 void iqm_parse_float_array(const void *iqm_data, const iqm_vert_array_t *vert_array, float *out, size_t n_elements, size_t element_len, float *default_value);
 void iqm_parse_uint8_array(const void *iqm_data, const iqm_vert_array_t *vert_array, uint8_t *out, size_t n_elements, size_t element_len, uint8_t max_value);
-static const void *iqm_find_extension(const uint8_t *iqm_data, size_t iqm_data_size, const char *extension_name, size_t *extension_size);
+const void *iqm_find_extension(const uint8_t *iqm_data, size_t iqm_data_size, const char *extension_name, size_t *extension_size);
 // ----------------------------------------------------------------------------
 
 
@@ -194,6 +241,16 @@ typedef struct skeletal_material_s {
 
 
 
+
+
+// TODO - Remvoe this?
+struct skeletal_mesh_s;
+typedef struct skeletal_mesh_s skeletal_mesh_t;
+
+
+
+
+
 typedef struct skeletal_model_s {
     // Model mins / maxs across all animation frames
     vec3_t mins;
@@ -201,8 +258,7 @@ typedef struct skeletal_model_s {
 
     // List of meshes
     uint32_t n_meshes;
-    // skeletal_mesh_t *meshes;
-    void *meshes; // void-pointer to platform-specific mesh structs
+    skeletal_mesh_t *meshes;
 
 
     // FIXME - I'd like to add these fields, but the model struct is immutable at runtime...
@@ -282,15 +338,70 @@ typedef struct skeletal_model_s {
 } skeletal_model_t;
 
 
+typedef struct skeletal_skeleton_s {
+    bool in_use;
+    int modelindex; // Animation / skeleton data is pulled from this model
+    skeletal_model_t *model; // Animation / skeleton data is pulled from this model
+
+    // ------------------------------------------------------------------------
+    // Skeleton State Variables
+    // ------------------------------------------------------------------------
+    // The following state variables are set whenever a pose is applied to a 
+    // skeleton object.
+    // ------------------------------------------------------------------------
+    int anim_modelindex;
+    int anim_framegroup; // Framegroup index (0,1,2, ...)
+    float anim_starttime; // Server time at which the animation was started
+    float anim_speed; // Anim playback speed (1.0 for normal, 0.5 for half-speed, 2.0 for double speed, etc.)
+    float last_build_time; // Time at which the skeleton was last built. Used to avoid rebuilding
+
+    // Server-only: Custom properties to support bone hitboxes
+    bool *bone_hitbox_enabled;  // Whether or not to use the hitbox for each bone
+    vec3_t *bone_hitbox_ofs;    // Ofs of the bounding box for each bone
+    vec3_t *bone_hitbox_scale;  // Size of the bounding box for each bone
+    int *bone_hitbox_tag;              // Tag value returned for ray-hitbox intersections with each bone
+
+    // ------------------------------------------------------------------------
+    // The following state variables are derived from the above state variables
+    // ------------------------------------------------------------------------
+    skeletal_model_t *anim_model; // Which skeletal model the animation data was read from
+    mat3x4_t *bone_transforms; // Transforms bone's local-space to model-space
+    mat3x4_t *bone_rest_to_pose_transforms; // Transforms bone's rest-pose model-space to posed model-space
+
+#ifdef IQM_LOAD_NORMALS
+    mat3x3_t *bone_rest_to_pose_normal_transforms; // 3x3 inverse-transpose of `bone_transforms` for vertex normals
+#endif // IQM_LOAD_NORMALS
+
+    int32_t *anim_bone_idx; // anim_bone_idx[i] = j : skeleton bone i reads data from animation bone j. If j == -1, bone i is not animated.
+    // ------------------------------------------------------------------------
+} skeletal_skeleton_t;
+
+
+
+// Defined in platform-specific C++ IQM files
+skeletal_mesh_t *load_iqm_meshes(const void *iqm_data, const iqm_model_vertex_arrays_t *iqm_vertex_arrays);
+uint32_t count_unpacked_skel_model_meshes_n_bytes(skeletal_model_t *skel_model);
+void pack_skeletal_model_meshes(skeletal_model_t *unpacked_skel_model_in, skeletal_model_t *packed_skel_model_out, uint8_t **buffer_head_ptr);
+
+
+
+
+#define PACKING_BYTE_PADDING 4
+#define PACK_MEMBER(dest_ptr, src_ptr, n_bytes, buffer_start, buffer_head) (_pack_member( (void**) dest_ptr, (void*) src_ptr, n_bytes, buffer_start, buffer_head))
+void _pack_member(void **dest_ptr, void *src_ptr, size_t n_bytes, uint8_t *buffer_start, uint8_t **buffer_head);
+#define UNPACK_MEMBER(packed_member_ptr, buffer_start) ((__typeof__(packed_member_ptr))_unpack_member(packed_member_ptr, buffer_start))
+void *_unpack_member(void *packed_member_ptr, void *buffer_start);
+
+
+
+void free_pointer_and_clear(void **ptr);
 
 
 
 
 
-
-
-
-
+bool ray_aabb_intersection(vec3_t ray_pos, vec3_t ray_dir, float *tmin);
+skeletal_skeleton_t *cl_update_skel_for_ent(entity_t *ent);
 
 
 
@@ -319,4 +430,21 @@ void sv_skel_clear_all();
 qboolean sv_get_skeleton_bounds(int skel_idx, vec3_t mins, vec3_t maxs);
 int cl_get_camera_bone_view_transform(entity_t *view_ent, mat3x4_t camera_anim_view_matrix_out);
 
+
+
+void cl_get_skel_model_bounds(int model_idx, int animmodel_idx, vec3_t mins, vec3_t maxs);
+void sv_get_skel_model_bounds(int model_idx, int animmodel_idx, vec3_t mins, vec3_t maxs);
+void Mod_LoadIQMModel (model_t *model, void *buffer);
+
+
+// TODO - Move these elsewhere
+#define ZOMBIE_LIMB_STATE_HEAD      1
+#define ZOMBIE_LIMB_STATE_ARM_L     2
+#define ZOMBIE_LIMB_STATE_ARM_R     4
+#define ZOMBIE_LIMB_STATE_LEG_L     8
+#define ZOMBIE_LIMB_STATE_LEG_R     16
+#define ZOMBIE_LIMB_STATE_FULL      (ZOMBIE_LIMB_STATE_HEAD | ZOMBIE_LIMB_STATE_ARM_L | ZOMBIE_LIMB_STATE_ARM_R | ZOMBIE_LIMB_STATE_LEG_L | ZOMBIE_LIMB_STATE_LEG_R)
+
+
 #endif // IQM_H
+

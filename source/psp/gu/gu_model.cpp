@@ -50,6 +50,7 @@ void Mod_LoadBrushModel   (model_t *mod, void *buffer);
 void Mod_LoadAliasModel   (model_t *mod, void *buffer);
 void Mod_LoadH2AliasModel (model_t *mod, void *buffer);
 void Mod_LoadQ2AliasModel (model_t *mod, void *buffer);
+void Mod_LoadIQMModel     (model_t *mod, void *buffer);
 qboolean Mod_LoadQ2SpriteModel (model_t *mod, void *buffer);
 //void Mod_LoadQ2BrushModel (model_t *mod, void *buffer);
 void Mod_LoadQ3AliasModel      (model_t *mod, void *buffer);

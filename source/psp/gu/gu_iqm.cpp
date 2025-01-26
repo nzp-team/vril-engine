@@ -4,6 +4,9 @@ extern"C" {
 
 }
 
+
+#include <limits>
+
 #include <pspgu.h>
 #include <pspgum.h>
 
@@ -23,44 +26,10 @@ extern void Fog_EnableGFog();
 extern char pr_string_temp[PR_MAX_TEMPSTRING];
 
 
-#define VERT_BONES 4
-#define TRI_VERTS 3
-#define SUBMESH_BONES 8
-
-
-// Enable any of these to turn on debug prints
-// #define IQMDEBUG_LOADIQM_LOADMESH
-// #define IQMDEBUG_LOADIQM_MESHSPLITTING //
-// #define IQMDEBUG_LOADIQM_BONEINFO
-#define IQMDEBUG_LOADIQM_ANIMINFO //
-// #define IQMDEBUG_LOADIQM_DEBUGSUMMARY
-#define IQMDEBUG_LOADIQM_RELOCATE
-#define IQMDEBUG_SKEL_TRACELINE
-// #define IQMDEBUG_CALC_MODEL_BOUNDS
-
-
-// Special IQM animation event
-#define IQM_ANIM_EVENT_CODE_MOVE_DIST 2
-
-
-
-skeletal_skeleton_t sv_skeletons[MAX_SKELETONS]; // Server-side skeleton objects
-skeletal_skeleton_t cl_skeletons[MAX_SKELETONS]; // Client-side skeleton objects
-int sv_n_skeletons = 0;
-int cl_n_skeletons = 0;
-
-
 
 void free_skeletal_model(skeletal_model_t *skel_model);
 
 
-#ifdef IQM_BBOX_PER_MODEL_PER_ANIM
-void calc_skel_model_bounds_for_rest_pose(skeletal_model_t *skel_model, vec3_t model_mins, vec3_t model_maxs);
-void calc_skel_model_bounds_for_anim(skeletal_model_t *skel_model, skeletal_model_t *anim_model, vec3_t model_mins, vec3_t model_maxs);
-void _get_skel_model_bounds(skeletal_model_t *skel_model, skeletal_model_t *skel_anim, int model_idx, int animmodel_idx, vec3_t mins, vec3_t maxs);
-#endif // IQM_BBOX_PER_MODEL_PER_ANIM
-void cl_get_skel_model_bounds(int model_idx, int animmodel_idx, vec3_t mins, vec3_t maxs);
-void sv_get_skel_model_bounds(int model_idx, int animmodel_idx, vec3_t mins, vec3_t maxs);
 
 
 // 
@@ -153,100 +122,41 @@ int bone_list_set_union(uint8_t *bone_list_a, int bone_list_a_n_bones, const uin
 
 
 
-#define UINT16_T_MAX_VAL     65535
-#define UINT16_T_MIN_VAL     0
-#define INT16_T_MAX_VAL      32767
-#define INT16_T_MIN_VAL     -32768
-#define UINT8_T_MAX_VAL      255
-#define UINT8_T_MIN_VAL      0
-#define INT8_T_MAX_VAL       127
-#define INT8_T_MIN_VAL      -128
 
+
+
+
+
+
+//
+// Splits a `skeletal_mesh_t` mesh into one or more submeshes that reference no more than 8 bones
+// Writes triangle submesh index into `tri_submesh_idxs` 
+// CAUTION: Assumes `tri_submesh_idxs` is of length `mesh->n_tris`
+//
+// Returns the number of submeshes that were created
 // 
-// Maps a float in [-1,1] to a int16_t in [-32768, 32767]
-//
-int16_t float_to_int16(float x) {
-    // Rescale to [0,1]
-    x = ((x+1) * 0.5);
-    // Interpolate between min and max value
-    int16_t val = (int16_t) (INT16_T_MIN_VAL + x * (INT16_T_MAX_VAL - INT16_T_MIN_VAL));
-    // Clamp to bounds
-    return std::min( (int16_t) INT16_T_MAX_VAL, std::max( (int16_t) INT16_T_MIN_VAL, val ));
-}
-
-// 
-// Maps a float in [0,1] to a uint16_t in [0, 65535]
-//
-uint16_t float_to_uint16(float x) {
-    // Interpolate between min and max value
-    uint16_t val = (int16_t) (UINT16_T_MIN_VAL + x * (UINT16_T_MAX_VAL - UINT16_T_MIN_VAL));
-    // Clamp to bounds
-    return std::min( (uint16_t) UINT16_T_MAX_VAL, std::max( (uint16_t) UINT16_T_MIN_VAL, val ));
-}
-
-// 
-// Maps a float in [-1,1] to a int8_t in [-128, 127]
-//
-int8_t float_to_int8(float x) {
-    // Rescale to [0,1]
-    x = ((x+1) * 0.5);
-    // Interpolate between min and max value
-    int8_t val = (int8_t) (INT8_T_MIN_VAL + x * (INT8_T_MAX_VAL - INT8_T_MIN_VAL));
-    // Clamp to bounds
-    return std::min( (int8_t) INT8_T_MAX_VAL, std::max( (int8_t) INT8_T_MIN_VAL, val ));
-}
-
-//
-// Applies the inverse of an ofs and a scale
-//
-float apply_inv_ofs_scale(float x, float ofs, float scale) {
-    return (x - ofs) / scale;
-}
-
-// 
-// Maps a float in [0,1] to a uint8_t in [0, 255]
-//
-uint8_t float_to_uint8(float x) {
-    // Interpolate between min and max value
-    uint8_t val = (uint8_t) (UINT8_T_MIN_VAL + x * (UINT8_T_MAX_VAL - UINT8_T_MIN_VAL));
-    // Clamp to bounds
-    return std::min( (uint8_t) UINT8_T_MAX_VAL, std::max( (uint8_t) UINT8_T_MIN_VAL, val ));
-}
-
-
-
-
-
-
-
-// 
-// Splits a `skeletal_mesh_t` mesh into one or more `skeletal_mesh_t` submeshes that reference no more than 8 bones
-//
-void submesh_skeletal_mesh(skeletal_mesh_t *mesh) {
+int skeletal_submesh_get_tri_submesh_idxs(skeletal_full_mesh_t *mesh, int8_t *tri_submesh_idxs) {
 #ifdef IQMDEBUG_LOADIQM_MESHSPLITTING
-    Con_Printf("=========== Submesh started =============\n");
+    Con_Printf("skeletal_submesh_get_tri_submesh_idxs -- Start\n");
 #endif // IQMDEBUG_LOADIQM_MESHSPLITTING
 
     // --------------------------------------------------------------------
     // Build the set of bones referenced by each triangle
     // --------------------------------------------------------------------
-    uint8_t *tri_n_bones = (uint8_t*) malloc(sizeof(uint8_t) * mesh->n_tris); // Contains the number of bones that the i-th triangle references
-    uint8_t *tri_bones = (uint8_t*) malloc(sizeof(uint8_t) * TRI_VERTS * VERT_BONES * mesh->n_tris); // Contains the list of bones referenced by the i-th triangle
+    // Make lists to hold bones idxs referenced by each triangle, initialized to 0s
+    uint8_t tri_n_bones[mesh->n_tris] = {}; // Contains the number of bones that the i-th triangle references
+    uint8_t tri_bones[TRI_VERTS * VERT_BONES * mesh->n_tris] = {}; // Contains the list of bones referenced by the i-th triangle
 
 
     for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
-        // Initialize this triangle's bone list to 0s
-        for(int tri_bone_idx = 0; tri_bone_idx < TRI_VERTS * VERT_BONES; tri_bone_idx++) {
-            tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + tri_bone_idx] = 0;
-        }
-        tri_n_bones[tri_idx] = 0;
-
         for(uint32_t tri_vert_idx = 0; tri_vert_idx < TRI_VERTS; tri_vert_idx++ ) {
             uint32_t vert_idx = mesh->tri_verts[(tri_idx * TRI_VERTS) + tri_vert_idx];
             // Loop through the vertex's referenced bones
             for(int vert_bone_idx = 0; vert_bone_idx < VERT_BONES; vert_bone_idx++) {
+
                 uint8_t bone_idx = mesh->vert_bone_idxs[vert_idx * VERT_BONES + vert_bone_idx];
                 float bone_weight = mesh->vert_bone_weights[vert_idx * VERT_BONES + vert_bone_idx];
+
 
                 if(bone_weight > 0) {
                     // Verify the bone is not already in this triangle's bone list
@@ -261,109 +171,31 @@ void submesh_skeletal_mesh(skeletal_mesh_t *mesh) {
     // --------------------------------------------------------------------
 
 
-    // // ========================================================================================================================
-    // // ========================================================================================================================
-    // // ---
-    // // Let's just print the triangles, their bones, and their set assignment, see if that's what's crashing
-    // // Next up: just skip to mesh[3] to see if it crashes on its own, or if the other meshes are putting us in a bad state
-    // // ---
-    // // Okay, we're still crashing here... interesting...
+#ifdef IQMDEBUG_LOADIQM_MESHSPLITTING
+    Con_Printf("skeletal_submesh_get_tri_submesh_idxs -- Done gathering triangle-bone references\n");
+#endif // IQMDEBUG_LOADIQM_MESHSPLITTING
 
-    // int n_prints = 0;
-
-    // for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
-    //     Con_Printf("\t\tn_prints: %d\n", n_prints);
-    //     Con_Printf("\t\tIQMDEBUG triangle %d, triangle set: %d, bone-list (%d): [ ", tri_idx, 0, tri_n_bones[tri_idx]); // IQMFIXME
-    //     n_prints++;
-
-    //     // --------------------------------------------------------------------
-    //     // This works fine...
-    //     // --------------------------------------------------------------------
-    //     // Con_Printf("%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d]\n", 
-    //     //     tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + 0],
-    //     //     tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + 1],
-    //     //     tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + 2],
-    //     //     tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + 3],
-    //     //     tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + 4],
-    //     //     tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + 5],
-    //     //     tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + 6],
-    //     //     tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + 7],
-    //     //     tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + 8],
-    //     //     tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + 9],
-    //     //     tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + 10],
-    //     //     tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + 11]
-    //     // );
-    //     // --------------------------------------------------------------------
-
-    //     // --------------------------------------------------------------------
-    //     // --------------------------------------------------------------------
-    //     // Weird... commenting this whole loop out fixes the crash... let's bring back some of it.
-    //     for(uint32_t tri_bone_idx = 0; tri_bone_idx < TRI_VERTS * VERT_BONES; tri_bone_idx++) {
-    //         // --
-    //         // Check if somehow stack is running out
-    //         // if(tri_bone_idx == 0) {
-    //         //     Con_Printf("(&tri_bone_idx: %p) ", (void*) &tri_bone_idx);
-    //         // }
-    //         // --
-    //         // // Only print the triangle's list of valid bones
-    //         // if(tri_bone_idx >= tri_n_bones[tri_idx]) {
-    //         //     break;
-    //         // }
-    //         // Print separator between used and unused indices
-    //         if(tri_bone_idx == tri_n_bones[tri_idx]) {
-    //             Con_Printf("// "); n_prints++;
-    //         }
-
-    //         int arr_ofs = (tri_idx * TRI_VERTS * VERT_BONES) + tri_bone_idx;
-    //         Con_Printf("[%d] = ", arr_ofs); n_prints++;
-    //         Con_Printf("%d, ", tri_bones[arr_ofs]); n_prints++;
-
-    //         // I think this is the offending line...
-    //         // Con_Printf(" (%d) ", (tri_idx * TRI_VERTS * VERT_BONES) + tri_bone_idx); // Still crashes, so not related to dtypes... hmmm
-    //         // -- Switched tri_bone_idx to uint32_t --
-    //         // Con_Printf(" (%d) ", 0); // This works fine, so it may not be print-related after all...
-    //         // Con_Printf(" (%d) ", (tri_idx * TRI_VERTS * VERT_BONES) + tri_bone_idx); // This crashes... interesting
-    //         // Crashes at ofs: 136
-    //         // Crashes at triangle: 144
-    //         // Con_Printf("%d, ", tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + tri_bone_idx]);
-    //     }
-    //     Con_Printf("]\n"); n_prints++;// IQMFIXME
-    //     // --------------------------------------------------------------------
-    // }
-    // return; // IQMDEBUG - Skip everything after this function, should still crash
-    // // Wow this still crashes... why?
-    // // ========================================================================================================================
-    // // ========================================================================================================================
-
-
-    // // Debug print a few triangle bone lists:
-    // for(int j = 0; j < 10; j++) {
-    //     Con_Printf("Mesh: %d tri: %d bones (%d): ", i, j, tri_n_bones[j]);
-    //     for(int k = 0; k < tri_n_bones[j]; k++) {
-    //         Con_Printf("%d, ", tri_bones[j * TRI_VERTS * VERT_BONES + k]);
-    //     }
-    //     Con_Printf("\n");
-    // }
-    // break;
 
     // --------------------------------------------------------------------
     // Assign each triangle in the mesh to a submesh idx
     // --------------------------------------------------------------------
-    int8_t *tri_submesh_idx = (int8_t*) malloc(sizeof(int8_t) * mesh->n_tris); // Contains the set the i-th triangle belongs to
     const int SET_DISCARD = -2; // Discarded triangles
     const int SET_UNASSIGNED = -1; // Denotes unassigned triangles
     for(uint32_t j = 0; j < mesh->n_tris; j++) {
-        tri_submesh_idx[j] = SET_UNASSIGNED;
+        tri_submesh_idxs[j] = SET_UNASSIGNED;
     }
 
     int cur_submesh_idx = -1;
+    int cur_submesh_n_bones = 0;
+    uint8_t cur_submesh_bones[SUBMESH_BONES];
+
 
     while(true) {
         // Find the unassigned triangle that uses the most bones:
         int cur_tri = -1;
         for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
             // If this triangle isn't `UNASSIGNED`, skip it
-            if(tri_submesh_idx[tri_idx] != SET_UNASSIGNED) {
+            if(tri_submesh_idxs[tri_idx] != SET_UNASSIGNED) {
                 continue;
             }
             // If we haven't found one yet, set it
@@ -377,57 +209,39 @@ void submesh_skeletal_mesh(skeletal_mesh_t *mesh) {
             }
         }
 
+
+#ifdef IQMDEBUG_LOADIQM_MESHSPLITTING
+    Con_Printf("skeletal_submesh_get_tri_submesh_idxs -- Found unassigned triangle: %d\n", cur_tri);
+#endif // IQMDEBUG_LOADIQM_MESHSPLITTING
+
+
         // If we didn't find any triangles, stop submesh algorithm. We're done.
         if(cur_tri == -1) {
             break;
         }
 
-
-        // // ========================================================================================================================
-        // // ========================================================================================================================
-        // // ---
-        // // Let's just print the triangles, their bones, and their set assignment, see if that's what's crashing
-        // // Next up: just skip to mesh[3] to see if it crashes on its own, or if the other meshes are putting us in a bad state
-        // // ---
-        // // Okay, we're still crashing here... interesting...
-        // for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
-        //     Con_Printf("\t\tIQMDEBUG triangle %d, triangle set: %d, bone-list (%d): [ ", tri_idx, tri_submesh_idx[tri_idx], tri_n_bones[tri_idx]); // IQMFIXME
-        //     for(int tri_bone_idx = 0; tri_bone_idx < TRI_VERTS * VERT_BONES; tri_bone_idx++) {
-        //         // Print separator between used and unused indices
-        //         if(tri_bone_idx == tri_n_bones[tri_idx]) {
-        //             Con_Printf("// ");
-        //         }
-        //         Con_Printf("%d, ", tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + tri_bone_idx]);
-        //     }
-        //     Con_Printf("]\n"); // IQMFIXME
-        // }
-        // break; // IQMDEBUG - Skip everything after this function, should still crash
-        // // ---
-        // // ========================================================================================================================
-        // // ========================================================================================================================
-
-
-
-
         // Verify the triangle doesn't have more than the max bones allowed:
         if(tri_n_bones[cur_tri] > SUBMESH_BONES) {
             Con_Printf("Warning: Mesh Triangle %d references %d bones, which is more than the maximum allowed for any mesh (%d). Skipping triangle...\n", cur_tri, tri_n_bones[cur_tri], SUBMESH_BONES);
             // Discard it
-            tri_submesh_idx[cur_tri] = SET_DISCARD;
+            tri_submesh_idxs[cur_tri] = SET_DISCARD;
             continue;
         }
 
 
         cur_submesh_idx += 1;
-        int cur_submesh_n_bones = 0;
-        uint8_t *cur_submesh_bones = (uint8_t*) malloc(sizeof(uint8_t) * SUBMESH_BONES);
+        cur_submesh_n_bones = 0;
+        for(int submesh_bone_idx = 0; submesh_bone_idx < SUBMESH_BONES; submesh_bone_idx++) {
+            cur_submesh_bones[submesh_bone_idx] = 0;
+        }
+        
 #ifdef IQMDEBUG_LOADIQM_MESHSPLITTING
         Con_Printf("Creating submesh %d for mesh\n", cur_submesh_idx);
 #endif // IQMDEBUG_LOADIQM_MESHSPLITTING
 
 
         // Add the triangle to the current submesh:
-        tri_submesh_idx[cur_tri] = cur_submesh_idx;
+        tri_submesh_idxs[cur_tri] = cur_submesh_idx;
 
         // Add the triangle's bones to the current submesh:
         for(int submesh_bone_idx = 0; submesh_bone_idx < tri_n_bones[cur_tri]; submesh_bone_idx++) {
@@ -446,18 +260,9 @@ void submesh_skeletal_mesh(skeletal_mesh_t *mesh) {
         // Add all unassigned triangles from the main mesh that references bones in this submesh's bone list
         for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
             // If this triangle isn't `UNASSIGNED`, skip it
-            if(tri_submesh_idx[tri_idx] != SET_UNASSIGNED) {
+            if(tri_submesh_idxs[tri_idx] != SET_UNASSIGNED) {
                 continue;
             }
-
-            // if(i == 0) {
-            //     Con_Printf("Mesh %d submesh %d checking tri %d\n",i,cur_submesh_idx,tri_idx);
-            //     Con_Printf("\tTri bones: (%d), ", tri_n_bones[tri_idx]);
-            //     for(int tri_bone_idx = 0; tri_bone_idx < tri_n_bones[tri_idx]; tri_bone_idx++) {
-            //         Con_Printf("%d,", tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + tri_bone_idx]);
-            //     }
-            //     Con_Printf("\n");
-            // }
 
             // If this triangle's bones is not a subset of the current submesh bone list, skip it
             if(!bone_list_is_subset(&tri_bones[tri_idx * TRI_VERTS * VERT_BONES], tri_n_bones[tri_idx], cur_submesh_bones, cur_submesh_n_bones)) {
@@ -465,9 +270,8 @@ void submesh_skeletal_mesh(skeletal_mesh_t *mesh) {
             }
 
             // Otherwise, it is a subset, add it to the current submesh
-            tri_submesh_idx[tri_idx] = cur_submesh_idx;
+            tri_submesh_idxs[tri_idx] = cur_submesh_idx;
         }
-
 
 
 #ifdef IQMDEBUG_LOADIQM_MESHSPLITTING
@@ -476,10 +280,10 @@ void submesh_skeletal_mesh(skeletal_mesh_t *mesh) {
             int cur_submesh_n_tris = 0;
             int n_assigned_tris = 0;
             for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
-                if(tri_submesh_idx[tri_idx] != SET_UNASSIGNED) {
+                if(tri_submesh_idxs[tri_idx] != SET_UNASSIGNED) {
                     n_assigned_tris++;
                 }
-                if(tri_submesh_idx[tri_idx] == cur_submesh_idx) {
+                if(tri_submesh_idxs[tri_idx] == cur_submesh_idx) {
                     cur_submesh_n_tris++;
                 }
             }
@@ -495,7 +299,7 @@ void submesh_skeletal_mesh(skeletal_mesh_t *mesh) {
             int cur_tri_n_missing_bones = 0;
             for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
                 // If this triangle isn't `UNASSIGNED`, skip it
-                if(tri_submesh_idx[tri_idx] != SET_UNASSIGNED) {
+                if(tri_submesh_idxs[tri_idx] != SET_UNASSIGNED) {
                     continue;
                 }
                 // Count the number of bones referenced by this triangle that are not in the current submesh bone list
@@ -538,7 +342,7 @@ void submesh_skeletal_mesh(skeletal_mesh_t *mesh) {
 
 
             // Assign the triangle to the current submesh
-            tri_submesh_idx[cur_tri] = cur_submesh_idx;
+            tri_submesh_idxs[cur_tri] = cur_submesh_idx;
             // Con_Printf("\tIQMDEBUG Computing bone list set union\n"); // IQMFIXME
 
             // Add this triangle's bones to the current submesh list of bones
@@ -552,80 +356,21 @@ void submesh_skeletal_mesh(skeletal_mesh_t *mesh) {
             Con_Printf("]\n");
 #endif // IQMDEBUG_LOADIQM_MESHSPLITTING
 
-            // Con_Printf("\t\tIQMDEBUG Looking for unassigned triangles: \n");
-
-
-            // // ========================================================================================================================
-            // // ========================================================================================================================
-            // // ---
-            // // Let's just print the triangles, their bones, and their set assignment, see if that's what's crashing
-            // // Next up: just skip to mesh[3] to see if it crashes on its own, or if the other meshes are putting us in a bad state
-            // // ---
-            // // Okay, we're still crashing here... interesting...
-            // for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
-            //     Con_Printf("\t\tIQMDEBUG triangle %d, triangle set: %d, bone-list (%d): [ ", tri_idx, tri_submesh_idx[tri_idx], tri_n_bones[tri_idx]); // IQMFIXME
-            //     for(int tri_bone_idx = 0; tri_bone_idx < TRI_VERTS * VERT_BONES; tri_bone_idx++) {
-            //         // Print separator between used and unused indices
-            //         if(tri_bone_idx == tri_n_bones[tri_idx]) {
-            //             Con_Printf("// ");
-            //         }
-            //         Con_Printf("%d, ", tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + tri_bone_idx]);
-            //     }
-            //     Con_Printf("]\n"); // IQMFIXME
-            // }
-            // // ---
-            // break; // IQMDEBUG - Skip everything after this function, should still crash
-            // continue; // IQMDEBUG - Skip the following check, this crashes!
-            // // ========================================================================================================================
-            // // ========================================================================================================================
-
-
             // Add all unassigned triangles from the main mesh that reference bones in this submesh's bone list
             for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
                 // If this triangle isn't `UNASSIGNED`, skip it
-                if(tri_submesh_idx[tri_idx] != SET_UNASSIGNED) {
+                if(tri_submesh_idxs[tri_idx] != SET_UNASSIGNED) {
                     continue;
                 }
-                // Con_Printf("\t\tIQMDEBUG triangle %d, triangle set: %d\n", tri_idx, tri_submesh_idx[tri_idx]); // IQMFIXME
-
-                // if(i == 0) {
-                //     Con_Printf("Mesh %d submesh %d checking tri %d\n",i,cur_submesh_idx,tri_idx);
-                //     Con_Printf("\tTri bones: (%d), ", tri_n_bones[tri_idx]);
-                //     for(int tri_bone_idx = 0; tri_bone_idx < tri_n_bones[tri_idx]; tri_bone_idx++) {
-                //         Con_Printf("%d,", tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + tri_bone_idx]);
-                //     }
-                //     Con_Printf("\n");
-                // }
-
-                // Con_Printf("\t\tIQMDEBUG checking if triangle %d bone-list is subset\n", tri_idx); // IQMFIXME
-
-                // ----
-                // Con_Printf("\t\tIQMDEBUG triangle %d bone-list (%d): [", tri_idx, tri_n_bones[tri_idx]); // IQMFIXME
-                // for(int tri_bone_idx = 0; tri_bone_idx < TRI_VERTS * VERT_BONES; tri_bone_idx++) {
-                //     // Print separator between used and unused indices
-                //     if(tri_bone_idx == tri_n_bones[tri_idx]) {
-                //         Con_Printf("// ");
-                //     }
-                //     Con_Printf("%d, ", tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + tri_bone_idx]);
-                // }
-                // Con_Printf("]\n"); // IQMFIXME
-                // ----
-
-
 
                 // If this triangle's bones is not a subset of the current submesh bone list, skip it
                 if(!bone_list_is_subset(&tri_bones[tri_idx * TRI_VERTS * VERT_BONES], tri_n_bones[tri_idx], cur_submesh_bones, cur_submesh_n_bones)) {
-                    // Con_Printf("\t\tIQMDEBUG triangle %d bone-list is not subset, skipping\n", tri_idx);
                     continue;
                 }
-                // Con_Printf("\t\tIQMDEBUG triangle %d bone-list is subset, assigning to current submesh mesh: %d\n", tri_idx, cur_submesh_idx);
 
                 // Otherwise, it is a subset, add it to the current submesh
-                tri_submesh_idx[tri_idx] = cur_submesh_idx;
+                tri_submesh_idxs[tri_idx] = cur_submesh_idx;
             }
-
-
-            // Con_Printf("\t\tIQMDEBUG to count n_assigned / cur_submesh triangles\n"); // IQMFIXME
 
 #ifdef IQMDEBUG_LOADIQM_MESHSPLITTING
             {
@@ -633,10 +378,10 @@ void submesh_skeletal_mesh(skeletal_mesh_t *mesh) {
                 int cur_submesh_n_tris = 0;
                 int n_assigned_tris = 0;
                 for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
-                    if(tri_submesh_idx[tri_idx] != SET_UNASSIGNED) {
+                    if(tri_submesh_idxs[tri_idx] != SET_UNASSIGNED) {
                         n_assigned_tris++;
                     }
-                    if(tri_submesh_idx[tri_idx] == cur_submesh_idx) {
+                    if(tri_submesh_idxs[tri_idx] == cur_submesh_idx) {
                         cur_submesh_n_tris++;
                     }
                 }
@@ -645,45 +390,58 @@ void submesh_skeletal_mesh(skeletal_mesh_t *mesh) {
             }
 #endif // IQMDEBUG_LOADIQM_MESHSPLITTING
         }
-
-        // Con_Printf("IQMDEBUG - About to free submesh bones\n");
-        free(cur_submesh_bones);
-        // Con_Printf("IQMDEBUG - Done freeing submesh bones\n");
     }
-
     int n_submeshes = cur_submesh_idx + 1;
-    mesh->n_submeshes = n_submeshes;
-    // Con_Printf("IQMDEBUG - About to malloc submeshes array\n");
-    mesh->submeshes = (skeletal_mesh_t *) malloc(sizeof(skeletal_mesh_t) * n_submeshes);
-    // Con_Printf("IQMDEBUG - Done mallocing submeshes array\n");
 
+
+#ifdef IQMDEBUG_LOADIQM_MESHSPLITTING
+    Con_Printf("skeletal_submesh_get_tri_submesh_idxs -- Done, split into %d submeshes\n", n_submeshes);
+#endif // IQMDEBUG_LOADIQM_MESHSPLITTING
+
+    return n_submeshes;
+}
+
+
+
+
+//
+// Given list of triangle submesh indices `tri_submesh_idxs`, splits up mesh `mesh` 
+// into `n_submeshes` submeshes
+//
+skeletal_full_mesh_t *skeletal_submesh_build_submeshes(skeletal_full_mesh_t *mesh, int8_t *tri_submesh_idxs, int n_submeshes) {
+#ifdef IQMDEBUG_LOADIQM_MESHSPLITTING
+        Con_Printf("skeletal_submesh_build_submeshes -- Start\n");
+#endif // IQMDEBUG_LOADIQM_MESHSPLITTING
+
+    skeletal_full_mesh_t *submeshes = (skeletal_full_mesh_t *) malloc(sizeof(skeletal_full_mesh_t) * n_submeshes);
 
     for(int submesh_idx = 0; submesh_idx < n_submeshes; submesh_idx++) {
 #ifdef IQMDEBUG_LOADIQM_MESHSPLITTING
         Con_Printf("Reconstructing submesh %d/%d for mesh\n", submesh_idx+1, n_submeshes);
 #endif // IQMDEBUG_LOADIQM_MESHSPLITTING
-        // Count the number of triangles that have been assigned to this submesh
-        int submesh_tri_count = 0;
-        for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
-            if(tri_submesh_idx[tri_idx] == submesh_idx) {
-                submesh_tri_count++;
-            }
-        }
-
-        // Allocate enough memory to fit theoretical max amount of unique vertes this model can reference (given we know its triangle count)
-        uint16_t *submesh_mesh_vert_idxs = (uint16_t*) malloc(sizeof(uint16_t) * TRI_VERTS * submesh_tri_count); // Indices into mesh list of vertices
-        // Allocate enough memoery to fit 3 vertex indices per triangle
-        uint16_t *submesh_tri_verts = (uint16_t*) malloc(sizeof(uint16_t) * TRI_VERTS * submesh_tri_count);
-        uint32_t submesh_n_tris = 0;
-        uint32_t submesh_n_verts = 0;
 
         // ----------------------------------------------------------------
         // Build this submesh's list of triangle indices, vertex list, and
         // triangle vertex indices
         // ----------------------------------------------------------------
+        // Count the number of triangles that have been assigned to this submesh
+        int submesh_tri_count = 0;
+        for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
+            if(tri_submesh_idxs[tri_idx] == submesh_idx) {
+                submesh_tri_count++;
+            }
+        }
+
+        // Allocate enough memory to fit theoretical max amount of unique vertes this model can reference (given we know its triangle count)
+        uint16_t submesh_mesh_vert_idxs[TRI_VERTS * submesh_tri_count]; // Indices into mesh list of vertices
+        // Allocate enough memoery to fit 3 vertex indices per triangle
+        uint16_t submesh_tri_verts[TRI_VERTS * submesh_tri_count];
+        uint32_t submesh_n_tris = 0;
+        uint32_t submesh_n_verts = 0;
+
         for(uint32_t mesh_tri_idx = 0; mesh_tri_idx < mesh->n_tris; mesh_tri_idx++) {
             // Skip triangles that don't belong to this submesh
-            if(tri_submesh_idx[mesh_tri_idx] != submesh_idx) {
+            if(tri_submesh_idxs[mesh_tri_idx] != submesh_idx) {
                 continue;
             }
 
@@ -695,7 +453,6 @@ void submesh_skeletal_mesh(skeletal_mesh_t *mesh) {
             // If that vertex is already in the submesh, use that index instead
             for(int tri_vert_idx = 0; tri_vert_idx < TRI_VERTS; tri_vert_idx++) {
                 int mesh_vert_idx = mesh->tri_verts[(mesh_tri_idx * TRI_VERTS) + tri_vert_idx];
-                // FIXME - This is a pointer into the full model vert indices list... Do we instead want the index into the mesh's vertex list?
 
                 // Check if this vertex is already in the submesh
                 int submesh_vert_idx = -1;
@@ -718,181 +475,63 @@ void submesh_skeletal_mesh(skeletal_mesh_t *mesh) {
         }
         // ----------------------------------------------------------------
 
-        mesh->submeshes[submesh_idx].n_verts = submesh_n_verts;
-        mesh->submeshes[submesh_idx].n_tris = submesh_n_tris;
-        mesh->submeshes[submesh_idx].vert_rest_positions = (vec3_t*) malloc(sizeof(vec3_t) * submesh_n_verts);
-        mesh->submeshes[submesh_idx].vert_uvs = (vec2_t*) malloc(sizeof(vec2_t) * submesh_n_verts);
+
+        // ----------------------------------------------------------------
+        // Populate the submesh struct vertex arrays
+        // ----------------------------------------------------------------
+        submeshes[submesh_idx].n_verts = submesh_n_verts;
+        submeshes[submesh_idx].vert_rest_positions = (vec3_t*) malloc(sizeof(vec3_t) * submesh_n_verts);
+        submeshes[submesh_idx].vert_uvs = (vec2_t*) malloc(sizeof(vec2_t) * submesh_n_verts);
 
 #ifdef IQM_LOAD_NORMALS
-        mesh->submeshes[submesh_idx].vert_rest_normals = (vec3_t*) malloc(sizeof(vec3_t) * submesh_n_verts);
+        submeshes[submesh_idx].vert_rest_normals = (vec3_t*) malloc(sizeof(vec3_t) * submesh_n_verts);
 #endif // IQM_LOAD_NORMALS
     
-        // mesh->submeshes[submesh_idx].vert_bone_weights = (float*) malloc(sizeof(float) * VERT_BONES * submesh_n_verts);
-        // mesh->submeshes[submesh_idx].vert_bone_idxs = (uint8_t*) malloc(sizeof(uint8_t) * VERT_BONES * submesh_n_verts);
-        mesh->submeshes[submesh_idx].vert_bone_weights = nullptr;
-        mesh->submeshes[submesh_idx].vert_bone_idxs = nullptr;
-        mesh->submeshes[submesh_idx].vert16s = nullptr;
-        mesh->submeshes[submesh_idx].vert8s = nullptr;
-        mesh->submeshes[submesh_idx].vert_skinning_weights = (float*) malloc(sizeof(float) * SUBMESH_BONES * submesh_n_verts);
-        mesh->submeshes[submesh_idx].verts_ofs[0] = 0.0f;
-        mesh->submeshes[submesh_idx].verts_ofs[1] = 0.0f;
-        mesh->submeshes[submesh_idx].verts_ofs[2] = 0.0f;
-        mesh->submeshes[submesh_idx].verts_scale[0] = 1.0f;
-        mesh->submeshes[submesh_idx].verts_scale[1] = 1.0f;
-        mesh->submeshes[submesh_idx].verts_scale[2] = 1.0f;
-        mesh->submeshes[submesh_idx].n_submeshes = 0;
-        mesh->submeshes[submesh_idx].submeshes = nullptr;
-        mesh->submeshes[submesh_idx].geomset = 0;
-        mesh->submeshes[submesh_idx].geomid = 0;
-        mesh->submeshes[submesh_idx].material_name = nullptr;
-        mesh->submeshes[submesh_idx].material_idx = -1;
-
-
+        submeshes[submesh_idx].vert_bone_weights = (float*) malloc(sizeof(float) * VERT_BONES * submesh_n_verts);
+        submeshes[submesh_idx].vert_bone_idxs = (uint8_t*) malloc(sizeof(uint8_t) * VERT_BONES * submesh_n_verts);
+        submeshes[submesh_idx].geomset = mesh->geomset;
+        submeshes[submesh_idx].geomid = mesh->geomid;
+        submeshes[submesh_idx].material_name = nullptr; // TODO - Don't copy string content for submeshes, it's held by the containing mesh
+        submeshes[submesh_idx].material_idx = mesh->material_idx;
 
         for(uint32_t vert_idx = 0; vert_idx < submesh_n_verts; vert_idx++) {
             uint16_t mesh_vert_idx = submesh_mesh_vert_idxs[vert_idx]; 
-            mesh->submeshes[submesh_idx].vert_rest_positions[vert_idx][0] = mesh->vert_rest_positions[mesh_vert_idx][0];
-            mesh->submeshes[submesh_idx].vert_rest_positions[vert_idx][1] = mesh->vert_rest_positions[mesh_vert_idx][1];
-            mesh->submeshes[submesh_idx].vert_rest_positions[vert_idx][2] = mesh->vert_rest_positions[mesh_vert_idx][2];
-            mesh->submeshes[submesh_idx].vert_uvs[vert_idx][0] = mesh->vert_uvs[mesh_vert_idx][0];
-            mesh->submeshes[submesh_idx].vert_uvs[vert_idx][1] = mesh->vert_uvs[mesh_vert_idx][1];
+            submeshes[submesh_idx].vert_rest_positions[vert_idx][0] = mesh->vert_rest_positions[mesh_vert_idx][0];
+            submeshes[submesh_idx].vert_rest_positions[vert_idx][1] = mesh->vert_rest_positions[mesh_vert_idx][1];
+            submeshes[submesh_idx].vert_rest_positions[vert_idx][2] = mesh->vert_rest_positions[mesh_vert_idx][2];
+            submeshes[submesh_idx].vert_uvs[vert_idx][0] = mesh->vert_uvs[mesh_vert_idx][0];
+            submeshes[submesh_idx].vert_uvs[vert_idx][1] = mesh->vert_uvs[mesh_vert_idx][1];
     
 #ifdef IQM_LOAD_NORMALS
-            mesh->submeshes[submesh_idx].vert_rest_normals[vert_idx][0] = mesh->vert_rest_normals[mesh_vert_idx][0];
-            mesh->submeshes[submesh_idx].vert_rest_normals[vert_idx][1] = mesh->vert_rest_normals[mesh_vert_idx][1];
-            mesh->submeshes[submesh_idx].vert_rest_normals[vert_idx][2] = mesh->vert_rest_normals[mesh_vert_idx][2];
+            submeshes[submesh_idx].vert_rest_normals[vert_idx][0] = mesh->vert_rest_normals[mesh_vert_idx][0];
+            submeshes[submesh_idx].vert_rest_normals[vert_idx][1] = mesh->vert_rest_normals[mesh_vert_idx][1];
+            submeshes[submesh_idx].vert_rest_normals[vert_idx][2] = mesh->vert_rest_normals[mesh_vert_idx][2];
 #endif // IQM_LOAD_NORMALS
 
-            // for(int k = 0; k < VERT_BONES; k++) {
-            //     mesh->submeshes[submesh_idx].vert_bone_weights[(vert_idx * VERT_BONES) + k] = mesh->vert_bone_weights[(mesh_vert_idx * VERT_BONES) + k];
-            //     mesh->submeshes[submesh_idx].vert_bone_idxs[(vert_idx * VERT_BONES) + k] = mesh->vert_bone_idxs[(mesh_vert_idx * VERT_BONES) + k];
-            // }
-
-            // Initialize all bone skinning weights to 0.0f
-            for(int bone_idx = 0; bone_idx < SUBMESH_BONES; bone_idx++) {
-                mesh->submeshes[submesh_idx].vert_skinning_weights[vert_idx * SUBMESH_BONES + bone_idx] = 0.0f;
+            for(int k = 0; k < VERT_BONES; k++) {
+                submeshes[submesh_idx].vert_bone_weights[(vert_idx * VERT_BONES) + k] = mesh->vert_bone_weights[(mesh_vert_idx * VERT_BONES) + k];
+                submeshes[submesh_idx].vert_bone_idxs[(vert_idx * VERT_BONES) + k] = mesh->vert_bone_idxs[(mesh_vert_idx * VERT_BONES) + k];
             }
         }
 
-
-        // FIXME - Why write them if we immediately free them? Are these used?
-        // free(mesh->submeshes[submesh_idx].vert_bone_idxs);
-        // free(mesh->submeshes[submesh_idx].vert_bone_weights);
-        // mesh->submeshes[submesh_idx].vert_bone_idxs = nullptr;
-        // mesh->submeshes[submesh_idx].vert_bone_weights = nullptr;
-
         // ----------------------------------------------------------------
-        // Build the submesh's list of bones indices, and the vertex skinning weights
+        // Populate the submesh triangles
         // ----------------------------------------------------------------
-        int n_submesh_bones = 0;
-        uint8_t *submesh_bones = (uint8_t*) malloc(sizeof(uint8_t) * SUBMESH_BONES);
-        // Initialize to all 0s
-        for(int bone_idx = 0; bone_idx < SUBMESH_BONES; bone_idx++) {
-            submesh_bones[bone_idx] = 0;
-        }
+        submeshes[submesh_idx].n_tris = submesh_n_tris;
 
-        // For every vertex
-        for(uint32_t vert_idx = 0; vert_idx < submesh_n_verts; vert_idx++) {
-            int mesh_vert_idx = submesh_mesh_vert_idxs[vert_idx];
-
-            // For every bone that belongs to that vertex
-            for(int vert_bone_idx = 0; vert_bone_idx < VERT_BONES; vert_bone_idx++) {
-                uint8_t bone_idx = mesh->vert_bone_idxs[mesh_vert_idx * VERT_BONES + vert_bone_idx];
-                float bone_weight = mesh->vert_bone_weights[mesh_vert_idx * VERT_BONES + vert_bone_idx];
-                if(bone_weight > 0.0f) {
-                    int vert_bone_submesh_idx = -1;
-                    // Search the submesh's list of bones for this bone
-                    for(int submesh_bone_idx = 0; submesh_bone_idx < n_submesh_bones; submesh_bone_idx++) {
-                        if(bone_idx == submesh_bones[submesh_bone_idx]) {
-                            vert_bone_submesh_idx = submesh_bone_idx;
-                            break;
-                        }
-                    }
-
-                    // If we didn't find the bone, add it to the submesh's list of bones
-                    if(vert_bone_submesh_idx == -1) {
-                        submesh_bones[n_submesh_bones] = bone_idx;
-                        vert_bone_submesh_idx = n_submesh_bones;
-                        n_submesh_bones += 1;
-                    }
-
-                    // Set the vertex's corresponding weight entry for that bone
-                    mesh->submeshes[submesh_idx].vert_skinning_weights[vert_idx * SUBMESH_BONES + vert_bone_submesh_idx] = bone_weight;
-                }
-            }
-        }
-
-
-        // TEMP HACK DEBUG
-        // Set each vertex bone skinning weights to [1.0, 0.0, 0.0, ...]
-        // for(uint32_t vert_idx = 0; vert_idx < submesh_n_verts; vert_idx++) {
-        //     mesh->submeshes[submesh_idx].vert_skinning_weights[vert_idx * SUBMESH_BONES + 0] = 1.0f;
-        //     for(int submesh_bone_idx = 1; submesh_bone_idx < SUBMESH_BONES; submesh_bone_idx++) {
-        //         mesh->submeshes[submesh_idx].vert_skinning_weights[vert_idx * SUBMESH_BONES + submesh_bone_idx] = 0.0f;
-        //     }
-        // }
-
-        // Save the submesh's list of bone indices
-        mesh->submeshes[submesh_idx].n_skinning_bones = n_submesh_bones;
-        for(int bone_idx = 0; bone_idx < SUBMESH_BONES; bone_idx++) {
-            mesh->submeshes[submesh_idx].skinning_bone_idxs[bone_idx] = submesh_bones[bone_idx];
-        }
-        // ----------------------------------------------------------------
-
-
-        // ----------------------------------------------------------------
-        // Set the triangle vertex indices
-        // ----------------------------------------------------------------
-        mesh->submeshes[submesh_idx].tri_verts = (uint16_t*) malloc(sizeof(uint16_t) * TRI_VERTS * submesh_n_tris);
+        submeshes[submesh_idx].tri_verts = (uint16_t*) malloc(sizeof(uint16_t) * TRI_VERTS * submesh_n_tris);
         for(uint32_t tri_idx = 0; tri_idx < submesh_n_tris; tri_idx++) {
-            mesh->submeshes[submesh_idx].tri_verts[tri_idx * TRI_VERTS + 0] = submesh_tri_verts[tri_idx * TRI_VERTS + 0];
-            mesh->submeshes[submesh_idx].tri_verts[tri_idx * TRI_VERTS + 1] = submesh_tri_verts[tri_idx * TRI_VERTS + 1];
-            mesh->submeshes[submesh_idx].tri_verts[tri_idx * TRI_VERTS + 2] = submesh_tri_verts[tri_idx * TRI_VERTS + 2];
+            submeshes[submesh_idx].tri_verts[tri_idx * TRI_VERTS + 0] = submesh_tri_verts[tri_idx * TRI_VERTS + 0];
+            submeshes[submesh_idx].tri_verts[tri_idx * TRI_VERTS + 1] = submesh_tri_verts[tri_idx * TRI_VERTS + 1];
+            submeshes[submesh_idx].tri_verts[tri_idx * TRI_VERTS + 2] = submesh_tri_verts[tri_idx * TRI_VERTS + 2];
         }
         // ----------------------------------------------------------------
 
-
-        // -––-----------––-----------––-----------––-----------––---------
 #ifdef IQMDEBUG_LOADIQM_MESHSPLITTING
-        Con_Printf("Mesh submesh %d bones (%d): [", submesh_idx, n_submesh_bones);
-        for(int j = 0; j < SUBMESH_BONES; j++) {
-            Con_Printf("%d, ", submesh_bones[j]);
-        }
-        Con_Printf("]\n");
+        Con_Printf("skeletal_submesh_build_submeshes -- Done\n");
 #endif // IQMDEBUG_LOADIQM_MESHSPLITTING
-
-        // // TODO - Print all verts for this submesh
-        // for(uint32_t vert_idx = 0; vert_idx < submesh_n_verts; vert_idx++) {
-        //     int mesh_vert_idx = submesh_mesh_vert_idxs[vert_idx];
-        //     Con_Printf("\tvert %d, bones {%d:%.2f, %d:%.2f, %d:%.2f, %d:%.2f} --> [%d:%.2f, %d:%.2f, %d:%.2f, %d:%.2f, %d:%.2f, %d:%.2f, %d:%.2f, %d:%.2f]\n", 
-        //         vert_idx, 
-        //         skel_model->meshes[i].vert_bone_idxs[mesh_vert_idx * VERT_BONES + 0], skel_model->meshes[i].vert_bone_weights[mesh_vert_idx * VERT_BONES + 0],
-        //         skel_model->meshes[i].vert_bone_idxs[mesh_vert_idx * VERT_BONES + 1], skel_model->meshes[i].vert_bone_weights[mesh_vert_idx * VERT_BONES + 1],
-        //         skel_model->meshes[i].vert_bone_idxs[mesh_vert_idx * VERT_BONES + 2], skel_model->meshes[i].vert_bone_weights[mesh_vert_idx * VERT_BONES + 2],
-        //         skel_model->meshes[i].vert_bone_idxs[mesh_vert_idx * VERT_BONES + 3], skel_model->meshes[i].vert_bone_weights[mesh_vert_idx * VERT_BONES + 3],
-        //         submesh_bones[0], skel_model->meshes[i].submeshes[submesh_idx].skinning_verts[vert_idx].bone_weights[0],
-        //         submesh_bones[1], skel_model->meshes[i].submeshes[submesh_idx].skinning_verts[vert_idx].bone_weights[1],
-        //         submesh_bones[2], skel_model->meshes[i].submeshes[submesh_idx].skinning_verts[vert_idx].bone_weights[2],
-        //         submesh_bones[3], skel_model->meshes[i].submeshes[submesh_idx].skinning_verts[vert_idx].bone_weights[3],
-        //         submesh_bones[4], skel_model->meshes[i].submeshes[submesh_idx].skinning_verts[vert_idx].bone_weights[4],
-        //         submesh_bones[5], skel_model->meshes[i].submeshes[submesh_idx].skinning_verts[vert_idx].bone_weights[5],
-        //         submesh_bones[6], skel_model->meshes[i].submeshes[submesh_idx].skinning_verts[vert_idx].bone_weights[6],
-        //         submesh_bones[7], skel_model->meshes[i].submeshes[submesh_idx].skinning_verts[vert_idx].bone_weights[7]
-        //     );
-        // }
-        // -––-----------––-----------––-----------––-----------––---------
-
-#ifdef IQMDEBUG_LOADIQM_MESHSPLITTING
-        Con_Printf("About to free submesh data structures...\n");
-#endif // IQMDEBUG_LOADIQM_MESHSPLITTING
-        free(submesh_mesh_vert_idxs);
-        free(submesh_tri_verts);
     }
-
-    free(tri_n_bones);
-    free(tri_bones);
-    free(tri_submesh_idx);
-    // --------------------------------------------------------------------
+    return submeshes;
 }
 
 
@@ -910,7 +549,7 @@ void submesh_skeletal_mesh(skeletal_mesh_t *mesh) {
 // This method calculates the offset and scale necessary to achieve the above 
 // effect.
 // 
-void calc_quantization_grid_scale_ofs(skeletal_mesh_t *mesh) {
+void calc_quantization_grid_scale_ofs(vec3_t *vert_pos, int n_verts, vec3_t verts_ofs, vec3_t verts_scale) {
     // ----------------------------------------------------------------------
     // 8-bit and 16-bit vertices are quantized onto a grid
     // Find the most compact grid to quantize the vertices onto
@@ -926,15 +565,15 @@ void calc_quantization_grid_scale_ofs(skeletal_mesh_t *mesh) {
     // Compute mins / maxs along each axis (x,y,z)
     // Then compute ofs and scale to have all verts on that axis be centered on 
     // the origin and fit within [-1, 1]
-    for(int axis=0; axis < 3; axis++) {
-        float model_min = mesh->vert_rest_positions[0][axis];
-        float model_max = mesh->vert_rest_positions[0][axis];
-        for(uint32_t vert_idx = 0; vert_idx < mesh->n_verts; vert_idx++) {
-            model_min = std::min(mesh->vert_rest_positions[vert_idx][axis], model_min);
-            model_max = std::max(mesh->vert_rest_positions[vert_idx][axis], model_max);
+    for(int axis = 0; axis < 3; axis++) {
+        float model_min = vert_pos[0][axis];
+        float model_max = vert_pos[0][axis];
+        for(uint32_t vert_idx = 1; vert_idx < n_verts; vert_idx++) {
+            model_min = std::min(vert_pos[vert_idx][axis], model_min);
+            model_max = std::max(vert_pos[vert_idx][axis], model_max);
         }
-        mesh->verts_ofs[axis] = ((model_max - model_min) / 2.0f) + model_min;
-        mesh->verts_scale[axis] = (model_max - model_min) / 2.0f;
+        verts_ofs[axis] = ((model_max + model_min) / 2.0f);
+        verts_scale[axis] = (model_max - model_min) / 2.0f;
     }
 
 #ifdef IQMDEBUG_LOADIQM_LOADMESH
@@ -943,1713 +582,793 @@ void calc_quantization_grid_scale_ofs(skeletal_mesh_t *mesh) {
     // ----------------------------------------------------------------------
 }
 
-// 
-// Using temporary data loaded by `load_iqm_file`, writes the vertex structs that:
-//      - Use 8-bit vertex sizes
-//      - Remove triangle indices to have a raw list of unindexed vertices
-// 
-void write_skinning_vert8_structs(skeletal_mesh_t *mesh) {
-    int n_unindexed_verts = mesh->n_tris * TRI_VERTS;
-    mesh->n_verts = n_unindexed_verts;
-    mesh->vert8s = (skel_vertex_i8_t*) malloc(sizeof(skel_vertex_i8_t) * n_unindexed_verts);
-
-    for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
-        for(int tri_vert_idx = 0; tri_vert_idx < TRI_VERTS; tri_vert_idx++) {
-            int unindexed_vert_idx = tri_idx * 3 + tri_vert_idx;
-            uint16_t indexed_vert_idx = mesh->tri_verts[tri_idx * 3 + tri_vert_idx];
-
-            // int8 vertex with int8 weights
-            // Con_Printf("Writing vert8 for vert %d/%d (for triangle: %d/%d)\n", unindexed_vert_idx+1, n_unindexed_verts, tri_idx+1,mesh->n_tris);
-            // Con_Printf("\twriting position...\n");
-            mesh->vert8s[unindexed_vert_idx].x = float_to_int8(apply_inv_ofs_scale(mesh->vert_rest_positions[indexed_vert_idx][0], mesh->verts_ofs[0], mesh->verts_scale[0]));
-            mesh->vert8s[unindexed_vert_idx].y = float_to_int8(apply_inv_ofs_scale(mesh->vert_rest_positions[indexed_vert_idx][1], mesh->verts_ofs[1], mesh->verts_scale[1]));
-            mesh->vert8s[unindexed_vert_idx].z = float_to_int8(apply_inv_ofs_scale(mesh->vert_rest_positions[indexed_vert_idx][2], mesh->verts_ofs[2], mesh->verts_scale[2]));
-            // Con_Printf("\twriting uv...\n");
-            mesh->vert8s[unindexed_vert_idx].u = float_to_int8(mesh->vert_uvs[indexed_vert_idx][0]);
-            mesh->vert8s[unindexed_vert_idx].v = float_to_int8(mesh->vert_uvs[indexed_vert_idx][1]);
-
-#ifdef IQM_LOAD_NORMALS
-            // Con_Printf("\twriting normal...\n");
-            mesh->vert8s[unindexed_vert_idx].nor_x = float_to_int8(mesh->vert_rest_normals[indexed_vert_idx][0]);
-            mesh->vert8s[unindexed_vert_idx].nor_y = float_to_int8(mesh->vert_rest_normals[indexed_vert_idx][1]);
-            mesh->vert8s[unindexed_vert_idx].nor_z = float_to_int8(mesh->vert_rest_normals[indexed_vert_idx][2]);
-#endif // IQM_LOAD_NORMALS
-
-            // Con_Printf("\twriting bone weights...\n");
-            for(int bone_idx = 0; bone_idx < SUBMESH_BONES; bone_idx++) {
-                mesh->vert8s[unindexed_vert_idx].bone_weights[bone_idx] = float_to_int8(mesh->vert_skinning_weights[indexed_vert_idx * SUBMESH_BONES + bone_idx]);
-            }
-        }
-    }
-}
-
-// 
-// Using temporary data loaded by `load_iqm_file`, writes the vertex structs that:
-//      - Use 16-bit vertex sizes
-//      - Remove triangle indices to have a raw list of unindexed vertices
-// 
-void write_skinning_vert16_structs(skeletal_mesh_t *mesh) {
-    int n_unindexed_verts = mesh->n_tris * TRI_VERTS;
-    mesh->n_verts = n_unindexed_verts;
-    mesh->vert16s = (skel_vertex_i16_t*) malloc(sizeof(skel_vertex_i16_t) * n_unindexed_verts);
-
-    for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
-        for(int tri_vert_idx = 0; tri_vert_idx < TRI_VERTS; tri_vert_idx++) {
-            int unindexed_vert_idx = tri_idx * 3 + tri_vert_idx;
-            uint16_t indexed_vert_idx = mesh->tri_verts[tri_idx * 3 + tri_vert_idx];
-
-            // int16 vertex with int8 weights
-            // Con_Printf("Writing vert16 for vert %d/%d (for triangle: %d/%d)\n", unindexed_vert_idx+1, n_unindexed_verts, tri_idx+1,mesh->n_tris);
-            // Con_Printf("\twriting position...\n");
-            mesh->vert16s[unindexed_vert_idx].x = float_to_int16(apply_inv_ofs_scale(mesh->vert_rest_positions[indexed_vert_idx][0], mesh->verts_ofs[0], mesh->verts_scale[0]));
-            mesh->vert16s[unindexed_vert_idx].y = float_to_int16(apply_inv_ofs_scale(mesh->vert_rest_positions[indexed_vert_idx][1], mesh->verts_ofs[1], mesh->verts_scale[1]));
-            mesh->vert16s[unindexed_vert_idx].z = float_to_int16(apply_inv_ofs_scale(mesh->vert_rest_positions[indexed_vert_idx][2], mesh->verts_ofs[2], mesh->verts_scale[2]));
-            // Con_Printf("\twriting uv...\n");
-            mesh->vert16s[unindexed_vert_idx].u = float_to_int16(mesh->vert_uvs[indexed_vert_idx][0]);
-            mesh->vert16s[unindexed_vert_idx].v = float_to_int16(mesh->vert_uvs[indexed_vert_idx][1]);
-
-#ifdef IQM_LOAD_NORMALS
-            // Con_Printf("\twriting normal...\n");
-            mesh->vert16s[unindexed_vert_idx].nor_x = float_to_int16(mesh->vert_rest_normals[indexed_vert_idx][0]);
-            mesh->vert16s[unindexed_vert_idx].nor_y = float_to_int16(mesh->vert_rest_normals[indexed_vert_idx][1]);
-            mesh->vert16s[unindexed_vert_idx].nor_z = float_to_int16(mesh->vert_rest_normals[indexed_vert_idx][2]);
-#endif // IQM_LOAD_NORMALS
-
-            // Con_Printf("\twriting bone weights...\n");
-            for(int bone_idx = 0; bone_idx < SUBMESH_BONES; bone_idx++) {
-                mesh->vert16s[unindexed_vert_idx].bone_weights[bone_idx] = float_to_int8(mesh->vert_skinning_weights[indexed_vert_idx * SUBMESH_BONES + bone_idx]);
-            }
-        }
-    }
-}
 
 
-// 
-// Util function that frees a pointer and sets it to nullptr
-// 
-template<typename T>
-void free_pointer_and_clear(T* &ptr) {
-    if(ptr != nullptr) {
-        free(ptr);
-        ptr = nullptr;
-    }
-}
 
-
-// 
-// Returns the amount of memory needed to store a string, including null terminator
-// Additionally, pads an extra byte to get 2-byte aligned values 
-// (Since relocatable model tightly packs strings together, we must keep things 2-byte aligned)
-// 
-uint32_t safe_strsize(char *str) {
-    if(str == nullptr) {
-        return 0;
-    }
-
-    uint32_t n_bytes = sizeof(char) * (strlen(str) + 1);
-
-    // FIXME - Make 4-byte aligned
-    // if(n_bytes % 2 == 1) {
-    //     n_bytes += 1;
-    // }
-    n_bytes += (4 - (n_bytes % 4)) % 4;
-    return n_bytes;
-}
 
 
 
 //
-// Given pointer to raw IQM model bytes buffer, loads the IQM model
+// Converts a float `x` in [`min_x`,`max_x`] to integer type
+// Supports any of: uint8_t, uint16_t, int8_t, int16_t
+//
+template <typename T, int min_x_i, int max_x_i>
+T float_to_int(float x) {
+    constexpr float min_x = (float) min_x_i;
+    constexpr float max_x = (float) max_x_i;
+    // Ensure x is within [min_val, max_val]
+    x = std::min( max_x, std::max( min_x, x ));
+    // Rescale to [0,1]
+    x = (x - min_x) / (max_x - min_x);
+    // Interpolate between T's min and max value
+    constexpr T min_val = std::numeric_limits<T>::min();
+    constexpr T max_val = std::numeric_limits<T>::max();
+    T val = (T) (min_val + x * (max_val - min_val));
+    // Clamp to bounds
+    return static_cast<T>(std::min( max_val, std::max( min_val, val)));
+}
+
+
+//
+// Applies the inverse of an ofs and a scale
+//
+float apply_inv_ofs_scale(float x, float ofs, float scale) {
+    return (x - ofs) / scale;
+}
+
+
 // 
-skeletal_model_t *load_iqm_file(void *iqm_data) {
+// Given a mesh loaded by ???, writes vertex draw struct that:
+//      - Use quantization
+//      - Remove triangle indices to have a raw list of unindexed vertices
+//
+template <typename T_verts, typename T_pos, typename T_uv, typename T_nor, typename T_bone_weight>
+T_verts *build_skinning_vert_structs(skeletal_full_mesh_t *mesh, float *vert_skinning_weights, vec3_t verts_ofs, vec3_t verts_scale) {
+    int n_unindexed_verts = mesh->n_tris * TRI_VERTS;
+    T_verts *verts = (T_verts*) malloc(sizeof(T_verts) * n_unindexed_verts);
+
+    for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
+        for(int tri_vert_idx = 0; tri_vert_idx < TRI_VERTS; tri_vert_idx++) {
+            int unindexed_vert_idx = tri_idx * 3 + tri_vert_idx;
+            uint16_t indexed_vert_idx = mesh->tri_verts[tri_idx * 3 + tri_vert_idx];
+
+            // Con_Printf("\twriting position...\n");
+            verts[unindexed_vert_idx].x = float_to_int<T_pos,-1,1>(apply_inv_ofs_scale(mesh->vert_rest_positions[indexed_vert_idx][0], verts_ofs[0], verts_scale[0]));
+            verts[unindexed_vert_idx].y = float_to_int<T_pos,-1,1>(apply_inv_ofs_scale(mesh->vert_rest_positions[indexed_vert_idx][1], verts_ofs[1], verts_scale[1]));
+            verts[unindexed_vert_idx].z = float_to_int<T_pos,-1,1>(apply_inv_ofs_scale(mesh->vert_rest_positions[indexed_vert_idx][2], verts_ofs[2], verts_scale[2]));
+            // Con_Printf("\twriting uv...\n");
+            verts[unindexed_vert_idx].u = float_to_int<T_uv,-1,1>(mesh->vert_uvs[indexed_vert_idx][0]);
+            verts[unindexed_vert_idx].v = float_to_int<T_uv,-1,1>(mesh->vert_uvs[indexed_vert_idx][1]);
+
+#ifdef IQM_LOAD_NORMALS
+            // Con_Printf("\twriting normal...\n");
+            verts[unindexed_vert_idx].nor_x = float_to_int<T_nor,-1,1>(mesh->vert_rest_normals[indexed_vert_idx][0]);
+            verts[unindexed_vert_idx].nor_y = float_to_int<T_nor,-1,1>(mesh->vert_rest_normals[indexed_vert_idx][1]);
+            verts[unindexed_vert_idx].nor_z = float_to_int<T_nor,-1,1>(mesh->vert_rest_normals[indexed_vert_idx][2]);
+#endif // IQM_LOAD_NORMALS
+
+            // Con_Printf("\twriting bone weights...\n");
+            for(int bone_idx = 0; bone_idx < SUBMESH_BONES; bone_idx++) {
+                // FIXME - This ain't right 
+
+                verts[unindexed_vert_idx].bone_weights[bone_idx] = float_to_int<T_bone_weight,-1,1>(vert_skinning_weights[indexed_vert_idx * SUBMESH_BONES + bone_idx]);
+            }
+        }
+    }
+    return verts;
+}
+
+
+
+// 
+// Loads the a full mesh from an IQM file without alteration
+// 
+void load_full_iqm_mesh(skeletal_full_mesh_t *mesh, int mesh_idx, const void *iqm_data, const iqm_model_vertex_arrays_t *iqm_vertex_arrays) {
     const iqm_header_t *iqm_header = (const iqm_header_t*) iqm_data;
-
-    if(memcmp(iqm_header->magic, IQM_MAGIC, sizeof(iqm_header->magic))) {
-        return nullptr; 
+    if(mesh_idx < 0 || mesh_idx >= iqm_header->n_meshes) {
+        return;
     }
-    if(iqm_header->version != IQM_VERSION_2) {
-        return nullptr;
-    }
-
-    // We won't know what the `iqm_data` buffer length is, but this is a useful check
-    // if(iqm_header->filesize != file_len) {
-    //     return nullptr;
-    // }
-    size_t file_len = iqm_header->filesize;
-
-    const iqm_vert_array_t *iqm_verts_pos = nullptr;
-    const iqm_vert_array_t *iqm_verts_uv = nullptr;
-    const iqm_vert_array_t *iqm_verts_nor = nullptr;
-    const iqm_vert_array_t *iqm_verts_tan = nullptr;
-    const iqm_vert_array_t *iqm_verts_color = nullptr;
-    const iqm_vert_array_t *iqm_verts_bone_idxs = nullptr;
-    const iqm_vert_array_t *iqm_verts_bone_weights = nullptr;
-
-#ifdef IQMDEBUG_LOADIQM_LOADMESH
-    Con_Printf("\tParsing vert attribute arrays\n");
-#endif // IQMDEBUG_LOADIQM_LOADMESH
-
-    const iqm_vert_array_t *vert_arrays = (const iqm_vert_array_t*)((uint8_t*) iqm_data + iqm_header->ofs_vert_arrays);
-    for(unsigned int i = 0; i < iqm_header->n_vert_arrays; i++) {
-        if((iqm_vert_array_type) vert_arrays[i].type == iqm_vert_array_type::IQM_VERT_POS) {
-            iqm_verts_pos = &vert_arrays[i];
-        }
-        else if((iqm_vert_array_type) vert_arrays[i].type == iqm_vert_array_type::IQM_VERT_UV) {
-            iqm_verts_uv = &vert_arrays[i];
-        }
-        else if((iqm_vert_array_type) vert_arrays[i].type == iqm_vert_array_type::IQM_VERT_NOR) {
-            iqm_verts_nor = &vert_arrays[i];
-        }
-        else if((iqm_vert_array_type) vert_arrays[i].type == iqm_vert_array_type::IQM_VERT_TAN) {
-            // Only use tangents if float and if each tangent is a 4D vector:
-            if((iqm_dtype) vert_arrays[i].format == iqm_dtype::IQM_DTYPE_FLOAT && vert_arrays[i].size == 4) {
-                iqm_verts_tan = &vert_arrays[i];
-            }
-            else {
-                Con_Printf("Warning: IQM vertex tangent array (idx: %d, type: %d, fmt: %d, size: %d) is not 4D float array.\n", i, vert_arrays[i].type, vert_arrays[i].format, vert_arrays[i].size);
-            }
-        }
-        else if((iqm_vert_array_type) vert_arrays[i].type == iqm_vert_array_type::IQM_VERT_COLOR) {
-            iqm_verts_color = &vert_arrays[i];
-        }
-        else if((iqm_vert_array_type) vert_arrays[i].type == iqm_vert_array_type::IQM_VERT_BONE_IDXS) {
-            iqm_verts_bone_idxs = &vert_arrays[i];
-        }
-        else if((iqm_vert_array_type) vert_arrays[i].type == iqm_vert_array_type::IQM_VERT_BONE_WEIGHTS) {
-            iqm_verts_bone_weights = &vert_arrays[i];
-        }
-        else {
-            Con_Printf("Warning: Unrecognized IQM vertex array type (idx: %d, type: %d, fmt: %d, size: %d)\n", i, vert_arrays[i].type, vert_arrays[i].format, vert_arrays[i].size);
-        }
-    }
-
-    // ------------------------------------------------------------------------
-    // Check for minimum set of required fields for IQM models that have meshes:
-    // ------------------------------------------------------------------------
-    if(iqm_header->n_meshes > 0) {
-        bool loading_failed = false;
-        if(iqm_verts_pos == nullptr) {
-            Con_Printf("Error: IQM file model has meshes but no vertex positions data array.\n");
-            loading_failed = true;
-        }
-        if(iqm_verts_uv == nullptr) {
-            Con_Printf("Error: IQM file model has meshes but no vertex UV data array.\n");
-            loading_failed = true;
-        }
-        // TODO - Technically we could allow for support of IQM models without 
-        // TODO   normals / bone weights/ bone indices, but at present all of 
-        // TODO   the IQM code assumes we have them. 
-
-#ifdef IQM_LOAD_NORMALS
-        if(iqm_verts_nor == nullptr) {
-            Con_Printf("Error: IQM file model has meshes but no vertex normal data array.\n");
-            loading_failed = true;
-        }
-#endif // IQM_LOAD_NORMALS
-
-        if(iqm_verts_bone_weights == nullptr) {
-            Con_Printf("Error: IQM file model has meshes but no vertex bone weights data array.\n");
-            loading_failed = true;
-        }
-        if(iqm_verts_bone_idxs == nullptr) {
-            Con_Printf("Error: IQM file model has meshes but no vertex bone indices data array.\n");
-            loading_failed = true;
-        }
-        if(loading_failed) {
-            return nullptr;
-        }
-    }
-    // ------------------------------------------------------------------------
-
-#ifdef IQMDEBUG_LOADIQM_LOADMESH
-    Con_Printf("\tCreating skeletal model object\n");
-#endif // IQMDEBUG_LOADIQM_LOADMESH
-    skeletal_model_t *skel_model = (skeletal_model_t*) malloc(sizeof(skeletal_model_t));
-    skel_model->n_meshes = iqm_header->n_meshes;
-    skel_model->meshes = (skeletal_mesh_t*) malloc(sizeof(skeletal_mesh_t) * skel_model->n_meshes);
-
-    vec2_t *verts_uv = (vec2_t*) malloc(sizeof(vec2_t) * iqm_header->n_verts);
-    vec3_t *verts_pos = (vec3_t*) malloc(sizeof(vec3_t) * iqm_header->n_verts);
-#ifdef IQM_LOAD_NORMALS
-    vec3_t *verts_nor = (vec3_t*) malloc(sizeof(vec3_t) * iqm_header->n_verts);
-#endif // IQM_LOAD_NORMALS
-
-
-    // ------------------------------------------------------------------------
-    // Convert verts_pos / verts_uv datatypes to floats 
-    // ------------------------------------------------------------------------
-    vec3_t default_vert = {0,0,0};
-    vec2_t default_uv = {0,0};
-#ifdef IQM_LOAD_NORMALS
-    vec3_t default_nor = {0,0,1.0f};
-#endif // IQM_LOAD_NORMALS
-
-#ifdef IQMDEBUG_LOADIQM_LOADMESH
-    Con_Printf("\tParsing vertex attribute arrays\n");
-    Con_Printf("Verts pos: %d\n", iqm_verts_pos);
-    Con_Printf("Verts uv: %d\n", iqm_verts_uv);
-    Con_Printf("Verts nor: %d\n", iqm_verts_nor);
-    Con_Printf("Verts bone weights: %d\n", iqm_verts_bone_weights);
-    Con_Printf("Verts bone idxs: %d\n", iqm_verts_bone_idxs);
-#endif // IQMDEBUG_LOADIQM_LOADMESH
-
-
-    iqm_parse_float_array(iqm_data, iqm_verts_pos, (float*) verts_pos, iqm_header->n_verts, 3, (float*) &default_vert);
-    iqm_parse_float_array(iqm_data, iqm_verts_uv,  (float*) verts_uv,  iqm_header->n_verts, 2, (float*) &default_uv);
-#ifdef IQM_LOAD_NORMALS
-    iqm_parse_float_array(iqm_data, iqm_verts_nor, (float*) verts_nor, iqm_header->n_verts, 3, (float*) &default_nor);
-#endif // IQM_LOAD_NORMALS
-
-    float *verts_bone_weights = (float*)   malloc(sizeof(float) * 4 * iqm_header->n_verts);
-    uint8_t *verts_bone_idxs  = (uint8_t*) malloc(sizeof(uint8_t) * 4 * iqm_header->n_verts);
-    float default_bone_weights[] = {0.0f, 0.0f, 0.0f, 0.0f};
-    iqm_parse_float_array(iqm_data, iqm_verts_bone_weights, verts_bone_weights,  iqm_header->n_verts, 4, (float*) &default_bone_weights);
-    iqm_parse_uint8_array(iqm_data, iqm_verts_bone_idxs,    verts_bone_idxs,     iqm_header->n_verts, 4, (uint8_t) std::min( (int) iqm_header->n_joints, (int) IQM_MAX_BONES));
-
-    // TODO - Parse / set other vertex attributes we care about:
-    // - vertex normals <-  iqm_verts_nor
-    // - vertex tangents <- iqm_verts_tan
-    // - vertex colors <-   iqm_verts_color
-    // ------------------------------------------------------------------------
 
     const iqm_mesh_t *iqm_meshes = (const iqm_mesh_t*)((uint8_t*) iqm_data + iqm_header->ofs_meshes);
 
-    for(uint32_t i = 0; i < iqm_header->n_meshes; i++) {
-        skeletal_mesh_t *mesh = &skel_model->meshes[i];
-        const char *material_name = (const char*) (((uint8_t*) iqm_data + iqm_header->ofs_text) + iqm_meshes[i].material);
-        Con_Printf("Mesh[%d]: \"%s\"\n", i, material_name);
+    const char *material_name = (const char*) (((uint8_t*) iqm_data + iqm_header->ofs_text) + iqm_meshes[mesh_idx].material);
+    Con_Printf("Mesh[%d]: \"%s\"\n", mesh_idx, material_name);
+    mesh->material_name = (char*) malloc(sizeof(char) * (strlen(material_name) + 1));
+    strcpy(mesh->material_name, material_name);
+    // Indicate that material has not yet been found in list of materials, we'll find it later
+    mesh->material_idx = -1;
+    
 
-        // mesh->material_name = nullptr;
-        mesh->material_name = (char*) malloc(sizeof(char) * (strlen(material_name) + 1));
-        strcpy(mesh->material_name, material_name);
-        mesh->material_idx = -1; // Indicate that material has not yet been found in list of materials, we'll find it later
+    uint32_t first_vert = iqm_meshes[mesh_idx].first_vert_idx;
+    uint32_t n_verts = iqm_meshes[mesh_idx].n_verts;
+    uint32_t first_tri = iqm_meshes[mesh_idx].first_tri;
+    uint32_t n_tris = iqm_meshes[mesh_idx].n_tris;
 
-        mesh->geomset = 0;
-        mesh->geomid = 0;
-        uint32_t first_vert = iqm_meshes[i].first_vert_idx;
-        uint32_t first_tri = iqm_meshes[i].first_tri;
-        // skel_model->meshes[i].first_vert = first_vert;
-        uint32_t n_verts = iqm_meshes[i].n_verts;
-        mesh->n_verts = n_verts;
-        mesh->vert_rest_positions = (vec3_t*) malloc(sizeof(vec3_t) * n_verts);
 
+    mesh->n_verts = n_verts;
+    mesh->vert_rest_positions = (vec3_t*) malloc(sizeof(vec3_t) * n_verts);
 #ifdef IQM_LOAD_NORMALS
-        mesh->vert_rest_normals = (vec3_t*) malloc(sizeof(vec3_t) * n_verts);
+    mesh->vert_rest_normals = (vec3_t*) malloc(sizeof(vec3_t) * n_verts);
+#endif // IQM_LOAD_NORMALS
+    mesh->vert_uvs = (vec2_t*) malloc(sizeof(vec2_t) * n_verts);
+    mesh->vert_bone_weights = (float*) malloc(sizeof(float)  * VERT_BONES * n_verts);  // 4 bone weights per vertex
+    mesh->vert_bone_idxs = (uint8_t*) malloc(sizeof(uint8_t) * VERT_BONES * n_verts);  // 4 bone indices per vertex
+
+    for(uint32_t vert_idx = 0; vert_idx < n_verts; vert_idx++) {
+        // Write static fields:
+        mesh->vert_rest_positions[vert_idx][0] = iqm_vertex_arrays->verts_pos[first_vert + vert_idx][0];
+        mesh->vert_rest_positions[vert_idx][1] = iqm_vertex_arrays->verts_pos[first_vert + vert_idx][1];
+        mesh->vert_rest_positions[vert_idx][2] = iqm_vertex_arrays->verts_pos[first_vert + vert_idx][2];
+        mesh->vert_uvs[vert_idx][0] = iqm_vertex_arrays->verts_uv[first_vert + vert_idx][0];
+        mesh->vert_uvs[vert_idx][1] = iqm_vertex_arrays->verts_uv[first_vert + vert_idx][1];
+#ifdef IQM_LOAD_NORMALS
+        mesh->vert_rest_normals[vert_idx][0] = iqm_vertex_arrays->verts_nor[first_vert + vert_idx][0];
+        mesh->vert_rest_normals[vert_idx][1] = iqm_vertex_arrays->verts_nor[first_vert + vert_idx][1];
+        mesh->vert_rest_normals[vert_idx][2] = iqm_vertex_arrays->verts_nor[first_vert + vert_idx][2];
 #endif // IQM_LOAD_NORMALS
 
-        mesh->vert_uvs = (vec2_t*) malloc(sizeof(vec2_t) * n_verts);
-        mesh->vert_bone_weights = (float*) malloc(sizeof(float)  * VERT_BONES * n_verts);  // 4 bone weights per vertex
-        mesh->vert_bone_idxs = (uint8_t*) malloc(sizeof(uint8_t) * VERT_BONES * n_verts);  // 4 bone indices per vertex
-        mesh->vert_skinning_weights = nullptr;
-        mesh->verts_ofs[0] = 0.0f;
-        mesh->verts_ofs[1] = 0.0f;
-        mesh->verts_ofs[2] = 0.0f;
-        mesh->verts_scale[0] = 1.0f;
-        mesh->verts_scale[1] = 1.0f;
-        mesh->verts_scale[2] = 1.0f;
-        mesh->vert16s = nullptr;
-        mesh->vert8s = nullptr;
-        mesh->n_submeshes = 0;
-        mesh->submeshes = nullptr;
-        mesh->n_skinning_bones = 0;
-        for(int j = 0; j < SUBMESH_BONES; j++) {
-            mesh->skinning_bone_idxs[j] = 0;
-        }
-
-
-
-
-        for(uint32_t j = 0; j < skel_model->meshes[i].n_verts; j++) {
-            // Write static fields:
-            mesh->vert_rest_positions[j][0] = verts_pos[first_vert + j][0];
-            mesh->vert_rest_positions[j][1] = verts_pos[first_vert + j][1];
-            mesh->vert_rest_positions[j][2] = verts_pos[first_vert + j][2];
-            mesh->vert_uvs[j][0] = verts_uv[first_vert + j][0];
-            mesh->vert_uvs[j][1] = verts_uv[first_vert + j][1];
-
-#ifdef IQM_LOAD_NORMALS
-            mesh->vert_rest_normals[j][0] = verts_nor[first_vert + j][0];
-            mesh->vert_rest_normals[j][1] = verts_nor[first_vert + j][1];
-            mesh->vert_rest_normals[j][2] = verts_nor[first_vert + j][2];
-#endif // IQM_LOAD_NORMALS
-
-            for(int k = 0; k < 4; k++) {
-                mesh->vert_bone_weights[j * 4 + k] = verts_bone_weights[(first_vert + j) * 4 + k];
-                mesh->vert_bone_idxs[j * 4 + k] = verts_bone_idxs[(first_vert + j) * 4 + k];
-            }
-        }
-
-        // skel_model->meshes[i].n_tris = iqm_meshes[i].n_tris;
-        mesh->n_tris = iqm_meshes[i].n_tris;
-        mesh->tri_verts = (uint16_t*) malloc(sizeof(uint16_t) * 3 * mesh->n_tris);
-
-        for(uint32_t j = 0; j < skel_model->meshes[i].n_tris; j++) {
-            uint16_t vert_a = ((iqm_tri_t*)((uint8_t*) iqm_data + iqm_header->ofs_tris))[first_tri + j].vert_idxs[0] - first_vert;
-            uint16_t vert_b = ((iqm_tri_t*)((uint8_t*) iqm_data + iqm_header->ofs_tris))[first_tri + j].vert_idxs[1] - first_vert;
-            uint16_t vert_c = ((iqm_tri_t*)((uint8_t*) iqm_data + iqm_header->ofs_tris))[first_tri + j].vert_idxs[2] - first_vert;
-            mesh->tri_verts[j*3 + 0] = vert_a;
-            mesh->tri_verts[j*3 + 1] = vert_b;
-            mesh->tri_verts[j*3 + 2] = vert_c;
-        }
-
-        // --
-        // Split the mesh into one or more submeshes
-        // --
-        // IQM meshes can reference an arbitrary number of bones, but PSP can 
-        // only reference 8 bones per mesh. So all meshes that reference more 
-        // than 8 bones must be split into submeshes that reference 8 bones or
-        // fewer each
-        // --
-        
-        submesh_skeletal_mesh(mesh);
-#ifdef IQMDEBUG_LOADIQM_LOADMESH
-        Con_Printf("Done splitting mesh into submeshes\n");
-#endif // IQMDEBUG_LOADIQM_LOADMESH
-        // --
-
-
-        for(int submesh_idx = 0; submesh_idx < mesh->n_submeshes; submesh_idx++) {
-#ifdef IQMDEBUG_LOADIQM_LOADMESH
-            Con_Printf("Writing vert structs for mesh %d/%d submesh %d/%d\n", i+1, iqm_header->n_meshes, submesh_idx+1, mesh->n_submeshes);
-#endif // IQMDEBUG_LOADIQM_LOADMESH
-            //  Cast float32 temp vertex data to vert8s / vert16s
-            //  Remove triangle indices
-            calc_quantization_grid_scale_ofs(&mesh->submeshes[submesh_idx]);
-            // TODO - Avoid building both vert8 and vert16 structs?
-            write_skinning_vert8_structs(&mesh->submeshes[submesh_idx]);
-            write_skinning_vert16_structs(&mesh->submeshes[submesh_idx]);
-#ifdef IQMDEBUG_LOADIQM_LOADMESH
-            Con_Printf("Done writing vert structs for mesh %d/%d submesh %d/%d\n", i+1, iqm_header->n_meshes, submesh_idx+1, mesh->n_submeshes);
-#endif // IQMDEBUG_LOADIQM_LOADMESH
-        }
-
-
-        // Deallocate mesh's loading temporary structs (not used by drawing code)
-        for(int submesh_idx = 0; submesh_idx < mesh->n_submeshes; submesh_idx++) {
-#ifdef IQMDEBUG_LOADIQM_LOADMESH
-            Con_Printf("Clearing temporary memory for mesh %d/%d submesh %d/%d\n", i+1, iqm_header->n_meshes, submesh_idx+1, mesh->n_submeshes);
-#endif // IQMDEBUG_LOADIQM_LOADMESH
-            skeletal_mesh_t *submesh = &mesh->submeshes[submesh_idx];
-            free_pointer_and_clear( submesh->vert_rest_positions);
-            free_pointer_and_clear( submesh->vert_uvs);
-
-#ifdef IQM_LOAD_NORMALS
-            free_pointer_and_clear( submesh->vert_rest_normals);
-#endif // IQM_LOAD_NORMALS
-
-            free_pointer_and_clear( submesh->vert_bone_weights); // NOTE - Unused by submeshes, but included for completeness
-            free_pointer_and_clear( submesh->vert_bone_idxs);    // NOTE - Unused by submeshes, but included for completeness
-            free_pointer_and_clear( submesh->vert_skinning_weights);
-            free_pointer_and_clear( submesh->tri_verts);
-#ifdef IQMDEBUG_LOADIQM_LOADMESH
-            Con_Printf("Done clearing temporary memory for mesh %d/%d submesh %d/%d\n", i+1, iqm_header->n_meshes, submesh_idx+1, mesh->n_submeshes);
-#endif // IQMDEBUG_LOADIQM_LOADMESH
-        }
-        
-#ifdef IQMDEBUG_LOADIQM_LOADMESH
-        Con_Printf("Clearing temporary memory for mesh %d/%d\n", i+1, iqm_header->n_meshes);
-        Con_Printf("\tClearing vert_rest_positions...\n", i+1, iqm_header->n_meshes);
-#endif // IQMDEBUG_LOADIQM_LOADMESH
-        free_pointer_and_clear( mesh->vert_rest_positions);
-
-
-#ifdef IQM_LOAD_NORMALS
-#ifdef IQMDEBUG_LOADIQM_LOADMESH
-        Con_Printf("\tClearing vert_rest_normals...\n", i+1, iqm_header->n_meshes);
-#endif // IQMDEBUG_LOADIQM_LOADMESH
-        free_pointer_and_clear( mesh->vert_rest_normals);
-#endif // IQM_LOAD_NORMALS
-
-
-#ifdef IQMDEBUG_LOADIQM_LOADMESH
-        Con_Printf("\tClearing vert_uvs...\n", i+1, iqm_header->n_meshes);
-#endif // IQMDEBUG_LOADIQM_LOADMESH
-        free_pointer_and_clear( mesh->vert_uvs);
-#ifdef IQMDEBUG_LOADIQM_LOADMESH
-        Con_Printf("\tClearing vert_bone_weights...\n", i+1, iqm_header->n_meshes);
-#endif // IQMDEBUG_LOADIQM_LOADMESH
-        free_pointer_and_clear( mesh->vert_bone_weights);
-#ifdef IQMDEBUG_LOADIQM_LOADMESH
-        Con_Printf("\tClearing vert_bone_idxs...\n", i+1, iqm_header->n_meshes);
-#endif // IQMDEBUG_LOADIQM_LOADMESH
-        free_pointer_and_clear( mesh->vert_bone_idxs);
-#ifdef IQMDEBUG_LOADIQM_LOADMESH
-        Con_Printf("\tClearing vert_skinning_weights...\n", i+1, iqm_header->n_meshes);
-#endif // IQMDEBUG_LOADIQM_LOADMESH
-        free_pointer_and_clear( mesh->vert_skinning_weights);   // NOTE - Unused by meshes, but included for completeness
-#ifdef IQMDEBUG_LOADIQM_LOADMESH
-        Con_Printf("\tClearing tri_verts...\n", i+1, iqm_header->n_meshes);
-#endif // IQMDEBUG_LOADIQM_LOADMESH
-        free_pointer_and_clear( mesh->tri_verts);
-#ifdef IQMDEBUG_LOADIQM_LOADMESH
-        Con_Printf("Done clearing temporary memory for mesh %d/%d\n", i+1, iqm_header->n_meshes);
-#endif // IQMDEBUG_LOADIQM_LOADMESH
-    }
-
-    // Deallocate iqm parsing buffers
-    free(verts_pos);
-    free(verts_uv);
-#ifdef IQM_LOAD_NORMALS
-    free(verts_nor);
-#endif // IQM_LOAD_NORMALS
-    free(verts_bone_weights);
-    free(verts_bone_idxs);
-
-    Con_Printf("IQMDEBUG Got to here...\n");
-
-
-    // --------------------------------------------------
-    // Parse bones and their rest transforms
-    // --------------------------------------------------
-#ifdef IQMDEBUG_LOADIQM_BONEINFO
-    Con_Printf("Parsing joints...\n");
-#endif // IQMDEBUG_LOADIQM_BONEINFO
-    skel_model->n_bones = iqm_header->n_joints ? iqm_header->n_joints : iqm_header->n_poses;
-    skel_model->bone_name = (char**) malloc(sizeof(char*) * skel_model->n_bones);
-    skel_model->bone_parent_idx = (int16_t*) malloc(sizeof(int16_t) * skel_model->n_bones);
-    skel_model->bone_rest_pos = (vec3_t*) malloc(sizeof(vec3_t) * skel_model->n_bones);
-    skel_model->bone_rest_rot = (quat_t*) malloc(sizeof(quat_t) * skel_model->n_bones);
-    skel_model->bone_rest_scale = (vec3_t*) malloc(sizeof(vec3_t) * skel_model->n_bones);
-
-    const iqm_joint_quaternion_t *iqm_joints = (const iqm_joint_quaternion_t*) ((uint8_t*) iqm_data + iqm_header->ofs_joints);
-    for(uint32_t i = 0; i < iqm_header->n_joints; i++) {
-        const char *joint_name = (const char*) (((uint8_t*) iqm_data + iqm_header->ofs_text) + iqm_joints[i].name);
-        skel_model->bone_name[i] = (char*) malloc(sizeof(char) * (strlen(joint_name) + 1));
-        strcpy(skel_model->bone_name[i], joint_name);
-        skel_model->bone_parent_idx[i] = iqm_joints[i].parent_joint_idx;
-        skel_model->bone_rest_pos[i][0] = iqm_joints[i].translate[0];
-        skel_model->bone_rest_pos[i][1] = iqm_joints[i].translate[1];
-        skel_model->bone_rest_pos[i][2] = iqm_joints[i].translate[2];
-        skel_model->bone_rest_rot[i][0] = iqm_joints[i].rotate[0];
-        skel_model->bone_rest_rot[i][1] = iqm_joints[i].rotate[1];
-        skel_model->bone_rest_rot[i][2] = iqm_joints[i].rotate[2];
-        skel_model->bone_rest_rot[i][3] = iqm_joints[i].rotate[3];
-        skel_model->bone_rest_scale[i][0] = iqm_joints[i].scale[0];
-        skel_model->bone_rest_scale[i][1] = iqm_joints[i].scale[1];
-        skel_model->bone_rest_scale[i][2] = iqm_joints[i].scale[2];
-        // -- 
-    }
-#ifdef IQMDEBUG_LOADIQM_BONEINFO
-    Con_Printf("\tParsed %d bones.\n", skel_model->n_bones);
-#endif // IQMDEBUG_LOADIQM_BONEINFO
-
-
-
-#ifdef IQM_BBOX_PER_MODEL_PER_ANIM
-    // --------------------------------------------------
-    // Set default skeleton hitbox values
-    // These will be calculated properly by`calc_skel_model_bounds_for_rest_pose` 
-    // and `calc_skel_model_bounds_for_anim`
-    // --------------------------------------------------
-    VectorSet(skel_model->rest_pose_bone_hitbox_mins, -1, -1, -1);
-    VectorSet(skel_model->rest_pose_bone_hitbox_maxs,  1,  1,  1);
-    VectorSet(skel_model->anim_bone_hitbox_mins, -1, -1, -1);
-    VectorSet(skel_model->anim_bone_hitbox_maxs,  1,  1,  1);
-    // --------------------------------------------------
-#endif // IQM_BBOX_PER_MODEL_PER_ANIM
-
-    // --------------------------------------------------
-    // Set default hitbox values for all bones
-    // (These values may be overridden by JSON file)
-    // --------------------------------------------------
-    skel_model->bone_hitbox_enabled = (bool*) malloc(sizeof(bool) * skel_model->n_bones);
-    skel_model->bone_hitbox_ofs = (vec3_t*) malloc(sizeof(vec3_t) * skel_model->n_bones);
-    skel_model->bone_hitbox_scale = (vec3_t*) malloc(sizeof(vec3_t) * skel_model->n_bones);
-    skel_model->bone_hitbox_tag = (int*) malloc(sizeof(int) * skel_model->n_bones);
-    for(uint32_t i = 0; i < skel_model->n_bones; i++) {
-        skel_model->bone_hitbox_enabled[i] = false;
-        skel_model->bone_hitbox_ofs[i][0] = 0.0f;
-        skel_model->bone_hitbox_ofs[i][1] = 0.0f;
-        skel_model->bone_hitbox_ofs[i][2] = 0.0f;
-        skel_model->bone_hitbox_scale[i][0] = 1.0f;
-        skel_model->bone_hitbox_scale[i][1] = 1.0f;
-        skel_model->bone_hitbox_scale[i][2] = 1.0f;
-        skel_model->bone_hitbox_tag[i] = 0;
-    }
-
-
-#ifdef IQMDEBUG_LOADIQM_BONEINFO
-    for(uint32_t i = 0; i < skel_model->n_bones; i++) {
-        Con_Printf("Parsed bone: %i, \"%s\" (parent bone: %d)\n", i, skel_model->bone_name[i], skel_model->bone_parent_idx[i]);
-        Con_Printf("\tPos: (%.2f, %.2f, %.2f)\n", skel_model->bone_rest_pos[i][0], skel_model->bone_rest_pos[i][1], skel_model->bone_rest_pos[i][2]);
-        Con_Printf("\tRot: (%.2f, %.2f, %.2f, %.2f)\n", skel_model->bone_rest_rot[i][0], skel_model->bone_rest_rot[i][1], skel_model->bone_rest_rot[i][2], skel_model->bone_rest_rot[i][3]);
-        Con_Printf("\tScale: (%.2f, %.2f, %.2f)\n", skel_model->bone_rest_scale[i][0], skel_model->bone_rest_scale[i][1], skel_model->bone_rest_scale[i][2]);
-        Con_Printf("\tDefault hitbox enabled: %d\n", skel_model->bone_hitbox_enabled[i]);
-        Con_Printf("\tDefault hitbox ofs: (%.2f, %.2f, %.2f)\n", skel_model->bone_hitbox_ofs[i][0], skel_model->bone_hitbox_ofs[i][1], skel_model->bone_hitbox_ofs[i][2]);
-        Con_Printf("\tDefault hitbox scale: (%.2f, %.2f, %.2f)\n", skel_model->bone_hitbox_scale[i][0], skel_model->bone_hitbox_scale[i][1], skel_model->bone_hitbox_scale[i][2]);
-        Con_Printf("\tDefault hitbox tag: %d\n", skel_model->bone_hitbox_tag[i]);
-    }
-#endif // IQMDEBUG_LOADIQM_BONEINFO
-
-
-    for(uint32_t i = 0; i < skel_model->n_bones; i++) {
-        // i-th bone's parent index must be less than i
-        if((int) i <= skel_model->bone_parent_idx[i]) {
-            Con_Printf("Error: IQM file bones are sorted incorrectly. Bone %d is located before its parent bone %d.\n", i, skel_model->bone_parent_idx[i]);
-            // FIXME - Deallocate all allocated memory
-            return nullptr;
+        for(int vert_bone_idx = 0; vert_bone_idx < 4; vert_bone_idx++) {
+            mesh->vert_bone_weights[vert_idx * 4 + vert_bone_idx] = iqm_vertex_arrays->verts_bone_weights[(first_vert + vert_idx) * 4 + vert_bone_idx];
+            mesh->vert_bone_idxs[vert_idx * 4 + vert_bone_idx] = iqm_vertex_arrays->verts_bone_idxs[(first_vert + vert_idx) * 4 + vert_bone_idx];
         }
     }
 
+    mesh->n_tris = n_tris;
+    mesh->tri_verts = (uint16_t*) malloc(sizeof(uint16_t) * 3 * mesh->n_tris);
 
-    // Check if we have a bone named `fps_cam`
-    skel_model->fps_cam_bone_idx = -1;
-    for(uint32_t i = 0; i < skel_model->n_bones; i++) {
-        if(!strcmp(skel_model->bone_name[i], "fps_cam")) {
-            skel_model->fps_cam_bone_idx = i;
-            break;
-        }
+    for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
+        uint16_t vert_a = ((iqm_tri_t*)((uint8_t*) iqm_data + iqm_header->ofs_tris))[first_tri + tri_idx].vert_idxs[0] - first_vert;
+        uint16_t vert_b = ((iqm_tri_t*)((uint8_t*) iqm_data + iqm_header->ofs_tris))[first_tri + tri_idx].vert_idxs[1] - first_vert;
+        uint16_t vert_c = ((iqm_tri_t*)((uint8_t*) iqm_data + iqm_header->ofs_tris))[first_tri + tri_idx].vert_idxs[2] - first_vert;
+        mesh->tri_verts[tri_idx * 3 + 0] = vert_a;
+        mesh->tri_verts[tri_idx * 3 + 1] = vert_b;
+        mesh->tri_verts[tri_idx * 3 + 2] = vert_c;
     }
-    // --------------------------------------------------
-
-
-
-
-    // --------------------------------------------------
-    // Calculate static bone transforms that will be reused often
-    // --------------------------------------------------
-    // Build the transform that takes us from model-space to each bone's bone-space for the rest pose.
-    // This is static, so compute once and cache
-
-    // First build the bone-space --> model-space transform for each bone (We will invert it later)
-    skel_model->bone_rest_transforms = (mat3x4_t*) malloc(sizeof(mat3x4_t) * skel_model->n_bones);
-    skel_model->inv_bone_rest_transforms = (mat3x4_t*) malloc(sizeof(mat3x4_t) * skel_model->n_bones);
-    for(uint32_t i = 0; i < skel_model->n_bones; i++) {
-        // Rest bone-space transform (relative to parent)
-        Matrix3x4_scale_rotate_translate(
-            skel_model->bone_rest_transforms[i],
-            skel_model->bone_rest_scale[i],
-            skel_model->bone_rest_rot[i],
-            skel_model->bone_rest_pos[i]
-        );
-        // If we have a parent, concat parent transform to get model-space transform
-        int parent_bone_idx = skel_model->bone_parent_idx[i];
-        if(parent_bone_idx >= 0) {
-            mat3x4_t temp;
-            Matrix3x4_ConcatTransforms( temp, skel_model->bone_rest_transforms[parent_bone_idx], skel_model->bone_rest_transforms[i]);
-            Matrix3x4_Copy(skel_model->bone_rest_transforms[i], temp);
-        }
-        // If we don't have a parent, the bone-space transform _is_ the model-space transform
-    }
-    // Next, invert the transforms to get the model-space --> bone-space transform
-    // NOTE - `Matrix3x4_Invert_Simple` assumes uniform scaling
-    // NOTE - If we want non-uniform scaling, use `Matrix3x4_Invert_Affine`
-    for(uint32_t i = 0; i < skel_model->n_bones; i++) {
-        Matrix3x4_Invert_Simple( skel_model->inv_bone_rest_transforms[i], skel_model->bone_rest_transforms[i]);
-    }
-    // --------------------------------------------------
-
-
-    // --------------------------------------------------
-    // Parse all frames (poses)
-    // --------------------------------------------------
-    skel_model->n_frames = iqm_header->n_frames;
-#ifdef IQMDEBUG_LOADIQM_ANIMINFO
-    Con_Printf("\tBones: %d\n",skel_model->n_bones);
-    Con_Printf("\tFrames: %d\n",iqm_header->n_frames);
-    Con_Printf("\tPoses: %d\n",iqm_header->n_poses);
-#endif // IQMDEBUG_LOADIQM_ANIMINFO
-    skel_model->frames_move_dist = (float *) malloc(sizeof(float) * skel_model->n_frames);
-    skel_model->frames_bone_pos = (vec3_t *) malloc(sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames);
-    skel_model->frames_bone_rot = (quat_t *) malloc(sizeof(quat_t) * skel_model->n_bones * skel_model->n_frames);
-    skel_model->frames_bone_scale = (vec3_t *) malloc(sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames);
-
-
-
-    const uint16_t *frames_data = (const uint16_t*)((uint8_t*) iqm_data + iqm_header->ofs_frames);
-    int frames_data_ofs = 0;
-    const iqm_pose_quaternion_t *iqm_poses = (const iqm_pose_quaternion_t*) ((uint8_t*) iqm_data + iqm_header->ofs_poses);
-
-    // Iterate over actual frames in IQM file:
-    for(uint32_t i = 0; i < iqm_header->n_frames; i++) {
-
-        // Initialize frame movement distance to 0 for all frames
-        skel_model->frames_move_dist[i] = 0.0f;
-
-        // Iterate over pose (a pose is a bone orientation, one pose per bone)
-        for(uint32_t j = 0; j < iqm_header->n_poses; j++) {
-            // Read data for all 10 channels
-            float pose_data[10] = {0};
-            for(uint32_t k = 0; k < 10; k++) {
-                pose_data[k] = iqm_poses[j].channel_ofs[k];
-                if(iqm_poses[j].mask & (1 << k)) {
-                    pose_data[k] += frames_data[frames_data_ofs++] * iqm_poses[j].channel_scale[k];
-                }
-            }
-            int frame_bone_idx = i * skel_model->n_bones + j;
-            skel_model->frames_bone_pos[frame_bone_idx][0] = pose_data[0];
-            skel_model->frames_bone_pos[frame_bone_idx][1] = pose_data[1];
-            skel_model->frames_bone_pos[frame_bone_idx][2] = pose_data[2];
-            skel_model->frames_bone_rot[frame_bone_idx][0] = pose_data[3];
-            skel_model->frames_bone_rot[frame_bone_idx][1] = pose_data[4];
-            skel_model->frames_bone_rot[frame_bone_idx][2] = pose_data[5];
-            skel_model->frames_bone_rot[frame_bone_idx][3] = pose_data[6];
-            skel_model->frames_bone_scale[frame_bone_idx][0] = pose_data[7];
-            skel_model->frames_bone_scale[frame_bone_idx][1] = pose_data[8];
-            skel_model->frames_bone_scale[frame_bone_idx][2] = pose_data[9];
-        }
-    }
-    // --------------------------------------------------
-
-    // --------------------------------------------------
-    // Parse animations (framegroups)
-    // --------------------------------------------------
-    skel_model->n_framegroups = iqm_header->n_anims;
-    skel_model->framegroup_name = (char**) malloc(sizeof(char*) * skel_model->n_framegroups);
-    skel_model->framegroup_start_frame = (uint32_t*) malloc(sizeof(uint32_t) * skel_model->n_framegroups);
-    skel_model->framegroup_n_frames = (uint32_t*) malloc(sizeof(uint32_t) * skel_model->n_framegroups);
-    skel_model->framegroup_fps = (float*) malloc(sizeof(float) * skel_model->n_framegroups);
-    skel_model->framegroup_loop = (bool*) malloc(sizeof(bool) * skel_model->n_framegroups);
-
-    if(iqm_header->n_anims > 0) {
-        const iqm_anim_t *iqm_framegroups = (const iqm_anim_t*)((uint8_t*) iqm_data + iqm_header->ofs_anims);
-        for(uint32_t i = 0; i < iqm_header->n_anims; i++) {
-            const char* framegroup_name = (const char*) ((uint8_t*) iqm_data + iqm_header->ofs_text + iqm_framegroups[i].name);
-            skel_model->framegroup_name[i] = (char*) malloc(sizeof(char) * (strlen(framegroup_name) + 1));
-            strcpy(skel_model->framegroup_name[i], framegroup_name);
-            skel_model->framegroup_start_frame[i] = iqm_framegroups[i].first_frame;
-            skel_model->framegroup_n_frames[i] = iqm_framegroups[i].n_frames;
-            skel_model->framegroup_fps[i] = iqm_framegroups[i].framerate;
-            // skel_model->framegroup_fps[i] = 20.0f;
-            skel_model->framegroup_loop[i] = iqm_framegroups[i].flags & (uint32_t) iqm_anim_flag::IQM_ANIM_FLAG_LOOP;
-            // FOR DEBUG ONLY: Force-loop all animations:
-            skel_model->framegroup_loop[i] = true;
-        }
-    }
-#ifdef IQMDEBUG_LOADIQM_ANIMINFO
-    Con_Printf("\tParsed %d framegroups.\n", skel_model->n_framegroups);
-#endif // IQMDEBUG_LOADIQM_ANIMINFO
-    // --------------------------------------------------
-
-
-    // --------------------------------------------------
-    // Initialize material default values
-    // --------------------------------------------------
-    skel_model->n_materials = 0;
-    skel_model->material_names = nullptr;
-    skel_model->material_n_skins = nullptr;
-    skel_model->materials = nullptr;
-    // --------------------------------------------------
-
-
-
-    // --------------------------------------------------
-    // Parse IQM per-frame mins/maxs to compute overall mins/maxs
-    // --------------------------------------------------
-    const iqm_bounds_t *iqm_frame_bounds = (const iqm_bounds_t *)((uint8_t*) iqm_data + iqm_header->ofs_bounds);
-    if(iqm_header->ofs_bounds != 0) {
-        // Compute overall model mins / maxes by finding the most extreme points for all frames:
-        for(uint16_t i = 0; i < iqm_header->n_frames; i++) {
-            for(int j = 0; j < 3; j++) {
-                skel_model->mins[0] = fmin(skel_model->mins[0], iqm_frame_bounds[i].mins[0]);
-                skel_model->maxs[0] = fmax(skel_model->maxs[0], iqm_frame_bounds[i].maxs[0]);
-            }
-        }
-    }
-    // --------------------------------------------------
 
     // --------------------------------------------------
     // Parse FTE_MESH IQM extension
     // --------------------------------------------------
     size_t iqm_fte_ext_mesh_size;
+    size_t file_len = iqm_header->filesize;
     const iqm_ext_fte_mesh_t *iqm_fte_ext_mesh = (const iqm_ext_fte_mesh_t *) iqm_find_extension((uint8_t*) iqm_data, file_len, "FTE_MESH", &iqm_fte_ext_mesh_size);
-
     if(iqm_fte_ext_mesh != nullptr) {
-        for(uint16_t i = 0; i < iqm_header->n_meshes; i++) {
-            // TODO - How / where do I want to stash these?
-            // Con_Printf("IQM FTE Extension \"FTE_MESH \" mesh %d\n", i);
-            // Con_Printf("\tcontents %d\n", iqm_fte_ext_mesh[i].contents);
-            // Con_Printf("\tsurfaceflags %d\n", iqm_fte_ext_mesh[i].surfaceflags);
-            // Con_Printf("\tsurfaceid %d\n", iqm_fte_ext_mesh[i].surfaceid);
-            // Con_Printf("\tgeomset %d\n", iqm_fte_ext_mesh[i].geomset);
-            // Con_Printf("\tgeomid %d\n", iqm_fte_ext_mesh[i].geomid);
-            // Con_Printf("\tmin_dist %d\n", iqm_fte_ext_mesh[i].min_dist); // LOD min distance
-            // Con_Printf("\tmax_dist %d\n", iqm_fte_ext_mesh[i].max_dist); // LOD max distance
-            skel_model->meshes[i].geomset = iqm_fte_ext_mesh[i].geomset;
-            skel_model->meshes[i].geomid = iqm_fte_ext_mesh[i].geomid;
-        }
+        mesh->geomset = iqm_fte_ext_mesh[mesh_idx].geomset;
+        mesh->geomid = iqm_fte_ext_mesh[mesh_idx].geomid;
     }
     // --------------------------------------------------
+}
 
 
-    // --------------------------------------------------
-    // Parse FTE_EVENT IQM extension
-    // --------------------------------------------------
-    Con_Printf("About to parse IQM FTE events\n");
-    size_t iqm_fte_ext_event_size;
-    const iqm_ext_fte_event_t *iqm_fte_ext_events = (const iqm_ext_fte_event_t*) iqm_find_extension((uint8_t*)iqm_data, file_len, "FTE_EVENT", &iqm_fte_ext_event_size);
-    uint16_t iqm_fte_ext_event_n_events = iqm_fte_ext_event_size / sizeof(iqm_ext_fte_event_t);
-    Con_Printf("FTE_EVENTS parsed size %d\n", iqm_fte_ext_event_size);
-    Con_Printf("num FTE_EVENTS %d\n", iqm_fte_ext_event_n_events);
-    Con_Printf("FTE event struct %d\n", sizeof(iqm_ext_fte_event_t));
 
-    skel_model->framegroup_n_events = nullptr;
-    skel_model->framegroup_event_time = nullptr;
-    skel_model->framegroup_event_code = nullptr;
-    skel_model->framegroup_event_data_str = nullptr;
-
-    if(iqm_fte_ext_events != nullptr) {
-        // Count the number of events for each framegroup:
-        skel_model->framegroup_n_events = (uint16_t*) malloc(sizeof(uint16_t) * skel_model->n_framegroups);
-        for(uint16_t i = 0; i < skel_model->n_framegroups; i++) {
-            skel_model->framegroup_n_events[i] = 0;
-        }
-        for(uint16_t i = 0; i < iqm_fte_ext_event_n_events; i++) {
-            int framegroup_idx = iqm_fte_ext_events[i].anim;
-            uint32_t event_code = iqm_fte_ext_events[i].event_code;
-
-            // Movement anim events will be stored separately, skip them here
-            if(event_code == IQM_ANIM_EVENT_CODE_MOVE_DIST) {
-                continue;
-            }
-            skel_model->framegroup_n_events[framegroup_idx]++;
-        }
-
-        // Allocate memory for all framegroup arrays
-        skel_model->framegroup_event_time = (float**) malloc(sizeof(float*) * skel_model->n_framegroups);
-        skel_model->framegroup_event_code = (uint32_t**) malloc(sizeof(uint32_t*) * skel_model->n_framegroups);
-        skel_model->framegroup_event_data_str = (char***) malloc(sizeof(char**) * skel_model->n_framegroups);
-
-        // Allocate enough memory in each framegroup array to hold events in a list:
-        for(uint16_t i = 0; i < skel_model->n_framegroups; i++) {
-            if(skel_model->framegroup_n_events[i] == 0) {
-                skel_model->framegroup_event_time[i] = nullptr;
-                skel_model->framegroup_event_code[i] = nullptr;
-                skel_model->framegroup_event_data_str[i] = nullptr;
-            }
-            else {
-                skel_model->framegroup_event_time[i] = (float*) malloc(sizeof(float) * skel_model->framegroup_n_events[i]);
-                skel_model->framegroup_event_code[i] = (uint32_t*) malloc(sizeof(uint32_t) * skel_model->framegroup_n_events[i]);
-                skel_model->framegroup_event_data_str[i] = (char**) malloc(sizeof(char*) * skel_model->framegroup_n_events[i]);
-                // Set each char array pointer to nullptr, we'll use this to identify empty indices
-                for(int j = 0; j < skel_model->framegroup_n_events[i]; j++) {
-                    skel_model->framegroup_event_data_str[i][j] = nullptr;
-                }
-            }
-        }
-
-        for(uint16_t i = 0; i < iqm_fte_ext_event_n_events; i++) {
-            const char *iqm_event_data_str = (const char*) ((uint8_t*) iqm_data + iqm_header->ofs_text + iqm_fte_ext_events[i].event_data_str);
-
-            int event_framegroup_idx = iqm_fte_ext_events[i].anim;
-            float event_time = iqm_fte_ext_events[i].timestamp;
-            uint32_t event_code = iqm_fte_ext_events[i].event_code;
-
-            // Movement anim events will be stored separately, skip them here
-            if(event_code == IQM_ANIM_EVENT_CODE_MOVE_DIST) {
-                continue;
-            }
-
-            // Allocate data for this string and copy the char array
-            char *event_data_str = (char*) malloc(sizeof(char) * (strlen(iqm_event_data_str) + 1));
-            strcpy(event_data_str, iqm_event_data_str);
-
-            // If invalid framegroup idx, skip the event
-            if(event_framegroup_idx < 0 || event_framegroup_idx >= skel_model->n_framegroups) {
-                Con_Printf("WARNING: Unable to load IQM event. Framegroup idx %d invalid for a model with %d framegroups.\n", event_framegroup_idx, skel_model->n_framegroups);
-                continue;
-            }
-
-            // Find the correct index to insert the event into in this framegroup's event list
-            int event_idx = 0;
-            for(; event_idx < skel_model->framegroup_n_events[event_framegroup_idx]; event_idx++) {
-                // If this index is empty, insert here
-                if(skel_model->framegroup_event_data_str[event_framegroup_idx][event_idx] == nullptr) {
-                    break;
-                }
-                // If the event at this index has an event time > the current event, insert here
-                else if(skel_model->framegroup_event_time[event_framegroup_idx][event_idx] > event_time) {
-                    break;
-                }
-            }
-            // Con_Printf("Event %d inserting at framegroup %d index %d\n", i, event_framegroup_idx, event_idx);
-
-            // If event_idx exceeds the length of the array, warn and skip (This should never happen)
-            if(event_idx >= skel_model->framegroup_n_events[event_framegroup_idx]) {
-                Con_Printf("WARNING: Unable to load IQM event for time %f for framegroup %d.\n", i, event_framegroup_idx);
-                continue;
-            }
-
-            // Shift up the events in the array.
-            // Starting from the end of the array, move up all events after the insertion `event_idx`
-            for(int j = skel_model->framegroup_n_events[event_framegroup_idx] - 2; j >= event_idx; j--) {
-                if(skel_model->framegroup_event_data_str[event_framegroup_idx][j] == nullptr) {
-                    continue;
-                }
-                // Con_Printf("\tframegroup %d moving event at idx %d to idx %d\n", event_framegroup_idx, j, j+1);
-                skel_model->framegroup_event_time[event_framegroup_idx][j+1] = skel_model->framegroup_event_time[event_framegroup_idx][j];
-                skel_model->framegroup_event_data_str[event_framegroup_idx][j+1] = skel_model->framegroup_event_data_str[event_framegroup_idx][j];
-                skel_model->framegroup_event_code[event_framegroup_idx][j+1] = skel_model->framegroup_event_code[event_framegroup_idx][j];
-            }
-
-            // Insert the new event at the chosen index:
-            skel_model->framegroup_event_time[event_framegroup_idx][event_idx] = event_time;
-            skel_model->framegroup_event_data_str[event_framegroup_idx][event_idx] = event_data_str;
-            skel_model->framegroup_event_code[event_framegroup_idx][event_idx] = event_code;
-        }
+void free_full_iqm_mesh(skeletal_full_mesh_t *mesh) {
+    if(mesh == nullptr) {
+        return;
     }
-    // --------------------------------------------------
-
-
-
-
-    // --------------------------------------------------
-    // Parse movement speed IQM Animation events for each animation
-    // --------------------------------------------------
-
-    if(iqm_fte_ext_events != nullptr) {
-        for(uint16_t i = 0; i < iqm_fte_ext_event_n_events; i++) {
-            const char *iqm_event_data_str = (const char*) ((uint8_t*) iqm_data + iqm_header->ofs_text + iqm_fte_ext_events[i].event_data_str);
-            int event_framegroup_idx = iqm_fte_ext_events[i].anim;
-            float event_time = iqm_fte_ext_events[i].timestamp;
-            uint32_t event_code = iqm_fte_ext_events[i].event_code;
-
-            // Skip non-movement-distance anim events
-            if(event_code != IQM_ANIM_EVENT_CODE_MOVE_DIST) {
-                continue;
-            }
-
-            // If walk distance is 0 or failed to parse, skip
-            float event_walk_dist = atof(iqm_event_data_str);
-            if(event_walk_dist == 0.0f) {
-                continue;
-            }
-
-            if(event_framegroup_idx < 0 || event_framegroup_idx >= skel_model->n_framegroups) {
-                continue;
-            }
-
-            int framegroup_n_frames = skel_model->framegroup_n_frames[event_framegroup_idx];
-            float framegroup_duration = framegroup_n_frames / skel_model->framegroup_fps[event_framegroup_idx];
-
-            // Calculate the nearest frame index to deposit this movement distance
-            int event_framegroup_frame_idx = (int) (event_time * skel_model->framegroup_fps[event_framegroup_idx]) % framegroup_n_frames;
-
-            Con_Printf("Walkdist event %d, data: %s\n", i, iqm_event_data_str);
-
-            Con_Printf("Walkdist event framegroup %d deposit dist %f at time %f (frames: %d, fps: %f, calculated frame: %d)\n", 
-                event_framegroup_idx, 
-                event_walk_dist,
-                event_time,
-                framegroup_n_frames,
-                skel_model->framegroup_fps[event_framegroup_idx],
-                event_framegroup_frame_idx 
-            );
-
-            skel_model->frames_move_dist[event_framegroup_frame_idx] += event_walk_dist;
-        }
-    }
-
-    for(int framegroup_idx = 0; framegroup_idx < skel_model->n_framegroups; framegroup_idx++) {
-        int start_frame_idx = skel_model->framegroup_start_frame[framegroup_idx];
-        int end_frame_idx = start_frame_idx + skel_model->framegroup_n_frames[framegroup_idx];
-        for(int frame_idx = start_frame_idx; frame_idx < end_frame_idx; frame_idx++) {
-            Con_Printf("Walkdist framegroup %d frame %d dist: %f\n", framegroup_idx, frame_idx, skel_model->frames_move_dist[frame_idx]);
-        }
-    }
-
-    // Calculate inclusive cumulative sum for walk distances
-    for(int framegroup_idx = 0; framegroup_idx < skel_model->n_framegroups; framegroup_idx++) {
-        int start_frame_idx = skel_model->framegroup_start_frame[framegroup_idx];
-        int end_frame_idx = start_frame_idx + skel_model->framegroup_n_frames[framegroup_idx];
-
-        for(int frame_idx = start_frame_idx + 1; frame_idx < end_frame_idx; frame_idx++) {
-            skel_model->frames_move_dist[frame_idx] += skel_model->frames_move_dist[frame_idx - 1];
-
-            Con_Printf("Walkdist framegroup %d frame %d cumsumdist: %f\n", framegroup_idx, frame_idx, skel_model->frames_move_dist[frame_idx]);
-        }
-    }
-
-    
-    
-    // --------------------------------------------------
+    free_pointer_and_clear( (void**) &mesh->material_name);
+    free_pointer_and_clear( (void**) &mesh->vert_rest_positions);
+#ifdef IQM_LOAD_NORMALS
+    free_pointer_and_clear( (void**) &mesh->vert_rest_normals);
+#endif // IQM_LOAD_NORMALS
+    free_pointer_and_clear( (void**) &mesh->vert_uvs);
+    free_pointer_and_clear( (void**) &mesh->vert_bone_weights);
+    free_pointer_and_clear( (void**) &mesh->vert_bone_idxs);
+    free_pointer_and_clear( (void**) &mesh->tri_verts);
+}
 
 
 
 
 
-    // // --------------------------------------------------
-    // // Parse FTE_SKIN IQM extension
-    // // --------------------------------------------------
-    // // size_t iqm_fte_ext_skin_size;
-    // // const uint32_t *iqm_fte_ext_skin_n_skins = (const uint32_t*) iqm_find_extension(iqm_data, file_len, "FTE_SKINS", &iqm_fte_ext_skin_size);
-
-    // // // const iqm_ext_fte_skin_t *iqm_fte_ext_skins
-    // // if(iqm_fte_ext_skin_n_skins != nullptr) {
-
-    // //     if(iqm_fte_ext_skin_size >= (sizeof(uint32_t) * 2 * iqm_header->n_meshes)) {
-    // //         const uint32_t n_skin_skinframes = iqm_fte_ext_skin_n_skins[0];
-    // //         const uint32_t n_skin_meshskins = iqm_fte_ext_skin_n_skins[1];
-    // //         size_t expected_skin_size = sizeof(iqm_ext_fte_skin_t) + sizeof(uint32_t) * iqm_header->n_meshes + sizeof(iqm_ext_fte_skin_t) * n_skin_skinframes + sizeof(iqm_ext_fte_skin_meshskin_t) * n_skin_meshskins;
-    // //         if(iqm_fte_ext_skin_size == expected_skin_size) {
-    // //             const iqm_ext_fte_skin_skinframe_t *skinframes = (const iqm_ext_fte_skin_skinframe_t *) (iqm_fte_ext_skin_n_skins + 2 + iqm_header->n_meshes);
-    // //             const iqm_ext_fte_skin_meshskin_t *meshskins = (const iqm_ext_fte_skin_meshskin_t *) (skinframes + n_skin_skinframes);
-
-    // //             // TODO - Print these? Not sure if we'll even want them... or if we should support them?
-    // //         }
-    // //     }
-    // // }
-    // // --------------------------------------------------
 
 
-    // ------------------------------------------------------------------------
-    // IQM File requirements error checking:
-    // ------------------------------------------------------------------------
-    //
-    // Currently we allow for three types of IQM model files:
-    //  1. IQM model with: meshes, skeleton, animation framegroups
-    //  2. IQM model with: meshes, skeleton
-    //  3. IQM model with: skeleton, animation framegroups
-    // 
-    //  IQM models with only meshes, only skeletons, or only framegroups 
-    //  are currently not supported.
-    // 
-    bool has_meshes = (skel_model->n_meshes > 0);
-    bool has_skeleton = (skel_model->n_bones > 0);
-    bool has_animations = (skel_model->n_frames > 0) && (skel_model->n_framegroups > 0);
-    bool loading_failed = false;
-    if(!has_skeleton) {
-        Con_Printf("Error: IQM file model does not have skeleton data.\n");
-        loading_failed = true;
-    }
-    if(!has_meshes && !has_animations) {
-        Con_Printf("Error: IQM file model has neither mesh data nor animation data. At least one of these is required.\n");
-        loading_failed = true;
-    }
-    if(loading_failed) {
-        free_skeletal_model(skel_model);
+//
+// Given iqm file header, and parsed vertex data arrays, allocate and return an
+// array of platform-specific `skeletal_mesh_t` structs
+//
+skeletal_mesh_t *load_iqm_meshes(const void *iqm_data, const iqm_model_vertex_arrays_t *iqm_vertex_arrays) {
+
+#ifdef IQMDEBUG_LOADIQM_LOADMESH
+    Con_Printf("load_iqm_meshes -- Start\n");
+#endif // IQMDEBUG_LOADIQM_LOADMESH
+
+
+
+    const iqm_header_t *iqm_header = (const iqm_header_t*) iqm_data;
+
+    if(iqm_header->n_meshes <= 0) {
         return nullptr;
     }
-    // ------------------------------------------------------------------------
 
-    return skel_model;
+    // TODO - Verify we have non-null pointers in `iqm_vertex_arrays`?
+
+
+    skeletal_mesh_t *meshes = (skeletal_mesh_t*) malloc(sizeof(skeletal_mesh_t) * iqm_header->n_meshes);
+    
+    for(int mesh_idx = 0; mesh_idx < iqm_header->n_meshes; mesh_idx++) {
+
+        skeletal_full_mesh_t full_mesh;
+        load_full_iqm_mesh(&full_mesh, mesh_idx, iqm_data, iqm_vertex_arrays);
+
+
+        // --------------------------------------------------------------------
+        // Load values at the mesh level
+        // --------------------------------------------------------------------
+        meshes[mesh_idx].geomset = full_mesh.geomset;
+        meshes[mesh_idx].geomid = full_mesh.geomid;
+        // Transfer ownership of heap-alloced material name char array
+        meshes[mesh_idx].material_name = full_mesh.material_name;
+        // Clear full_mesh's pointer so it's not freed
+        full_mesh.material_name = nullptr;
+        // --------------------------------------------------------------------
+
+
+        // --------------------------------------------------------------------
+        // Load values at the submesh level
+        // --------------------------------------------------------------------
+
+#ifdef IQMDEBUG_LOADIQM_LOADMESH
+        Con_Printf("load_iqm_meshes -- Splitting mesh into submeshes\n");
+#endif // IQMDEBUG_LOADIQM_LOADMESH
+
+        int8_t tri_submesh_idxs[full_mesh.n_tris];
+        // Submeshing step 1. Get submesh index for each mesh triangle
+        int n_submeshes = skeletal_submesh_get_tri_submesh_idxs(&full_mesh, tri_submesh_idxs);
+        // Submeshing step 2. Split the mesh into submeshes
+        skeletal_full_mesh_t *full_mesh_submeshes = skeletal_submesh_build_submeshes(&full_mesh, tri_submesh_idxs, n_submeshes);
+
+#ifdef IQMDEBUG_LOADIQM_LOADMESH
+        Con_Printf("load_iqm_meshes -- Done splitting mesh into submeshes\n");
+#endif // IQMDEBUG_LOADIQM_LOADMESH
+
+
+
+        meshes[mesh_idx].n_submeshes = n_submeshes;
+        meshes[mesh_idx].submeshes = (skeletal_submesh_t*) malloc(sizeof(skeletal_submesh_t) * n_submeshes);
+
+
+
+        for(int submesh_idx = 0; submesh_idx < n_submeshes; submesh_idx++) {
+#ifdef IQMDEBUG_LOADIQM_LOADMESH
+            Con_Printf("load_iqm_meshes -- Writing vert structs for mesh %d/%d submesh %d/%d\n", mesh_idx+1, iqm_header->n_meshes, submesh_idx+1, n_submeshes);
+#endif // IQMDEBUG_LOADIQM_LOADMESH
+
+            skeletal_full_mesh_t *full_submesh = &(full_mesh_submeshes[submesh_idx]);
+            skeletal_submesh_t *submesh = &(meshes[mesh_idx].submeshes[submesh_idx]);
+
+            // Submesh vertices are stored as lists of triangles (no triangle indexing array)
+            submesh->n_verts = full_submesh->n_tris * 3;
+            submesh->n_tris = full_submesh->n_tris;
+
+            // Initialize to all 0s
+            submesh->n_skinning_bones = 0;
+            for(int bone_idx = 0; bone_idx < SUBMESH_BONES; bone_idx++) {
+                submesh->skinning_bone_idxs[bone_idx] = 0;
+            }
+
+            
+            // Temporary array to calculate new bone weights layout for verts, initialized to all 0s
+            float vert_skinning_weights[SUBMESH_BONES * full_submesh->n_verts] = {};
+
+
+            for(uint32_t vert_idx = 0; vert_idx < full_submesh->n_verts; vert_idx++) {
+                // Add all bones used by this vertex to the submesh's list of bones
+                for(int vert_bone_idx = 0; vert_bone_idx < VERT_BONES; vert_bone_idx++) {
+                    uint8_t bone_idx = full_submesh->vert_bone_idxs[vert_idx * VERT_BONES + vert_bone_idx];
+                    float bone_weight = full_submesh->vert_bone_weights[vert_idx * VERT_BONES + vert_bone_idx];
+
+                    if(bone_weight > 0.0f) {
+                        int vert_bone_submesh_idx = -1;
+                        // Search the submesh's list of bones for this bone
+                        for(int submesh_bone_idx = 0; submesh_bone_idx < submesh->n_skinning_bones; submesh_bone_idx++) {
+                            if(bone_idx == submesh->skinning_bone_idxs[submesh_bone_idx]) {
+                                vert_bone_submesh_idx = submesh_bone_idx;
+                                break;
+                            }
+                        }
+
+                        // If we didn't find the bone, add it to the submesh's list of bones
+                        if(vert_bone_submesh_idx == -1) {
+                            if(submesh->n_skinning_bones >= SUBMESH_BONES) {
+                                Con_Printf("Warning: Vertex puts submesh over %d bone limit. Reference ignored (submesh->n_skinning_bones=%d, bone=%d, weight=%.2f)\n", 
+                                    SUBMESH_BONES,
+                                    submesh->n_skinning_bones, 
+                                    bone_idx, 
+                                    bone_weight
+                                );
+                                continue;
+                            }
+                            submesh->skinning_bone_idxs[submesh->n_skinning_bones] = bone_idx;
+                            vert_bone_submesh_idx = submesh->n_skinning_bones;
+                            submesh->n_skinning_bones += 1;
+                        }
+
+                        // Set the vertex's corresponding weight entry for that bone
+                        vert_skinning_weights[vert_idx * SUBMESH_BONES + vert_bone_submesh_idx] = bone_weight;
+                    }
+                }
+            }
+
+
+            calc_quantization_grid_scale_ofs(full_submesh->vert_rest_positions, full_submesh->n_verts, submesh->verts_ofs, submesh->verts_scale);
+            submesh->vert8s  = build_skinning_vert_structs< skel_vertex_i8_t,  int8_t,  int8_t,  int8_t, int8_t>(full_submesh, vert_skinning_weights, submesh->verts_ofs, submesh->verts_scale);
+            submesh->vert16s = build_skinning_vert_structs<skel_vertex_i16_t, int16_t, int16_t, int16_t, int8_t>(full_submesh, vert_skinning_weights, submesh->verts_ofs, submesh->verts_scale);
+
+#ifdef IQMDEBUG_LOADIQM_LOADMESH
+            Con_Printf("load_iqm_meshes -- Done writing vert structs for mesh %d/%d submesh %d/%d\n", mesh_idx+1, iqm_header->n_meshes, submesh_idx+1, n_submeshes);
+#endif // IQMDEBUG_LOADIQM_LOADMESH
+        }
+
+
+        for(int submesh_idx = 0; submesh_idx < n_submeshes; submesh_idx++) {
+#ifdef IQMDEBUG_LOADIQM_LOADMESH
+            Con_Printf("load_iqm_meshes -- Clearing temporary memory for mesh %d/%d submesh %d/%d\n", mesh_idx+1, iqm_header->n_meshes, submesh_idx+1, n_submeshes);
+#endif // IQMDEBUG_LOADIQM_LOADMESH
+
+            free_full_iqm_mesh(&(full_mesh_submeshes[submesh_idx]));
+
+#ifdef IQMDEBUG_LOADIQM_LOADMESH
+            Con_Printf("load_iqm_meshes -- Clearing temporary memory for mesh %d/%d submesh %d/%d\n", mesh_idx+1, iqm_header->n_meshes, submesh_idx+1, n_submeshes);
+#endif // IQMDEBUG_LOADIQM_LOADMESH
+
+        }
+        
+        free(full_mesh_submeshes);
+        // --------------------------------------------------------------------
+
+
+
+#ifdef IQMDEBUG_LOADIQM_LOADMESH
+        Con_Printf("load_iqm_meshes -- Clearing temporary memory for mesh %d/%d\n", mesh_idx+1, iqm_header->n_meshes);
+#endif // IQMDEBUG_LOADIQM_LOADMESH
+
+        free_full_iqm_mesh(&full_mesh);
+
+#ifdef IQMDEBUG_LOADIQM_LOADMESH
+        Con_Printf("load_iqm_meshes -- Done clearing temporary memory for mesh %d/%d\n", mesh_idx+1, iqm_header->n_meshes);
+#endif // IQMDEBUG_LOADIQM_LOADMESH
+    }
+
+
+#ifdef IQMDEBUG_LOADIQM_LOADMESH
+        Con_Printf("load_iqm_meshes -- Done for %d meshes\n", iqm_header->n_meshes);
+#endif // IQMDEBUG_LOADIQM_LOADMESH
+
+    return meshes;
 }
+
+
+// 
+// Returns the total number of bytes required to store a skeletal_model_t's
+// list of meshes ONLY, including all data pointed to via internal pointers
+// 
+uint32_t count_unpacked_skel_model_meshes_n_bytes(skeletal_model_t *skel_model) {
+
+    uint32_t skel_model_n_bytes = 0;
+
+    skel_model_n_bytes += sizeof(skeletal_mesh_t) * skel_model->n_meshes;
+    for(int mesh_idx = 0; mesh_idx < skel_model->n_meshes; mesh_idx++) {
+        skeletal_mesh_t *mesh = &skel_model->meshes[mesh_idx];
+        skel_model_n_bytes += safe_strsize(mesh->material_name);
+        skel_model_n_bytes += sizeof(skeletal_submesh_t) * mesh->n_submeshes;
+
+
+        for(int submesh_idx = 0; submesh_idx < mesh->n_submeshes; submesh_idx++) {
+            skeletal_submesh_t *submesh = &mesh->submeshes[submesh_idx];
+
+            if(submesh->vert8s != NULL) {
+                skel_model_n_bytes += sizeof(skel_vertex_i8_t) * submesh->n_verts;
+            }
+            if(submesh->vert16s != NULL) {
+                skel_model_n_bytes += sizeof(skel_vertex_i16_t) * submesh->n_verts;
+            }
+        }
+    }
+
+    return skel_model_n_bytes;
+}
+
 
 
 // 
 // Returns the total number of bytes required to store a skeletal_model_t
 // including all data pointed to via pointers 
 // 
-uint32_t count_skel_model_n_bytes(skeletal_model_t *skel_model) {
-    uint32_t skel_model_n_bytes = 0;
-    skel_model_n_bytes += sizeof(skeletal_model_t);
-    skel_model_n_bytes += sizeof(skeletal_mesh_t) * skel_model->n_meshes;
-    for(int i = 0; i < skel_model->n_meshes; i++) {
-        skeletal_mesh_t *mesh = &skel_model->meshes[i];
-        skel_model_n_bytes += safe_strsize(mesh->material_name);
-        skel_model_n_bytes += sizeof(skeletal_mesh_t) * mesh->n_submeshes;
-        for(int j = 0; j < mesh->n_submeshes; j++) {
-            skeletal_mesh_t *submesh = &mesh->submeshes[j];
-            if(submesh->vert8s != nullptr) {
-                skel_model_n_bytes += sizeof(skel_vertex_i8_t) * submesh->n_verts;
-            }
-            if(submesh->vert16s != nullptr) {
-                skel_model_n_bytes += sizeof(skel_vertex_i16_t) * submesh->n_verts;
-            }
-        }
-    }
-    // -- bones --
-    skel_model_n_bytes += sizeof(char*) * skel_model->n_bones;
-    skel_model_n_bytes += sizeof(int16_t) * skel_model->n_bones;
-    skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
-    skel_model_n_bytes += sizeof(quat_t) * skel_model->n_bones;
-    skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
-    for(int i = 0; i < skel_model->n_bones; i++) {
-        skel_model_n_bytes += safe_strsize(skel_model->bone_name[i]);
-    }
-    // -- bone hitbox info --
-    skel_model_n_bytes += sizeof(bool) * skel_model->n_bones;
-    skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
-    skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
-    skel_model_n_bytes += sizeof(int) * skel_model->n_bones;
-    // -- cached bone rest transforms --
-    skel_model_n_bytes += sizeof(mat3x4_t) * skel_model->n_bones;
-    skel_model_n_bytes += sizeof(mat3x4_t) * skel_model->n_bones;
-    // -- animation frames -- 
-    skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames;
-    skel_model_n_bytes += sizeof(quat_t) * skel_model->n_bones * skel_model->n_frames;
-    skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames;
-    skel_model_n_bytes += sizeof(float) * skel_model->n_frames;
-    // -- animation framegroups --
-    skel_model_n_bytes += sizeof(char*) * skel_model->n_framegroups;
-    skel_model_n_bytes += sizeof(uint32_t) * skel_model->n_framegroups;
-    skel_model_n_bytes += sizeof(uint32_t) * skel_model->n_framegroups;
-    skel_model_n_bytes += sizeof(float) * skel_model->n_framegroups;
-    skel_model_n_bytes += sizeof(bool) * skel_model->n_framegroups;
-    for(int i = 0; i < skel_model->n_framegroups; i++) {
-        skel_model_n_bytes += safe_strsize(skel_model->framegroup_name[i]);
-    }
-    // -- materials --
-    skel_model_n_bytes += sizeof(char*) * skel_model->n_materials;
-    skel_model_n_bytes += sizeof(int) * skel_model->n_materials;
-    skel_model_n_bytes += sizeof(skeletal_material_t*) * skel_model->n_materials;
-    for(int i = 0; i < skel_model->n_materials; i++) {
-        skel_model_n_bytes += safe_strsize(skel_model->material_names[i]);
-        skel_model_n_bytes += sizeof(skeletal_material_t) * skel_model->material_n_skins[i];
-    }
-    // -- FTE Anim Events --
-    if(skel_model->framegroup_n_events != nullptr) {
-        skel_model_n_bytes += sizeof(uint16_t) * skel_model->n_framegroups;
-        skel_model_n_bytes += sizeof(float*) * skel_model->n_framegroups;
-        skel_model_n_bytes += sizeof(char**) * skel_model->n_framegroups;
-        skel_model_n_bytes += sizeof(uint32_t*) * skel_model->n_framegroups;
-        for(int i = 0; i < skel_model->n_framegroups; i++) {
-            skel_model_n_bytes += sizeof(float) * skel_model->framegroup_n_events[i];
-            skel_model_n_bytes += sizeof(char*) * skel_model->framegroup_n_events[i];
-            skel_model_n_bytes += sizeof(uint32_t) * skel_model->framegroup_n_events[i];
-            for(int j = 0; j < skel_model->framegroup_n_events[i]; j++) {
-                skel_model_n_bytes += safe_strsize(skel_model->framegroup_event_data_str[i][j]);
-            }
-        }
-    }
-    return skel_model_n_bytes;
-}
+// uint32_t count_skel_model_n_bytes(skeletal_model_t *skel_model) {
+//     uint32_t skel_model_n_bytes = 0;
+//     skel_model_n_bytes += sizeof(skeletal_model_t);
+//     skel_model_n_bytes += sizeof(skeletal_mesh_t) * skel_model->n_meshes;
+//     for(int i = 0; i < skel_model->n_meshes; i++) {
+//         skeletal_mesh_t *mesh = &skel_model->meshes[i];
+//         skel_model_n_bytes += safe_strsize(mesh->material_name);
+//         skel_model_n_bytes += sizeof(skeletal_mesh_t) * mesh->n_submeshes;
+//         for(int j = 0; j < mesh->n_submeshes; j++) {
+//             skeletal_mesh_t *submesh = &mesh->submeshes[j];
+//             if(submesh->vert8s != nullptr) {
+//                 skel_model_n_bytes += sizeof(skel_vertex_i8_t) * submesh->n_verts;
+//             }
+//             if(submesh->vert16s != nullptr) {
+//                 skel_model_n_bytes += sizeof(skel_vertex_i16_t) * submesh->n_verts;
+//             }
+//         }
+//     }
+//     // -- bones --
+//     skel_model_n_bytes += sizeof(char*) * skel_model->n_bones;
+//     skel_model_n_bytes += sizeof(int16_t) * skel_model->n_bones;
+//     skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
+//     skel_model_n_bytes += sizeof(quat_t) * skel_model->n_bones;
+//     skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
+//     for(int i = 0; i < skel_model->n_bones; i++) {
+//         skel_model_n_bytes += safe_strsize(skel_model->bone_name[i]);
+//     }
+//     // -- bone hitbox info --
+//     skel_model_n_bytes += sizeof(bool) * skel_model->n_bones;
+//     skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
+//     skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
+//     skel_model_n_bytes += sizeof(int) * skel_model->n_bones;
+//     // -- cached bone rest transforms --
+//     skel_model_n_bytes += sizeof(mat3x4_t) * skel_model->n_bones;
+//     skel_model_n_bytes += sizeof(mat3x4_t) * skel_model->n_bones;
+//     // -- animation frames -- 
+//     skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames;
+//     skel_model_n_bytes += sizeof(quat_t) * skel_model->n_bones * skel_model->n_frames;
+//     skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames;
+//     skel_model_n_bytes += sizeof(float) * skel_model->n_frames;
+//     // -- animation framegroups --
+//     skel_model_n_bytes += sizeof(char*) * skel_model->n_framegroups;
+//     skel_model_n_bytes += sizeof(uint32_t) * skel_model->n_framegroups;
+//     skel_model_n_bytes += sizeof(uint32_t) * skel_model->n_framegroups;
+//     skel_model_n_bytes += sizeof(float) * skel_model->n_framegroups;
+//     skel_model_n_bytes += sizeof(bool) * skel_model->n_framegroups;
+//     for(int i = 0; i < skel_model->n_framegroups; i++) {
+//         skel_model_n_bytes += safe_strsize(skel_model->framegroup_name[i]);
+//     }
+//     // -- materials --
+//     skel_model_n_bytes += sizeof(char*) * skel_model->n_materials;
+//     skel_model_n_bytes += sizeof(int) * skel_model->n_materials;
+//     skel_model_n_bytes += sizeof(skeletal_material_t*) * skel_model->n_materials;
+//     for(int i = 0; i < skel_model->n_materials; i++) {
+//         skel_model_n_bytes += safe_strsize(skel_model->material_names[i]);
+//         skel_model_n_bytes += sizeof(skeletal_material_t) * skel_model->material_n_skins[i];
+//     }
+//     // -- FTE Anim Events --
+//     if(skel_model->framegroup_n_events != nullptr) {
+//         skel_model_n_bytes += sizeof(uint16_t) * skel_model->n_framegroups;
+//         skel_model_n_bytes += sizeof(float*) * skel_model->n_framegroups;
+//         skel_model_n_bytes += sizeof(char**) * skel_model->n_framegroups;
+//         skel_model_n_bytes += sizeof(uint32_t*) * skel_model->n_framegroups;
+//         for(int i = 0; i < skel_model->n_framegroups; i++) {
+//             skel_model_n_bytes += sizeof(float) * skel_model->framegroup_n_events[i];
+//             skel_model_n_bytes += sizeof(char*) * skel_model->framegroup_n_events[i];
+//             skel_model_n_bytes += sizeof(uint32_t) * skel_model->framegroup_n_events[i];
+//             for(int j = 0; j < skel_model->framegroup_n_events[i]; j++) {
+//                 skel_model_n_bytes += safe_strsize(skel_model->framegroup_event_data_str[i][j]);
+//             }
+//         }
+//     }
+//     return skel_model_n_bytes;
+// }
 
 
-// 
-// Util function for flattening a region of memory
-// Given a region of memory `buffer` that can fit `n_bytes`
-// 1. Copies `n_bytes` bytes from src_ptr into `buffer`
-// 2. Assigns the `dest_ptr` to the start location of that memory
-// 3. Increments the `buffer` pointer to point to the next free location of memory
-// 
-template<typename T>
-void flatten_member(T* &dest_ptr, T *src_ptr, size_t n_bytes, uint8_t* &buffer) {
-    // If src is nullptr, set dest to null_ptr and don't do anything else
-    if(src_ptr == nullptr) {
-        dest_ptr = nullptr;
-        return;
+
+void pack_skeletal_model_meshes(skeletal_model_t *unpacked_skel_model_in, skeletal_model_t *packed_skel_model_out, uint8_t **buffer_head_ptr) {
+
+    // `packed_skel_model_out` also points to the start of the contiguous memory buffer, grab that reference
+    uint8_t *buffer = (uint8_t*) packed_skel_model_out;
+
+    PACK_MEMBER(&packed_skel_model_out->meshes, unpacked_skel_model_in->meshes, sizeof(skeletal_mesh_t) * unpacked_skel_model_in->n_meshes, buffer, buffer_head_ptr);
+
+    for(int mesh_idx = 0; mesh_idx < unpacked_skel_model_in->n_meshes; mesh_idx++) {
+        skeletal_mesh_t *packed_mesh = &UNPACK_MEMBER(packed_skel_model_out->meshes,packed_skel_model_out)[mesh_idx];
+        skeletal_mesh_t *unpacked_mesh = &unpacked_skel_model_in->meshes[mesh_idx];
+
+        PACK_MEMBER(&packed_mesh->material_name, unpacked_mesh->material_name, safe_strsize(unpacked_mesh->material_name), buffer, buffer_head_ptr);
+        PACK_MEMBER(&packed_mesh->submeshes, unpacked_mesh->submeshes, sizeof(skeletal_submesh_t) * unpacked_mesh->n_submeshes, buffer, buffer_head_ptr);
+
+        for(int submesh_idx = 0; submesh_idx < unpacked_mesh->n_submeshes; submesh_idx++) {
+            skeletal_submesh_t *packed_submesh = &UNPACK_MEMBER(packed_mesh->submeshes,packed_skel_model_out)[submesh_idx];
+            skeletal_submesh_t *unpacked_submesh = &unpacked_mesh->submeshes[submesh_idx];
+
+            PACK_MEMBER(&packed_submesh->vert8s, unpacked_submesh->vert8s, sizeof(skel_vertex_i8_t) * unpacked_submesh->n_verts, buffer, buffer_head_ptr);
+            PACK_MEMBER(&packed_submesh->vert16s, unpacked_submesh->vert16s, sizeof(skel_vertex_i16_t) * unpacked_submesh->n_verts, buffer, buffer_head_ptr);
+        }
     }
-    // Pad requested memory to two bytes
-    // if(n_bytes % 2 == 1) {
-    //     n_bytes += 1;
+
+
+    // // ------------------------------------------------------------------------
+    // Con_Printf("=========================================================\n");
+    // Con_Printf("Debug printing packed mesh so far...\n");
+    // // Temp debug
+
+    // Con_Printf("\tModel n_meshes: %d\n", packed_skel_model_out->n_meshes);
+
+    // if(packed_skel_model_out->n_meshes > 0 ) {
+    //     int mesh_idx = 0;
+    //     skeletal_mesh_t *mesh = &UNPACK_MEMBER(packed_skel_model_out->meshes,packed_skel_model_out)[mesh_idx];
+    //     const char *material_name = UNPACK_MEMBER(mesh->material_name,packed_skel_model_out);
+
+    //     Con_Printf("\tmodel.meshes[%d].n_submeshes: %d\n", mesh_idx, mesh->n_submeshes);
+    //     Con_Printf("\tmodel.meshes[%d].material_name: \"%s\"\n", mesh_idx, material_name);
     // }
-    // Pad to 4-bytes
-    n_bytes += (4 - (n_bytes % 4)) % 4;
-    memcpy(buffer, src_ptr, n_bytes);
-    dest_ptr = (T*) buffer;
-    buffer += n_bytes;
-}
 
-// 
-// Util function to use after flattening a region of memory
-// Takes a pointer to memory and sets it to the offset to that region of memory
-// relative to the start of the buffer
-// 
-template<typename T1, typename T2>
-void set_member_to_offset(T1* &dest_ptr, T2 *buffer_start) {
-    // If the pointer is nullptr, don't offset (leave it as 0)
-    if(dest_ptr == nullptr) {
-        return;
-    }
-    dest_ptr = (T1*) ((uint8_t*) dest_ptr - (uint8_t*) buffer_start);
-}
-
-template<typename T1, typename T2>
-T1 *get_member_from_offset(T1 *member_ptr, T2 *buffer_start) {
-    return (T1*) ((uint8_t*) buffer_start + (int) member_ptr);
-}
-
-
-//
-// Copies the data contained in `skel_model` into `relocatable_skel_model` in 
-// such a way that the model memory is fully relocatable. (i.e. all data is 
-// laid out contiguously in memory, and pointers contain offsets relative to the 
-// start of the memory block)
-//
-// NOTE - Assumes `relocatable_skel_model` is large enough to fully fit the skel_model's data
-// NOTE - I'm horrified by this code too. There has got to be a better way to pull this off...
-//
-void make_skeletal_model_relocatable(skeletal_model_t *relocatable_skel_model, skeletal_model_t *skel_model) {
-    // ------------–------------–------------–------------–------------–-------
-    // Memcpy each piece of the skeletal model into the corresponding section
-    // ------------–------------–------------–------------–------------–-------
-
-    // Con_Printf("make_skeletal_model_relocatable 1.1\n");
-
-    uint8_t *ptr = (uint8_t*) relocatable_skel_model;
-    flatten_member(relocatable_skel_model, skel_model, sizeof(skeletal_model_t), ptr);
-    flatten_member(relocatable_skel_model->meshes, skel_model->meshes, sizeof(skeletal_mesh_t) * skel_model->n_meshes, ptr);
-
-
-    // Con_Printf("make_skeletal_model_relocatable 1.2\n");
-
-
-    for(int i = 0; i < skel_model->n_meshes; i++) {
-        // Con_Printf("make_skeletal_model_relocatable 1.2.1 i=%d\n", i);
-
-        flatten_member(relocatable_skel_model->meshes[i].material_name, skel_model->meshes[i].material_name, safe_strsize(skel_model->meshes[i].material_name), ptr);
-        
-        // Con_Printf("make_skeletal_model_relocatable 1.2.2\n");
-        flatten_member(relocatable_skel_model->meshes[i].submeshes, skel_model->meshes[i].submeshes, sizeof(skeletal_mesh_t) * skel_model->meshes[i].n_submeshes, ptr);
-
-        // Con_Printf("make_skeletal_model_relocatable 1.2.3\n");
-        for(int j = 0; j < skel_model->meshes[i].n_submeshes; j++) {
-
-            // Con_Printf("make_skeletal_model_relocatable 1.2.3.1 j=%d\n", j);
-            // Con_Printf("mesh[%d].submesh[%d].n_verts = %d\n", i, j, (void*) skel_model->meshes[i].submeshes[j].n_verts);
-            // Con_Printf("mesh[%d].submesh[%d].vert8s = %p\n", i, j, (void*) skel_model->meshes[i].submeshes[j].vert8s);
-
-            // IQMFIXME - Crashes here
-
-            // if(skel_model->meshes[i].submeshes[j].vert8s != nullptr) {
-                flatten_member(relocatable_skel_model->meshes[i].submeshes[j].vert8s, skel_model->meshes[i].submeshes[j].vert8s, sizeof(skel_vertex_i8_t) * skel_model->meshes[i].submeshes[j].n_verts, ptr);
-            // }
-
-            // Con_Printf("make_skeletal_model_relocatable 1.2.3.2 j=%d\n", j);
-            // if(skel_model->meshes[i].submeshes[j].vert16s != nullptr) {
-                flatten_member(relocatable_skel_model->meshes[i].submeshes[j].vert16s, skel_model->meshes[i].submeshes[j].vert16s, sizeof(skel_vertex_i16_t) * skel_model->meshes[i].submeshes[j].n_verts, ptr);
-            // }
-        }
-        // Con_Printf("make_skeletal_model_relocatable 1.2.4\n");
-    }
-
-
-    // Con_Printf("make_skeletal_model_relocatable 1.3\n");
-
-
-    // -- bones --
-    flatten_member(relocatable_skel_model->bone_name, skel_model->bone_name, sizeof(char*) * skel_model->n_bones, ptr);
-    flatten_member(relocatable_skel_model->bone_parent_idx, skel_model->bone_parent_idx, sizeof(int16_t) * skel_model->n_bones, ptr);
-    flatten_member(relocatable_skel_model->bone_rest_pos, skel_model->bone_rest_pos, sizeof(vec3_t) * skel_model->n_bones, ptr);
-    flatten_member(relocatable_skel_model->bone_rest_rot, skel_model->bone_rest_rot, sizeof(vec4_t) * skel_model->n_bones, ptr);
-    flatten_member(relocatable_skel_model->bone_rest_scale, skel_model->bone_rest_scale, sizeof(vec3_t) * skel_model->n_bones, ptr);
-    for(int i = 0; i < skel_model->n_bones; i++) {
-        flatten_member(relocatable_skel_model->bone_name[i], skel_model->bone_name[i], safe_strsize(skel_model->bone_name[i]), ptr);
-    }
-
-    // Con_Printf("make_skeletal_model_relocatable 1.4\n");
-
-    // -- bone hitbox info --
-    flatten_member(relocatable_skel_model->bone_hitbox_enabled, skel_model->bone_hitbox_enabled, sizeof(bool) * skel_model->n_bones, ptr);
-    flatten_member(relocatable_skel_model->bone_hitbox_ofs,     skel_model->bone_hitbox_ofs,     sizeof(vec3_t) * skel_model->n_bones, ptr);
-    flatten_member(relocatable_skel_model->bone_hitbox_scale,   skel_model->bone_hitbox_scale,   sizeof(vec3_t) * skel_model->n_bones, ptr);
-    flatten_member(relocatable_skel_model->bone_hitbox_tag,     skel_model->bone_hitbox_tag,     sizeof(int) * skel_model->n_bones, ptr);
-
-    // Con_Printf("make_skeletal_model_relocatable 1.5\n");
-
-    // -- cached bone rest transforms --
-    flatten_member(relocatable_skel_model->bone_rest_transforms, skel_model->bone_rest_transforms, sizeof(mat3x4_t) * skel_model->n_bones, ptr);
-    flatten_member(relocatable_skel_model->inv_bone_rest_transforms, skel_model->inv_bone_rest_transforms, sizeof(mat3x4_t) * skel_model->n_bones, ptr);
-
-    // Con_Printf("make_skeletal_model_relocatable 1.6\n");
-
-    // -- frames --
-    flatten_member(relocatable_skel_model->frames_bone_pos, skel_model->frames_bone_pos, sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames, ptr);
-    flatten_member(relocatable_skel_model->frames_bone_rot, skel_model->frames_bone_rot, sizeof(quat_t) * skel_model->n_bones * skel_model->n_frames, ptr);
-    flatten_member(relocatable_skel_model->frames_bone_scale, skel_model->frames_bone_scale, sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames, ptr);
-    flatten_member(relocatable_skel_model->frames_move_dist, skel_model->frames_move_dist, sizeof(float) * skel_model->n_frames, ptr);
-
-    // Con_Printf("make_skeletal_model_relocatable 1.7\n");
-
-    // -- framegroups --
-    flatten_member(relocatable_skel_model->framegroup_name, skel_model->framegroup_name, sizeof(char*) * skel_model->n_framegroups, ptr);
-    flatten_member(relocatable_skel_model->framegroup_start_frame, skel_model->framegroup_start_frame, sizeof(uint32_t) * skel_model->n_framegroups, ptr);
-    flatten_member(relocatable_skel_model->framegroup_n_frames, skel_model->framegroup_n_frames, sizeof(uint32_t) * skel_model->n_framegroups, ptr);
-    flatten_member(relocatable_skel_model->framegroup_fps, skel_model->framegroup_fps, sizeof(float) * skel_model->n_framegroups, ptr);
-    flatten_member(relocatable_skel_model->framegroup_loop, skel_model->framegroup_loop, sizeof(bool) * skel_model->n_framegroups, ptr);
-    for(int i = 0; i < skel_model->n_framegroups; i++) {
-        flatten_member(relocatable_skel_model->framegroup_name[i], skel_model->framegroup_name[i], safe_strsize(skel_model->framegroup_name[i]), ptr);
-    }
-
-    // Con_Printf("make_skeletal_model_relocatable 1.8\n");
-
-    // -- materials --
-    flatten_member(relocatable_skel_model->material_names, skel_model->material_names, sizeof(char*) * skel_model->n_materials, ptr);
-    flatten_member(relocatable_skel_model->material_n_skins, skel_model->material_n_skins, sizeof(int) * skel_model->n_materials, ptr);
-    flatten_member(relocatable_skel_model->materials, skel_model->materials, sizeof(skeletal_material_t*) * skel_model->n_materials, ptr);
-    for(int i = 0; i < skel_model->n_materials; i++) {
-        flatten_member(relocatable_skel_model->material_names[i], skel_model->material_names[i], safe_strsize(skel_model->material_names[i]), ptr);
-        flatten_member(relocatable_skel_model->materials[i], skel_model->materials[i], sizeof(skeletal_material_t) * skel_model->material_n_skins[i], ptr);
-    }
-
-    // Con_Printf("make_skeletal_model_relocatable 1.9\n");
-
-    // -- FTE Anim Events --
-    flatten_member(relocatable_skel_model->framegroup_n_events, skel_model->framegroup_n_events, sizeof(uint16_t) * skel_model->n_framegroups, ptr);
-    flatten_member(relocatable_skel_model->framegroup_event_time, skel_model->framegroup_event_time, sizeof(float*) * skel_model->n_framegroups, ptr);
-    flatten_member(relocatable_skel_model->framegroup_event_code, skel_model->framegroup_event_code, sizeof(uint32_t *) * skel_model->n_framegroups, ptr);
-    flatten_member(relocatable_skel_model->framegroup_event_data_str, skel_model->framegroup_event_data_str, sizeof(char**) * skel_model->n_framegroups, ptr);
-    if(skel_model->framegroup_n_events != nullptr) {
-        for(int i = 0; i < skel_model->n_framegroups; i++) {
-            flatten_member(relocatable_skel_model->framegroup_event_time[i], skel_model->framegroup_event_time[i], sizeof(float) * skel_model->framegroup_n_events[i], ptr);
-            flatten_member(relocatable_skel_model->framegroup_event_code[i], skel_model->framegroup_event_code[i], sizeof(uint32_t) * skel_model->framegroup_n_events[i], ptr);
-            flatten_member(relocatable_skel_model->framegroup_event_data_str[i], skel_model->framegroup_event_data_str[i], sizeof(char*) * skel_model->framegroup_n_events[i], ptr);
-            for(int j = 0; j < skel_model->framegroup_n_events[i]; j++) {
-                flatten_member(relocatable_skel_model->framegroup_event_data_str[i][j], skel_model->framegroup_event_data_str[i][j], safe_strsize(skel_model->framegroup_event_data_str[i][j]), ptr);
-            }
-        }
-    }
-    // ------------–------------–------------–------------–------------–-------
-
-    // Con_Printf("make_skeletal_model_relocatable 1.10\n");
-
-
-    // ------------–------------–------------–------------–------------–-------
-    // Clean up all pointers to be relative to model start location in memory
-    // NOTE - Must deconstruct in reverse order to avoid undoing offsets
-    // ------------–------------–------------–------------–------------–-------
-    // -- FTE Anim Events --
-    if(skel_model->framegroup_n_events != nullptr) {
-        for(int i = 0; i < skel_model->n_framegroups; i++) {
-            for(int j = 0; j < skel_model->framegroup_n_events[i]; j++) {
-                set_member_to_offset(relocatable_skel_model->framegroup_event_data_str[i][j], relocatable_skel_model);
-            }
-            set_member_to_offset(relocatable_skel_model->framegroup_event_data_str[i], relocatable_skel_model);
-            set_member_to_offset(relocatable_skel_model->framegroup_event_code[i], relocatable_skel_model);
-            set_member_to_offset(relocatable_skel_model->framegroup_event_time[i], relocatable_skel_model);
-        }
-    }
-    set_member_to_offset(relocatable_skel_model->framegroup_event_data_str, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->framegroup_event_code, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->framegroup_event_time, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->framegroup_n_events, relocatable_skel_model);
-
-    // Con_Printf("make_skeletal_model_relocatable 1.11\n");
-
-
-    // -- materials --
-    for(int i = 0; i < skel_model->n_materials; i++) {
-        set_member_to_offset(relocatable_skel_model->materials[i], relocatable_skel_model);
-        set_member_to_offset(relocatable_skel_model->material_names[i], relocatable_skel_model);
-    }
-    set_member_to_offset(relocatable_skel_model->materials, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->material_n_skins, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->material_names, relocatable_skel_model);
-
-    // Con_Printf("make_skeletal_model_relocatable 1.12\n");
-
-    // -- framegroups --
-    for(int i = 0; i < skel_model->n_framegroups; i++) {
-        set_member_to_offset(relocatable_skel_model->framegroup_name[i], relocatable_skel_model);
-    }
-    set_member_to_offset(relocatable_skel_model->framegroup_loop, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->framegroup_fps, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->framegroup_n_frames, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->framegroup_start_frame, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->framegroup_name, relocatable_skel_model);
-
-    // Con_Printf("make_skeletal_model_relocatable 1.13\n");
-
-    // -- frames --
-    set_member_to_offset(relocatable_skel_model->frames_move_dist, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->frames_bone_scale, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->frames_bone_rot, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->frames_bone_pos, relocatable_skel_model);
-
-    // Con_Printf("make_skeletal_model_relocatable 1.14\n");
-    // -- cached bone rest transforms --
-    set_member_to_offset(relocatable_skel_model->inv_bone_rest_transforms, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->bone_rest_transforms, relocatable_skel_model);
-
-    // Con_Printf("make_skeletal_model_relocatable 1.15\n");
-    // -- bone hitbox info --
-    set_member_to_offset(relocatable_skel_model->bone_hitbox_tag,     relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->bone_hitbox_scale,   relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->bone_hitbox_ofs,     relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->bone_hitbox_enabled, relocatable_skel_model);
-
-    // Con_Printf("make_skeletal_model_relocatable 1.16\n");
-    // -- bones --
-    for(int i = 0; i < skel_model->n_bones; i++) {
-        set_member_to_offset(relocatable_skel_model->bone_name[i], relocatable_skel_model);
-    }
-    set_member_to_offset(relocatable_skel_model->bone_rest_scale, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->bone_rest_rot, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->bone_rest_pos, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->bone_parent_idx, relocatable_skel_model);
-    set_member_to_offset(relocatable_skel_model->bone_name, relocatable_skel_model);
-
-    for(int i = 0; i < skel_model->n_meshes; i++) {
-        for(int j = 0; j < skel_model->meshes[i].n_submeshes; j++) {
-            set_member_to_offset(relocatable_skel_model->meshes[i].submeshes[j].vert8s, relocatable_skel_model);
-            set_member_to_offset(relocatable_skel_model->meshes[i].submeshes[j].vert16s, relocatable_skel_model);
-        }
-        set_member_to_offset(relocatable_skel_model->meshes[i].submeshes, relocatable_skel_model);
-        set_member_to_offset(relocatable_skel_model->meshes[i].material_name, relocatable_skel_model);
-    }
-    set_member_to_offset(relocatable_skel_model->meshes, relocatable_skel_model);
-
-    // Con_Printf("make_skeletal_model_relocatable 1.17\n");
-    // ------------–------------–------------–------------–------------–-------
-}
-
-
-//
-// Completely deallocates a skeletal_model_t struct, pointers and all.
-// NOTE - This should not be used on a relocatable skeletal_model_t object.
-//
-void free_skeletal_model(skeletal_model_t *skel_model) {
-    // Free fields in reverse order to avoid losing references
-    // -- FTE Anim Events --
-    if(skel_model->framegroup_n_events != nullptr) {
-        for(int i = 0; i < skel_model->n_framegroups; i++) {
-            for(int j = 0; j < skel_model->framegroup_n_events[i]; j++) {
-                free_pointer_and_clear(skel_model->framegroup_event_data_str[i][j]);
-            }
-            free_pointer_and_clear(skel_model->framegroup_event_data_str[i]);
-            free_pointer_and_clear(skel_model->framegroup_event_code[i]);
-            free_pointer_and_clear(skel_model->framegroup_event_time[i]);
-        }
-    }
-    free_pointer_and_clear(skel_model->framegroup_event_data_str);
-    free_pointer_and_clear(skel_model->framegroup_event_code);
-    free_pointer_and_clear(skel_model->framegroup_event_time);
-    free_pointer_and_clear(skel_model->framegroup_n_events);
-    // -- materials --
-    for(int i = 0; i < skel_model->n_materials; i++) {
-        free_pointer_and_clear(skel_model->materials[i]);
-        free_pointer_and_clear(skel_model->material_names[i]);
-    }
-    free_pointer_and_clear(skel_model->materials);
-    free_pointer_and_clear(skel_model->material_n_skins);
-    free_pointer_and_clear(skel_model->material_names);
-    // -- framegroups --
-    for(int i = 0; i < skel_model->n_framegroups; i++) {
-        free_pointer_and_clear(skel_model->framegroup_name[i]);
-    }
-    free_pointer_and_clear(skel_model->framegroup_loop);
-    free_pointer_and_clear(skel_model->framegroup_fps);
-    free_pointer_and_clear(skel_model->framegroup_n_frames);
-    free_pointer_and_clear(skel_model->framegroup_start_frame);
-    free_pointer_and_clear(skel_model->framegroup_name);
-    // -- frames --
-    free_pointer_and_clear(skel_model->frames_bone_scale);
-    free_pointer_and_clear(skel_model->frames_bone_rot);
-    free_pointer_and_clear(skel_model->frames_bone_pos);
-    free_pointer_and_clear(skel_model->frames_move_dist);
-    // -- cached bone rest transforms --
-    free_pointer_and_clear(skel_model->inv_bone_rest_transforms);
-    free_pointer_and_clear(skel_model->bone_rest_transforms);
-    // -- bone hitbox info --
-    free_pointer_and_clear(skel_model->bone_hitbox_tag);
-    free_pointer_and_clear(skel_model->bone_hitbox_scale);
-    free_pointer_and_clear(skel_model->bone_hitbox_ofs);
-    free_pointer_and_clear(skel_model->bone_hitbox_enabled);
-    // -- bones --
-    for(int i = 0; i < skel_model->n_bones; i++) {
-        free_pointer_and_clear(skel_model->bone_name[i]);
-    }
-    free_pointer_and_clear(skel_model->bone_name);
-    free_pointer_and_clear(skel_model->bone_parent_idx);
-    free_pointer_and_clear(skel_model->bone_rest_pos);
-    free_pointer_and_clear(skel_model->bone_rest_rot);
-    free_pointer_and_clear(skel_model->bone_rest_scale);
-    for(int i = 0; i < skel_model->n_meshes; i++) {
-        for(int j = 0; j < skel_model->meshes[i].n_submeshes; j++) {
-            // These submesh struct members are expected to be nullptr:
-            free_pointer_and_clear( skel_model->meshes[i].submeshes[j].vert_rest_positions);
-            free_pointer_and_clear( skel_model->meshes[i].submeshes[j].vert_uvs);
-
-#ifdef IQM_LOAD_NORMALS
-            free_pointer_and_clear( skel_model->meshes[i].submeshes[j].vert_rest_normals);
-#endif // IQM_LOAD_NORMALS
-
-            free_pointer_and_clear( skel_model->meshes[i].submeshes[j].vert_bone_weights);
-            free_pointer_and_clear( skel_model->meshes[i].submeshes[j].vert_bone_idxs);
-            free_pointer_and_clear( skel_model->meshes[i].submeshes[j].vert_skinning_weights);
-            free_pointer_and_clear( skel_model->meshes[i].submeshes[j].tri_verts);
-            free_pointer_and_clear( skel_model->meshes[i].submeshes[j].submeshes);
-            free_pointer_and_clear( skel_model->meshes[i].submeshes[j].material_name);
-
-            // These submesh struct members are expected to be allocated:
-            free_pointer_and_clear( skel_model->meshes[i].submeshes[j].vert8s);     // Only free if not nullptr
-            free_pointer_and_clear( skel_model->meshes[i].submeshes[j].vert16s);    // Only free if not nullptr
-        }
-        
-        // These mesh struct members are expected to be nullptr:
-        free_pointer_and_clear( skel_model->meshes[i].vert_rest_positions);
-        free_pointer_and_clear( skel_model->meshes[i].vert_uvs);
-
-#ifdef IQM_LOAD_NORMALS
-        free_pointer_and_clear( skel_model->meshes[i].vert_rest_normals);
-#endif // IQM_LOAD_NORMALS
-
-        free_pointer_and_clear( skel_model->meshes[i].vert_bone_weights);
-        free_pointer_and_clear( skel_model->meshes[i].vert_bone_idxs);
-        free_pointer_and_clear( skel_model->meshes[i].vert_skinning_weights);
-        free_pointer_and_clear( skel_model->meshes[i].tri_verts);
-        free_pointer_and_clear( skel_model->meshes[i].vert16s);
-        free_pointer_and_clear( skel_model->meshes[i].vert8s);
-
-        // These mesh struct members are expected to be allocated:
-        free_pointer_and_clear( skel_model->meshes[i].material_name);
-        free_pointer_and_clear( skel_model->meshes[i].submeshes);
-    }
-    free(skel_model->meshes);
-    free(skel_model);
-}
-
-
-
-
-/*
-=================
-Mod_LoadIQMModel
-=================
-*/
-extern char loadname[];
-void Mod_LoadIQMModel (model_t *model, void *buffer) {
-
-    Con_Printf("Loading IQM model: \"%s\"\n", model->name);
-    skeletal_model_t *skel_model = load_iqm_file(buffer);
-    load_iqm_file_json_info(skel_model, model->name);
-
-    // ------------------------------------------------------------------------
-    // Debug - printing the skel_model contents
-    // ------------------------------------------------------------------------
-#ifdef IQMDEBUG_LOADIQM_DEBUGSUMMARY
-    Con_Printf("------------------------------------------------------------\n");
-    Con_Printf("Debug printing skeletal model \"%s\"\n", loadname);
-    Con_Printf("------------------------------------------------------------\n");
-    Con_Printf("skel_model->n_meshes = %d\n", skel_model->n_meshes);
-    for(int i = 0; i < skel_model->n_meshes; i++) {
-        Con_Printf("---------------------\n");
-        Con_Printf("skel_model->meshes[%d].n_verts = %d\n", i, skel_model->meshes[i].n_verts);
-        Con_Printf("skel_model->meshes[%d].n_tris = %d\n", i, skel_model->meshes[i].n_tris);
-        Con_Printf("skel_model->meshes[%d].vert_rest_positions = %d\n", i, skel_model->meshes[i].vert_rest_positions);
-        Con_Printf("skel_model->meshes[%d].vert_uvs = %d\n", i, skel_model->meshes[i].vert_uvs);
-
-#ifdef IQM_LOAD_NORMALS
-        Con_Printf("skel_model->meshes[%d].vert_rest_normals = %d\n", i, skel_model->meshes[i].vert_rest_normals);
-#endif // IQM_LOAD_NORMALS
-
-        Con_Printf("skel_model->meshes[%d].vert_bone_weights = %d\n", i, skel_model->meshes[i].vert_bone_weights);
-        Con_Printf("skel_model->meshes[%d].vert_bone_idxs = %d\n", i, skel_model->meshes[i].vert_bone_idxs);
-
-        // IQMFIXME - Crashed here
-        Con_Printf("skel_model->meshes[%d].vert_skinning_weights = %d\n", i, skel_model->meshes[i].vert_skinning_weights);
-        Con_Printf("skel_model->meshes[%d].tri_verts = %d\n", i, skel_model->meshes[i].tri_verts);
-        Con_Printf("skel_model->meshes[%d].vert16s = %d\n", i, skel_model->meshes[i].vert16s);
-        Con_Printf("skel_model->meshes[%d].vert8s = %d\n", i, skel_model->meshes[i].vert8s);
-        Con_Printf("skel_model->meshes[%d].geomset = %d\n", i, skel_model->meshes[i].geomset);
-        Con_Printf("skel_model->meshes[%d].geomid = %d\n", i, skel_model->meshes[i].geomid);
-        Con_Printf("skel_model->meshes[%d].material_name = \"%s\"\n", i, skel_model->meshes[i].material_name);
-        Con_Printf("skel_model->meshes[%d].material_idx = %d\n", i, skel_model->meshes[i].material_idx);
-        // --
-        Con_Printf("skel_model->meshes[%d].n_skinning_bones = %d\n", i, skel_model->meshes[i].n_skinning_bones);
-        Con_Printf("\tskel_model->meshes[%d].skinning_bone_idxs = [", i);
-        for(int k = 0; k < 8; k++) {
-            Con_Printf("%d, ", skel_model->meshes[i].skinning_bone_idxs[k]);
-        }
-        Con_Printf("]\n");
-        // --
-        Con_Printf("\tskel_model->meshes[%d].verts_ofs = [", i);
-        for(int k = 0; k < 3; k++) {
-            Con_Printf("%f, ", skel_model->meshes[i].verts_ofs[k]);
-        }
-        Con_Printf("]\n");
-        // --
-        Con_Printf("\tskel_model->meshes[%d].verts_scale = [", i);
-        for(int k = 0; k < 3; k++) {
-            Con_Printf("%f, ", skel_model->meshes[i].verts_scale[k]);
-        }
-        Con_Printf("]\n");
-        // --
-        Con_Printf("skel_model->meshes[%d].n_submeshes = %d\n", i, skel_model->meshes[i].n_submeshes);
-        Con_Printf("skel_model->meshes[%d].submeshes = %d\n", i, skel_model->meshes[i].submeshes);
-
-        for(int j = 0; j < skel_model->meshes[i].n_submeshes; j++) {
-            Con_Printf("\t----------\n");
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].n_verts = %d\n", i, j, skel_model->meshes[i].submeshes[j].n_verts);
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].n_tris = %d\n", i, j, skel_model->meshes[i].submeshes[j].n_tris);
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_rest_positions = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_rest_positions);
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_uvs = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_uvs);
-
-#ifdef IQM_LOAD_NORMALS
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_rest_normals = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_rest_normals);
-#endif // IQM_LOAD_NORMALS
-
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_bone_weights = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_bone_weights);
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_bone_idxs = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_bone_idxs);
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_skinning_weights = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_skinning_weights);
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].tri_verts = %d\n", i, j, skel_model->meshes[i].submeshes[j].tri_verts);
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert16s = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert16s);
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert8s = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert8s);
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].n_skinning_bones = %d\n", i, j, skel_model->meshes[i].submeshes[j].n_skinning_bones);
-            // --
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].skinning_bone_idxs = [", i, j);
-            for(int k = 0; k < 8; k++) {
-                Con_Printf("%d, ", skel_model->meshes[i].submeshes[j].skinning_bone_idxs[k]);
-            }
-            Con_Printf("]\n");
-            // --
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].verts_ofs = [", i, j);
-            for(int k = 0; k < 3; k++) {
-                Con_Printf("%f, ", skel_model->meshes[i].submeshes[j].verts_ofs[k]);
-            }
-            Con_Printf("]\n");
-            // --
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].verts_scale = [", i, j);
-            for(int k = 0; k < 3; k++) {
-                Con_Printf("%f, ", skel_model->meshes[i].submeshes[j].verts_scale[k]);
-            }
-            Con_Printf("]\n");
-            // --
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].n_submeshes = %d\n", i, j, skel_model->meshes[i].submeshes[j].n_submeshes);
-            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].submeshes = %d\n", i, j, skel_model->meshes[i].submeshes[j].submeshes);
-            Con_Printf("\t----------\n");
-        }
-        Con_Printf("---------------------\n");
-    }
-    for(uint32_t i = 0; i < skel_model->n_bones; i++) {
-        Con_Printf("Parsed bone: %i, \"%s\" (parent bone: %d)\n", i, skel_model->bone_name[i], skel_model->bone_parent_idx[i]);
-        Con_Printf("\tPos: (%.2f, %.2f, %.2f)\n", skel_model->bone_rest_pos[i][0], skel_model->bone_rest_pos[i][1], skel_model->bone_rest_pos[i][2]);
-        Con_Printf("\tRot: (%.2f, %.2f, %.2f, %.2f)\n", skel_model->bone_rest_rot[i][0], skel_model->bone_rest_rot[i][1], skel_model->bone_rest_rot[i][2], skel_model->bone_rest_rot[i][3]);
-        Con_Printf("\tScale: (%.2f, %.2f, %.2f)\n", skel_model->bone_rest_scale[i][0], skel_model->bone_rest_scale[i][1], skel_model->bone_rest_scale[i][2]);
-        Con_Printf("\thitbox enabled: %d\n", skel_model->bone_hitbox_enabled[i]);
-        Con_Printf("\thitbox ofs: (%.2f, %.2f, %.2f)\n", skel_model->bone_hitbox_ofs[i][0], skel_model->bone_hitbox_ofs[i][1], skel_model->bone_hitbox_ofs[i][2]);
-        Con_Printf("\thitbox scale: (%.2f, %.2f, %.2f)\n", skel_model->bone_hitbox_scale[i][0], skel_model->bone_hitbox_scale[i][1], skel_model->bone_hitbox_scale[i][2]);
-        Con_Printf("\thitbox tag: %d\n", skel_model->bone_hitbox_tag[i]);
-    }
-
-    for(int i = 0; i < skel_model->n_materials; i++) {
-        Con_Printf("---------------------\n");
-        Con_Printf("skel_model->material_names[%d] = %s\n", i, skel_model->material_names[i]);
-        Con_Printf("skel_model->material_n_skins[%d] = %d\n", i, skel_model->material_n_skins[i]);
-        for(int j = 0; j < skel_model->material_n_skins[i]; j++) {
-            Con_Printf("\tskel_model->materials[%d][%d].texture_idx = %d\n", i, j, skel_model->materials[i][j].texture_idx);
-            Con_Printf("\tskel_model->materials[%d][%d].transparent = %d\n", i, j, skel_model->materials[i][j].transparent);
-            Con_Printf("\tskel_model->materials[%d][%d].fullbright = %d\n", i, j, skel_model->materials[i][j].fullbright);
-            Con_Printf("\tskel_model->materials[%d][%d].fog = %d\n", i, j, skel_model->materials[i][j].fog);
-            Con_Printf("\tskel_model->materials[%d][%d].shade_smooth = %d\n", i, j, skel_model->materials[i][j].shade_smooth);
-            Con_Printf("\tskel_model->materials[%d][%d].add_color = %d\n", i, j, skel_model->materials[i][j].add_color);
-            Con_Printf("\tskel_model->materials[%d][%d].add_color val = [%f, %f, %f, %f]\n", i, j, skel_model->materials[i][j].add_color_red, skel_model->materials[i][j].add_color_green, skel_model->materials[i][j].add_color_blue, skel_model->materials[i][j].add_color_alpha);
-        }
-    }
-
-
-    Con_Printf("skel_model->n_framegroups = %d\n", skel_model->n_framegroups);
-
-    for(int i = 0; i < skel_model->n_framegroups; i++) {
-        Con_Printf("---------------------\n");
-        Con_Printf("skel_model->framegroup_name[%d] = \"%s\"\n", i, skel_model->framegroup_name[i]);
-        Con_Printf("skel_model->framegroup_start_frame[%d] = %d\n", i, skel_model->framegroup_start_frame[i]);
-        Con_Printf("skel_model->framegroup_n_frames[%d] = %d\n", i, skel_model->framegroup_n_frames[i]);
-        Con_Printf("skel_model->framegroup_fps[%d] = %f\n", i, skel_model->framegroup_fps[i]);
-        Con_Printf("skel_model->framegroup_loop[%d] = %d\n", i, skel_model->framegroup_loop[i]);
-
-        if(skel_model->framegroup_n_events != nullptr) {
-            Con_Printf("skel_model->framegroup_n_events[%d] = %d\n", i, skel_model->framegroup_n_events[i]);
-            for(int j = 0; j < skel_model->framegroup_n_events[i]; j++) {
-                Con_Printf("\tskel_model->framegroup_event_time[%d][%d] = %f\n", i, j, skel_model->framegroup_event_time[i][j]);
-                Con_Printf("\tskel_model->framegroup_event_code[%d][%d] = %d\n", i, j, skel_model->framegroup_event_code[i][j]);
-                Con_Printf("\tskel_model->framegroup_event_data_str[%d][%d] = \"%s\"\n", i, j, skel_model->framegroup_event_data_str[i][j]);
-            }
-        }
-    }
-
-    if(skel_model->fps_cam_bone_idx >= 0) {
-        Con_Printf("------------------------------------------------------------\n");
-        Con_Printf("Printing fps_cam_bone animation data:\n");
-        for(int i = 0; i < skel_model->n_framegroups; i++) {
-            for(int frame_idx = skel_model->framegroup_start_frame[i]; frame_idx < skel_model->framegroup_start_frame[i] + skel_model->framegroup_n_frames[i]; frame_idx++) {
-                vec3_t *frame_pos = &(skel_model->frames_bone_pos[      skel_model->n_bones * frame_idx + skel_model->fps_cam_bone_idx]);
-                quat_t *frame_rot = &(skel_model->frames_bone_rot[      skel_model->n_bones * frame_idx + skel_model->fps_cam_bone_idx]);
-                vec3_t *frame_scale = &(skel_model->frames_bone_scale[  skel_model->n_bones * frame_idx + skel_model->fps_cam_bone_idx]);
-
-                Con_Printf("Camera bone transform (bone %d, framegroup %d, frame %d): pos: (%.2f, %.2f, %.2f), rot: (%.2f, %.2f, %.2f, %.2f), scale: (%.2f, %.2f, %.2f)\n",
-                    skel_model->fps_cam_bone_idx, i, frame_idx,
-                    (*frame_pos)[0], (*frame_pos)[1], (*frame_pos)[2], 
-                    (*frame_rot)[0], (*frame_rot)[1], (*frame_rot)[2], (*frame_rot)[3], 
-                    (*frame_scale)[0], (*frame_scale)[1], (*frame_scale)[2]
-                );
-            }
-        }
-        Con_Printf("------------------------------------------------------------\n");
-    }
-#endif // IQMDEBUG_LOADIQM_DEBUGSUMMARY
-    // ------------------------------------------------------------------------
-
-
-    // TODO - Need to update this function to work with latest version of skeletal_model_t
-#ifdef IQMDEBUG_LOADIQM_RELOCATE
-    Con_Printf("About to calculate skeletal model size...\n");
-#endif // IQMDEBUG_LOADIQM_RELOCATE
-    uint32_t skel_model_n_bytes = count_skel_model_n_bytes(skel_model);
-#ifdef IQMDEBUG_LOADIQM_RELOCATE
-    Con_Printf("Done calculating skeletal model size\n");
-    Con_Printf("Skeletal model size (before padding): %d\n", skel_model_n_bytes);
-#endif // IQMDEBUG_LOADIQM_RELOCATE
-    // skeletal_model_t *relocatable_skel_model = (skeletal_model_t*) malloc(skel_model_n_bytes); // TODO - Pad to 2-byte alignment?
-    // Pad to two bytes:
-    // Pad to four bytes:
-    skel_model_n_bytes += (skel_model_n_bytes % 4);
-#ifdef IQMDEBUG_LOADIQM_RELOCATE
-    Con_Printf("Skeletal model size (after padding): %d\n", skel_model_n_bytes);
-#endif // IQMDEBUG_LOADIQM_RELOCATE
-    // if(skel_model_n_bytes % 2 == 1) {
-    //     skel_model_n_bytes += 1;
-    // }
-    //
-    // FIXME - Make sure every memory location is offset by two bytes? Might require modifying flattenmemory method
-    //
-#ifdef IQMDEBUG_LOADIQM_RELOCATE
-    Con_Printf("Allocating memory for skeletal model\n");
-#endif // IQMDEBUG_LOADIQM_RELOCATE
-    skeletal_model_t *relocatable_skel_model = (skeletal_model_t*) Hunk_AllocName(skel_model_n_bytes, loadname);
-#ifdef IQMDEBUG_LOADIQM_RELOCATE
-    Con_Printf("Done allocating memory for skeletal model\n");
-#endif // IQMDEBUG_LOADIQM_RELOCATE
-#ifdef IQMDEBUG_LOADIQM_RELOCATE
-    Con_Printf("Flattening skeletal model to make relocatable\n");
-#endif // IQMDEBUG_LOADIQM_RELOCATE
-    make_skeletal_model_relocatable(relocatable_skel_model, skel_model);
-#ifdef IQMDEBUG_LOADIQM_RELOCATE
-    Con_Printf("Done flattening skeletal model to make relocatable\n");
-#endif // IQMDEBUG_LOADIQM_RELOCATE
-    model->type = mod_iqm;
-
-
-#ifdef IQM_BBOX_PER_MODEL_PER_ANIM
-    Con_Printf("About to calculate rest pose mins / maxs\n");
-    calc_skel_model_bounds_for_rest_pose(relocatable_skel_model, relocatable_skel_model->rest_pose_bone_hitbox_mins, relocatable_skel_model->rest_pose_bone_hitbox_maxs);
-    Con_Printf("Done calculating rest pose mins / maxs:\n");
-    Con_Printf("\tmins: [%f, %f, %f]\n", relocatable_skel_model->rest_pose_bone_hitbox_mins[0], relocatable_skel_model->rest_pose_bone_hitbox_mins[1], relocatable_skel_model->rest_pose_bone_hitbox_mins[2]);
-    Con_Printf("\tmaxs: [%f, %f, %f]\n", relocatable_skel_model->rest_pose_bone_hitbox_maxs[0], relocatable_skel_model->rest_pose_bone_hitbox_maxs[1], relocatable_skel_model->rest_pose_bone_hitbox_maxs[2]);
-    Con_Printf("About to calculate anim pose mins / maxs\n");
-    calc_skel_model_bounds_for_anim(relocatable_skel_model, relocatable_skel_model, relocatable_skel_model->anim_bone_hitbox_mins, relocatable_skel_model->anim_bone_hitbox_maxs);
-    Con_Printf("Done calculating anim pose mins / maxs:\n");
-    Con_Printf("\tmins: [%f, %f, %f]\n", relocatable_skel_model->anim_bone_hitbox_mins[0], relocatable_skel_model->anim_bone_hitbox_mins[1], relocatable_skel_model->anim_bone_hitbox_mins[2]);
-    Con_Printf("\tmaxs: [%f, %f, %f]\n", relocatable_skel_model->anim_bone_hitbox_maxs[0], relocatable_skel_model->anim_bone_hitbox_maxs[1], relocatable_skel_model->anim_bone_hitbox_maxs[2]);
-#endif // IQM_BBOX_PER_MODEL_PER_ANIM
-
-
-#ifdef IQMDEBUG_LOADIQM_RELOCATE
-    Con_Printf("Copying final skeletal model struct... ");
-#endif // IQMDEBUG_LOADIQM_RELOCATE
-
-    if (!model->cache.data) {
-        Cache_Alloc(&model->cache, skel_model_n_bytes, loadname);
-    }
-    if (!model->cache.data) {
-        return;
-    }
-
-    memcpy_vfpu(model->cache.data, (void*) relocatable_skel_model, skel_model_n_bytes);
-
-#ifdef IQMDEBUG_LOADIQM_RELOCATE
-    Con_Printf("DONE\n");
-#endif // IQMDEBUG_LOADIQM_RELOCATE
-
-#ifdef IQMDEBUG_LOADIQM_RELOCATE
-    Con_Printf("About to free temp skeletal model struct...");
-#endif // IQMDEBUG_LOADIQM_RELOCATE
-
-    free_skeletal_model(skel_model);
-    skel_model = nullptr;
-
-#ifdef IQMDEBUG_LOADIQM_RELOCATE
-    Con_Printf("DONE\n");
-#endif // IQMDEBUG_LOADIQM_RELOCATE
+    // Con_Printf("=========================================================\n");
+    // // ------------------------------------------------------------------------
 }
 
 
 
 
 
+// /*
+// =================
+// Mod_LoadIQMModel
+// =================
+// */
+// extern char loadname[];
+// void Mod_LoadIQMModel (model_t *model, void *buffer) {
+//     return;
 
-void bind_submesh_bones(skeletal_mesh_t *submesh, skeletal_skeleton_t *skeleton) {
+
+
+
+
+
+// //     Con_Printf("Loading IQM model: \"%s\"\n", model->name);
+// //     skeletal_model_t *skel_model = load_iqm_file(buffer);
+// //     // load_iqm_file_json_info(skel_model, model->name);
+
+// //     // ------------------------------------------------------------------------
+// //     // Debug - printing the skel_model contents
+// //     // ------------------------------------------------------------------------
+// // #ifdef IQMDEBUG_LOADIQM_DEBUGSUMMARY
+// //     Con_Printf("------------------------------------------------------------\n");
+// //     Con_Printf("Debug printing skeletal model \"%s\"\n", loadname);
+// //     Con_Printf("------------------------------------------------------------\n");
+// //     Con_Printf("skel_model->n_meshes = %d\n", skel_model->n_meshes);
+// //     for(int i = 0; i < skel_model->n_meshes; i++) {
+// //         Con_Printf("---------------------\n");
+// //         Con_Printf("skel_model->meshes[%d].n_verts = %d\n", i, skel_model->meshes[i].n_verts);
+// //         Con_Printf("skel_model->meshes[%d].n_tris = %d\n", i, skel_model->meshes[i].n_tris);
+// //         Con_Printf("skel_model->meshes[%d].vert_rest_positions = %d\n", i, skel_model->meshes[i].vert_rest_positions);
+// //         Con_Printf("skel_model->meshes[%d].vert_uvs = %d\n", i, skel_model->meshes[i].vert_uvs);
+
+// // #ifdef IQM_LOAD_NORMALS
+// //         Con_Printf("skel_model->meshes[%d].vert_rest_normals = %d\n", i, skel_model->meshes[i].vert_rest_normals);
+// // #endif // IQM_LOAD_NORMALS
+
+// //         Con_Printf("skel_model->meshes[%d].vert_bone_weights = %d\n", i, skel_model->meshes[i].vert_bone_weights);
+// //         Con_Printf("skel_model->meshes[%d].vert_bone_idxs = %d\n", i, skel_model->meshes[i].vert_bone_idxs);
+
+// //         // IQMFIXME - Crashed here
+// //         Con_Printf("skel_model->meshes[%d].vert_skinning_weights = %d\n", i, skel_model->meshes[i].vert_skinning_weights);
+// //         Con_Printf("skel_model->meshes[%d].tri_verts = %d\n", i, skel_model->meshes[i].tri_verts);
+// //         Con_Printf("skel_model->meshes[%d].vert16s = %d\n", i, skel_model->meshes[i].vert16s);
+// //         Con_Printf("skel_model->meshes[%d].vert8s = %d\n", i, skel_model->meshes[i].vert8s);
+// //         Con_Printf("skel_model->meshes[%d].geomset = %d\n", i, skel_model->meshes[i].geomset);
+// //         Con_Printf("skel_model->meshes[%d].geomid = %d\n", i, skel_model->meshes[i].geomid);
+// //         Con_Printf("skel_model->meshes[%d].material_name = \"%s\"\n", i, skel_model->meshes[i].material_name);
+// //         Con_Printf("skel_model->meshes[%d].material_idx = %d\n", i, skel_model->meshes[i].material_idx);
+// //         // --
+// //         Con_Printf("skel_model->meshes[%d].n_skinning_bones = %d\n", i, skel_model->meshes[i].n_skinning_bones);
+// //         Con_Printf("\tskel_model->meshes[%d].skinning_bone_idxs = [", i);
+// //         for(int k = 0; k < 8; k++) {
+// //             Con_Printf("%d, ", skel_model->meshes[i].skinning_bone_idxs[k]);
+// //         }
+// //         Con_Printf("]\n");
+// //         // --
+// //         Con_Printf("\tskel_model->meshes[%d].verts_ofs = [", i);
+// //         for(int k = 0; k < 3; k++) {
+// //             Con_Printf("%f, ", skel_model->meshes[i].verts_ofs[k]);
+// //         }
+// //         Con_Printf("]\n");
+// //         // --
+// //         Con_Printf("\tskel_model->meshes[%d].verts_scale = [", i);
+// //         for(int k = 0; k < 3; k++) {
+// //             Con_Printf("%f, ", skel_model->meshes[i].verts_scale[k]);
+// //         }
+// //         Con_Printf("]\n");
+// //         // --
+// //         Con_Printf("skel_model->meshes[%d].n_submeshes = %d\n", i, skel_model->meshes[i].n_submeshes);
+// //         Con_Printf("skel_model->meshes[%d].submeshes = %d\n", i, skel_model->meshes[i].submeshes);
+
+// //         for(int j = 0; j < skel_model->meshes[i].n_submeshes; j++) {
+// //             Con_Printf("\t----------\n");
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].n_verts = %d\n", i, j, skel_model->meshes[i].submeshes[j].n_verts);
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].n_tris = %d\n", i, j, skel_model->meshes[i].submeshes[j].n_tris);
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_rest_positions = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_rest_positions);
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_uvs = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_uvs);
+
+// // #ifdef IQM_LOAD_NORMALS
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_rest_normals = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_rest_normals);
+// // #endif // IQM_LOAD_NORMALS
+
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_bone_weights = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_bone_weights);
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_bone_idxs = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_bone_idxs);
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_skinning_weights = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_skinning_weights);
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].tri_verts = %d\n", i, j, skel_model->meshes[i].submeshes[j].tri_verts);
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert16s = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert16s);
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert8s = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert8s);
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].n_skinning_bones = %d\n", i, j, skel_model->meshes[i].submeshes[j].n_skinning_bones);
+// //             // --
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].skinning_bone_idxs = [", i, j);
+// //             for(int k = 0; k < 8; k++) {
+// //                 Con_Printf("%d, ", skel_model->meshes[i].submeshes[j].skinning_bone_idxs[k]);
+// //             }
+// //             Con_Printf("]\n");
+// //             // --
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].verts_ofs = [", i, j);
+// //             for(int k = 0; k < 3; k++) {
+// //                 Con_Printf("%f, ", skel_model->meshes[i].submeshes[j].verts_ofs[k]);
+// //             }
+// //             Con_Printf("]\n");
+// //             // --
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].verts_scale = [", i, j);
+// //             for(int k = 0; k < 3; k++) {
+// //                 Con_Printf("%f, ", skel_model->meshes[i].submeshes[j].verts_scale[k]);
+// //             }
+// //             Con_Printf("]\n");
+// //             // --
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].n_submeshes = %d\n", i, j, skel_model->meshes[i].submeshes[j].n_submeshes);
+// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].submeshes = %d\n", i, j, skel_model->meshes[i].submeshes[j].submeshes);
+// //             Con_Printf("\t----------\n");
+// //         }
+// //         Con_Printf("---------------------\n");
+// //     }
+// //     for(uint32_t i = 0; i < skel_model->n_bones; i++) {
+// //         Con_Printf("Parsed bone: %i, \"%s\" (parent bone: %d)\n", i, skel_model->bone_name[i], skel_model->bone_parent_idx[i]);
+// //         Con_Printf("\tPos: (%.2f, %.2f, %.2f)\n", skel_model->bone_rest_pos[i][0], skel_model->bone_rest_pos[i][1], skel_model->bone_rest_pos[i][2]);
+// //         Con_Printf("\tRot: (%.2f, %.2f, %.2f, %.2f)\n", skel_model->bone_rest_rot[i][0], skel_model->bone_rest_rot[i][1], skel_model->bone_rest_rot[i][2], skel_model->bone_rest_rot[i][3]);
+// //         Con_Printf("\tScale: (%.2f, %.2f, %.2f)\n", skel_model->bone_rest_scale[i][0], skel_model->bone_rest_scale[i][1], skel_model->bone_rest_scale[i][2]);
+// //         Con_Printf("\thitbox enabled: %d\n", skel_model->bone_hitbox_enabled[i]);
+// //         Con_Printf("\thitbox ofs: (%.2f, %.2f, %.2f)\n", skel_model->bone_hitbox_ofs[i][0], skel_model->bone_hitbox_ofs[i][1], skel_model->bone_hitbox_ofs[i][2]);
+// //         Con_Printf("\thitbox scale: (%.2f, %.2f, %.2f)\n", skel_model->bone_hitbox_scale[i][0], skel_model->bone_hitbox_scale[i][1], skel_model->bone_hitbox_scale[i][2]);
+// //         Con_Printf("\thitbox tag: %d\n", skel_model->bone_hitbox_tag[i]);
+// //     }
+
+// //     for(int i = 0; i < skel_model->n_materials; i++) {
+// //         Con_Printf("---------------------\n");
+// //         Con_Printf("skel_model->material_names[%d] = %s\n", i, skel_model->material_names[i]);
+// //         Con_Printf("skel_model->material_n_skins[%d] = %d\n", i, skel_model->material_n_skins[i]);
+// //         for(int j = 0; j < skel_model->material_n_skins[i]; j++) {
+// //             Con_Printf("\tskel_model->materials[%d][%d].texture_idx = %d\n", i, j, skel_model->materials[i][j].texture_idx);
+// //             Con_Printf("\tskel_model->materials[%d][%d].transparent = %d\n", i, j, skel_model->materials[i][j].transparent);
+// //             Con_Printf("\tskel_model->materials[%d][%d].fullbright = %d\n", i, j, skel_model->materials[i][j].fullbright);
+// //             Con_Printf("\tskel_model->materials[%d][%d].fog = %d\n", i, j, skel_model->materials[i][j].fog);
+// //             Con_Printf("\tskel_model->materials[%d][%d].shade_smooth = %d\n", i, j, skel_model->materials[i][j].shade_smooth);
+// //             Con_Printf("\tskel_model->materials[%d][%d].add_color = %d\n", i, j, skel_model->materials[i][j].add_color);
+// //             Con_Printf("\tskel_model->materials[%d][%d].add_color val = [%f, %f, %f, %f]\n", i, j, skel_model->materials[i][j].add_color_red, skel_model->materials[i][j].add_color_green, skel_model->materials[i][j].add_color_blue, skel_model->materials[i][j].add_color_alpha);
+// //         }
+// //     }
+
+
+// //     Con_Printf("skel_model->n_framegroups = %d\n", skel_model->n_framegroups);
+
+// //     for(int i = 0; i < skel_model->n_framegroups; i++) {
+// //         Con_Printf("---------------------\n");
+// //         Con_Printf("skel_model->framegroup_name[%d] = \"%s\"\n", i, skel_model->framegroup_name[i]);
+// //         Con_Printf("skel_model->framegroup_start_frame[%d] = %d\n", i, skel_model->framegroup_start_frame[i]);
+// //         Con_Printf("skel_model->framegroup_n_frames[%d] = %d\n", i, skel_model->framegroup_n_frames[i]);
+// //         Con_Printf("skel_model->framegroup_fps[%d] = %f\n", i, skel_model->framegroup_fps[i]);
+// //         Con_Printf("skel_model->framegroup_loop[%d] = %d\n", i, skel_model->framegroup_loop[i]);
+
+// //         if(skel_model->framegroup_n_events != NULL) {
+// //             Con_Printf("skel_model->framegroup_n_events[%d] = %d\n", i, skel_model->framegroup_n_events[i]);
+// //             for(int j = 0; j < skel_model->framegroup_n_events[i]; j++) {
+// //                 Con_Printf("\tskel_model->framegroup_event_time[%d][%d] = %f\n", i, j, skel_model->framegroup_event_time[i][j]);
+// //                 Con_Printf("\tskel_model->framegroup_event_code[%d][%d] = %d\n", i, j, skel_model->framegroup_event_code[i][j]);
+// //                 Con_Printf("\tskel_model->framegroup_event_data_str[%d][%d] = \"%s\"\n", i, j, skel_model->framegroup_event_data_str[i][j]);
+// //             }
+// //         }
+// //     }
+
+// //     if(skel_model->fps_cam_bone_idx >= 0) {
+// //         Con_Printf("------------------------------------------------------------\n");
+// //         Con_Printf("Printing fps_cam_bone animation data:\n");
+// //         for(int i = 0; i < skel_model->n_framegroups; i++) {
+// //             for(int frame_idx = skel_model->framegroup_start_frame[i]; frame_idx < skel_model->framegroup_start_frame[i] + skel_model->framegroup_n_frames[i]; frame_idx++) {
+// //                 vec3_t *frame_pos = &(skel_model->frames_bone_pos[      skel_model->n_bones * frame_idx + skel_model->fps_cam_bone_idx]);
+// //                 quat_t *frame_rot = &(skel_model->frames_bone_rot[      skel_model->n_bones * frame_idx + skel_model->fps_cam_bone_idx]);
+// //                 vec3_t *frame_scale = &(skel_model->frames_bone_scale[  skel_model->n_bones * frame_idx + skel_model->fps_cam_bone_idx]);
+
+// //                 Con_Printf("Camera bone transform (bone %d, framegroup %d, frame %d): pos: (%.2f, %.2f, %.2f), rot: (%.2f, %.2f, %.2f, %.2f), scale: (%.2f, %.2f, %.2f)\n",
+// //                     skel_model->fps_cam_bone_idx, i, frame_idx,
+// //                     (*frame_pos)[0], (*frame_pos)[1], (*frame_pos)[2], 
+// //                     (*frame_rot)[0], (*frame_rot)[1], (*frame_rot)[2], (*frame_rot)[3], 
+// //                     (*frame_scale)[0], (*frame_scale)[1], (*frame_scale)[2]
+// //                 );
+// //             }
+// //         }
+// //         Con_Printf("------------------------------------------------------------\n");
+// //     }
+// // #endif // IQMDEBUG_LOADIQM_DEBUGSUMMARY
+// //     // ------------------------------------------------------------------------
+
+
+// //     // TODO - Need to update this function to work with latest version of skeletal_model_t
+// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
+// //     Con_Printf("About to calculate skeletal model size...\n");
+// // #endif // IQMDEBUG_LOADIQM_RELOCATE
+// //     uint32_t skel_model_n_bytes = count_skel_model_n_bytes(skel_model);
+// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
+// //     Con_Printf("Done calculating skeletal model size\n");
+// //     Con_Printf("Skeletal model size (before padding): %d\n", skel_model_n_bytes);
+// // #endif // IQMDEBUG_LOADIQM_RELOCATE
+// //     // skeletal_model_t *relocatable_skel_model = (skeletal_model_t*) malloc(skel_model_n_bytes); // TODO - Pad to 2-byte alignment?
+// //     // Pad to two bytes:
+// //     // Pad to four bytes:
+// //     skel_model_n_bytes += (skel_model_n_bytes % 4);
+// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
+// //     Con_Printf("Skeletal model size (after padding): %d\n", skel_model_n_bytes);
+// // #endif // IQMDEBUG_LOADIQM_RELOCATE
+// //     // if(skel_model_n_bytes % 2 == 1) {
+// //     //     skel_model_n_bytes += 1;
+// //     // }
+// //     //
+// //     // FIXME - Make sure every memory location is offset by two bytes? Might require modifying flattenmemory method
+// //     //
+// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
+// //     Con_Printf("Allocating memory for skeletal model\n");
+// // #endif // IQMDEBUG_LOADIQM_RELOCATE
+// //     skeletal_model_t *relocatable_skel_model = (skeletal_model_t*) Hunk_AllocName(skel_model_n_bytes, loadname);
+// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
+// //     Con_Printf("Done allocating memory for skeletal model\n");
+// // #endif // IQMDEBUG_LOADIQM_RELOCATE
+// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
+// //     Con_Printf("Flattening skeletal model to make relocatable\n");
+// // #endif // IQMDEBUG_LOADIQM_RELOCATE
+// //     make_skeletal_model_relocatable(relocatable_skel_model, skel_model);
+// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
+// //     Con_Printf("Done flattening skeletal model to make relocatable\n");
+// // #endif // IQMDEBUG_LOADIQM_RELOCATE
+// //     model->type = mod_iqm;
+
+
+// // #ifdef IQM_BBOX_PER_MODEL_PER_ANIM
+// //     Con_Printf("About to calculate rest pose mins / maxs\n");
+// //     calc_skel_model_bounds_for_rest_pose(relocatable_skel_model, relocatable_skel_model->rest_pose_bone_hitbox_mins, relocatable_skel_model->rest_pose_bone_hitbox_maxs);
+// //     Con_Printf("Done calculating rest pose mins / maxs:\n");
+// //     Con_Printf("\tmins: [%f, %f, %f]\n", relocatable_skel_model->rest_pose_bone_hitbox_mins[0], relocatable_skel_model->rest_pose_bone_hitbox_mins[1], relocatable_skel_model->rest_pose_bone_hitbox_mins[2]);
+// //     Con_Printf("\tmaxs: [%f, %f, %f]\n", relocatable_skel_model->rest_pose_bone_hitbox_maxs[0], relocatable_skel_model->rest_pose_bone_hitbox_maxs[1], relocatable_skel_model->rest_pose_bone_hitbox_maxs[2]);
+// //     Con_Printf("About to calculate anim pose mins / maxs\n");
+// //     calc_skel_model_bounds_for_anim(relocatable_skel_model, relocatable_skel_model, relocatable_skel_model->anim_bone_hitbox_mins, relocatable_skel_model->anim_bone_hitbox_maxs);
+// //     Con_Printf("Done calculating anim pose mins / maxs:\n");
+// //     Con_Printf("\tmins: [%f, %f, %f]\n", relocatable_skel_model->anim_bone_hitbox_mins[0], relocatable_skel_model->anim_bone_hitbox_mins[1], relocatable_skel_model->anim_bone_hitbox_mins[2]);
+// //     Con_Printf("\tmaxs: [%f, %f, %f]\n", relocatable_skel_model->anim_bone_hitbox_maxs[0], relocatable_skel_model->anim_bone_hitbox_maxs[1], relocatable_skel_model->anim_bone_hitbox_maxs[2]);
+// // #endif // IQM_BBOX_PER_MODEL_PER_ANIM
+
+
+// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
+// //     Con_Printf("Copying final skeletal model struct... ");
+// // #endif // IQMDEBUG_LOADIQM_RELOCATE
+
+// //     if (!model->cache.data) {
+// //         Cache_Alloc(&model->cache, skel_model_n_bytes, loadname);
+// //     }
+// //     if (!model->cache.data) {
+// //         return;
+// //     }
+
+// //     memcpy_vfpu(model->cache.data, (void*) relocatable_skel_model, skel_model_n_bytes);
+
+// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
+// //     Con_Printf("DONE\n");
+// // #endif // IQMDEBUG_LOADIQM_RELOCATE
+
+// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
+// //     Con_Printf("About to free temp skeletal model struct...");
+// // #endif // IQMDEBUG_LOADIQM_RELOCATE
+
+// //     free_skeletal_model(skel_model);
+// //     skel_model = NULL;
+
+// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
+// //     Con_Printf("DONE\n");
+// // #endif // IQMDEBUG_LOADIQM_RELOCATE
+// }
+
+
+
+
+void bind_submesh_bones(skeletal_submesh_t *submesh, skeletal_skeleton_t *skeleton) {
     // Transform matrix that undoes int16 / int8 quantization scale + ofs
     ScePspFMatrix4 undo_quantization;
     gumLoadIdentity(&undo_quantization);
@@ -2824,8 +1543,6 @@ void draw_ent_aabb(entity_t *ent) {
 
 
 
-
-
 //
 // Draws bone hitbox bounding boxes and overall skeleton bounding box
 //  draw_skel_bbox -- If `true`, draws overall skeleton bounding box around bones
@@ -2838,7 +1555,7 @@ void draw_skeleton_bboxes(entity_t *ent, skeletal_skeleton_t *skel, bool draw_sk
 
     // Draw bones
     // Con_Printf("------------------------------\n");
-    // char **bone_names = get_member_from_offset(skel_model->bone_name, skel_model);
+    // char **bone_names = UNPACK_MEMBER(skel_model->bone_name, skel_model);
     mat3x4_t *bone_transforms = skel->bone_transforms;
 
     // ------------------------------------------------------------------------
@@ -2909,10 +1626,10 @@ void draw_skeleton_bboxes(entity_t *ent, skeletal_skeleton_t *skel, bool draw_sk
     // --------------------------------------------------
 
 
-    bool *bone_hitbox_enabled = get_member_from_offset(skel->model->bone_hitbox_enabled, skel->model);
-    vec3_t *bone_hitbox_ofs = get_member_from_offset(skel->model->bone_hitbox_ofs, skel->model);
-    vec3_t *bone_hitbox_scale = get_member_from_offset(skel->model->bone_hitbox_scale, skel->model);
-    int *bone_hitbox_tag = get_member_from_offset(skel->model->bone_hitbox_tag, skel->model);
+    bool *bone_hitbox_enabled = UNPACK_MEMBER(skel->model->bone_hitbox_enabled, skel->model);
+    vec3_t *bone_hitbox_ofs = UNPACK_MEMBER(skel->model->bone_hitbox_ofs, skel->model);
+    vec3_t *bone_hitbox_scale = UNPACK_MEMBER(skel->model->bone_hitbox_scale, skel->model);
+    int *bone_hitbox_tag = UNPACK_MEMBER(skel->model->bone_hitbox_tag, skel->model);
 
 
     // ----------------------------------------------------
@@ -2954,7 +1671,7 @@ void draw_skeleton_bboxes(entity_t *ent, skeletal_skeleton_t *skel, bool draw_sk
         // VectorNormalizeFast(ray_dir_bone_space);
         float bbox_hit_tmin;
         // Con_Printf("About to draw bbox around entire skeleton 3\n");
-        bool bbox_hit = ray_aabb_intersection(ray_start_skel_space, ray_dir_skel_space, bbox_hit_tmin);
+        bool bbox_hit = ray_aabb_intersection(ray_start_skel_space, ray_dir_skel_space, &bbox_hit_tmin);
         // --------------------------------------------
 
         ScePspFMatrix4 skel_mat;
@@ -3031,7 +1748,7 @@ void draw_skeleton_bboxes(entity_t *ent, skeletal_skeleton_t *skel, bool draw_sk
             Matrix3x4_VectorRotate(world_to_bone_transform, ray_dir, ray_dir_bone_space);
             // VectorNormalizeFast(ray_dir_bone_space);
             float bbox_hit_tmin;
-            bool bbox_hit = ray_aabb_intersection(ray_start_bone_space, ray_dir_bone_space, bbox_hit_tmin);
+            bool bbox_hit = ray_aabb_intersection(ray_start_bone_space, ray_dir_bone_space, &bbox_hit_tmin);
 
             // vec3_t ray_start_world_space;
             // vec3_t ray_dir_world_space;
@@ -3141,7 +1858,7 @@ void draw_skeleton_bboxes(entity_t *ent, skeletal_skeleton_t *skel, bool draw_sk
 
 
 void draw_skeleton_rest_pose_bone_axes(skeletal_model_t *skel_model) {
-    mat3x4_t *bone_transforms = get_member_from_offset(skel_model->bone_rest_transforms, skel_model);
+    mat3x4_t *bone_transforms = UNPACK_MEMBER(skel_model->bone_rest_transforms, skel_model);
 
     // mat3x4_t ident_mat;
     // Matrix3x4_LoadIdentity(ident_mat);
@@ -3181,7 +1898,7 @@ void draw_skeleton_bone_axes(entity_t *ent, skeletal_skeleton_t *skel) {
     }
 
     // Draw bones
-    // char **bone_names = get_member_from_offset(skel_model->bone_name, skel_model);
+    // char **bone_names = UNPACK_MEMBER(skel_model->bone_name, skel_model);
     mat3x4_t *bone_transforms = skel->bone_transforms;
     skeletal_model_t *skel_model = skel->model;
 
@@ -3190,7 +1907,7 @@ void draw_skeleton_bone_axes(entity_t *ent, skeletal_skeleton_t *skel) {
     // IQMFIXME - Remove these
     // -------------–
     // Test debug -- Draw bones at their rest positions...
-    // mat3x4_t *bone_rest_transforms = get_member_from_offset(skel_model->bone_rest_transforms, skel_model);
+    // mat3x4_t *bone_rest_transforms = UNPACK_MEMBER(skel_model->bone_rest_transforms, skel_model);
     // bone_transforms = bone_rest_transforms;
     // -------------–
     // mat3x4_t ident_mat;
@@ -3598,7 +2315,7 @@ void R_DrawIQMModel(entity_t *ent) {
     
 
 
-    skeletal_mesh_t *meshes = get_member_from_offset(skel_model->meshes, skel_model);
+    skeletal_mesh_t *meshes = UNPACK_MEMBER(skel_model->meshes, skel_model);
 
     // TODO - Need to somehow detect when this is being called on a zombie ent, to know when to check limbs state
     // Con_Printf("Ent limb state: %d\n", ent->limbs_state);
@@ -3676,12 +2393,12 @@ void R_DrawIQMModel(entity_t *ent) {
 
 
         int material_idx = mesh->material_idx;
-        int *material_n_skins = get_member_from_offset(skel_model->material_n_skins, skel_model);
+        int *material_n_skins = UNPACK_MEMBER(skel_model->material_n_skins, skel_model);
         
         skeletal_material_t *material = nullptr;
         if(material_idx >= 0 && skel_model->n_materials > 0) {
-            skeletal_material_t **materials = get_member_from_offset(skel_model->materials, skel_model);
-            skeletal_material_t *material_skins = get_member_from_offset(materials[material_idx], skel_model);
+            skeletal_material_t **materials = UNPACK_MEMBER(skel_model->materials, skel_model);
+            skeletal_material_t *material_skins = UNPACK_MEMBER(materials[material_idx], skel_model);
             int skin_idx = ent->skinnum;
             // If this material doesn't have requested skin number, get modulus
             // skin_idx to always get a valid skin
@@ -3707,12 +2424,12 @@ void R_DrawIQMModel(entity_t *ent) {
         // // ------------------------------
 
         // Con_Printf("\tn_submeshes: %d\n", mesh->n_submeshes);
-        skeletal_mesh_t *submeshes = get_member_from_offset(mesh->submeshes, skel_model);
+        skeletal_submesh_t *submeshes = UNPACK_MEMBER(mesh->submeshes, skel_model);
         for(int j = 0; j < mesh->n_submeshes; j++) {
             // Con_Printf("Drawing mesh %d submesh %d\n", i, j);
-            skeletal_mesh_t *submesh = &submeshes[j];
-            skel_vertex_i8_t *vert8s = get_member_from_offset(submesh->vert8s, skel_model);
-            skel_vertex_i16_t *vert16s = get_member_from_offset(submesh->vert16s, skel_model);
+            skeletal_submesh_t *submesh = &submeshes[j];
+            skel_vertex_i8_t *vert8s = UNPACK_MEMBER(submesh->vert8s, skel_model);
+            skel_vertex_i16_t *vert16s = UNPACK_MEMBER(submesh->vert16s, skel_model);
 
 
 

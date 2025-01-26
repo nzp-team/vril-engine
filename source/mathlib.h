@@ -86,6 +86,10 @@ extern	int nanmask;
 
 typedef float matrix3x4[3][4];
 typedef float matrix3x3[3][3];
+typedef matrix3x4 mat3x4_t;
+typedef matrix3x3 mat3x3_t;
+typedef vec4_t quat_t;
+
 
 void VectorMA (vec3_t veca, float scale, vec3_t vecb, vec3_t vecc);
 
@@ -229,3 +233,28 @@ extern vec3_t _mathlib_temp_vec1, _mathlib_temp_vec2, _mathlib_temp_vec3;
 
 
 void transform_AABB(vec3_t in_mins, vec3_t in_maxs, mat3x4_t transform, vec3_t out_mins, vec3_t out_maxs);
+void Matrix3x4_to_ScePspFMatrix4(ScePspFMatrix4 *out, mat3x4_t *in);
+
+
+
+#ifdef __PSP__
+void Matrix3x4_to_ScePspFMatrix4(ScePspFMatrix4 *out, mat3x4_t *in);
+#endif // __PSP__
+
+void Matrix3x4_scale_rotate_translate(mat3x4_t out, const vec3_t scale, const quat_t rotation, const vec3_t translation);
+void Matrix3x4_rotate_translate(mat3x4_t out, const quat_t rotation, const vec3_t translation);
+
+
+extern const matrix3x4 matrix3x4_zero;
+extern const matrix3x3 matrix3x3_zero;
+extern const matrix3x3 matrix3x3_identity;
+
+
+#define Matrix3x4_LoadZero( mat )		Matrix3x4_Copy( mat, matrix3x4_zero )
+#define Matrix3x3_Copy( out, in )		memcpy( out, in, sizeof( matrix3x3 ))
+#define Matrix3x3_LoadZero( mat )		Matrix3x3_Copy( mat, matrix3x3_zero )
+#define Matrix3x3_LoadIdentity( mat )		Matrix3x3_Copy( mat, matrix3x3_identity )
+void Matrix3x4_scale_translate(mat3x4_t out, const vec3_t scale, const vec3_t translation);
+void Matrix3x4_Invert_Affine( matrix3x4 out, const matrix3x4 in );
+void Matrix3x3_Invert_Transposed_Matrix3x4(matrix3x3 out, const matrix3x4 in);
+

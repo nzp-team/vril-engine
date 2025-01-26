@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern "C"
 {
 #include "../../quakedef.h"
-float TraceLine (vec3_t start, vec3_t end, vec3_t impact, vec3_t normal);
 }
 
 //includes

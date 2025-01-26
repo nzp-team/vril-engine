@@ -10,24 +10,11 @@
 #define VIDEO_HARDWARE_IQM_H
 
 
-// 
-// If defined, enables runtime calculation of skeletal model bbox when playing an arbitrary skeletal anim
-// This bbox is used as an early-out check for raytrace skeleton bone collision detection.
-// If enabled, the early-out bbox will accurately reflect the min / max positions of all bone bboxes across the animation
-// If disabled, the early-out bbox will be static (currently 2x HLBSP player hull). 
-// Any bones outside of this static bbox will not be deetected by raytrace collision detection.
-// 
-// TODO - Profile hit detection with and without this
-// TODO - Profile time spent calculating the AABB for a model
-// #define IQM_BBOX_PER_MODEL_PER_ANIM
 
+#define VERT_BONES 4
+#define TRI_VERTS 3
+#define SUBMESH_BONES 8
 
-// #define IQM_LOAD_NORMALS    // Uncomment this to load vertex normals
-
-
-typedef matrix3x4 mat3x4_t;
-typedef vec4_t quat_t;
-typedef matrix3x3 mat3x3_t;
 
 
 
@@ -58,7 +45,7 @@ typedef struct skel_vertex_i16_s {
 
 typedef struct skel_vertex_i8_s {
     // Bone skinning weights, one per bone.
-    int8_t bone_weights[8];
+    int8_t bone_weights[SUBMESH_BONES];
     int8_t u,v;
 
 #ifdef IQM_LOAD_NORMALS
@@ -71,20 +58,16 @@ typedef struct skel_vertex_i8_s {
 
 
 
-
-
-typedef struct skeletal_mesh_s {
+// 
+// Struct used to stash temporary mesh structure during loading
+//
+typedef struct skeletal_full_mesh_s {
     uint32_t n_verts;               // Number of vertices in this mesh
     uint32_t n_tris;                // Number of triangles in this mesh
     uint32_t geomset;
     uint32_t geomid;
-
     char *material_name;
     int material_idx;
-
-    // ------------------------------------------------------------------------
-    // Pointers to use to stash temporary data during model loading
-    // ------------------------------------------------------------------------
     vec3_t *vert_rest_positions;    // Vert xyz coordinates
     vec2_t *vert_uvs;               // Vert UV coordinates
 
@@ -94,30 +77,49 @@ typedef struct skeletal_mesh_s {
 
     float  *vert_bone_weights;      // 4 bone weights per vertex
     uint8_t *vert_bone_idxs;        // 4 bone indices per vertex
-    float *vert_skinning_weights;   // 8 weights per vertex (Used for mesh -> submesh splitting)
+    
     uint16_t *tri_verts;            // (3 * n_tris) indices to verts that define triangles
-    // ------------------------------------------------------------------------
+} skeletal_full_mesh_t;
 
-    // ------------------------------------------------------------------------
-    // Pointers to data structures holding the hardware-skinning vertex data
-    // NOTE - These are only assigned at the submesh level
-    // ------------------------------------------------------------------------
+
+typedef struct skeletal_submesh_s {
+    uint32_t n_verts;               // Number of vertices in this mesh
+    uint32_t n_tris;                // Number of triangles in this mesh
+
     // skel_vertex_f32_t *verts   = nullptr;    // float32 Vertex struct
     skel_vertex_i16_t *vert16s = nullptr;       // int16 Vertex struct
     skel_vertex_i8_t  *vert8s  = nullptr;       // int8 Vertex struct
+
     uint8_t n_skinning_bones = 0;               // Number of hardware skinning bones (<= 8)
-    uint8_t skinning_bone_idxs[8];              // Model bone indices to use for hardware skinning
+    uint8_t skinning_bone_idxs[SUBMESH_BONES];  // Model bone indices to use for hardware skinning
+
     vec3_t verts_ofs;                           // Offset for vertex quantization grid
     vec3_t verts_scale;                         // Scale for vertex quantization grid
-    // ------------------------------------------------------------------------
+} skeletal_submesh_t;
 
+
+typedef struct skeletal_mesh_s {
+    uint32_t geomset;
+    uint32_t geomid;
+    char *material_name;
+    int material_idx;
     uint8_t n_submeshes = 0;
-    struct skeletal_mesh_s *submeshes = nullptr;
-} skeletal_mesh_t;
+    struct skeletal_submesh_s *submeshes = nullptr;
+} skeletal_mesh_s;
 
 
-void Mod_LoadIQMModel (model_t *model, void *buffer);
+
+// extern "C" {
+//     skeletal_mesh_t *load_iqm_meshes(const void *iqm_data, const iqm_model_vertex_arrays_t *iqm_vertex_arrays);    
+//     // TODO - Implement these
+//     // pack_skel_meshes();
+//     // count_skel_meshes_nbytes();
+//     // free_unpacked_skel_meshes();
+// };
+
+
 void R_DrawIQMModel(entity_t *ent);
+// void Mod_LoadIQMModel (model_t *model, void *buffer);
 
 
 #endif // VIDEO_HARDWARE_IQM_H

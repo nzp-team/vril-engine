@@ -281,7 +281,6 @@ typedef struct
 #endif // _3DS
 #include "progs.h"
 
-#include "iqm.h"
 
 #ifdef _3DS
 #include "ctr/server.h"
@@ -300,8 +299,9 @@ typedef struct
 #include "wii/gx/gx_model.h"
 #else
 #include "psp/gu/gu_model.h"
-#include "psp/gu/gu_iqm.h"
 #endif
+
+#include "iqm.h"
 
 #include "input.h"
 #include "world.h"
