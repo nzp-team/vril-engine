@@ -2834,172 +2834,156 @@ void pack_skeletal_model(skeletal_model_t *unpacked_skel_model_in, skeletal_mode
     pack_skeletal_model_meshes(unpacked_skel_model_in, packed_skel_model_out, buffer_head_ptr);
 
 
+    // -- bones --
+    PACK_MEMBER(&packed_skel_model_out->bone_name,          unpacked_skel_model_in->bone_name,          sizeof(char*)   * unpacked_skel_model_in->n_bones, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->bone_parent_idx,    unpacked_skel_model_in->bone_parent_idx,    sizeof(int16_t) * unpacked_skel_model_in->n_bones, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->bone_rest_pos,      unpacked_skel_model_in->bone_rest_pos,      sizeof(vec3_t)  * unpacked_skel_model_in->n_bones, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->bone_rest_rot,      unpacked_skel_model_in->bone_rest_rot,      sizeof(vec4_t)  * unpacked_skel_model_in->n_bones, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->bone_rest_scale,    unpacked_skel_model_in->bone_rest_scale,    sizeof(vec3_t)  * unpacked_skel_model_in->n_bones, buffer, buffer_head_ptr);
+
+    char **packed_bone_name = UNPACK_MEMBER(packed_skel_model_out->bone_name, packed_skel_model_out);
+    char **unpacked_bone_name = unpacked_skel_model_in->bone_name;
+    for(int bone_idx = 0; bone_idx < unpacked_skel_model_in->n_bones; bone_idx++) {
+        PACK_MEMBER(&packed_bone_name[bone_idx], unpacked_bone_name[bone_idx], safe_strsize(unpacked_bone_name[bone_idx]), buffer, buffer_head_ptr);
+    }
 
 
-    // // -- bones --
-    // flatten_member(relocatable_skel_model->bone_name, skel_model->bone_name, sizeof(char*) * skel_model->n_bones, ptr);
-    // flatten_member(relocatable_skel_model->bone_parent_idx, skel_model->bone_parent_idx, sizeof(int16_t) * skel_model->n_bones, ptr);
-    // flatten_member(relocatable_skel_model->bone_rest_pos, skel_model->bone_rest_pos, sizeof(vec3_t) * skel_model->n_bones, ptr);
-    // flatten_member(relocatable_skel_model->bone_rest_rot, skel_model->bone_rest_rot, sizeof(vec4_t) * skel_model->n_bones, ptr);
-    // flatten_member(relocatable_skel_model->bone_rest_scale, skel_model->bone_rest_scale, sizeof(vec3_t) * skel_model->n_bones, ptr);
-    // for(int i = 0; i < skel_model->n_bones; i++) {
-    //     flatten_member(relocatable_skel_model->bone_name[i], skel_model->bone_name[i], safe_strsize(skel_model->bone_name[i]), ptr);
-    // }
-
-    // // Con_Printf("make_skeletal_model_relocatable 1.4\n");
-
-    // // -- bone hitbox info --
-    // flatten_member(relocatable_skel_model->bone_hitbox_enabled, skel_model->bone_hitbox_enabled, sizeof(bool) * skel_model->n_bones, ptr);
-    // flatten_member(relocatable_skel_model->bone_hitbox_ofs,     skel_model->bone_hitbox_ofs,     sizeof(vec3_t) * skel_model->n_bones, ptr);
-    // flatten_member(relocatable_skel_model->bone_hitbox_scale,   skel_model->bone_hitbox_scale,   sizeof(vec3_t) * skel_model->n_bones, ptr);
-    // flatten_member(relocatable_skel_model->bone_hitbox_tag,     skel_model->bone_hitbox_tag,     sizeof(int) * skel_model->n_bones, ptr);
-
-    // // Con_Printf("make_skeletal_model_relocatable 1.5\n");
-
-    // // -- cached bone rest transforms --
-    // flatten_member(relocatable_skel_model->bone_rest_transforms, skel_model->bone_rest_transforms, sizeof(mat3x4_t) * skel_model->n_bones, ptr);
-    // flatten_member(relocatable_skel_model->inv_bone_rest_transforms, skel_model->inv_bone_rest_transforms, sizeof(mat3x4_t) * skel_model->n_bones, ptr);
-
-    // // Con_Printf("make_skeletal_model_relocatable 1.6\n");
-
-    // // -- frames --
-    // flatten_member(relocatable_skel_model->frames_bone_pos, skel_model->frames_bone_pos, sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames, ptr);
-    // flatten_member(relocatable_skel_model->frames_bone_rot, skel_model->frames_bone_rot, sizeof(quat_t) * skel_model->n_bones * skel_model->n_frames, ptr);
-    // flatten_member(relocatable_skel_model->frames_bone_scale, skel_model->frames_bone_scale, sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames, ptr);
-    // flatten_member(relocatable_skel_model->frames_move_dist, skel_model->frames_move_dist, sizeof(float) * skel_model->n_frames, ptr);
-
-    // // Con_Printf("make_skeletal_model_relocatable 1.7\n");
-
-    // // -- framegroups --
-    // flatten_member(relocatable_skel_model->framegroup_name, skel_model->framegroup_name, sizeof(char*) * skel_model->n_framegroups, ptr);
-    // flatten_member(relocatable_skel_model->framegroup_start_frame, skel_model->framegroup_start_frame, sizeof(uint32_t) * skel_model->n_framegroups, ptr);
-    // flatten_member(relocatable_skel_model->framegroup_n_frames, skel_model->framegroup_n_frames, sizeof(uint32_t) * skel_model->n_framegroups, ptr);
-    // flatten_member(relocatable_skel_model->framegroup_fps, skel_model->framegroup_fps, sizeof(float) * skel_model->n_framegroups, ptr);
-    // flatten_member(relocatable_skel_model->framegroup_loop, skel_model->framegroup_loop, sizeof(bool) * skel_model->n_framegroups, ptr);
-    // for(int i = 0; i < skel_model->n_framegroups; i++) {
-    //     flatten_member(relocatable_skel_model->framegroup_name[i], skel_model->framegroup_name[i], safe_strsize(skel_model->framegroup_name[i]), ptr);
-    // }
-
-    // // Con_Printf("make_skeletal_model_relocatable 1.8\n");
-
-    // // -- materials --
-    // flatten_member(relocatable_skel_model->material_names, skel_model->material_names, sizeof(char*) * skel_model->n_materials, ptr);
-    // flatten_member(relocatable_skel_model->material_n_skins, skel_model->material_n_skins, sizeof(int) * skel_model->n_materials, ptr);
-    // flatten_member(relocatable_skel_model->materials, skel_model->materials, sizeof(skeletal_material_t*) * skel_model->n_materials, ptr);
-    // for(int i = 0; i < skel_model->n_materials; i++) {
-    //     flatten_member(relocatable_skel_model->material_names[i], skel_model->material_names[i], safe_strsize(skel_model->material_names[i]), ptr);
-    //     flatten_member(relocatable_skel_model->materials[i], skel_model->materials[i], sizeof(skeletal_material_t) * skel_model->material_n_skins[i], ptr);
-    // }
-
-    // // Con_Printf("make_skeletal_model_relocatable 1.9\n");
-
-    // // -- FTE Anim Events --
-    // flatten_member(relocatable_skel_model->framegroup_n_events, skel_model->framegroup_n_events, sizeof(uint16_t) * skel_model->n_framegroups, ptr);
-    // flatten_member(relocatable_skel_model->framegroup_event_time, skel_model->framegroup_event_time, sizeof(float*) * skel_model->n_framegroups, ptr);
-    // flatten_member(relocatable_skel_model->framegroup_event_code, skel_model->framegroup_event_code, sizeof(uint32_t *) * skel_model->n_framegroups, ptr);
-    // flatten_member(relocatable_skel_model->framegroup_event_data_str, skel_model->framegroup_event_data_str, sizeof(char**) * skel_model->n_framegroups, ptr);
-    // if(skel_model->framegroup_n_events != nullptr) {
-    //     for(int i = 0; i < skel_model->n_framegroups; i++) {
-    //         flatten_member(relocatable_skel_model->framegroup_event_time[i], skel_model->framegroup_event_time[i], sizeof(float) * skel_model->framegroup_n_events[i], ptr);
-    //         flatten_member(relocatable_skel_model->framegroup_event_code[i], skel_model->framegroup_event_code[i], sizeof(uint32_t) * skel_model->framegroup_n_events[i], ptr);
-    //         flatten_member(relocatable_skel_model->framegroup_event_data_str[i], skel_model->framegroup_event_data_str[i], sizeof(char*) * skel_model->framegroup_n_events[i], ptr);
-    //         for(int j = 0; j < skel_model->framegroup_n_events[i]; j++) {
-    //             flatten_member(relocatable_skel_model->framegroup_event_data_str[i][j], skel_model->framegroup_event_data_str[i][j], safe_strsize(skel_model->framegroup_event_data_str[i][j]), ptr);
-    //         }
-    //     }
-    // }
-    // // ------------–------------–------------–------------–------------–-------
-
-    // // Con_Printf("make_skeletal_model_relocatable 1.10\n");
+    // -- bone hitbox info --
+    PACK_MEMBER(&packed_skel_model_out->bone_hitbox_enabled, unpacked_skel_model_in->bone_hitbox_enabled, sizeof(bool)     * unpacked_skel_model_in->n_bones, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->bone_hitbox_ofs,     unpacked_skel_model_in->bone_hitbox_ofs,     sizeof(vec3_t)   * unpacked_skel_model_in->n_bones, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->bone_hitbox_scale,   unpacked_skel_model_in->bone_hitbox_scale,   sizeof(vec3_t)   * unpacked_skel_model_in->n_bones, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->bone_hitbox_tag,     unpacked_skel_model_in->bone_hitbox_tag,     sizeof(int)      * unpacked_skel_model_in->n_bones, buffer, buffer_head_ptr);
 
 
-    // // ------------–------------–------------–------------–------------–-------
-    // // Clean up all pointers to be relative to model start location in memory
-    // // NOTE - Must deconstruct in reverse order to avoid undoing offsets
-    // // ------------–------------–------------–------------–------------–-------
-    // // -- FTE Anim Events --
-    // if(skel_model->framegroup_n_events != nullptr) {
-    //     for(int i = 0; i < skel_model->n_framegroups; i++) {
-    //         for(int j = 0; j < skel_model->framegroup_n_events[i]; j++) {
-    //             set_member_to_offset(relocatable_skel_model->framegroup_event_data_str[i][j], relocatable_skel_model);
-    //         }
-    //         set_member_to_offset(relocatable_skel_model->framegroup_event_data_str[i], relocatable_skel_model);
-    //         set_member_to_offset(relocatable_skel_model->framegroup_event_code[i], relocatable_skel_model);
-    //         set_member_to_offset(relocatable_skel_model->framegroup_event_time[i], relocatable_skel_model);
-    //     }
-    // }
-    // set_member_to_offset(relocatable_skel_model->framegroup_event_data_str, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->framegroup_event_code, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->framegroup_event_time, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->framegroup_n_events, relocatable_skel_model);
-
-    // // Con_Printf("make_skeletal_model_relocatable 1.11\n");
+    // -- cached bone rest transforms --
+    PACK_MEMBER(&packed_skel_model_out->bone_rest_transforms,     unpacked_skel_model_in->bone_rest_transforms,     sizeof(mat3x4_t) * unpacked_skel_model_in->n_bones, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->inv_bone_rest_transforms, unpacked_skel_model_in->inv_bone_rest_transforms, sizeof(mat3x4_t) * unpacked_skel_model_in->n_bones, buffer, buffer_head_ptr);
 
 
-    // // -- materials --
-    // for(int i = 0; i < skel_model->n_materials; i++) {
-    //     set_member_to_offset(relocatable_skel_model->materials[i], relocatable_skel_model);
-    //     set_member_to_offset(relocatable_skel_model->material_names[i], relocatable_skel_model);
-    // }
-    // set_member_to_offset(relocatable_skel_model->materials, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->material_n_skins, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->material_names, relocatable_skel_model);
+    // -- frames --
+    PACK_MEMBER(&packed_skel_model_out->frames_bone_pos,   unpacked_skel_model_in->frames_bone_pos,   sizeof(vec3_t) * unpacked_skel_model_in->n_bones, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->frames_bone_rot,   unpacked_skel_model_in->frames_bone_rot,   sizeof(quat_t) * unpacked_skel_model_in->n_bones, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->frames_bone_scale, unpacked_skel_model_in->frames_bone_scale, sizeof(vec3_t) * unpacked_skel_model_in->n_bones, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->frames_move_dist,  unpacked_skel_model_in->frames_move_dist,  sizeof(float)  * unpacked_skel_model_in->n_bones, buffer, buffer_head_ptr);
 
-    // // Con_Printf("make_skeletal_model_relocatable 1.12\n");
 
-    // // -- framegroups --
-    // for(int i = 0; i < skel_model->n_framegroups; i++) {
-    //     set_member_to_offset(relocatable_skel_model->framegroup_name[i], relocatable_skel_model);
-    // }
-    // set_member_to_offset(relocatable_skel_model->framegroup_loop, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->framegroup_fps, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->framegroup_n_frames, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->framegroup_start_frame, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->framegroup_name, relocatable_skel_model);
+    // -- framegroups --
+    PACK_MEMBER(&packed_skel_model_out->framegroup_name,         unpacked_skel_model_in->framegroup_name,          sizeof(char*)    * unpacked_skel_model_in->n_framegroups, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->framegroup_start_frame,  unpacked_skel_model_in->framegroup_start_frame,   sizeof(uint32_t) * unpacked_skel_model_in->n_framegroups, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->framegroup_n_frames,     unpacked_skel_model_in->framegroup_n_frames,      sizeof(uint32_t) * unpacked_skel_model_in->n_framegroups, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->framegroup_fps,          unpacked_skel_model_in->framegroup_fps,           sizeof(float)    * unpacked_skel_model_in->n_framegroups, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->framegroup_loop,         unpacked_skel_model_in->framegroup_loop,          sizeof(bool)     * unpacked_skel_model_in->n_framegroups, buffer, buffer_head_ptr);
 
-    // // Con_Printf("make_skeletal_model_relocatable 1.13\n");
+    char **packed_framegroup_name = UNPACK_MEMBER(packed_skel_model_out->framegroup_name, packed_skel_model_out);
+    char **unpacked_framegroup_name = unpacked_skel_model_in->framegroup_name;
+    for(int framegroup_idx = 0; framegroup_idx < unpacked_skel_model_in->n_framegroups; framegroup_idx++) {
+        PACK_MEMBER(&packed_framegroup_name[framegroup_idx], unpacked_framegroup_name[framegroup_idx], safe_strsize(unpacked_framegroup_name[framegroup_idx]), buffer, buffer_head_ptr);
+    }
 
-    // // -- frames --
-    // set_member_to_offset(relocatable_skel_model->frames_move_dist, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->frames_bone_scale, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->frames_bone_rot, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->frames_bone_pos, relocatable_skel_model);
 
-    // // Con_Printf("make_skeletal_model_relocatable 1.14\n");
-    // // -- cached bone rest transforms --
-    // set_member_to_offset(relocatable_skel_model->inv_bone_rest_transforms, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->bone_rest_transforms, relocatable_skel_model);
+    // -- materials --
+    PACK_MEMBER(&packed_skel_model_out->material_names,    unpacked_skel_model_in->material_names,    sizeof(char*)                * unpacked_skel_model_in->n_materials, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->material_n_skins,  unpacked_skel_model_in->material_n_skins,  sizeof(int)                  * unpacked_skel_model_in->n_materials, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->materials,         unpacked_skel_model_in->materials,         sizeof(skeletal_material_t*) * unpacked_skel_model_in->n_materials, buffer, buffer_head_ptr);
 
-    // // Con_Printf("make_skeletal_model_relocatable 1.15\n");
-    // // -- bone hitbox info --
-    // set_member_to_offset(relocatable_skel_model->bone_hitbox_tag,     relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->bone_hitbox_scale,   relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->bone_hitbox_ofs,     relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->bone_hitbox_enabled, relocatable_skel_model);
+    char **packed_material_names = UNPACK_MEMBER(packed_skel_model_out->material_names, packed_skel_model_out);
+    char **unpacked_material_names = unpacked_skel_model_in->material_names;
+    
+    skeletal_material_t **packed_materials = UNPACK_MEMBER(packed_skel_model_out->materials, packed_skel_model_out);
+    skeletal_material_t **unpacked_materials = unpacked_skel_model_in->materials;
 
-    // // Con_Printf("make_skeletal_model_relocatable 1.16\n");
-    // // -- bones --
-    // for(int i = 0; i < skel_model->n_bones; i++) {
-    //     set_member_to_offset(relocatable_skel_model->bone_name[i], relocatable_skel_model);
-    // }
-    // set_member_to_offset(relocatable_skel_model->bone_rest_scale, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->bone_rest_rot, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->bone_rest_pos, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->bone_parent_idx, relocatable_skel_model);
-    // set_member_to_offset(relocatable_skel_model->bone_name, relocatable_skel_model);
+    for(int material_idx = 0; material_idx < unpacked_skel_model_in->n_materials; material_idx++) {
+        PACK_MEMBER(&packed_material_names[material_idx],  unpacked_material_names[material_idx], safe_strsize(unpacked_material_names[material_idx]), buffer, buffer_head_ptr);
+        PACK_MEMBER(&packed_materials[material_idx],       unpacked_materials[material_idx],      sizeof(skeletal_material_t) * unpacked_skel_model_in->material_n_skins[material_idx], buffer, buffer_head_ptr);
+    }
 
-    // for(int i = 0; i < skel_model->n_meshes; i++) {
-    //     for(int j = 0; j < skel_model->meshes[i].n_submeshes; j++) {
-    //         set_member_to_offset(relocatable_skel_model->meshes[i].submeshes[j].vert8s, relocatable_skel_model);
-    //         set_member_to_offset(relocatable_skel_model->meshes[i].submeshes[j].vert16s, relocatable_skel_model);
-    //     }
-    //     set_member_to_offset(relocatable_skel_model->meshes[i].submeshes, relocatable_skel_model);
-    //     set_member_to_offset(relocatable_skel_model->meshes[i].material_name, relocatable_skel_model);
-    // }
-    // set_member_to_offset(relocatable_skel_model->meshes, relocatable_skel_model);
 
-    // // Con_Printf("make_skeletal_model_relocatable 1.17\n");
-    // // ------------–------------–------------–------------–------------–-------
+    // -- FTE Anim Events --
+    PACK_MEMBER(&packed_skel_model_out->framegroup_n_events,       unpacked_skel_model_in->framegroup_n_events,       sizeof(uint16_t)  * unpacked_skel_model_in->n_framegroups, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->framegroup_event_time,     unpacked_skel_model_in->framegroup_event_time,     sizeof(float*)    * unpacked_skel_model_in->n_framegroups, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->framegroup_event_code,     unpacked_skel_model_in->framegroup_event_code,     sizeof(uint32_t*) * unpacked_skel_model_in->n_framegroups, buffer, buffer_head_ptr);
+    PACK_MEMBER(&packed_skel_model_out->framegroup_event_data_str, unpacked_skel_model_in->framegroup_event_data_str, sizeof(char**)    * unpacked_skel_model_in->n_framegroups, buffer, buffer_head_ptr);
+
+
+    float **packed_framegroup_event_time = UNPACK_MEMBER(packed_skel_model_out->framegroup_event_time, packed_skel_model_out);
+    float **unpacked_framegroup_event_time = unpacked_skel_model_in->framegroup_event_time;
+
+    uint32_t **packed_framegroup_event_code = UNPACK_MEMBER(packed_skel_model_out->framegroup_event_code, packed_skel_model_out);
+    uint32_t **unpacked_framegroup_event_code = unpacked_skel_model_in->framegroup_event_code;
+
+    char ***packed_framegroup_event_data_str = UNPACK_MEMBER(packed_skel_model_out->framegroup_event_data_str, packed_skel_model_out);
+    char ***unpacked_framegroup_event_data_str = unpacked_skel_model_in->framegroup_event_data_str;
+
+    if(unpacked_skel_model_in->framegroup_n_events != NULL) {
+        for(int framegroup_idx; framegroup_idx < unpacked_skel_model_in->n_framegroups; framegroup_idx++) {
+            int framegroup_n_events = unpacked_skel_model_in->framegroup_n_events[framegroup_idx];
+            PACK_MEMBER(&packed_framegroup_event_time[framegroup_idx],     unpacked_framegroup_event_time[framegroup_idx],     sizeof(float)    * framegroup_n_events, buffer, buffer_head_ptr);
+            PACK_MEMBER(&packed_framegroup_event_code[framegroup_idx],     unpacked_framegroup_event_code[framegroup_idx],     sizeof(uint32_t) * framegroup_n_events, buffer, buffer_head_ptr);
+            PACK_MEMBER(&packed_framegroup_event_data_str[framegroup_idx], unpacked_framegroup_event_data_str[framegroup_idx], sizeof(char*)    * framegroup_n_events, buffer, buffer_head_ptr);
+
+            char **packed_framegroup_frame_event_data_str =   UNPACK_MEMBER(packed_framegroup_event_data_str[framegroup_idx], packed_skel_model_out);
+            char **unpacked_framegroup_frame_event_data_str =   unpacked_framegroup_event_data_str[framegroup_idx];
+
+            for(int event_idx = 0; event_idx < unpacked_skel_model_in->framegroup_n_events[framegroup_idx]; event_idx++) {
+                PACK_MEMBER(&packed_framegroup_frame_event_data_str[event_idx],  unpacked_framegroup_frame_event_data_str[event_idx], safe_strsize(unpacked_framegroup_frame_event_data_str[event_idx]), buffer, buffer_head_ptr);
+            }
+        }
+    }
+    // ------------–------------–------------–------------–------------–-------
+
+
+
+    // ------------------------------------------------------------------------
+    // Debug print values so far...
+    // ------------------------------------------------------------------------
+    Con_Printf("=========================================================\n");
+    Con_Printf("Debug printing packed model so far...\n");
+    // Temp debug
+
+    Con_Printf("\tModel n_bones: %d\n", packed_skel_model_out->n_bones);
+
+    if(packed_skel_model_out->n_bones > 0 ) {
+        int bone_idx = 0;
+        char **tmp_bone_names = UNPACK_MEMBER(packed_skel_model_out->bone_name, packed_skel_model_out);
+
+        for(int bone_idx = 0; bone_idx < packed_skel_model_out->n_bones; bone_idx++) {
+            char *tmp_bone_name = UNPACK_MEMBER(tmp_bone_names[bone_idx], packed_skel_model_out);
+            Con_Printf("\tModel bone_name[%d] = \"%s\"\n", bone_idx, tmp_bone_name);
+        }
+    }
+
+
+    Con_Printf("\tModel n_framegroups: %d\n", packed_skel_model_out->n_framegroups);
+    if(packed_skel_model_out->framegroup_n_events != NULL) {
+        uint16_t *tmp_packed_framegroup_n_events = UNPACK_MEMBER(packed_skel_model_out->framegroup_n_events, packed_skel_model_out);
+
+        float **tmp_packed_framegroup_event_time = UNPACK_MEMBER(packed_skel_model_out->framegroup_event_time, packed_skel_model_out);
+        uint32_t **tmp_packed_framegroup_event_code = UNPACK_MEMBER(packed_skel_model_out->framegroup_event_code, packed_skel_model_out);
+        char ***tmp_packed_framegroup_event_data_str = UNPACK_MEMBER(packed_skel_model_out->framegroup_event_data_str, packed_skel_model_out);
+
+
+        for(int framegroup_idx; framegroup_idx < unpacked_skel_model_in->n_framegroups; framegroup_idx++) {
+            Con_Printf("\tframegroup[%d].n_events = %d\n", framegroup_idx, tmp_packed_framegroup_n_events[framegroup_idx]);
+
+            uint32_t *tmp_packed_framegroup_event_codes = UNPACK_MEMBER(tmp_packed_framegroup_event_code[framegroup_idx], packed_skel_model_out);
+            float *tmp_packed_framegroup_event_times = UNPACK_MEMBER(tmp_packed_framegroup_event_time[framegroup_idx], packed_skel_model_out);
+            char **tmp_packed_framegroup_event_data_strs = UNPACK_MEMBER(tmp_packed_framegroup_event_data_str[framegroup_idx], packed_skel_model_out);
+
+            for(int event_idx = 0; event_idx < tmp_packed_framegroup_n_events[framegroup_idx]; event_idx++) {
+
+                uint32_t tmp_event_code = tmp_packed_framegroup_event_codes[event_idx];
+                float tmp_event_time = tmp_packed_framegroup_event_times[event_idx];
+                char *tmp_event_data_str = UNPACK_MEMBER(tmp_packed_framegroup_event_data_strs[event_idx], packed_skel_model_out);
+                Con_Printf("\t\tframegroup[%d].event[%d] = %d, \"%s\" @ %.2f\n", framegroup_idx, event_idx, tmp_event_code, tmp_event_data_str, tmp_event_time);
+            }
+        }
+    }
+
+
+
+
+    Con_Printf("=========================================================\n");
+    // ------------------------------------------------------------------------
 }
 
 
