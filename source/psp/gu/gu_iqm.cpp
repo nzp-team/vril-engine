@@ -941,7 +941,7 @@ skeletal_mesh_t *load_iqm_meshes(const void *iqm_data, const iqm_model_vertex_ar
 // Returns the total number of bytes required to store a skeletal_model_t's
 // list of meshes ONLY, including all data pointed to via internal pointers
 // 
-uint32_t count_unpacked_skel_model_meshes_n_bytes(skeletal_model_t *skel_model) {
+uint32_t count_unpacked_skeletal_model_meshes_n_bytes(skeletal_model_t *skel_model) {
 
     uint32_t skel_model_n_bytes = 0;
 
@@ -965,6 +965,11 @@ uint32_t count_unpacked_skel_model_meshes_n_bytes(skeletal_model_t *skel_model) 
     }
 
     return skel_model_n_bytes;
+}
+
+
+void free_unpacked_skeletal_meshes(skeletal_model_t *unpacked_skel_model) {
+    // FIXME - Implement this
 }
 
 
@@ -1072,299 +1077,62 @@ void pack_skeletal_model_meshes(skeletal_model_t *unpacked_skel_model_in, skelet
             PACK_MEMBER(&packed_submesh->vert16s, unpacked_submesh->vert16s, sizeof(skel_vertex_i16_t) * unpacked_submesh->n_verts, buffer, buffer_head_ptr);
         }
     }
-
-
-    // // ------------------------------------------------------------------------
-    // Con_Printf("=========================================================\n");
-    // Con_Printf("Debug printing packed mesh so far...\n");
-    // // Temp debug
-
-    // Con_Printf("\tModel n_meshes: %d\n", packed_skel_model_out->n_meshes);
-
-    // if(packed_skel_model_out->n_meshes > 0 ) {
-    //     int mesh_idx = 0;
-    //     skeletal_mesh_t *mesh = &UNPACK_MEMBER(packed_skel_model_out->meshes,packed_skel_model_out)[mesh_idx];
-    //     const char *material_name = UNPACK_MEMBER(mesh->material_name,packed_skel_model_out);
-
-    //     Con_Printf("\tmodel.meshes[%d].n_submeshes: %d\n", mesh_idx, mesh->n_submeshes);
-    //     Con_Printf("\tmodel.meshes[%d].material_name: \"%s\"\n", mesh_idx, material_name);
-    // }
-
-    // Con_Printf("=========================================================\n");
-    // // ------------------------------------------------------------------------
 }
 
 
+//
+// Given a packed or unpacked `skel_model`, debug prints its platform-specicif mesh data
+//
+void debug_print_skeletal_model_meshes(skeletal_model_t *skel_model, int is_packed) {
 
+    skeletal_mesh_t *meshes = OPT_UNPACK_MEMBER(skel_model->meshes, skel_model, is_packed);
 
+    for(int mesh_idx = 0; mesh_idx < skel_model->n_meshes; mesh_idx++) {
+        Con_Printf("---------------------\n");
+        char *material_name = OPT_UNPACK_MEMBER(meshes[mesh_idx].material_name, skel_model, is_packed);
+        Con_Printf("skel_model->meshes[%d].geomset = %d\n",           mesh_idx, meshes[mesh_idx].geomset);
+        Con_Printf("skel_model->meshes[%d].geomid = %d\n",            mesh_idx, meshes[mesh_idx].geomid);
+        Con_Printf("skel_model->meshes[%d].material_name = \"%s\"\n", mesh_idx, material_name);
+        Con_Printf("skel_model->meshes[%d].material_idx = %d\n",      mesh_idx, meshes[mesh_idx].material_idx);
+        Con_Printf("skel_model->meshes[%d].n_submeshes = %d\n",       mesh_idx, meshes[mesh_idx].n_submeshes);
+        Con_Printf("skel_model->meshes[%d].submeshes = %d\n",         mesh_idx, meshes[mesh_idx].submeshes);
+        Con_Printf("---------------------\n");
 
-// /*
-// =================
-// Mod_LoadIQMModel
-// =================
-// */
-// extern char loadname[];
-// void Mod_LoadIQMModel (model_t *model, void *buffer) {
-//     return;
+        skeletal_submesh_t *submeshes = OPT_UNPACK_MEMBER(meshes[mesh_idx].submeshes, skel_model, is_packed);
 
+        for(int submesh_idx = 0; submesh_idx < meshes[mesh_idx].n_submeshes; submesh_idx++) {
+            Con_Printf("\t----------\n");
+            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].n_verts = %d\n",          mesh_idx, submesh_idx, submeshes[submesh_idx].n_verts);
+            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].n_tris = %d\n",           mesh_idx, submesh_idx, submeshes[submesh_idx].n_tris);
+            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert16s = %d\n",          mesh_idx, submesh_idx, submeshes[submesh_idx].vert16s);
+            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert8s = %d\n",           mesh_idx, submesh_idx, submeshes[submesh_idx].vert8s);
+            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].n_skinning_bones = %d\n", mesh_idx, submesh_idx, submeshes[submesh_idx].n_skinning_bones);
+            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].skinning_bone_idxs = [",  mesh_idx, submesh_idx);
+            for(int submesh_bone_idx = 0; submesh_bone_idx < SUBMESH_BONES; submesh_bone_idx++) {
+                Con_Printf("%d, ", submeshes[submesh_idx].skinning_bone_idxs[submesh_bone_idx]);
+            }
+            Con_Printf("]\n");
 
-
-
-
-
-// //     Con_Printf("Loading IQM model: \"%s\"\n", model->name);
-// //     skeletal_model_t *skel_model = load_iqm_file(buffer);
-// //     // load_iqm_file_json_info(skel_model, model->name);
-
-// //     // ------------------------------------------------------------------------
-// //     // Debug - printing the skel_model contents
-// //     // ------------------------------------------------------------------------
-// // #ifdef IQMDEBUG_LOADIQM_DEBUGSUMMARY
-// //     Con_Printf("------------------------------------------------------------\n");
-// //     Con_Printf("Debug printing skeletal model \"%s\"\n", loadname);
-// //     Con_Printf("------------------------------------------------------------\n");
-// //     Con_Printf("skel_model->n_meshes = %d\n", skel_model->n_meshes);
-// //     for(int i = 0; i < skel_model->n_meshes; i++) {
-// //         Con_Printf("---------------------\n");
-// //         Con_Printf("skel_model->meshes[%d].n_verts = %d\n", i, skel_model->meshes[i].n_verts);
-// //         Con_Printf("skel_model->meshes[%d].n_tris = %d\n", i, skel_model->meshes[i].n_tris);
-// //         Con_Printf("skel_model->meshes[%d].vert_rest_positions = %d\n", i, skel_model->meshes[i].vert_rest_positions);
-// //         Con_Printf("skel_model->meshes[%d].vert_uvs = %d\n", i, skel_model->meshes[i].vert_uvs);
-
-// // #ifdef IQM_LOAD_NORMALS
-// //         Con_Printf("skel_model->meshes[%d].vert_rest_normals = %d\n", i, skel_model->meshes[i].vert_rest_normals);
-// // #endif // IQM_LOAD_NORMALS
-
-// //         Con_Printf("skel_model->meshes[%d].vert_bone_weights = %d\n", i, skel_model->meshes[i].vert_bone_weights);
-// //         Con_Printf("skel_model->meshes[%d].vert_bone_idxs = %d\n", i, skel_model->meshes[i].vert_bone_idxs);
-
-// //         // IQMFIXME - Crashed here
-// //         Con_Printf("skel_model->meshes[%d].vert_skinning_weights = %d\n", i, skel_model->meshes[i].vert_skinning_weights);
-// //         Con_Printf("skel_model->meshes[%d].tri_verts = %d\n", i, skel_model->meshes[i].tri_verts);
-// //         Con_Printf("skel_model->meshes[%d].vert16s = %d\n", i, skel_model->meshes[i].vert16s);
-// //         Con_Printf("skel_model->meshes[%d].vert8s = %d\n", i, skel_model->meshes[i].vert8s);
-// //         Con_Printf("skel_model->meshes[%d].geomset = %d\n", i, skel_model->meshes[i].geomset);
-// //         Con_Printf("skel_model->meshes[%d].geomid = %d\n", i, skel_model->meshes[i].geomid);
-// //         Con_Printf("skel_model->meshes[%d].material_name = \"%s\"\n", i, skel_model->meshes[i].material_name);
-// //         Con_Printf("skel_model->meshes[%d].material_idx = %d\n", i, skel_model->meshes[i].material_idx);
-// //         // --
-// //         Con_Printf("skel_model->meshes[%d].n_skinning_bones = %d\n", i, skel_model->meshes[i].n_skinning_bones);
-// //         Con_Printf("\tskel_model->meshes[%d].skinning_bone_idxs = [", i);
-// //         for(int k = 0; k < 8; k++) {
-// //             Con_Printf("%d, ", skel_model->meshes[i].skinning_bone_idxs[k]);
-// //         }
-// //         Con_Printf("]\n");
-// //         // --
-// //         Con_Printf("\tskel_model->meshes[%d].verts_ofs = [", i);
-// //         for(int k = 0; k < 3; k++) {
-// //             Con_Printf("%f, ", skel_model->meshes[i].verts_ofs[k]);
-// //         }
-// //         Con_Printf("]\n");
-// //         // --
-// //         Con_Printf("\tskel_model->meshes[%d].verts_scale = [", i);
-// //         for(int k = 0; k < 3; k++) {
-// //             Con_Printf("%f, ", skel_model->meshes[i].verts_scale[k]);
-// //         }
-// //         Con_Printf("]\n");
-// //         // --
-// //         Con_Printf("skel_model->meshes[%d].n_submeshes = %d\n", i, skel_model->meshes[i].n_submeshes);
-// //         Con_Printf("skel_model->meshes[%d].submeshes = %d\n", i, skel_model->meshes[i].submeshes);
-
-// //         for(int j = 0; j < skel_model->meshes[i].n_submeshes; j++) {
-// //             Con_Printf("\t----------\n");
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].n_verts = %d\n", i, j, skel_model->meshes[i].submeshes[j].n_verts);
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].n_tris = %d\n", i, j, skel_model->meshes[i].submeshes[j].n_tris);
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_rest_positions = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_rest_positions);
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_uvs = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_uvs);
-
-// // #ifdef IQM_LOAD_NORMALS
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_rest_normals = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_rest_normals);
-// // #endif // IQM_LOAD_NORMALS
-
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_bone_weights = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_bone_weights);
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_bone_idxs = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_bone_idxs);
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert_skinning_weights = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert_skinning_weights);
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].tri_verts = %d\n", i, j, skel_model->meshes[i].submeshes[j].tri_verts);
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert16s = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert16s);
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].vert8s = %d\n", i, j, skel_model->meshes[i].submeshes[j].vert8s);
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].n_skinning_bones = %d\n", i, j, skel_model->meshes[i].submeshes[j].n_skinning_bones);
-// //             // --
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].skinning_bone_idxs = [", i, j);
-// //             for(int k = 0; k < 8; k++) {
-// //                 Con_Printf("%d, ", skel_model->meshes[i].submeshes[j].skinning_bone_idxs[k]);
-// //             }
-// //             Con_Printf("]\n");
-// //             // --
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].verts_ofs = [", i, j);
-// //             for(int k = 0; k < 3; k++) {
-// //                 Con_Printf("%f, ", skel_model->meshes[i].submeshes[j].verts_ofs[k]);
-// //             }
-// //             Con_Printf("]\n");
-// //             // --
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].verts_scale = [", i, j);
-// //             for(int k = 0; k < 3; k++) {
-// //                 Con_Printf("%f, ", skel_model->meshes[i].submeshes[j].verts_scale[k]);
-// //             }
-// //             Con_Printf("]\n");
-// //             // --
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].n_submeshes = %d\n", i, j, skel_model->meshes[i].submeshes[j].n_submeshes);
-// //             Con_Printf("\tskel_model->meshes[%d].submeshes[%d].submeshes = %d\n", i, j, skel_model->meshes[i].submeshes[j].submeshes);
-// //             Con_Printf("\t----------\n");
-// //         }
-// //         Con_Printf("---------------------\n");
-// //     }
-// //     for(uint32_t i = 0; i < skel_model->n_bones; i++) {
-// //         Con_Printf("Parsed bone: %i, \"%s\" (parent bone: %d)\n", i, skel_model->bone_name[i], skel_model->bone_parent_idx[i]);
-// //         Con_Printf("\tPos: (%.2f, %.2f, %.2f)\n", skel_model->bone_rest_pos[i][0], skel_model->bone_rest_pos[i][1], skel_model->bone_rest_pos[i][2]);
-// //         Con_Printf("\tRot: (%.2f, %.2f, %.2f, %.2f)\n", skel_model->bone_rest_rot[i][0], skel_model->bone_rest_rot[i][1], skel_model->bone_rest_rot[i][2], skel_model->bone_rest_rot[i][3]);
-// //         Con_Printf("\tScale: (%.2f, %.2f, %.2f)\n", skel_model->bone_rest_scale[i][0], skel_model->bone_rest_scale[i][1], skel_model->bone_rest_scale[i][2]);
-// //         Con_Printf("\thitbox enabled: %d\n", skel_model->bone_hitbox_enabled[i]);
-// //         Con_Printf("\thitbox ofs: (%.2f, %.2f, %.2f)\n", skel_model->bone_hitbox_ofs[i][0], skel_model->bone_hitbox_ofs[i][1], skel_model->bone_hitbox_ofs[i][2]);
-// //         Con_Printf("\thitbox scale: (%.2f, %.2f, %.2f)\n", skel_model->bone_hitbox_scale[i][0], skel_model->bone_hitbox_scale[i][1], skel_model->bone_hitbox_scale[i][2]);
-// //         Con_Printf("\thitbox tag: %d\n", skel_model->bone_hitbox_tag[i]);
-// //     }
-
-// //     for(int i = 0; i < skel_model->n_materials; i++) {
-// //         Con_Printf("---------------------\n");
-// //         Con_Printf("skel_model->material_names[%d] = %s\n", i, skel_model->material_names[i]);
-// //         Con_Printf("skel_model->material_n_skins[%d] = %d\n", i, skel_model->material_n_skins[i]);
-// //         for(int j = 0; j < skel_model->material_n_skins[i]; j++) {
-// //             Con_Printf("\tskel_model->materials[%d][%d].texture_idx = %d\n", i, j, skel_model->materials[i][j].texture_idx);
-// //             Con_Printf("\tskel_model->materials[%d][%d].transparent = %d\n", i, j, skel_model->materials[i][j].transparent);
-// //             Con_Printf("\tskel_model->materials[%d][%d].fullbright = %d\n", i, j, skel_model->materials[i][j].fullbright);
-// //             Con_Printf("\tskel_model->materials[%d][%d].fog = %d\n", i, j, skel_model->materials[i][j].fog);
-// //             Con_Printf("\tskel_model->materials[%d][%d].shade_smooth = %d\n", i, j, skel_model->materials[i][j].shade_smooth);
-// //             Con_Printf("\tskel_model->materials[%d][%d].add_color = %d\n", i, j, skel_model->materials[i][j].add_color);
-// //             Con_Printf("\tskel_model->materials[%d][%d].add_color val = [%f, %f, %f, %f]\n", i, j, skel_model->materials[i][j].add_color_red, skel_model->materials[i][j].add_color_green, skel_model->materials[i][j].add_color_blue, skel_model->materials[i][j].add_color_alpha);
-// //         }
-// //     }
-
-
-// //     Con_Printf("skel_model->n_framegroups = %d\n", skel_model->n_framegroups);
-
-// //     for(int i = 0; i < skel_model->n_framegroups; i++) {
-// //         Con_Printf("---------------------\n");
-// //         Con_Printf("skel_model->framegroup_name[%d] = \"%s\"\n", i, skel_model->framegroup_name[i]);
-// //         Con_Printf("skel_model->framegroup_start_frame[%d] = %d\n", i, skel_model->framegroup_start_frame[i]);
-// //         Con_Printf("skel_model->framegroup_n_frames[%d] = %d\n", i, skel_model->framegroup_n_frames[i]);
-// //         Con_Printf("skel_model->framegroup_fps[%d] = %f\n", i, skel_model->framegroup_fps[i]);
-// //         Con_Printf("skel_model->framegroup_loop[%d] = %d\n", i, skel_model->framegroup_loop[i]);
-
-// //         if(skel_model->framegroup_n_events != NULL) {
-// //             Con_Printf("skel_model->framegroup_n_events[%d] = %d\n", i, skel_model->framegroup_n_events[i]);
-// //             for(int j = 0; j < skel_model->framegroup_n_events[i]; j++) {
-// //                 Con_Printf("\tskel_model->framegroup_event_time[%d][%d] = %f\n", i, j, skel_model->framegroup_event_time[i][j]);
-// //                 Con_Printf("\tskel_model->framegroup_event_code[%d][%d] = %d\n", i, j, skel_model->framegroup_event_code[i][j]);
-// //                 Con_Printf("\tskel_model->framegroup_event_data_str[%d][%d] = \"%s\"\n", i, j, skel_model->framegroup_event_data_str[i][j]);
-// //             }
-// //         }
-// //     }
-
-// //     if(skel_model->fps_cam_bone_idx >= 0) {
-// //         Con_Printf("------------------------------------------------------------\n");
-// //         Con_Printf("Printing fps_cam_bone animation data:\n");
-// //         for(int i = 0; i < skel_model->n_framegroups; i++) {
-// //             for(int frame_idx = skel_model->framegroup_start_frame[i]; frame_idx < skel_model->framegroup_start_frame[i] + skel_model->framegroup_n_frames[i]; frame_idx++) {
-// //                 vec3_t *frame_pos = &(skel_model->frames_bone_pos[      skel_model->n_bones * frame_idx + skel_model->fps_cam_bone_idx]);
-// //                 quat_t *frame_rot = &(skel_model->frames_bone_rot[      skel_model->n_bones * frame_idx + skel_model->fps_cam_bone_idx]);
-// //                 vec3_t *frame_scale = &(skel_model->frames_bone_scale[  skel_model->n_bones * frame_idx + skel_model->fps_cam_bone_idx]);
-
-// //                 Con_Printf("Camera bone transform (bone %d, framegroup %d, frame %d): pos: (%.2f, %.2f, %.2f), rot: (%.2f, %.2f, %.2f, %.2f), scale: (%.2f, %.2f, %.2f)\n",
-// //                     skel_model->fps_cam_bone_idx, i, frame_idx,
-// //                     (*frame_pos)[0], (*frame_pos)[1], (*frame_pos)[2], 
-// //                     (*frame_rot)[0], (*frame_rot)[1], (*frame_rot)[2], (*frame_rot)[3], 
-// //                     (*frame_scale)[0], (*frame_scale)[1], (*frame_scale)[2]
-// //                 );
-// //             }
-// //         }
-// //         Con_Printf("------------------------------------------------------------\n");
-// //     }
-// // #endif // IQMDEBUG_LOADIQM_DEBUGSUMMARY
-// //     // ------------------------------------------------------------------------
-
-
-// //     // TODO - Need to update this function to work with latest version of skeletal_model_t
-// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
-// //     Con_Printf("About to calculate skeletal model size...\n");
-// // #endif // IQMDEBUG_LOADIQM_RELOCATE
-// //     uint32_t skel_model_n_bytes = count_skel_model_n_bytes(skel_model);
-// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
-// //     Con_Printf("Done calculating skeletal model size\n");
-// //     Con_Printf("Skeletal model size (before padding): %d\n", skel_model_n_bytes);
-// // #endif // IQMDEBUG_LOADIQM_RELOCATE
-// //     // skeletal_model_t *relocatable_skel_model = (skeletal_model_t*) malloc(skel_model_n_bytes); // TODO - Pad to 2-byte alignment?
-// //     // Pad to two bytes:
-// //     // Pad to four bytes:
-// //     skel_model_n_bytes += (skel_model_n_bytes % 4);
-// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
-// //     Con_Printf("Skeletal model size (after padding): %d\n", skel_model_n_bytes);
-// // #endif // IQMDEBUG_LOADIQM_RELOCATE
-// //     // if(skel_model_n_bytes % 2 == 1) {
-// //     //     skel_model_n_bytes += 1;
-// //     // }
-// //     //
-// //     // FIXME - Make sure every memory location is offset by two bytes? Might require modifying flattenmemory method
-// //     //
-// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
-// //     Con_Printf("Allocating memory for skeletal model\n");
-// // #endif // IQMDEBUG_LOADIQM_RELOCATE
-// //     skeletal_model_t *relocatable_skel_model = (skeletal_model_t*) Hunk_AllocName(skel_model_n_bytes, loadname);
-// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
-// //     Con_Printf("Done allocating memory for skeletal model\n");
-// // #endif // IQMDEBUG_LOADIQM_RELOCATE
-// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
-// //     Con_Printf("Flattening skeletal model to make relocatable\n");
-// // #endif // IQMDEBUG_LOADIQM_RELOCATE
-// //     make_skeletal_model_relocatable(relocatable_skel_model, skel_model);
-// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
-// //     Con_Printf("Done flattening skeletal model to make relocatable\n");
-// // #endif // IQMDEBUG_LOADIQM_RELOCATE
-// //     model->type = mod_iqm;
-
-
-// // #ifdef IQM_BBOX_PER_MODEL_PER_ANIM
-// //     Con_Printf("About to calculate rest pose mins / maxs\n");
-// //     calc_skel_model_bounds_for_rest_pose(relocatable_skel_model, relocatable_skel_model->rest_pose_bone_hitbox_mins, relocatable_skel_model->rest_pose_bone_hitbox_maxs);
-// //     Con_Printf("Done calculating rest pose mins / maxs:\n");
-// //     Con_Printf("\tmins: [%f, %f, %f]\n", relocatable_skel_model->rest_pose_bone_hitbox_mins[0], relocatable_skel_model->rest_pose_bone_hitbox_mins[1], relocatable_skel_model->rest_pose_bone_hitbox_mins[2]);
-// //     Con_Printf("\tmaxs: [%f, %f, %f]\n", relocatable_skel_model->rest_pose_bone_hitbox_maxs[0], relocatable_skel_model->rest_pose_bone_hitbox_maxs[1], relocatable_skel_model->rest_pose_bone_hitbox_maxs[2]);
-// //     Con_Printf("About to calculate anim pose mins / maxs\n");
-// //     calc_skel_model_bounds_for_anim(relocatable_skel_model, relocatable_skel_model, relocatable_skel_model->anim_bone_hitbox_mins, relocatable_skel_model->anim_bone_hitbox_maxs);
-// //     Con_Printf("Done calculating anim pose mins / maxs:\n");
-// //     Con_Printf("\tmins: [%f, %f, %f]\n", relocatable_skel_model->anim_bone_hitbox_mins[0], relocatable_skel_model->anim_bone_hitbox_mins[1], relocatable_skel_model->anim_bone_hitbox_mins[2]);
-// //     Con_Printf("\tmaxs: [%f, %f, %f]\n", relocatable_skel_model->anim_bone_hitbox_maxs[0], relocatable_skel_model->anim_bone_hitbox_maxs[1], relocatable_skel_model->anim_bone_hitbox_maxs[2]);
-// // #endif // IQM_BBOX_PER_MODEL_PER_ANIM
-
-
-// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
-// //     Con_Printf("Copying final skeletal model struct... ");
-// // #endif // IQMDEBUG_LOADIQM_RELOCATE
-
-// //     if (!model->cache.data) {
-// //         Cache_Alloc(&model->cache, skel_model_n_bytes, loadname);
-// //     }
-// //     if (!model->cache.data) {
-// //         return;
-// //     }
-
-// //     memcpy_vfpu(model->cache.data, (void*) relocatable_skel_model, skel_model_n_bytes);
-
-// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
-// //     Con_Printf("DONE\n");
-// // #endif // IQMDEBUG_LOADIQM_RELOCATE
-
-// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
-// //     Con_Printf("About to free temp skeletal model struct...");
-// // #endif // IQMDEBUG_LOADIQM_RELOCATE
-
-// //     free_skeletal_model(skel_model);
-// //     skel_model = NULL;
-
-// // #ifdef IQMDEBUG_LOADIQM_RELOCATE
-// //     Con_Printf("DONE\n");
-// // #endif // IQMDEBUG_LOADIQM_RELOCATE
-// }
-
+            // --
+            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].verts_ofs = [%f, %f, %f]\n", 
+                mesh_idx, submesh_idx,
+                submeshes[submesh_idx].verts_ofs[0], 
+                submeshes[submesh_idx].verts_ofs[1], 
+                submeshes[submesh_idx].verts_ofs[2]
+            );
+            // --
+            Con_Printf("\tskel_model->meshes[%d].submeshes[%d].verts_scale = [%f, %f, %f]\n", 
+                mesh_idx, submesh_idx,
+                submeshes[submesh_idx].verts_scale[0], 
+                submeshes[submesh_idx].verts_scale[1], 
+                submeshes[submesh_idx].verts_scale[2]
+            );
+            // --
+            Con_Printf("\t----------\n");
+        }
+        Con_Printf("---------------------\n");
+    }
+}
 
 
 

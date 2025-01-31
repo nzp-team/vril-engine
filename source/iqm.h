@@ -4,12 +4,12 @@
 
 
 // Enable any of these to turn on debug prints
-#define IQMDEBUG_LOADIQM_LOADMESH
-#define IQMDEBUG_LOADIQM_MESHSPLITTING
+// #define IQMDEBUG_LOADIQM_LOADMESH
+// #define IQMDEBUG_LOADIQM_MESHSPLITTING
 // #define IQMDEBUG_LOADIQM_BONEINFO
 #define IQMDEBUG_LOADIQM_ANIMINFO
-// #define IQMDEBUG_LOADIQM_DEBUGSUMMARY
-#define IQMDEBUG_LOADIQM_RELOCATE
+#define IQMDEBUG_LOADIQM_DEBUGSUMMARY
+#define IQMDEBUG_LOADIQM_PACKING
 #define IQMDEBUG_SKEL_TRACELINE
 // #define IQMDEBUG_CALC_MODEL_BOUNDS
 
@@ -378,20 +378,23 @@ typedef struct skeletal_skeleton_s {
 
 
 
-// Defined in platform-specific C++ IQM files
+// Defined in platform-specific C++ IQM files, called from C
 skeletal_mesh_t *load_iqm_meshes(const void *iqm_data, const iqm_model_vertex_arrays_t *iqm_vertex_arrays);
-uint32_t count_unpacked_skel_model_meshes_n_bytes(skeletal_model_t *skel_model);
+uint32_t count_unpacked_skeletal_model_meshes_n_bytes(skeletal_model_t *skel_model);
 void pack_skeletal_model_meshes(skeletal_model_t *unpacked_skel_model_in, skeletal_model_t *packed_skel_model_out, uint8_t **buffer_head_ptr);
-
+void free_unpacked_skeletal_meshes(skeletal_model_t *unpacked_skel_model);
+void debug_print_skeletal_model_meshes(skeletal_model_t *skel_model, int is_packed);
 
 
 
 #define PACKING_BYTE_PADDING 4
 #define PACK_MEMBER(dest_ptr, src_ptr, n_bytes, buffer_start, buffer_head) (_pack_member( (void**) dest_ptr, (void*) src_ptr, n_bytes, buffer_start, buffer_head))
 void _pack_member(void **dest_ptr, void *src_ptr, size_t n_bytes, uint8_t *buffer_start, uint8_t **buffer_head);
-#define UNPACK_MEMBER(packed_member_ptr, buffer_start) ((__typeof__(packed_member_ptr))_unpack_member(packed_member_ptr, buffer_start))
 void *_unpack_member(void *packed_member_ptr, void *buffer_start);
-
+#define UNPACK_MEMBER(packed_member_ptr, buffer_start) ((__typeof__(packed_member_ptr))_unpack_member(packed_member_ptr, buffer_start))
+// Macro that takes an explicit "is_packed" argument, if not packed: returns input ptr, if packed: invokes PACK_MEMBER
+#define OPT_UNPACK_MEMBER(packed_member_ptr, buffer_start, is_packed) \
+    ((is_packed) ? (UNPACK_MEMBER(packed_member_ptr, buffer_start)) : (packed_member_ptr))
 
 
 void free_pointer_and_clear(void **ptr);

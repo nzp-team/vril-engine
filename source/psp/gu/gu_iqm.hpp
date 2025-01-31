@@ -119,7 +119,6 @@ typedef struct skeletal_mesh_s {
 
 
 void R_DrawIQMModel(entity_t *ent);
-// void Mod_LoadIQMModel (model_t *model, void *buffer);
 
 
 #endif // VIDEO_HARDWARE_IQM_H
