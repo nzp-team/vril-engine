@@ -2640,180 +2640,125 @@ void debug_print_skeletal_model(skeletal_model_t *skel_model, int is_packed) {
 
         mat3x4_t *print_mat;
 
-        Con_Printf("skel_model->anim_bone_hitbox_maxs[%d] = \n", bone_idx);
+        Con_Printf("skel_model->bone_rest_transforms[%d] = \n", bone_idx);
         print_mat = &(bone_rest_transforms[bone_idx]);
-        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", *print_mat[0][0], *print_mat[0][1], *print_mat[0][2], *print_mat[0][3]);
-        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", *print_mat[1][0], *print_mat[1][1], *print_mat[1][2], *print_mat[1][3]);
-        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", *print_mat[2][0], *print_mat[2][1], *print_mat[2][2], *print_mat[2][3]);
+        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[0][0], (*print_mat)[0][1], (*print_mat)[0][2], (*print_mat)[0][3]);
+        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[1][0], (*print_mat)[1][1], (*print_mat)[1][2], (*print_mat)[1][3]);
+        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[2][0], (*print_mat)[2][1], (*print_mat)[2][2], (*print_mat)[2][3]);
         Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", 0.0f, 0.0f, 0.0f, 1.0f); // for 3x4 matrices, last row is implied to be [0,0,0,1]
 
-        Con_Printf("\tskel_model->anim_bone_hitbox_maxs[%d] = \n", bone_idx);
+        Con_Printf("\tskel_model->inv_bone_rest_transforms[%d] = \n", bone_idx);
         print_mat = &(inv_bone_rest_transforms[bone_idx]);
-        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", *print_mat[0][0], *print_mat[0][1], *print_mat[0][2], *print_mat[0][3]);
-        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", *print_mat[1][0], *print_mat[1][1], *print_mat[1][2], *print_mat[1][3]);
-        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", *print_mat[2][0], *print_mat[2][1], *print_mat[2][2], *print_mat[2][3]);
+        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[0][0], (*print_mat)[0][1], (*print_mat)[0][2], (*print_mat)[0][3]);
+        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[1][0], (*print_mat)[1][1], (*print_mat)[1][2], (*print_mat)[1][3]);
+        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[2][0], (*print_mat)[2][1], (*print_mat)[2][2], (*print_mat)[2][3]);
         Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", 0.0f, 0.0f, 0.0f, 1.0f); // for 3x4 matrices, last row is implied to be [0,0,0,1]
+        Con_Printf("---------------------\n");
+    }
+    Con_Printf("skel_model->fps_cam_bone_idx = %d\n", skel_model->fps_cam_bone_idx);
+
+
+
+    Con_Printf("skel_model->n_frames = %d\n", skel_model->n_frames);
+
+    vec3_t *frames_bone_pos     = OPT_UNPACK_MEMBER(skel_model->frames_bone_pos,    skel_model, is_packed);
+    quat_t *frames_bone_rot     = OPT_UNPACK_MEMBER(skel_model->frames_bone_rot,    skel_model, is_packed);
+    vec3_t *frames_bone_scale   = OPT_UNPACK_MEMBER(skel_model->frames_bone_scale,  skel_model, is_packed);
+    float  *frames_move_dist    = OPT_UNPACK_MEMBER(skel_model->frames_move_dist,   skel_model, is_packed);
+
+    for(int frame_idx = 0; frame_idx < skel_model->n_frames; frame_idx++) {
+        Con_Printf("---------------------\n");
+        for(uint32_t bone_idx = 0; bone_idx < skel_model->n_bones; bone_idx++) {
+            int entry_idx = frame_idx * skel_model->n_bones + bone_idx;
+            Con_Printf("skel_model->frames_bone_pos[%d (frame: %d, bone: %d)] = [%f, %f, %f]\n",    entry_idx, frame_idx, bone_idx, frames_bone_pos[entry_idx][0], frames_bone_pos[entry_idx][1], frames_bone_pos[entry_idx][2]);
+            Con_Printf("skel_model->frames_bone_rot[%d (frame: %d, bone: %d)] = [%f, %f, %f, %f]\n",    entry_idx, frame_idx, bone_idx, frames_bone_rot[entry_idx][0], frames_bone_rot[entry_idx][1], frames_bone_rot[entry_idx][2], frames_bone_rot[entry_idx][3]);
+            Con_Printf("skel_model->frames_bone_scale[%d (frame: %d, bone: %d)] = [%f, %f, %f]\n",  entry_idx, frame_idx, bone_idx, frames_bone_scale[entry_idx][0], frames_bone_scale[entry_idx][1], frames_bone_scale[entry_idx][2]);
+            Con_Printf("skel_model->frames_move_dist[%d (frame: %d, bone: %d)] = %f\n",   entry_idx, frame_idx, bone_idx, frames_move_dist[entry_idx]);
+        }
+        Con_Printf("---------------------\n");
+
+        // Only print the first frame for all bones (printing all frames is too verbose)
+        break;
+    }
+
+    Con_Printf("skel_model->n_framegroups = %d\n", skel_model->n_framegroups);
+    char     **framegroup_names      = OPT_UNPACK_MEMBER(skel_model->framegroup_name,        skel_model, is_packed);
+    uint32_t *framegroup_start_frame = OPT_UNPACK_MEMBER(skel_model->framegroup_start_frame, skel_model, is_packed);
+    uint32_t *framegroup_n_frames    = OPT_UNPACK_MEMBER(skel_model->framegroup_n_frames,    skel_model, is_packed);
+    float    *framegroup_fps         = OPT_UNPACK_MEMBER(skel_model->framegroup_fps,         skel_model, is_packed);
+    bool     *framegroup_loop        = OPT_UNPACK_MEMBER(skel_model->framegroup_loop,        skel_model, is_packed);
+
+    for(int framegroup_idx = 0; framegroup_idx < skel_model->n_framegroups; framegroup_idx++) {
+        char *framegroup_name = OPT_UNPACK_MEMBER(framegroup_names[framegroup_idx], skel_model, is_packed);
+        Con_Printf("---------------------\n");
+        Con_Printf("skel_model->framegroup_names[%d] = \"%s\"\n",    framegroup_idx, framegroup_name);
+        Con_Printf("skel_model->framegroup_start_frame[%d] = %d\n",  framegroup_idx, framegroup_start_frame);
+        Con_Printf("skel_model->framegroup_n_frames[%d] = %d\n",     framegroup_idx, framegroup_n_frames);
+        Con_Printf("skel_model->framegroup_fps[%d] = %f\n",          framegroup_idx, framegroup_fps);
+        Con_Printf("skel_model->framegroup_loop[%d] = %d\n",         framegroup_idx, framegroup_loop);
+        Con_Printf("---------------------\n");
+
+    }
+
+
+
+    Con_Printf("skel_model->n_materials = %d\n", skel_model->n_materials);
+    char     **material_names       = OPT_UNPACK_MEMBER(skel_model->material_names,   skel_model, is_packed);
+    int      *material_n_skins      = OPT_UNPACK_MEMBER(skel_model->material_n_skins, skel_model, is_packed);
+    skeletal_material_t **materials = OPT_UNPACK_MEMBER(skel_model->materials,        skel_model, is_packed);
+
+    for(int material_idx = 0; material_idx < skel_model->n_materials; material_idx++){
+        char     **material_name       = OPT_UNPACK_MEMBER(material_names[material_idx],   skel_model, is_packed);
+        Con_Printf("---------------------\n");
+        Con_Printf("skel_model->material_names[%d] = \"%s\"\n",   material_idx, material_name);
+        Con_Printf("skel_model->material_n_skins[%d] = \"%s\"\n", material_idx, material_n_skins[material_idx]);
+
+        for(int skin_idx = 0; skin_idx < material_n_skins[material_idx]; skin_idx++) {
+            skeletal_material_t *material_skins = OPT_UNPACK_MEMBER(materials[material_idx], skel_model, is_packed);
+            Con_Printf("\t----------\n");
+            Con_Printf("\tskel_model->materials[%d][%d].texture_idx = %d\n",     material_idx, skin_idx, material_skins[skin_idx].texture_idx);
+            Con_Printf("\tskel_model->materials[%d][%d].transparent = %d\n",     material_idx, skin_idx, material_skins[skin_idx].transparent);
+            Con_Printf("\tskel_model->materials[%d][%d].fullbright = %d\n",      material_idx, skin_idx, material_skins[skin_idx].fullbright);
+            Con_Printf("\tskel_model->materials[%d][%d].fog = %d\n",             material_idx, skin_idx, material_skins[skin_idx].fog);
+            Con_Printf("\tskel_model->materials[%d][%d].shade_smooth = %d\n",    material_idx, skin_idx, material_skins[skin_idx].shade_smooth);
+            Con_Printf("\tskel_model->materials[%d][%d].add_color = %d\n",       material_idx, skin_idx, material_skins[skin_idx].add_color);
+            Con_Printf("\tskel_model->materials[%d][%d].add_color_red = %d\n",   material_idx, skin_idx, material_skins[skin_idx].add_color_red);
+            Con_Printf("\tskel_model->materials[%d][%d].add_color_green = %d\n", material_idx, skin_idx, material_skins[skin_idx].add_color_green);
+            Con_Printf("\tskel_model->materials[%d][%d].add_color_blue = %d\n",  material_idx, skin_idx, material_skins[skin_idx].add_color_blue);
+            Con_Printf("\tskel_model->materials[%d][%d].add_color_alpha = %d\n", material_idx, skin_idx, material_skins[skin_idx].add_color_alpha);
+            Con_Printf("\t----------\n");
+        }
         Con_Printf("---------------------\n");
     }
 
 
-    // TODO - Continue writing this function
 
+    Con_Printf("skel_model->framegroup_n_events = %d\n", skel_model->framegroup_n_events);
 
-    // --
-    // TODO - Take inventory of _all_ remaining fields on the model to print...
-    // --
-    // uint16_t n_frames;
-    // vec3_t *frames_bone_pos;
-    // quat_t *frames_bone_rot;
-    // vec3_t *frames_bone_scale;
-    // float *frames_move_dist;
-    // --
-    // uint16_t n_framegroups;
-    // char **framegroup_name;
-    // uint32_t *framegroup_start_frame;
-    // uint32_t *framegroup_n_frames;
-    // float *framegroup_fps;
-    // bool *framegroup_loop;
-    // --
-    // int n_materials;
-    // char **material_names;
-    // int *material_n_skins;
-    // skeletal_material_t **materials;
-    // --
-    // // Animation framegroup FTE events data
-    // uint16_t *framegroup_n_events;
-    // float **framegroup_event_time;
-    // uint32_t **framegroup_event_code;
-    // char ***framegroup_event_data_str;
-    // --
+    if(skel_model->framegroup_n_events != NULL) {
+        uint16_t  *framegroup_n_events       = OPT_UNPACK_MEMBER(skel_model->framegroup_n_events,       skel_model, is_packed);
+        float    **framegroup_event_time     = OPT_UNPACK_MEMBER(skel_model->framegroup_event_time,     skel_model, is_packed);
+        uint32_t **framegroup_event_code     = OPT_UNPACK_MEMBER(skel_model->framegroup_event_code,     skel_model, is_packed);
+        char    ***framegroup_event_data_str = OPT_UNPACK_MEMBER(skel_model->framegroup_event_data_str, skel_model, is_packed);
 
+        for(int framegroup_idx = 0; framegroup_idx < skel_model->n_framegroups; framegroup_idx++) {
 
+            Con_Printf("\tskel_model->framegroup_n_events[%d] = %d\n", framegroup_idx, framegroup_n_events[framegroup_idx]);
+            uint32_t *framegroup_event_codes        = OPT_UNPACK_MEMBER(framegroup_event_time[framegroup_idx],     skel_model, is_packed);
+            float    *framegroup_event_times        = OPT_UNPACK_MEMBER(framegroup_event_code[framegroup_idx],     skel_model, is_packed);
+            char    **framegroup_event_data_strs    = OPT_UNPACK_MEMBER(framegroup_event_data_str[framegroup_idx], skel_model, is_packed);
 
-
-
-    // TODO - Print:
-    // int fps_cam_bone_idx; // -1 if no camera bone, otherwise it contains the index of the bone named `fps_cam`
-
-
-
-    // for(int i = 0; i < skel_model->n_materials; i++) {
-    //     Con_Printf("---------------------\n");
-    //     Con_Printf("skel_model->material_names[%d] = %s\n", i, skel_model->material_names[i]);
-    //     Con_Printf("skel_model->material_n_skins[%d] = %d\n", i, skel_model->material_n_skins[i]);
-    //     for(int j = 0; j < skel_model->material_n_skins[i]; j++) {
-    //         Con_Printf("\tskel_model->materials[%d][%d].texture_idx = %d\n", i, j, skel_model->materials[i][j].texture_idx);
-    //         Con_Printf("\tskel_model->materials[%d][%d].transparent = %d\n", i, j, skel_model->materials[i][j].transparent);
-    //         Con_Printf("\tskel_model->materials[%d][%d].fullbright = %d\n", i, j, skel_model->materials[i][j].fullbright);
-    //         Con_Printf("\tskel_model->materials[%d][%d].fog = %d\n", i, j, skel_model->materials[i][j].fog);
-    //         Con_Printf("\tskel_model->materials[%d][%d].shade_smooth = %d\n", i, j, skel_model->materials[i][j].shade_smooth);
-    //         Con_Printf("\tskel_model->materials[%d][%d].add_color = %d\n", i, j, skel_model->materials[i][j].add_color);
-    //         Con_Printf("\tskel_model->materials[%d][%d].add_color val = [%f, %f, %f, %f]\n", i, j, skel_model->materials[i][j].add_color_red, skel_model->materials[i][j].add_color_green, skel_model->materials[i][j].add_color_blue, skel_model->materials[i][j].add_color_alpha);
-    //     }
-    // Con_Printf("---------------------\n");
-    // }
-
-
-    // Con_Printf("skel_model->n_framegroups = %d\n", skel_model->n_framegroups);
-
-    // for(int i = 0; i < skel_model->n_framegroups; i++) {
-    //     Con_Printf("---------------------\n");
-    //     Con_Printf("skel_model->framegroup_name[%d] = \"%s\"\n", i, skel_model->framegroup_name[i]);
-    //     Con_Printf("skel_model->framegroup_start_frame[%d] = %d\n", i, skel_model->framegroup_start_frame[i]);
-    //     Con_Printf("skel_model->framegroup_n_frames[%d] = %d\n", i, skel_model->framegroup_n_frames[i]);
-    //     Con_Printf("skel_model->framegroup_fps[%d] = %f\n", i, skel_model->framegroup_fps[i]);
-    //     Con_Printf("skel_model->framegroup_loop[%d] = %d\n", i, skel_model->framegroup_loop[i]);
-
-    //     if(skel_model->framegroup_n_events != NULL) {
-    //         Con_Printf("skel_model->framegroup_n_events[%d] = %d\n", i, skel_model->framegroup_n_events[i]);
-    //         for(int j = 0; j < skel_model->framegroup_n_events[i]; j++) {
-    //             Con_Printf("\tskel_model->framegroup_event_time[%d][%d] = %f\n", i, j, skel_model->framegroup_event_time[i][j]);
-    //             Con_Printf("\tskel_model->framegroup_event_code[%d][%d] = %d\n", i, j, skel_model->framegroup_event_code[i][j]);
-    //             Con_Printf("\tskel_model->framegroup_event_data_str[%d][%d] = \"%s\"\n", i, j, skel_model->framegroup_event_data_str[i][j]);
-    //         }
-    //     }
-    // Con_Printf("---------------------\n");
-    // }
-
-    // if(skel_model->fps_cam_bone_idx >= 0) {
-    //     Con_Printf("------------------------------------------------------------\n");
-    //     Con_Printf("Printing fps_cam_bone animation data:\n");
-    //     for(int i = 0; i < skel_model->n_framegroups; i++) {
-    //         for(int frame_idx = skel_model->framegroup_start_frame[i]; frame_idx < skel_model->framegroup_start_frame[i] + skel_model->framegroup_n_frames[i]; frame_idx++) {
-    //             vec3_t *frame_pos = &(skel_model->frames_bone_pos[      skel_model->n_bones * frame_idx + skel_model->fps_cam_bone_idx]);
-    //             quat_t *frame_rot = &(skel_model->frames_bone_rot[      skel_model->n_bones * frame_idx + skel_model->fps_cam_bone_idx]);
-    //             vec3_t *frame_scale = &(skel_model->frames_bone_scale[  skel_model->n_bones * frame_idx + skel_model->fps_cam_bone_idx]);
-
-    //             Con_Printf("Camera bone transform (bone %d, framegroup %d, frame %d): pos: (%.2f, %.2f, %.2f), rot: (%.2f, %.2f, %.2f, %.2f), scale: (%.2f, %.2f, %.2f)\n",
-    //                 skel_model->fps_cam_bone_idx, i, frame_idx,
-    //                 (*frame_pos)[0], (*frame_pos)[1], (*frame_pos)[2], 
-    //                 (*frame_rot)[0], (*frame_rot)[1], (*frame_rot)[2], (*frame_rot)[3], 
-    //                 (*frame_scale)[0], (*frame_scale)[1], (*frame_scale)[2]
-    //             );
-    //         }
-    //     }
-    //     Con_Printf("------------------------------------------------------------\n");
-    // }
-    // ------------------------------------------------------------------------
-
-
-    // ========================================================================
-    // ========================================================================
-    // ========================================================================
-    // ------------------------------------------------------------------------
-    // Debug print values so far...
-    // ------------------------------------------------------------------------
-    // Con_Printf("=========================================================\n");
-    // Con_Printf("Debug printing packed model so far...\n");
-    // // Temp debug
-
-    // Con_Printf("\tModel n_bones: %d\n", packed_skel_model_out->n_bones);
-
-    // if(packed_skel_model_out->n_bones > 0 ) {
-    //     int bone_idx = 0;
-    //     char **tmp_bone_names = UNPACK_MEMBER(packed_skel_model_out->bone_name, packed_skel_model_out);
-
-    //     for(int bone_idx = 0; bone_idx < packed_skel_model_out->n_bones; bone_idx++) {
-    //         char *tmp_bone_name = UNPACK_MEMBER(tmp_bone_names[bone_idx], packed_skel_model_out);
-    //         Con_Printf("\tModel bone_name[%d] = \"%s\"\n", bone_idx, tmp_bone_name);
-    //     }
-    // }
-
-
-    // Con_Printf("\tModel n_framegroups: %d\n", packed_skel_model_out->n_framegroups);
-    // if(packed_skel_model_out->framegroup_n_events != NULL) {
-    //     uint16_t *tmp_packed_framegroup_n_events = UNPACK_MEMBER(packed_skel_model_out->framegroup_n_events, packed_skel_model_out);
-
-    //     float **tmp_packed_framegroup_event_time = UNPACK_MEMBER(packed_skel_model_out->framegroup_event_time, packed_skel_model_out);
-    //     uint32_t **tmp_packed_framegroup_event_code = UNPACK_MEMBER(packed_skel_model_out->framegroup_event_code, packed_skel_model_out);
-    //     char ***tmp_packed_framegroup_event_data_str = UNPACK_MEMBER(packed_skel_model_out->framegroup_event_data_str, packed_skel_model_out);
-
-
-    //     for(int framegroup_idx; framegroup_idx < unpacked_skel_model_in->n_framegroups; framegroup_idx++) {
-    //         Con_Printf("\tframegroup[%d].n_events = %d\n", framegroup_idx, tmp_packed_framegroup_n_events[framegroup_idx]);
-
-    //         uint32_t *tmp_packed_framegroup_event_codes = UNPACK_MEMBER(tmp_packed_framegroup_event_code[framegroup_idx], packed_skel_model_out);
-    //         float *tmp_packed_framegroup_event_times = UNPACK_MEMBER(tmp_packed_framegroup_event_time[framegroup_idx], packed_skel_model_out);
-    //         char **tmp_packed_framegroup_event_data_strs = UNPACK_MEMBER(tmp_packed_framegroup_event_data_str[framegroup_idx], packed_skel_model_out);
-
-    //         for(int event_idx = 0; event_idx < tmp_packed_framegroup_n_events[framegroup_idx]; event_idx++) {
-
-    //             uint32_t tmp_event_code = tmp_packed_framegroup_event_codes[event_idx];
-    //             float tmp_event_time = tmp_packed_framegroup_event_times[event_idx];
-    //             char *tmp_event_data_str = UNPACK_MEMBER(tmp_packed_framegroup_event_data_strs[event_idx], packed_skel_model_out);
-    //             Con_Printf("\t\tframegroup[%d].event[%d] = %d, \"%s\" @ %.2f\n", framegroup_idx, event_idx, tmp_event_code, tmp_event_data_str, tmp_event_time);
-    //         }
-    //     }
-    // }
-
-
-
-
-    // Con_Printf("=========================================================\n");
-    // // ------------------------------------------------------------------------
-
-
-
+            Con_Printf("\t----------\n");
+            for(int event_idx = 0; event_idx < framegroup_n_events[framegroup_idx]; event_idx++) {
+                char *event_data_str = OPT_UNPACK_MEMBER(framegroup_event_data_strs[event_idx], skel_model, is_packed);
+                Con_Printf("\tskel_model->framegroup_event_codes[%d][%d] = {code: %d, data: \"%s\", time: %.2f}\n", 
+                    framegroup_idx, event_idx, 
+                    framegroup_event_codes[event_idx], event_data_str, framegroup_event_times[event_idx]
+                );
+            }
+            Con_Printf("\t----------\n");
+        }
+    }
 }
 
 
