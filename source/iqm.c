@@ -176,10 +176,6 @@ const void *iqm_find_extension(const uint8_t *iqm_data, size_t iqm_data_size, co
 
 
 
-void *get_unpacked_member(void *member_ptr, void *buffer_start) {
-    return (void*) ((uint8_t*) buffer_start + (int) member_ptr);
-}
-
 
 // 
 // Util function that frees a pointer and sets it to NULL
@@ -1610,110 +1606,75 @@ void sv_get_skel_model_bounds(int model_idx, int animmodel_idx, vec3_t mins, vec
 		
 //
 // Completely deallocates a skeletal_model_t struct, pointers and all.
-// NOTE - This should only be used on heap-allocated skeletal models whose
-// NOTE   pointers are absolute (not-relative to model-start)
+// NOTE - This should only be used on unpacked (heap-allocated) skeletal models 
+// NOTE   whose pointers are absolute (not-relative to model-start)
 //
 void free_unpacked_skeletal_model(skeletal_model_t *skel_model) {
-    return;
+    // Free fields in reverse order to avoid losing references
 
-//     // Free fields in reverse order to avoid losing references
-//     // -- FTE Anim Events --
-//     if(skel_model->framegroup_n_events != NULL) {
-//         for(int i = 0; i < skel_model->n_framegroups; i++) {
-//             for(int j = 0; j < skel_model->framegroup_n_events[i]; j++) {
-//                 free_pointer_and_clear( (void**) skel_model->framegroup_event_data_str[i][j]);
-//             }
-//             free_pointer_and_clear( (void**) skel_model->framegroup_event_data_str[i]);
-//             free_pointer_and_clear( (void**) skel_model->framegroup_event_code[i]);
-//             free_pointer_and_clear( (void**) skel_model->framegroup_event_time[i]);
-//         }
-//     }
-//     free_pointer_and_clear( (void**) skel_model->framegroup_event_data_str);
-//     free_pointer_and_clear( (void**) skel_model->framegroup_event_code);
-//     free_pointer_and_clear( (void**) skel_model->framegroup_event_time);
-//     free_pointer_and_clear( (void**) skel_model->framegroup_n_events);
-//     // -- materials --
-//     for(int i = 0; i < skel_model->n_materials; i++) {
-//         free_pointer_and_clear( (void**) skel_model->materials[i]);
-//         free_pointer_and_clear( (void**) skel_model->material_names[i]);
-//     }
-//     free_pointer_and_clear( (void**) skel_model->materials);
-//     free_pointer_and_clear( (void**) skel_model->material_n_skins);
-//     free_pointer_and_clear( (void**) skel_model->material_names);
-//     // -- framegroups --
-//     for(int i = 0; i < skel_model->n_framegroups; i++) {
-//         free_pointer_and_clear( (void**) skel_model->framegroup_name[i]);
-//     }
-//     free_pointer_and_clear( (void**) skel_model->framegroup_loop);
-//     free_pointer_and_clear( (void**) skel_model->framegroup_fps);
-//     free_pointer_and_clear( (void**) skel_model->framegroup_n_frames);
-//     free_pointer_and_clear( (void**) skel_model->framegroup_start_frame);
-//     free_pointer_and_clear( (void**) skel_model->framegroup_name);
-//     // -- frames --
-//     free_pointer_and_clear( (void**) skel_model->frames_bone_scale);
-//     free_pointer_and_clear( (void**) skel_model->frames_bone_rot);
-//     free_pointer_and_clear( (void**) skel_model->frames_bone_pos);
-//     free_pointer_and_clear( (void**) skel_model->frames_move_dist);
-//     // -- cached bone rest transforms --
-//     free_pointer_and_clear( (void**) skel_model->inv_bone_rest_transforms);
-//     free_pointer_and_clear( (void**) skel_model->bone_rest_transforms);
-//     // -- bone hitbox info --
-//     free_pointer_and_clear( (void**) skel_model->bone_hitbox_tag);
-//     free_pointer_and_clear( (void**) skel_model->bone_hitbox_scale);
-//     free_pointer_and_clear( (void**) skel_model->bone_hitbox_ofs);
-//     free_pointer_and_clear( (void**) skel_model->bone_hitbox_enabled);
-//     // -- bones --
-//     for(int i = 0; i < skel_model->n_bones; i++) {
-//         free_pointer_and_clear( (void**) skel_model->bone_name[i]);
-//     }
-//     free_pointer_and_clear( (void**) skel_model->bone_name);
-//     free_pointer_and_clear( (void**) skel_model->bone_parent_idx);
-//     free_pointer_and_clear( (void**) skel_model->bone_rest_pos);
-//     free_pointer_and_clear( (void**) skel_model->bone_rest_rot);
-//     free_pointer_and_clear( (void**) skel_model->bone_rest_scale);
-//     for(int i = 0; i < skel_model->n_meshes; i++) {
-//         for(int j = 0; j < skel_model->meshes[i].n_submeshes; j++) {
-//             // These submesh struct members are expected to be NULL:
-//             free_pointer_and_clear( (void**)  skel_model->meshes[i].submeshes[j].vert_rest_positions);
-//             free_pointer_and_clear( (void**)  skel_model->meshes[i].submeshes[j].vert_uvs);
+    // -- FTE Anim Events --
+    if(skel_model->framegroup_n_events != NULL) {
+        for(int i = 0; i < skel_model->n_framegroups; i++) {
+            for(int j = 0; j < skel_model->framegroup_n_events[i]; j++) {
+                free_pointer_and_clear( (void**) &skel_model->framegroup_event_data_str[i][j]);
+            }
+            free_pointer_and_clear( (void**) &skel_model->framegroup_event_data_str[i]);
+            free_pointer_and_clear( (void**) &skel_model->framegroup_event_code[i]);
+            free_pointer_and_clear( (void**) &skel_model->framegroup_event_time[i]);
+        }
+    }
+    free_pointer_and_clear( (void**) &skel_model->framegroup_event_data_str);
+    free_pointer_and_clear( (void**) &skel_model->framegroup_event_code);
+    free_pointer_and_clear( (void**) &skel_model->framegroup_event_time);
+    free_pointer_and_clear( (void**) &skel_model->framegroup_n_events);
 
-// #ifdef IQM_LOAD_NORMALS
-//             free_pointer_and_clear( (void**)  skel_model->meshes[i].submeshes[j].vert_rest_normals);
-// #endif // IQM_LOAD_NORMALS
+    // -- materials --
+    for(int i = 0; i < skel_model->n_materials; i++) {
+        free_pointer_and_clear( (void**) &skel_model->materials[i]);
+        free_pointer_and_clear( (void**) &skel_model->material_names[i]);
+    }
+    free_pointer_and_clear( (void**) &skel_model->materials);
+    free_pointer_and_clear( (void**) &skel_model->material_n_skins);
+    free_pointer_and_clear( (void**) &skel_model->material_names);
 
-//             free_pointer_and_clear( (void**)  skel_model->meshes[i].submeshes[j].vert_bone_weights);
-//             free_pointer_and_clear( (void**)  skel_model->meshes[i].submeshes[j].vert_bone_idxs);
-//             free_pointer_and_clear( (void**)  skel_model->meshes[i].submeshes[j].vert_skinning_weights);
-//             free_pointer_and_clear( (void**)  skel_model->meshes[i].submeshes[j].tri_verts);
-//             free_pointer_and_clear( (void**)  skel_model->meshes[i].submeshes[j].submeshes);
-//             free_pointer_and_clear( (void**)  skel_model->meshes[i].submeshes[j].material_name);
+    // -- framegroups --
+    for(int i = 0; i < skel_model->n_framegroups; i++) {
+        free_pointer_and_clear( (void**) &skel_model->framegroup_name[i]);
+    }
+    free_pointer_and_clear( (void**) &skel_model->framegroup_loop);
+    free_pointer_and_clear( (void**) &skel_model->framegroup_fps);
+    free_pointer_and_clear( (void**) &skel_model->framegroup_n_frames);
+    free_pointer_and_clear( (void**) &skel_model->framegroup_start_frame);
+    free_pointer_and_clear( (void**) &skel_model->framegroup_name);
 
-//             // These submesh struct members are expected to be allocated:
-//             free_pointer_and_clear( (void**)  skel_model->meshes[i].submeshes[j].vert8s);     // Only free if not NULL
-//             free_pointer_and_clear( (void**)  skel_model->meshes[i].submeshes[j].vert16s);    // Only free if not NULL
-//         }
-        
-//         // These mesh struct members are expected to be NULL:
-//         free_pointer_and_clear( (void**)  skel_model->meshes[i].vert_rest_positions);
-//         free_pointer_and_clear( (void**)  skel_model->meshes[i].vert_uvs);
+    // -- frames --
+    free_pointer_and_clear( (void**) &skel_model->frames_bone_scale);
+    free_pointer_and_clear( (void**) &skel_model->frames_bone_rot);
+    free_pointer_and_clear( (void**) &skel_model->frames_bone_pos);
+    free_pointer_and_clear( (void**) &skel_model->frames_move_dist);
 
-// #ifdef IQM_LOAD_NORMALS
-//         free_pointer_and_clear( (void**)  skel_model->meshes[i].vert_rest_normals);
-// #endif // IQM_LOAD_NORMALS
+    // -- cached bone rest transforms --
+    free_pointer_and_clear( (void**) &skel_model->inv_bone_rest_transforms);
+    free_pointer_and_clear( (void**) &skel_model->bone_rest_transforms);
 
-//         free_pointer_and_clear( (void**)  skel_model->meshes[i].vert_bone_weights);
-//         free_pointer_and_clear( (void**)  skel_model->meshes[i].vert_bone_idxs);
-//         free_pointer_and_clear( (void**)  skel_model->meshes[i].vert_skinning_weights);
-//         free_pointer_and_clear( (void**)  skel_model->meshes[i].tri_verts);
-//         free_pointer_and_clear( (void**)  skel_model->meshes[i].vert16s);
-//         free_pointer_and_clear( (void**)  skel_model->meshes[i].vert8s);
+    // -- bone hitbox info --
+    free_pointer_and_clear( (void**) &skel_model->bone_hitbox_tag);
+    free_pointer_and_clear( (void**) &skel_model->bone_hitbox_scale);
+    free_pointer_and_clear( (void**) &skel_model->bone_hitbox_ofs);
+    free_pointer_and_clear( (void**) &skel_model->bone_hitbox_enabled);
 
-//         // These mesh struct members are expected to be allocated:
-//         free_pointer_and_clear( (void**)  skel_model->meshes[i].material_name);
-//         free_pointer_and_clear( (void**)  skel_model->meshes[i].submeshes);
-//     }
-//     free(skel_model->meshes);
-//     free(skel_model);
+    // -- bones --
+    for(int i = 0; i < skel_model->n_bones; i++) {
+        free_pointer_and_clear( (void**) &skel_model->bone_name[i]);
+    }
+    free_pointer_and_clear( (void**) &skel_model->bone_name);
+    free_pointer_and_clear( (void**) &skel_model->bone_parent_idx);
+    free_pointer_and_clear( (void**) &skel_model->bone_rest_pos);
+    free_pointer_and_clear( (void**) &skel_model->bone_rest_rot);
+    free_pointer_and_clear( (void**) &skel_model->bone_rest_scale);
+
+    free_unpacked_skeletal_model_meshes(skel_model);
+    free(skel_model);
 }
 
 
@@ -1953,19 +1914,8 @@ skeletal_model_t *load_iqm_file(void *iqm_data) {
     // ------------------------------------------------------------------------
     // Platform-specific mesh data loading of IQM data
     // ------------------------------------------------------------------------
-
     skel_model->n_meshes = iqm_header->n_meshes;
     skel_model->meshes = load_iqm_meshes(iqm_data, &iqm_vertex_arrays);
-
-
-
-    // TODO - Call a platform-specific function that populates the skel_model
-    // some_func(iqm_header, iqm_vertex_arrays);
-    // - Skel Model Mesh population
-    // - Skel Model submesh splitting
-    // - Skel Model submesh quantization to int8 and int16
-    // - Clear temporary submesh float data
-    // - Clear mesh vert array data (only used on submeshes)
     // ------------------------------------------------------------------------
 
     free_iqm_model_vertex_arrays(&iqm_vertex_arrays);
@@ -2461,16 +2411,13 @@ skeletal_model_t *load_iqm_file(void *iqm_data) {
     bool has_meshes = (skel_model->n_meshes > 0);
     bool has_skeleton = (skel_model->n_bones > 0);
     bool has_animations = (skel_model->n_frames > 0) && (skel_model->n_framegroups > 0);
-    bool loading_failed = false;
     if(!has_skeleton) {
         Con_Printf("Error: IQM model file does not have skeleton data.\n");
-        loading_failed = true;
+        free_unpacked_skeletal_model(skel_model);
+        return NULL;
     }
     if(!has_meshes && !has_animations) {
         Con_Printf("Error: IQM model file has neither mesh data nor animation data. At least one of these is required.\n");
-        loading_failed = true;
-    }
-    if(loading_failed) {
         free_unpacked_skeletal_model(skel_model);
         return NULL;
     }
@@ -2647,7 +2594,7 @@ void debug_print_skeletal_model(skeletal_model_t *skel_model, int is_packed) {
         Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[2][0], (*print_mat)[2][1], (*print_mat)[2][2], (*print_mat)[2][3]);
         Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", 0.0f, 0.0f, 0.0f, 1.0f); // for 3x4 matrices, last row is implied to be [0,0,0,1]
 
-        Con_Printf("\tskel_model->inv_bone_rest_transforms[%d] = \n", bone_idx);
+        Con_Printf("skel_model->inv_bone_rest_transforms[%d] = \n", bone_idx);
         print_mat = &(inv_bone_rest_transforms[bone_idx]);
         Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[0][0], (*print_mat)[0][1], (*print_mat)[0][2], (*print_mat)[0][3]);
         Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[1][0], (*print_mat)[1][1], (*print_mat)[1][2], (*print_mat)[1][3]);
@@ -2692,15 +2639,13 @@ void debug_print_skeletal_model(skeletal_model_t *skel_model, int is_packed) {
         char *framegroup_name = OPT_UNPACK_MEMBER(framegroup_names[framegroup_idx], skel_model, is_packed);
         Con_Printf("---------------------\n");
         Con_Printf("skel_model->framegroup_names[%d] = \"%s\"\n",    framegroup_idx, framegroup_name);
-        Con_Printf("skel_model->framegroup_start_frame[%d] = %d\n",  framegroup_idx, framegroup_start_frame);
-        Con_Printf("skel_model->framegroup_n_frames[%d] = %d\n",     framegroup_idx, framegroup_n_frames);
-        Con_Printf("skel_model->framegroup_fps[%d] = %f\n",          framegroup_idx, framegroup_fps);
-        Con_Printf("skel_model->framegroup_loop[%d] = %d\n",         framegroup_idx, framegroup_loop);
+        Con_Printf("skel_model->framegroup_start_frame[%d] = %d\n",  framegroup_idx, framegroup_start_frame[framegroup_idx]);
+        Con_Printf("skel_model->framegroup_n_frames[%d] = %d\n",     framegroup_idx, framegroup_n_frames[framegroup_idx]);
+        Con_Printf("skel_model->framegroup_fps[%d] = %f\n",          framegroup_idx, framegroup_fps[framegroup_idx]);
+        Con_Printf("skel_model->framegroup_loop[%d] = %d\n",         framegroup_idx, framegroup_loop[framegroup_idx]);
         Con_Printf("---------------------\n");
 
     }
-
-
 
     Con_Printf("skel_model->n_materials = %d\n", skel_model->n_materials);
     char     **material_names       = OPT_UNPACK_MEMBER(skel_model->material_names,   skel_model, is_packed);
@@ -2925,7 +2870,7 @@ void pack_skeletal_model(skeletal_model_t *unpacked_skel_model_in, skeletal_mode
         char ***packed_framegroup_event_data_str = UNPACK_MEMBER(packed_skel_model_out->framegroup_event_data_str, packed_skel_model_out);
         char ***unpacked_framegroup_event_data_str = unpacked_skel_model_in->framegroup_event_data_str;
 
-        for(int framegroup_idx; framegroup_idx < unpacked_skel_model_in->n_framegroups; framegroup_idx++) {
+        for(int framegroup_idx = 0; framegroup_idx < unpacked_skel_model_in->n_framegroups; framegroup_idx++) {
             int framegroup_n_events = unpacked_skel_model_in->framegroup_n_events[framegroup_idx];
             PACK_MEMBER(&packed_framegroup_event_time[framegroup_idx],     unpacked_framegroup_event_time[framegroup_idx],     sizeof(float)    * framegroup_n_events, buffer, buffer_head_ptr);
             PACK_MEMBER(&packed_framegroup_event_code[framegroup_idx],     unpacked_framegroup_event_code[framegroup_idx],     sizeof(uint32_t) * framegroup_n_events, buffer, buffer_head_ptr);
@@ -3002,22 +2947,13 @@ void Mod_LoadIQMModel (model_t *model, void *buffer) {
 
     pack_skeletal_model(unpacked_skel_model, packed_skel_model);
 
-
-
 #ifdef IQMDEBUG_LOADIQM_DEBUGSUMMARY
     debug_print_skeletal_model(packed_skel_model, true);
 #endif // IQMDEBUG_LOADIQM_DEBUGSUMMARY
 
-
-
-    return;
-    // FIXME - Need to refactor everythign below this...
-
-
 #ifdef IQMDEBUG_LOADIQM_PACKING
     Con_Printf("Done packing skeletal model\n");
 #endif // IQMDEBUG_LOADIQM_PACKING
-
 
 #ifdef IQMDEBUG_LOADIQM_PACKING
     Con_Printf("Freeing temp unpacked skeletal model...");
@@ -3030,7 +2966,7 @@ void Mod_LoadIQMModel (model_t *model, void *buffer) {
     Con_Printf("DONE\n");
 #endif // IQMDEBUG_LOADIQM_PACKING
 
-
+    return;
 
 #ifdef IQM_BBOX_PER_MODEL_PER_ANIM
     // These functions are also used at runtime, and so operate on packed skeletal models

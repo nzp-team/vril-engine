@@ -27,8 +27,6 @@ extern char pr_string_temp[PR_MAX_TEMPSTRING];
 
 
 
-void free_skeletal_model(skeletal_model_t *skel_model);
-
 
 
 
@@ -968,8 +966,19 @@ uint32_t count_unpacked_skeletal_model_meshes_n_bytes(skeletal_model_t *skel_mod
 }
 
 
-void free_unpacked_skeletal_meshes(skeletal_model_t *unpacked_skel_model) {
-    // FIXME - Implement this
+void free_unpacked_skeletal_model_meshes(skeletal_model_t *skel_model) {
+    // Free fields in reverse order to avoid losing references
+    for(int mesh_idx = 0; mesh_idx < skel_model->n_meshes; mesh_idx++) {
+        skeletal_mesh_t *mesh = &(skel_model->meshes[mesh_idx]);
+        for(int submesh_idx = 0; submesh_idx < mesh->n_submeshes; submesh_idx++) {
+            skeletal_submesh_t *submesh = &(mesh->submeshes[submesh_idx]);
+            free_pointer_and_clear( (void**) &submesh->vert16s);
+            free_pointer_and_clear( (void**) &submesh->vert8s);
+        }
+        free_pointer_and_clear( (void**) &mesh->submeshes);
+        free_pointer_and_clear( (void**) &mesh->material_name);
+    }
+    free_pointer_and_clear((void**) &skel_model->meshes);
 }
 
 
