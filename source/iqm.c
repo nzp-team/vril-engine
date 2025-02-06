@@ -262,33 +262,32 @@ skeletal_model_t *cl_get_skel_model_for_modelidx(int model_idx) {
 //
 // ------------------------------------------------------------------------
 void map_anim_bones_to_skel_bones(skeletal_model_t *skel_model, skeletal_model_t *anim_model, int32_t *skel_bone_to_anim_bone_mapping) {
-    return;
 
-    // // If skeleton and anim model are the same, mapping is: [0, 1, 2, ...]
-    // if(skel_model == anim_model) {
-    //     for(int32_t i = 0; i < skel_model->n_bones; i++) {
-    //         skel_bone_to_anim_bone_mapping[i] = i;
-    //     }
-    // }
-    // // If skeleton model and anim model differ, search through bone names 
-    // // to find the index that each skeleton bone should pull animation data from
-    // else {
-    //     char **anim_model_bone_names = get_unpacked_member(anim_model->bone_name, anim_model);
-    //     char **skel_model_bone_names = get_unpacked_member(skel_model->bone_name, skel_model);
+    // If skeleton and anim model are the same, mapping is: [0, 1, 2, ...]
+    if(skel_model == anim_model) {
+        for(int32_t i = 0; i < skel_model->n_bones; i++) {
+            skel_bone_to_anim_bone_mapping[i] = i;
+        }
+    }
+    // If skeleton model and anim model differ, search through bone names 
+    // to find the index that each skeleton bone should pull animation data from
+    else {
+        char **anim_model_bone_names = UNPACK_MEMBER(anim_model->bone_name, anim_model);
+        char **skel_model_bone_names = UNPACK_MEMBER(skel_model->bone_name, skel_model);
 
-    //     for(uint32_t i = 0; i < skel_model->n_bones; i++) {
-    //         // Default to -1, indicating that this bone's corresponding animation bone has not yet been found
-    //         skel_bone_to_anim_bone_mapping[i] = -1;
-    //         char *skel_model_bone_name = get_unpacked_member(skel_model_bone_names[i], skel_model);
-    //         for(uint32_t j = 0; j < anim_model->n_bones; j++) {
-    //             char *anim_model_bone_name = get_unpacked_member(anim_model_bone_names[j], anim_model);
-    //             if(!strcmp( skel_model_bone_name, anim_model_bone_name)) {
-    //                 skel_bone_to_anim_bone_mapping[i] = j;
-    //                 break;
-    //             }
-    //         }
-    //     }
-    // }
+        for(uint32_t i = 0; i < skel_model->n_bones; i++) {
+            // Default to -1, indicating that this bone's corresponding animation bone has not yet been found
+            skel_bone_to_anim_bone_mapping[i] = -1;
+            char *skel_model_bone_name = UNPACK_MEMBER(skel_model_bone_names[i], skel_model);
+            for(uint32_t j = 0; j < anim_model->n_bones; j++) {
+                char *anim_model_bone_name = UNPACK_MEMBER(anim_model_bone_names[j], anim_model);
+                if(!strcmp( skel_model_bone_name, anim_model_bone_name)) {
+                    skel_bone_to_anim_bone_mapping[i] = j;
+                    break;
+                }
+            }
+        }
+    }
 }
 
 
@@ -1079,342 +1078,338 @@ uint16_t bounds_capacity = 0;
 
  
 void calc_skel_model_bounds_for_rest_pose(skeletal_model_t *skel_model, vec3_t model_mins, vec3_t model_maxs) {
-    return;
 
 
-// #ifdef IQMDEBUG_CALC_MODEL_BOUNDS
-//     Con_Printf("calc_skel_model_bounds_for_rest_pose started\n");
-// #endif // IQMDEBUG_CALC_MODEL_BOUNDS
+#ifdef IQMDEBUG_CALC_MODEL_BOUNDS
+    Con_Printf("calc_skel_model_bounds_for_rest_pose started\n");
+#endif // IQMDEBUG_CALC_MODEL_BOUNDS
 
-//     if(skel_model == NULL) {
-// #ifdef IQMDEBUG_CALC_MODEL_BOUNDS
-//         Con_Printf("calc_skel_model_bounds_for_rest_pose finished 1\n");
-// #endif // IQMDEBUG_CALC_MODEL_BOUNDS
-//         return;
-//     }
-//     // In case we don't have any bones, load default mins/maxs:
-//     VectorSet(model_mins, -1,-1,-1);
-//     VectorSet(model_maxs, 1,1,1);
-//     if(skel_model->n_bones <= 0) {
-// #ifdef IQMDEBUG_CALC_MODEL_BOUNDS
-//         Con_Printf("calc_skel_model_bounds_for_rest_pose finished 1\n");
-// #endif // IQMDEBUG_CALC_MODEL_BOUNDS
-//         return;
-//     }
+    if(skel_model == NULL) {
+#ifdef IQMDEBUG_CALC_MODEL_BOUNDS
+        Con_Printf("calc_skel_model_bounds_for_rest_pose finished 1\n");
+#endif // IQMDEBUG_CALC_MODEL_BOUNDS
+        return;
+    }
+    // In case we don't have any bones, load default mins/maxs:
+    VectorSet(model_mins, -1,-1,-1);
+    VectorSet(model_maxs, 1,1,1);
+    if(skel_model->n_bones <= 0) {
+#ifdef IQMDEBUG_CALC_MODEL_BOUNDS
+        Con_Printf("calc_skel_model_bounds_for_rest_pose finished 1\n");
+#endif // IQMDEBUG_CALC_MODEL_BOUNDS
+        return;
+    }
 
 
-//     // ------------------------------------------------------------------------
-//     // 
-//     // ------------------------------------------------------------------------
-//     mat3x4_t *bone_rest_transforms = get_unpacked_member(skel_model->bone_rest_transforms, skel_model);
+    // ------------------------------------------------------------------------
+    // 
+    // ------------------------------------------------------------------------
+    mat3x4_t *bone_rest_transforms = UNPACK_MEMBER(skel_model->bone_rest_transforms, skel_model);
 
-//     // NOTE - Though skeletons keep their own copy of bone hitbox ofs and scales
-//     // NOTE   This function disregards that and only uses the bone hitboxes as
-//     // NOTE   defined in the IQM model (and its JSON counterpart)
-//     // NOTE - Thus, if you programmatically increase the hitbox for a bone at 
-//     // NOTE   runtime, that change won't be reflected in this bounds calculation,
-//     // NOTE   and thus the bone hitbox may be larger than the overall bounds 
-//     // NOTE   calculated here against the default bone hitbox sizes. This is a 
-//     // NOTE   tricky edge case to watch out for. If you know you'll need that, 
-//     // NOTE   maybe calculate the bounds here using the skeleton's current 
-//     // NOTE   hitbox definition instead, but you'll need to come up with some 
-//     // NOTE   other non-model-based bounds caching system. - blubs 
-//     vec3_t *bone_hitbox_ofs = get_unpacked_member(skel_model->bone_hitbox_ofs, skel_model);
-//     vec3_t *bone_hitbox_scale = get_unpacked_member(skel_model->bone_hitbox_scale, skel_model);
+    // NOTE - Though skeletons keep their own copy of bone hitbox ofs and scales
+    // NOTE   This function disregards that and only uses the bone hitboxes as
+    // NOTE   defined in the IQM model (and its JSON counterpart)
+    // NOTE - Thus, if you programmatically increase the hitbox for a bone at 
+    // NOTE   runtime, that change won't be reflected in this bounds calculation,
+    // NOTE   and thus the bone hitbox may be larger than the overall bounds 
+    // NOTE   calculated here against the default bone hitbox sizes. This is a 
+    // NOTE   tricky edge case to watch out for. If you know you'll need that, 
+    // NOTE   maybe calculate the bounds here using the skeleton's current 
+    // NOTE   hitbox definition instead, but you'll need to come up with some 
+    // NOTE   other non-model-based bounds caching system. - blubs 
+    vec3_t *bone_hitbox_ofs = UNPACK_MEMBER(skel_model->bone_hitbox_ofs, skel_model);
+    vec3_t *bone_hitbox_scale = UNPACK_MEMBER(skel_model->bone_hitbox_scale, skel_model);
 
-//     const int unit_bbox_n_corners = 8;
-//     static vec3_t unit_bbox_corners[8] = {
-//         // {-1,-1,-1}, // Left,  Back,  Bottom
-//         // { 1,-1,-1}, // Right, Back,  Bottom
-//         // { 1, 1,-1}, // Right, Front, Bottom
-//         // {-1, 1,-1}, // Left,  Front, Bottom
-//         // {-1,-1, 1}, // Left,  Back,  Top
-//         // { 1,-1, 1}, // Right, Back,  Top
-//         // { 1, 1, 1}, // Right, Front, Top
-//         // {-1, 1, 1}, // Left,  Front, Top
-//         {-0.5,-0.5,-0.5}, // Left,  Back,  Bottom
-//         { 0.5,-0.5,-0.5}, // Right, Back,  Bottom
-//         { 0.5, 0.5,-0.5}, // Right, Front, Bottom
-//         {-0.5, 0.5,-0.5}, // Left,  Front, Bottom
-//         {-0.5,-0.5, 0.5}, // Left,  Back,  Top
-//         { 0.5,-0.5, 0.5}, // Right, Back,  Top
-//         { 0.5, 0.5, 0.5}, // Right, Front, Top
-//         {-0.5, 0.5, 0.5}, // Left,  Front, Top
-//     };
+    const int unit_bbox_n_corners = 8;
+    static vec3_t unit_bbox_corners[8] = {
+        // {-1,-1,-1}, // Left,  Back,  Bottom
+        // { 1,-1,-1}, // Right, Back,  Bottom
+        // { 1, 1,-1}, // Right, Front, Bottom
+        // {-1, 1,-1}, // Left,  Front, Bottom
+        // {-1,-1, 1}, // Left,  Back,  Top
+        // { 1,-1, 1}, // Right, Back,  Top
+        // { 1, 1, 1}, // Right, Front, Top
+        // {-1, 1, 1}, // Left,  Front, Top
+        {-0.5,-0.5,-0.5}, // Left,  Back,  Bottom
+        { 0.5,-0.5,-0.5}, // Right, Back,  Bottom
+        { 0.5, 0.5,-0.5}, // Right, Front, Bottom
+        {-0.5, 0.5,-0.5}, // Left,  Front, Bottom
+        {-0.5,-0.5, 0.5}, // Left,  Back,  Top
+        { 0.5,-0.5, 0.5}, // Right, Back,  Top
+        { 0.5, 0.5, 0.5}, // Right, Front, Top
+        {-0.5, 0.5, 0.5}, // Left,  Front, Top
+    };
 
-//     // Set to `true` after first pass
-//     bool bounds_initialized = true;
+    // Set to `true` after first pass
+    bool bounds_initialized = true;
 
-// #ifdef IQMDEBUG_CALC_MODEL_BOUNDS
-//     Con_Printf("calc_skel_model_bounds_for_rest_pose 3\n");
-// #endif // IQMDEBUG_CALC_MODEL_BOUNDS
+#ifdef IQMDEBUG_CALC_MODEL_BOUNDS
+    Con_Printf("calc_skel_model_bounds_for_rest_pose 3\n");
+#endif // IQMDEBUG_CALC_MODEL_BOUNDS
 
-//     // Calculate the current pose transform for all bones
-//     for(uint32_t bone_idx = 0; bone_idx < skel_model->n_bones; bone_idx++) {
-//         // Bone local-space -> model-space for rest pose is pre-calculated
+    // Calculate the current pose transform for all bones
+    for(uint32_t bone_idx = 0; bone_idx < skel_model->n_bones; bone_idx++) {
+        // Bone local-space -> model-space for rest pose is pre-calculated
         
-//         // Apply bone AABB scale / ofs:
-//         mat3x4_t bone_hitbox_transform;
-//         Matrix3x4_scale_translate(bone_hitbox_transform, bone_hitbox_scale[bone_idx], bone_hitbox_ofs[bone_idx]);
-//         // Apply bone's rest pose transform:
-//         mat3x4_t bone_transform;
-//         Matrix3x4_ConcatTransforms(bone_transform, bone_rest_transforms[bone_idx], bone_hitbox_transform);
+        // Apply bone AABB scale / ofs:
+        mat3x4_t bone_hitbox_transform;
+        Matrix3x4_scale_translate(bone_hitbox_transform, bone_hitbox_scale[bone_idx], bone_hitbox_ofs[bone_idx]);
+        // Apply bone's rest pose transform:
+        mat3x4_t bone_transform;
+        Matrix3x4_ConcatTransforms(bone_transform, bone_rest_transforms[bone_idx], bone_hitbox_transform);
 
-// #ifdef IQMDEBUG_CALC_MODEL_BOUNDS
-//         Con_Printf("Checking rest pose bone mins / maxs for bone %d\n", bone_idx);
-//         Con_Printf("\tBone ofs: [%f, %f, %f]\n", bone_hitbox_ofs[bone_idx][0], bone_hitbox_ofs[bone_idx][1], bone_hitbox_ofs[bone_idx][2]);
-//         Con_Printf("\tBone scale: [%f, %f, %f]\n", bone_hitbox_scale[bone_idx][0], bone_hitbox_scale[bone_idx][1], bone_hitbox_scale[bone_idx][2]);
-//         Con_Printf("\tBone hitbox transform:\n");
-//         Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_hitbox_transform[0][0], bone_hitbox_transform[0][1], bone_hitbox_transform[0][2], bone_hitbox_transform[0][3]);
-//         Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_hitbox_transform[1][0], bone_hitbox_transform[1][1], bone_hitbox_transform[1][2], bone_hitbox_transform[1][3]);
-//         Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_hitbox_transform[2][0], bone_hitbox_transform[2][1], bone_hitbox_transform[2][2], bone_hitbox_transform[2][3]);
-//         Con_Printf("\t\t[%f, %f, %f, %f]\n", 0.0f, 0.0f, 0.0f, 1.0f);
-//         Con_Printf("\tBone rest transform:\n");
-//         Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_rest_transforms[bone_idx][0][0], bone_rest_transforms[bone_idx][0][1], bone_rest_transforms[bone_idx][0][2], bone_rest_transforms[bone_idx][0][3]);
-//         Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_rest_transforms[bone_idx][1][0], bone_rest_transforms[bone_idx][1][1], bone_rest_transforms[bone_idx][1][2], bone_rest_transforms[bone_idx][1][3]);
-//         Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_rest_transforms[bone_idx][2][0], bone_rest_transforms[bone_idx][2][1], bone_rest_transforms[bone_idx][2][2], bone_rest_transforms[bone_idx][2][3]);
-//         Con_Printf("\t\t[%f, %f, %f, %f]\n", 0.0f, 0.0f, 0.0f, 1.0f);
-//         Con_Printf("\tBone transform:\n");
-//         Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_transform[0][0], bone_transform[0][1], bone_transform[0][2], bone_transform[0][3]);
-//         Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_transform[1][0], bone_transform[1][1], bone_transform[1][2], bone_transform[1][3]);
-//         Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_transform[2][0], bone_transform[2][1], bone_transform[2][2], bone_transform[2][3]);
-//         Con_Printf("\t\t[%f, %f, %f, %f]\n", 0.0f, 0.0f, 0.0f, 1.0f);
-// #endif // IQMDEBUG_CALC_MODEL_BOUNDS
+#ifdef IQMDEBUG_CALC_MODEL_BOUNDS
+        Con_Printf("Checking rest pose bone mins / maxs for bone %d\n", bone_idx);
+        Con_Printf("\tBone ofs: [%f, %f, %f]\n", bone_hitbox_ofs[bone_idx][0], bone_hitbox_ofs[bone_idx][1], bone_hitbox_ofs[bone_idx][2]);
+        Con_Printf("\tBone scale: [%f, %f, %f]\n", bone_hitbox_scale[bone_idx][0], bone_hitbox_scale[bone_idx][1], bone_hitbox_scale[bone_idx][2]);
+        Con_Printf("\tBone hitbox transform:\n");
+        Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_hitbox_transform[0][0], bone_hitbox_transform[0][1], bone_hitbox_transform[0][2], bone_hitbox_transform[0][3]);
+        Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_hitbox_transform[1][0], bone_hitbox_transform[1][1], bone_hitbox_transform[1][2], bone_hitbox_transform[1][3]);
+        Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_hitbox_transform[2][0], bone_hitbox_transform[2][1], bone_hitbox_transform[2][2], bone_hitbox_transform[2][3]);
+        Con_Printf("\t\t[%f, %f, %f, %f]\n", 0.0f, 0.0f, 0.0f, 1.0f);
+        Con_Printf("\tBone rest transform:\n");
+        Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_rest_transforms[bone_idx][0][0], bone_rest_transforms[bone_idx][0][1], bone_rest_transforms[bone_idx][0][2], bone_rest_transforms[bone_idx][0][3]);
+        Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_rest_transforms[bone_idx][1][0], bone_rest_transforms[bone_idx][1][1], bone_rest_transforms[bone_idx][1][2], bone_rest_transforms[bone_idx][1][3]);
+        Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_rest_transforms[bone_idx][2][0], bone_rest_transforms[bone_idx][2][1], bone_rest_transforms[bone_idx][2][2], bone_rest_transforms[bone_idx][2][3]);
+        Con_Printf("\t\t[%f, %f, %f, %f]\n", 0.0f, 0.0f, 0.0f, 1.0f);
+        Con_Printf("\tBone transform:\n");
+        Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_transform[0][0], bone_transform[0][1], bone_transform[0][2], bone_transform[0][3]);
+        Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_transform[1][0], bone_transform[1][1], bone_transform[1][2], bone_transform[1][3]);
+        Con_Printf("\t\t[%f, %f, %f, %f]\n", bone_transform[2][0], bone_transform[2][1], bone_transform[2][2], bone_transform[2][3]);
+        Con_Printf("\t\t[%f, %f, %f, %f]\n", 0.0f, 0.0f, 0.0f, 1.0f);
+#endif // IQMDEBUG_CALC_MODEL_BOUNDS
 
 
-//         // Project the 8 hitbox corners into model-space, update the overall model mins / maxs
-//         for(int i = 0; i < unit_bbox_n_corners; i++) {
-//             vec3_t model_space_corner;
-//             Matrix3x4_VectorTransform( bone_transform, unit_bbox_corners[i], model_space_corner);
+        // Project the 8 hitbox corners into model-space, update the overall model mins / maxs
+        for(int i = 0; i < unit_bbox_n_corners; i++) {
+            vec3_t model_space_corner;
+            Matrix3x4_VectorTransform( bone_transform, unit_bbox_corners[i], model_space_corner);
 
-//             // On first pass, set the mins / maxs
-//             if(!bounds_initialized) {
-//                 VectorCopy(model_space_corner, model_mins);
-//                 VectorCopy(model_space_corner, model_maxs);
-//                 bounds_initialized = true;
-//             }
-//             else {
-//                 VectorMin(model_space_corner, model_mins, model_mins);
-//                 VectorMax(model_space_corner, model_maxs, model_maxs);
-//             }
-//         }
-//     }
+            // On first pass, set the mins / maxs
+            if(!bounds_initialized) {
+                VectorCopy(model_space_corner, model_mins);
+                VectorCopy(model_space_corner, model_maxs);
+                bounds_initialized = true;
+            }
+            else {
+                VectorMin(model_space_corner, model_mins, model_mins);
+                VectorMax(model_space_corner, model_maxs, model_maxs);
+            }
+        }
+    }
 
-// #ifdef IQMDEBUG_CALC_MODEL_BOUNDS
-//     Con_Printf("calc_skel_model_bounds_for_rest_pose finished 4\n");
-//     Con_Printf("Final bounds calculated: (mins: [%.2f, %.2f, %.2f], maxs: [%.2f, %.2f, %.2f])\n",
-//         model_mins[0], model_mins[1], model_mins[2],
-//         model_maxs[0], model_maxs[1], model_maxs[2]
-//     );
-// #endif // IQMDEBUG_CALC_MODEL_BOUNDS
+#ifdef IQMDEBUG_CALC_MODEL_BOUNDS
+    Con_Printf("calc_skel_model_bounds_for_rest_pose finished 4\n");
+    Con_Printf("Final bounds calculated: (mins: [%.2f, %.2f, %.2f], maxs: [%.2f, %.2f, %.2f])\n",
+        model_mins[0], model_mins[1], model_mins[2],
+        model_maxs[0], model_maxs[1], model_maxs[2]
+    );
+#endif // IQMDEBUG_CALC_MODEL_BOUNDS
 }
 
 
 
 void calc_skel_model_bounds_for_anim(skeletal_model_t *skel_model, skeletal_model_t *anim_model, vec3_t model_mins, vec3_t model_maxs) {
-    return;
 
-// #ifdef IQMDEBUG_CALC_MODEL_BOUNDS
-//     Con_Printf("calc_skel_model_bounds_for_anim started\n");
-// #endif // IQMDEBUG_CALC_MODEL_BOUNDS
+#ifdef IQMDEBUG_CALC_MODEL_BOUNDS
+    Con_Printf("calc_skel_model_bounds_for_anim started\n");
+#endif // IQMDEBUG_CALC_MODEL_BOUNDS
 
-//     if(skel_model == NULL || anim_model == NULL) {
-// #ifdef IQMDEBUG_CALC_MODEL_BOUNDS
-//         Con_Printf("calc_skel_model_bounds_for_anim finished 1\n");
-// #endif // IQMDEBUG_CALC_MODEL_BOUNDS
-//         return;
-//     }
-//     if(skel_model->n_bones <= 0) {
-// #ifdef IQMDEBUG_CALC_MODEL_BOUNDS
-//         Con_Printf("calc_skel_model_bounds_for_anim finished 2\n");
-// #endif // IQMDEBUG_CALC_MODEL_BOUNDS
-//         return;
-//     }
+    if(skel_model == NULL || anim_model == NULL) {
+#ifdef IQMDEBUG_CALC_MODEL_BOUNDS
+        Con_Printf("calc_skel_model_bounds_for_anim finished 1\n");
+#endif // IQMDEBUG_CALC_MODEL_BOUNDS
+        return;
+    }
+    if(skel_model->n_bones <= 0) {
+#ifdef IQMDEBUG_CALC_MODEL_BOUNDS
+        Con_Printf("calc_skel_model_bounds_for_anim finished 2\n");
+#endif // IQMDEBUG_CALC_MODEL_BOUNDS
+        return;
+    }
 
-//     // If no animation bones or frames, return skel model's rest pose hitbox bounds
-//     VectorCopy(skel_model->rest_pose_bone_hitbox_mins, model_mins);
-//     VectorCopy(skel_model->rest_pose_bone_hitbox_maxs, model_maxs);
+    // If no animation bones or frames, return skel model's rest pose hitbox bounds
+    VectorCopy(skel_model->rest_pose_bone_hitbox_mins, model_mins);
+    VectorCopy(skel_model->rest_pose_bone_hitbox_maxs, model_maxs);
 
-//     if(anim_model->n_bones <= 0 || anim_model->n_framegroups <= 0) {
-// #ifdef IQMDEBUG_CALC_MODEL_BOUNDS
-//         Con_Printf("calc_skel_model_bounds_for_anim finished 3\n");
-// #endif // IQMDEBUG_CALC_MODEL_BOUNDS
-//         return;
-//     }
-
-
-//     mat3x4_t *bone_rest_transforms = get_unpacked_member(skel_model->bone_rest_transforms, skel_model);
-//     int16_t *bone_parent_idx = get_unpacked_member(skel_model->bone_parent_idx, skel_model);
-//     vec3_t *anim_model_frames_bone_pos = get_unpacked_member(anim_model->frames_bone_pos, anim_model);
-//     quat_t *anim_model_frames_bone_rot = get_unpacked_member(anim_model->frames_bone_rot, anim_model);
-//     vec3_t *anim_model_frames_bone_scale = get_unpacked_member(anim_model->frames_bone_scale, anim_model);
-//     uint32_t *framegroup_start_frame = get_unpacked_member(anim_model->framegroup_start_frame, anim_model);
-//     uint32_t *framegroup_n_frames = get_unpacked_member(anim_model->framegroup_n_frames, anim_model);
+    if(anim_model->n_bones <= 0 || anim_model->n_framegroups <= 0) {
+#ifdef IQMDEBUG_CALC_MODEL_BOUNDS
+        Con_Printf("calc_skel_model_bounds_for_anim finished 3\n");
+#endif // IQMDEBUG_CALC_MODEL_BOUNDS
+        return;
+    }
 
 
-//     // NOTE - Though skeletons keep their own copy of bone hitbox ofs and scales
-//     // NOTE   This function disregards that and only uses the bone hitboxes as
-//     // NOTE   defined in the IQM model (and its JSON counterpart)
-//     // NOTE - Thus, if you programmatically increase the hitbox for a bone at 
-//     // NOTE   runtime, that change won't be reflected in this bounds calculation,
-//     // NOTE   and thus the bone hitbox may be larger than the overall bounds 
-//     // NOTE   calculated here against the default bone hitbox sizes. This is a 
-//     // NOTE   tricky edge case to watch out for. If you know you'll need that, 
-//     // NOTE   maybe calculate the bounds here using the skeleton's currnet 
-//     // NOTE   hitbox definition instead, but you'll need to come up with some 
-//     // NOTE   other non-model-based bounds caching system. - blubs 
-//     vec3_t *bone_hitbox_ofs = get_unpacked_member(skel_model->bone_hitbox_ofs, skel_model);
-//     vec3_t *bone_hitbox_scale = get_unpacked_member(skel_model->bone_hitbox_scale, skel_model);
+    mat3x4_t *bone_rest_transforms = UNPACK_MEMBER(skel_model->bone_rest_transforms, skel_model);
+    int16_t *bone_parent_idx = UNPACK_MEMBER(skel_model->bone_parent_idx, skel_model);
+    vec3_t *anim_model_frames_bone_pos = UNPACK_MEMBER(anim_model->frames_bone_pos, anim_model);
+    quat_t *anim_model_frames_bone_rot = UNPACK_MEMBER(anim_model->frames_bone_rot, anim_model);
+    vec3_t *anim_model_frames_bone_scale = UNPACK_MEMBER(anim_model->frames_bone_scale, anim_model);
+    uint32_t *framegroup_start_frame = UNPACK_MEMBER(anim_model->framegroup_start_frame, anim_model);
+    uint32_t *framegroup_n_frames = UNPACK_MEMBER(anim_model->framegroup_n_frames, anim_model);
 
 
-//     // Find the animation data bone index to pull for each skeleton bone index
-//     // Match them by bone name
-//     int32_t anim_bone_idxs[IQM_MAX_BONES];
-//     map_anim_bones_to_skel_bones(skel_model, anim_model, anim_bone_idxs);
-
-//     // Con_Printf("calc_skel_model_bounds_for_anim skel_model -> skel_anim bone map:\n");
-//     // Con_Printf("{");
-//     // for(int i = 0; i < skel_model->n_bones; i++) {
-//     //     Con_Printf("%d: %d, ", i, anim_bone_idxs[i]);
-//     // }
-//     // Con_Printf("}\n");
-
-
-//     // Each matrix takes us from bone-space to animated model-space
-//     mat3x4_t bone_transforms[IQM_MAX_BONES];
-
-//     const int unit_bbox_n_corners = 8;
-//     static vec3_t unit_bbox_corners[8] = {
-//         {-0.5,-0.5,-0.5}, // Left,  Back,  Bottom
-//         { 0.5,-0.5,-0.5}, // Right, Back,  Bottom
-//         { 0.5, 0.5,-0.5}, // Right, Front, Bottom
-//         {-0.5, 0.5,-0.5}, // Left,  Front, Bottom
-//         {-0.5,-0.5, 0.5}, // Left,  Back,  Top
-//         { 0.5,-0.5, 0.5}, // Right, Back,  Top
-//         { 0.5, 0.5, 0.5}, // Right, Front, Top
-//         {-0.5, 0.5, 0.5}, // Left,  Front, Top
-//     };
-// #ifdef IQMDEBUG_CALC_MODEL_BOUNDS
-//     Con_Printf("calc_skel_model_bounds_for_anim 4\n");
-// #endif // IQMDEBUG_CALC_MODEL_BOUNDS
-
-//     // Set to `true` after first pass
-//     bool bounds_initialized = true;
+    // NOTE - Though skeletons keep their own copy of bone hitbox ofs and scales
+    // NOTE   This function disregards that and only uses the bone hitboxes as
+    // NOTE   defined in the IQM model (and its JSON counterpart)
+    // NOTE - Thus, if you programmatically increase the hitbox for a bone at 
+    // NOTE   runtime, that change won't be reflected in this bounds calculation,
+    // NOTE   and thus the bone hitbox may be larger than the overall bounds 
+    // NOTE   calculated here against the default bone hitbox sizes. This is a 
+    // NOTE   tricky edge case to watch out for. If you know you'll need that, 
+    // NOTE   maybe calculate the bounds here using the skeleton's currnet 
+    // NOTE   hitbox definition instead, but you'll need to come up with some 
+    // NOTE   other non-model-based bounds caching system. - blubs 
+    vec3_t *bone_hitbox_ofs = UNPACK_MEMBER(skel_model->bone_hitbox_ofs, skel_model);
+    vec3_t *bone_hitbox_scale = UNPACK_MEMBER(skel_model->bone_hitbox_scale, skel_model);
 
 
-//     for(uint16_t framegroup_idx = 0; framegroup_idx < anim_model->n_framegroups; framegroup_idx++) {
-//         uint32_t start_frame = framegroup_start_frame[framegroup_idx];
-//         uint32_t end_frame = start_frame + framegroup_n_frames[framegroup_idx];
-//         for(uint32_t frame_idx = start_frame; frame_idx < end_frame; frame_idx++) {
-
-//             // Calculate the current pose transform for all bones
-//             for(uint32_t bone_idx = 0; bone_idx < skel_model->n_bones; bone_idx++) {
-//                 uint32_t anim_bone_idx = anim_bone_idxs[bone_idx];
-
-//                 // If no animation data for this bone, set to rest pose and skip
-//                 if(anim_bone_idx == -1) {
-//                     // ... set its transform to rest pose and skip it
-//                     Matrix3x4_Copy(bone_transforms[bone_idx], bone_rest_transforms[bone_idx]);
-//                 }
-//                 else {
-//                     vec3_t *frame_pos = &(anim_model_frames_bone_pos[anim_model->n_bones * frame_idx + anim_bone_idx]);
-//                     quat_t *frame_rot = &(anim_model_frames_bone_rot[anim_model->n_bones * frame_idx + anim_bone_idx]);
-//                     vec3_t *frame_scale = &(anim_model_frames_bone_scale[anim_model->n_bones * frame_idx + anim_bone_idx]);
-
-//                     // Current pose bone-space transform (relative to parent)
-//                     Matrix3x4_scale_rotate_translate(bone_transforms[bone_idx], *frame_scale, *frame_rot, *frame_pos);
-
-//                     // If we have a parent, concat parent transform to get model-space transform
-//                     int parent_bone_idx = bone_parent_idx[bone_idx];
-//                     if(parent_bone_idx >= 0) {
-//                         mat3x4_t temp; 
-//                         Matrix3x4_ConcatTransforms(temp, bone_transforms[parent_bone_idx], bone_transforms[bone_idx]);
-//                         Matrix3x4_Copy(bone_transforms[bone_idx], temp);
-//                     }
-//                     // If we don't have a parent, the bone-space transform _is_ the model-space transform
-//                 }
-//                 // bone_transform[bone_idx] now contains the bone-space -> model-space transform for this bone
+    // Find the animation data bone index to pull for each skeleton bone index
+    // Match them by bone name
+    int32_t anim_bone_idxs[IQM_MAX_BONES];
+    map_anim_bones_to_skel_bones(skel_model, anim_model, anim_bone_idxs);
 
 
+    // Con_Printf("calc_skel_model_bounds_for_anim skel_model -> skel_anim bone map:\n");
+    // Con_Printf("{");
+    // for(int i = 0; i < skel_model->n_bones; i++) {
+    //     Con_Printf("%d: %d, ", i, anim_bone_idxs[i]);
+    // }
+    // Con_Printf("}\n");
 
 
-//                 // Apply bone AABB scale / ofs:
-//                 mat3x4_t bone_hitbox_transform;
-//                 Matrix3x4_scale_translate(bone_hitbox_transform, bone_hitbox_scale[bone_idx], bone_hitbox_ofs[bone_idx]);
-//                 // Apply bone's current pose transform:
-//                 mat3x4_t bone_transform;
-//                 Matrix3x4_ConcatTransforms(bone_transform, bone_transforms[bone_idx], bone_hitbox_transform);
+    // Each matrix takes us from bone-space to animated model-space
+    mat3x4_t bone_transforms[IQM_MAX_BONES];
+
+    const int unit_bbox_n_corners = 8;
+    static vec3_t unit_bbox_corners[8] = {
+        {-0.5,-0.5,-0.5}, // Left,  Back,  Bottom
+        { 0.5,-0.5,-0.5}, // Right, Back,  Bottom
+        { 0.5, 0.5,-0.5}, // Right, Front, Bottom
+        {-0.5, 0.5,-0.5}, // Left,  Front, Bottom
+        {-0.5,-0.5, 0.5}, // Left,  Back,  Top
+        { 0.5,-0.5, 0.5}, // Right, Back,  Top
+        { 0.5, 0.5, 0.5}, // Right, Front, Top
+        {-0.5, 0.5, 0.5}, // Left,  Front, Top
+    };
+#ifdef IQMDEBUG_CALC_MODEL_BOUNDS
+    Con_Printf("calc_skel_model_bounds_for_anim 4\n");
+#endif // IQMDEBUG_CALC_MODEL_BOUNDS
+
+    // Set to `true` after first pass
+    bool bounds_initialized = true;
 
 
-// #ifdef IQMDEBUG_CALC_MODEL_BOUNDS
-//                 bool do_print = false;
-//                 // bool do_print = true;
-//                 // if(skel_model->n_bones < 25 && skel_model->n_meshes > 0 && start_frame == 0 && end_frame < 30) {
-//                 //     do_print = true;
-//                 // }
+    for(uint16_t framegroup_idx = 0; framegroup_idx < anim_model->n_framegroups; framegroup_idx++) {
+        uint32_t start_frame = framegroup_start_frame[framegroup_idx];
+        uint32_t end_frame = start_frame + framegroup_n_frames[framegroup_idx];
+        for(uint32_t frame_idx = start_frame; frame_idx < end_frame; frame_idx++) {
 
-//                 if(do_print) {
-//                     Con_Printf("\tUpdating model mins/maxs for framegroup %d frame %d bone %d\n", framegroup_idx, frame_idx, bone_idx);
-//                     Con_Printf("\t\tGetting bone anim data for anim bone %d / %d for frame %d\n", anim_bone_idx, anim_model->n_bones, frame_idx);
+            // Calculate the current pose transform for all bones
+            for(uint32_t bone_idx = 0; bone_idx < skel_model->n_bones; bone_idx++) {
+                uint32_t anim_bone_idx = anim_bone_idxs[bone_idx];
 
-//                     Con_Printf("\t\tBone Transform:\n");
-//                     Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_transforms[bone_idx][0][0], bone_transforms[bone_idx][0][1], bone_transforms[bone_idx][0][2], bone_transforms[bone_idx][0][3]);
-//                     Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_transforms[bone_idx][1][0], bone_transforms[bone_idx][1][1], bone_transforms[bone_idx][1][2], bone_transforms[bone_idx][1][3]);
-//                     Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_transforms[bone_idx][2][0], bone_transforms[bone_idx][2][1], bone_transforms[bone_idx][2][2], bone_transforms[bone_idx][2][3]);
-//                     Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", 0.0f, 0.0f, 0.0f, 1.0f);
+                // If no animation data for this bone, set to rest pose and skip
+                if(anim_bone_idx == -1) {
+                    // ... set its transform to rest pose and skip it
+                    Matrix3x4_Copy(bone_transforms[bone_idx], bone_rest_transforms[bone_idx]);
+                }
+                else {
+                    vec3_t *frame_pos = &(anim_model_frames_bone_pos[anim_model->n_bones * frame_idx + anim_bone_idx]);
+                    quat_t *frame_rot = &(anim_model_frames_bone_rot[anim_model->n_bones * frame_idx + anim_bone_idx]);
+                    vec3_t *frame_scale = &(anim_model_frames_bone_scale[anim_model->n_bones * frame_idx + anim_bone_idx]);
 
-//                     Con_Printf("\t\tBone Hitbox Transform:\n");
-//                     Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_hitbox_transform[0][0], bone_hitbox_transform[0][1], bone_hitbox_transform[0][2], bone_hitbox_transform[0][3]);
-//                     Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_hitbox_transform[1][0], bone_hitbox_transform[1][1], bone_hitbox_transform[1][2], bone_hitbox_transform[1][3]);
-//                     Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_hitbox_transform[2][0], bone_hitbox_transform[2][1], bone_hitbox_transform[2][2], bone_hitbox_transform[2][3]);
-//                     Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", 0.0f, 0.0f, 0.0f, 1.0f);
+                    // Current pose bone-space transform (relative to parent)
+                    Matrix3x4_scale_rotate_translate(bone_transforms[bone_idx], *frame_scale, *frame_rot, *frame_pos);
 
-//                     Con_Printf("\t\tBone + Bone Hitbox Transform:\n");
-//                     Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_transform[0][0], bone_transform[0][1], bone_transform[0][2], bone_transform[0][3]);
-//                     Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_transform[1][0], bone_transform[1][1], bone_transform[1][2], bone_transform[1][3]);
-//                     Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_transform[2][0], bone_transform[2][1], bone_transform[2][2], bone_transform[2][3]);
-//                     Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", 0.0f, 0.0f, 0.0f, 1.0f);
-//                 }
-// #endif // IQMDEBUG_CALC_MODEL_BOUNDS
+                    // If we have a parent, concat parent transform to get model-space transform
+                    int parent_bone_idx = bone_parent_idx[bone_idx];
+                    if(parent_bone_idx >= 0) {
+                        mat3x4_t temp; 
+                        Matrix3x4_ConcatTransforms(temp, bone_transforms[parent_bone_idx], bone_transforms[bone_idx]);
+                        Matrix3x4_Copy(bone_transforms[bone_idx], temp);
+                    }
+                    // If we don't have a parent, the bone-space transform _is_ the model-space transform
+                }
+                // bone_transform[bone_idx] now contains the bone-space -> model-space transform for this bone
+
+                // Apply bone AABB scale / ofs:
+                mat3x4_t bone_hitbox_transform;
+                Matrix3x4_scale_translate(bone_hitbox_transform, bone_hitbox_scale[bone_idx], bone_hitbox_ofs[bone_idx]);
+                // Apply bone's current pose transform:
+                mat3x4_t bone_transform;
+                Matrix3x4_ConcatTransforms(bone_transform, bone_transforms[bone_idx], bone_hitbox_transform);
 
 
-//                 // Project the 8 hitbox corners into model-space, update the overall model mins / maxs
-//                 for(int i = 0; i < unit_bbox_n_corners; i++) {
-//                     vec3_t model_space_corner;
-//                     Matrix3x4_VectorTransform( bone_transform, unit_bbox_corners[i], model_space_corner);
+#ifdef IQMDEBUG_CALC_MODEL_BOUNDS
+                bool do_print = false;
+                // bool do_print = true;
+                // if(skel_model->n_bones < 25 && skel_model->n_meshes > 0 && start_frame == 0 && end_frame < 30) {
+                //     do_print = true;
+                // }
 
-//                     // On first pass, set the mins / maxs
-//                     if(!bounds_initialized) {
-//                         VectorCopy(model_space_corner, model_mins);
-//                         VectorCopy(model_space_corner, model_maxs);
-//                         bounds_initialized = true;
-//                     }
-//                     else {
-//                         VectorMax(model_space_corner, model_maxs, model_maxs);
-//                         VectorMin(model_space_corner, model_mins, model_mins);
-//                     }
+                if(do_print) {
+                    Con_Printf("\tUpdating model mins/maxs for framegroup %d frame %d bone %d\n", framegroup_idx, frame_idx, bone_idx);
+                    Con_Printf("\t\tGetting bone anim data for anim bone %d / %d for frame %d\n", anim_bone_idx, anim_model->n_bones, frame_idx);
 
-// #ifdef IQMDEBUG_CALC_MODEL_BOUNDS
-//                     if(do_print) {
-//                         Con_Printf("\t\tBBOX corner %d: [%.2f, %.2f, %.2f]\n", i, model_space_corner[0], model_space_corner[1], model_space_corner[2]);
-//                         Con_Printf("\t\tCurrent model bounds (mins: [%.2f, %.2f, %.2f], maxs: [%.2f, %.2f, %.2f])\n", 
-//                             model_mins[0], model_mins[1], model_mins[2],
-//                             model_maxs[0], model_maxs[1], model_maxs[2]
-//                         );
-//                     }
-// #endif // IQMDEBUG_CALC_MODEL_BOUNDS
-//                 }
-//             }
-//         }
-//     }
+                    Con_Printf("\t\tBone Transform:\n");
+                    Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_transforms[bone_idx][0][0], bone_transforms[bone_idx][0][1], bone_transforms[bone_idx][0][2], bone_transforms[bone_idx][0][3]);
+                    Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_transforms[bone_idx][1][0], bone_transforms[bone_idx][1][1], bone_transforms[bone_idx][1][2], bone_transforms[bone_idx][1][3]);
+                    Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_transforms[bone_idx][2][0], bone_transforms[bone_idx][2][1], bone_transforms[bone_idx][2][2], bone_transforms[bone_idx][2][3]);
+                    Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", 0.0f, 0.0f, 0.0f, 1.0f);
 
-// #ifdef IQMDEBUG_CALC_MODEL_BOUNDS
-//     Con_Printf("calc_skel_model_bounds_for_anim finished 4\n");
-//     Con_Printf("Final bounds calculated: (mins: [%.2f, %.2f, %.2f], maxs: [%.2f, %.2f, %.2f])\n",
-//         model_mins[0], model_mins[1], model_mins[2],
-//         model_maxs[0], model_maxs[1], model_maxs[2]
-//     );
-// #endif // IQMDEBUG_CALC_MODEL_BOUNDS
+                    Con_Printf("\t\tBone Hitbox Transform:\n");
+                    Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_hitbox_transform[0][0], bone_hitbox_transform[0][1], bone_hitbox_transform[0][2], bone_hitbox_transform[0][3]);
+                    Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_hitbox_transform[1][0], bone_hitbox_transform[1][1], bone_hitbox_transform[1][2], bone_hitbox_transform[1][3]);
+                    Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_hitbox_transform[2][0], bone_hitbox_transform[2][1], bone_hitbox_transform[2][2], bone_hitbox_transform[2][3]);
+                    Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", 0.0f, 0.0f, 0.0f, 1.0f);
+
+                    Con_Printf("\t\tBone + Bone Hitbox Transform:\n");
+                    Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_transform[0][0], bone_transform[0][1], bone_transform[0][2], bone_transform[0][3]);
+                    Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_transform[1][0], bone_transform[1][1], bone_transform[1][2], bone_transform[1][3]);
+                    Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", bone_transform[2][0], bone_transform[2][1], bone_transform[2][2], bone_transform[2][3]);
+                    Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", 0.0f, 0.0f, 0.0f, 1.0f);
+                }
+#endif // IQMDEBUG_CALC_MODEL_BOUNDS
+
+
+                // Project the 8 hitbox corners into model-space, update the overall model mins / maxs
+                for(int i = 0; i < unit_bbox_n_corners; i++) {
+                    vec3_t model_space_corner;
+                    Matrix3x4_VectorTransform( bone_transform, unit_bbox_corners[i], model_space_corner);
+
+                    // On first pass, set the mins / maxs
+                    if(!bounds_initialized) {
+                        VectorCopy(model_space_corner, model_mins);
+                        VectorCopy(model_space_corner, model_maxs);
+                        bounds_initialized = true;
+                    }
+                    else {
+                        VectorMax(model_space_corner, model_maxs, model_maxs);
+                        VectorMin(model_space_corner, model_mins, model_mins);
+                    }
+
+#ifdef IQMDEBUG_CALC_MODEL_BOUNDS
+                    if(do_print) {
+                        Con_Printf("\t\tBBOX corner %d: [%.2f, %.2f, %.2f]\n", i, model_space_corner[0], model_space_corner[1], model_space_corner[2]);
+                        Con_Printf("\t\tCurrent model bounds (mins: [%.2f, %.2f, %.2f], maxs: [%.2f, %.2f, %.2f])\n", 
+                            model_mins[0], model_mins[1], model_mins[2],
+                            model_maxs[0], model_maxs[1], model_maxs[2]
+                        );
+                    }
+#endif // IQMDEBUG_CALC_MODEL_BOUNDS
+                }
+            }
+        }
+    }
+
+#ifdef IQMDEBUG_CALC_MODEL_BOUNDS
+    Con_Printf("calc_skel_model_bounds_for_anim finished 4\n");
+    Con_Printf("Final bounds calculated: (mins: [%.2f, %.2f, %.2f], maxs: [%.2f, %.2f, %.2f])\n",
+        model_mins[0], model_mins[1], model_mins[2],
+        model_maxs[0], model_maxs[1], model_maxs[2]
+    );
+#endif // IQMDEBUG_CALC_MODEL_BOUNDS
 }
 
 
@@ -2554,12 +2549,6 @@ void debug_print_skeletal_model(skeletal_model_t *skel_model, int is_packed) {
     vec3_t *bone_hitbox_scale = OPT_UNPACK_MEMBER(skel_model->bone_hitbox_scale,   skel_model, is_packed);
     int *bone_hitbox_tag      = OPT_UNPACK_MEMBER(skel_model->bone_hitbox_tag,     skel_model, is_packed);
 
-#ifdef IQM_BBOX_PER_MODEL_PER_ANIM
-    vec3_t rest_pose_bone_hitbox_mins = OPT_UNPACK_MEMBER(skel_model->rest_pose_bone_hitbox_mins, skel_model, is_packed);
-    vec3_t rest_pose_bone_hitbox_maxs = OPT_UNPACK_MEMBER(skel_model->rest_pose_bone_hitbox_maxs, skel_model, is_packed);
-    vec3_t anim_bone_hitbox_mins      = OPT_UNPACK_MEMBER(skel_model->anim_bone_hitbox_mins,      skel_model, is_packed);
-    vec3_t anim_bone_hitbox_maxs      = OPT_UNPACK_MEMBER(skel_model->anim_bone_hitbox_maxs,      skel_model, is_packed);
-#endif // IQM_BBOX_PER_MODEL_PER_ANIM
     mat3x4_t *bone_rest_transforms     = OPT_UNPACK_MEMBER(skel_model->bone_rest_transforms,      skel_model, is_packed);
     mat3x4_t *inv_bone_rest_transforms = OPT_UNPACK_MEMBER(skel_model->inv_bone_rest_transforms,  skel_model, is_packed);
 
@@ -2578,12 +2567,6 @@ void debug_print_skeletal_model(skeletal_model_t *skel_model, int is_packed) {
         Con_Printf("skel_model->bone_hitbox_scale[%d] = [%f, %f, %f]\n",  bone_idx, bone_hitbox_scale[bone_idx][0], bone_hitbox_scale[bone_idx][1], bone_hitbox_scale[bone_idx][2]);
         Con_Printf("skel_model->bone_hitbox_tag[%d] = %d\n",              bone_idx, bone_hitbox_tag[bone_idx]);
 
-#ifdef IQM_BBOX_PER_MODEL_PER_ANIM
-        Con_Printf("skel_model->rest_pose_bone_hitbox_min[%d] = [%f, %f, %f]\n",  bone_idx, rest_pose_bone_hitbox_min[bone_idx][0], rest_pose_bone_hitbox_min[bone_idx][1], rest_pose_bone_hitbox_min[bone_idx][2]);
-        Con_Printf("skel_model->rest_pose_bone_hitbox_maxs[%d] = [%f, %f, %f]\n", bone_idx, rest_pose_bone_hitbox_maxs[bone_idx][0], rest_pose_bone_hitbox_maxs[bone_idx][1], rest_pose_bone_hitbox_maxs[bone_idx][2]);
-        Con_Printf("skel_model->anim_bone_hitbox_mins[%d] = [%f, %f, %f]\n",      bone_idx, anim_bone_hitbox_mins[bone_idx][0], anim_bone_hitbox_mins[bone_idx][1], anim_bone_hitbox_mins[bone_idx][2]);
-        Con_Printf("skel_model->anim_bone_hitbox_maxs[%d] = [%f, %f, %f]\n",      bone_idx, anim_bone_hitbox_maxs[bone_idx][0], anim_bone_hitbox_maxs[bone_idx][1], anim_bone_hitbox_maxs[bone_idx][2]);
-#endif // IQM_BBOX_PER_MODEL_PER_ANIM
 
         mat3x4_t *print_mat;
 
@@ -2603,6 +2586,17 @@ void debug_print_skeletal_model(skeletal_model_t *skel_model, int is_packed) {
         Con_Printf("---------------------\n");
     }
     Con_Printf("skel_model->fps_cam_bone_idx = %d\n", skel_model->fps_cam_bone_idx);
+
+
+#ifdef IQM_BBOX_PER_MODEL_PER_ANIM
+        Con_Printf("skel_model->rest_pose_bone_hitbox_mins = [%f, %f, %f]\n",  skel_model->rest_pose_bone_hitbox_mins[0], skel_model->rest_pose_bone_hitbox_mins[1], skel_model->rest_pose_bone_hitbox_mins[2]);
+        Con_Printf("skel_model->rest_pose_bone_hitbox_maxs = [%f, %f, %f]\n", skel_model->rest_pose_bone_hitbox_maxs[0], skel_model->rest_pose_bone_hitbox_maxs[1], skel_model->rest_pose_bone_hitbox_maxs[2]);
+        Con_Printf("skel_model->anim_bone_hitbox_mins = [%f, %f, %f]\n",      skel_model->anim_bone_hitbox_mins[0], skel_model->anim_bone_hitbox_mins[1], skel_model->anim_bone_hitbox_mins[2]);
+        Con_Printf("skel_model->anim_bone_hitbox_maxs = [%f, %f, %f]\n",      skel_model->anim_bone_hitbox_maxs[0], skel_model->anim_bone_hitbox_maxs[1], skel_model->anim_bone_hitbox_maxs[2]);
+#endif // IQM_BBOX_PER_MODEL_PER_ANIM
+
+
+
 
 
 
@@ -2966,7 +2960,6 @@ void Mod_LoadIQMModel (model_t *model, void *buffer) {
     Con_Printf("DONE\n");
 #endif // IQMDEBUG_LOADIQM_PACKING
 
-    return;
 
 #ifdef IQM_BBOX_PER_MODEL_PER_ANIM
     // These functions are also used at runtime, and so operate on packed skeletal models
@@ -2976,12 +2969,11 @@ void Mod_LoadIQMModel (model_t *model, void *buffer) {
     Con_Printf("\tmins: [%f, %f, %f]\n", packed_skel_model->rest_pose_bone_hitbox_mins[0], packed_skel_model->rest_pose_bone_hitbox_mins[1], packed_skel_model->rest_pose_bone_hitbox_mins[2]);
     Con_Printf("\tmaxs: [%f, %f, %f]\n", packed_skel_model->rest_pose_bone_hitbox_maxs[0], packed_skel_model->rest_pose_bone_hitbox_maxs[1], packed_skel_model->rest_pose_bone_hitbox_maxs[2]);
     Con_Printf("About to calculate anim pose mins / maxs\n");
-    calc_skel_model_bounds_for_anim(relocatable_skel_model, relocatable_skel_model, packed_skel_model->anim_bone_hitbox_mins, packed_skel_model->anim_bone_hitbox_maxs);
+    calc_skel_model_bounds_for_anim(packed_skel_model, packed_skel_model, packed_skel_model->anim_bone_hitbox_mins, packed_skel_model->anim_bone_hitbox_maxs);
     Con_Printf("Done calculating anim pose mins / maxs:\n");
     Con_Printf("\tmins: [%f, %f, %f]\n", packed_skel_model->anim_bone_hitbox_mins[0], packed_skel_model->anim_bone_hitbox_mins[1], packed_skel_model->anim_bone_hitbox_mins[2]);
     Con_Printf("\tmaxs: [%f, %f, %f]\n", packed_skel_model->anim_bone_hitbox_maxs[0], packed_skel_model->anim_bone_hitbox_maxs[1], packed_skel_model->anim_bone_hitbox_maxs[2]);
 #endif // IQM_BBOX_PER_MODEL_PER_ANIM
-
 
 
     model->type = mod_iqm;
