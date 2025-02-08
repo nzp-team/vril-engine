@@ -179,18 +179,18 @@ void wii_apply_weapon_offset (Mtx in, Mtx rot) {
 	float rotTransX, rotTransY, rotTransZ, adsTransX, adsTransY, adsTransZ;
 	
 	// rough center for all weapons
-	rotTransZ = 0; //2 up/down
+	rotTransX = 0; //2 up/down
 	rotTransY = -4; //0 left/right
-	rotTransX = 12; //1 forward/backward
+	rotTransZ = 12; //1 forward/backward
 	
 	// only need to adjust Z axis on ADS translation
-	adsTransZ = 0;
+	adsTransX = 0;
 	adsTransY = 0;
-	adsTransX = -6;
+	adsTransZ = -6;
 	
 	if (cl.stats[STAT_ZOOM] == 1) {
 		// apply weapon offset (move origin)
-		guMtxTrans(in, adsTransX, adsTransY,  adsTransZ);
+		guMtxTrans(in, adsTransZ, adsTransY,  adsTransX);
 		guMtxConcat(model, in, model);
 		
 		// new rotation matrix rotates towards wiimote pointer
@@ -200,13 +200,13 @@ void wii_apply_weapon_offset (Mtx in, Mtx rot) {
 		guMtxConcat(model, rot, model);	
 		
 		// undo weapon offset (move origin back to original pos)
-		guMtxTrans(in, adsTransX*-1, adsTransY*-1,  adsTransZ*-1);
+		guMtxTrans(in, adsTransZ*-1, adsTransY*-1,  adsTransX*-1);
 		guMtxConcat(model, in, model);
 		
 		// if we're not ads and the viewmodel isn't locked
 	} else if (lock_viewmodel != 1) {
 		// apply weapon offset (move origin)
-		guMtxTrans(in, rotTransX, rotTransY,  rotTransZ);
+		guMtxTrans(in, rotTransZ, rotTransY,  rotTransX);
 		guMtxConcat(model, in, model);
 		
 		// new rotation matrix rotates towards wiimote pointer
@@ -216,7 +216,7 @@ void wii_apply_weapon_offset (Mtx in, Mtx rot) {
 		guMtxConcat(model, rot, model);
 		
 		// undo weapon offset (move origin back to original pos)
-		guMtxTrans(in, rotTransX*-1, rotTransY*-1,  rotTransZ*-1);
+		guMtxTrans(in, rotTransZ*-1, rotTransY*-1,  rotTransX*-1);
 		guMtxConcat(model, in, model);
 	}
 }
