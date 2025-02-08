@@ -522,6 +522,10 @@ extern kbutton_t in_forward, in_left, in_right;
 extern qboolean croshhairmoving;
 extern cvar_t ads_center;
 extern cvar_t sniper_center;
+
+float smoothed_crosshair_x = 0;
+float smoothed_crosshair_y = 0;
+
 // Some things here rely upon IN_Move always being called after IN_Commands on the same frame
 void IN_Move (usercmd_t *cmd)
 {
@@ -562,19 +566,21 @@ void IN_Move (usercmd_t *cmd)
 			
 		x2 = clamp((float)wiimote_ir_x / (pointer.vres[0] / 2.0f) - 1.0f, -1.0f, 1.0f);
 		y2 = clamp((float)wiimote_ir_y / (pointer.vres[1] / 2.0f) - 1.0f, -1.0f, 1.0f);
-		// Move the cross position
 		
-		// sB if sniper scope we want to aim in da middle
-		// Unless I can find a way to make the scope image 
-		// move with pointer>>??
-		// seems impossible in my mind
+		// smooth out IR input
+		smoothed_crosshair_x += (x2 - smoothed_crosshair_x) * 0.22;
+		smoothed_crosshair_y += (y2 - smoothed_crosshair_y) * 0.22;
+		
+		// Move the cross position
 		
 		if (aimsnap == true || (cl.stats[STAT_ZOOM] == 1 && ads_center.value) || (cl.stats[STAT_ZOOM] == 2 && sniper_center.value)) {
 			Cvar_SetValue("cl_crossx", vid.width / 2);
 			Cvar_SetValue("cl_crossy", vid.height / 2);
 		} else {
-			Cvar_SetValue("cl_crossx", vid.width / 2 * x2);
-			Cvar_SetValue("cl_crossy", vid.height / 2 * y2);
+			// do we want smoothing always?
+			// I'm not sure. maybe this should be an adjustable option. 
+			Cvar_SetValue("cl_crossx", vid.width / 2 * smoothed_crosshair_x);
+			Cvar_SetValue("cl_crossy", vid.height / 2 * smoothed_crosshair_y);
 			
 			//Con_Printf ("crossx: %f crossy %f\n", scr_vrect.width / 2 * x2, scr_vrect.height / 2 * y2);
 		}
