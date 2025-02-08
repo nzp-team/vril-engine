@@ -168,23 +168,78 @@ qboolean R_CullBox (vec3_t mins, vec3_t maxs)
 guVector axis2 = {0,0,1};
 guVector axis1 = {0,1,0};
 guVector axis0 = {1,0,0};
+
+extern cvar_t cl_crossx;
+extern cvar_t cl_crossy;
+extern int lock_viewmodel;
+extern float goal_crosshair_pitch;
+extern float goal_crosshair_yaw;
+void wii_apply_weapon_offset (Mtx in, Mtx rot) {
+	
+	float rotTransX, rotTransY, rotTransZ, adsTransX, adsTransY, adsTransZ;
+	
+	// rough center for all weapons
+	rotTransZ = 0; //2 up/down
+	rotTransY = -4; //0 left/right
+	rotTransX = 12; //1 forward/backward
+	
+	// only need to adjust Z axis on ADS translation
+	adsTransZ = 0;
+	adsTransY = 0;
+	adsTransX = -6;
+	
+	if (cl.stats[STAT_ZOOM] == 1) {
+		// apply weapon offset (move origin)
+		guMtxTrans(in, adsTransX, adsTransY,  adsTransZ);
+		guMtxConcat(model, in, model);
+		
+		// new rotation matrix rotates towards wiimote pointer
+		guMtxRotAxisRad(rot, &axis2, DegToRad(goal_crosshair_yaw*-1));
+		guMtxConcat(model, rot, model);
+		guMtxRotAxisRad(rot, &axis1, DegToRad(goal_crosshair_pitch));
+		guMtxConcat(model, rot, model);	
+		
+		// undo weapon offset (move origin back to original pos)
+		guMtxTrans(in, adsTransX*-1, adsTransY*-1,  adsTransZ*-1);
+		guMtxConcat(model, in, model);
+		
+		// if we're not ads and the viewmodel isn't locked
+	} else if (lock_viewmodel != 1) {
+		// apply weapon offset (move origin)
+		guMtxTrans(in, rotTransX, rotTransY,  rotTransZ);
+		guMtxConcat(model, in, model);
+		
+		// new rotation matrix rotates towards wiimote pointer
+		guMtxRotAxisRad(rot, &axis2, DegToRad(goal_crosshair_yaw*-1));
+		guMtxConcat(model, rot, model);
+		guMtxRotAxisRad(rot, &axis1, DegToRad(goal_crosshair_pitch));
+		guMtxConcat(model, rot, model);
+		
+		// undo weapon offset (move origin back to original pos)
+		guMtxTrans(in, rotTransX*-1, rotTransY*-1,  rotTransZ*-1);
+		guMtxConcat(model, in, model);
+	}
+}
+
 void R_RotateForEntity (entity_t *e, unsigned char scale)
 {
 	Mtx temp;
-
-	// ELUTODO: change back to asm when ALL functions have been corrected
+	Mtx rot;
 	
-	// sB changed back to asm.
-	
-	guMtxTrans(temp, e->origin[0],  e->origin[1],  e->origin[2]);
+	// setup transform
+	guMtxTrans(temp, e->origin[0],  e->origin[1], e->origin[2]);
 	guMtxConcat(model, temp, model);
-
+	// perform standard rotation
 	guMtxRotAxisRad(temp, &axis2, DegToRad(e->angles[1]));
 	guMtxConcat(model, temp, model);
 	guMtxRotAxisRad(temp, &axis1, DegToRad(-e->angles[0]));
 	guMtxConcat(model, temp, model);
 	guMtxRotAxisRad(temp, &axis0, DegToRad(e->angles[2]));
 	guMtxConcat(model, temp, model);
+	
+	if (e == &cl.viewent || e == &cl.viewent2) {
+		wii_apply_weapon_offset(temp, rot);
+	}
 	
 	if (scale != ENTSCALE_DEFAULT) {
 		float scalefactor = ENTSCALE_DECODE(scale);
@@ -734,7 +789,6 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	//glPushMatrix ();
 	guMtxIdentity(model);
 	R_RotateForEntity (e, e->scale);
-	//R_RotateForEntity (e);
 
 	//glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
 	//glScalef (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
@@ -745,7 +799,7 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	guMtxConcat(model, temp, model);
 	
 	guMtxConcat(view,model,modelview);
-	GX_LoadPosMtxImm(modelview, GX_PNMTX0); //(modelview, GX_PNMTX0)
+	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
 /*
 	if (gl_smoothmodels.value)
 		glShadeModel (GL_SMOOTH);
@@ -779,16 +833,9 @@ R_DrawTransparentAliasModel
 */
 void R_DrawTransparentAliasModel (entity_t *e)
 {
-	//int			i, j;
-	//int			lnum;
-	//vec3_t		dist;
-	//float		add;
 	model_t		*clmodel;
 	vec3_t		mins, maxs;
 	aliashdr_t	*paliashdr;
-	//trivertx_t	*verts, *v;
-	//int			index;
-	//float		s, t, an;
 	int			anim;
 	Mtx			temp;
 	lerpdata_t	lerpdata;
@@ -797,8 +844,6 @@ void R_DrawTransparentAliasModel (entity_t *e)
 
 	VectorAdd (currententity->origin, clmodel->mins, mins);
 	VectorAdd (currententity->origin, clmodel->maxs, maxs);
-	
-	//Con_Printf("drawing transparent mdl");
 
 // naievil -- fixme: on psp this is == 2 ? 
 	if (R_CullBox (mins, maxs))
@@ -815,25 +860,7 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	// //
 	// // get lighting information
 	// //
-	/*
-	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
-	{
-		if (cl_dlights[lnum].die >= cl.time)
-		{
-			VectorSubtract (currententity->origin,
-							cl_dlights[lnum].origin,
-							dist);
-			add = cl_dlights[lnum].radius - Length(dist);
-			if (add > 0)
-			{
-				lightcolor[0] += add * cl_dlights[lnum].color[0];
-				lightcolor[1] += add * cl_dlights[lnum].color[1];
-				lightcolor[2] += add * cl_dlights[lnum].color[2];
-			}
-			
-		}
-	}
-	*/
+
 	for(int g = 0; g < 3; g++)
 	{
 		if(lightcolor[g] < 8)
@@ -847,22 +874,6 @@ void R_DrawTransparentAliasModel (entity_t *e)
 		lightcolor[0] = lightcolor[1] = lightcolor[2] = 255;
 	}
 
-	// clamp lighting so it doesn't overbright as much
-	/*
-	if (ambientlight > 128)
-		ambientlight = 128;
-	if (ambientlight + shadelight > 192)
-		shadelight = 192 - ambientlight;
-	*/
-	// shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
-	// shadelight = shadelight / 200.0;
-	
-	// an = e->angles[1]/180*M_PI;
-	// shadevector[0] = cos(-an);
-	// shadevector[1] = sin(-an);
-	// shadevector[2] = 1;
-	// VectorNormalize (shadevector);
-
 	//
 	// locate the proper data
 	//
@@ -874,16 +885,7 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	//
 
 	//GL_DisableMultitexture();
-	
-	//Shpuld
-	/*
-	if(r_model_brightness.value)
-	{
-		lightcolor[0] += 16;
-		lightcolor[1] += 16;
-		lightcolor[2] += 16;
-	}
-	*/
+
     guMtxIdentity(model);
 	R_RotateForEntity (e, e->scale);
 
@@ -947,6 +949,7 @@ R_DrawAliasModel
 =================
 */
 int doZHack;
+extern qboolean update_weap_pos;
 void R_DrawAliasModel (entity_t *e)
 {
 	char		specChar;
@@ -978,16 +981,8 @@ void R_DrawAliasModel (entity_t *e)
 	//
 	// get lighting information
 	//
-
-	//ambientlight = shadelight = R_LightPoint (currententity->origin);
 	
 	R_LightPoint (currententity->origin);
-
-	/*
-	// allways give the gun some light
-	if (e == &cl.viewent && ambientlight < 24)
-		ambientlight = shadelight = 24;
-	*/
 	
 	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
 	{
@@ -997,13 +992,7 @@ void R_DrawAliasModel (entity_t *e)
 							cl_dlights[lnum].origin,
 							dist);
 			add = cl_dlights[lnum].radius - Length(dist);
-			/*
-			if (add > 0) {
-				ambientlight += add;
-				//ZOID models should be affected by dlights as well
-				shadelight += add;
-			}
-			*/	
+
 			if (add > 0)
 			{
 				lightcolor[0] += add * cl_dlights[lnum].color[0];
@@ -1013,33 +1002,6 @@ void R_DrawAliasModel (entity_t *e)
 			
 		}
 	}
-	/*
-	// clamp lighting so it doesn't overbright as much
-	if (ambientlight > 128)
-		ambientlight = 128;
-	if (ambientlight + shadelight > 192)
-		shadelight = 192 - ambientlight;
-	*/
-	
-	// ZOID: never allow players to go totally black
-	/*
-	i = currententity - cl_entities;
-	if (i >= 1 && i<=cl.maxclients && !strcmp (currententity->model->name, "progs/player.mdl"))
-	{
-		if (lightcolor[0] < 8)
-			lightcolor[0] = 8;
-		if (lightcolor[1] < 8)
-			lightcolor[1] = 8;
-		if (lightcolor[2] < 8)
-			lightcolor[2] = 8;
-	}
-	*/
-		//if (ambientlight < 8)
-			//ambientlight = shadelight = 8;
-	
-	//shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
-	//shadelight = shadelight / 200.0;
-	//VectorScale(lightcolor, 1.0f / 200.0f, lightcolor);
 	
 	an = e->angles[1]/180*M_PI;
 	shadevector[0] = cosf(-an);
@@ -1068,15 +1030,7 @@ void R_DrawAliasModel (entity_t *e)
 	//
 
 	//GL_DisableMultitexture();
-	/*
-	add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
-	if (add > 0.0f && specChar != '!' && !(e->effects & EF_FULLBRIGHT))
-	{	
-		lightcolor[0] += add / 3.0f;
-		lightcolor[1] += add / 3.0f;
-		lightcolor[2] += add / 3.0f;
-	}
-	*/
+
 	if(specChar == '!' || (e->effects & EF_FULLBRIGHT))
 	{
 		lightcolor[0] = lightcolor[1] = lightcolor[2] = 255;
@@ -1090,6 +1044,7 @@ void R_DrawAliasModel (entity_t *e)
 		lightcolor[2] += 32;
 	}
 	
+	// always give the gun a little more light
 	if (e == &cl.viewent || e == &cl.viewent2)
 	{
 		if (lightcolor[0] < 64)
@@ -1115,16 +1070,15 @@ void R_DrawAliasModel (entity_t *e)
 		|| !strcmp (clmodel->name, "progs/bolt.mdl")
 	    || !strcmp (clmodel->name, "models/misc/bolt2.mdl")
 	    || !strcmp (clmodel->name, "progs/bolt3.mdl") ) {
-			lightcolor[0] = lightcolor[1] = lightcolor[2] = 255;
-		}
-
+		lightcolor[0] = lightcolor[1] = lightcolor[2] = 255;
+	}
 	guMtxIdentity(model);
 	R_RotateForEntity (e, ENTSCALE_DEFAULT);
 
 	if ((e == &cl.viewent || e == &cl.viewent2)/* && scr_fov_viewmodel.value*/) {
 		float scale = 1.0f / tan (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
 		if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) 
-			scale *= ENTSCALE_DECODE(e->scale);
+			scale *= ENTSCALE_DECODE(e->scale);	
 		//glTranslatef (paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
 		//glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
 		guMtxTrans (temp, paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
@@ -1142,13 +1096,6 @@ void R_DrawAliasModel (entity_t *e)
 		guMtxScale (temp2, paliashdr->scale[0] * scale, paliashdr->scale[1] * scale, paliashdr->scale[2] * scale);
 		guMtxConcat(model, temp2, model);
 	}
-	
-	/*
-	c_guMtxTrans (temp, paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
-	c_guMtxConcat(model, temp, model);
-	c_guMtxScale (temp, paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
-	c_guMtxConcat(model, temp, model);
-	*/
 
 	guMtxConcat(view,model,modelview);
 	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
@@ -1202,17 +1149,6 @@ void R_DrawAliasModel (entity_t *e)
 			GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	}
 
-	// we can't dynamically colormap textures, so they are cached
-	// seperately for the players.  Heads are just uncolored.
-	/*
-	if (currententity->colormap != vid.colormap && !gl_nocolors.value)
-	{
-		i = currententity - cl_entities;
-		if (i >= 1 && i<=cl.maxclients)
-		    GL_Bind0(playertextures[i - 1]);
-	}
-	*/
-
 	/* ELUTODO if (gl_smoothmodels.value)
 		glShadeModel (GL_SMOOTH);*/
 
@@ -1236,7 +1172,7 @@ void R_DrawAliasModel (entity_t *e)
 			R_DrawZombieLimb(e,2);
 		if(e->z_rarm)
 			R_DrawZombieLimb(e,3);
-	}	
+	}
 
 /* ELUTODO
 	glShadeModel (GL_FLAT);
@@ -1880,10 +1816,9 @@ void R_SetupGL (void)
 	guMtxTrans(temp, -r_refdef.vieworg[0],  -r_refdef.vieworg[1],  -r_refdef.vieworg[2]);
 	guMtxConcat(view, temp, view);
 	
+	// initialize and set fog table parameters 
 	GX_InitFogAdjTable	(table, r_refdef.vrect.width, perspective);
-	
 	GX_SetFogRangeAdj(GX_ENABLE, screenaspect, table);
-	
 	Fog_EnableGFog ();
 
 	// ELUTODOglGetFloatv (GL_MODELVIEW_MATRIX, r_world_matrix);
@@ -2023,7 +1958,6 @@ r_refdef must be set before the first call
 void R_RenderView (void)
 {
 	double	time1=0, time2=0;
-	// ELUTODO GLfloat colors[4] = {(GLfloat) 0.0, (GLfloat) 0.0, (GLfloat) 1, (GLfloat) 0.20};
 
 	if (r_norefresh.value)
 		return;
@@ -2055,8 +1989,6 @@ void R_RenderView (void)
 	R_DrawView2Model ();
 	GX_LoadPosMtxImm(view, GX_PNMTX0);
 	R_DrawWaterSurfaces ();
-
-	//Fog_DisableGFog (); //johnfitz	
 
 	// render mirror view
 	R_Mirror ();
