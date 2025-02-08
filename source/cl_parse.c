@@ -1112,9 +1112,7 @@ CL_ParseServerMessage
 */
 extern double bettyprompt_time;
 extern qboolean doubletap_has_damage_buff;
-#ifdef __WII__
 extern int lock_viewmodel;
-#endif
 void CL_ParseServerMessage (void)
 {
 	int			cmd;

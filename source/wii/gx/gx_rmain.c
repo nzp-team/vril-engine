@@ -179,9 +179,9 @@ void wii_apply_weapon_offset (Mtx in, Mtx rot) {
 	float rotTransX, rotTransY, rotTransZ, adsTransX, adsTransY, adsTransZ;
 	
 	// rough center for all weapons
-	rotTransX = 0; //2 up/down
-	rotTransY = -4; //0 left/right
-	rotTransZ = 12; //1 forward/backward
+	rotTransX = 0; // up/down
+	rotTransY = -4; // left/right
+	rotTransZ = 12; // forward/backward
 	
 	// only need to adjust Z axis on ADS translation
 	adsTransX = 0;

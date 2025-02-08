@@ -29,7 +29,7 @@ extern cvar_t lcd_x;
 
 #ifdef __WII__
 #define IR_YAWRANGE	15.0f
-#define IR_PITCHRANGE	15.0f
+#define IR_PITCHRANGE	18.0f
 #endif
 
 extern vec3_t CWeaponOffset;//blubs declared this

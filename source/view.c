@@ -728,7 +728,6 @@ static float OldYawTheta;
 static float OldPitchTheta;
 
 #ifdef __WII__
-int lock_viewmodel; 
 extern float centerdrift_offset_yaw;
 extern float centerdrift_offset_pitch;
 extern qboolean aimsnap;
@@ -742,7 +741,7 @@ float goal_roll = 0;
 #endif
 
 static vec3_t cADSOfs;
-
+int lock_viewmodel; 
 void CalcGunAngle (void)
 {
 	float	yaw, pitch, move;
