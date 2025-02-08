@@ -1112,6 +1112,9 @@ CL_ParseServerMessage
 */
 extern double bettyprompt_time;
 extern qboolean doubletap_has_damage_buff;
+#ifdef __WII__
+extern int lock_viewmodel;
+#endif
 void CL_ParseServerMessage (void)
 {
 	int			cmd;
@@ -1208,8 +1211,12 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_lockviewmodel:
+#ifdef __WII__
+			lock_viewmodel = MSG_ReadByte();
+#else
 			// This platform doesn't use this.
 			MSG_ReadByte();
+#endif
 			break;
 
 		case svc_rumble:
