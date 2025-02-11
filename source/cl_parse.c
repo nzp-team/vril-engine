@@ -1209,12 +1209,7 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_lockviewmodel:
-#ifdef __WII__
 			lock_viewmodel = MSG_ReadByte();
-#else
-			// This platform doesn't use this.
-			MSG_ReadByte();
-#endif
 			break;
 
 		case svc_rumble:
