@@ -1112,6 +1112,7 @@ CL_ParseServerMessage
 */
 extern double bettyprompt_time;
 extern qboolean doubletap_has_damage_buff;
+extern int lock_viewmodel;
 void CL_ParseServerMessage (void)
 {
 	int			cmd;
@@ -1208,8 +1209,7 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_lockviewmodel:
-			// This platform doesn't use this.
-			MSG_ReadByte();
+			lock_viewmodel = MSG_ReadByte();
 			break;
 
 		case svc_rumble:

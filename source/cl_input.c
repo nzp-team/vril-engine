@@ -590,7 +590,6 @@ void CL_SendMove (usercmd_t *cmd)
 	buf.maxsize = 128;
 	buf.cursize = 0;
 	buf.data = data;
-	int i;
 
 	cl.cmd = *cmd;
 
@@ -642,24 +641,23 @@ void CL_SendMove (usercmd_t *cmd)
 // send the movement message
 //
     MSG_WriteByte (&buf, clc_move);
-
 	MSG_WriteFloat (&buf, cl.mtime[0]);	// so server can get ping times
 
 	VectorAdd(cl.gun_kick, cl.viewangles, tempv);
 #ifdef __WII__
-	float xcrossnormal, ycrossnormal;
-	xcrossnormal = (cl_crossx.value / (vid.width/2)) * IR_YAWRANGE;
-	ycrossnormal = (cl_crossy.value / (vid.height/2)) * IR_PITCHRANGE;
+	float xcross_scr, ycross_scr;
+	xcross_scr = (cl_crossx.value / (vid.width/2)) * (IR_YAWRANGE * 2.2); // approximate offset -- not perfect but close
+	ycross_scr = (cl_crossy.value / (vid.height/2)) * (IR_PITCHRANGE * 2);
 	
 	// sB lock crosshair in the center of screen
 	if(aimsnap == true || (cl.stats[STAT_ZOOM] == 1 && ads_center.value) || (cl.stats[STAT_ZOOM] == 2 && sniper_center.value)) {
-		MSG_WriteFloat (&buf, tempv[PITCH]/* + (cl_crossy.value/vid.height) * IR_PITCHRANGE*/);
-		MSG_WriteFloat (&buf, tempv[YAW]/* - (cl_crossx.value/vid.width - 1) * IR_YAWRANGE*/);
+		MSG_WriteFloat (&buf, tempv[PITCH]);
+		MSG_WriteFloat (&buf, tempv[YAW]);
 		MSG_WriteFloat (&buf, tempv[ROLL]);
 	} else {
 		//sBTODO figure out how to make this way more accurate than it is
-		MSG_WriteFloat (&buf, tempv[PITCH] + ycrossnormal);
-		MSG_WriteFloat (&buf, tempv[YAW] - xcrossnormal);
+		MSG_WriteFloat (&buf, tempv[PITCH] + ycross_scr);
+		MSG_WriteFloat (&buf, tempv[YAW] - xcross_scr);
 		MSG_WriteFloat (&buf, tempv[ROLL]);
 	}
 #else

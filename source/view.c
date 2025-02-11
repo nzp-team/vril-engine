@@ -728,14 +728,20 @@ static float OldYawTheta;
 static float OldPitchTheta;
 
 #ifdef __WII__
-int lock_viewmodel; 
 extern float centerdrift_offset_yaw;
 extern float centerdrift_offset_pitch;
 extern qboolean aimsnap;
+
+float goal_crosshair_pitch = 0;
+float goal_crosshair_yaw = 0;
+float cur_crosshair_pitch = 0;
+float cur_crosshair_yaw = 0;
+float cur_roll = 0;
+float goal_roll = 0;
 #endif
 
 static vec3_t cADSOfs;
-
+int lock_viewmodel; 
 void CalcGunAngle (void)
 {
 	float	yaw, pitch, move;
@@ -808,37 +814,34 @@ void CalcGunAngle (void)
 
 	//cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch);
 #else
-	float xcrossnormal;
-	float ycrossnormal;
 	
-	xcrossnormal = (cl_crossx.value / (vid.width/2) * IR_YAWRANGE);
-	ycrossnormal = (cl_crossy.value / (vid.height/2) * IR_PITCHRANGE);
+	// we want to rotate towards the crosshair
+	cur_crosshair_yaw = (cl_crossx.value / (vid.width/2) * IR_PITCHRANGE);
+	cur_crosshair_pitch  = (cl_crossy.value / (vid.height/2) * IR_YAWRANGE);
 	
-	float roll_og_pos;
-	float inroll_smooth;
+	goal_crosshair_yaw += (cur_crosshair_yaw - goal_crosshair_yaw) * 0.22;
+	goal_crosshair_pitch += (cur_crosshair_pitch - goal_crosshair_pitch) * 0.22;
 	
 	if (aimsnap == false && !(cl.stats[STAT_ZOOM] == 1 && ads_center.value) && lock_viewmodel != 1 && !(cl.stats[STAT_ZOOM] == 2 && sniper_center.value))
 	{
 		// change viewmodel rotation based on wiimote position inside of screen space. 
-		cl.viewent.angles[YAW] = (r_refdef.viewangles[YAW]) - (xcrossnormal);
-		cl.viewent.angles[PITCH] = -(r_refdef.viewangles[PITCH]) + (ycrossnormal)*-1;
+		cl.viewent.angles[YAW] = (r_refdef.viewangles[YAW]) - (goal_crosshair_yaw);
+		cl.viewent.angles[PITCH] = -(r_refdef.viewangles[PITCH]) + (goal_crosshair_pitch)*-1;
 		
 		// is the roll cvar enabled? if so we will rotate the viewangles to match Wiimote position
 		// This is capped to mitiagte exessive rolling 
 		if (cl_weapon_inrollangle.value) {
 			if (cl.stats[STAT_ZOOM] == 0) {	
 				
-				roll_og_pos = in_rollangle;
-				// WIP roll smoothing, which will also be applied to weapon rotation angles when completed. 
-				inroll_smooth = /*lin_lerp (in_rollangle, last_roll, smooth_amt)*/roll_og_pos;	
+				cur_roll = in_rollangle;
+				goal_roll += (cur_roll - goal_roll) * 0.07;	
 				
-				if(inroll_smooth > 24.5f)
-					inroll_smooth = 24.5f;
-				else if(inroll_smooth < -24.5f)
-					inroll_smooth = -24.5f;
-				
-				//Con_Printf("roll: %f\n", inroll_smooth);
-				cl.viewent.angles[ROLL] = inroll_smooth;
+				if(goal_roll > 16.5f)
+					goal_roll = 16.5f;
+				else if(goal_roll < -16.5f)
+					goal_roll = -16.5f;
+			
+				cl.viewent.angles[ROLL] = goal_roll;
 			}
 		}
 	}
