@@ -104,7 +104,9 @@ static void init()
 	
 	fb = 0;
 	
-	// ELUTODO: Add option to adjust this like the overscan height, can go from 720 to 640
+	// ELUTODO: Add option to adjust the width like the overscan height, can go from 720 to 640
+	// Once that is done set viWidth to 704 by default
+
 	// This is safe to always set to 672, the Homebrew Channel does it for example
     rmode->viWidth = 672;
 	
