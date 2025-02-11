@@ -20,6 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include <ogc/gx.h>
+#include <ogc/video.h>
+
+#define QUAKE_WII_BASEDIR "/apps/nzportable"
 
 void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);
@@ -174,7 +177,6 @@ extern	int		d_lightstylevalue[256];	// 8.8 fraction of base light value
 
 extern	qboolean	envmap;
 extern	int	currenttexture0;
-extern	int	currenttexture1;
 extern	int	cnttextures[2];
 extern	int	particletexture;
 extern	int	playertextures[MAX_SCOREBOARD];

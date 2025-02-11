@@ -134,8 +134,6 @@ static void init()
 	console_init(framebuffer[fb & 1], 20, 20, rmode->fbWidth, rmode->xfbHeight, rmode->fbWidth * 2);
 	
 	GL_Init();
-	
-	//VIDEO_SetBlack(false);
 
 	// Initialise the controller library.
 	PAD_Init();

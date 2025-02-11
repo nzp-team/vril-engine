@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <ogc/gx_struct.h>
 #include <ogc/pad.h>
 #include <ogc/system.h>
-#include <ogc/video.h>
 #include <ogc/lwp_watchdog.h>
 #include <sys/stat.h>
 #include <wiiuse/wpad.h>

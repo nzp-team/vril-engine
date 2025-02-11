@@ -868,7 +868,6 @@ void R_DrawBrushModel (entity_t *e)
 
 	currententity = e;
 	currenttexture0 = -1;
-	//currenttexture1 = -1;
 
 	clmodel = e->model;
 
@@ -1204,7 +1203,6 @@ void R_DrawWorld (void)
 
 	currententity = &ent;
 	currenttexture0 = -1;
-	//currenttexture1 = -1;
 
 	//GX_Color4u8(255, 255, 255, 255);
 	memset (lightmap_polys, 0, sizeof(lightmap_polys));
