@@ -50,6 +50,7 @@ jobs:
           path: ./build/3ds/bin/nzportable.3dsx
   Compile-DOL:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     container:
       image: devkitpro/devkitppc
     steps:
@@ -68,7 +69,6 @@ jobs:
           make -f Makefile.wii
   Unify-and-Release:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     needs: [Compile-EBOOT, Compile-3DSX]
     steps:
       - name: Checkout
