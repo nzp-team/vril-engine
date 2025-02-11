@@ -1410,9 +1410,9 @@ void R_DrawView2Model (void)
 		return;
 
 	// hack the depth range to prevent view model from poking into walls
-	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 0.3f);
+	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2] > 640 ? 640 : viewport_size[2], viewport_size[3], 0.0f, 0.3f);
 	R_DrawAliasModel (currententity);
-	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 1.0f);
+	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2] > 640 ? 640 : viewport_size[2], viewport_size[3], 0.0f, 1.0f);
 }
 
 /*
@@ -1452,9 +1452,9 @@ void R_DrawViewModel (void)
 		return;
 	
 	// hack the depth range to prevent view model from poking into walls
-	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 0.3f);
+	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2] > 640 ? 640 : viewport_size[2], viewport_size[3], 0.0f, 0.3f);
 	R_DrawAliasModel (currententity);
-	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 1.0f);
+	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2] > 640 ? 640 : viewport_size[2], viewport_size[3], 0.0f, 1.0f);
 }
 
 #if 0
@@ -1774,7 +1774,7 @@ void R_SetupGL (void)
 	viewport_size[2] = w;
 	viewport_size[3] = h;
 	//GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 1.0f);
-	GX_SetViewport(glx, gly, glwidth, glheight, 0.0f, 1.0f);
+	GX_SetViewport(glx, gly, glwidth > 640 ? 640 : glwidth, glheight, 0.0f, 1.0f);
     screenaspect = (float)r_refdef.vrect.width/r_refdef.vrect.height;
 	guPerspective (perspective, r_refdef.fov_y, screenaspect, ZMIN3D, ZMAX3D);
 

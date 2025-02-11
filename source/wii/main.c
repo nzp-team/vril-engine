@@ -104,16 +104,20 @@ static void init()
 	
 	fb = 0;
 	
-	// 16:9 and 4:3 Screen Adjustment for Wii
-    if (CONF_GetAspectRatio() == CONF_ASPECT_16_9) {
-        rmode->viWidth = 672;
-    } else {    // 4:3
-        rmode->viWidth = 640;
-    }
+	// ELUTODO: Add option to adjust this like the overscan height, can go from 720 to 640
+	// This is safe to always set to 672, the Homebrew Channel does it for example
+    rmode->viWidth = 672;
 	
-    // This probably needs to consider PAL
-    rmode->viXOrigin = (VI_MAX_WIDTH_NTSC - rmode->viWidth) / 2;
-
+	if (rmode == &TVPal576IntDfScale || rmode == &TVPal576ProgScale) 
+	{
+		rmode->viXOrigin = (VI_MAX_WIDTH_PAL - rmode->viWidth) / 2;
+		rmode->viYOrigin = (VI_MAX_HEIGHT_PAL - rmode->viHeight) / 2;
+	} 
+	else 
+	{
+		rmode->viXOrigin = (VI_MAX_WIDTH_NTSC - rmode->viWidth) / 2;
+		rmode->viYOrigin = (VI_MAX_HEIGHT_NTSC - rmode->viHeight) / 2;
+	}
 	// Set up the video system with the chosen mode.
 	VIDEO_Configure(rmode);
 

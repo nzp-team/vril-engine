@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <ogc/system.h>
 #include <ogc/video.h>
 #include <ogc/video_types.h>
+#include <ogc/conf.h>
 #include <malloc.h>
 #include <gccore.h>
 
@@ -239,7 +240,7 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 	*width = scr_width;
 	*height = scr_height - (vid_tvborder.value * 400);
 
-	GX_SetScissor(*x,*y,*width,*height);
+	GX_SetScissor(*x,*y,*width > 640 ? 640 : *width,*height);
 	
 	// ELUTODO: really necessary?
 	//GX_InvVtxCache();
@@ -310,10 +311,10 @@ void VID_Init(unsigned char *palette)
 
 // only multiples of eight, please
 // set vid parameters
-	scr_width = rmode->fbWidth;
+	scr_width = CONF_GetAspectRatio() == CONF_ASPECT_16_9 ? 854 : rmode->fbWidth;
 	scr_height = rmode->efbHeight;
 
-	vid.width = 640; //640
+	vid.width = CONF_GetAspectRatio() == CONF_ASPECT_16_9 ? 854 : 640; //640
 	vid.height = 480; //480
 
 	if (vid.height > scr_height)
