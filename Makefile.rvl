@@ -95,7 +95,7 @@ export OUTPUT	:=	$(CURDIR)/$(TARGETDIR)/$(TARGET)
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
 	@[ -d $(TARGETDIR) ] || mkdir -p $(TARGETDIR)
-	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile.wii
+	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile.rvl
 
 #---------------------------------------------------------------------------------
 clean:
