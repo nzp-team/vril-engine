@@ -360,19 +360,6 @@ void R_SpawnDecalBSP (vec3_t org, char *texname, int size)
 		return;
 
 	int tex = loadtextureimage(va("decals/%s",texname),   0, 0, qfalse, GU_LINEAR);
-	if(!tex) //find in decals.wad
-	{
-		if(wadreload)
-		{
-			WAD3_LoadTextureWadFile ("decals.wad");
-			wadreload = 0;
-		}
-		tex = WAD3_LoadTextureName(texname);
-		if(!tex)
-		{
-			return;
-		}
-	}
 
 	VectorClear (bestorg);
 	VectorClear (bestnormal);

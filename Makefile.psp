@@ -79,7 +79,6 @@ COMMON_OBJS = \
 	source/crypter.o
 
 HARDWARE_VIDEO_ONLY_OBJS = \
-    source/psp/wad3.o \
 	source/psp/clipping.o \
 	source/psp/vram.o \
     source/psp/gu/gu_psp.o \
