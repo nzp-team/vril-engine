@@ -2,6 +2,7 @@ name: Build
 on: [push, pull_request]
 jobs:
   Compile-EBOOT:
+    if: github.ref == 'refs/heads/main' || github.event_name == "pull_request"
     runs-on: ubuntu-latest
     container:
       image: pspdev/pspdev
@@ -24,6 +25,7 @@ jobs:
           name: psp-nzp-eboot
           path: ./build/psp/bin/EBOOT.PBP
   Compile-3DSX:
+    if: github.ref == 'refs/heads/main' || github.event_name == "pull_request"
     runs-on: ubuntu-latest
     outputs:
       o3ds_link: ${{ steps.zip.outputs.zip }}
@@ -49,6 +51,7 @@ jobs:
           name: ctr-nzp-3dsx
           path: ./build/3ds/bin/nzportable.3dsx
   Compile-DOL:
+    if: github.ref == 'refs/heads/main' || github.event_name == "pull_request"
     runs-on: ubuntu-latest
     container:
       image: devkitpro/devkitppc
