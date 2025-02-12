@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 void Draw_Init (void);
 void Draw_Character (int x, int y, int num);
+void Draw_CharacterRGBA (int x, int y, int num, float r, float g, float b, float a, float scale);
 void Draw_DebugChar (char num);
 void Draw_Pic (int x, int y, qpic_t *pic);
 #ifdef __PSP__

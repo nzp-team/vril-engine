@@ -200,6 +200,16 @@ void M_Print (int cx, int cy, char *str)
 	}
 }
 
+void M_DrawCharacterScaled (int cx, int line, int num)
+{
+	Draw_CharacterRGBA(cx*2 + ((vid.conwidth - 320*2)>>1), (line*2)-32, num, 255, 255, 255, 255, 2);
+}
+
+void M_PrintScaled (int cx, int cy, char *str)
+{
+	Draw_ColoredString(cx*2 + ((vid.conwidth - 320*2)>>1), (cy*2)-32, str, 255, 0, 0, 255, 2);
+}
+
 void M_PrintWhite (int cx, int cy, char *str)
 {
 	while (*str)
@@ -1962,11 +1972,11 @@ void M_DrawSlider (int x, int y, float range)
 		range = 0;
 	if (range > 1)
 		range = 1;
-	M_DrawCharacter (x-8, y, 128);
+	M_DrawCharacterScaled (x-8, y, 128);
 	for (i=0 ; i<SLIDER_RANGE ; i++)
-		M_DrawCharacter (x + i*8, y, 129);
-	M_DrawCharacter (x+i*8, y, 130);
-	M_DrawCharacter (x + (SLIDER_RANGE-1)*8 * range, y, 131);
+		M_DrawCharacterScaled (x + i*8, y, 129);
+	M_DrawCharacterScaled (x+i*8, y, 130);
+	M_DrawCharacterScaled (x + (SLIDER_RANGE-1)*8 * range, y, 131);
 }
 
 void M_DrawCheckbox (int x, int y, int on)
@@ -1978,9 +1988,9 @@ void M_DrawCheckbox (int x, int y, int on)
 		M_DrawCharacter (x, y, 129);
 #endif
 	if (on)
-		M_Print (x, y, "ON");
+		M_PrintScaled (x, y, "ON");
 	else
-		M_Print (x, y, "OFF");
+		M_PrintScaled (x, y, "OFF");
 }
 
 void M_Options_Draw (void)
@@ -1990,54 +2000,54 @@ void M_Options_Draw (void)
 	if (key_dest != key_menu_pause)
 		Draw_StretchPic (0, 0, menu_bk, vid.width, vid.height);
 
-	M_Print (16, 40, "    Customize controls");
-	M_Print (16, 52, "         Go to console");
-	M_Print (16, 64, "     Reset to defaults");
+	M_PrintScaled (16, 40, "Customize controls");
+	M_PrintScaled (16, 52, "Go to console");
+	M_PrintScaled (16, 64, "Reset to defaults");
 
-	M_Print (16, 76, "           Screen size");
+	M_PrintScaled (16, 76, "Screen size");
 	r = (scr_viewsize.value - 100) / (120 - 100);
 	M_DrawSlider (220, 76, r);
 
-	M_Print (16, 88, "            Brightness");
+	M_PrintScaled (16, 88, "Brightness");
 	r = (1.0f - v_gamma.value) / 0.5f;
 	M_DrawSlider (220, 88, r);
 
-	M_Print (16, 100, "      	 Sensitivity");
+	M_PrintScaled (16, 100, "Sensitivity");
 	r = (sensitivity.value - 1)/10;
 	M_DrawSlider (220, 100, r);
 
-	M_Print (16, 112, "      CD Music Volume");
+	M_PrintScaled (16, 112, "CD Music Volume");
 	r = bgmvolume.value;
 	M_DrawSlider (220, 112, r);
 
-	M_Print (16, 124, "         Sound Volume");
+	M_PrintScaled (16, 124, "Sound Volume");
 	r = volume.value;
 	M_DrawSlider (220, 124, r);
 
-	M_Print (16, 136,"    NK stick as arrows");
+	M_PrintScaled (16, 136,"NK stick as arrows");
 	M_DrawCheckbox (215, 136, nunchuk_stick_as_arrows.value);
 	
-	M_Print (16, 148,"            Aim Assist");
+	M_PrintScaled (16, 148,"Aim Assist");
 	M_DrawCheckbox (215, 148, in_aimassist.value);
 	
-	M_Print (16, 160,"   ADS Always Centered");
+	M_PrintScaled (16, 160,"ADS Always Centered");
 	M_DrawCheckbox (215, 160, ads_center.value);
 	
-	M_Print (16, 172," Scope Always Centered");
+	M_PrintScaled (16, 172,"Scope Always Centered");
 	M_DrawCheckbox (215, 172, sniper_center.value);
 
-	M_Print (16, 184, "          Weapon Roll");
+	M_PrintScaled (16, 184, "Weapon Roll");
 	M_DrawCheckbox (215, 184, cl_weapon_inrollangle.value);
 
-	M_Print (16, 196, "          TV Overscan");
+	M_PrintScaled (16, 196, "TV Overscan");
 	r = vid_tvborder.value / 0.2f;
 	M_DrawSlider (220, 196, r);
 	
-	M_Print (16, 208, "           Retro Mode");
+	M_PrintScaled (16, 208, "Retro Mode");
 	M_DrawCheckbox (215, 208, vid_retromode.value);
 
 // cursor
-	M_DrawCharacter (200, 40 + options_cursor*12, 12+((int)(realtime*4)&1));
+	M_DrawCharacterScaled (200, 40 + options_cursor*12, 12+((int)(realtime*4)&1));
 }
 
 extern qboolean console_enabled;
@@ -2196,16 +2206,16 @@ void M_Keys_Draw (void)
 	//M_DrawPic ( (320-p->width)/2, 4, p);
 
 	if (bind_grab)
-		M_Print (12, 32, "Press a key or button for this action");
+		M_PrintScaled (12, 32, "Press a key or button for this action");
 	else
-		M_Print (18, 32, "Enter to change, backspace to clear");
+		M_PrintScaled (18, 32, "Enter to change, backspace to clear");
 
 // search for known bindings
 	for (i=0 ; i<NUMCOMMANDS ; i++)
 	{
 		y = 48 + 8*i;
 
-		M_Print (16, y, bindnames[i][1]);
+		M_PrintScaled (16, y, bindnames[i][1]);
 
 		//l = strlen (bindnames[i][0]);
 
@@ -2213,25 +2223,25 @@ void M_Keys_Draw (void)
 
 		if (keys[0] == -1)
 		{
-			M_Print (140, y, "???");
+			M_PrintScaled (140, y, "???");
 		}
 		else
 		{
 			name = Key_KeynumToString (keys[0]);
-			M_Print (140, y, name);
+			M_PrintScaled (140, y, name);
 			x = strlen(name) * 8;
 			if (keys[1] != -1)
 			{
-				M_Print (140 + x + 8, y, "or");
-				M_Print (140 + x + 32, y, Key_KeynumToString (keys[1]));
+				M_PrintScaled (140 + x + 8, y, "or");
+				M_PrintScaled (140 + x + 32, y, Key_KeynumToString (keys[1]));
 			}
 		}
 	}
 
 	if (bind_grab)
-		M_DrawCharacter (130, 48 + keys_cursor*8, '=');
+		M_DrawCharacterScaled (130, 48 + keys_cursor*8, '=');
 	else
-		M_DrawCharacter (130, 48 + keys_cursor*8, 12+((int)(realtime*4)&1));
+		M_DrawCharacterScaled (130, 48 + keys_cursor*8, 12+((int)(realtime*4)&1));
 }
 
 
