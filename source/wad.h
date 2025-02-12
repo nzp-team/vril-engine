@@ -75,12 +75,5 @@ void	*W_GetLumpNum (int num);
 void SwapPic (qpic_t *pic);
 
 void WAD3_LoadTextureWadFile (char *filename);
-
-#ifdef __PSP__
-int WAD3_LoadTexture(miptex_t *mt);
-int WAD3_LoadTextureName(char *name);
-int ConvertWad3ToRGBA(miptex_t *tex);
-void W_LoadTextureWadFileHL (char *filename, int complain);
-byte *W_ConvertWAD3TextureHL(miptex_t *tex);
-byte *W_GetTextureHL(char *name);
-#endif // __PSP__
+byte *WAD3_LoadTexture(miptex_t *mt);
+int WAD3_LoadTextureClut4(miptex_t *mt);

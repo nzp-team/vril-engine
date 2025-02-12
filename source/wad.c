@@ -162,9 +162,8 @@ void SwapPic (qpic_t *pic)
 WAD3 Texture Loading for BSP 3.0 Support From Baker		--Diabolickal HLBSP
 =============================================================================
 */
-#ifndef __PSP__
 
-#define TEXWAD_MAXIMAGES 16384
+#define TEXWAD_MAXIMAGES 128
 
 typedef struct {
    char name[MAX_QPATH];
@@ -272,6 +271,25 @@ static byte *ConvertWad3ToRGBA(miptex_t *tex) {
    return data;
 }
 
+#ifdef __PSP__
+
+int WAD3_LoadTextureClut4(miptex_t *mt)
+{
+	// Check that texture has data
+    if (!mt->offsets[0]) {
+        Sys_Error("WAD3_LoadTextureClut4: mt->offsets[0] == 0");
+        return 0;
+    }
+
+    // Get pointers to WAD3 data and palette
+    const byte* wadData = ((byte*)mt) + mt->offsets[0];
+	const byte* palette = ((byte*)mt) + mt->offsets[3] + (mt->width>>3)*(mt->height>>3) + 2;
+
+	return GL_LoadTexture8to4(mt->name, mt->width, mt->height, wadData, palette, 0);
+}
+
+#endif // __PSP__
+
 byte *WAD3_LoadTexture(miptex_t *mt) {
    char texname[MAX_QPATH];
    int i, j, lowmark = 0;
@@ -279,8 +297,8 @@ byte *WAD3_LoadTexture(miptex_t *mt) {
    miptex_t *tex;
    byte *data;
 
-   if (mt->offsets[0])
-      return ConvertWad3ToRGBA(mt);
+    if (mt->offsets[0])
+        return ConvertWad3ToRGBA(mt);
 
    texname[sizeof(texname) - 1] = 0;
    W_CleanupName (mt->name, texname);
@@ -316,4 +334,3 @@ byte *WAD3_LoadTexture(miptex_t *mt) {
    }
    return NULL;
 }
-#endif //__PSP__, _3DS, __WII__

@@ -218,8 +218,6 @@ void Mod_ClearAll (void)
 
 	}
 
-	UnloadWads();  //Crow_bar
-
 	ent_file = NULL; //~~~~
 
 	GL_UnloadAllTextures();
@@ -536,58 +534,70 @@ void Mod_LoadTextures (lump_t *l)
 	else
 	{
 		if (loadmodel->bspversion == HL_BSPVERSION)
-		{
-			
+		{		
 			char filename[64];		// Filename to check r4w file
-			byte *f;
+			byte *data;
 			sprintf(filename, "textures/maps/%s/%s.r4w", sv.name, mt->name);		// search in textures/maps/MAPNAME/TEXNAME
 			
-			f = static_cast<byte*>(COM_LoadHunkFile(filename));
+			data = static_cast<byte*>(COM_LoadHunkFile(filename));
 			
-			if (!f) {
+			if (data == NULL) {
 				sprintf(filename, "textures/%s.r4w", mt->name);					// search in textures/TEXNAME
-				f = static_cast<byte*>(COM_LoadHunkFile(filename));
+				data = static_cast<byte*>(COM_LoadHunkFile(filename));
 			}
 			
-			if (!f) {
+			if (data == NULL) {
 				Con_Printf("Loading texture %s as WAD3, %dx%d\n", mt->name, mt->width, mt->height);		// didn't find the texture in the folder
 					
-				// naievil -- try to push wad3 loading 
-				int index = WAD3_LoadTexture(mt);
-				if(index)
-				{
+				int index = WAD3_LoadTextureClut4(mt);
+
+				if (index != 0) {
 					com_netpath[0] = 0;
 					tx->gl_texturenum = index;
 					tx->fullbright = -1;
 					tx->dt_texturenum = 0;
-
-	//				if(tx_pixels = WAD3_LoadTexture(mt))
-	//				{
-	//					com_netpath[0] = 0;
-	//					tx->gl_texturenum = GL_LoadPalletedTexture (tx_pixels, tx->name, tx->width, tx->height, 0);
-	//					tx->fullbright = -1;
-	//					mapTextureNameList.push_back(tx->gl_texturenum);
-	//					tx->dt_texturenum = 0;
-
-				}
-				else
-				{
-					Con_Printf("Texture %s not found\n", mt->name);		// didn't find the texture in the folder
+				} else {
+					// Fall back to missing texture.
+					Con_Printf("Texture %s not found\n", mt->name);
 					com_netpath[0] = 0;
 					tx->gl_texturenum = nonetexture;
 				}
+	// 			// naievil -- try to push wad3 loading 
+	// 			int index = WAD3_LoadTexture(mt);
+	// 			if(index)
+	// 			{
+	// 				com_netpath[0] = 0;
+	// 				tx->gl_texturenum = index;
+	// 				tx->fullbright = -1;
+	// 				tx->dt_texturenum = 0;
+
+	// //				if(tx_pixels = WAD3_LoadTexture(mt))
+	// //				{
+	// //					com_netpath[0] = 0;
+	// //					tx->gl_texturenum = GL_LoadPalletedTexture (tx_pixels, tx->name, tx->width, tx->height, 0);
+	// //					tx->fullbright = -1;
+	// //					mapTextureNameList.push_back(tx->gl_texturenum);
+	// //					tx->dt_texturenum = 0;
+
+	// 			}
+	// 			else
+	// 			{
+	// 				Con_Printf("Texture %s not found\n", mt->name);		// didn't find the texture in the folder
+	// 				com_netpath[0] = 0;
+	// 				tx->gl_texturenum = nonetexture;
+	// 			}
 			
 			} else {
 				
 				int w, h;
 				
-				unsigned int magic = *((unsigned int*)(f));
+				unsigned int magic = *((unsigned int*)(data));
 				if (magic == 0x65663463)								// what the fuck? 
 				{
-					w = *((int*)(f + 4));
-					h = *((int*)(f + 8));
+					w = *((int*)(data + 4));
+					h = *((int*)(data + 8));
 
-					tx->gl_texturenum = GL_LoadTexture4(mt->name, w, h, (byte*)(f + 16), GU_LINEAR, qfalse);
+					tx->gl_texturenum = GL_LoadTexture4(mt->name, w, h, (byte*)(data + 16), GU_LINEAR, qfalse);
 				}
 	
 			}

@@ -628,7 +628,7 @@ This is the same as Draw_Character, but with RGBA color codes.
 ================
 */
 extern cvar_t scr_coloredtext;
-void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float a)
+void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float a, float scale)
 {
 	int	row, col;
 
@@ -1500,11 +1500,11 @@ void Draw_Crosshair (void)
 	}
 	// Area of Effect (o)
 	else if (crosshair.value == 2) {
-		Draw_CharacterRGBA((vid.width)/2-4, (vid.height)/2, 'O', 255, col, col, crosshair_opacity);
+		Draw_CharacterRGBA((vid.width)/2-4, (vid.height)/2, 'O', 255, col, col, crosshair_opacity, 1);
 	}
 	// Dot crosshair (.)
 	else if (crosshair.value == 3) {
-		Draw_CharacterRGBA((vid.width - 8)/2, (vid.height - 8)/2, '.', 255, col, col, crosshair_opacity);
+		Draw_CharacterRGBA((vid.width - 8)/2, (vid.height - 8)/2, '.', 255, col, col, crosshair_opacity, 1);
 	}
 	// Grenade crosshair
 	else if (crosshair.value == 4) {
@@ -1565,6 +1565,7 @@ static int HexToInt(char c)
 void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, float a, float scale)
 {
 	int num;
+	int scale_int = rint(scale);
 	qboolean white = qtrue;
 
 	if (y <= -8)
@@ -1611,8 +1612,8 @@ void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, flo
 
 	        vertices[1].u = (fcol + 1) * 8;
 	        vertices[1].v = (frow + 1) * 8;
-	        vertices[1].x = x + (8*(int)scale);
-	        vertices[1].y = y + (8*(int)scale);
+	        vertices[1].x = x + (8*scale_int);
+	        vertices[1].y = y + (8*scale_int);
 	        vertices[1].z = 0;
 
 	        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D, 2, 0, vertices);
@@ -1620,11 +1621,11 @@ void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, flo
 
 		// Hooray for variable-spacing!
 		if (*text == ' ')
-			x += 4 * (int)scale;
+			x += 4 * scale_int;
         else if ((int)*text < 33 || (int)*text > 126)
-            x += 8 * (int)scale;
+            x += 8 * scale_int;
         else
-            x += (font_kerningamount[(int)(*text - 33)] + 1) * (int)scale;
+            x += (font_kerningamount[(int)(*text - 33)] + 1) * scale_int;
 	}
 
 	if (!white)
