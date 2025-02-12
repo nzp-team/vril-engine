@@ -179,13 +179,13 @@ void WAD3_LoadTextureWadFile (char *filename) {
    lumpinfo_t *lumps, *lump_p;
    wadinfo_t header;
    int i, j, infotableofs, numlumps, lowmark;
-   FILE *file;
+   FILE *file = NULL;
 
-   if (COM_FOpenFile (va("textures/halflife/%s", filename), &file) != -1)
+   if (COM_FOpenFile (va("textures/halflife/%s", filename), (int *)file) != -1)
       goto loaded;
-   if (COM_FOpenFile (va("textures/%s", filename), &file) != -1)
+   if (COM_FOpenFile (va("textures/%s", filename), (int *)file) != -1)
       goto loaded;
-   if (COM_FOpenFile (filename, &file) != -1)
+   if (COM_FOpenFile (filename, (int *)file) != -1)
       goto loaded;
 
    Host_Error ("Couldn't load halflife wad \"%s\"\n", filename);
