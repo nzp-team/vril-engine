@@ -68,7 +68,7 @@ jobs:
       - name: Build
         working-directory: ./
         run: |
-          make -f Makefile.wii
+          make -f Makefile.rvl
   Unify-and-Release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
