@@ -590,6 +590,7 @@ void CL_SendMove (usercmd_t *cmd)
 	buf.maxsize = 128;
 	buf.cursize = 0;
 	buf.data = data;
+	int i;
 
 	cl.cmd = *cmd;
 
