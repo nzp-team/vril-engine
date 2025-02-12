@@ -1,9 +1,9 @@
-name: Build EBOOT and Publish Release
-on: [push]
+name: Build
+on: [push, pull_request]
 jobs:
   Compile-EBOOT:
+    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     container:
       image: pspdev/pspdev
     steps:
@@ -19,13 +19,14 @@ jobs:
           cd ../../../
           make -f Makefile.psp install
       - name: Upload Artifact
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: psp-nzp-eboot
           path: ./build/psp/bin/EBOOT.PBP
   Compile-3DSX:
+    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     outputs:
       o3ds_link: ${{ steps.zip.outputs.zip }}
     container:
@@ -44,13 +45,14 @@ jobs:
         run: |
           make -f Makefile.ctr
       - name: Upload Artifact
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: ctr-nzp-3dsx
           path: ./build/3ds/bin/nzportable.3dsx
   Compile-DOL:
+    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     container:
       image: devkitpro/devkitppc
     steps:
@@ -68,6 +70,7 @@ jobs:
         run: |
           make -f Makefile.wii
   Unify-and-Release:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: [Compile-EBOOT, Compile-3DSX]
     steps:
