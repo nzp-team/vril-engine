@@ -467,7 +467,7 @@ This is the same as Draw_Character, but with RGBA color codes.
 ================
 */
 extern cvar_t scr_coloredtext;
-void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float a, int scale)
+void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float a, float scale)
 {
 	int				row, col;
 	float			frow, fcol, size;
@@ -485,7 +485,7 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 
 	frow = row*0.0625;
 	fcol = col*0.0625;
-	size = 0.0625*(float)scale;
+	size = 0.0625*scale;
 
 	GL_Bind (char_texture);
 
