@@ -210,6 +210,11 @@ void M_PrintScaled (int cx, int cy, char *str)
 	Draw_ColoredString(cx*2 + ((vid.conwidth - 320*2)>>1), (cy*2)-32, str, 255, 0, 0, 255, 2);
 }
 
+void M_PrintWhiteScaled (int cx, int cy, char *str)
+{
+	Draw_ColoredString(cx*2 + ((vid.conwidth - 320*2)>>1), (cy*2)-32, str, 255, 255, 255, 255, 2);
+}
+
 void M_PrintWhite (int cx, int cy, char *str)
 {
 	while (*str)
@@ -387,7 +392,7 @@ void M_Paused_Menu_f ()
 static void M_Paused_Menu_Draw ()
 {
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 680, 340, 0, 0, 0, 80);
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 80);
 
 	// Header
 	Draw_ColoredString(30, 20, "PAUSED", 255, 255, 255, 255, 3);
@@ -499,33 +504,34 @@ void M_Credits_Draw (void)
 	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 400, 240, 0, 0, 0, 102);
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
 
 	// Header
 	Draw_ColoredString(5, 5, "CREDITS", 255, 255, 255, 255, 3);
 
-	Draw_ColoredString(5, 30, "Programming:", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 40, "Blubs, Jukki, DR_Mabuse1981, Naievil", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 50, "Cypress, ScatterBox", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 30*1.5, "Programming:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 40*1.5, "Blubs, Jukki, DR_Mabuse1981, Naievil", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 50*1.5, "Cypress, ScatterBox", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 70, "Models:", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 80, "Blubs, Ju[s]tice, Derped_Crusader", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 70*1.5, "Models:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 80*1.5, "Blubs, Ju[s]tice, Derped_Crusader", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 100, "GFX:", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 110, "Blubs, Ju[s]tice, Cypress, Derped_Crusader", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 100*1.5, "GFX:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 110*1.5, "Blubs, Ju[s]tice, Cypress, Derped_Crusader", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 130, "Sounds/Music:", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 140, "Blubs, Biodude, Cypress, Marty P.", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 130*1.5, "Sounds/Music:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 140*1.5, "Blubs, Biodude, Cypress, Marty P.", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 160, "Special Thanks:", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 170, "- Spike, Eukara:     FTEQW", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 180, "- Shpuld:            CleanQC4FTE", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 190, "- Crow_Bar, st1x51:  dQuake(plus)", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 200, "- fgsfdsfgs:         Quakespasm-NX", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 210, "- MasterFeizz:       ctrQuake", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 220, "- Rinnegatamante:    Initial VITA Port & Updater", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 160*1.5, "Special Thanks:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 170*1.5, "- Spike, Eukara:     FTEQW", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 180*1.5, "- Shpuld:            CleanQC4FTE", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 190*1.5, "- Crow_Bar, st1x51:  dQuake(plus)", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 200*1.5, "- fgsfdsfgs:         Quakespasm-NX", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 210*1.5, "- MasterFeizz:       ctrQuake", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 220*1.5, "- Rinnegatamante:    Initial VITA Port & Updater", 255, 255, 255, 255, 1.5);
+	// ELUTODO: Add Credits to sbeed/tyleryoung88 for the Wii Port
 
-	Draw_ColoredString(5, 230, "Back", 255, 0, 0, 255, 1.5);
+	Draw_ColoredString(5, 230*1.5, "Back", 255, 0, 0, 255, 1.5);
 }
 
 
@@ -2370,8 +2376,8 @@ void M_OSK_Draw (void) {
 	if (selected_char[0] == ' ' || selected_char[0] == '\t')
 		selected_char[0] = 'X';
 
-	y = 150;
-	x = 150;
+	y = 50;
+	x = 50;
 
 	M_DrawTextBox (x-3, y-10, 		     26, 10);
 	M_DrawTextBox ((x-3)+(26*CHAR_SIZE),    y-10,  10, 10);
