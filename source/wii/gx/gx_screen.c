@@ -1275,7 +1275,7 @@ void SCR_DrawConsole (void)
 	if (scr_con_current)
 	{
 		scr_copyeverything = 1;
-		Con_DrawConsole (scr_con_current, true);
+		Con_DrawConsole (scr_con_current/1.5, true);
 		clearconsole = 0;
 	}
 	

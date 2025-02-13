@@ -618,7 +618,11 @@ void Con_DrawConsole (int lines, qboolean drawinput)
 		text = con_text + (j % con_totallines)*con_linewidth;
 
 		for (x=0 ; x<con_linewidth ; x++)
+		#ifndef __WII__
 			Draw_Character ( (x+1)<<3, y, text[x]);
+		#else
+			Draw_CharacterRGBA (((x+1)<<3)*1.5, y*1.5, text[x], 255, 255, 255, 255, 1.5);
+		#endif
 	}
 
 // draw the input prompt, user text, and cursor if desired
