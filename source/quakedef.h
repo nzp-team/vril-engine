@@ -257,8 +257,6 @@ typedef struct
 #include "cmd.h"
 #ifdef _3DS
 #include "ctr/sbar.h"
-#elif __WII__
-#include "wii/sbar.h"
 #endif // _3DS
 #include "cl_hud.h"
 #include "sound.h"
