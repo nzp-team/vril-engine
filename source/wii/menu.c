@@ -602,10 +602,10 @@ void M_Restart_Draw (void)
 	M_Draw ();
 	m_state = m_restart;
 
-	M_Print (64, 84,  restartMessage[0]);
-	M_Print (64, 92,  restartMessage[1]);
-	M_Print (64, 100, restartMessage[2]);
-	M_Print (64, 108, restartMessage[3]);
+	M_PrintScaled (64, 84,  restartMessage[0]);
+	M_PrintScaled (64, 92,  restartMessage[1]);
+	M_PrintScaled (64, 100, restartMessage[2]);
+	M_PrintScaled (64, 108, restartMessage[3]);
 }
 
 
@@ -667,10 +667,10 @@ void M_Exit_Draw (void)
 	M_Draw ();
 	m_state = m_exit;
 
-	M_Print (64, 84,  exitMessage[0]);
-	M_Print (64, 92,  exitMessage[1]);
-	M_Print (64, 100, exitMessage[2]);
-	M_Print (64, 108, exitMessage[3]);
+	M_PrintScaled (64, 84,  exitMessage[0]);
+	M_PrintScaled (64, 92,  exitMessage[1]);
+	M_PrintScaled (64, 100, exitMessage[2]);
+	M_PrintScaled (64, 108, exitMessage[3]);
 }
 
 
@@ -742,7 +742,7 @@ void M_Main_Draw (void)
 	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
 
 	// Version String
-	Draw_ColoredString((vid.width - (strlen(game_build_date) * 12)), 6, game_build_date, 255, 255, 255, 255, 1.5);
+	Draw_ColoredString((vid.width - getTextWidth(game_build_date, 1)) + 4, 5, game_build_date, 255, 255, 255, 255, 1.5);
 
 	// Header
 	Draw_ColoredString(6, 6, "MAIN MENU", 255, 255, 255, 255, 3.5);
@@ -2534,10 +2534,10 @@ void M_Quit_Draw (void)
 	sprintf(yes, "Y or A button: Yes");
 	sprintf(no, "N or B button: No");
 
-	M_Print (64, 84,  "Really quit?");
-	M_Print (64, 92,  "");
-	M_Print (64, 100, yes);
-	M_Print (64, 108, no);
+	M_PrintScaled (64, 84,  "Really quit?");
+	M_PrintScaled (64, 92,  "");
+	M_PrintScaled (64, 100, yes);
+	M_PrintScaled (64, 108, no);
 }
 
 //=============================================================================
