@@ -2376,20 +2376,22 @@ void M_OSK_Draw (void) {
 	if (selected_char[0] == ' ' || selected_char[0] == '\t')
 		selected_char[0] = 'X';
 
-	y = 50;
-	x = 50;
+	y = 20;
+	x = 20;
 
+	/* Unable to scale these
 	M_DrawTextBox (x-3, y-10, 		     26, 10);
 	M_DrawTextBox ((x-3)+(26*CHAR_SIZE),    y-10,  10, 10);
 	M_DrawTextBox (x-3, (y-10)+(10*CHAR_SIZE),36,  3);
+	*/
 
 	for(i=0;i<=MAX_Y;i++)
 	{
-		M_PrintWhite (x, y+(CHAR_SIZE*i), osk_text[i]);
+		M_PrintWhiteScaled (x, y+(CHAR_SIZE*i), osk_text[i]);
 		if (i == 1 || i == 4 || i == 7)
-			M_Print      (x+(27*CHAR_SIZE), y+(CHAR_SIZE*i), osk_help[i]);
+			M_PrintScaled      (x+(27*CHAR_SIZE), y+(CHAR_SIZE*i), osk_help[i]);
 		else
-			M_PrintWhite (x+(27*CHAR_SIZE), y+(CHAR_SIZE*i), osk_help[i]);
+			M_PrintWhiteScaled (x+(27*CHAR_SIZE), y+(CHAR_SIZE*i), osk_help[i]);
 	}
 
 	int text_len = strlen(osk_buffer);
@@ -2399,19 +2401,19 @@ void M_OSK_Draw (void) {
 		strncpy(oneline,osk_buffer,MAX_CHAR_LINE);
 		oneline[MAX_CHAR_LINE] = '\0';
 
-		M_Print (x+4, y+4+(CHAR_SIZE*(MAX_Y+2)), oneline );
+		M_PrintScaled (x+4, y+4+(CHAR_SIZE*(MAX_Y+2)), oneline );
 
 		strncpy(oneline,osk_buffer+MAX_CHAR_LINE, text_len - MAX_CHAR_LINE);
 		oneline[text_len - MAX_CHAR_LINE] = '\0';
 
-		M_Print (x+4, y+4+(CHAR_SIZE*(MAX_Y+3)), oneline );
-		M_PrintWhite (x+4+(CHAR_SIZE*(text_len - MAX_CHAR_LINE)), y+4+(CHAR_SIZE*(MAX_Y+3)),"_");
+		M_PrintScaled (x+4, y+4+(CHAR_SIZE*(MAX_Y+3)), oneline );
+		M_PrintWhiteScaled (x+4+(CHAR_SIZE*(text_len - MAX_CHAR_LINE)), y+4+(CHAR_SIZE*(MAX_Y+3)),"_");
 	}
 	else {
-		M_Print (x+4, y+4+(CHAR_SIZE*(MAX_Y+2)), osk_buffer );
-		M_PrintWhite (x+4+(CHAR_SIZE*(text_len)), y+4+(CHAR_SIZE*(MAX_Y+2)),"_");
+		M_PrintScaled (x+4, y+4+(CHAR_SIZE*(MAX_Y+2)), osk_buffer );
+		M_PrintWhiteScaled (x+4+(CHAR_SIZE*(text_len)), y+4+(CHAR_SIZE*(MAX_Y+2)),"_");
 	}
-	M_Print      (x+((((osk_pos_x)*2)+1)*CHAR_SIZE), y+(osk_pos_y*CHAR_SIZE), selected_char);
+	M_PrintScaled      (x+((((osk_pos_x)*1.1)+1)*CHAR_SIZE), y+(osk_pos_y*CHAR_SIZE), selected_char);
 }
 
 
