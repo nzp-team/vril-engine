@@ -60,7 +60,8 @@ static float vid_gamma = 1.0;
 Mtx44 perspective;
 Mtx view, model, modelview;
 
-cvar_t vid_tvborder = {"vid_tvborder", "0", (qboolean)true};
+cvar_t vid_overscan_height = {"vid_overscan_height", "0", (qboolean)true};
+cvar_t vid_overscan_width = {"vid_overscan_width", "0", (qboolean)true};
 cvar_t vid_conmode = {"vid_conmode", "0", (qboolean)true};
 
 void D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
@@ -235,16 +236,12 @@ GL_BeginRendering
 void GL_BeginRendering (int *x, int *y, int *width, int *height)
 {
 	// ELUTODO: lol at the * 2 on height
-	*x = 0;
-	*y = vid_tvborder.value * 200;
+	*x = vid_overscan_width.value * 200;
+	*y = vid_overscan_height.value * 200;
 	*width = scr_width;
-	*height = scr_height - (vid_tvborder.value * 400);
+	*height = scr_height - (vid_overscan_height.value * 400);
 
-	GX_SetScissor(*x,*y,*width > 640 ? 640 : *width,*height);
-	
-	// ELUTODO: really necessary?
-	//GX_InvVtxCache();
-	//GX_InvalidateTexAll();
+	GX_SetScissor(*x,*y,*width > 640 ? 640 - (vid_overscan_width.value * 360) : *width - (vid_overscan_width.value * 360),*height);
 }
 
 void GL_EndRendering (void)
@@ -334,7 +331,8 @@ void VID_Init(unsigned char *palette)
 
 	vid.recalc_refdef = 1;				// force a surface cache flush
 
-	Cvar_RegisterVariable(&vid_tvborder);
+	Cvar_RegisterVariable(&vid_overscan_height);
+	Cvar_RegisterVariable(&vid_overscan_width);
 	Cvar_RegisterVariable(&vid_retromode);
 	Cvar_RegisterVariable(&vid_conmode);
 

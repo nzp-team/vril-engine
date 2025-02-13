@@ -243,7 +243,8 @@ extern  cvar_t  r_overbright;
 extern	cvar_t	gl_max_size;
 extern	cvar_t	gl_playermip;
 
-extern cvar_t vid_tvborder;
+extern cvar_t vid_overscan_height;
+extern cvar_t vid_overscan_width;
 extern cvar_t vid_retromode;
 
 extern  cvar_t	r_part_muzzleflash;

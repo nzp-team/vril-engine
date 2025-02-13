@@ -1868,7 +1868,7 @@ again:
 //=============================================================================
 /* OPTIONS MENU */
 
-#define	OPTIONS_ITEMS	15
+#define	OPTIONS_ITEMS	16
 
 #define	SLIDER_RANGE	10
 
@@ -1949,15 +1949,23 @@ void M_AdjustSliders (int dir)
 	case 12:	// weapon roll by input
 		Cvar_SetValue ("cl_weapon_inrollangle", !cl_weapon_inrollangle.value);
 		break;
-	case 13:	// tv border
-		vid_tvborder.value += dir * 0.005f;
-		if (vid_tvborder.value < 0)
-			vid_tvborder.value = 0;
-		if (vid_tvborder.value > 0.2)
-			vid_tvborder.value = 0.2;
-		Cvar_SetValue ("vid_tvborder", vid_tvborder.value);
-		break;		
-	case 14:	// retro mode
+	case 13:	// height overscan
+		vid_overscan_height.value += dir * 0.005f;
+		if (vid_overscan_height.value < 0)
+			vid_overscan_height.value = 0;
+		if (vid_overscan_height.value > 0.2)
+			vid_overscan_height.value = 0.2;
+		Cvar_SetValue ("vid_overscan_height", vid_overscan_height.value);
+		break;	
+	case 14:	// width overscan
+		vid_overscan_width.value += dir * 0.0025f;
+		if (vid_overscan_width.value < 0)
+			vid_overscan_width.value = 0;
+		if (vid_overscan_width.value > 0.1)
+			vid_overscan_width.value = 0.1;
+		Cvar_SetValue ("vid_overscan_width", vid_overscan_width.value);
+		break;
+	case 15:	// retro mode
 		Cvar_SetValue ("vid_retromode", !vid_retromode.value);
 		break;
 	}
@@ -2039,12 +2047,16 @@ void M_Options_Draw (void)
 	M_PrintScaled (16, 184, "Weapon Roll");
 	M_DrawCheckbox (215, 184, cl_weapon_inrollangle.value);
 
-	M_PrintScaled (16, 196, "TV Overscan");
-	r = vid_tvborder.value / 0.2f;
+	M_PrintScaled (16, 196, "TV Height Overscan");
+	r = vid_overscan_height.value / 0.2f;
 	M_DrawSlider (220, 196, r);
 	
-	M_PrintScaled (16, 208, "Retro Mode");
-	M_DrawCheckbox (215, 208, vid_retromode.value);
+	M_PrintScaled (16, 208, "TV Width Overscan");
+	r = vid_overscan_width.value / 0.1f;
+	M_DrawSlider (220, 208, r);
+	
+	M_PrintScaled (16, 220, "Retro Mode");
+	M_DrawCheckbox (215, 220, vid_retromode.value);
 
 // cursor
 	M_DrawCharacterScaled (200, 40 + options_cursor*12, 12+((int)(realtime*4)&1));
