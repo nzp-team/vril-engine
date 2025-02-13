@@ -46,7 +46,6 @@ void CDAudio_PlayFromString(char* track_name, qboolean looping)
 		return;
 	}
 	
-	MP3Player_Volume(255);	
 	MP3Player_PlayBuffer (mp3buffer, com_filesize, NULL);
 	
 	isplaying = true;
@@ -56,8 +55,7 @@ void CDAudio_PlayFromString(char* track_name, qboolean looping)
 
 void CDAudio_Stop(void)
 {
-	MP3Player_Stop();
-	free (mp3buffer);
+	stopmp3 = true;
 }
 
 
@@ -75,13 +73,14 @@ void CDAudio_Update(void)
 	isplaying = MP3Player_IsPlaying ();
 	
 	if (isplaying == true) {
-		free(mp3buffer);
-		stopmp3 = true;
+		MP3Player_Volume(bgmvolume.value * 255);
 	}
 	
 	if (stopmp3 == true) {
 		if (mp3buffer) {
+			MP3Player_Stop();
 			free (mp3buffer);
+			isplaying = false;
 		}
 	}
 	
