@@ -2384,6 +2384,7 @@ void M_OSK_Draw (void) {
 	M_DrawTextBox ((x-3)+(26*CHAR_SIZE),    y-10,  10, 10);
 	M_DrawTextBox (x-3, (y-10)+(10*CHAR_SIZE),36,  3);
 	*/
+	Draw_FillByColor((x-3)*2 + ((vid.conwidth - 320*2)>>1), (y-30)*2, 580, 23*8, 57, 57, 57, 255);
 
 	for(i=0;i<=MAX_Y;i++)
 	{
