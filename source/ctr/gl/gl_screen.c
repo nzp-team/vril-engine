@@ -1183,7 +1183,7 @@ void SCR_DrawConsole (void)
 	if (scr_con_current)
 	{
 		scr_copyeverything = 1;
-		Con_DrawConsole (scr_con_current, true);
+		Con_DrawConsole (scr_con_current, true, 1);
 		clearconsole = 0;
 	}
 	else
