@@ -589,7 +589,7 @@ The typing input line at the bottom should only be drawn if typing is allowed
 ================
 */
 qboolean console_enabled;
-void Con_DrawConsole (int lines, qboolean drawinput)
+void Con_DrawConsole (int lines, qboolean drawinput, float scale)
 {
 	int				i, x, y;
 	int				rows;
@@ -603,6 +603,9 @@ void Con_DrawConsole (int lines, qboolean drawinput)
 	Draw_ConsoleBackground (lines);
 	if (!console_enabled && !developer.value)
 		return;
+
+// Console will look off without this
+	lines = lines/scale;
 
 // draw the text
 	con_vislines = lines;
@@ -618,11 +621,7 @@ void Con_DrawConsole (int lines, qboolean drawinput)
 		text = con_text + (j % con_totallines)*con_linewidth;
 
 		for (x=0 ; x<con_linewidth ; x++)
-		#ifndef __WII__
-			Draw_Character ( (x+1)<<3, y, text[x]);
-		#else
-			Draw_CharacterRGBA (((x+1)<<3)*1.5, y*1.5, text[x], 255, 255, 255, 255, 1.5);
-		#endif
+		Draw_CharacterRGBA ( ((x+1)<<3)*scale, y*scale, text[x], 255, 255, 255, 255, scale);
 	}
 
 // draw the input prompt, user text, and cursor if desired
