@@ -247,14 +247,13 @@ int main(int argc, char* argv[])
 		Host_Frame(current_time - last_time);
 		last_time = current_time;
 		
-		//Con_Printf ("time: %f \n", current_time_millisec);
-		//Con_Printf ("time off: %f \n", time_wpad_off_millisec);
-		
 		if (rumble_on&&(current_time > time_wpad_off)) 
 		{
 			WPAD_Rumble(0, false);
 			rumble_on = 0;
 		}
+		
+		CDAudio_Update();
 	};
 
 	exit(0);
