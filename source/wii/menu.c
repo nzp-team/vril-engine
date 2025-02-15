@@ -210,6 +210,11 @@ void M_PrintScaled (int cx, int cy, char *str)
 	Draw_ColoredString(cx*2 + ((vid.conwidth - 320*2)>>1), (cy*2)-32, str, 255, 0, 0, 255, 2);
 }
 
+void M_PrintWhiteScaled (int cx, int cy, char *str)
+{
+	Draw_ColoredString(cx*2 + ((vid.conwidth - 320*2)>>1), (cy*2)-32, str, 255, 255, 255, 255, 2);
+}
+
 void M_PrintWhite (int cx, int cy, char *str)
 {
 	while (*str)
@@ -387,7 +392,7 @@ void M_Paused_Menu_f ()
 static void M_Paused_Menu_Draw ()
 {
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 680, 340, 0, 0, 0, 80);
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 80);
 
 	// Header
 	Draw_ColoredString(30, 20, "PAUSED", 255, 255, 255, 255, 3);
@@ -499,33 +504,34 @@ void M_Credits_Draw (void)
 	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 400, 240, 0, 0, 0, 102);
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
 
 	// Header
 	Draw_ColoredString(5, 5, "CREDITS", 255, 255, 255, 255, 3);
 
-	Draw_ColoredString(5, 30, "Programming:", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 40, "Blubs, Jukki, DR_Mabuse1981, Naievil", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 50, "Cypress, ScatterBox", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 30*1.5, "Programming:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 40*1.5, "Blubs, Jukki, DR_Mabuse1981, Naievil", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 50*1.5, "Cypress, ScatterBox", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 70, "Models:", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 80, "Blubs, Ju[s]tice, Derped_Crusader", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 70*1.5, "Models:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 80*1.5, "Blubs, Ju[s]tice, Derped_Crusader", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 100, "GFX:", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 110, "Blubs, Ju[s]tice, Cypress, Derped_Crusader", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 100*1.5, "GFX:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 110*1.5, "Blubs, Ju[s]tice, Cypress, Derped_Crusader", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 130, "Sounds/Music:", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 140, "Blubs, Biodude, Cypress, Marty P.", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 130*1.5, "Sounds/Music:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 140*1.5, "Blubs, Biodude, Cypress, Marty P.", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 160, "Special Thanks:", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 170, "- Spike, Eukara:     FTEQW", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 180, "- Shpuld:            CleanQC4FTE", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 190, "- Crow_Bar, st1x51:  dQuake(plus)", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 200, "- fgsfdsfgs:         Quakespasm-NX", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 210, "- MasterFeizz:       ctrQuake", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 220, "- Rinnegatamante:    Initial VITA Port & Updater", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 160*1.5, "Special Thanks:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 170*1.5, "- Spike, Eukara:     FTEQW", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 180*1.5, "- Shpuld:            CleanQC4FTE", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 190*1.5, "- Crow_Bar, st1x51:  dQuake(plus)", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 200*1.5, "- fgsfdsfgs:         Quakespasm-NX", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 210*1.5, "- MasterFeizz:       ctrQuake", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 220*1.5, "- Rinnegatamante:    Initial VITA Port & Updater", 255, 255, 255, 255, 1.5);
+	// ELUTODO: Add Credits to sbeed/tyleryoung88 for the Wii Port
 
-	Draw_ColoredString(5, 230, "Back", 255, 0, 0, 255, 1.5);
+	Draw_ColoredString(5, 230*1.5, "Back", 255, 0, 0, 255, 1.5);
 }
 
 
@@ -742,8 +748,7 @@ void M_Main_Draw (void)
 	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
 
 	// Version String
-	Draw_ColoredString((vid.width - getTextWidth(game_build_date, 1)) + 4, 5, game_build_date, 255, 255, 255, 255, 1.5);
-
+	Draw_ColoredString((vid.width - (strlen(game_build_date) * 12)), 6, game_build_date, 255, 255, 255, 255, 1.5);
 	// Header
 	Draw_ColoredString(6, 6, "MAIN MENU", 255, 255, 255, 255, 3.5);
 
@@ -2370,20 +2375,23 @@ void M_OSK_Draw (void) {
 	if (selected_char[0] == ' ' || selected_char[0] == '\t')
 		selected_char[0] = 'X';
 
-	y = 150;
-	x = 150;
+	y = 20;
+	x = 20;
 
+	/* Unable to scale these
 	M_DrawTextBox (x-3, y-10, 		     26, 10);
 	M_DrawTextBox ((x-3)+(26*CHAR_SIZE),    y-10,  10, 10);
 	M_DrawTextBox (x-3, (y-10)+(10*CHAR_SIZE),36,  3);
+	*/
+	Draw_FillByColor((x-3)*2 + ((vid.conwidth - 320*2)>>1), (y-30)*2, 580, 220, 57, 57, 57, 255);
 
 	for(i=0;i<=MAX_Y;i++)
 	{
-		M_PrintWhite (x, y+(CHAR_SIZE*i), osk_text[i]);
+		M_PrintWhiteScaled (x, y+(CHAR_SIZE*i), osk_text[i]);
 		if (i == 1 || i == 4 || i == 7)
-			M_Print      (x+(27*CHAR_SIZE), y+(CHAR_SIZE*i), osk_help[i]);
+			M_PrintScaled      (x+(27*CHAR_SIZE), y+(CHAR_SIZE*i), osk_help[i]);
 		else
-			M_PrintWhite (x+(27*CHAR_SIZE), y+(CHAR_SIZE*i), osk_help[i]);
+			M_PrintWhiteScaled (x+(27*CHAR_SIZE), y+(CHAR_SIZE*i), osk_help[i]);
 	}
 
 	int text_len = strlen(osk_buffer);
@@ -2393,19 +2401,19 @@ void M_OSK_Draw (void) {
 		strncpy(oneline,osk_buffer,MAX_CHAR_LINE);
 		oneline[MAX_CHAR_LINE] = '\0';
 
-		M_Print (x+4, y+4+(CHAR_SIZE*(MAX_Y+2)), oneline );
+		M_PrintScaled (x+4, y+4+(CHAR_SIZE*(MAX_Y+2)), oneline );
 
 		strncpy(oneline,osk_buffer+MAX_CHAR_LINE, text_len - MAX_CHAR_LINE);
 		oneline[text_len - MAX_CHAR_LINE] = '\0';
 
-		M_Print (x+4, y+4+(CHAR_SIZE*(MAX_Y+3)), oneline );
-		M_PrintWhite (x+4+(CHAR_SIZE*(text_len - MAX_CHAR_LINE)), y+4+(CHAR_SIZE*(MAX_Y+3)),"_");
+		M_PrintScaled (x+4, y+4+(CHAR_SIZE*(MAX_Y+3)), oneline );
+		M_PrintWhiteScaled (x+4+(CHAR_SIZE*(text_len - MAX_CHAR_LINE)), y+4+(CHAR_SIZE*(MAX_Y+3)),"_");
 	}
 	else {
-		M_Print (x+4, y+4+(CHAR_SIZE*(MAX_Y+2)), osk_buffer );
-		M_PrintWhite (x+4+(CHAR_SIZE*(text_len)), y+4+(CHAR_SIZE*(MAX_Y+2)),"_");
+		M_PrintScaled (x+4, y+4+(CHAR_SIZE*(MAX_Y+2)), osk_buffer );
+		M_PrintWhiteScaled (x+4+(CHAR_SIZE*(text_len)), y+4+(CHAR_SIZE*(MAX_Y+2)),"_");
 	}
-	M_Print      (x+((((osk_pos_x)*2)+1)*CHAR_SIZE), y+(osk_pos_y*CHAR_SIZE), selected_char);
+	M_PrintScaled      (x+((((osk_pos_x)*1.1)+1)*CHAR_SIZE), y+(osk_pos_y*CHAR_SIZE), selected_char);
 }
 
 
