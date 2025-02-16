@@ -50,7 +50,7 @@ int getTextWidth(char *str, float scale);
 //other
 void Clear_LoadingFill (void);
 #ifdef __PSP__
-byte *StringToRGB (const char *s);
+byte *StringToRGB (char *s);
 #endif // __PSP__
 
 extern float loading_cur_step;

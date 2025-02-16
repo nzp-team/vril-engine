@@ -140,8 +140,8 @@ void R_Entity_Classic_Particles (entity_t *ent)
 
 if (!avelocities[0][0])
 {
-for (i=0 ; i<NUMVERTEXNORMALS*3 ; i++)
-avelocities[0][i] = (rand()&255) * 0.01;
+for (i=0 ; i<NUMVERTEXNORMALS ; i++)
+avelocities[i][0] = (rand()&255) * 0.01;
 }
 
 
@@ -215,7 +215,7 @@ void R_ReadPointFile_f (void)
 	vec3_t	org;
 	int		r;
 	int		c;
-	particle_t	*p;
+	particle2_t	*p;
 	char	name[MAX_OSPATH];
 	
 	sprintf (name,"maps/%s.pts", sv.name);
@@ -247,7 +247,7 @@ void R_ReadPointFile_f (void)
 		active_particles = p;
 		
 		p->die = 99999;
-		p->color[0] = p->color[1] = p->color[2] = (-c)&15;
+		p->color = (-c)&15;
 		p->type = pt_static;
 		VectorCopy (vec3_origin, p->vel);
 		VectorCopy (org, p->org);

@@ -1696,7 +1696,7 @@ void R_DrawAliasModel (entity_t *e)
 	aliashdr_t	*paliashdr;
 	float		an;
 	int			anim;
-	bool 		force_fullbright, additive;
+	bool 		force_fullbright;
 
         clmodel = e->model;
 
@@ -1734,7 +1734,6 @@ void R_DrawAliasModel (entity_t *e)
 		sceGuAlphaFunc(GU_GREATER, 0x88, c);
 	}
 	force_fullbright = false;
-	additive = false;
 
 	VectorCopy (e->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
@@ -1971,7 +1970,7 @@ void R_DrawMD2Model (entity_t *e)
 	model_t		*clmodel;
 	vec3_t		mins, maxs;
 	float		an;
-	bool 		force_fullbright, additive;
+	bool 		force_fullbright;
 
 	md2_t		*pheader; // LH / muff
 
@@ -2003,7 +2002,6 @@ void R_DrawMD2Model (entity_t *e)
   }
 
 	force_fullbright = false;
-	additive = false;
 	clmodel = e->model;
 
 	VectorAdd (e->origin, clmodel->mins, mins);

@@ -2458,7 +2458,6 @@ void QMB_MuzzleFlash(vec3_t org)
 
 void QMB_MuzzleFlashLG(vec3_t org)
 {
-	float	frametime = fabs(cl.ctime - cl.oldtime);
 	col_t	color;
 
 	color[0] = color[1] = 20;
@@ -2688,6 +2687,8 @@ void QMB_BlobExplosion (vec3_t org)
 
 void QMB_LavaSplash (vec3_t org)
 {
+	#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+
 	int	i, j;
 	float	vel;
 	vec3_t	dir, neworg;
@@ -2710,6 +2711,8 @@ void QMB_LavaSplash (vec3_t org)
 
 		}
 	}
+
+	#pragma GCC diagnostic pop
 }
 
 void QMB_TeleportSplash (vec3_t org)
@@ -3034,6 +3037,8 @@ R_EntityParticles
 */
 void QMB_EntityParticles (entity_t *ent)
 {
+	#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+
 	int			i;
 	float		angle, dist, sr, sp, sy, cr, cp, cy;
 	vec3_t		forward, org;
@@ -3042,8 +3047,8 @@ void QMB_EntityParticles (entity_t *ent)
 	dist = 64;
 
 	if (!avelocities[0][0])
-		for (i=0 ; i<NUMVERTEXNORMALS*3 ; i++)
-			avelocities[0][i] = (rand() & 255) * 0.01;
+		for (i=0 ; i<NUMVERTEXNORMALS ; i++)
+			avelocities[i][0] = (rand() & 255) * 0.01;
 
 	for (i=0 ; i<NUMVERTEXNORMALS ; i++)
 	{
@@ -3081,17 +3086,20 @@ void QMB_EntityParticles (entity_t *ent)
 		org[2] = ent->origin[2] + r_avertexnormals[i][2]*dist + forward[2]*16;
 		AddParticle (p_flare, org, 1, 2,0.005, color, forward);
 	}
+
+	#pragma GCC diagnostic pop
 }
 
 //Modified from Quake2
 void QMB_FlyParticles (vec3_t origin, int count)
 {
+	#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+
 	float		frametime	= fabs(cl.time - cl.oldtime);
     int         i;
     float       angle, sr, sp, sy, cr, cp, cy;
     vec3_t      forward, org;
     float       dist = 64;
-	col_t		color = {255,255,255,100};
 
     if (frametime)
 	{
@@ -3100,8 +3108,8 @@ void QMB_FlyParticles (vec3_t origin, int count)
 
 		if (!avelocities[0][0])
 		{
-			for (i=0 ; i<NUMVERTEXNORMALS*3 ; i++)
-				avelocities[0][i] = (rand()&255) * 0.01;
+			for (i=0 ; i<NUMVERTEXNORMALS ; i++)
+				avelocities[i][0] = (rand()&255) * 0.01;
 		}
 
 		for (i=0 ; i<count ; i+=2)
@@ -3145,6 +3153,8 @@ void QMB_FlyParticles (vec3_t origin, int count)
 			org[2] = origin[2] + r_avertexnormals[i][2]*dist + forward[2]*32;
 		}
 	}
+
+	#pragma GCC diagnostic pop
 }
 
 void R_GetParticleMode (void)
