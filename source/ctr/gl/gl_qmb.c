@@ -141,10 +141,7 @@ typedef struct particle_texture_s
 	float	coords[MAX_PTEX_COMPONENTS][4];
 } particle_texture_t;
 
-static	float	sint[7] = {0.000000, 0.781832, 0.974928, 0.433884, -0.433884, -0.974928, -0.781832};
-static	float	cost[7] = {1.000000, 0.623490, -0.222521, -0.900969, -0.900969, -0.222521, 0.623490};
-
-static			particle_t			*particles, *free_particles, active_particles;
+static			particle_t			*particles, *free_particles;
 static			particle_type_t		particle_types[num_particletypes];//R00k
 static	int		particle_type_index[num_particletypes];
 static			particle_texture_t	particle_textures[num_particletextures];
@@ -357,7 +354,7 @@ void QMB_AllocParticles (void)
 
 void QMB_InitParticles (void)
 {
-	int	i, j, ti, count = 0, particleimage;
+	int	i, count = 0, particleimage;
     float	max_s, max_t; //For ADD_PARTICLE_TEXTURE
 
 	particle_mode = pm_classic;
@@ -585,11 +582,10 @@ void QMB_InitParticles (void)
 __inline static void AddParticle (part_type_t type, vec3_t org, int count, float size, float time, col_t col, vec3_t dir)
 {
 	byte			*color;
-	int				i, j, k;
+	int				i, j;
 	float			tempSize; //stage;
 	particle_t		*p;
 	particle_type_t	*pt;
-    static unsigned long q3blood_texindex = 0;
 
 	if (!qmb_initialized)
 		Sys_Error ("QMB particle added without initialization");
@@ -830,7 +826,6 @@ __inline static void AddParticleTrail (part_type_t type, vec3_t start, vec3_t en
 	vec3_t		point, delta;
 	particle_t	*p;
 	particle_type_t	*pt;
-	static	float	rotangle = 0;
     count = 0;
 
 	if (!qmb_initialized)
@@ -1304,7 +1299,7 @@ void R_CalcBeamVerts (float *vert, vec3_t org1, vec3_t org2, float width)
 void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *coord) {
 	float            scale;
     vec3_t            up, right, p_downleft, p_upleft, p_downright, p_upright;
-    GLubyte            color[4], *c;
+    GLubyte            color[4];
 
     VectorScale (vup, 1.5, up);
     VectorScale (vright, 1.5, right);
@@ -1353,13 +1348,10 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
 void QMB_DrawParticles (void)
 {
 	int		j, i;
-	vec3_t		up, right, billboard[4], velcoord[4], neworg;
+	vec3_t		up, right, billboard[4], velcoord[4];
 	particle_t		*p;
 	particle_type_t		*pt;
 	particle_texture_t	*ptex;
-
-	float	varray_vertex[16];
-	vec3_t	distance;
 
 	if (!qmb_initialized)
 		return;
@@ -2455,7 +2447,7 @@ void QMB_LavaSplash (vec3_t org)
 {
 	int	i, j;
 	float	vel;
-	vec3_t	dir, neworg;
+	vec3_t	dir;
 
 	for (i=-16 ; i<16; i++)
 	{
@@ -2464,10 +2456,6 @@ void QMB_LavaSplash (vec3_t org)
 			dir[0] = j * 8 + (rand() & 7);
 			dir[1] = i * 8 + (rand() & 7);
 			dir[2] = 256;
-
-			neworg[0] = org[0] + dir[0];
-			neworg[1] = org[1] + dir[1];
-			neworg[2] = org[2] + (rand() & 63);
 
 			VectorNormalizeFast (dir);
 			vel = 50 + (rand() & 63);
@@ -2813,6 +2801,9 @@ R_EntityParticles
 */
 void QMB_EntityParticles (entity_t *ent)
 {
+
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+
 	int			i;
 	float		angle, dist, sp, sy, cp, cy;
 	vec3_t		forward, org;
@@ -2821,8 +2812,8 @@ void QMB_EntityParticles (entity_t *ent)
 	dist = 64;
 
 	if (!avelocities[0][0])
-		for (i=0 ; i<NUMVERTEXNORMALS*3 ; i++)
-			avelocities[0][i] = (rand() & 255) * 0.01;
+		for (i=0 ; i<NUMVERTEXNORMALS; i++)
+			avelocities[i][0] = (rand() & 255) * 0.01;
 
 	for (i=0 ; i<NUMVERTEXNORMALS ; i++)
 	{
@@ -2843,50 +2834,9 @@ void QMB_EntityParticles (entity_t *ent)
 		org[2] = ent->origin[2] + r_avertexnormals[i][2]*dist + forward[2]*16;
 		AddParticle (p_flare, org, 1, 2,0.005, color, forward);
 	}
-}
 
-//Modified from Quake2
-void QMB_FlyParticles (vec3_t origin, int count)
-{
-	float		frametime	= fabs(cl.time - cl.oldtime);
-    int         i;
-    float       angle, sp, sy, cp, cy;
-    vec3_t      forward, org;
-    float       dist = 64;
-	col_t		color = {255,255,255,100};
+#pragma GCC diagnostic pop
 
-    if (frametime)
-	{
-		if (count > NUMVERTEXNORMALS) {
-			count = NUMVERTEXNORMALS;
-		}
-
-		if (!avelocities[0][0])
-		{
-			for (i=0 ; i<NUMVERTEXNORMALS*3 ; i++)
-				avelocities[0][i] = (rand()&255) * 0.01;
-		}
-
-		for (i=0 ; i<count ; i+=2)
-		{
-			angle = cl.time * avelocities[i][0];
-			sy = sin(angle);
-			cy = cos(angle);
-			angle = cl.time * avelocities[i][1];
-			sp = sin(angle);
-			cp = cos(angle);
-			angle = cl.time * avelocities[i][2];
-
-			forward[0] = cp*cy;
-			forward[1] = cp*sy;
-			forward[2] = -sp;
-
-			dist = sin(cl.time + i)*64;
-			org[0] = origin[0] + r_avertexnormals[i][0]*dist + forward[0]*32;
-			org[1] = origin[1] + r_avertexnormals[i][1]*dist + forward[1]*32;
-			org[2] = origin[2] + r_avertexnormals[i][2]*dist + forward[2]*32;
-		}
-	}
 }
 
 void R_GetParticleMode (void)

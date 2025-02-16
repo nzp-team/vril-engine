@@ -1009,8 +1009,6 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 			*c = '+';
 		c++;
 	}
-
-	com_netpath[0] = 0;
 /*
     sprintf (name, "%s.wal", basename);
 	if (data = LoadWAL(name))
@@ -1018,28 +1016,28 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 */
 
 	sprintf (name, "%s.tga", basename);
-	FS_FOpenFile (name, &f);
+	COM_FOpenFile(name, &f);
 	if (f)
 		return LoadTGA (f, matchwidth, matchheight);
 		
 	sprintf (name, "%s.pcx", basename);
-	FS_FOpenFile (name, &f);
+	COM_FOpenFile(name, &f);
 	if (f)
 		return LoadPCX (f, matchwidth, matchheight);
 	
 	sprintf (name, "%s.jpg", basename);
-	FS_FOpenFile (name, &f);
+	COM_FOpenFile(name, &f);
 	if (f)
 	{
 		return LoadJPG (f, matchwidth, matchheight);
 	}
 	sprintf (name, "%s.png", basename);
-	FS_FOpenFile (name, &f);
+	COM_FOpenFile(name, &f);
 	if (f)
 		return LoadPNG (f, matchwidth, matchheight);
 	
 	sprintf (name, "%s.bmp", basename);
-	FS_FOpenFile (name, &f);
+	COM_FOpenFile(name, &f);
 	if (f)
 		return LoadBMP (f, matchwidth, matchheight);
 	//if (complain)

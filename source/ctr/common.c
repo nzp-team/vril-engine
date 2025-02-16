@@ -1061,8 +1061,6 @@ COM_Init
 */
 void COM_Init (char *basedir)
 {
-	byte    swaptest[2] = {1,0};
-
 	// force set little endian to be cool and fast
 	bigendien = false;
 	BigShort = ShortSwap;
@@ -1202,7 +1200,7 @@ void COM_WriteFile (char *filename, void *data, int len)
 	int             handle;
 	char    name[MAX_OSPATH];
 	
-	sprintf (name, "%s/%s", com_gamedir, filename);
+	snprintf(name, MAX_OSPATH + 1, "%s/%s", com_gamedir, filename);
 
 	handle = Sys_FileOpenWrite (name);
 	if (handle == -1)
@@ -1284,8 +1282,8 @@ Sets com_filesize and one of handle or file
 int COM_FindFile (char *filename, int *handle, FILE **file)
 {
 	searchpath_t    *search;
-	char            netpath[MAX_OSPATH];
-	char            cachepath[MAX_OSPATH];
+    char            netpath[128];
+	char            cachepath[MAX_OSPATH * 2];
 	pack_t          *pak;
 	int                     i;
 	int                     findtime, cachetime;
@@ -1334,7 +1332,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 		else
 		{               
 			// check a file in the directory tree
-			sprintf (netpath, "%s/%s",search->filename, filename);
+			snprintf (netpath, MAX_OSPATH * 2, "%s/%s", search->filename, filename);
 			
 			findtime = Sys_FileTime (netpath);
 			if (findtime == -1)
@@ -1345,14 +1343,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 				strcpy (cachepath, netpath);
 			else
 			{	
-#if defined(_WIN32)
-				if ((strlen(netpath) < 2) || (netpath[1] != ':'))
-					sprintf (cachepath,"%s%s", com_cachedir, netpath);
-				else
-					sprintf (cachepath,"%s%s", com_cachedir, netpath+2);
-#else
-				sprintf (cachepath,"%s%s", com_cachedir, netpath);
-#endif
+				snprintf(cachepath, MAX_OSPATH * 2, "%s%s", com_cachedir, netpath);
 
 				cachetime = Sys_FileTime (cachepath);
 			

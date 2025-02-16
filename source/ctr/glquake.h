@@ -53,6 +53,7 @@ extern	float	gldepthmin, gldepthmax;
 
 void GL_Upload32 (unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha);
 void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
+void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel);
 int GL_FindTexture (char *identifier);
 
@@ -314,8 +315,37 @@ extern lpSelTexFUNC qglSelectTextureSGIS;
 
 extern qboolean gl_mtexable;
 
+int R_LightPoint (vec3_t p);
+void R_DrawBrushModel (entity_t *e);
+void R_AnimateLight (void);
+void R_DrawWorld (void);
+void R_DrawParticles (void);
+void R_DrawWaterSurfaces (void);
+void R_RenderBrushPoly (msurface_t *fa);
+void R_InitParticles (void);
+void R_ClearParticles (void);
+qboolean R_CullBox (vec3_t emins, vec3_t emaxs);
+void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
+void R_RotateForEntity (entity_t *e, unsigned char scale);
+void R_ClearSkyBox (void);
+void R_DrawSkyBox (void);
+
+void V_CalcBlend (void);
+
 void GL_DisableMultitexture(void);
 void GL_EnableMultitexture(void);
+void GL_SubdivideSurface (msurface_t *fa);
+void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr);
+void GL_BuildLightmaps (void);
+void GL_Set2D (void);
+
+void EmitWaterPolys (msurface_t *fa);
+void EmitSkyPolys (msurface_t *fa);
+void EmitReflectivePolys (msurface_t *fa);
+void EmitScrollPolys (msurface_t *fa);
+void EmitBothSkyLayers (msurface_t *fa);
+
+void R_StoreEfrags (efrag_t **ppefrag);
 
 //johnfitz -- fog functions called from outside gl_fog.c
 void Fog_ParseServerMessage (void);
@@ -335,6 +365,7 @@ void Sky_NewMap (void);
 
 qboolean VID_Is8bit(void);
 
+void Sky_LoadSkyBox(char* name);
 
 // naievil -- fixme: none of these work
 //-----------------------------------------------------

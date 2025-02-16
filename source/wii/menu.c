@@ -1140,7 +1140,7 @@ void Map_Finder(void)
 		custom_maps[i].occupied = false;
 	}
 	
-	while(dp=readdir(dir))
+	while((dp = readdir(dir)))
 	{
 		
 		if(dp->d_name[0] == '.')

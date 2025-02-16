@@ -67,12 +67,12 @@ extern void M_Menu_Main_f (void);
 #define MAXGAMEDIRLEN	1000
 char debuglogfile[MAXGAMEDIRLEN + 1];
 
-#ifndef _3DS
+#ifndef __3DS__
 void M_OSK_Draw (void);
 void Con_OSK_f (char *input, char *output, int outlen);
 void Con_OSK_Key(int key);
 void Con_DrawOSK(void);
-#endif // __PSP__, _3DS, __WII__
+#endif // __PSP__, __3DS__, __WII__
 
 extern qboolean console_enabled;
 /*
@@ -490,7 +490,6 @@ The input line scrolls horizontally if typing goes beyond the right edge
 */
 void Con_DrawInput (void)
 {
-	int		y;
 	int		i;
 	char	*text;
 
@@ -511,8 +510,6 @@ void Con_DrawInput (void)
 		text += 1 + key_linepos - con_linewidth;
 		
 // draw it
-	y = con_vislines-16;
-
 	for (i=0 ; i<con_linewidth ; i++)
 		Draw_Character ( (i+1)<<3, con_vislines - 16, text[i]);
 
@@ -627,12 +624,12 @@ void Con_DrawConsole (int lines, qboolean drawinput)
 		Con_DrawInput ();
 #endif // __WII__
 
-#ifndef _3DS
+#ifndef __3DS__
 	Con_DrawOSK();	
-#endif // __PSP__, _3DS, __WII__
+#endif // __PSP__, __3DS__, __WII__
 }
 
-#ifndef _3DS
+#ifndef __3DS__
 static qboolean	scr_osk_active = false;
 
 

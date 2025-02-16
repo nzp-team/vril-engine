@@ -526,10 +526,6 @@ static void Test_Poll(void)
 	int		len;
 	char	name[32];
 	char	address[64];
-	int		colors;
-	int		frags;
-	int		connectTime;
-	byte	playerNumber;
 
 	net_landriverlevel = testDriver;
 
@@ -554,14 +550,12 @@ static void Test_Poll(void)
 		if (MSG_ReadByte() != CCREP_PLAYER_INFO)
 			Sys_Error("Unexpected repsonse to Player Info request\n");
 
-		playerNumber = MSG_ReadByte();
+		MSG_ReadByte();
 		strcpy(name, MSG_ReadString());
-		colors = MSG_ReadLong();
-		frags = MSG_ReadLong();
-		connectTime = MSG_ReadLong();
+		MSG_ReadLong();
+		MSG_ReadLong();
+		MSG_ReadLong();
 		strcpy(address, MSG_ReadString());
-
-		Con_Printf("%s\n  frags:%3i  colors:%u %u  time:%u\n  %s\n", name, frags, colors >> 4, colors & 0x0f, connectTime / 60, address);
 	}
 
 	testPollCount--;

@@ -4916,99 +4916,7 @@ int		gameoptions_cursor;
 
 void M_GameOptions_Draw (void)
 {
-	int		x;
 
-    if (key_dest != key_menu_pause)
-		Draw_PicIndex(0, 0, 480, 272, menu_bk);
-	//else
-		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
-
-	M_DrawTextBox (152, 32, 10, 1);
-	M_PrintOld (160, 40, "begin game");
-
-	M_PrintOld (0, 56, "      Max players");
-	M_PrintOld (160, 56, va("%i", maxplayers) );
-
-	M_PrintOld (0, 64, "        Game Type");
-	if (coop.value)
-		M_PrintOld (160, 64, "Cooperative");
-	else
-		M_PrintOld (160, 64, "Deathmatch");
-
-	M_PrintOld (0, 72, "        Teamplay");
-
-	char *msg;
-
-	switch((int)teamplay.value)
-	{
-		case 1: msg = "No Friendly Fire"; break;
-		case 2: msg = "Friendly Fire"; break;
-		default: msg = "Off"; break;
-	}
-	M_PrintOld (160, 72, msg);
-
-
-	M_PrintOld (0, 80, "            Skill");
-	if (skill.value == 0)
-		M_PrintOld (160, 80, "Easy difficulty");
-	else if (skill.value == 1)
-		M_PrintOld (160, 80, "Normal difficulty");
-	else if (skill.value == 2)
-		M_PrintOld (160, 80, "Hard difficulty");
-	else
-		M_PrintOld (160, 80, "Nightmare difficulty");
-
-	M_PrintOld (0, 88, "       Frag Limit");
-	if (fraglimit.value == 0)
-		M_PrintOld (160, 88, "none");
-	else
-		M_PrintOld (160, 88, va("%i points", (int)fraglimit.value));
-
-	M_PrintOld (0, 96, "       Time Limit");
-	if (timelimit.value == 0)
-		M_PrintOld (160, 96, "none");
-	else
-		M_PrintOld (160, 96, va("%i minutes", (int)timelimit.value));
-
-	M_PrintOld (0, 112, "         Episode");
-
-	if(user_maps)
-		M_PrintOld (160, 112, "User Maps");
-	else
-		M_PrintOld (160, 112, episodes[startepisode].description);
-
-	M_PrintOld (0, 120, "           Level");
-
-   if(user_maps)
-	{
-		M_PrintOld (160, 120, user_levels[startlevel]);
-	}
-	else
-	{
-		M_PrintOld (160, 120, levels[episodes[startepisode].firstLevel + startlevel].description);
-        M_PrintOld (160, 128, levels[episodes[startepisode].firstLevel + startlevel].name);
-    }
-
-// line cursor
-	M_DrawCharacter2 (144, gameoptions_cursor_table[gameoptions_cursor], 12+((int)(realtime*4)&1));
-
-	if (m_serverInfoMessage)
-	{
-		if ((realtime - m_serverInfoMessageTime) < 5.0)
-		{
-			x = (320-26*8)/2;
-			M_DrawTextBox (x, 138, 24, 4);
-			x += 8;
-			M_PrintOld (x, 146, "  More than 4 players   ");
-			M_PrintOld (x, 154, " requires using command ");
-			M_PrintOld (x, 162, "line parameters; please ");
-			M_PrintOld (x, 170, "   see techinfo.txt.    ");
-		}
-		else
-		{
-			m_serverInfoMessage = false;
-		}
-	}
 }
 
 
@@ -5070,14 +4978,7 @@ void M_NetStart_Change (int dir)
 
 	case 7:
 		startepisode += dir;
-		if (user_maps)
-		{
-		    count = 1;
-		}
-		else
-		{
-			count = 2;
-        }
+		count = 1;
 		if (startepisode < 0)
 			startepisode = count - 1;
 
@@ -5089,10 +4990,7 @@ void M_NetStart_Change (int dir)
 
 	case 8:
 		startlevel += dir;
-		if(user_maps)
-			count = user_maps_num;
-		else
-			count = episodes[startepisode].levels;
+		count = user_maps_num;
 		if (startlevel < 0)
 			startlevel = count - 1;
 
@@ -5147,11 +5045,7 @@ void M_GameOptions_Key (int key)
 			Cbuf_AddText ("listen 0\n");	// so host_netport will be re-examined
 			Cbuf_AddText ( va ("maxplayers %u\n", maxplayers) );
 			SCR_BeginLoadingPlaque ();
-
-			if(user_maps)
-				Cbuf_AddText ( va ("map %s\n", user_levels[startlevel]));
-            else
-			    Cbuf_AddText ( va ("map %s\n", levels[episodes[startepisode].firstLevel + startlevel].name) );
+			Cbuf_AddText ( va ("map %s\n", user_levels[startlevel]));
 			return;
 		}
 

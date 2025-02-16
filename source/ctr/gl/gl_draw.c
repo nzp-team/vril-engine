@@ -813,8 +813,6 @@ void Draw_LoadingFill(void)
 	int max_step   	= 350;
     int x          	= (vid.width  / 2) - (max_step / 2);
     int y          	= vid.height - (size/ 2) - 25;
-	int l;
-	char str[64];
 	char* text;
 
 
@@ -1230,8 +1228,6 @@ void Draw_FadeScreen (void)
 	glColor4f (1,1,1,1);
 	glEnable (GL_TEXTURE_2D);
 	glDisable (GL_BLEND);
-
-	Sbar_Changed();
 }
 
 //=============================================================================

@@ -25,29 +25,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <malloc.h>
+#include <arpa/inet.h>
 
 #include <3ds.h>
 #include <sys/fcntl.h>
-
-inline uint32_t htonl(uint32_t hostshort)
-{
-	return __builtin_bswap32(hostshort);
-}
-
-inline uint16_t htons(uint16_t hostshort)
-{
-	return __builtin_bswap16(hostshort);
-}
-
-inline uint32_t ntohl(uint32_t netlong)
-{
-	return __builtin_bswap32(netlong);
-}
-
-inline uint16_t ntohs(uint16_t netshort)
-{
-	return __builtin_bswap16(netshort);
-}
 
 #define SOC_BUFFERSIZE  0x100000
 #define SOC_ALIGN       0x1000
@@ -71,11 +53,9 @@ static unsigned long myAddr;
 
 int UDP_Init (void)
 {
-	struct hostent *local;
-	char	buff[15];
 	struct qsockaddr addr;
 	char *colon;
-  int ret;
+  	int ret;
 
 	if (COM_CheckParm ("-noudp"))
 		return -1;
@@ -161,9 +141,6 @@ int UDP_OpenSocket (int port)
 {
 	int newsocket;
 	struct sockaddr_in address;
-	qboolean _true = true;
-	  int yes = 1;
-	  int rc;
 
 	if ((newsocket = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 		return -1;
@@ -284,7 +261,7 @@ int UDP_Read (int socket, byte *buf, int len, struct qsockaddr *addr)
 	int addrlen = sizeof (struct qsockaddr);
 	int ret;
 
-	ret = recvfrom (socket, buf, len, 0, (struct sockaddr *)addr, &addrlen);
+	ret = recvfrom (socket, buf, len, 0, (struct sockaddr *)addr, (socklen_t*)&addrlen);
 	if (ret == -1 )
 		return 0;
 	return ret;
@@ -367,7 +344,7 @@ int UDP_GetSocketAddr (int socket, struct qsockaddr *addr)
 	unsigned int a;
 
 	Q_memset(addr, 0, sizeof(struct qsockaddr));
-	getsockname(socket, (struct sockaddr *)addr, &addrlen);
+	getsockname(socket, (struct sockaddr *)addr, (socklen_t*)&addrlen);
 	a = ((struct sockaddr_in *)addr)->sin_addr.s_addr;
 	if (a == 0 || a == inet_addr("127.0.0.1"))
 		((struct sockaddr_in *)addr)->sin_addr.s_addr = myAddr;

@@ -547,12 +547,8 @@ void SCR_CheckDrawUseString (void)
 
 	scr_usetime_off -= host_frametime;
 
-	if (scr_usetime_off <= 0 && !cl.intermission)
+	if ((scr_usetime_off <= 0 && !cl.intermission) || key_dest != key_game || cl.stats[STAT_HEALTH] <= 0)
 		return;
-	if (key_dest != key_game)
-		return;
-    if (cl.stats[STAT_HEALTH] <= 0)
-        return;
 
 	SCR_DrawUseString ();
 }
@@ -591,7 +587,6 @@ Internal use only
 */
 static void SCR_CalcRefdef (void)
 {
-	vrect_t		vrect;
 	float		size;
 	int		h;
 	qboolean		full = false;
@@ -599,9 +594,6 @@ static void SCR_CalcRefdef (void)
 
 	scr_fullupdate = 0;		// force a background redraw
 	vid.recalc_refdef = 0;
-
-// force the status bar to redraw
-	Sbar_Changed ();
 
 //========================================
 	
@@ -1220,7 +1212,7 @@ void SCR_ScreenShot_f (void)
 {
 	byte		*buffer;
 	char		pcxname[80]; 
-	char		checkname[MAX_OSPATH];
+	char		checkname[MAX_OSPATH * 2];
 	int			i, c, temp;
 // 
 // find a file name to save it to 
@@ -1231,7 +1223,7 @@ void SCR_ScreenShot_f (void)
 	{ 
 		pcxname[5] = i/10 + '0'; 
 		pcxname[6] = i%10 + '0'; 
-		sprintf (checkname, "%s/%s", com_gamedir, pcxname);
+		snprintf (checkname, MAX_OSPATH * 2, "%s/%s", com_gamedir, pcxname);
 		if (Sys_FileTime(checkname) == -1)
 			break;	// file doesn't exist
 	} 
@@ -1293,7 +1285,6 @@ void SCR_BeginLoadingPlaque (void)
 
 	scr_drawloading = true;
 	scr_fullupdate = 0;
-	Sbar_Changed ();
 	SCR_UpdateScreen ();
 	scr_drawloading = false;
 
@@ -1521,11 +1512,9 @@ int GetWeaponZoomAmmount (void)
 float zoomin_time;
 int original_fov;
 int original_view_fov;
+void Draw_Crosshair (void);
 void SCR_UpdateScreen (void)
 {
-	static float	oldscr_viewsize;
-	vrect_t		vrect;
-
 	if (block_drawing)
 		return;
 

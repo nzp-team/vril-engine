@@ -33,6 +33,10 @@ CFLAGS	=		$(MACHDEP) $(INCLUDE) \
 			-g -Wall -O2 -Wcast-align -fno-merge-constants -fstrict-aliasing -fsingle-precision-constant -fno-aggressive-loop-optimizations \
 			-DGXQUAKE -DNQ_HACK -Wtrigraphs -D__WII__
 
+ifeq ($(WERROR),1)
+CFLAGS 		+= -Werror
+endif
+
 CXXFLAGS = $(CFLAGS)
 
 LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map

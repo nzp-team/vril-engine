@@ -37,11 +37,11 @@ void Draw_ColoredStringCentered(int y, char *text, float r, float g, float b, fl
 void Draw_TransPic (int x, int y, qpic_t *pic);
 void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation);
 void Draw_ConsoleBackground (int lines);
-#ifdef __PSP__
 void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha);
+#ifdef __PSP__
 void Draw_Fill (int x, int y, int w, int h, int c);
-void Draw_LoadingFill(void);
 #endif
+void Draw_LoadingFill(void);
 void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a);
 void Draw_FadeScreen (void);
 void Draw_String (int x, int y, char *str);

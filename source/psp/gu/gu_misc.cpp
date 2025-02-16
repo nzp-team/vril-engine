@@ -140,23 +140,7 @@ byte	dottexture2[16][16] =
 
 void R_InitParticleTexture (void)
 {
-
-	int		x,y;
-	byte	data[16][16][2];
-
-	//
-	// particle texture
-	//
-
-	for (x=0 ; x<16 ; x++)
-	{
-		for (y=0 ; y<16 ; y++)
-		{
-			data[y][x][0] = (dottexture2[x][y])*0xF0 | (dottexture2[x][y])*0x0F;
-			data[y][x][1] = (dottexture2[x][y])*0xF0 | (dottexture2[x][y])*0x0F;
-		}
-	}
-	//particletexture = GL_LoadImages ("_particle_", 16, 16, &data[0][0][0], qtrue, GU_LINEAR, 0, 2);
+	
 }
 
 //extern qboolean config_lock;
@@ -418,10 +402,10 @@ void R_NewMap (void)
 	{
 		if (!cl.worldmodel->textures[i])
 			continue;
-		if (!Q_strncmp(cl.worldmodel->textures[i]->name,"sky",3) )
+		if (!strncmp(cl.worldmodel->textures[i]->name,"sky",3) )
 			skytexturenum = i;
-		if (!Q_strncmp(cl.worldmodel->textures[i]->name,"window02_1",10) )//reminder 
-		//if (!Q_strncmp(cl.worldmodel->textures[i]->name,"3tiles_grey_64",10) )//reminder "window02_1"
+		if (!strncmp(cl.worldmodel->textures[i]->name,"window02_1",10) )//reminder 
+		//if (!strncmp(cl.worldmodel->textures[i]->name,"3tiles_grey_64",10) )//reminder "window02_1"
 			mirrortexturenum = i;
  		cl.worldmodel->textures[i]->texturechain = NULL;
 	}

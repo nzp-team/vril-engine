@@ -46,9 +46,6 @@ namespace quake
 			short right;
 		};
 
-//		static int				file = -1;
-		static int		        last_track = 1;
-
 		static bool	 playing  = false;
 		static bool	 paused   = false;
 		static bool	 enabled  = false;
@@ -193,8 +190,8 @@ void CDAudio_PlayFromString(char* track_name, qboolean looping)
 {
 	CDAudio_Stop();
 
-	char path[256];
-	sprintf(path, "%s/tracks/%s.mp3", com_gamedir, track_name);
+	char path[512];
+	snprintf(path, 512, "%s/tracks/%s.mp3", com_gamedir, track_name);
 
 	int ret = mp3_start_play(path, 0);
 	cd_loop = looping;

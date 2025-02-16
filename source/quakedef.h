@@ -90,7 +90,7 @@ extern int psp_system_model;
 
 
 #define	MAX_QPATH		64			// max length of a quake game pathname
-#define	MAX_OSPATH		128			// max length of a filesystem pathname
+#define	MAX_OSPATH		256			// max length of a filesystem pathname
 
 #define	ON_EPSILON		0.1			// point on plane side epsilon
 
@@ -206,7 +206,7 @@ extern int psp_system_model;
 #define	SOUND_CHANNELS		8
 
 
-#ifdef _3DS
+#ifdef __3DS__
 #include "ctr/common.h"
 #include "ctr/vid.h"
 #include "ctr/sys.h"
@@ -218,7 +218,7 @@ extern int psp_system_model;
 #include "wii/common.h"
 #include "wii/vid.h"
 #include "wii/sys.h"
-#endif // _3DS, __PSP__, __WII__
+#endif // __3DS__, __PSP__, __WII__
 #include "zone.h"
 #include "mathlib.h"
 #include "bspfile.h"
@@ -243,7 +243,7 @@ typedef struct
 #include "wad.h"
 #include "draw.h"
 #include "cvar.h"
-#ifdef _3DS
+#ifdef __3DS__
 #include "ctr/screen.h"
 #include "ctr/net.h"
 #elif __PSP__
@@ -252,15 +252,12 @@ typedef struct
 #elif __WII__
 #include "wii/screen.h"
 #include "wii/net.h"
-#endif // _3DS
+#endif // __3DS__
 #include "protocol.h"
 #include "cmd.h"
-#ifdef _3DS
-#include "ctr/sbar.h"
-#endif // _3DS
 #include "cl_hud.h"
 #include "sound.h"
-#ifdef _3DS
+#ifdef __3DS__
 #include "ctr/render.h"
 #include "ctr/client.h"
 #elif __PSP__
@@ -269,17 +266,17 @@ typedef struct
 #elif __WII__
 #include "wii/render.h"
 #include "wii/client.h"
-#endif // _3DS
+#endif // __3DS__
 #include "progs.h"
-#ifdef _3DS
+#ifdef __3DS__
 #include "ctr/server.h"
 #elif __PSP__
 #include "psp/server.h"
 #elif __WII__
 #include "wii/server.h"
-#endif // _3DS
+#endif // __3DS__
 
-#ifdef _3DS
+#ifdef __3DS__
 #include "ctr/gl/gl_model.h"
 #include "ctr/gl/gl_decal.h"
 #elif __WII__
@@ -290,7 +287,7 @@ typedef struct
 
 #include "input.h"
 #include "world.h"
-#ifdef _3DS
+#ifdef __3DS__
 #include "ctr/keys.h"
 #elif __PSP__
 #include "psp/keys.h"
@@ -299,7 +296,7 @@ typedef struct
 #endif
 #include "console.h"
 #include "view.h"
-#ifdef _3DS
+#ifdef __3DS__
 #include "ctr/menu.h"
 #elif __PSP__
 #include "psp/menu.h"
@@ -309,7 +306,7 @@ typedef struct
 #include "crc.h"
 #include "cdaudio.h"
 
-#ifdef _3DS
+#ifdef __3DS__
 #include "ctr/glquake.h"
 #elif __WII__
 #include "wii/gx/gxquake.h"
@@ -460,9 +457,9 @@ extern int argsort_comparator(const void *lhs, const void *rhs);
 extern func_t	EndFrame;
 
 
-#ifdef _3DS
+#ifdef __3DS__
 #define VERTEXARRAYSIZE 18360
 extern float gVertexBuffer[VERTEXARRAYSIZE];
 extern float gColorBuffer[VERTEXARRAYSIZE];
 extern float gTexCoordBuffer[VERTEXARRAYSIZE];
-#endif // _3DS
+#endif // __3DS__
