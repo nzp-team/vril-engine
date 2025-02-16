@@ -436,7 +436,7 @@ void DecalWalkBsp_R (decal_t *dec, mnode_t *node)
 
 qboolean DecalAddPolygon (decal_t *dec, int vertcount, vec3_t *vertices)
 {
-	int a, b, count, *triangle;
+	int a, b, count;
 
 	count = dec->vertexCount;
 	if (count + vertcount >= MAX_DECAL_VERTICES)
@@ -446,7 +446,6 @@ qboolean DecalAddPolygon (decal_t *dec, int vertcount, vec3_t *vertices)
 		return qfalse;
 
 	// Add polygon as a triangle fan
-	triangle = &dec->triangleArray[dec->triangleCount][0];
 	for (a = 2 ; a < vertcount ; a++)
 	{
 		dec->triangleArray[dec->triangleCount][0] = count;

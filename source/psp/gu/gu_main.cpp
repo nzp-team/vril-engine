@@ -1113,8 +1113,6 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 	trivertx_t* verts2;
 	int*        order;
 	int         count;
-	vec3_t      d;
-	vec3_t       point;
 	int prim;
 	prim = GU_TRIANGLE_FAN;
 
@@ -1396,115 +1394,7 @@ GL_DrawQ2AliasShadow
 extern	vec3_t	lightspot;
 void GL_DrawQ2AliasShadow (entity_t *e, md2_t *pheader, int lastpose, int pose, float lerp)
 {
-	float	ilerp, height, lheight;
-	int		*order, count;
-	md2trivertx_t	*verts1, *verts2;
-	vec3_t	scale1, translate1, scale2, translate2, point;
-	md2frame_t *frame1, *frame2;
 
-	// Tomaz - New Shadow Begin
-	trace_t		downtrace;
-	vec3_t		downmove;
-	float		s1,c1;
-	// Tomaz - New Shadow End
-
-	lheight = currententity->origin[2] - lightspot[2];
-
-	height = 0;
-
-	ilerp = 1.0 - lerp;
-
-	// Tomaz - New Shadow Begin
-	VectorCopy (e->origin, downmove);
-	downmove[2] = downmove[2] - 4096;
-	memset (&downtrace, 0, sizeof(downtrace));
-	SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, e->origin, downmove, &downtrace);
-
-	#ifdef PSP_VFPU
-	s1 = vfpu_sinf( e->angles[1]/180*M_PI);
-	c1 = vfpu_cosf( e->angles[1]/180*M_PI);
-	#else
-	s1 = sin( e->angles[1]/180*M_PI);
-	c1 = cos( e->angles[1]/180*M_PI);
-	#endif
-	// Tomaz - New Shadow End
-
-	//new version by muff - fixes bug, easier to read, faster (well slightly)
-	frame1 = (md2frame_t *)((int) pheader + pheader->ofs_frames + (pheader->framesize * lastpose));
-	frame2 = (md2frame_t *)((int) pheader + pheader->ofs_frames + (pheader->framesize * pose));
-
-	VectorCopy(frame1->scale, scale1);
-	VectorCopy(frame1->translate, translate1);
-	VectorCopy(frame2->scale, scale2);
-	VectorCopy(frame2->translate, translate2);
-	verts1 = &frame1->verts[0];
-	verts2 = &frame2->verts[0];
-	order = (int *)((int) pheader + pheader->ofs_glcmds);
-
-	height = -lheight + 1.0;
-
-    while (1)
-    {
-		// get the vertex count and primitive type
-		count = *order++;
-		if (!count)
-			break;		// done
-		int prim;
-		if (count < 0)
-		{
-			count = -count;
-		    prim = GU_TRIANGLE_FAN;
-		}
-		else
-		{
-			prim = GU_TRIANGLE_STRIP;
-		}
-
-		// Allocate the vertices.
-		struct vertex
-		{
-			float x, y, z;
-		};
-
-		vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * count));
-
-		for (int vertex_index = 0; vertex_index < count; ++vertex_index)
-		{
-            point[0] =
-		(verts1[order[2]].v[0]*scale1[0]+translate1[0])*ilerp+(verts2[order[2]].v[0]*scale2[0]+translate2[0])*lerp;
-
-			point[1] =
-		(verts1[order[2]].v[1]*scale1[1]+translate1[1])*ilerp+(verts2[order[2]].v[1]*scale2[1]+translate2[1])*lerp;
-
-			point[2] =
-		(verts1[order[2]].v[2]*scale1[2]+translate1[2])*ilerp+(verts2[order[2]].v[2]*scale2[2]+translate2[2])*lerp;
-
-			// Tomaz - New shadow Begin
-			point[2] =  - (e->origin[2] - downtrace.endpos[2]) ;
-
-			point[2] += ((point[1] * (s1 * downtrace.plane.normal[0])) -
-						  (point[0] * (c1 * downtrace.plane.normal[0])) -
-						  (point[0] * (s1 * downtrace.plane.normal[1])) -
-						  (point[1] * (c1 * downtrace.plane.normal[1]))) +
-						  ((1.0 - downtrace.plane.normal[2])*20) + 0.2 ;
-
-			out[vertex_index].x = point[0];
-		    out[vertex_index].y = point[1];
-		    out[vertex_index].z = point[2];
-			// Tomaz - New shadow Begin
-
-			order+=3;
-		 }
-	     if(r_showtris.value)
-		 {
-			sceGuDisable(GU_TEXTURE_2D);
-		 }
-		 sceGuDrawArray(r_showtris.value ? GU_LINE_STRIP : prim,GU_VERTEX_32BITF, count, 0, out);
-	     if(r_showtris.value)
-		 {
-			sceGuEnable(GU_TEXTURE_2D);
-		 }
-	}
 }
 
 /*
@@ -2465,130 +2355,7 @@ R_DrawQ3Frame
 */
 void R_DrawQ3Frame (int frame, md3header_t *pmd3hdr, md3surface_t *pmd3surf, entity_t *ent, int distance)
 {
-	int		i, j, numtris, pose, pose1, pose2;
-	float		l, lerpfrac;
-	vec3_t		lightvec, interpolated_verts;
-	unsigned int	*tris;
-	md3tc_t		*tc;
-	md3vert_mem_t	*verts, *v1, *v2;
-	model_t		*clmodel = ent->model;
 
-	if ((frame >= pmd3hdr->numframes) || (frame < 0))
-	{
-		Con_DPrintf ("R_DrawQ3Frame: no such frame %d\n", frame);
-		frame = 0;
-	}
-
-	if (ent->pose1 >= pmd3hdr->numframes)
-		ent->pose1 = 0;
-
-	pose = frame;
-
-	if (!strcmp(clmodel->name, "models/player/lower.md3"))
-		ent->frame_interval = anims[legsanim].interval;
-	else if (!strcmp(clmodel->name, "models/player/upper.md3"))
-		ent->frame_interval = anims[bodyanim].interval;
-	else
-		ent->frame_interval = 0.1;
-
-	if (ent->pose2 != pose)
-	{
-		ent->frame_start_time = cl.time;
-		ent->pose1 = ent->pose2;
-		ent->pose2 = pose;
-		ent->framelerp = 0;
-	}
-	else
-	{
-		ent->framelerp = (cl.time - ent->frame_start_time) / ent->frame_interval;
-	}
-
-	// weird things start happening if blend passes 1
-	if (cl.paused || ent->framelerp > 1)
-		ent->framelerp = 1;
-
-	verts = (md3vert_mem_t *)((byte *)pmd3hdr + pmd3surf->ofsverts);
-	tc = (md3tc_t *)((byte *)pmd3surf + pmd3surf->ofstc);
-	tris = (unsigned int *)((byte *)pmd3surf + pmd3surf->ofstris);
-	numtris = pmd3surf->numtris * 3;
-	pose1 = ent->pose1 * pmd3surf->numverts;
-	pose2 = ent->pose2 * pmd3surf->numverts;
-
-	if (surface_transparent)
-	{
-		sceGuEnable (GU_BLEND);
-		//sceGuBlendFunc (GL_ONE, GL_ONE);
-		sceGuDepthMask (GU_TRUE);
-		sceGuDisable (GU_CULL_FACE);
-	}
-	else
-	if (ISADDITIVE(ent))
-		sceGuEnable (GU_BLEND);
-
-	// Allocate the vertices.
-	struct vertex
-	{
-		float u, v;
-		unsigned int color;
-		float x, y, z;
-	};
-
-	vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * numtris));
-
-	for (i=0 ; i<numtris ; i++)
-	{
-		float	s, t;
-
-		v1 = verts + *tris + pose1;
-		v2 = verts + *tris + pose2;
-
-		s = tc[*tris].s, t = tc[*tris].t;
-
-        out[i].u = s;
-		out[i].v = t;
-
-		lerpfrac = VectorL2Compare(v1->vec, v2->vec, distance) ? ent->framelerp : 1;
-
-
-		l = FloatInterpolate (shadedots[v1->oldnormal>>8], lerpfrac, shadedots[v2->oldnormal>>8]);
-		l = l / 256;
-		l = fmin(l, 1);
-
-		VectorInterpolate (v1->vec, lerpfrac, v2->vec, interpolated_verts);
-
-		out[i].x = interpolated_verts[0];
-        out[i].y = interpolated_verts[1];
-        out[i].z = interpolated_verts[2];
-
-		for (j = 0 ; j < 3 ; j++)
-			lightvec[j] = lightcolor[j] /1.0f + l;
-
-	   	out[i].color = GU_COLOR(lightvec[0], lightvec[1], lightvec[2], 1.0f);
-		*tris++;
-	}
-
-    if(r_showtris.value)
-	{
-	  sceGuDisable(GU_TEXTURE_2D);
-	}
-
-	sceGuDrawArray(r_showtris.value ? GU_LINE_STRIP : GU_TRIANGLES, GU_TEXTURE_32BITF | GU_VERTEX_32BITF | GU_COLOR_8888, numtris, 0, out);
-
-    if(r_showtris.value)
-	{
-	  sceGuEnable(GU_TEXTURE_2D);
-	}
-
-	if (surface_transparent)
-	{
-		sceGuDisable (GU_BLEND);
-		sceGuBlendFunc (GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
-		sceGuDepthMask (GU_FALSE);
-		sceGuEnable (GU_CULL_FACE);
-	}
-	else
-	if (ISADDITIVE(ent))
-		sceGuDisable (GU_BLEND);
 }
 
 /*
@@ -2598,112 +2365,7 @@ R_DrawQ3Shadow
 */
 void R_DrawQ3Shadow (entity_t *ent, float lheight, float s1, float c1, trace_t downtrace)
 {
-	int		i, j, numtris, pose1, pose2;
-	vec3_t		point1, point2, interpolated;
-	md3header_t	*pmd3hdr;
-	md3surface_t	*pmd3surf;
-	unsigned int	*tris;
-	md3vert_mem_t	*verts;
-	model_t		*clmodel = ent->model;
-#if 0
-	float		m[16];
-	md3tag_t	*tag;
-	tagentity_t	*tagent;
-#endif
 
-	pmd3hdr = (md3header_t *)Mod_Extradata (clmodel);
-
-	pmd3surf = (md3surface_t *)((byte *)pmd3hdr + pmd3hdr->ofssurfs);
-	for (i=0 ; i<pmd3hdr->numsurfs ; i++)
-	{
-		verts = (md3vert_mem_t *)((byte *)pmd3hdr + pmd3surf->ofsverts);
-		tris = (unsigned int *)((byte *)pmd3surf + pmd3surf->ofstris);
-		numtris = pmd3surf->numtris * 3;
-		pose1 = ent->pose1 * pmd3surf->numverts;
-		pose2 = ent->pose2 * pmd3surf->numverts;
-
-		// Allocate the vertices.
-	    struct vertex
-	    {
-		 float x, y, z;
-	    };
-
-	    vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * numtris));
-
-		for (j=0 ; j<numtris ; j++)
-		{
-			// normals and vertexes come from the frame list
-			VectorCopy (verts[*tris+pose1].vec, point1);
-
-			point1[0] -= shadevector[0] * (point1[2] + lheight);
-			point1[1] -= shadevector[1] * (point1[2] + lheight);
-
-			VectorCopy (verts[*tris+pose2].vec, point2);
-
-			point2[0] -= shadevector[0] * (point2[2] + lheight);
-			point2[1] -= shadevector[1] * (point2[2] + lheight);
-
-			VectorInterpolate (point1, ent->framelerp, point2, interpolated);
-
-			interpolated[2] = -(ent->origin[2] - downtrace.endpos[2]);
-
-			interpolated[2] += ((interpolated[1] * (s1 * downtrace.plane.normal[0])) -
-					    (interpolated[0] * (c1 * downtrace.plane.normal[0])) -
-					    (interpolated[0] * (s1 * downtrace.plane.normal[1])) -
-					    (interpolated[1] * (c1 * downtrace.plane.normal[1]))) +
-					    ((1 - downtrace.plane.normal[2]) * 20) + 0.2;
-
-			out[j].x = interpolated[0];
-            out[j].y = interpolated[1];
-            out[j].z = interpolated[2];
-			*tris++;
-		}
-        if(r_showtris.value)
-		{
-		   sceGuDisable(GU_TEXTURE_2D);
-		}
-		sceGuDrawArray(r_showtris.value ? GU_LINE_STRIP : GU_TRIANGLES,GU_VERTEX_32BITF, numtris, 0, out);
-        if(r_showtris.value)
-		{
-		   sceGuEnable(GU_TEXTURE_2D);
-		}
-
-		pmd3surf = (md3surface_t *)((byte *)pmd3surf + pmd3surf->ofsend);
-	}
-
-	if (!pmd3hdr->numtags)	// single model, done
-		return;
-
-// no multimodel shadow support yet
-#if 0
-	tag = (md3tag_t *)((byte *)pmd3hdr + pmd3hdr->ofstags);
-	tag += ent->pose2 * pmd3hdr->numtags;
-	for (i=0 ; i<pmd3hdr->numtags ; i++, tag++)
-	{
-		if (multimodel_level == 0 && !strcmp(tag->name, "tag_torso"))
-		{
-			tagent = &q3player_body;
-			ent = &q3player_body.ent;
-			multimodel_level++;
-		}
-		else if (multimodel_level == 1 && !strcmp(tag->name, "tag_head"))
-		{
-			tagent = &q3player_head;
-			ent = &q3player_head.ent;
-			multimodel_level++;
-		}
-		else
-		{
-			continue;
-		}
-
-		glPushMatrix ();
-		R_RotateForTagEntity (tagent, tag, m);
-		glMultMatrixf (m);
-		R_DrawQ3Shadow (ent, lheight, s1, c1, downtrace);
-		glPopMatrix ();
-	}
-#endif
 }
 
 /*
@@ -3636,7 +3298,6 @@ r_refdef must be set before the first call
 */
 void R_RenderScene (void)
 {
-
 	int 		i;
 	float vecx_point_transform = 90 - r_refdef.fov_x * 0.5;
 	float vecy_point_transform = 90 - r_refdef.fov_y * 0.5;
@@ -3645,7 +3306,6 @@ void R_RenderScene (void)
 	int x, x2, y2, y, w, h;
 	float fovx, fovy; //johnfitz
 	int contents; //johnfitz
-	char specChar; //nzp
 
 	if (cl.maxclients > 1)
 		Cvar_Set ("r_fullbright", "0");

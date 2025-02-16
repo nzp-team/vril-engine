@@ -383,7 +383,7 @@ void QMB_AllocParticles (void)
 
 void QMB_InitParticles (void)
 {
-	int	i, j, ti, count = 0, particleimage;
+	int	i, count = 0, particleimage;
     float	max_s, max_t; //For ADD_PARTICLE_TEXTURE
 
 	particle_mode = pm_classic;
@@ -635,11 +635,10 @@ void QMB_InitParticles (void)
 __inline static void AddParticle (part_type_t type, vec3_t org, int count, float size, float time, col_t col, vec3_t dir)
 {
 	byte			*color;
-	int				i, j, k;
+	int				i, j;
 	float			tempSize; //stage;
 	particle_t		*p;
 	particle_type_t	*pt;
-    static unsigned long q3blood_texindex = 0;
 
 	if (!qmb_initialized)
 		Sys_Error ("QMB particle added without initialization");
@@ -877,7 +876,6 @@ __inline static void AddParticleTrail (part_type_t type, vec3_t start, vec3_t en
 	vec3_t		point, delta;
 	particle_t	*p;
 	particle_type_t	*pt;
-	static	float	rotangle = 0;
     count = 0;
 
 	if (!qmb_initialized)
@@ -1805,12 +1803,6 @@ void QMB_LetItRain(void)
 					continue;
 
 				//R00k let's make some thunder...
-				/*if (cl.time > cl.thundertime)
-				{
-					S_StartSound (-1, 0, cl_sfx_thunder, p->midpoint, 1, 1);
-					cl.thundertime = cl.time + (rand()% 60 + 1);
-				}*/
-				/*
 				point[0] = p->midpoint[0] + (rand() % 80 - 40);
 				point[1] = p->midpoint[1] + (rand() % 80 - 40);
 				point[2] = p->midpoint[2];

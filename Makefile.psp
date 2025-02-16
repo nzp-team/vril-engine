@@ -128,8 +128,7 @@ include $(PSPSDK)/lib/build.mak
 
 clean:
 	rm -rf build/
-	rm source/psp/*.o
-	rm source/*.o
+	find . -type f -name '*.o' -exec rm {} +
 
 install: EBOOT.PBP
 	mkdir -p build/psp/

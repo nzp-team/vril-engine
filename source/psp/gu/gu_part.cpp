@@ -129,16 +129,14 @@ float	timescale = 0.01;
 
 void R_Entity_Classic_Particles (entity_t *ent)
 {
-	int			count;
 	int			i;
 	particle2_t	*p;
 	float		angle;
-	float		sr, sp, sy, cr, cp, cy;
+	float		sp, sy, cp, cy;
 	vec3_t		forward;
 	float		dist;
 
 	dist = 64;
-	count = 50;
 
 if (!avelocities[0][0])
 {
@@ -156,8 +154,6 @@ avelocities[0][i] = (rand()&255) * 0.01;
 		sp = sinf(angle);
 		cp = cosf(angle);
 		angle = cl.time * avelocities[i][2];
-		sr = sinf(angle);
-		cr = cosf(angle);
 
 		forward[0] = cp*cy;
 		forward[1] = cp*sy;
@@ -215,49 +211,31 @@ void R_ClearParticles (void)
 
 void R_ReadPointFile_f (void)
 {
-	int	f;
+	FILE	*f;
 	vec3_t	org;
 	int		r;
 	int		c;
-	particle2_t	*p;
+	particle_t	*p;
 	char	name[MAX_OSPATH];
-
+	
 	sprintf (name,"maps/%s.pts", sv.name);
 
 	COM_FOpenFile (name, &f);
-	if (f < 0)
+	if (!f)
 	{
 		Con_Printf ("couldn't open %s\n", name);
 		return;
 	}
-
+	
 	Con_Printf ("Reading %s...\n", name);
 	c = 0;
 	for ( ;; )
 	{
-		// Read the line into a string.
-		char line[128];
-		unsigned int chars = 0; //fix
-		do
-		{
-			if (chars >= (sizeof(line) - 2))
-			{
-				Sys_Error("Line buffer overflow when reading point file");
-			}
-
-			if (Sys_FileRead(f, &line[chars++], 1) == 0)
-			{
-				break;
-			}
-		}
-		while (line[chars - 1] != '\n');
-		line[chars] = '\0';
-
-		r = sscanf (line, "%f %f %f\n", &org[0], &org[1], &org[2]);
+		r = fscanf (f,"%f %f %f\n", &org[0], &org[1], &org[2]);
 		if (r != 3)
 			break;
 		c++;
-
+		
 		if (!free_particles)
 		{
 			Con_Printf ("Not enough free particles\n");
@@ -267,15 +245,15 @@ void R_ReadPointFile_f (void)
 		free_particles = p->next;
 		p->next = active_particles;
 		active_particles = p;
-
+		
 		p->die = 99999;
-		p->color = (-c)&15;
+		p->color[0] = p->color[1] = p->color[2] = (-c)&15;
 		p->type = pt_static;
 		VectorCopy (vec3_origin, p->vel);
 		VectorCopy (org, p->org);
 	}
 
-	Sys_FileClose(f);
+	fclose (f);
 	Con_Printf ("%i points read\n", c);
 }
 

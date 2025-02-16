@@ -152,8 +152,6 @@ void R_EntityParticles (entity_t *ent)
 		sp = sin(angle);
 		cp = cos(angle);
 		angle = cl.time * avelocities[i][2];
-		sr = sin(angle);
-		cr = cos(angle);
 	
 		forward[0] = cp*cy;
 		forward[1] = cp*sy;

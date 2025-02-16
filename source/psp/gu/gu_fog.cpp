@@ -393,7 +393,7 @@ called before drawing stuff that should be fogged
 */
 void Fog_EnableGFog (void)
 {
-	if (!Fog_GetStart() == 0 || !Fog_GetEnd() <= 0)
+	if (!(Fog_GetStart() == 0) || !(Fog_GetEnd() <= 0))
 		sceGuEnable(GU_FOG);
 }
 
@@ -406,7 +406,7 @@ called after drawing stuff that should be fogged
 */
 void Fog_DisableGFog (void)
 {
-	if (!Fog_GetStart() == 0 || !Fog_GetEnd() <= 0)
+	if (!(Fog_GetStart() == 0) || !(Fog_GetEnd() <= 0))
 		sceGuDisable(GU_FOG);
 }
 
