@@ -129,7 +129,7 @@ void R_EntityParticles (entity_t *ent)
 	int			i;
 	particle_t	*p;
 	float		angle;
-	float		sr, sp, sy, cr, cp, cy;
+	float		sp, sy, cp, cy;
 	vec3_t		forward;
 	float		dist;
 	
