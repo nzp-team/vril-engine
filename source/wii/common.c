@@ -715,12 +715,12 @@ char *MSG_ReadString (void)
 
 float MSG_ReadCoord (void)
 {
-	return MSG_ReadShort() * (1.0/8);
+	return MSG_ReadShort() * (1.0f/8);
 }
 
 float MSG_ReadAngle (void)
 {
-	return MSG_ReadChar() * (360.0/256);
+	return MSG_ReadChar() * (360.0f/256);
 }
 
 
@@ -756,9 +756,6 @@ void *SZ_GetSpace (sizebuf_t *buf, int length)
 	
 	if (buf->cursize + length > buf->maxsize)
 	{
-
-		Con_Printf("buf->cursize: %d, length: %d, buf->maxsize: %d\n", buf->cursize, length, buf->maxsize);
-
 		if (!buf->allowoverflow)
 			Sys_Error ("SZ_GetSpace: overflow without allowoverflow set");
 		
@@ -1282,7 +1279,7 @@ The filename will be prefixed by the current game directory
 */
 void COM_WriteFile (char *filename, void *data, int len)
 {
-	int             handle;
+	int     handle;
 	char    name[MAX_OSPATH];
 	
 	snprintf(name, MAX_OSPATH + 1, "%s/%s", com_gamedir, filename);
@@ -1367,11 +1364,11 @@ Sets com_filesize and one of handle or file
 int COM_FindFile (char *filename, int *handle, FILE **file)
 {
 	searchpath_t    *search;
-    char            netpath[128];
-	char            cachepath[MAX_OSPATH * 2];
+	char            netpath[128];
+	char            cachepath[MAX_OSPATH*2];
 	pack_t          *pak;
-	int                     i;
-	int                     findtime, cachetime;
+	int             i;
+	int             findtime, cachetime;
 
 	if (file && handle)
 		Sys_Error ("COM_FindFile: both handle and file set");
@@ -1406,17 +1403,16 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 					}
 					else
 					{       // open a new file on the pakfile
-						*file = fopen (pak->filename, "rb");
-						if (*file)
-							fseek (*file, pak->files[i].filepos, SEEK_SET);
+						Sys_FileOpenRead(pak->filename, (int *)file);
+						if ((*file) >= 0)
+							Sys_FileSeek((int)file, pak->files[i].filepos);
 					}
 					com_filesize = pak->files[i].filelen;
 					return com_filesize;
 				}
 		}
 		else
-		{               
-			// check a file in the directory tree
+		{       
 			snprintf (netpath, MAX_OSPATH * 2, "%s/%s", search->filename, filename);
 			
 			findtime = Sys_FileTime (netpath);
@@ -1427,7 +1423,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 			if (!com_cachedir[0])
 				strcpy (cachepath, netpath);
 			else
-			{	
+			{
 				snprintf(cachepath, MAX_OSPATH * 2, "%s%s", com_cachedir, netpath);
 
 				cachetime = Sys_FileTime (cachepath);
@@ -1437,14 +1433,14 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 				strcpy (netpath, cachepath);
 			}	
 
-			Sys_Printf ("FindFile: %s\n",netpath);
+			//Sys_Printf ("FindFile: %s\n",netpath);
 			com_filesize = Sys_FileOpenRead (netpath, &i);
 			if (handle)
 				*handle = i;
 			else
 			{
 				Sys_FileClose (i);
-				*file = fopen (netpath, "rb");
+				Sys_FileOpenRead(netpath, (int *)file);
 			}
 			return com_filesize;
 		}
@@ -1456,7 +1452,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 	if (handle)
 		*handle = -1;
 	else
-		*file = NULL;
+		*file = (FILE *)-1;
 	com_filesize = -1;
 	return -1;
 }
@@ -1480,7 +1476,7 @@ int COM_OpenFile (char *filename, int *handle)
 ===========
 COM_FOpenFile
 
-If the requested file is inside a packfile, a new FILE * will be opened
+If the requested file is inside a packfile, a new file will be opened
 into the file.
 ===========
 */
@@ -1551,6 +1547,10 @@ byte *COM_LoadFile (char *path, int usehunk)
 		else
 			buf = loadbuf;
 	}
+	else if (usehunk == 5)
+	{
+		buf = malloc(len+1);
+	}
 	else
 		Sys_Error ("COM_LoadFile: bad usehunk");
 
@@ -1616,7 +1616,7 @@ pack_t *COM_LoadPackFile (char *packfile)
 
 	if (Sys_FileOpenRead (packfile, &packhandle) == -1)
 	{
-//              Con_Printf ("Couldn't open %s\n", packfile);
+              //Con_Printf ("Couldn't open %s\n", packfile);
 		return NULL;
 	}
 	Sys_FileRead (packhandle, (void *)&header, sizeof(header));
@@ -1640,6 +1640,7 @@ pack_t *COM_LoadPackFile (char *packfile)
 	Sys_FileRead (packhandle, (void *)info, header.dirlen);
 
 // crc the directory to check for modifications
+
 	CRC_Init (&crc);
 	for (i=0 ; i<header.dirlen ; i++)
 		CRC_ProcessByte (&crc, ((byte *)info)[i]);
@@ -1675,10 +1676,10 @@ then loads and adds pak1.pak pak2.pak ...
 */
 void COM_AddGameDirectory (char *dir)
 {
-	int                             i;
+	//int             i;
 	searchpath_t    *search;
-	pack_t                  *pak;
-	char                    pakfile[MAX_OSPATH];
+	//pack_t        *pak;
+	//char          pakfile[MAX_OSPATH];
 
 	strcpy (com_gamedir, dir);
 
@@ -1693,6 +1694,7 @@ void COM_AddGameDirectory (char *dir)
 //
 // add any pak files in the format pak0.pak pak1.pak, ...
 //
+/*
 	for (i=0 ; ; i++)
 	{
 		sprintf (pakfile, "%s/pak%i.pak", dir, i);
@@ -1704,7 +1706,7 @@ void COM_AddGameDirectory (char *dir)
 		search->next = com_searchpaths;
 		com_searchpaths = search;               
 	}
-
+*/
 //
 // add the contents of the parms.txt file to the end of the command line
 //
@@ -1759,7 +1761,7 @@ void COM_InitFilesystem (void)
 		com_cachedir[0] = 0;
 
 //
-// start up with GAMENAME by default (id1)
+// start up with GAMENAME by default (nzp)
 //
 	COM_AddGameDirectory (va("%s/"GAMENAME, basedir) );
 
@@ -1810,11 +1812,10 @@ void COM_InitFilesystem (void)
 	if (COM_CheckParm ("-proghack"))
 		proghack = true;
 }
-
 //Diabolickal HLBSP
 void Q_strncpyz (char *dest, char *src, size_t size)
 {
-   strncpy (dest, src, size - 1);
-   dest[size-1] = 0;
+	strncpy (dest, src, size - 1);
+	dest[size-1] = 0;
 }
 //Diabolickal End

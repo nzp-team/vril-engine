@@ -19,25 +19,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // comndef.h  -- general definitions
 
-
-#ifndef min
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#endif
-#ifndef max
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#endif
-
-#define bound(a, b, c) ((a) >= (c) ? (a) : (b) < (a) ? (a) : (b) > (c) ? (c) : (b))
-
 #if !defined BYTE_DEFINED
 typedef unsigned char 		byte;
 #define BYTE_DEFINED 1
 #endif
 
-#undef true
-#undef false
+// libogc
+#include <gctypes.h>
+typedef bool qboolean;
 
-typedef enum {false, true}	qboolean;
 
 //============================================================================
 
@@ -93,6 +83,8 @@ void InsertLinkAfter (link_t *l, link_t *after);
 #define Q_MINLONG ((int)0x80000000)
 #define Q_MINFLOAT ((int)0x7fffffff)
 
+#define bound(a, b, c) ((a) >= (c) ? (a) : (b) < (a) ? (a) : (b) > (c) ? (c) : (b))
+
 //============================================================================
 
 extern	qboolean		bigendien;
@@ -100,10 +92,9 @@ extern	qboolean		bigendien;
 extern	short	(*BigShort) (short l);
 extern	short	(*LittleShort) (short l);
 extern	int	(*BigLong) (int l);
-
-#define LittleLong(l) l
-#define LittleShort(l) l
-#define LittleFloat(l) l
+extern	int	(*LittleLong) (int l);
+extern	float	(*BigFloat) (float l);
+extern	float	(*LittleFloat) (float l);
 
 //============================================================================
 
@@ -196,3 +187,7 @@ extern	struct cvar_s	registered;
 
 extern qboolean		standard_quake, rogue, hipnotic;
 void Q_strncpyz (char *dest, char *src, size_t size);        //Diabolickal HLBSP
+
+short ShortSwap (short l);
+int LongSwap (int l);
+float FloatSwap (float f);

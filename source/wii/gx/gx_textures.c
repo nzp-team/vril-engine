@@ -1042,7 +1042,7 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 
 int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap, qboolean keep)
 {
-	int f = 0;
+	int	f;
 	int texnum;
 	char basename[128], name[132];
 	char *texname = malloc(32);
@@ -1064,12 +1064,12 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	
 	int len = strlen(basename);
 	texname = basename + len - 20;
-	
+
 	//Try PCX	
 	snprintf (name, 132, "%s.pcx", basename);
-	Sys_FileOpenRead(name, &f);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0) {
-		Sys_FileClose(f);
+		COM_CloseFile (f);
 		data = LoadPCX (name, matchwidth, matchheight);
 		if (data == 0) {
 			Con_Printf("PCX: can't load %s\n", name);	
@@ -1081,9 +1081,9 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	}	
 	//Try TGA
 	sprintf (name, "%s.tga", basename);
-	Sys_FileOpenRead(name, &f);
+	COM_FOpenFile (name,(FILE **) &f);
 	if (f > 0){
-		Sys_FileClose(f);
+		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 4);	
 		if (data == 0) {
 			Con_Printf("TGA: can't load %s\n", name);	
@@ -1095,9 +1095,9 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	}
 	//Try PNG
 	sprintf (name, "%s.png", basename);
-	Sys_FileOpenRead(name, &f);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0){
-		Sys_FileClose(f);
+		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
 		if (data == 0) {
 			Con_Printf("PNG: can't load %s\n", name);	
@@ -1109,9 +1109,9 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	}
 	//Try JPEG
 	sprintf (name, "%s.jpeg", basename);
-	Sys_FileOpenRead(name, &f);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0){
-		Sys_FileClose(f);
+		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
 		if (data == 0) {
 			Con_Printf("JPEG: can't load %s\n", name);	
@@ -1122,9 +1122,9 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 		return texnum;
 	}
 	sprintf (name, "%s.jpg", basename);
-	Sys_FileOpenRead(name, &f);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0){
-		Sys_FileClose(f);
+		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
 		if (data == 0) {
 			Con_Printf("JPG: can't load %s\n", name);	
@@ -1143,7 +1143,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 {
 	int	f = 0;
 	int texnum;
-	char basename[128], name[132];
+	char basename[128], name[128];
 	char *texname = malloc(32);
 	
 	int image_size = 128 * 128;
@@ -1172,9 +1172,9 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	texname = basename + len - 20;
 	
 	snprintf(name, 132, "%s.pcx", basename);
-	Sys_FileOpenRead(name, &f);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0) {
-		Sys_FileClose(f);
+		COM_CloseFile (f);
 		data = LoadPCX (name, matchwidth, matchheight);	
 		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, true, true, 4);		
 		free(data);
@@ -1182,9 +1182,9 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	}
 	//Try TGA
 	sprintf (name, "%s.tga", basename);
-	Sys_FileOpenRead(name, &f);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0){
-		Sys_FileClose(f);
+		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 4);	
 		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, false, true, 4);		
 		free(data);
@@ -1192,9 +1192,9 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	}
 	//Try PNG
 	sprintf (name, "%s.png", basename);
-	Sys_FileOpenRead(name, &f);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0){
-		Sys_FileClose(f);
+		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
 		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, false, true, 4);		
 		free(data);
@@ -1202,18 +1202,18 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	}
 	//Try JPEG
 	sprintf (name, "%s.jpeg", basename);
-	Sys_FileOpenRead(name, &f);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0){
-		Sys_FileClose(f);
+		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
 		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, false, true, 4);
 		free(data);
 		return texnum;
 	}
 	sprintf (name, "%s.jpg", basename);
-	Sys_FileOpenRead(name, &f);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0){
-		Sys_FileClose(f);
+		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
 		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, false, true, 4);		
 		free(data);
