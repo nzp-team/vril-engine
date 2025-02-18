@@ -20,9 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int CDAudio_Init(void);
 void CDAudio_Play(byte track, qboolean looping);
-#ifndef _3DS
+#ifndef __3DS__
 void CDAudio_PlayFromString(char* track_name, qboolean looping);
-#endif // _3DS
+#endif // __3DS__
 void CDAudio_Stop(void);
 void CDAudio_Pause(void);
 void CDAudio_Resume(void);

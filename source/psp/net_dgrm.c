@@ -443,9 +443,6 @@ static void Test_Poll(void)
 	int		len;
 	char	name[32];
 	char	address[64];
-	int		points;
-	int		connectTime;
-	byte	playerNumber;
 
 	net_landriverlevel = testDriver;
 
@@ -470,10 +467,10 @@ static void Test_Poll(void)
 		if (MSG_ReadByte() != CCREP_PLAYER_INFO)
 			Sys_Error("Unexpected repsonse to Player Info request\n");
 
-		playerNumber = MSG_ReadByte();
+		MSG_ReadByte();
 		Q_strcpy(name, MSG_ReadString());
-		points = MSG_ReadLong();
-		connectTime = MSG_ReadLong();
+		MSG_ReadLong();
+		MSG_ReadLong();
 		Q_strcpy(address, MSG_ReadString());
 
 	}

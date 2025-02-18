@@ -1042,9 +1042,9 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 
 int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap, qboolean keep)
 {
-	int	f = 0;
+	int	f;
 	int texnum;
-	char basename[128], name[128];
+	char basename[128], name[132];
 	char *texname = malloc(32);
 	byte *data;
 	byte *c;
@@ -1064,10 +1064,10 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	
 	int len = strlen(basename);
 	texname = basename + len - 20;
-	
+
 	//Try PCX	
-	sprintf (name, "%s.pcx", basename);
-	COM_FOpenFile (name, &f);
+	snprintf (name, 132, "%s.pcx", basename);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0) {
 		COM_CloseFile (f);
 		data = LoadPCX (name, matchwidth, matchheight);
@@ -1081,7 +1081,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	}	
 	//Try TGA
 	sprintf (name, "%s.tga", basename);
-	COM_FOpenFile (name, &f);
+	COM_FOpenFile (name,(FILE **) &f);
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 4);	
@@ -1095,7 +1095,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	}
 	//Try PNG
 	sprintf (name, "%s.png", basename);
-	COM_FOpenFile (name, &f);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
@@ -1109,7 +1109,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	}
 	//Try JPEG
 	sprintf (name, "%s.jpeg", basename);
-	COM_FOpenFile (name, &f);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
@@ -1122,7 +1122,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 		return texnum;
 	}
 	sprintf (name, "%s.jpg", basename);
-	COM_FOpenFile (name, &f);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
@@ -1171,8 +1171,8 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	int len = strlen(basename);
 	texname = basename + len - 20;
 	
-	sprintf (name, "%s.pcx", basename);
-	COM_FOpenFile (name, &f);
+	snprintf(name, 132, "%s.pcx", basename);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0) {
 		COM_CloseFile (f);
 		data = LoadPCX (name, matchwidth, matchheight);	
@@ -1182,7 +1182,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	}
 	//Try TGA
 	sprintf (name, "%s.tga", basename);
-	COM_FOpenFile (name, &f);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 4);	
@@ -1192,7 +1192,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	}
 	//Try PNG
 	sprintf (name, "%s.png", basename);
-	COM_FOpenFile (name, &f);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
@@ -1202,7 +1202,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	}
 	//Try JPEG
 	sprintf (name, "%s.jpeg", basename);
-	COM_FOpenFile (name, &f);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
@@ -1211,7 +1211,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 		return texnum;
 	}
 	sprintf (name, "%s.jpg", basename);
-	COM_FOpenFile (name, &f);
+	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);

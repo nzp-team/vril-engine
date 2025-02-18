@@ -228,13 +228,12 @@ void IN_SwitchKeyboard(void)
 {
 	static SwkbdState swkbd;
 	static char console_buffer[64];
-	SwkbdButton button = SWKBD_BUTTON_NONE;
 
 	swkbdInit(&swkbd, SWKBD_TYPE_QWERTY, 2, -1);
 	swkbdSetInitialText(&swkbd, console_buffer);
 	swkbdSetHintText(&swkbd, "Enter Quake console command");
 	swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Send", true);
-	button = swkbdInputText(&swkbd, console_buffer, sizeof(console_buffer));
+	swkbdInputText(&swkbd, console_buffer, sizeof(console_buffer));
 
 	Cbuf_AddText(va("%s\n", console_buffer));
 }

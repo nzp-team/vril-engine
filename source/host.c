@@ -869,9 +869,9 @@ Host_Init
 */
 #include "cl_slist.h"
 
-#ifdef _3DS
+#ifdef __3DS__
 extern bool new3ds_flag;
-#endif // _3DS
+#endif // __3DS__
 
 void M_Start_Menu_f (void);
 void Host_Init (quakeparms_t *parms)
@@ -918,7 +918,7 @@ void Host_Init (quakeparms_t *parms)
 	}
 
 	Con_Printf ("VRAM Size: %i bytes\n", sceGeEdramGetSize());
-#elif _3DS
+#elif __3DS__
 	Con_Printf ("3DS NZP v%4.1f (3DSX: "__TIME__" "__DATE__")\n", (float)(VERSION));
 
 	if (new3ds_flag)
@@ -927,7 +927,7 @@ void Host_Init (quakeparms_t *parms)
 		Con_Printf ("3DS Model: Nintendo 3DS\n");
 #elif __WII__
 	Con_Printf ("WII NZP v%4.1f (DOL: "__TIME__" "__DATE__")\n", (float)(VERSION));
-#endif // __PSP__, _3DS
+#endif // __PSP__, __3DS__
 
 	Con_Printf ("%4.1f megabyte Quake hunk \n",parms->memsize/ (1024*1024.0));
 

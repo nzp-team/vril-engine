@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define GL_COLOR_INDEX8_EXT     0x80E5
 
+#pragma GCC diagnostic ignored "-Wstringop-overflow="
+
 extern unsigned char d_15to8table[65536];
 
 cvar_t		gl_nobind = {"gl_nobind", "0"};
@@ -813,8 +815,6 @@ void Draw_LoadingFill(void)
 	int max_step   	= 350;
     int x          	= (vid.width  / 2) - (max_step / 2);
     int y          	= vid.height - (size/ 2) - 25;
-	int l;
-	char str[64];
 	char* text;
 
 
@@ -1230,8 +1230,6 @@ void Draw_FadeScreen (void)
 	glColor4f (1,1,1,1);
 	glEnable (GL_TEXTURE_2D);
 	glDisable (GL_BLEND);
-
-	Sbar_Changed();
 }
 
 //=============================================================================

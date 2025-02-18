@@ -48,7 +48,7 @@ qpic_t 		*b_circle;
 qpic_t 		*b_square;
 qpic_t 		*b_cross;
 qpic_t 		*b_triangle;
-#elif _3DS
+#elif __3DS__
 qpic_t 		*b_abutton;
 qpic_t 		*b_bbutton;
 qpic_t 		*b_xbutton;
@@ -63,7 +63,7 @@ qpic_t 		*b_plus;
 qpic_t 		*b_one;
 qpic_t 		*b_two;
 qpic_t 		*b_home;
-#endif // __PSP__, _3DS, __WII__
+#endif // __PSP__, __3DS__, __WII__
 
 qpic_t 		*b_left;
 qpic_t 		*b_right;
@@ -74,10 +74,10 @@ qpic_t 		*b_rt;
 
 #ifdef __PSP__
 qpic_t 		*b_home;
-#elif _3DS
+#elif __3DS__
 qpic_t 		*b_zlt;
 qpic_t 		*b_zrt;
-#endif // __PSP__, _3DS
+#endif // __PSP__, __3DS__
 
 qpic_t 		*b_start;
 qpic_t 		*b_select;
@@ -151,11 +151,11 @@ void HUD_DictateScaleFactor(void)
 	hud_scale_factor = 1.5f;
 #elif __PSP__
 	hud_scale_factor = 1.0f;
-#elif _3DS
+#elif __3DS__
 	hud_scale_factor = 1.0f;
 #else
 	hud_scale_factor = 1.0f;
-#endif // __WII__, __PSP__, _3DS
+#endif // __WII__, __PSP__, __3DS__
 }
 
 /*
@@ -209,7 +209,7 @@ void HUD_Init (void)
 	b_start = Draw_CachePic ("gfx/butticons/start");
 	b_select = Draw_CachePic ("gfx/butticons/select");
 	b_home = Draw_CachePic ("gfx/butticons/home");
-#elif _3DS
+#elif __3DS__
 	b_abutton = Draw_CachePic ("gfx/butticons/facebt_a");
 	b_bbutton = Draw_CachePic ("gfx/butticons/facebt_b");
 	b_ybutton = Draw_CachePic ("gfx/butticons/facebt_y");
@@ -238,7 +238,7 @@ void HUD_Init (void)
 	b_home = Draw_CachePic ("gfx/butticons/homebutton");
 	b_one = Draw_CachePic ("gfx/butticons/1button");
 	b_two = Draw_CachePic ("gfx/butticons/2button");
-#endif // __PSP__, _3DS, __WII__
+#endif // __PSP__, __3DS__, __WII__
 
     fx_blood_lu = Draw_CachePic ("gfx/hud/blood");
 
@@ -490,7 +490,6 @@ void HUD_Points (void)
 	int				i, k, l;
 	int				x, y, f, xplus;
 	scoreboard_t	*s;
-	char str[12];
 
 // scores
 	HUD_Sortpoints ();
@@ -1561,8 +1560,6 @@ void HUD_AmmoString (void)
 {
 	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG])
 	{
-		int x;
-
 		if (0 < cl.stats[STAT_AMMO] && cl.stats[STAT_CURRENTMAG] >= 0) {
 			Draw_ColoredStringCentered(vid.height - (100 * hud_scale_factor), "Reload", 255, 255, 255, 255, hud_scale_factor);
 		} else if (0 < cl.stats[STAT_CURRENTMAG]) {
@@ -1611,12 +1608,10 @@ HUD_Weapon
 void HUD_Weapon (void)
 {
 	char str[32];
-	float l;
 	x_value = vid.width;
 	y_value = vid.height - (40 * hud_scale_factor);
 
 	strcpy(str, pr_strings+sv_player->v.Weapon_Name);
-	l = strlen(str);
 
 	x_value = (vid.width - (55 * hud_scale_factor)) - getTextWidth(str, hud_scale_factor);
 	Draw_ColoredString (x_value, y_value, str, 255, 255, 255, 255, hud_scale_factor);
@@ -1646,7 +1641,7 @@ void HUD_BettyPrompt (void)
 	Draw_Pic (x + getTextWidth("Double-tap  ", 1) - 4, 60, GetButtonIcon("+use"));
 	Draw_Pic (x + getTextWidth("Double-tap     then press   ", 1) - 4, 60, GetButtonIcon("+grenade"));
 
-#elif _3DS
+#elif __3DS__
 
 	char str[32];
 	char str2[32];
@@ -1674,7 +1669,7 @@ void HUD_BettyPrompt (void)
 	Draw_ColoredStringCentered((90 * hud_scale_factor), str2, 255, 255, 255, 255, hud_scale_factor);
 	Draw_Pic (200 * hud_scale_factor + 14, 68 * hud_scale_factor, b_minus);
 
-#endif // __PSP__, _3DS, __WII__
+#endif // __PSP__, __3DS__, __WII__
 }
 
 /*

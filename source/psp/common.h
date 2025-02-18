@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
 
 See the GNU General Public License for more details.
 
@@ -85,21 +85,17 @@ void InsertLinkAfter (link_t *l, link_t *after);
 #define NULL ((void *)0)
 #endif
 
-#define Q_MAXCHAR  ((char)0x7f)
+#define Q_MAXCHAR ((char)0x7f)
 #define Q_MAXSHORT ((short)0x7fff)
-#define Q_MAXINT   ((int)0x7fffffff)
-#define Q_MAXLONG  ((int)0x7fffffff)
+#define Q_MAXINT	((int)0x7fffffff)
+#define Q_MAXLONG ((int)0x7fffffff)
 #define Q_MAXFLOAT ((int)0x7fffffff)
 
-#define Q_MINCHAR  ((char)0x80)
+#define Q_MINCHAR ((char)0x80)
 #define Q_MINSHORT ((short)0x8000)
-#define Q_MININT   ((int)0x80000000)
-#define Q_MINLONG  ((int)0x80000000)
+#define Q_MININT 	((int)0x80000000)
+#define Q_MINLONG ((int)0x80000000)
 #define Q_MINFLOAT ((int)0x7fffffff)
-
-
-
-#define	MAX_TOKEN_CHARS		128		// max length of an individual token
 
 //============================================================================
 
@@ -139,8 +135,7 @@ float MSG_ReadCoord (void);
 float MSG_ReadAngle (void);
 
 //============================================================================
-void Q_strncpyz (char *dest, char *src, size_t size);
-void Q_snprintfz (char *dest, size_t size, char *fmt, ...);
+
 void Q_memset (void *dest, int fill, int count);
 void Q_memcpy (void *dest, void *src, int count);
 int Q_memcmp (void *m1, void *m2, int count);
@@ -149,17 +144,20 @@ void Q_strncpy (char *dest, char *src, int count);
 int Q_strlen (char *str);
 char *Q_strrchr (char *s, char c);
 void Q_strcat (char *dest, char *src);
-int Q_strncmp (char *s1, char *s2, int count);
 int Q_strcasecmp (char *s1, char *s2);
 int Q_strncasecmp (char *s1, char *s2, int n);
 int	Q_atoi (char *str);
 float Q_atof (char *str);
+int q_snprintf (char *str, size_t size, const char *format, ...);
+int q_vsnprintf(char *str, size_t size, const char *format, va_list args);
+
+//============================================================================
 
 extern	char		com_token[1024];
 extern	qboolean	com_eof;
 
 char *COM_Parse (char *data);
-char *COM_ParseQ2 (char **data_p);
+
 
 extern	int		com_argc;
 extern	char	**com_argv;
@@ -169,14 +167,17 @@ void COM_Init (char *path);
 void COM_InitArgv (int argc, char **argv);
 
 char *COM_SkipPath (char *pathname);
-char *COM_SkipPathWritable (char *pathname);
 void COM_StripExtension (char *in, char *out);
 void COM_FileBase (char *in, char *out);
 void COM_DefaultExtension (char *path, char *extension);
+char *COM_FileExtension (char *in);
 
 char	*va(char *format, ...);
 char *CopyString (char *in);
 // does a varargs printf into a temp buffer
+
+
+//============================================================================
 
 extern int com_filesize;
 struct cache_user_s;
@@ -185,19 +186,19 @@ extern	char	com_gamedir[MAX_OSPATH];
 
 void COM_WriteFile (char *filename, void *data, int len);
 int COM_OpenFile (char *filename, int *hndl);
-int COM_FOpenFile (char *filename, int *file);
+int COM_FOpenFile (char *filename, FILE **file);
 void COM_CloseFile (int h);
-void    COM_CreatePath (char *path);
-char *COM_FileExtension (char *in);
+void COM_CreatePath(char* path);
+byte *COM_LoadFile(char* path, int usehunk);
+
 byte *COM_LoadStackFile (char *path, void *buffer, int bufsize);
 byte *COM_LoadTempFile (char *path);
 byte *COM_LoadHunkFile (char *path);
-byte *COM_LoadFile (char *path, int usehunk);
 void COM_LoadCacheFile (char *path, struct cache_user_s *cu);
-//============================================================================
-qboolean FS_FindFile (char *filename);
-int      FS_FOpenFile (char *filename, FILE **file);
-extern	char	com_netpath[MAX_OSPATH];
-//============================================================================
 
-extern qboolean   user_maps;
+
+extern	struct cvar_s	registered;
+
+extern qboolean		standard_quake, rogue, hipnotic;
+void Q_strncpyz (char *dest, char *src, size_t size);        //Diabolickal HLBSP
+void Q_snprintfz (char *dest, size_t size, char *fmt, ...);

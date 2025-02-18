@@ -74,16 +74,16 @@ interface from being ambiguous.
 #define	CVAR_REGISTERED		(1U << 10)	// the var is added to the list of variables
 #define	CVAR_CALLBACK		(1U << 16)	// var has a callback
 
-
+struct cvar_s;
 typedef void (*cvarcallback_t) (struct cvar_s *);
 
 typedef struct cvar_s
 {
-	const char	*name;
-	const char	*string;
+	char	*name;
+	char	*string;
 	unsigned int	flags;
 	float		value;
-	const char	*default_string; //johnfitz -- remember defaults for reset function
+	char	*default_string; //johnfitz -- remember defaults for reset function
 	cvarcallback_t	callback;
 	struct cvar_s	*next;
 } cvar_t;
@@ -95,17 +95,16 @@ void	Cvar_RegisterVariable (cvar_t *variable);
 void Cvar_SetCallback (cvar_t *var, cvarcallback_t func);
 // set a callback function to the var
 
-void	Cvar_Set (const char *var_name, const char *value);
+void	Cvar_Set (const char *var_name, char *value);
 // equivelant to "<name> <variable>" typed at the console
 
 void	Cvar_SetValue (const char *var_name, const float value);
 // expands value to a string and calls Cvar_Set
 
-void	Cvar_SetROM (const char *var_name, const char *value);
 void	Cvar_SetValueROM (const char *var_name, const float value);
 // sets a CVAR_ROM variable from within the engine
 
-void Cvar_SetQuick (cvar_t *var, const char *value);
+void Cvar_SetQuick (cvar_t *var, char *value);
 void Cvar_SetValueQuick (cvar_t *var, const float value);
 // these two accept a cvar pointer instead of a var name,
 // but are otherwise identical to the "non-Quick" versions.
@@ -135,7 +134,7 @@ void	Cvar_UnlockAll (void);
 
 void	Cvar_Init (void);
 
-const char	*Cvar_CompleteVariable (const char *partial);
+char	*Cvar_CompleteVariable (char *partial);
 // attempts to match a partial variable name for command line completion
 // returns NULL if nothing fits
 

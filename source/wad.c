@@ -180,11 +180,11 @@ void WAD3_LoadTextureWadFile (char *filename) {
    int i, j, infotableofs, numlumps, lowmark;
    FILE *file = NULL;
 
-   if (COM_FOpenFile (va("textures/halflife/%s", filename), (int *)file) != -1)
+   if (COM_FOpenFile (va("textures/halflife/%s", filename), &file) != -1)
       goto loaded;
-   if (COM_FOpenFile (va("textures/%s", filename), (int *)file) != -1)
+   if (COM_FOpenFile (va("textures/%s", filename), &file) != -1)
       goto loaded;
-   if (COM_FOpenFile (filename, (int *)file) != -1)
+   if (COM_FOpenFile (filename, &file) != -1)
       goto loaded;
 
    Host_Error ("Couldn't load halflife wad \"%s\"\n", filename);
@@ -282,7 +282,7 @@ int WAD3_LoadTextureClut4(miptex_t *mt)
     }
 
     // Get pointers to WAD3 data and palette
-    const byte* wadData = ((byte*)mt) + mt->offsets[0];
+   byte* wadData = ((byte*)mt) + mt->offsets[0];
 	const byte* palette = ((byte*)mt) + mt->offsets[3] + (mt->width>>3)*(mt->height>>3) + 2;
 
 	return GL_LoadTexture8to4(mt->name, mt->width, mt->height, wadData, palette, 0);

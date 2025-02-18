@@ -329,7 +329,7 @@ void CL_AdjustAngles (void)
 	
 #ifdef __PSP__
 	cl_sensitivity = in_sensitivity.value;
-#elif _3DS
+#elif __3DS__
 	cl_sensitivity = sensitivity.value;
 #else
 	cl_sensitivity = 1.0f;
@@ -590,7 +590,10 @@ void CL_SendMove (usercmd_t *cmd)
 	buf.maxsize = 128;
 	buf.cursize = 0;
 	buf.data = data;
+
+#ifndef __WII__
 	int i;
+#endif // __WII__
 
 	cl.cmd = *cmd;
 

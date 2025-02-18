@@ -42,7 +42,7 @@ Cvar_List_f -- johnfitz
 void Cvar_List_f (void)
 {
 	cvar_t	*cvar;
-	const char 	*partial;
+	char 	*partial;
 	int		len, count;
 
 	if (Cmd_Argc() > 1)
@@ -348,7 +348,7 @@ const char *Cvar_VariableString (const char *var_name)
 Cvar_CompleteVariable
 ============
 */
-const char *Cvar_CompleteVariable (const char *partial)
+char *Cvar_CompleteVariable(char *partial)
 {
 	cvar_t	*cvar;
 	int	len;
@@ -383,7 +383,7 @@ void Cvar_Reset (const char *name)
 		Cvar_SetQuick (var, var->default_string);
 }
 
-void Cvar_SetQuick (cvar_t *var, const char *value)
+void Cvar_SetQuick (cvar_t *var, char *value)
 {
 	if (var->flags & (CVAR_ROM|CVAR_LOCKED))
 		return;
@@ -452,7 +452,7 @@ void Cvar_SetValueQuick (cvar_t *var, const float value)
 Cvar_Set
 ============
 */
-void Cvar_Set (const char *var_name, const char *value)
+void Cvar_Set (const char *var_name, char *value)
 {
 	cvar_t		*var;
 
@@ -488,22 +488,6 @@ void Cvar_SetValue (const char *var_name, const float value)
 	}
 
 	Cvar_Set (var_name, val);
-}
-
-/*
-============
-Cvar_SetROM
-============
-*/
-void Cvar_SetROM (const char *var_name, const char *value)
-{
-	cvar_t *var = Cvar_FindVar (var_name);
-	if (var)
-	{
-		var->flags &= ~CVAR_ROM;
-		Cvar_SetQuick (var, value);
-		var->flags |= CVAR_ROM;
-	}
 }
 
 /*

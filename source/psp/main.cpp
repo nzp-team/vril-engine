@@ -556,7 +556,7 @@ int user_main(SceSize argc, void* argp)
 	}
 	else
 	{
-		strncpy(gameDirectory,currentDirectory,sizeof(gameDirectory)-1);
+		strncpy(gameDirectory, currentDirectory, sizeof(gameDirectory));
 	}
 
 	/////
@@ -691,14 +691,14 @@ int user_main(SceSize argc, void* argp)
 void Sys_ReadCommandLineFile (char* netpath)
 {
 	int 	in;
-	int     remaining, count;
+	int     remaining;
 	char    buf[4096];
 	int     argc = 1;
 
 	remaining = Sys_FileOpenRead (netpath, &in);
 
 	if (in > 0 && remaining > 0) {
-		count = Sys_FileRead (in, buf, 4096);
+		Sys_FileRead (in, buf, 4096);
 		f_argv[0] = empty_string;
 
 		char* lpCmdLine = buf;

@@ -136,7 +136,7 @@ typedef struct
 	qboolean	demoplayback;
 	qboolean	timedemo;
 	int			forcetrack;			// -1 = use normal cd track
-	FILE		*demofile;
+	int			demofile;
 	int			td_lastframe;		// to meter out one message a frame
 	int			td_startframe;		// host_framecount at start
 	float		td_starttime;		// realtime at second frame of timedemo
@@ -308,6 +308,7 @@ extern	beam_t			cl_beams[MAX_BEAMS];
 // cl_main
 //
 dlight_t *CL_AllocDlight (int key);
+void CL_NewDlight (int key, vec3_t origin, float radius, float time, int type);
 void	CL_DecayLights (void);
 
 void CL_Init (void);

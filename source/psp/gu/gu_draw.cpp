@@ -282,7 +282,7 @@ void GL_BindDET (int texture_index)
 	}
 
 	// Set the texture image.
-	const void* const texture_memory = texture.vram ? texture.vram : texture.ram;
+	void* texture_memory = texture.vram ? texture.vram : texture.ram;
 	sceGuTexImage(0, texture.width, texture.height, texture.width, texture_memory);
 
 
@@ -294,7 +294,7 @@ void GL_BindDET (int texture_index)
 
 		for (int i = 1; i <= texture.mipmaps; i++)
 		{
-			void* const texture_memory2 = ((byte*) texture_memory)+offset;
+			void* texture_memory2 = ((byte*) texture_memory)+offset;
             sceGuTexImage(i, texture.width/div, texture.height/div, texture.width/div, texture_memory2);
 			offset += size/(div*div);
 			div *=2;
@@ -545,9 +545,6 @@ Draw_Init
 */
 void Draw_Init (void)
 {
-	byte	*detail;
-	int i;
-
   	// load the console background and the charset
 	// by hand, because we need to write the version
 	// string into the background before turning
@@ -1030,7 +1027,7 @@ void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation)
 		else
 			trans[v] = translation[p];
 	}
-    int translate_texture = GL_LoadTexture ("Player_Trl", pic->width, pic->height, (const byte*)trans, qtrue, GU_LINEAR, 0);
+    int translate_texture = GL_LoadTexture ("Player_Trl", pic->width, pic->height, (byte*)trans, qtrue, GU_LINEAR, 0);
 
 	GL_Bind (translate_texture);
 
@@ -1093,8 +1090,6 @@ void Draw_LoadingFill(void)
 	int max_step   	= 350;
     int x          	= (vid.width  / 2) - (max_step / 2);
     int y          	= vid.height - (size/ 2) - 25;
-	int l;
-	char str[64];
 	char* text;
 
 
@@ -1191,7 +1186,7 @@ void Draw_Fill (int x, int y, int w, int h, int c)
 	sceGuEnable(GU_TEXTURE_2D);
 }
 
-byte *StringToRGB (const char *s)
+byte *StringToRGB (char *s)
 {
 	byte		*col;
 	static	byte	rgb[4];
@@ -1548,19 +1543,6 @@ void Draw_Crosshair (void)
 Draw_ColoredString
 ================
 */
-
-static int HexToInt(char c)
-{
-	if (isdigit(c))
-		return c - '0';
-	else if (c >= 'a' && c <= 'f')
-		return 10 + c - 'a';
-	else if (c >= 'A' && c <= 'F')
-		return 10 + c - 'A';
-	else
-		return -1;
-}
-
 // Creds to UP Team for scale code - cypress
 void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, float a, float scale)
 {
@@ -1896,7 +1878,7 @@ void swizzle(u8* out, const u8* in, unsigned int width, unsigned int height)
 swizzle_fast
 ================
 */
-void swizzle_fast(u8* out, const u8* in, unsigned int width, unsigned int height)
+void swizzle_fast(u8* out, u8* in, unsigned int width, unsigned int height)
 {
 	unsigned int blockx, blocky;
 	unsigned int j;
@@ -1907,15 +1889,15 @@ void swizzle_fast(u8* out, const u8* in, unsigned int width, unsigned int height
 	unsigned int src_pitch = (width-16)/4;
 	unsigned int src_row = width * 8;
 
-	const u8* ysrc = in;
+	u8* ysrc = in;
 	u32* dst = (u32*)out;
 
 	for (blocky = 0; blocky < height_blocks; ++blocky)
 	{
-		const u8* xsrc = ysrc;
+		u8* xsrc = ysrc;
 		for (blockx = 0; blockx < width_blocks; ++blockx)
 		{
-			const u32* src = (u32*)xsrc;
+			u32* src = (u32*)xsrc;
 			for (j = 0; j < 8; ++j)
 			{
 				*(dst++) = *(src++);
@@ -1956,7 +1938,7 @@ void GL_ResampleTexture(const byte *in, int inwidth, int inheight, unsigned char
 GL_Upload8
 ================
 */
-void GL_Upload8(int texture_index, const byte *data, int width, int height)
+void GL_Upload8(int texture_index, byte *data, int width, int height)
 {
 	if ((texture_index < 0) || (texture_index >= MAX_GLTEXTURES) || gltextures_used[texture_index] == false)
 	{
@@ -2040,7 +2022,7 @@ void GL_Upload8(int texture_index, const byte *data, int width, int height)
 GL_Upload8_A
 ================
 */
-void GL_Upload8_A(int texture_index, const byte *data, int width, int height)
+void GL_Upload8_A(int texture_index, byte *data, int width, int height)
 {
 	if ((texture_index < 0) || (texture_index >= MAX_GLTEXTURES) || gltextures_used[texture_index] == false)
 	{
@@ -2078,7 +2060,7 @@ void GL_Upload8_A(int texture_index, const byte *data, int width, int height)
 GL_Upload16_A
 ================
 */
-void GL_Upload16_A(int texture_index, const byte *data, int width, int height)
+void GL_Upload16_A(int texture_index, byte *data, int width, int height)
 {
 	if ((texture_index < 0) || (texture_index >= MAX_GLTEXTURES) || gltextures_used[texture_index] == false)
 	{
@@ -2172,7 +2154,7 @@ void TextureConvector(unsigned char *in32, unsigned char *out16, int w, int h, i
 GL_Upload16_B
 ================
 */
-void GL_Upload32_16(int texture_index, const byte *data, int width, int height)
+void GL_Upload32_16(int texture_index, byte *data, int width, int height)
 {
 	if ((texture_index < 0) || (texture_index >= MAX_GLTEXTURES) || gltextures_used[texture_index] == false)
 	{
@@ -2239,7 +2221,7 @@ void GL_Upload32_16(int texture_index, const byte *data, int width, int height)
 GL_Upload16
 ================
 */
-void GL_Upload16(int texture_index, const byte *data, int width, int height)
+void GL_Upload16(int texture_index, byte *data, int width, int height)
 {
 	if ((texture_index < 0) || (texture_index >= MAX_GLTEXTURES) || gltextures_used[texture_index] == false)
 	{
@@ -2291,7 +2273,7 @@ void GL_Upload16(int texture_index, const byte *data, int width, int height)
 GL_Upload24_A
 ===============
 */
-void GL_Upload24_A(int texture_index, const byte *data, int width, int height)
+void GL_Upload24_A(int texture_index, byte *data, int width, int height)
 {
 	if ((texture_index < 0) || (texture_index >= MAX_GLTEXTURES) || gltextures_used[texture_index] == false)
 	{
@@ -2339,7 +2321,7 @@ void GL_Upload24_A(int texture_index, const byte *data, int width, int height)
 GL_Upload24
 ================
 */
-void GL_Upload24(int texture_index, const byte *data, int width, int height)
+void GL_Upload24(int texture_index, byte *data, int width, int height)
 {
 	if ((texture_index < 0) || (texture_index >= MAX_GLTEXTURES) || gltextures_used[texture_index] == false)
 	{
@@ -2427,7 +2409,7 @@ void GL_Upload24(int texture_index, const byte *data, int width, int height)
 GL_Upload32_A
 ===============
 */
-void GL_Upload32_A(int texture_index, const byte *data, int width, int height)
+void GL_Upload32_A(int texture_index, byte *data, int width, int height)
 {
 	if ((texture_index < 0) || (texture_index >= MAX_GLTEXTURES) || gltextures_used[texture_index] == false)
 	{
@@ -2474,7 +2456,7 @@ void GL_Upload32_A(int texture_index, const byte *data, int width, int height)
 GL_Upload32
 ================
 */
-void GL_Upload32(int texture_index, const byte *data, int width, int height)
+void GL_Upload32(int texture_index, byte *data, int width, int height)
 {
 	if ((texture_index < 0) || (texture_index >= MAX_GLTEXTURES) || gltextures_used[texture_index] == false)
 	{
@@ -2565,7 +2547,7 @@ void GL_Upload32(int texture_index, const byte *data, int width, int height)
 GL_UploadDXT
 ================
 */
-void GL_UploadDXT(int texture_index, const byte *data, int width, int height)
+void GL_UploadDXT(int texture_index, byte *data, int width, int height)
 {
 	if ((texture_index < 0) || (texture_index >= MAX_GLTEXTURES) || gltextures_used[texture_index] == false)
 	{
@@ -2779,7 +2761,7 @@ int GL_GetTextureIndex() {
 GL_LoadTexture
 ================
 */
-int GL_LoadTexture (const char *identifier, int width, int height, const byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level)
+int GL_LoadTexture (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level)
 {
 	int texture_index = GL_TextureForName(identifier);
 	if (texture_index >= 0) return texture_index;
@@ -2873,7 +2855,7 @@ int GL_LoadTexture (const char *identifier, int width, int height, const byte *d
 GL_LoadPalTex
 ================
 */
-int GL_LoadPalTex (const char *identifier, int width, int height, const byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, byte *palette, int paltype)
+int GL_LoadPalTex (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, byte *palette, int paltype)
 {
 	int texture_index = GL_TextureForName(identifier);
 	if (texture_index >= 0) return texture_index;
@@ -3025,7 +3007,7 @@ int GL_LoadPalTex (const char *identifier, int width, int height, const byte *da
 GL_LoadTextureLM
 ================
 */
-int GL_LoadTextureLM (const char *identifier, int width, int height, const byte *data, int bpp, int filter, qboolean update, int forcopy)
+int GL_LoadTextureLM (const char *identifier, int width, int height, byte *data, int bpp, int filter, qboolean update, int forcopy)
 {
 	tex_scale_down = r_tex_scale_down.value == qtrue;
 	int texture_index = GL_TextureForName(identifier);
@@ -3217,7 +3199,7 @@ GL_LoadImages
 ================
 */
 int total_overbudget_texturemem;
-int GL_LoadImages (const char *identifier, int width, int height, const byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp)
+int GL_LoadImages (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp)
 {
 	int texture_index = GL_TextureForName(identifier);
 	if (texture_index >= 0) return texture_index;
@@ -3465,7 +3447,7 @@ void GL_Upload4(int texture_index, const byte *data, int width, int height)
 	sceKernelDcacheWritebackRange(texture.ram, buffer_size);
 }
 
-int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, const byte *data, int filter, qboolean swizzled)
+int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, byte *data, int filter, qboolean swizzled)
 {
 	int texture_index = GL_TextureForName(identifier);
 	if (texture_index >= 0) return texture_index;
@@ -3513,7 +3495,7 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 	return texture_index;	
 }
 
-int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int height, const byte *data, const byte *pal, int filter)
+int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int height, byte *data, const byte *pal, int filter)
 {
 	tex_scale_down = r_tex_scale_down.value == qtrue;
 	int new_width = width;

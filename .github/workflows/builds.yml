@@ -17,7 +17,7 @@ jobs:
           cd source/psp/libpspmath
           make && make install
           cd ../../../
-          make -f Makefile.psp install
+          make -f Makefile.psp install WERROR=1
       - name: Upload Artifact
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
@@ -43,7 +43,7 @@ jobs:
       - name: Build
         working-directory: ./
         run: |
-          make -f Makefile.ctr
+          make -f Makefile.ctr WERROR=1
       - name: Upload Artifact
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
@@ -68,7 +68,7 @@ jobs:
       - name: Build
         working-directory: ./
         run: |
-          make -f Makefile.rvl
+          make -f Makefile.rvl WERROR=1
   Unify-and-Release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest

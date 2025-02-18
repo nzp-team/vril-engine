@@ -1325,7 +1325,7 @@ void SCR_ScreenShot_f (void)
 	{ 
 		pcxname[5] = i/10 + '0'; 
 		pcxname[6] = i%10 + '0'; 
-		sprintf (checkname, "%s/%s", com_gamedir, pcxname);
+		snprintf (checkname, MAX_OSPATH + 1, "%s/%s", com_gamedir, pcxname);
 		if (Sys_FileTime(checkname) == -1)
 			break;	// file doesn't exist
 	} 

@@ -104,6 +104,8 @@ RECENT REVISION HISTORY:
 #ifndef STBI_INCLUDE_STB_IMAGE_H
 #define STBI_INCLUDE_STB_IMAGE_H
 
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+
 // DOCUMENTATION
 //
 // Limitations:
@@ -6961,6 +6963,8 @@ STBIDEF int stbi_info_from_callbacks(stbi_io_callbacks const *c, void *user, int
    stbi__start_callbacks(&s, (stbi_io_callbacks *) c, user);
    return stbi__info_main(&s,x,y,comp);
 }
+
+#pragma GCC diagnostic pop
 
 #endif // STB_IMAGE_IMPLEMENTATION
 
