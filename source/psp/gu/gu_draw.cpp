@@ -282,7 +282,7 @@ void GL_BindDET (int texture_index)
 	}
 
 	// Set the texture image.
-	void* texture_memory = texture.vram ? texture.vram : texture.ram;
+	const void* texture_memory = texture.vram ? texture.vram : texture.ram;
 	sceGuTexImage(0, texture.width, texture.height, texture.width, texture_memory);
 
 
@@ -294,7 +294,7 @@ void GL_BindDET (int texture_index)
 
 		for (int i = 1; i <= texture.mipmaps; i++)
 		{
-			void* texture_memory2 = ((byte*) texture_memory)+offset;
+			const void* texture_memory2 = ((const byte*) texture_memory)+offset;
             sceGuTexImage(i, texture.width/div, texture.height/div, texture.width/div, texture_memory2);
 			offset += size/(div*div);
 			div *=2;
