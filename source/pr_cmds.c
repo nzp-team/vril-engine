@@ -2532,6 +2532,10 @@ void PF_fgets (void)
 
 	count = Sys_FileRead(h, &buffer, 1);
 	
+	// protection against crashes
+	if(!count)
+		return;
+	
 	if (count && buffer == '\r')	// carriage return
 	{
 		count = Sys_FileRead(h, &buffer, 1);	// skip

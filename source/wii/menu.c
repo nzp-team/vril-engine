@@ -328,18 +328,6 @@ void M_DrawTextBox (int x, int y, int width, int lines)
 
 //=============================================================================
 
-void M_Load_Menu_Pics ()
-{
-	menu_bk 	= Draw_CachePic("gfx/menu/menu_background");
-	menu_ndu 	= Draw_CachePic("gfx/menu/nacht_der_untoten");
-	//menu_kn 	= Draw_CachePic("gfx/menu/kino_der_toten");
-	menu_wh 	= Draw_CachePic("gfx/menu/nzp_warehouse");
-	menu_wh2 	= Draw_CachePic("gfx/menu/nzp_warehouse2");
-	//menu_wn 	= Draw_CachePic("gfx/menu/wahnsinn");
-	menu_ch 	= Draw_CachePic("gfx/menu/christmas_special");
-	menu_custom = Draw_CachePic("gfx/menu/custom");
-}
-
 int m_save_demonum;
 
 /*
@@ -883,6 +871,13 @@ void M_SinglePlayer_Draw (void)
 {
 	int y = 60;
 	
+	// Precache all menu pics
+	menu_ndu = Draw_CachePic("gfx/menu/nacht_der_untoten");
+	menu_wh2 = Draw_CachePic("gfx/menu/nzp_warehouse2");
+	menu_wh = Draw_CachePic("gfx/menu/nzp_warehouse");
+	menu_ch = Draw_CachePic("gfx/menu/christmas_special");
+	menu_custom = Draw_CachePic("gfx/menu/custom");
+	
 	// Background
 	menu_bk = Draw_CachePic("gfx/menu/menu_background");
 	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
@@ -955,7 +950,6 @@ void M_SinglePlayer_Draw (void)
 	// Map description & pic
 	switch(m_singleplayer_cursor) {
 		case 0:
-			menu_ndu = Draw_CachePic("gfx/menu/nacht_der_untoten");
 			Draw_StretchPic(265, 55, menu_ndu, 320, 200);
 			Draw_ColoredString(235, 275, "Desolate bunker located on a Ge-", 255, 255, 255, 255, 1.5);
 			Draw_ColoredString(235, 290, "rman airfield, stranded after a", 255, 255, 255, 255, 1.5);
@@ -967,7 +961,6 @@ void M_SinglePlayer_Draw (void)
 			Draw_ColoredString(235, 380, "to the overwhelming onslaught?", 255, 255, 255, 255, 1.5);
 			break;
 		case 1:
-			menu_wh2 = Draw_CachePic("gfx/menu/nzp_warehouse2");
 			Draw_StretchPic(265, 55, menu_wh2, 320, 200);
 			Draw_ColoredString(235, 275, "Four nameless marines find them-", 255, 255, 255, 255, 1.5);
 			Draw_ColoredString(235, 290, "selves at a forsaken warehouse,", 255, 255, 255, 255, 1.5);
@@ -977,21 +970,18 @@ void M_SinglePlayer_Draw (void)
 			Draw_ColoredString(235, 350, "what you find..", 255, 255, 255, 255, 1.5);
 			break;
 		case 2:
-			menu_wh = Draw_CachePic("gfx/menu/nzp_warehouse");
 			Draw_StretchPic(265, 55, menu_wh, 320, 200);
 			Draw_ColoredString(235, 275, "Old Warehouse full of Zombies!", 255, 255, 255, 255, 1.5);
 			Draw_ColoredString(235, 290, "Fight your way to the Power", 255, 255, 255, 255, 1.5);
 			Draw_ColoredString(235, 305, "Switch through the Hordes!", 255, 255, 255, 255, 1.5);
 			break;
 		case 3:
-			menu_ch = Draw_CachePic("gfx/menu/christmas_special");
 			Draw_StretchPic(265, 55, menu_ch, 320, 200);
 			Draw_ColoredString(235, 275, "No Santa this year. Though we're", 255, 255, 255, 255, 1.5);
 			Draw_ColoredString(235, 290, "sure you will get presents from", 255, 255, 255, 255, 1.5);
 			Draw_ColoredString(235, 305, "the undead! Will you accept them?", 255, 255, 255, 255, 1.5);
 			break;
 		case 4:
-			menu_custom = Draw_CachePic("gfx/menu/custom");
 			Draw_StretchPic(265, 55, menu_custom, 320, 200);
 			Draw_ColoredString(235, 275, "Custom Maps made by Community", 255, 255, 255, 255, 1.5);
 			Draw_ColoredString(235, 290, "Members on GitHub and on the", 255, 255, 255, 255, 1.5);
@@ -1185,17 +1175,17 @@ void Map_Finder(void)
 				int value;
 
 				custom_maps[user_maps_num].map_name_pretty = malloc(sizeof(char)*32);
-				custom_maps[user_maps_num].map_desc_1 = malloc(sizeof(char)*40);
-				custom_maps[user_maps_num].map_desc_2 = malloc(sizeof(char)*40);
-				custom_maps[user_maps_num].map_desc_3 = malloc(sizeof(char)*40);
-				custom_maps[user_maps_num].map_desc_4 = malloc(sizeof(char)*40);
-				custom_maps[user_maps_num].map_desc_5 = malloc(sizeof(char)*40);
-				custom_maps[user_maps_num].map_desc_6 = malloc(sizeof(char)*40);
-				custom_maps[user_maps_num].map_desc_7 = malloc(sizeof(char)*40);
-				custom_maps[user_maps_num].map_desc_8 = malloc(sizeof(char)*40);
-				custom_maps[user_maps_num].map_author = malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_desc_1 = malloc(sizeof(char)*64);
+				custom_maps[user_maps_num].map_desc_2 = malloc(sizeof(char)*64);
+				custom_maps[user_maps_num].map_desc_3 = malloc(sizeof(char)*64);
+				custom_maps[user_maps_num].map_desc_4 = malloc(sizeof(char)*64);
+				custom_maps[user_maps_num].map_desc_5 = malloc(sizeof(char)*64);
+				custom_maps[user_maps_num].map_desc_6 = malloc(sizeof(char)*64);
+				custom_maps[user_maps_num].map_desc_7 = malloc(sizeof(char)*64);
+				custom_maps[user_maps_num].map_desc_8 = malloc(sizeof(char)*64);
+				custom_maps[user_maps_num].map_author = malloc(sizeof(char)*64);
 
-				char* buffer = (char*)calloc(sz+1, sizeof(char));
+				char* buffer = (char*)calloc(sz+1, 2);
 				fread(buffer, sz, 1, setting_file);
 
 				strtok(buffer, "\n");
@@ -1261,6 +1251,17 @@ void M_Menu_CustomMaps_Draw (void)
 		multiplier = (current_custom_map_page - 1) * 15;
 	else
 		multiplier = 0;
+	
+	// Precache all menu pics 
+	// Draw_CachePic will save the pic and return it when needed
+	for (int i = 0; i < 15; i++) {
+		if (custom_maps[i + multiplier].occupied == false)
+			continue;
+		
+		if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
+				menu_cuthum = Draw_CachePic(custom_maps[i + multiplier].map_thumbnail_path);
+			}
+	}
 
 	for (int i = 0; i < 15; i++) {
 		if (custom_maps[i + multiplier].occupied == false)
@@ -3441,7 +3442,6 @@ void M_Init (void)
 		game_build_date = "version.txt not found.";
 	}
 
-	//M_Load_Menu_Pics();
 	Map_Finder();
 }
 

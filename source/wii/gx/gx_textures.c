@@ -416,7 +416,7 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 	texbuffs = GX_GetTexBufferSize (scaled_width, scaled_height, GX_TF_RGB5A3, mipmap ? GX_TRUE : GX_FALSE, max_mip_level);
 	destination->data = __lwp_heap_allocate(&texture_heap, texbuffs/*scaled_width * scaled_height * 2*/);	
 	__lwp_heap_getinfo(&texture_heap, &info);
-	if (developer.value) {
+	if (developer.value == 4) {
 		Con_Printf ("tex buff size %d\n", texbuffs);
 		Con_Printf("Used Heap: %dM\n", info.used_size / (1024*1024));
 	}
@@ -622,15 +622,13 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 	for (i = 0;i < 256;i++) lhcsumtable[i] = i + 1;
 	for (i = 0;i < s;i++) lhcsum += (lhcsumtable[data[i] & 255]++);
 
-	// see if the texture is allready present
+	// see if the texture is already present
 	if (identifier[0])
 	{
 		for (i=0, glt=gltextures ; i<numgltextures ; i++, glt++)
 		{
 			if (glt->used)
 			{
-				// ELUTODO: causes problems if we compare to a texture with NO name?
-				// sBTODO we definitely have issues with identifier strings. will investigate later..
 				if (!strcmp (identifier, glt->identifier))
 				{
 					if (width != glt->width || height != glt->height)
@@ -671,7 +669,6 @@ reload:
 	
 	GL_Bind0 (glt->texnum);
 	
-	//Con_Printf ("tex %s\n", identifier);
 	if (bytesperpixel == 1) {
 		GL_Upload8 (glt, data, width, height, mipmap, alpha);
 	}
@@ -702,7 +699,6 @@ int GL_LoadLightmapTexture (char *identifier, int width, int height, byte *data)
 		Sys_Error ("GL_LoadLightmapTexture: numgltextures == MAX_GLTEXTURES\n");
 
 	glt = &gltextures[numgltextures];
-	//Con_Printf("gltexnum: %i", numgltextures);
 	strcpy (glt->identifier, identifier);
 	//Con_Printf("Identifier: %s", identifier);
 	glt->texnum = numgltextures;
@@ -823,12 +819,13 @@ void GL_ClearTextureCache(void)
 	{
 		if (gltextures[i].used)
 		{
+			
 			if (gltextures[i].keep)
 			{
 				mipmap = gltextures[i].mipmap;
 				
 				mip_level = 1;
-	
+		
 				if (mipmap) {
 					sw = gltextures[i].scaled_width;
 					sh = gltextures[i].scaled_height;
@@ -844,20 +841,20 @@ void GL_ClearTextureCache(void)
 				texbuffs = GX_GetTexBufferSize	(gltextures[i].scaled_width, gltextures[i].scaled_height, GX_TF_RGB5A3, mipmap ? GX_TRUE : GX_FALSE, mip_level);
 				
 				numgltextures = i + 1;
-
+		
 				newdata = __lwp_heap_allocate(&texture_heap, texbuffs/*gltextures[i].scaled_width * gltextures[i].scaled_height * sizeof(data)*/);
 				if (!newdata)
 					Sys_Error("GL_ClearTextureCache: Out of memory.");
-
+		
 				// ELUTODO Pseudo-defragmentation that helps a bit :)
 				memcpy(newdata, gltextures[i].data, texbuffs/*gltextures[i].scaled_width * gltextures[i].scaled_height * sizeof(data)*/);
-
+		
 				if (!__lwp_heap_free(&texture_heap, gltextures[i].data))
 					Sys_Error("GL_ClearTextureCache: Error freeing data.");
-
+		
 				gltextures[i].data = newdata;
 				GX_InitTexObj(&gltextures[i].gx_tex, gltextures[i].data, gltextures[i].scaled_width, gltextures[i].scaled_height, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, mipmap ? GX_TRUE : GX_FALSE);
-
+		
 				DCFlushRange(gltextures[i].data, texbuffs/*gltextures[i].scaled_width * gltextures[i].scaled_height * sizeof(data)*/);
 			}
 			else
@@ -879,6 +876,33 @@ void GL_ClearTextureCache(void)
 //
 //
 */
+
+
+/*
+============
+COM_FileBase
+============
+*/
+// create a unique identifier for each externally loaded texture based on filename
+void tex_filebase (char *in, char *out)
+{
+	char *s, *s2;
+	
+	s = in + strlen(in) - 1;
+	
+	for (s2 = s ; s2 != in && *s2 && *s2 != '/' ; s2--)
+	;
+	
+	if (s-s2 < 2)
+		strcpy (out,"bad input");
+	else
+	{
+		strncpy (out,s2+1, (s+1)-(s2));
+		out[s-s2] = 0;
+	}
+}
+
+
 int		image_width;
 int		image_height;
 /*
@@ -1009,7 +1033,7 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 #define STBI_ONLY_TGA
 #define STBI_ONLY_PIC
 #include "../../stb_image.h"
-byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int matchheight, int reverseRGBA)
+byte* loadimagepixels (char* filename, int matchwidth, int matchheight, int reverseRGBA)
 {
 	int bpp;
 	int width, height;
@@ -1027,7 +1051,7 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
     byte *image = stbi_load_from_memory(rgba_data, com_filesize, &width, &height, &bpp, 4);
 	
 	if(image == NULL) {
-		Con_Printf("%s\n", stbi_failure_reason());
+		Sys_Error(" stbi failure: %s\n", stbi_failure_reason());
 		return 0;
 	}
 	
@@ -1040,15 +1064,15 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 	return image;
 }
 
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap, qboolean keep)
+int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean keep)
 {
 	int	f;
 	int texnum;
-	char basename[128], name[132];
-	char *texname = malloc(32);
+	char basename[128], name[256];
+	char texname[32];
 	byte *data;
 	byte *c;
-	
+
 	if (complain == false)
 		COM_StripExtension(filename, basename); // strip the extension to allow TGA
 	else
@@ -1061,161 +1085,78 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 			*c = '+';
 		c++;
 	}
-	
-	int len = strlen(basename);
-	texname = basename + len - 20;
 
 	//Try PCX	
 	snprintf (name, 132, "%s.pcx", basename);
 	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0) {
 		COM_CloseFile (f);
+		tex_filebase (filename, texname);	
 		data = LoadPCX (name, matchwidth, matchheight);
 		if (data == 0) {
 			Con_Printf("PCX: can't load %s\n", name);	
 			return 0;
 		}
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, true, true, 4);		
+		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, true, true, 4);	
 		free(data);
 		return texnum;
 	}	
 	//Try TGA
-	sprintf (name, "%s.tga", basename);
+	snprintf (name, 132, "%s.tga", basename);
 	COM_FOpenFile (name,(FILE **) &f);
 	if (f > 0){
 		COM_CloseFile (f);
-		data = loadimagepixels (name, complain, matchwidth, matchheight, 4);	
+		tex_filebase (filename, texname);	
+		data = loadimagepixels (name, matchwidth, matchheight, 4);	
 		if (data == 0) {
 			Con_Printf("TGA: can't load %s\n", name);	
+			return 0;
+		}
+		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, true, keep, 4);	
+		free(data);
+		return texnum;
+	}
+	//Try PNG
+	snprintf (name, 132, "%s.png", basename);
+	COM_FOpenFile (name, (FILE **)&f);
+	if (f > 0){
+		COM_CloseFile (f);
+		tex_filebase (filename, texname);	
+		data = loadimagepixels (name, matchwidth, matchheight, 1);
+		if (data == 0) {
+			Con_Printf("PNG: can't load %s\n", name);	
 			return 0;
 		}
 		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, true, keep, 4);
 		free(data);
 		return texnum;
 	}
-	//Try PNG
-	sprintf (name, "%s.png", basename);
-	COM_FOpenFile (name, (FILE **)&f);
-	if (f > 0){
-		COM_CloseFile (f);
-		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
-		if (data == 0) {
-			Con_Printf("PNG: can't load %s\n", name);	
-			return 0;
-		}
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, true, keep, 4);	
-		free(data);
-		return texnum;
-	}
 	//Try JPEG
-	sprintf (name, "%s.jpeg", basename);
+	snprintf (name, 133, "%s.jpeg", basename);
 	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0){
 		COM_CloseFile (f);
-		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
+		tex_filebase (filename, texname);	
+		data = loadimagepixels (name, matchwidth, matchheight, 1);
 		if (data == 0) {
 			Con_Printf("JPEG: can't load %s\n", name);	
 			return 0;
 		}
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, true, keep, 4);	
+		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, true, keep, 4);
 		free(data);
 		return texnum;
 	}
-	sprintf (name, "%s.jpg", basename);
+	snprintf (name, 132, "%s.jpg", basename);
 	COM_FOpenFile (name, (FILE **)&f);
 	if (f > 0){
 		COM_CloseFile (f);
-		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
+		tex_filebase (filename, texname);	
+		data = loadimagepixels (name, matchwidth, matchheight, 1);
 		if (data == 0) {
 			Con_Printf("JPG: can't load %s\n", name);	
 			return 0;
 		}
 		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, true, keep, 4);
-		free(data);
-		return texnum;
-	}
-	return 0;
-}
-
-extern char	skybox_name[32];
-extern char skytexname[32];
-int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap)
-{
-	int	f = 0;
-	int texnum;
-	char basename[128], name[128];
-	char *texname = malloc(32);
-	
-	int image_size = 128 * 128;
-	
-	byte* data = (byte*)malloc(image_size * 4);
-	byte *c;
-	
-	if (complain == false)
-		COM_StripExtension(filename, basename); // strip the extension to allow TGA
-	else
-		strcpy(basename, filename);
-
-	c = (byte*)basename;
-	while (*c)
-	{
-		if (*c == '*')
-			*c = '+';
-		c++;
-	}
-	
-	if (strcmp(skybox_name, ""))
-		return 0;
-//Try PCX
-
-	int len = strlen(basename);
-	texname = basename + len - 20;
-	
-	snprintf(name, 132, "%s.pcx", basename);
-	COM_FOpenFile (name, (FILE **)&f);
-	if (f > 0) {
-		COM_CloseFile (f);
-		data = LoadPCX (name, matchwidth, matchheight);	
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, true, true, 4);		
-		free(data);
-		return texnum;
-	}
-	//Try TGA
-	sprintf (name, "%s.tga", basename);
-	COM_FOpenFile (name, (FILE **)&f);
-	if (f > 0){
-		COM_CloseFile (f);
-		data = loadimagepixels (name, complain, matchwidth, matchheight, 4);	
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, false, true, 4);		
-		free(data);
-		return texnum;
-	}
-	//Try PNG
-	sprintf (name, "%s.png", basename);
-	COM_FOpenFile (name, (FILE **)&f);
-	if (f > 0){
-		COM_CloseFile (f);
-		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, false, true, 4);		
-		free(data);
-		return texnum;
-	}
-	//Try JPEG
-	sprintf (name, "%s.jpeg", basename);
-	COM_FOpenFile (name, (FILE **)&f);
-	if (f > 0){
-		COM_CloseFile (f);
-		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, false, true, 4);
-		free(data);
-		return texnum;
-	}
-	sprintf (name, "%s.jpg", basename);
-	COM_FOpenFile (name, (FILE **)&f);
-	if (f > 0){
-		COM_CloseFile (f);
-		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, false, true, 4);		
 		free(data);
 		return texnum;
 	}

@@ -1214,10 +1214,7 @@ void SCR_SetUpToDrawConsole (void)
 	Con_CheckResize ();
 	
 	if (scr_drawloading)
-		return;		// never a console with loading plaque
-	
-	con_forcedup = !cl.worldmodel || cls.signon != SIGNONS;
-		
+		return;		// never a console with loading plaque	
 	
 // decide on the height of the console
 	if (!cl.worldmodel || cls.signon != SIGNONS)//blubs here, undid it actually

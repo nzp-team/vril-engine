@@ -100,13 +100,10 @@ qpic_t	*Draw_CachePic (char *path)
 	if (numcachepics == MAX_CACHED_PICS)
 		Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
 	
-	numcachepics++;
-	strcpy (pic->name, str);
 //
 // load the pic from disk
 //
-	//Con_Printf ("Attempting to load: %s\n", str);
-	index = loadtextureimage (str, 0, 0, true, false, true);
+	index = loadtextureimage (str, 0, 0, false, true);
 	if(index > 0)
 	{
 		pic->pic.width  = gltextures[index].width;
@@ -119,12 +116,13 @@ qpic_t	*Draw_CachePic (char *path)
 		gl->sh = 1;
 		gl->tl = 0;
 		gl->th = 1;
+		
+		numcachepics++;
+		strcpy (pic->name, str);
 
 		return &pic->pic;
 	}
 	
-	// sB NZ:P only uses lmps for console.
-	// seperated logic.
 	return NULL;
 }
 
@@ -144,8 +142,9 @@ qpic_t	*Draw_LMP (char *path)
 		if (!strcmp (path, pic->name))
 			return &pic->pic;
 
-	if (menu_numcachepics == MAX_CACHED_PICS)
+	if (menu_numcachepics == MAX_CACHED_PICS) {
 		Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
+	}
 	menu_numcachepics++;
 	strcpy (pic->name, path);
 
@@ -263,7 +262,7 @@ void Draw_Init (void)
 	// by hand, because we need to write the version
 	// string into the background before turning
 	// it into a texture
-	draw_chars = loadimagepixels ("gfx/charset.tga", false, 0, 0, 4);
+	draw_chars = loadimagepixels ("gfx/charset.tga", 0, 0, 4);
 
 	// now turn them into textures
 	char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, false, true, true, 4);
