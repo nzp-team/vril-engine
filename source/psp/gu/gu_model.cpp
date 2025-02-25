@@ -857,76 +857,6 @@ void Mod_LoadVisibility (lump_t *l)
 
 /*
 =================
-Mod_ParseWadsFromEntityLump
-For Half-life maps
-=================
-*/
-static void Mod_ParseWadsFromEntityLump(char *data)
-{
-	char *s, key[1024], value[1024];
-	int i, j, k;
-
-	if (!data || !(data = COM_Parse(data)))
-		return;
-
-	if (com_token[0] != '{')
-		return; // error
-
-	while (1)
-	{
-		if (!(data = COM_Parse(data)))
-			return; // error
-
-		if (com_token[0] == '}')
-			break; // end of worldspawn
-
-		Q_strncpyz(key, (com_token[0] == '_') ? com_token + 1 : com_token, sizeof(key));
-
-		for (s = key + strlen(key) - 1; s >= key && *s == ' '; s--)		// remove trailing spaces
-			*s = 0;
-
-		if (!(data = COM_Parse(data)))
-			return; // error
-
-		Q_strncpyz(value, com_token, sizeof(value));
-
-		if (!strcmp("MaxRange", key))
-            Cvar_Set("r_maxrange", value);
-
-		if (!strcmp("wad", key))
-		{
-			j = 0;
-			for (i = 0; i < strlen(value); i++)
-			{
-				if (value[i] != ';' && value[i] != '\\' && value[i] != '/' && value[i] != ':')
-					break;
-			}
-			if (!value[i])
-				continue;
-			for ( ; i < sizeof(value); i++)
-			{
-				// ignore path - the \\ check is for HalfLife... stupid windoze 'programmers'...
-				if (value[i] == '\\' || value[i] == '/' || value[i] == ':')
-				{
-					j = i + 1;
-				}
-                else if (value[i] == ';' || value[i] == 0)
-				{
-					k = value[i];
-					value[i] = 0;
-					if (value[j])
-						WAD3_LoadTextureWadFile (value + j);
-					j = i + 1;
-					if (!k)
-						break;
-				}
-			}
-		}
-    }
-}
-
-/*
-=================
 Mod_LoadEntities
 .ent file support by Crow_bar
 =================
@@ -962,9 +892,6 @@ void Mod_LoadEntities (lump_t *l)
 
 	loadmodel->entities = static_cast<char*>(Hunk_AllocName ( l->filelen, entfilename));
 	memcpy_vfpu(loadmodel->entities, mod_base + l->fileofs, l->filelen);
-
-	if (loadmodel->bspversion == HL_BSPVERSION)
-		Mod_ParseWadsFromEntityLump(loadmodel->entities);
 }
 
 
