@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // r_misc.c
 
-#include "../../quakedef.h"
+#include "../../nzportable_def.h"
 
 cvar_t		gl_cshiftpercent = {"gl_cshiftpercent", "100", false};
 

@@ -1,7 +1,7 @@
 
 extern"C"
 {
-#include "../../quakedef.h"
+#include "../../nzportable_def.h"
 }
 
 /*

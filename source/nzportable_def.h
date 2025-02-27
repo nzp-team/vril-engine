@@ -17,9 +17,25 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-// quakedef.h -- primary header for client
+// nzportable_def.h -- primary header for client
 
 //#define	GLTEST			// experimental stuff
+
+#ifndef PLATFORM_DIRECTORY
+#error "Unknown platform! (Please build with -DPLATFORM_DIRECTORY='your_platform')"
+#endif // PLATFORM_DIRECTORY
+
+#ifndef PLATFORM_RENDERER
+#error "Unknown renderer! (Please build with -DPLATFORM_RENDERER='your_renderer')"
+#endif // PLATFORM_RENDERER
+
+#define STRINGIFY_MACRO(x) STR(x)
+#define STR(x) #x
+#define EXPAND(x) x
+#define CONCAT(n1, n2, n3) STRINGIFY_MACRO(EXPAND(n1)EXPAND(n2)EXPAND(n3))
+#define CONCAT7(n1, n2, n3, n4, n5, n6, n7) STRINGIFY_MACRO(EXPAND(n1)EXPAND(n2)EXPAND(n3)EXPAND(n4)EXPAND(n5)EXPAND(n6)EXPAND(n7))
+#define PLATFORM_FILE(file) CONCAT(PLATFORM_DIRECTORY,/,file)
+#define RENDERER_FILE(file) CONCAT7(PLATFORM_DIRECTORY,/,PLATFORM_RENDERER,/,PLATFORM_RENDERER,_,file)
 
 #ifndef __PSP__
 #define qtrue 1
@@ -205,20 +221,10 @@ extern int psp_system_model;
 
 #define	SOUND_CHANNELS		8
 
+#include PLATFORM_FILE(common.h)
+#include PLATFORM_FILE(vid.h)
+#include PLATFORM_FILE(sys.h)
 
-#ifdef _3DS
-#include "ctr/common.h"
-#include "ctr/vid.h"
-#include "ctr/sys.h"
-#elif __PSP__
-#include "psp/common.h"
-#include "psp/vid.h"
-#include "psp/sys.h"
-#elif __WII__
-#include "wii/common.h"
-#include "wii/vid.h"
-#include "wii/sys.h"
-#endif // _3DS, __PSP__, __WII__
 #include "zone.h"
 #include "mathlib.h"
 #include "bspfile.h"
@@ -243,79 +249,38 @@ typedef struct
 #include "wad.h"
 #include "draw.h"
 #include "cvar.h"
-#ifdef _3DS
-#include "ctr/screen.h"
-#include "ctr/net.h"
-#elif __PSP__
-#include "psp/screen.h"
-#include "psp/net.h"
-#elif __WII__
-#include "wii/screen.h"
-#include "wii/net.h"
-#endif // _3DS
+
+#include PLATFORM_FILE(screen.h)
+#include PLATFORM_FILE(net.h)
+
 #include "protocol.h"
 #include "cmd.h"
-#ifdef _3DS
-#include "ctr/sbar.h"
-#endif // _3DS
+
+#include PLATFORM_FILE(render.h)
+#include PLATFORM_FILE(client.h)
+
 #include "cl_hud.h"
 #include "sound.h"
-#ifdef _3DS
-#include "ctr/render.h"
-#include "ctr/client.h"
-#elif __PSP__
-#include "psp/render.h"
-#include "psp/client.h"
-#elif __WII__
-#include "wii/render.h"
-#include "wii/client.h"
-#endif // _3DS
-#include "progs.h"
-#ifdef _3DS
-#include "ctr/server.h"
-#elif __PSP__
-#include "psp/server.h"
-#elif __WII__
-#include "wii/server.h"
-#endif // _3DS
 
-#ifdef _3DS
-#include "ctr/gl/gl_model.h"
-#include "ctr/gl/gl_decal.h"
-#elif __WII__
-#include "wii/gx/gx_model.h"
-#else
-#include "psp/gu/gu_model.h"
-#endif
+#include "progs.h"
+
+#include PLATFORM_FILE(server.h)
+#include RENDERER_FILE(model.h)
 
 #include "input.h"
 #include "world.h"
-#ifdef _3DS
-#include "ctr/keys.h"
-#elif __PSP__
-#include "psp/keys.h"
-#elif __WII__
-#include "wii/keys.h"
-#endif
+
+#include PLATFORM_FILE(keys.h)
+
 #include "console.h"
 #include "view.h"
-#ifdef _3DS
-#include "ctr/menu.h"
-#elif __PSP__
-#include "psp/menu.h"
-#elif __WII__
-#include "wii/menu.h"
-#endif
+
+#include PLATFORM_FILE(menu.h)
+
 #include "crc.h"
 #include "cdaudio.h"
 
-#ifdef _3DS
-#include "ctr/glquake.h"
-#elif __WII__
-#include "wii/gx/gxquake.h"
-#else
-#include "psp/gu/gu_psp.h"
-#endif
+#include RENDERER_FILE(main.h)
 
 //=============================================================================
 

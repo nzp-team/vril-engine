@@ -48,7 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/dir.h>
 #include <unistd.h>
 
-#include "../quakedef.h"
+#include "../nzportable_def.h"
 
 extern void Sys_Reset(void);
 extern void Sys_Shutdown(void);

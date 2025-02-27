@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <network.h>
 // <<< FIX
 
-#include "../quakedef.h"
+#include "../nzportable_def.h"
 
 #include <sys/types.h>
 // >>> FIX: For Nintendo Wii using devkitPPC / libogc

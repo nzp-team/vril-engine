@@ -6,7 +6,7 @@ Fogging system based on FitzQuake's implementation
 
 extern "C"
 {
-#include "../../quakedef.h"
+#include "../../nzportable_def.h"
 }
 
 #include <pspgu.h>

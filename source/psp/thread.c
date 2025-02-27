@@ -1,6 +1,6 @@
 #include <pspkernel.h>
 
-#include "../quakedef.h"
+#include "../nzportable_def.h"
 #include "thread.h"
 
 SceUID sound_thread;

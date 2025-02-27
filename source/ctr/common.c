@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // common.c -- misc functions used in client and server
 
-#include "../quakedef.h"
+#include "../nzportable_def.h"
 
 #define NUM_SAFE_ARGVS  7
 

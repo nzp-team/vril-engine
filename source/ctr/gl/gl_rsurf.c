@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // r_surf.c: surface-related refresh code
 
-#include "../../quakedef.h"
+#include "../../nzportable_def.h"
 
 #ifndef GL_RGBA4
 #define	GL_RGBA4	0
