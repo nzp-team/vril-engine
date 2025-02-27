@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // ELUTODO: keys to: nunchuk turn and nunchuk look up/down?
 // ELUTODO: osk doesn't work if client disconnected
 
-#include "../quakedef.h"
+#include "../nzportable_def.h"
 
 cvar_t	nunchuk_stick_as_arrows = {"nunchuk_stick_as_arrows","0"};
 cvar_t  rumble = {"rumble","1"};

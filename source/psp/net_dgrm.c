@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "pspkernel.h"
 
-#include "../quakedef.h"
+#include "../nzportable_def.h"
 #include "net_dgrm.h"
 
 // these two macros are to make the code more readable

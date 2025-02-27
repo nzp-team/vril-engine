@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include <3ds.h>
 #include <GL/picaGL.h>
-#include "../../quakedef.h"
+#include "../../nzportable_def.h"
 
 unsigned	d_8to24table[256];
 unsigned char d_15to8table[65536];

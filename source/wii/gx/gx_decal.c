@@ -1,4 +1,4 @@
-#include "../../quakedef.h"
+#include "../../nzportable_def.h"
 
 #define DEFAULT_NUM_DECALS      1024 //*4
 #define ABSOLUTE_MIN_DECALS		256

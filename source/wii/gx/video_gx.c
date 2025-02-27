@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // ELUTODO: blank all the framebuffers to prevent artifacts before rendering takes place. Happens between the frontend ending and the quake console showing up
 
-#include "../../quakedef.h"
+#include "../../nzportable_def.h"
 
 extern void				*framebuffer[2];
 extern u32				fb;

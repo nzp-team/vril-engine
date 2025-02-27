@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // cvar.c -- dynamic variable tracking
 
-#include "quakedef.h"
+#include "nzportable_def.h"
 
 static cvar_t	*cvar_vars;
 static char	cvar_null_string[] = "";

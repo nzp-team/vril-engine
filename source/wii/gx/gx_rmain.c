@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // r_main.c
 
-#include "../../quakedef.h"
+#include "../../nzportable_def.h"
 
 extern vec3_t lightcolor; // LordHavoc: .lit support to the definitions at the top
 

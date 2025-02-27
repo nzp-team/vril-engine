@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <stdio.h>
 #include <3ds.h>
-#include "../quakedef.h"
+#include "../nzportable_def.h"
 
 #define SAMPLE_RATE   	22050
 #define NUM_SAMPLES 	2048
