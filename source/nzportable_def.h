@@ -266,7 +266,6 @@ typedef struct
 
 #include PLATFORM_FILE(server.h)
 #include RENDERER_FILE(model.h)
-#include RENDERER_FILE(decal.h)
 
 #include "input.h"
 #include "world.h"
