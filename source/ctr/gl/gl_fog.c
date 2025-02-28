@@ -5,7 +5,7 @@ Now with Quakespasm bits thrown into it!
 
 */
 
-#include "../../quakedef.h"
+#include "../../nzportable_def.h"
 
 //==============================================================================
 //

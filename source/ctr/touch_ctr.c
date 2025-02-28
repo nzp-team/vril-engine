@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 //FIX ME: load all hardcoded values from file
 
-#include "../quakedef.h"
+#include "../nzportable_def.h"
 
 #include <3ds.h>
 #include "touch_ctr.h"

@@ -31,7 +31,7 @@ INCLUDES	:=
 
 CFLAGS	=		$(MACHDEP) $(INCLUDE) \
 			-g -Wall -O2 -Wcast-align -fno-merge-constants -fstrict-aliasing -fsingle-precision-constant -fno-aggressive-loop-optimizations \
-			-DGXQUAKE -DNQ_HACK -Wtrigraphs -D__WII__
+			-DGXQUAKE -DNQ_HACK -Wtrigraphs -D__WII__ -DPLATFORM_DIRECTORY="wii" -DPLATFORM_RENDERER="gx"
 
 ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror

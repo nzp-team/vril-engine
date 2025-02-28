@@ -30,7 +30,7 @@ CFLAGS	:=	-g -fpermissive -Wall -O3 -mword-relocations \
 			-fomit-frame-pointer -ffunction-sections \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM11 -D__3DS__ -DGLQUAKE
+CFLAGS	+=	$(INCLUDE) -DARM11 -D__3DS__ -DGLQUAKE -DPLATFORM_DIRECTORY="ctr" -DPLATFORM_RENDERER="gl"
 
 ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror

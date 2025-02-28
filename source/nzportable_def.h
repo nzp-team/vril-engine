@@ -17,9 +17,25 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-// quakedef.h -- primary header for client
+// nzportable_def.h -- primary header for client
 
 //#define	GLTEST			// experimental stuff
+
+#ifndef PLATFORM_DIRECTORY
+#error "Unknown platform! (Please build with -DPLATFORM_DIRECTORY='your_platform')"
+#endif // PLATFORM_DIRECTORY
+
+#ifndef PLATFORM_RENDERER
+#error "Unknown renderer! (Please build with -DPLATFORM_RENDERER='your_renderer')"
+#endif // PLATFORM_RENDERER
+
+#define STRINGIFY_MACRO(x) STR(x)
+#define STR(x) #x
+#define EXPAND(x) x
+#define CONCAT(n1, n2, n3) STRINGIFY_MACRO(EXPAND(n1)EXPAND(n2)EXPAND(n3))
+#define CONCAT7(n1, n2, n3, n4, n5, n6, n7) STRINGIFY_MACRO(EXPAND(n1)EXPAND(n2)EXPAND(n3)EXPAND(n4)EXPAND(n5)EXPAND(n6)EXPAND(n7))
+#define PLATFORM_FILE(file) CONCAT(PLATFORM_DIRECTORY,/,file)
+#define RENDERER_FILE(file) CONCAT7(PLATFORM_DIRECTORY,/,PLATFORM_RENDERER,/,PLATFORM_RENDERER,_,file)
 
 #ifndef __PSP__
 #define qtrue 1
@@ -205,6 +221,9 @@ extern int psp_system_model;
 
 #define	SOUND_CHANNELS		8
 
+#include PLATFORM_FILE(common.h)
+#include PLATFORM_FILE(vid.h)
+#include PLATFORM_FILE(sys.h)
 
 #ifdef __3DS__
 #include "ctr/common.h"

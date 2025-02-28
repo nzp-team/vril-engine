@@ -2,7 +2,7 @@
 
 extern "C"
 {
-#include "../../quakedef.h"
+#include "../../nzportable_def.h"
 }
 
 #define LERPBYTE(i) r = row1[i]; out[i] = (byte) ((((row2[i] - r) * lerp) >> 16) + r)

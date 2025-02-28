@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // in_ctr.c -- for the Nintendo 3DS
 
-#include "../quakedef.h"
+#include "../nzportable_def.h"
 #include <GL/picaGL.h>
 #include <3ds.h>
 

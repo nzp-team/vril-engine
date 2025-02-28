@@ -38,7 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern "C"
 {
-#include "../quakedef.h"
+#include "../nzportable_def.h"
 #include "thread.h"
 #include "m33libs/kubridge.h"
 void VramSetSize(int kb);

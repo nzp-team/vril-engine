@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "quakedef.h"
+#include "nzportable_def.h"
 #include "cl_slist.h"
 
 server_entry_t	slist[MAX_SERVER_LIST];

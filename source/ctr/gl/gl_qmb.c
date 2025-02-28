@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // gl_rpart.c
 
-#include "../../quakedef.h"
+#include "../../nzportable_def.h"
 
 //#define	DEFAULT_NUM_PARTICLES		8192
 #define	ABSOLUTE_MIN_PARTICLES      64
