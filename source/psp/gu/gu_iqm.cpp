@@ -9,12 +9,6 @@ extern"C" {
 
 #include <pspgu.h>
 #include <pspgum.h>
-
-
-#include "nlohmann/json.hpp"
-using json = nlohmann::json;
-
-
 #include "gu_iqm.hpp"
 
 
@@ -23,7 +17,6 @@ extern char	skybox_name[32];
 extern void Fog_DisableGFog();
 extern void Fog_EnableGFog();
 // extern char *PF_VarString (int	first);
-extern char pr_string_temp[PR_MAX_TEMPSTRING];
 
 
 
@@ -143,23 +136,23 @@ int skeletal_submesh_get_tri_submesh_idxs(skeletal_full_mesh_t *mesh, int8_t *tr
     // --------------------------------------------------------------------
     // Make lists to hold bones idxs referenced by each triangle, initialized to 0s
     uint8_t tri_n_bones[mesh->n_tris] = {}; // Contains the number of bones that the i-th triangle references
-    uint8_t tri_bones[TRI_VERTS * VERT_BONES * mesh->n_tris] = {}; // Contains the list of bones referenced by the i-th triangle
+    uint8_t tri_bones[TRI_VERTS * IQM_VERT_BONES * mesh->n_tris] = {}; // Contains the list of bones referenced by the i-th triangle
 
 
     for(uint32_t tri_idx = 0; tri_idx < mesh->n_tris; tri_idx++) {
         for(uint32_t tri_vert_idx = 0; tri_vert_idx < TRI_VERTS; tri_vert_idx++ ) {
             uint32_t vert_idx = mesh->tri_verts[(tri_idx * TRI_VERTS) + tri_vert_idx];
             // Loop through the vertex's referenced bones
-            for(int vert_bone_idx = 0; vert_bone_idx < VERT_BONES; vert_bone_idx++) {
+            for(int vert_bone_idx = 0; vert_bone_idx < IQM_VERT_BONES; vert_bone_idx++) {
 
-                uint8_t bone_idx = mesh->vert_bone_idxs[vert_idx * VERT_BONES + vert_bone_idx];
-                float bone_weight = mesh->vert_bone_weights[vert_idx * VERT_BONES + vert_bone_idx];
+                uint8_t bone_idx = mesh->vert_bone_idxs[vert_idx * IQM_VERT_BONES + vert_bone_idx];
+                float bone_weight = mesh->vert_bone_weights[vert_idx * IQM_VERT_BONES + vert_bone_idx];
 
 
                 if(bone_weight > 0) {
                     // Verify the bone is not already in this triangle's bone list
-                    if(!bone_in_list(bone_idx, &tri_bones[tri_idx * TRI_VERTS * VERT_BONES], tri_n_bones[tri_idx])) {
-                        tri_bones[(tri_idx * TRI_VERTS * VERT_BONES) + tri_n_bones[tri_idx]] = bone_idx;
+                    if(!bone_in_list(bone_idx, &tri_bones[tri_idx * TRI_VERTS * IQM_VERT_BONES], tri_n_bones[tri_idx])) {
+                        tri_bones[(tri_idx * TRI_VERTS * IQM_VERT_BONES) + tri_n_bones[tri_idx]] = bone_idx;
                         tri_n_bones[tri_idx] += 1;
                     }
                 }
@@ -243,7 +236,7 @@ int skeletal_submesh_get_tri_submesh_idxs(skeletal_full_mesh_t *mesh, int8_t *tr
 
         // Add the triangle's bones to the current submesh:
         for(int submesh_bone_idx = 0; submesh_bone_idx < tri_n_bones[cur_tri]; submesh_bone_idx++) {
-            cur_submesh_bones[submesh_bone_idx] = tri_bones[(cur_tri * TRI_VERTS * VERT_BONES) + submesh_bone_idx];
+            cur_submesh_bones[submesh_bone_idx] = tri_bones[(cur_tri * TRI_VERTS * IQM_VERT_BONES) + submesh_bone_idx];
             cur_submesh_n_bones += 1;
         }
 
@@ -263,7 +256,7 @@ int skeletal_submesh_get_tri_submesh_idxs(skeletal_full_mesh_t *mesh, int8_t *tr
             }
 
             // If this triangle's bones is not a subset of the current submesh bone list, skip it
-            if(!bone_list_is_subset(&tri_bones[tri_idx * TRI_VERTS * VERT_BONES], tri_n_bones[tri_idx], cur_submesh_bones, cur_submesh_n_bones)) {
+            if(!bone_list_is_subset(&tri_bones[tri_idx * TRI_VERTS * IQM_VERT_BONES], tri_n_bones[tri_idx], cur_submesh_bones, cur_submesh_n_bones)) {
                 continue;
             }
 
@@ -301,7 +294,7 @@ int skeletal_submesh_get_tri_submesh_idxs(skeletal_full_mesh_t *mesh, int8_t *tr
                     continue;
                 }
                 // Count the number of bones referenced by this triangle that are not in the current submesh bone list
-                int n_missing_bones = bone_list_set_difference(&tri_bones[tri_idx * TRI_VERTS * VERT_BONES], tri_n_bones[tri_idx], cur_submesh_bones, cur_submesh_n_bones);
+                int n_missing_bones = bone_list_set_difference(&tri_bones[tri_idx * TRI_VERTS * IQM_VERT_BONES], tri_n_bones[tri_idx], cur_submesh_bones, cur_submesh_n_bones);
                 if(cur_tri == -1 || n_missing_bones < cur_tri_n_missing_bones) {
                     cur_tri = tri_idx;
                     cur_tri_n_missing_bones = n_missing_bones;
@@ -344,7 +337,7 @@ int skeletal_submesh_get_tri_submesh_idxs(skeletal_full_mesh_t *mesh, int8_t *tr
             // Con_Printf("\tIQMDEBUG Computing bone list set union\n"); // IQMFIXME
 
             // Add this triangle's bones to the current submesh list of bones
-            cur_submesh_n_bones = bone_list_set_union( cur_submesh_bones, cur_submesh_n_bones, &tri_bones[cur_tri * TRI_VERTS * VERT_BONES], tri_n_bones[cur_tri]);
+            cur_submesh_n_bones = bone_list_set_union( cur_submesh_bones, cur_submesh_n_bones, &tri_bones[cur_tri * TRI_VERTS * IQM_VERT_BONES], tri_n_bones[cur_tri]);
 
 #ifdef IQMDEBUG_LOADIQM_MESHSPLITTING
             Con_Printf("\tcur submesh bones (%d): [", cur_submesh_n_bones);
@@ -362,7 +355,7 @@ int skeletal_submesh_get_tri_submesh_idxs(skeletal_full_mesh_t *mesh, int8_t *tr
                 }
 
                 // If this triangle's bones is not a subset of the current submesh bone list, skip it
-                if(!bone_list_is_subset(&tri_bones[tri_idx * TRI_VERTS * VERT_BONES], tri_n_bones[tri_idx], cur_submesh_bones, cur_submesh_n_bones)) {
+                if(!bone_list_is_subset(&tri_bones[tri_idx * TRI_VERTS * IQM_VERT_BONES], tri_n_bones[tri_idx], cur_submesh_bones, cur_submesh_n_bones)) {
                     continue;
                 }
 
@@ -463,7 +456,7 @@ skeletal_full_mesh_t *skeletal_submesh_build_submeshes(skeletal_full_mesh_t *mes
                 // If we didn't find the vertex in the submesh vertex list, add it
                 if(submesh_vert_idx == -1) {
                     submesh_vert_idx = submesh_n_verts;
-                    submesh_mesh_vert_idxs[submesh_n_verts] = mesh_vert_idx;
+                    submesh_mesh_vert_idxs[submesh_vert_idx] = mesh_vert_idx;
                     submesh_n_verts += 1;
                 }
 
@@ -485,11 +478,11 @@ skeletal_full_mesh_t *skeletal_submesh_build_submeshes(skeletal_full_mesh_t *mes
         submeshes[submesh_idx].vert_rest_normals = (vec3_t*) malloc(sizeof(vec3_t) * submesh_n_verts);
 #endif // IQM_LOAD_NORMALS
     
-        submeshes[submesh_idx].vert_bone_weights = (float*) malloc(sizeof(float) * VERT_BONES * submesh_n_verts);
-        submeshes[submesh_idx].vert_bone_idxs = (uint8_t*) malloc(sizeof(uint8_t) * VERT_BONES * submesh_n_verts);
+        submeshes[submesh_idx].vert_bone_weights = (float*) malloc(sizeof(float) * IQM_VERT_BONES * submesh_n_verts);
+        submeshes[submesh_idx].vert_bone_idxs = (uint8_t*) malloc(sizeof(uint8_t) * IQM_VERT_BONES * submesh_n_verts);
         submeshes[submesh_idx].geomset = mesh->geomset;
         submeshes[submesh_idx].geomid = mesh->geomid;
-        submeshes[submesh_idx].material_name = nullptr; // TODO - Don't copy string content for submeshes, it's held by the containing mesh
+        submeshes[submesh_idx].material_name = nullptr; //  NOTE: Don't copy string content for submeshes, it's held by the containing mesh
         submeshes[submesh_idx].material_idx = mesh->material_idx;
 
         for(uint32_t vert_idx = 0; vert_idx < submesh_n_verts; vert_idx++) {
@@ -506,9 +499,9 @@ skeletal_full_mesh_t *skeletal_submesh_build_submeshes(skeletal_full_mesh_t *mes
             submeshes[submesh_idx].vert_rest_normals[vert_idx][2] = mesh->vert_rest_normals[mesh_vert_idx][2];
 #endif // IQM_LOAD_NORMALS
 
-            for(int k = 0; k < VERT_BONES; k++) {
-                submeshes[submesh_idx].vert_bone_weights[(vert_idx * VERT_BONES) + k] = mesh->vert_bone_weights[(mesh_vert_idx * VERT_BONES) + k];
-                submeshes[submesh_idx].vert_bone_idxs[(vert_idx * VERT_BONES) + k] = mesh->vert_bone_idxs[(mesh_vert_idx * VERT_BONES) + k];
+            for(int k = 0; k < IQM_VERT_BONES; k++) {
+                submeshes[submesh_idx].vert_bone_weights[(vert_idx * IQM_VERT_BONES) + k] = mesh->vert_bone_weights[(mesh_vert_idx * IQM_VERT_BONES) + k];
+                submeshes[submesh_idx].vert_bone_idxs[(vert_idx * IQM_VERT_BONES) + k] = mesh->vert_bone_idxs[(mesh_vert_idx * IQM_VERT_BONES) + k];
             }
         }
 
@@ -617,7 +610,7 @@ float apply_inv_ofs_scale(float x, float ofs, float scale) {
 
 // 
 // Given a mesh loaded by ???, writes vertex draw struct that:
-//      - Use quantization
+//      - Uses quantization
 //      - Remove triangle indices to have a raw list of unindexed vertices
 //
 template <typename T_verts, typename T_pos, typename T_uv, typename T_nor, typename T_bone_weight>
@@ -647,8 +640,6 @@ T_verts *build_skinning_vert_structs(skeletal_full_mesh_t *mesh, float *vert_ski
 
             // Con_Printf("\twriting bone weights...\n");
             for(int bone_idx = 0; bone_idx < SUBMESH_BONES; bone_idx++) {
-                // FIXME - This ain't right 
-
                 verts[unindexed_vert_idx].bone_weights[bone_idx] = float_to_int<T_bone_weight,-1,1>(vert_skinning_weights[indexed_vert_idx * SUBMESH_BONES + bone_idx]);
             }
         }
@@ -659,7 +650,7 @@ T_verts *build_skinning_vert_structs(skeletal_full_mesh_t *mesh, float *vert_ski
 
 
 // 
-// Loads the a full mesh from an IQM file without alteration
+// Loads a full mesh from an IQM file without alteration
 // 
 void load_full_iqm_mesh(skeletal_full_mesh_t *mesh, int mesh_idx, const void *iqm_data, const iqm_model_vertex_arrays_t *iqm_vertex_arrays) {
     const iqm_header_t *iqm_header = (const iqm_header_t*) iqm_data;
@@ -671,8 +662,7 @@ void load_full_iqm_mesh(skeletal_full_mesh_t *mesh, int mesh_idx, const void *iq
 
     const char *material_name = (const char*) (((uint8_t*) iqm_data + iqm_header->ofs_text) + iqm_meshes[mesh_idx].material);
     Con_Printf("Mesh[%d]: \"%s\"\n", mesh_idx, material_name);
-    mesh->material_name = (char*) malloc(sizeof(char) * (strlen(material_name) + 1));
-    strcpy(mesh->material_name, material_name);
+    mesh->material_name = strdup(material_name);
     // Indicate that material has not yet been found in list of materials, we'll find it later
     mesh->material_idx = -1;
     
@@ -689,8 +679,8 @@ void load_full_iqm_mesh(skeletal_full_mesh_t *mesh, int mesh_idx, const void *iq
     mesh->vert_rest_normals = (vec3_t*) malloc(sizeof(vec3_t) * n_verts);
 #endif // IQM_LOAD_NORMALS
     mesh->vert_uvs = (vec2_t*) malloc(sizeof(vec2_t) * n_verts);
-    mesh->vert_bone_weights = (float*) malloc(sizeof(float)  * VERT_BONES * n_verts);  // 4 bone weights per vertex
-    mesh->vert_bone_idxs = (uint8_t*) malloc(sizeof(uint8_t) * VERT_BONES * n_verts);  // 4 bone indices per vertex
+    mesh->vert_bone_weights = (float*) malloc(sizeof(float)  * IQM_VERT_BONES * n_verts);  // 4 bone weights per vertex
+    mesh->vert_bone_idxs = (uint8_t*) malloc(sizeof(uint8_t) * IQM_VERT_BONES * n_verts);  // 4 bone indices per vertex
 
     for(uint32_t vert_idx = 0; vert_idx < n_verts; vert_idx++) {
         // Write static fields:
@@ -705,9 +695,10 @@ void load_full_iqm_mesh(skeletal_full_mesh_t *mesh, int mesh_idx, const void *iq
         mesh->vert_rest_normals[vert_idx][2] = iqm_vertex_arrays->verts_nor[first_vert + vert_idx][2];
 #endif // IQM_LOAD_NORMALS
 
-        for(int vert_bone_idx = 0; vert_bone_idx < 4; vert_bone_idx++) {
-            mesh->vert_bone_weights[vert_idx * 4 + vert_bone_idx] = iqm_vertex_arrays->verts_bone_weights[(first_vert + vert_idx) * 4 + vert_bone_idx];
-            mesh->vert_bone_idxs[vert_idx * 4 + vert_bone_idx] = iqm_vertex_arrays->verts_bone_idxs[(first_vert + vert_idx) * 4 + vert_bone_idx];
+    
+        for(int vert_bone_idx = 0; vert_bone_idx < IQM_VERT_BONES; vert_bone_idx++) {
+            mesh->vert_bone_weights[vert_idx * IQM_VERT_BONES + vert_bone_idx] = iqm_vertex_arrays->verts_bone_weights[(first_vert + vert_idx) * IQM_VERT_BONES + vert_bone_idx];
+            mesh->vert_bone_idxs[vert_idx * IQM_VERT_BONES + vert_bone_idx] = iqm_vertex_arrays->verts_bone_idxs[(first_vert + vert_idx) * IQM_VERT_BONES + vert_bone_idx];
         }
     }
 
@@ -763,7 +754,7 @@ void free_full_iqm_mesh(skeletal_full_mesh_t *mesh) {
 // Given iqm file header, and parsed vertex data arrays, allocate and return an
 // array of platform-specific `skeletal_mesh_t` structs
 //
-skeletal_mesh_t *load_iqm_meshes(const void *iqm_data, const iqm_model_vertex_arrays_t *iqm_vertex_arrays) {
+extern "C" skeletal_mesh_t *load_iqm_meshes(const void *iqm_data, const iqm_model_vertex_arrays_t *iqm_vertex_arrays) {
 
 #ifdef IQMDEBUG_LOADIQM_LOADMESH
     Con_Printf("load_iqm_meshes -- Start\n");
@@ -850,9 +841,9 @@ skeletal_mesh_t *load_iqm_meshes(const void *iqm_data, const iqm_model_vertex_ar
 
             for(uint32_t vert_idx = 0; vert_idx < full_submesh->n_verts; vert_idx++) {
                 // Add all bones used by this vertex to the submesh's list of bones
-                for(int vert_bone_idx = 0; vert_bone_idx < VERT_BONES; vert_bone_idx++) {
-                    uint8_t bone_idx = full_submesh->vert_bone_idxs[vert_idx * VERT_BONES + vert_bone_idx];
-                    float bone_weight = full_submesh->vert_bone_weights[vert_idx * VERT_BONES + vert_bone_idx];
+                for(int vert_bone_idx = 0; vert_bone_idx < IQM_VERT_BONES; vert_bone_idx++) {
+                    uint8_t bone_idx = full_submesh->vert_bone_idxs[vert_idx * IQM_VERT_BONES + vert_bone_idx];
+                    float bone_weight = full_submesh->vert_bone_weights[vert_idx * IQM_VERT_BONES + vert_bone_idx];
 
                     if(bone_weight > 0.0f) {
                         int vert_bone_submesh_idx = -1;
@@ -875,8 +866,8 @@ skeletal_mesh_t *load_iqm_meshes(const void *iqm_data, const iqm_model_vertex_ar
                                 );
                                 continue;
                             }
-                            submesh->skinning_bone_idxs[submesh->n_skinning_bones] = bone_idx;
                             vert_bone_submesh_idx = submesh->n_skinning_bones;
+                            submesh->skinning_bone_idxs[vert_bone_submesh_idx] = bone_idx;
                             submesh->n_skinning_bones += 1;
                         }
 
@@ -939,7 +930,7 @@ skeletal_mesh_t *load_iqm_meshes(const void *iqm_data, const iqm_model_vertex_ar
 // Returns the total number of bytes required to store a skeletal_model_t's
 // list of meshes ONLY, including all data pointed to via internal pointers
 // 
-uint32_t count_unpacked_skeletal_model_meshes_n_bytes(skeletal_model_t *skel_model) {
+extern "C" uint32_t count_unpacked_skeletal_model_meshes_n_bytes(skeletal_model_t *skel_model) {
 
     uint32_t skel_model_n_bytes = 0;
 
@@ -966,7 +957,7 @@ uint32_t count_unpacked_skeletal_model_meshes_n_bytes(skeletal_model_t *skel_mod
 }
 
 
-void free_unpacked_skeletal_model_meshes(skeletal_model_t *skel_model) {
+extern "C" void free_unpacked_skeletal_model_meshes(skeletal_model_t *skel_model) {
     // Free fields in reverse order to avoid losing references
     for(int mesh_idx = 0; mesh_idx < skel_model->n_meshes; mesh_idx++) {
         skeletal_mesh_t *mesh = &(skel_model->meshes[mesh_idx]);
@@ -982,89 +973,7 @@ void free_unpacked_skeletal_model_meshes(skeletal_model_t *skel_model) {
 }
 
 
-
-// 
-// Returns the total number of bytes required to store a skeletal_model_t
-// including all data pointed to via pointers 
-// 
-// uint32_t count_skel_model_n_bytes(skeletal_model_t *skel_model) {
-//     uint32_t skel_model_n_bytes = 0;
-//     skel_model_n_bytes += sizeof(skeletal_model_t);
-//     skel_model_n_bytes += sizeof(skeletal_mesh_t) * skel_model->n_meshes;
-//     for(int i = 0; i < skel_model->n_meshes; i++) {
-//         skeletal_mesh_t *mesh = &skel_model->meshes[i];
-//         skel_model_n_bytes += safe_strsize(mesh->material_name);
-//         skel_model_n_bytes += sizeof(skeletal_mesh_t) * mesh->n_submeshes;
-//         for(int j = 0; j < mesh->n_submeshes; j++) {
-//             skeletal_mesh_t *submesh = &mesh->submeshes[j];
-//             if(submesh->vert8s != nullptr) {
-//                 skel_model_n_bytes += sizeof(skel_vertex_i8_t) * submesh->n_verts;
-//             }
-//             if(submesh->vert16s != nullptr) {
-//                 skel_model_n_bytes += sizeof(skel_vertex_i16_t) * submesh->n_verts;
-//             }
-//         }
-//     }
-//     // -- bones --
-//     skel_model_n_bytes += sizeof(char*) * skel_model->n_bones;
-//     skel_model_n_bytes += sizeof(int16_t) * skel_model->n_bones;
-//     skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
-//     skel_model_n_bytes += sizeof(quat_t) * skel_model->n_bones;
-//     skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
-//     for(int i = 0; i < skel_model->n_bones; i++) {
-//         skel_model_n_bytes += safe_strsize(skel_model->bone_name[i]);
-//     }
-//     // -- bone hitbox info --
-//     skel_model_n_bytes += sizeof(bool) * skel_model->n_bones;
-//     skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
-//     skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
-//     skel_model_n_bytes += sizeof(int) * skel_model->n_bones;
-//     // -- cached bone rest transforms --
-//     skel_model_n_bytes += sizeof(mat3x4_t) * skel_model->n_bones;
-//     skel_model_n_bytes += sizeof(mat3x4_t) * skel_model->n_bones;
-//     // -- animation frames -- 
-//     skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames;
-//     skel_model_n_bytes += sizeof(quat_t) * skel_model->n_bones * skel_model->n_frames;
-//     skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames;
-//     skel_model_n_bytes += sizeof(float) * skel_model->n_frames;
-//     // -- animation framegroups --
-//     skel_model_n_bytes += sizeof(char*) * skel_model->n_framegroups;
-//     skel_model_n_bytes += sizeof(uint32_t) * skel_model->n_framegroups;
-//     skel_model_n_bytes += sizeof(uint32_t) * skel_model->n_framegroups;
-//     skel_model_n_bytes += sizeof(float) * skel_model->n_framegroups;
-//     skel_model_n_bytes += sizeof(bool) * skel_model->n_framegroups;
-//     for(int i = 0; i < skel_model->n_framegroups; i++) {
-//         skel_model_n_bytes += safe_strsize(skel_model->framegroup_name[i]);
-//     }
-//     // -- materials --
-//     skel_model_n_bytes += sizeof(char*) * skel_model->n_materials;
-//     skel_model_n_bytes += sizeof(int) * skel_model->n_materials;
-//     skel_model_n_bytes += sizeof(skeletal_material_t*) * skel_model->n_materials;
-//     for(int i = 0; i < skel_model->n_materials; i++) {
-//         skel_model_n_bytes += safe_strsize(skel_model->material_names[i]);
-//         skel_model_n_bytes += sizeof(skeletal_material_t) * skel_model->material_n_skins[i];
-//     }
-//     // -- FTE Anim Events --
-//     if(skel_model->framegroup_n_events != nullptr) {
-//         skel_model_n_bytes += sizeof(uint16_t) * skel_model->n_framegroups;
-//         skel_model_n_bytes += sizeof(float*) * skel_model->n_framegroups;
-//         skel_model_n_bytes += sizeof(char**) * skel_model->n_framegroups;
-//         skel_model_n_bytes += sizeof(uint32_t*) * skel_model->n_framegroups;
-//         for(int i = 0; i < skel_model->n_framegroups; i++) {
-//             skel_model_n_bytes += sizeof(float) * skel_model->framegroup_n_events[i];
-//             skel_model_n_bytes += sizeof(char*) * skel_model->framegroup_n_events[i];
-//             skel_model_n_bytes += sizeof(uint32_t) * skel_model->framegroup_n_events[i];
-//             for(int j = 0; j < skel_model->framegroup_n_events[i]; j++) {
-//                 skel_model_n_bytes += safe_strsize(skel_model->framegroup_event_data_str[i][j]);
-//             }
-//         }
-//     }
-//     return skel_model_n_bytes;
-// }
-
-
-
-void pack_skeletal_model_meshes(skeletal_model_t *unpacked_skel_model_in, skeletal_model_t *packed_skel_model_out, uint8_t **buffer_head_ptr) {
+extern "C" void pack_skeletal_model_meshes(skeletal_model_t *unpacked_skel_model_in, skeletal_model_t *packed_skel_model_out, uint8_t **buffer_head_ptr) {
 
     // `packed_skel_model_out` also points to the start of the contiguous memory buffer, grab that reference
     uint8_t *buffer = (uint8_t*) packed_skel_model_out;
@@ -1092,7 +1001,7 @@ void pack_skeletal_model_meshes(skeletal_model_t *unpacked_skel_model_in, skelet
 //
 // Given a packed or unpacked `skel_model`, debug prints its platform-specicif mesh data
 //
-void debug_print_skeletal_model_meshes(skeletal_model_t *skel_model, int is_packed) {
+extern "C" void debug_print_skeletal_model_meshes(skeletal_model_t *skel_model, int is_packed) {
 
     skeletal_mesh_t *meshes = OPT_UNPACK_MEMBER(skel_model->meshes, skel_model, is_packed);
 
@@ -1142,6 +1051,56 @@ void debug_print_skeletal_model_meshes(skeletal_model_t *skel_model, int is_pack
         Con_Printf("---------------------\n");
     }
 }
+
+
+
+
+//
+// Platform-specific IQM material texture file loading
+//
+extern "C" int load_material_texture_image(char *texture_file) {
+    return loadtextureimage(texture_file, 0, 0, qtrue, GU_LINEAR);
+}
+
+
+
+//
+// Given an unpacked skeletal model, searches for the material name specified
+// by name for each mesh in the list of materials loaded from external JSON file.
+//
+// If found, stores the material index in the mesh struct to avoid searches at runtime
+// Otherwise assigns the mesh's material_idx to 0 to use first material available
+// 
+extern "C" void set_unpacked_skeletal_model_mesh_material_indices(skeletal_model_t *skel_model) {
+    // For each mesh, find the material_idx for the material it references, if not found set to 0
+    for(int mesh_idx = 0; mesh_idx < skel_model->n_meshes; mesh_idx++) {
+        Con_Printf("---------------\n");
+        Con_Printf("Looking for mesh %d material...\n", mesh_idx);
+        // Set default value
+        skel_model->meshes[mesh_idx].material_idx = 0;
+        if(skel_model->meshes[mesh_idx].material_name == NULL) {
+            Con_Printf("mesh %d material is NULL\n", mesh_idx);
+            continue;
+        }
+
+
+        Con_Printf("Looking for mesh %d material \"%s\"...\n", mesh_idx, skel_model->meshes[mesh_idx].material_name);
+        for(int material_idx = 0; material_idx < skel_model->n_materials; material_idx++) {
+            Con_Printf("Checking against known material %d \"%s\"\n...", material_idx, skel_model->material_names[material_idx]);
+
+            if(strcmp(skel_model->meshes[mesh_idx].material_name, skel_model->material_names[material_idx]) == 0) {
+                
+                Con_Printf("Assigned mesh %d material %d\n...", mesh_idx, material_idx);
+                skel_model->meshes[mesh_idx].material_idx = material_idx;
+                break;
+            }
+        }
+    }
+}
+
+
+
+
 
 
 
@@ -2173,7 +2132,7 @@ void R_DrawIQMModel(entity_t *ent) {
         int *material_n_skins = UNPACK_MEMBER(skel_model->material_n_skins, skel_model);
         
         skeletal_material_t *material = nullptr;
-        if(material_idx >= 0 && skel_model->n_materials > 0) {
+        if(material_idx >= 0 && material_idx < skel_model->n_materials) {
             skeletal_material_t **materials = UNPACK_MEMBER(skel_model->materials, skel_model);
             skeletal_material_t *material_skins = UNPACK_MEMBER(materials[material_idx], skel_model);
             int skin_idx = ent->skinnum;
@@ -2261,10 +2220,6 @@ void R_DrawIQMModel(entity_t *ent) {
     // }
 
 
-    // for(int i = 0; i < skel_model->n_bones; i++) {
-    //     char *bone_name = (char*)((uint8_t*) skel_model + (int) bone_names[i]);
-    //     // Con_Printf("Drawing bone: %i, \"%s\"\n", i, bone_name);
-    // }
     sceGumPopMatrix();
     // Con_Printf("\tDraw IQM end\n");
 }

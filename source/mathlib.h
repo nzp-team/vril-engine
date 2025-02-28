@@ -221,7 +221,7 @@ extern const matrix4x4	matrix4x4_identity;
 void VectorTransform (const vec3_t in1, matrix3x4 in2, vec3_t out);
 void AngleQuaternion( const vec3_t angles, vec4_t quaternion );
 void QuaternionMatrix( const vec4_t quaternion, float (*matrix)[4] );
-void QuaternionSlerp( const vec4_t p, vec4_t q, float t, vec4_t qt );
+void QuaternionSlerp( const vec4_t p, const vec4_t q, const float t, vec4_t qt );
 
 
 // Prototypes added by PM.

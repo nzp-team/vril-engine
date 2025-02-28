@@ -863,28 +863,34 @@ void QuaternionMatrix( const vec4_t quaternion, float (*matrix)[4] )
 	matrix[2][2] = 1.0 - 2.0 * quaternion[0] * quaternion[0] - 2.0 * quaternion[1] * quaternion[1];
 }
 
-void QuaternionSlerp( const vec4_t p, vec4_t q, float t, vec4_t qt )
+void QuaternionSlerp( const vec4_t p, const vec4_t q, const float t, vec4_t qt )
 {
-	int i;
 	float omega, cosom, sinom, sclp, sclq;
 
 	// decide if one of the quaternions is backwards
 	float a = 0;
 	float b = 0;
-	for (i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
 		a += (p[i]-q[i])*(p[i]-q[i]);
 		b += (p[i]+q[i])*(p[i]+q[i]);
 	}
+
+	vec4_t q_fixed;
 	if (a > b) {
-		for (i = 0; i < 4; i++) {
-			q[i] = -q[i];
+		for (int i = 0; i < 4; i++) {
+			q_fixed[i] = -q[i];
+		}
+	} else {
+		for (int i = 0; i < 4; i++) {
+			q_fixed[i] = q[i];
 		}
 	}
 
-	cosom = p[0]*q[0] + p[1]*q[1] + p[2]*q[2] + p[3]*q[3];
+	cosom = p[0]*q_fixed[0] + p[1]*q_fixed[1] + p[2]*q_fixed[2] + p[3]*q_fixed[3];
 
-	if ((1.0 + cosom) > 0.00000001) {
-		if ((1.0 - cosom) > 0.00000001) {
+	float eps = 0.00000001;
+	if(cosom > -1.0 + eps) {
+		if(cosom < 1.0 - eps) {
 			omega = acos( cosom );
 			#ifdef PSP_VFPU
 			sinom = vfpu_sinf( omega );
@@ -900,15 +906,17 @@ void QuaternionSlerp( const vec4_t p, vec4_t q, float t, vec4_t qt )
 			sclp = 1.0 - t;
 			sclq = t;
 		}
-		for (i = 0; i < 4; i++) {
-			qt[i] = sclp * p[i] + sclq * q[i];
+		for (int i = 0; i < 4; i++) {
+			qt[i] = sclp * p[i] + sclq * q_fixed[i];
 		}
 	}
 	else {
-		qt[0] = -p[1];
-		qt[1] = p[0];
-		qt[2] = -p[3];
-		qt[3] = p[2];
+		// Construct a perpendicular quaternion
+		vec4_t q_perp;
+		q_perp[0] = -p[1];
+		q_perp[1] = p[0];
+		q_perp[2] = -p[3];
+		q_perp[3] = p[2];
 		#ifdef PSP_VFPU
 		sclp = vfpu_sinf( (1.0 - t) * 0.5 * M_PI);
 		sclq = vfpu_sinf( t * 0.5 * M_PI);
@@ -916,8 +924,26 @@ void QuaternionSlerp( const vec4_t p, vec4_t q, float t, vec4_t qt )
 		sclp = sin( (1.0 - t) * 0.5 * M_PI);
 		sclq = sin( t * 0.5 * M_PI);
 		#endif
-		for (i = 0; i < 3; i++) {
-			qt[i] = sclp * p[i] + sclq * qt[i];
+
+		// Interpolate from p -> q_perp
+		for (int i = 0; i < 4; i++) {
+			qt[i] = sclp * p[i] + sclq * q_perp[i];
+		}
+
+		// At t >= 0.5, interpolate q_perp -> q_fixed
+		if(t > 0.5) {
+			// Maps [0.5,1] to [0,1]
+			const float t_adjusted = (t - 0.5) * 2.0; 
+			#ifdef PSP_VFPU
+			sclp = vfpu_sinf( (1.0 - t_adjusted) * 0.5 * M_PI);
+			sclq = vfpu_sinf( t_adjusted * 0.5 * M_PI);
+			#else
+			sclp = sin( (1.0 - t_adjusted) * 0.5 * M_PI);
+			sclq = sin( t_adjusted * 0.5 * M_PI);
+			#endif
+		}
+		for(int i = 0; i < 4; i++) {
+			qt[i] = sclp * qt[i] + sclq * q_fixed[i];
 		}
 	}
 }

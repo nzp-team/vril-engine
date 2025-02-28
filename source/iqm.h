@@ -38,6 +38,7 @@
 #define IQM_VERSION_1 1
 #define IQM_VERSION_2 2
 #define IQM_MAX_BONES 256
+#define IQM_VERT_BONES 4
 
 typedef struct iqm_header_s {
     char magic[16];
@@ -377,13 +378,17 @@ typedef struct skeletal_skeleton_s {
 } skeletal_skeleton_t;
 
 
-
+// ----------------------------------------------------------------------------
 // Defined in platform-specific C++ IQM files, called from C
+// ----------------------------------------------------------------------------
 skeletal_mesh_t *load_iqm_meshes(const void *iqm_data, const iqm_model_vertex_arrays_t *iqm_vertex_arrays);
 uint32_t count_unpacked_skeletal_model_meshes_n_bytes(skeletal_model_t *skel_model);
 void pack_skeletal_model_meshes(skeletal_model_t *unpacked_skel_model_in, skeletal_model_t *packed_skel_model_out, uint8_t **buffer_head_ptr);
 void free_unpacked_skeletal_model_meshes(skeletal_model_t *skel_model);
 void debug_print_skeletal_model_meshes(skeletal_model_t *skel_model, int is_packed);
+int load_material_texture_image(char *texture_file);
+void set_unpacked_skeletal_model_mesh_material_indices(skeletal_model_t *skel_model);
+// ----------------------------------------------------------------------------
 
 
 

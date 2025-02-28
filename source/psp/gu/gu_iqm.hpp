@@ -11,7 +11,6 @@
 
 
 
-#define VERT_BONES 4
 #define TRI_VERTS 3
 #define SUBMESH_BONES 8
 
