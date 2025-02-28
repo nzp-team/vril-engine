@@ -106,7 +106,7 @@ extern int psp_system_model;
 
 
 #define	MAX_QPATH		64			// max length of a quake game pathname
-#define	MAX_OSPATH		256			// max length of a filesystem pathname
+#define	MAX_OSPATH		128			// max length of a filesystem pathname
 
 #define	ON_EPSILON		0.1			// point on plane side epsilon
 
@@ -225,19 +225,6 @@ extern int psp_system_model;
 #include PLATFORM_FILE(vid.h)
 #include PLATFORM_FILE(sys.h)
 
-#ifdef __3DS__
-#include "ctr/common.h"
-#include "ctr/vid.h"
-#include "ctr/sys.h"
-#elif __PSP__
-#include "psp/common.h"
-#include "psp/vid.h"
-#include "psp/sys.h"
-#elif __WII__
-#include "wii/common.h"
-#include "wii/vid.h"
-#include "wii/sys.h"
-#endif // __3DS__, __PSP__, __WII__
 #include "zone.h"
 #include "mathlib.h"
 #include "bspfile.h"
@@ -262,76 +249,38 @@ typedef struct
 #include "wad.h"
 #include "draw.h"
 #include "cvar.h"
-#ifdef __3DS__
-#include "ctr/screen.h"
-#include "ctr/net.h"
-#elif __PSP__
-#include "psp/screen.h"
-#include "psp/net.h"
-#elif __WII__
-#include "wii/screen.h"
-#include "wii/net.h"
-#endif // __3DS__
+
+#include PLATFORM_FILE(screen.h)
+#include PLATFORM_FILE(net.h)
+
 #include "protocol.h"
 #include "cmd.h"
+
+#include PLATFORM_FILE(render.h)
+#include PLATFORM_FILE(client.h)
+
 #include "cl_hud.h"
 #include "sound.h"
-#ifdef __3DS__
-#include "ctr/render.h"
-#include "ctr/client.h"
-#elif __PSP__
-#include "psp/render.h"
-#include "psp/client.h"
-#elif __WII__
-#include "wii/render.h"
-#include "wii/client.h"
-#endif // __3DS__
-#include "progs.h"
-#ifdef __3DS__
-#include "ctr/server.h"
-#elif __PSP__
-#include "psp/server.h"
-#elif __WII__
-#include "wii/server.h"
-#endif // __3DS__
 
-#ifdef __3DS__
-#include "ctr/gl/gl_model.h"
-#include "ctr/gl/gl_decal.h"
-#elif __WII__
-#include "wii/gx/gx_model.h"
-#else
-#include "psp/gu/gu_model.h"
-#endif
+#include "progs.h"
+
+#include PLATFORM_FILE(server.h)
+#include RENDERER_FILE(model.h)
 
 #include "input.h"
 #include "world.h"
-#ifdef __3DS__
-#include "ctr/keys.h"
-#elif __PSP__
-#include "psp/keys.h"
-#elif __WII__
-#include "wii/keys.h"
-#endif
+
+#include PLATFORM_FILE(keys.h)
+
 #include "console.h"
 #include "view.h"
-#ifdef __3DS__
-#include "ctr/menu.h"
-#elif __PSP__
-#include "psp/menu.h"
-#elif __WII__
-#include "wii/menu.h"
-#endif
+
+#include PLATFORM_FILE(menu.h)
+
 #include "crc.h"
 #include "cdaudio.h"
 
-#ifdef __3DS__
-#include "ctr/glquake.h"
-#elif __WII__
-#include "wii/gx/gxquake.h"
-#else
-#include "psp/gu/gu_psp.h"
-#endif
+#include RENDERER_FILE(main.h)
 
 //=============================================================================
 
@@ -476,9 +425,9 @@ extern int argsort_comparator(const void *lhs, const void *rhs);
 extern func_t	EndFrame;
 
 
-#ifdef __3DS__
+#ifdef _3DS
 #define VERTEXARRAYSIZE 18360
 extern float gVertexBuffer[VERTEXARRAYSIZE];
 extern float gColorBuffer[VERTEXARRAYSIZE];
 extern float gTexCoordBuffer[VERTEXARRAYSIZE];
-#endif // __3DS__
+#endif // _3DS
