@@ -36,8 +36,6 @@ extern "C"
 
 #include <vram.h>
 
-#include "gu_images.h"
-
 #ifdef _WIN32
 # define ALIGNED(x)
 #else
@@ -541,8 +539,6 @@ typedef struct _TargaHeader {
 	unsigned char	pixel_size, attributes;
 } TargaHeader;
 
-int Image_WriteJPEG (char *filename, int compression, byte *pixels, int width, int height);
-
 /*
 ==================
 SCR_ScreenShot_f
@@ -550,10 +546,10 @@ SCR_ScreenShot_f
 */
 void SCR_ScreenShot_f (void)
 {
-	byte		*buffer;
+	//byte		*buffer;
 	char		name[80];
 	char		checkname[MAX_OSPATH];
-    int		    buffersize = glwidth * glheight * 3;
+    //int		    buffersize = glwidth * glheight * 3;
 //
 // find a file name to save it to
 //
@@ -575,7 +571,7 @@ void SCR_ScreenShot_f (void)
 		Con_Printf ("SCR_ScreenShot_f: Couldn't create a TGA file\n");
 		return;
  	}
-
+	/*
 	buffer = static_cast<byte*>(Q_malloc(buffersize));
 	memset(buffer, 0, buffersize);
 
@@ -586,6 +582,7 @@ void SCR_ScreenShot_f (void)
 	free (buffer);
 
 	Con_Printf ("Wrote %s\n", name);
+	*/
 }
 
 #if 0

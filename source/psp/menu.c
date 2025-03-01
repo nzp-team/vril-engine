@@ -420,18 +420,18 @@ int M_Start_Cusor;
 
 void M_Load_Menu_Pics ()
 {
-	menu_bk = loadtextureimage("gfx/menu/menu_background", 0, 0, false, GU_LINEAR);
-	menu_ndu 	= loadtextureimage("gfx/menu/nacht_der_untoten", 0, 0, false, GU_LINEAR);
+	menu_bk = loadtextureimage("gfx/menu/menu_background", 0, 0, false, GU_LINEAR, false, false);
+	menu_ndu 	= loadtextureimage("gfx/menu/nacht_der_untoten", 0, 0, false, GU_LINEAR, false, false);
 	//menu_kn 	= Draw_CacheImg("gfx/menu/kino_der_toten");
-	menu_wh 	= loadtextureimage("gfx/menu/nzp_warehouse", 0, 0, false, GU_LINEAR);
-	menu_wh2 	= loadtextureimage("gfx/menu/nzp_warehouse2", 0, 0, false, GU_LINEAR);
+	menu_wh 	= loadtextureimage("gfx/menu/nzp_warehouse", 0, 0, false, GU_LINEAR, false, false);
+	menu_wh2 	= loadtextureimage("gfx/menu/nzp_warehouse2", 0, 0, false, GU_LINEAR, false, false);
 	//menu_wn 	= Draw_CacheImg("gfx/menu/wahnsinn");
-	menu_ch 	= loadtextureimage("gfx/menu/christmas_special", 0, 0, false, GU_LINEAR);
-	menu_custom = loadtextureimage("gfx/menu/custom", 0, 0, false, GU_LINEAR);
+	menu_ch 	= loadtextureimage("gfx/menu/christmas_special", 0, 0, false, GU_LINEAR, false, false);
+	menu_custom = loadtextureimage("gfx/menu/custom", 0, 0, false, GU_LINEAR, false, false);
 	for (int i = 0; i < MAX_CUSTOM_MAPS; i++) {
 		if (custom_maps[i].occupied == false) continue;
 		if (custom_maps[i].map_use_thumbnail == false) continue;
-		custom_maps[i].thumbnail_index = loadtextureimage(custom_maps[i].map_thumbnail_path, 0, 0, false, GU_LINEAR, qfalse, qfalse);
+		custom_maps[i].thumbnail_index = loadtextureimage(custom_maps[i].map_thumbnail_path, 0, 0, false, GU_LINEAR, false, false);
 	}
 }
 

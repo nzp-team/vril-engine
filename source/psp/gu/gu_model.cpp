@@ -33,7 +33,6 @@ extern "C"
 
 #include "gu_hlmdl.h"
 #include "gu_fullbright.h"
-#include "gu_images.h"
 
 int LIGHTMAP_BYTES;
 

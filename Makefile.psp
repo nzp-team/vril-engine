@@ -39,6 +39,7 @@ COMMON_OBJS = \
 	source/psp/mp3.o \
 	source/psp/Random.o \
 	\
+	source/images.o \
 	source/chase.o \
 	source/cl_demo.o \
 	source/cl_input.o \
@@ -83,7 +84,6 @@ HARDWARE_VIDEO_ONLY_OBJS = \
 	source/psp/vram.o \
     source/psp/gu/gu_psp.o \
     source/psp/gu/gu_resample.o \
-    source/psp/gu/gu_images.o \
     source/psp/gu/gu_fullbright.o \
     source/psp/gu/gu_hlmdl.o \
     source/psp/gu/gu_draw.o \

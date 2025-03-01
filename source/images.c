@@ -20,6 +20,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "nzportable_def.h"
 
+#ifdef __PSP__
+#include <pspgu.h>
+#endif // __PSP__
+
 int		    image_width;
 int		    image_height;
 
@@ -134,12 +138,13 @@ byte* LoadPCX(FILE* f, int matchwidth, int matchheight) {
 /*small function to read files with stb_image - single-file image loader library.
 ** downloaded from: https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
 ** */
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_FAILURE_USERMSG
+#define STBI_ASSERT(x)
 #define STBI_ONLY_JPEG
 #define STBI_ONLY_PNG
 #define STBI_ONLY_TGA
 #define STBI_ONLY_PIC
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_FAILURE_USERMSG
 #include "stb_image.h"
 byte* LoadSTBI_Image(FILE *f)
 {
@@ -170,7 +175,7 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 	char	basename[128], name[133];
 	byte	 *c;
 
-	if (complain == qfalse)
+	if (complain == false)
 		COM_StripExtension(filename, basename); // strip the extension to allow TGA and PCX
 	else
 		strcpy(basename, filename);
@@ -239,9 +244,9 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
     tex_filebase (filename, texname);
 	
 #ifdef __PSP__
-	texture_index = GL_LoadImages (texname, image_width, image_height, data, qtrue, filter, 0, 4);
+	texture_index = GL_LoadImages (texname, image_width, image_height, data, true, filter, 0, 4);
 #elif __3DS__
-    texture_index = GL_LoadTexture (filename, image_width, image_height, data, mipmap, qtrue, 4);
+    texture_index = GL_LoadTexture (filename, image_width, image_height, data, mipmap, true, 4);
 #elif __WII__
     texture_index = GL_LoadTexture (texname, image_width, image_height, data, false, true, keep, 4);
 #endif
@@ -271,7 +276,7 @@ int loadskyboxsideimage (char* filename, int matchwidth, int matchheight, qboole
     
 #ifdef __PSP__
 	int newheight = image_height * 0.5;
-	texture_index = GL_LoadImages (filename, image_width, newheight, data, qtrue, filter, 0, 4);
+	texture_index = GL_LoadImages (filename, image_width, newheight, data, true, filter, 0, 4);
 #endif
 
 	// Only free the hunk if it was used.
@@ -303,7 +308,7 @@ int loadrgbafrompal (char* name, int width, int height, byte* data)
         rgbadata[i * 4 + 3] = 255; // Set alpha to opaque
 	}
 
-	int ret = GL_LoadImages(name, width, height, rgbadata, qtrue, GU_LINEAR, 0, 4);
+	int ret = GL_LoadImages(name, width, height, rgbadata, true, GU_LINEAR, 0, 4);
 
 	free(rgbadata);
 	return ret;

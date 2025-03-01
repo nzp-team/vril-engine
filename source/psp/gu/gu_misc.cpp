@@ -67,7 +67,7 @@ void	R_InitOtherTextures (void)
 	decal_blood1 = decal_blood2 = decal_blood3 = decal_q3blood = decal_burn;
 	decal_mark	  = loadtextureimage ("textures/decals/particle_burn01", 0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
 	GL_MarkTextureAsPermanent(decal_mark);
-	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, qfalse, GU_LINEA, qfalse, qfalse);
+	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
 	GL_MarkTextureAsPermanent(decal_glow);
 }
 
