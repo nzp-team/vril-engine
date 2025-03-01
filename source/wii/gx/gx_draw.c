@@ -103,7 +103,7 @@ qpic_t	*Draw_CachePic (char *path)
 //
 // load the pic from disk
 //
-	index = loadtextureimage (str, 0, 0, false, true);
+	index = loadtextureimage (str, 0, 0, false, 0, true, false);
 	if(index > 0)
 	{
 		pic->pic.width  = gltextures[index].width;

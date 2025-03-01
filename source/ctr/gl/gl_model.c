@@ -404,7 +404,7 @@ void Mod_LoadTextures (lump_t *l)
 			  	{
 					texture_mode = GL_LINEAR_MIPMAP_NEAREST;
 					sprintf (texname, "textures/%s", mt->name);
-					tx->gl_texturenum = loadtextureimage (texname, 0, 0, false, true);			//Diabolickal TGA textures
+					tx->gl_texturenum = loadtextureimage (texname, 0, 0, false, 0, false, true);			//Diabolickal TGA textures
 					if (tx->gl_texturenum == 0)// did not find a matching TGA...
 					{
 						data = WAD3_LoadTexture(mt);
@@ -1659,12 +1659,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 		pheader->gl_texturenum[0][0] = 
 		pheader->gl_texturenum[0][1] = 
 		pheader->gl_texturenum[0][2] = 
-		pheader->gl_texturenum[0][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, qtrue, qfalse);
+		pheader->gl_texturenum[0][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, qtrue,  0, qfalse, qfalse);
 		
 		pheader->gl_texturenum[1][0] = 
 		pheader->gl_texturenum[1][1] = 
 		pheader->gl_texturenum[1][2] = 
-		pheader->gl_texturenum[1][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, qtrue, qfalse);
+		pheader->gl_texturenum[1][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, qtrue, 0, qfalse, qfalse);
 
 		pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 		return (void *)pskintype;
@@ -1685,7 +1685,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] =
 			pheader->gl_texturenum[i][1] =
 			pheader->gl_texturenum[i][2] =
-			pheader->gl_texturenum[i][3] = loadtextureimage(model2, 0, 0, qtrue, qfalse);
+			pheader->gl_texturenum[i][3] = loadtextureimage(model2, 0, 0, qtrue, 0, qfalse, qfalse);
 
 			if (pheader->gl_texturenum[i][0] == 0) // did not find a matching TGA...
 			{
@@ -1968,7 +1968,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 
 	COM_StripExtension(loadmodel->name, sprite);
 	snprintf(sprite2, 128, "%s.spr_%i", sprite, framenum);
-	pspriteframe->gl_texturenum = loadtextureimage(sprite2, 0, 0, qtrue, qfalse);
+	pspriteframe->gl_texturenum = loadtextureimage(sprite2, 0, 0, qtrue, 0, qfalse, qfalse);
 
 	if (pspriteframe->gl_texturenum == 0) // did not find a matching TGA...
 	{

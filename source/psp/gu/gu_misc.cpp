@@ -45,7 +45,7 @@ void	R_InitOtherTextures (void)
 {
 	sniper_scope = Draw_CachePic ("gfx/hud/scope_256");
 
-	zombie_skins[0][0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
+	zombie_skins[0][0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR, qfalse, qfalse);
 	GL_MarkTextureAsPermanent(zombie_skins[0][0]);
 
 	// PSP PHAT: Only have 1 Zombie skin.. this saves 192kB of VRAM, well worth it.
@@ -54,20 +54,20 @@ void	R_InitOtherTextures (void)
 		zombie_skins[1][0] = zombie_skins[0][0];
 		zombie_skins[1][1] = zombie_skins[0][0];
 	} else {
-		zombie_skins[0][1] = loadtextureimage ("models/ai/zfull.mdl_1", 0, 0, qtrue, GU_LINEAR);
-		zombie_skins[1][0] = loadtextureimage ("models/ai/zfull.mdl_2", 0, 0, qtrue, GU_LINEAR);
-		zombie_skins[1][1] = loadtextureimage ("models/ai/zfull.mdl_3", 0, 0, qtrue, GU_LINEAR);
+		zombie_skins[0][1] = loadtextureimage ("models/ai/zfull.mdl_1", 0, 0, qtrue, GU_LINEAR, qfalse, qfalse);
+		zombie_skins[1][0] = loadtextureimage ("models/ai/zfull.mdl_2", 0, 0, qtrue, GU_LINEAR, qfalse, qfalse);
+		zombie_skins[1][1] = loadtextureimage ("models/ai/zfull.mdl_3", 0, 0, qtrue, GU_LINEAR, qfalse, qfalse);
 		GL_MarkTextureAsPermanent(zombie_skins[0][1]);
 		GL_MarkTextureAsPermanent(zombie_skins[1][0]);
 		GL_MarkTextureAsPermanent(zombie_skins[1][1]);
 	}
 
-	decal_burn	  = loadtextureimage ("textures/decals/explo_burn01", 0, 0, qfalse, GU_LINEAR);
+	decal_burn	  = loadtextureimage ("textures/decals/explo_burn01", 0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
 	GL_MarkTextureAsPermanent(decal_burn);
 	decal_blood1 = decal_blood2 = decal_blood3 = decal_q3blood = decal_burn;
-	decal_mark	  = loadtextureimage ("textures/decals/particle_burn01", 0, 0, qfalse, GU_LINEAR);
+	decal_mark	  = loadtextureimage ("textures/decals/particle_burn01", 0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
 	GL_MarkTextureAsPermanent(decal_mark);
-	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, qfalse, GU_LINEAR);
+	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, qfalse, GU_LINEA, qfalse, qfalse);
 	GL_MarkTextureAsPermanent(decal_glow);
 }
 

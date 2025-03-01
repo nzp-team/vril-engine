@@ -94,7 +94,6 @@ typedef struct
 	texel*	vram;
 } gltexture_t;
 
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
 void VID_SetPalette4(unsigned char* clut4pal);
 
 #define	MAX_GLTEXTURES	1024
@@ -351,7 +350,7 @@ qpic_t	*Draw_CachePic (char *path)
 // load the pic from disk
 //
 
-	int index = loadtextureimage (str, 0, 0, qfalse, GU_LINEAR);
+	int index = loadtextureimage (str, 0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
 	if(index)
 	{
 		pic->pic.width  = gltextures[index].original_width;
@@ -415,7 +414,7 @@ qpic_t	*Draw_CacheImg (char *path)
 // load the pic from disk
 //
 
-	int index = loadtextureimage (path, 0, 0, qfalse, GU_LINEAR);
+	int index = loadtextureimage (path, 0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
 	if(index != -1)
 	{
 		pic->pic.width  = gltextures[index].original_width;
@@ -555,7 +554,7 @@ void Draw_Init (void)
 	R_CreateDlightImage();
 
 	// now turn them into textures
-	char_texture = loadtextureimage ("gfx/charset", 0, 0, qfalse, GU_NEAREST);
+	char_texture = loadtextureimage ("gfx/charset", 0, 0, qfalse, GU_NEAREST, qfalse, qfalse);
 	GL_MarkTextureAsPermanent(char_texture);
 	if (char_texture == 0)// did not find a matching TGA...
 		Sys_Error ("Could not load charset, make sure you have every folder and file installed properly\nDouble check that all of your files are in their correct places\nAnd that you have installed the game properly.\nRefer to the readme.txt file for help\n");

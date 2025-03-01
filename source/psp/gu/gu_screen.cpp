@@ -1098,7 +1098,7 @@ void SCR_DrawLoadScreen (void)
 			char lpath[32];
 			strcpy(lpath, "gfx/lscreen/");
 			strcat(lpath, loadname2);
-			lscreen_index = loadtextureimage(lpath, 0, 0, qfalse, GU_LINEAR);
+			lscreen_index = loadtextureimage(lpath, 0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
 			awoo = Draw_CacheImg("gfx/menu/awoo");
 			loadscreeninit = qtrue;
 		}

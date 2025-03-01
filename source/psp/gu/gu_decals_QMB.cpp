@@ -359,7 +359,7 @@ void R_SpawnDecalBSP (vec3_t org, char *texname, int size)
 	if (!qmb_initialized)
 		return;
 
-	int tex = loadtextureimage(va("decals/%s",texname),   0, 0, qfalse, GU_LINEAR);
+	int tex = loadtextureimage(va("decals/%s",texname),   0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
 
 	VectorClear (bestorg);
 	VectorClear (bestnormal);
