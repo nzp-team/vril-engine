@@ -919,11 +919,11 @@ void Sky_LoadSkyBox (char *name)
     {
         int mark = Hunk_LowMark ();
 
-		if(!(skyimage[i] = loadskyboxsideimage (va("gfx/env/%s%s", name, suf[i]), 0, 0, qfalse, GU_LINEAR)) &&
-           !(skyimage[i] = loadskyboxsideimage (va("gfx/env/%s_%s", name, suf[i]), 0, 0, qfalse, GU_LINEAR)))
+		if(!(skyimage[i] = loadskyboxsideimage (va("gfx/env/%s%s", name, suf[i]), 0, 0, false, GU_LINEAR)) &&
+           !(skyimage[i] = loadskyboxsideimage (va("gfx/env/%s_%s", name, suf[i]), 0, 0, false, GU_LINEAR)))
 		{
 			Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[i]);
-		    if(!(skyimage[i] = loadskyboxsideimage (va("gfx/env/skybox%s", suf[i]), 0, 0, qfalse, GU_LINEAR)))
+		    if(!(skyimage[i] = loadskyboxsideimage (va("gfx/env/skybox%s", suf[i]), 0, 0, false, GU_LINEAR)))
 		    {
 			    Sys_Error("STD SKY NOT FOUND!");
 			}
@@ -933,11 +933,11 @@ void Sky_LoadSkyBox (char *name)
     }
 
 	int mark = Hunk_LowMark ();
-	if(!(skyimage[4] = loadtextureimage (va("gfx/env/%sup", name), 0, 0, qfalse, GU_LINEAR, qfalse, qfalse)) &&
-		!(skyimage[4] = loadtextureimage (va("gfx/env/%s_up", name), 0, 0, qfalse, GU_LINEAR, qfalse, qfalse)))
+	if(!(skyimage[4] = loadtextureimage (va("gfx/env/%sup", name), 0, 0, false, GU_LINEAR, false, false)) &&
+		!(skyimage[4] = loadtextureimage (va("gfx/env/%s_up", name), 0, 0, false, GU_LINEAR, false, false)))
 	{
 		Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[4]);
-		if(!(skyimage[4] = loadtextureimage (va("gfx/env/skybox%s", suf[4]), 0, 0, qfalse, GU_LINEAR, qfalse, qfalse)))
+		if(!(skyimage[4] = loadtextureimage (va("gfx/env/skybox%s", suf[4]), 0, 0, false, GU_LINEAR, false, false)))
 		{
 			Sys_Error("STD SKY NOT FOUND!");
 		}
@@ -1161,19 +1161,19 @@ void ClipSkyPolygon (int nump, vec3_t vecs, int stage)
 		return;
 	}
 
-	front = back = qfalse;
+	front = back = false;
 	norm = skyclip[stage];
 	for (i=0, v = vecs ; i<nump ; i++, v+=3)
 	{
 		d = DotProduct (v, norm);
 		if (d > ON_EPSILON)
 		{
-			front = qtrue;
+			front = true;
 			sides[i] = SIDE_FRONT;
 		}
 		else if (d < ON_EPSILON)
 		{
-			back = qtrue;
+			back = true;
 			sides[i] = SIDE_BACK;
 		}
 		else
@@ -1583,7 +1583,7 @@ void R_InitSky (byte *mt)
 	}
 
 	if (solidskytexture == -1)
-		solidskytexture = GL_LoadTexture("solidskytexture", 128, 128, trans, qfalse, GU_LINEAR, 0);
+		solidskytexture = GL_LoadTexture("solidskytexture", 128, 128, trans, false, GU_LINEAR, 0);
 
 	for (int i=0 ; i<128 ; i++)
 	{
@@ -1598,6 +1598,6 @@ void R_InitSky (byte *mt)
 	}
 
 	if (alphaskytexture == -1)
-		alphaskytexture = GL_LoadTexture("alphaskytexture", 128, 128, trans, qfalse, GU_LINEAR, 0);
+		alphaskytexture = GL_LoadTexture("alphaskytexture", 128, 128, trans, false, GU_LINEAR, 0);
 }
 

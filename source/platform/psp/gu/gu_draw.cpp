@@ -309,7 +309,7 @@ byte		menuplyr_pixels[4096];
 
 static int GL_LoadPicTexture (qpic_t *pic)
 {
-	return GL_LoadTexture ("", pic->width, pic->height, pic->data, qfalse, GU_NEAREST, 0);
+	return GL_LoadTexture ("", pic->width, pic->height, pic->data, false, GU_NEAREST, 0);
 }
 
 /*
@@ -339,13 +339,13 @@ qpic_t	*Draw_CachePic (char *path)
 // load the pic from disk
 //
 
-	int index = loadtextureimage (str, 0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
+	int index = loadtextureimage (str, 0, 0, false, GU_LINEAR, false, false);
 	if(index)
 	{
 		pic->pic.width  = gltextures[index].original_width;
 		pic->pic.height = gltextures[index].original_height;
 
-		gltextures[index].islmp = qfalse;
+		gltextures[index].islmp = false;
 		gl = (glpic_t *)pic->pic.data;
 		gl->index = index;
 		GL_MarkTextureAsPermanent(gl->index);
@@ -374,7 +374,7 @@ qpic_t	*Draw_CachePic (char *path)
 	gl->index = GL_LoadPicTexture (dat);
 	GL_MarkTextureAsPermanent(gl->index);
 
-	gltextures[gl->index].islmp = qtrue;
+	gltextures[gl->index].islmp = true;
 	return &pic->pic;
 }
 
@@ -403,7 +403,7 @@ qpic_t	*Draw_CacheImg (char *path)
 // load the pic from disk
 //
 
-	int index = loadtextureimage (path, 0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
+	int index = loadtextureimage (path, 0, 0, false, GU_LINEAR, false, false);
 	if(index != -1)
 	{
 		pic->pic.width  = gltextures[index].original_width;
@@ -489,7 +489,7 @@ static void R_CreateDlightImage( void )
 			data[y][x] = b;
 		}
 	}
-	ref_texture = GL_LoadTexture ("reftexture", DLIGHT_SIZE, DLIGHT_SIZE, (byte*)data, qfalse, GU_LINEAR, 0);
+	ref_texture = GL_LoadTexture ("reftexture", DLIGHT_SIZE, DLIGHT_SIZE, (byte*)data, false, GU_LINEAR, 0);
 }
 
 // ! " # $ % & ' ( ) * _ , - . / 0
@@ -538,12 +538,12 @@ void Draw_Init (void)
 	// string into the background before turning
 	// it into a texture
 
-	nonetexture = GL_LoadTexture ("nonetexture", 8, 8, (byte*)nontexdt, qfalse, GU_NEAREST, 0);
+	nonetexture = GL_LoadTexture ("nonetexture", 8, 8, (byte*)nontexdt, false, GU_NEAREST, 0);
 	GL_MarkTextureAsPermanent(nonetexture);
 	R_CreateDlightImage();
 
 	// now turn them into textures
-	char_texture = loadtextureimage ("gfx/charset", 0, 0, qfalse, GU_NEAREST, qfalse, qfalse);
+	char_texture = loadtextureimage ("gfx/charset", 0, 0, false, GU_NEAREST, false, false);
 	GL_MarkTextureAsPermanent(char_texture);
 	if (char_texture == 0)// did not find a matching TGA...
 		Sys_Error ("Could not load charset, make sure you have every folder and file installed properly\nDouble check that all of your files are in their correct places\nAnd that you have installed the game properly.\nRefer to the readme.txt file for help\n");
@@ -1015,7 +1015,7 @@ void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation)
 		else
 			trans[v] = translation[p];
 	}
-    int translate_texture = GL_LoadTexture ("Player_Trl", pic->width, pic->height, (byte*)trans, qtrue, GU_LINEAR, 0);
+    int translate_texture = GL_LoadTexture ("Player_Trl", pic->width, pic->height, (byte*)trans, true, GU_LINEAR, 0);
 
 	GL_Bind (translate_texture);
 
@@ -1505,7 +1505,7 @@ void Draw_Crosshair (void)
 			cur_spread = 2;
 		}
 
-		crosshair_pulse_grenade = qfalse;
+		crosshair_pulse_grenade = false;
 
         crosshair_offset = 12 + cur_spread;
 		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5;
@@ -1547,7 +1547,7 @@ void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, flo
 {
 	int num;
 	int scale_int = rint(scale);
-	qboolean white = qtrue;
+	qboolean white = true;
 
 	if (y <= -8)
 		return;			// totally off screen
@@ -2638,7 +2638,7 @@ void GL_UnloadTexture(int texture_index)
 	strcpy(texture.identifier,"");
 	texture.original_width = 0;
 	texture.original_height = 0;
-	texture.stretch_to_power_of_two = qfalse;
+	texture.stretch_to_power_of_two = false;
 
 	// Fill in the texture description.
 	texture.format  = GU_PSM_T8;
@@ -2654,6 +2654,24 @@ void GL_UnloadTexture(int texture_index)
 		free(texture.palette);
 		texture.palette = NULL;
 	}
+	if (texture.palette_2 != NULL)
+	{
+		free(texture.palette_2);
+		texture.palette_2 = NULL;
+	}
+#endif
+	texture.palette_active = qfalse;
+	if (texture.palette != NULL)
+	{
+		free(texture.palette);
+		texture.palette = NULL;
+	}
+	if (texture.palette_2 != NULL)
+	{
+		free(texture.palette_2);
+		texture.palette_2 = NULL;
+	}
+	
 	// Buffers.
 	if (texture.ram != NULL)
 	{
@@ -2745,7 +2763,7 @@ int GL_LoadTexture (const char *identifier, int width, int height, byte *data, q
 	int texture_index = GL_TextureForName(identifier);
 	if (texture_index >= 0) return texture_index;
 
-	tex_scale_down = r_tex_scale_down.value == qtrue;
+	tex_scale_down = r_tex_scale_down.value == true;
 	
 	texture_index = GL_GetTextureIndex();
 
@@ -2755,7 +2773,7 @@ int GL_LoadTexture (const char *identifier, int width, int height, byte *data, q
 	strcpy(texture.identifier, identifier);
 	texture.original_width			= width;
 	texture.original_height			= height;
-	texture.stretch_to_power_of_two	= stretch_to_power_of_two != qfalse;
+	texture.stretch_to_power_of_two	= stretch_to_power_of_two != false;
 
 	// Fill in the texture description.
 	texture.format			= GU_PSM_T8;
@@ -2763,6 +2781,10 @@ int GL_LoadTexture (const char *identifier, int width, int height, byte *data, q
 	texture.mipmaps			= mipmap_level;
 	texture.swizzle         = GU_TRUE;
 	texture.bpp             = 1;
+#ifdef STATIC_PAL
+	memset(texture.palette, 0, sizeof(texture.palette));
+#endif
+    texture.palette_active          = qfalse;
 
 	if (tex_scale_down == true && texture.stretch_to_power_of_two == true)
 	{
@@ -2835,9 +2857,145 @@ int GL_LoadPalTex (const char *identifier, int width, int height, byte *data, qb
 	int texture_index = GL_TextureForName(identifier);
 	if (texture_index >= 0) return texture_index;
 
-	byte * pal = palette;
-	int bpp = paltype == PAL_RGBA ? 4 : 3;
-	return GL_LoadTexture8to4(identifier, width, height, data, pal, filter, bpp, NULL);
+	tex_scale_down = r_tex_scale_down.value == qtrue;
+	
+	texture_index = GL_GetTextureIndex();
+
+	gltexture_t& texture = gltextures[texture_index];
+
+	// Fill in the source data.
+	strcpy(texture.identifier, identifier);
+	texture.original_width			= width;
+	texture.original_height			= height;
+	texture.stretch_to_power_of_two	= stretch_to_power_of_two != qfalse;
+
+	// Fill in the texture description.
+	texture.format			= GU_PSM_T8;
+	texture.filter			= filter;
+	texture.mipmaps			= mipmap_level;
+    texture.swizzle         = GU_TRUE;
+	texture.bpp             = 1;
+
+	// Upload the Palette
+    if((paltype == PAL_RGB  && palette) ||
+       (paltype == PAL_RGBA && palette) ||
+	   (paltype == PAL_Q2   && palette == NULL) ||
+	   (paltype == PAL_H2   && palette == NULL) )
+    {
+#ifndef STATIC_PAL
+        if(paltype == PAL_Q2)
+	    {
+              texture.palette_2 = d_8to24tableQ2; //hard coded palette
+		}
+	    else if(paltype == PAL_H2)
+	    {
+              texture.palette_2 = d_8to24tableH2; //hard coded palette
+		}
+		else
+		{
+			texture.palette_2 = static_cast<ScePspRGBA8888*>(memalign(16, sizeof(ScePspRGBA8888) * 256));
+			if(!texture.palette_2)
+			{
+	            Sys_Error("Out of RAM for palettes.");
+			}
+#endif
+			if(paltype == PAL_RGBA)
+			{
+				  // Convert the palette to PSP format.
+			      for (ScePspRGBA8888* color = &texture.palette_2[0]; color < &texture.palette_2[256]; ++color)
+				  {
+					const unsigned int r = gammatable[*palette++];
+					const unsigned int g = gammatable[*palette++];
+					const unsigned int b = gammatable[*palette++];
+					const unsigned int a = gammatable[*palette++];
+					*color = GU_RGBA(r, g, b, a);
+				  }
+	        }
+			else if(paltype == PAL_RGB)
+			{
+				  // Convert the palette to PSP format.
+			      for (ScePspRGBA8888* color = &texture.palette_2[0]; color < &texture.palette_2[256]; ++color)
+				  {
+					const unsigned int r = gammatable[*palette++];
+					const unsigned int g = gammatable[*palette++];
+					const unsigned int b = gammatable[*palette++];
+					*color = GU_RGBA(r, g, b, 0xff);
+				  }
+		    }
+#ifndef STATIC_PAL
+		}
+#endif
+		texture.palette_2[255] = 0;  //alpha color
+		texture.palette_active  = qtrue;
+	}
+	else
+    {
+	    Sys_Error("GL_LoadPalTex: Unknow palette type");
+	}
+
+
+	if (tex_scale_down == true && texture.stretch_to_power_of_two == true)
+	{
+		texture.width			= std::max(round_down(width), 32U);
+		texture.height			= std::max(round_down(height),32U);
+	}
+	else
+	{
+		texture.width			= std::max(round_up(width), 32U);
+		texture.height			= std::max(round_up(height),32U);
+	}
+
+	for (int i=0; i <= mipmap_level;i++)
+	{
+		int div = (int) powf(2,i);
+		if ((texture.width / div) > 16 && (texture.height / div) > 16 )
+		{
+			texture.mipmaps = i;
+		}
+	}
+
+	// Do we really need to resize the texture?
+	if (texture.stretch_to_power_of_two)
+	{
+		// Not if the size hasn't changed.
+		texture.stretch_to_power_of_two = (texture.width != width) || (texture.height != height);
+	}
+
+	Con_DPrintf("Loading TEX_PAL: %s [%dx%d](%0.2f KB)\n",texture.identifier,texture.width,texture.height, (float) ((texture.width*texture.height)/1024) + 256);
+
+	// Allocate the RAM.
+	std::size_t buffer_size = texture.width * texture.height;
+
+	if (texture.mipmaps > 0)
+	{
+		int size_incr = buffer_size/4;
+		for (int i= 1;i <= texture.mipmaps;i++)
+		{
+			buffer_size += size_incr;
+			size_incr = size_incr/4;
+		}
+	}
+
+	texture.ram	= static_cast<texel*>(memalign(16, buffer_size));
+
+	if (!texture.ram)
+	{
+		Sys_Error("Out of RAM for textures.");
+	}
+
+	// Allocate the VRAM.
+	texture.vram = static_cast<texel*>(vramalloc(buffer_size));
+
+	// Upload the texture.
+	GL_Upload8(texture_index, data, width, height);
+
+	if (texture.vram && texture.ram)
+	{
+		free(texture.ram);
+		texture.ram = NULL;
+	}
+	// Done.
+	return texture_index;
 }
 
 
@@ -2848,13 +3006,13 @@ GL_LoadTextureLM
 */
 int GL_LoadTextureLM (const char *identifier, int width, int height, byte *data, int bpp, int filter, qboolean update, int forcopy)
 {
-	tex_scale_down = r_tex_scale_down.value == qtrue;
+	tex_scale_down = r_tex_scale_down.value == true;
 	int texture_index = GL_TextureForName(identifier);
-	if (texture_index >= 0 && update == qfalse) {
+	if (texture_index >= 0 && update == false) {
 		return texture_index;
 	}
 
-	if (update == qfalse || texture_index == -1)
+	if (update == false || texture_index == -1)
 	{
 		texture_index = GL_GetTextureIndex();
 		gltexture_t& texture = gltextures[texture_index];
@@ -2866,6 +3024,11 @@ int GL_LoadTextureLM (const char *identifier, int width, int height, byte *data,
 		texture.original_height			= height;
 		texture.stretch_to_power_of_two	= false;
         texture.bpp                     = bpp;
+
+#ifdef STATIC_PAL
+        memset(texture.palette, 0, sizeof(texture.palette));
+#endif
+	    texture.palette_active          = qfalse;
 
 	    // Fill in the texture description.
 		switch(texture.bpp)
@@ -3038,7 +3201,7 @@ int GL_LoadImages (const char *identifier, int width, int height, byte *data, qb
 	int texture_index = GL_TextureForName(identifier);
 	if (texture_index >= 0) return texture_index;
 
-	tex_scale_down = r_tex_scale_down.value == qtrue;
+	tex_scale_down = r_tex_scale_down.value == true;
 	
 	texture_index = GL_GetTextureIndex();
 
@@ -3047,8 +3210,12 @@ int GL_LoadImages (const char *identifier, int width, int height, byte *data, qb
 	strcpy(texture.identifier, identifier);
 	texture.original_width			= width;
 	texture.original_height			= height;
-	texture.stretch_to_power_of_two	= stretch_to_power_of_two != qfalse;
+	texture.stretch_to_power_of_two	= stretch_to_power_of_two != false;
 	texture.bpp                     = bpp;
+#ifdef STATIC_PAL
+	memset(texture.palette, 0, sizeof(texture.palette));
+#endif
+	texture.palette_active          = qfalse;
 
 	// Fill in the texture description.
 	switch(texture.bpp)
@@ -3215,7 +3382,7 @@ int GL_LoadTexture8Pal32 (char *identifier, int width, int height, byte *data, b
 		trans[i*4+3] = gammatable[pal[data[i]*4+3]];
 	}
 
-    int index = GL_LoadImages (identifier, width, height, trans, qtrue, GU_LINEAR, 0, 4);
+    int index = GL_LoadImages (identifier, width, height, trans, true, GU_LINEAR, 0, 4);
 	free(trans);
 	return index;
 }
@@ -3237,7 +3404,7 @@ int GL_LoadTexture8Pal24 (char *identifier, int width, int height, byte *data, b
 		trans[i*4+3] = 255;
 	}
 
-    int index = GL_LoadImages (identifier, width, height, trans, qtrue, GU_LINEAR, 0, 4);
+    int index = GL_LoadImages (identifier, width, height, trans, true, GU_LINEAR, 0, 4);
 	free(trans);
 	return index;
 }
@@ -3289,7 +3456,7 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 	strcpy(texture.identifier, identifier);
 	texture.original_width = texture.width = width;
 	texture.original_height = texture.height = height;
-	texture.stretch_to_power_of_two = qfalse;
+	texture.stretch_to_power_of_two = false;
 	texture.swizzle = swizzled;
 
 	// Fill in the texture description.
@@ -3327,9 +3494,6 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 
 int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int height, byte *data, const byte *pal, int filter, int inpal_bpp, const byte * palhint)
 {
-	int texture_index = GL_TextureForName(identifier);
-	if (texture_index >= 0) return texture_index;
-
 	tex_scale_down = r_tex_scale_down.value == qtrue;
 	int new_width = width;
 	int new_height = height;
@@ -3368,7 +3532,7 @@ int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int 
 
 	free(unswizzled_data);
 
-	int id = GL_LoadTexture4(identifier, new_width, new_height, clut4data, filter, qtrue);
+	int id = GL_LoadTexture4(identifier, new_width, new_height, clut4data, filter, true);
 
 	free(clut4data);
 	free(resamp_data);

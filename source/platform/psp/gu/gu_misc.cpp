@@ -31,7 +31,7 @@ extern "C"
 
 void GL_InitTextureUsage ();
 
-qboolean	r_loadq3player = qfalse;
+qboolean	r_loadq3player = false;
 
 int decal_blood1, decal_blood2, decal_blood3, decal_q3blood, decal_burn, decal_mark, decal_glow;
 
@@ -61,12 +61,12 @@ void	R_InitOtherTextures (void)
 		GL_MarkTextureAsPermanent(zombie_skins[1][1]);
 	}
 
-	decal_burn	  = loadtextureimage ("textures/decals/explo_burn01", 0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
+	decal_burn	  = loadtextureimage ("textures/decals/explo_burn01", 0, 0, false, GU_LINEAR, false, false);
 	GL_MarkTextureAsPermanent(decal_burn);
 	decal_blood1 = decal_blood2 = decal_blood3 = decal_q3blood = decal_burn;
-	decal_mark	  = loadtextureimage ("textures/decals/particle_burn01", 0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
+	decal_mark	  = loadtextureimage ("textures/decals/particle_burn01", 0, 0, false, GU_LINEAR, false, false);
 	GL_MarkTextureAsPermanent(decal_mark);
-	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
+	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, false, GU_LINEAR, false, false);
 	GL_MarkTextureAsPermanent(decal_glow);
 }
 
@@ -161,7 +161,7 @@ void LoadMapConfig (void)
 		Cbuf_Execute ();
 	}
 
-	config_lock = qfalse;
+	config_lock = false;
 
 	//mapname = cl_map.string;
 	Con_Printf("loading cfg for %s\n", mapname);
@@ -200,7 +200,7 @@ void R_Envmap_f (void)
 		return;
 	}
 
-	envmap = qtrue;
+	envmap = true;
 
 	r_refdef.vrect.x = 0;
 	r_refdef.vrect.y = 0;
@@ -247,7 +247,7 @@ void R_Envmap_f (void)
 	GL_GetPixelsRGBA(buffer, 256, 256, 0);
 	COM_WriteFile ("env5.rgb", buffer, ENVMAP_SIZE);
 
-	envmap = qfalse;
+	envmap = false;
 
 	GL_EndRendering ();
 

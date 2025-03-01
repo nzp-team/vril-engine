@@ -88,8 +88,8 @@ float		scr_con_current;
 float		scr_conlines;		// lines of console to display
 
 float		oldscreensize, oldfov;
-cvar_t		scr_coloredtext = {"scr_coloredtext","1", qtrue};
-cvar_t		scr_fov = {"fov","90", qtrue};
+cvar_t		scr_coloredtext = {"scr_coloredtext","1", true};
+cvar_t		scr_fov = {"fov","90", true};
 cvar_t 		scr_fov_viewmodel = {"r_viewmodel_fov","75"};
 cvar_t		scr_conspeed = {"scr_conspeed","300"};
 cvar_t		scr_centertime = {"scr_centertime","2"};
@@ -97,11 +97,11 @@ cvar_t		scr_showram = {"showram","1"};
 cvar_t		scr_showpause = {"showpause","1"};
 cvar_t		scr_printspeed = {"scr_printspeed","8"};
 cvar_t 		scr_conheight = {"scr_conheight", "0.5"};
-cvar_t		scr_loadscreen = {"scr_loadscreen","1", qtrue};
-cvar_t 		cl_crosshair_debug = {"cl_crosshair_debug", "0", qtrue};
+cvar_t		scr_loadscreen = {"scr_loadscreen","1", true};
+cvar_t 		cl_crosshair_debug = {"cl_crosshair_debug", "0", true};
 
 
-cvar_t		r_dithering = {"r_dithering","1",qtrue};
+cvar_t		r_dithering = {"r_dithering","1",true};
 
 extern "C"	cvar_t	crosshair;
 
@@ -606,7 +606,7 @@ static void SCR_CalcRefdef (void)
 {
 	float		size;
 	int		h;
-	qboolean		full = qfalse;
+	qboolean		full = false;
 
 
 	scr_fullupdate = 0;		// force a background redraw
@@ -622,7 +622,7 @@ static void SCR_CalcRefdef (void)
 		Cvar_Set ("fov","170");
 
 // intermission is always full screen
-	full = qtrue;
+	full = true;
     size = 1.0;
 
 	h = vid.height;
@@ -682,7 +682,7 @@ void SCR_Init (void)
 
     hitmark 		= Draw_CachePic("gfx/hud/hit_marker");
 
-	scr_initialized = qtrue;
+	scr_initialized = true;
 }
 
 
@@ -1098,9 +1098,9 @@ void SCR_DrawLoadScreen (void)
 			char lpath[32];
 			strcpy(lpath, "gfx/lscreen/");
 			strcat(lpath, loadname2);
-			lscreen_index = loadtextureimage(lpath, 0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
+			lscreen_index = loadtextureimage(lpath, 0, 0, false, GU_LINEAR, false, false);
 			awoo = Draw_CacheImg("gfx/menu/awoo");
-			loadscreeninit = qtrue;
+			loadscreeninit = true;
 		}
 
 		if (lscreen_index > 0)
@@ -1147,11 +1147,11 @@ void SCR_SetUpToDrawConsole (void)
 // decide on the height of the console
 	if (!cl.worldmodel || cls.signon != SIGNONS)//blubs here, undid it actually
 	{
-		con_forcedup = qtrue;
+		con_forcedup = true;
 	}
 	else
 	{
-		con_forcedup = qfalse;
+		con_forcedup = false;
 	}
 
 	if (con_forcedup)
@@ -1195,7 +1195,7 @@ void SCR_DrawConsole (void)
 	if (scr_con_current)
 	{
 		scr_copyeverything = 1;
-		Con_DrawConsole (scr_con_current, qtrue, 1);
+		Con_DrawConsole (scr_con_current, true, 1);
 		clearconsole = 0;
 	}
 	else
@@ -1218,7 +1218,7 @@ SCR_BeginLoadingPlaque
 void SCR_BeginLoadingPlaque (void)
 {
 	CDAudio_Pause();
-	S_StopAllSounds (qtrue);
+	S_StopAllSounds (true);
 
 	if (cls.state != ca_connected)
 		return;
@@ -1230,12 +1230,12 @@ void SCR_BeginLoadingPlaque (void)
 	scr_centertime_off = 0;
 	scr_con_current = 0;
 
-	scr_drawloading = qtrue;
+	scr_drawloading = true;
 	scr_fullupdate = 0;
 	SCR_UpdateScreen ();
-	scr_drawloading = qfalse;
+	scr_drawloading = false;
 
-	scr_disabled_for_loading = qtrue;
+	scr_disabled_for_loading = true;
 	scr_disabled_time = realtime;
 	scr_fullupdate = 0;
 }
@@ -1248,7 +1248,7 @@ SCR_EndLoadingPlaque
 */
 void SCR_EndLoadingPlaque (void)
 {
-	scr_disabled_for_loading = qfalse;
+	scr_disabled_for_loading = false;
 	scr_fullupdate = 0;
 	Con_ClearNotify ();
 	CDAudio_Resume();
@@ -1302,15 +1302,15 @@ keypress.
 int SCR_ModalMessage (char *text)
 {
 	if (cls.state == ca_dedicated)
-		return qtrue;
+		return true;
 
 	scr_notifystring = text;
 
 // draw a fresh screen
 	scr_fullupdate = 0;
-	scr_drawdialog = qtrue;
+	scr_drawdialog = true;
 	SCR_UpdateScreen ();
-	scr_drawdialog = qfalse;
+	scr_drawdialog = false;
 
 	S_ClearBuffer ();		// so dma doesn't loop current sound
 
@@ -1474,7 +1474,7 @@ void SCR_UpdateScreen (void)
 	{
 		if (realtime - scr_disabled_time > 60)
 		{
-			scr_disabled_for_loading = qfalse;
+			scr_disabled_for_loading = false;
 			Con_Printf ("load failed.\n");
 		}
 		else
@@ -1539,13 +1539,13 @@ void SCR_UpdateScreen (void)
 	if (oldfov != scr_fov.value)
 	{
 		oldfov = scr_fov.value;
-		vid.recalc_refdef = qtrue;
+		vid.recalc_refdef = true;
 	}
 
 	if (oldscreensize != 120)
 	{
 		oldscreensize = 120;
-		vid.recalc_refdef = qtrue;
+		vid.recalc_refdef = true;
 	}
 
 	if (vid.recalc_refdef)

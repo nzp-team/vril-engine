@@ -50,6 +50,9 @@ bool system_has_right_stick;
 #include "system.hpp"
 #include "module.h"
 
+// Running a dedicated server?
+qboolean isDedicated = false;
+
 qboolean depthfl = false;
 
 extern	int  com_argc;
