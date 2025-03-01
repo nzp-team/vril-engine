@@ -342,7 +342,7 @@ Mod_LoadTextures
 */
 void Mod_LoadTextures (lump_t *l)
 {
-	int		i, j, pixels, num, max, altmax;
+	int		i, j, num, max, altmax;
 	miptex_t	*mt;
 	texture_t	*tx, *tx2;
 	texture_t	*anims[10];
@@ -382,7 +382,6 @@ void Mod_LoadTextures (lump_t *l)
 		
 		if ( (mt->width & 15) || (mt->height & 15) )
 			Sys_Error ("Texture %s is not 16 aligned", mt->name);
-		pixels = mt->width*mt->height/64*85;
 		tx = Hunk_AllocName (sizeof(texture_t), loadname );
 		loadmodel->textures[i] = tx;
 
@@ -723,7 +722,7 @@ void Mod_LoadTexinfo (lump_t *l)
 {
 	texinfo_t *in;
 	mtexinfo_t *out;
-	int 	i, j, count;
+	int 	i, j, k, count;
 	int		miptex;
 	float	len1, len2;
 
@@ -738,8 +737,11 @@ void Mod_LoadTexinfo (lump_t *l)
 
 	for ( i=0 ; i<count ; i++, in++, out++)
 	{
-		for (j=0 ; j<8 ; j++)
-			out->vecs[0][j] = LittleFloat (in->vecs[0][j]);
+		for (j=0 ; j<2 ; j++) {
+			for (k=0 ; k<4 ; k++) {
+				out->vecs[j][k] = LittleFloat (in->vecs[j][k]);
+			}
+		}
 		len1 = Length (out->vecs[0]);
 		len2 = Length (out->vecs[1]);
 		len1 = (len1 + len2)/2;
@@ -1431,9 +1433,9 @@ void Mod_LoadBrushModel (model_t *mod, void *buffer)
 
 		if (i < mod->numsubmodels-1)
 		{	// duplicate the basic information
-			char	name[10];
+			char	name[11];
 
-			sprintf (name, "*%i", i+1);
+			snprintf (name, 12, "*%i", i+1);
 			loadmodel = Mod_FindName (name);
 			*loadmodel = *mod;
 			strcpy (loadmodel->name, name);
@@ -1472,8 +1474,8 @@ Mod_LoadAliasFrame
 */
 void * Mod_LoadAliasFrame (void * pin, maliasframedesc_t *frame)
 {
-	trivertx_t		*pframe, *pinframe;
-	int				i, j;
+	trivertx_t		*pinframe;
+	int				i;
 	daliasframe_t	*pdaliasframe;
 	
 	pdaliasframe = (daliasframe_t *)pin;
@@ -1632,9 +1634,8 @@ Mod_LoadAllSkins
 void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 {
 	int		i, j, k;
-	char	name[32], model[64], model2[64];
+	char	name[MAX_OSPATH], model[64], model2[128];
 	int		s;
-	byte	*copy;
 	byte	*skin;
 	byte	*texels;
 	daliasskingroup_t		*pinskingroup;
@@ -1680,7 +1681,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			memcpy (texels, (byte *)(pskintype + 1), s);
 
 			// HACK HACK HACK
-			sprintf(model2, "%s.mdl_%i", model, i);
+			snprintf(model2, 128, "%s.mdl_%i", model, i);
 			pheader->gl_texturenum[i][0] =
 			pheader->gl_texturenum[i][1] =
 			pheader->gl_texturenum[i][2] =
@@ -1714,7 +1715,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 						pheader->texels[i] = texels - (byte *)pheader;
 						memcpy (texels, (byte *)(pskintype), s);
 					}
-					sprintf (name, "%s_%i_%i", loadmodel->name, i,j);
+					snprintf (name, MAX_OSPATH, "%s_%i_%i", loadmodel->name, i,j);
 					pheader->gl_texturenum[i][j&3] = 
 						GL_LoadTexture (name, pheader->skinwidth, 
 						pheader->skinheight, (byte *)(pskintype), true, false, 1);
@@ -1743,7 +1744,7 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	mdl_t				*pinmodel;
 	stvert_t			*pinstverts;
 	dtriangle_t			*pintriangles;
-	int					version, numframes, numskins;
+	int					version, numframes;
 	int					size;
 	daliasframetype_t	*pframetype;
 	daliasskintype_t	*pskintype;
@@ -1937,10 +1938,8 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 {
 	dspriteframe_t		*pinframe;
 	mspriteframe_t		*pspriteframe;
-	int					i, width, height, size, origin[2];
-	unsigned short		*ppixout;
-	byte				*ppixin;
-	char				name[64], sprite[64], sprite2[64];
+	int					width, height, size, origin[2];
+	char				name[128], sprite[64], sprite2[128];
 
 	pinframe = (dspriteframe_t *)pin;
 
@@ -1965,10 +1964,10 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	pspriteframe->right = width + origin[0];
 
 	// HACK HACK HACK
-	sprintf (name, "%s.spr_%i", loadmodel->name, framenum);
+	snprintf(name, 128, "%s.spr_%i", loadmodel->name, framenum);
 
 	COM_StripExtension(loadmodel->name, sprite);
-	sprintf(sprite2, "%s.spr_%i", sprite, framenum);
+	snprintf(sprite2, 128, "%s.spr_%i", sprite, framenum);
 	pspriteframe->gl_texturenum = loadtextureimage(sprite2, 0, 0, qtrue, qfalse);
 
 	if (pspriteframe->gl_texturenum == 0) // did not find a matching TGA...

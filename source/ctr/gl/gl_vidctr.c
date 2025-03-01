@@ -52,10 +52,14 @@ void GL_Init (void)
 {
 	pglInitEx(0x040000, 0x100000);
 
+#pragma GCC diagnostic ignored "-Wpointer-sign"
+
 	gl_vendor = glGetString (GL_VENDOR);
 	gl_renderer = glGetString (GL_RENDERER);
 	gl_version = glGetString (GL_VERSION);
 	gl_extensions = glGetString (GL_EXTENSIONS);
+
+#pragma GCC diagnostic pop
 
 	glClearDepth (1.0f);
 	glClearColor ((float)(16/255),(float)(32/255),(float)(64/255),1);
@@ -102,11 +106,9 @@ void	VID_SetPalette (unsigned char *palette)
 	unsigned r,g,b;
 	unsigned v;
 	int     r1,g1,b1;
-	int		j,k,l,m;
+	int		k;
 	unsigned short i;
 	unsigned	*table;
-	FILE *f;
-	char s[255];
 	int dist, bestdist;
 
 //
@@ -192,7 +194,7 @@ static void Check_Gamma (unsigned char *pal)
 void	VID_Init (unsigned char *palette)
 {
 	int i;
-	char	gldir[MAX_OSPATH];
+	char	gldir[512];
 	int width = 400;
 	int height = 240;
 
@@ -232,7 +234,7 @@ void	VID_Init (unsigned char *palette)
 
 	GL_Init();
 
-	sprintf (gldir, "%s/glquake", com_gamedir);
+	snprintf(gldir, 512, "%s/glquake", com_gamedir);
 	Sys_mkdir (gldir);
 
 	Check_Gamma(palette);

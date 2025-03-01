@@ -122,11 +122,14 @@ float	timescale = 0.01;
 
 void R_EntityParticles (entity_t *ent)
 {
+
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+
 	int			count;
 	int			i;
 	particle_t	*p;
 	float		angle;
-	float		sr, sp, sy, cr, cp, cy;
+	float		sp, sy, cp, cy;
 	vec3_t		forward;
 	float		dist;
 	
@@ -135,8 +138,8 @@ void R_EntityParticles (entity_t *ent)
 
 	if (!avelocities[0][0])
 	{
-		for (i=0 ; i<NUMVERTEXNORMALS*3 ; i++)
-			avelocities[0][i] = (rand()&255) * 0.01;
+		for (i=0 ; i<NUMVERTEXNORMALS; i++)
+			avelocities[i][0] = (rand()&255) * 0.01;
 	}
 
 
@@ -149,8 +152,6 @@ void R_EntityParticles (entity_t *ent)
 		sp = sin(angle);
 		cp = cos(angle);
 		angle = cl.time * avelocities[i][2];
-		sr = sin(angle);
-		cr = cos(angle);
 	
 		forward[0] = cp*cy;
 		forward[1] = cp*sy;
@@ -171,6 +172,9 @@ void R_EntityParticles (entity_t *ent)
 		p->org[1] = ent->origin[1] + r_avertexnormals[i][1]*dist + forward[1]*beamlength;			
 		p->org[2] = ent->origin[2] + r_avertexnormals[i][2]*dist + forward[2]*beamlength;			
 	}
+
+#pragma GCC diagnostic pop
+
 }
 
 
@@ -265,10 +269,10 @@ void R_ParseParticleEffect (void)
 	msgcount = MSG_ReadByte ();
 	color = MSG_ReadByte ();
 
-if (msgcount == 255)
-	count = 1024;
-else
-	count = msgcount;
+	if (msgcount == 255)
+		count = 1024;
+	else
+		count = msgcount;
 	
 	R_RunParticleEffect (org, dir, color, count);
 }
@@ -402,6 +406,7 @@ R_RunParticleEffect
 
 ===============
 */
+void Run_Classic_ParticleEffect (vec3_t org, vec3_t dir, int color, int count);
 
 #define RunParticleEffect(org, dir, color, count)		\
 	if (qmb_initialized)				\

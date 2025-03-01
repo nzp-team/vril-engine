@@ -90,6 +90,7 @@ void SV_CheckVelocity (edict_t *ent)
 //
 	for (i=0 ; i<3 ; i++)
 	{
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 		if (IS_NAN(ent->v.velocity[i]))
 		{
 			Con_Printf ("Got a NaN velocity on %s\n", pr_strings + ent->v.classname);
@@ -100,6 +101,7 @@ void SV_CheckVelocity (edict_t *ent)
 			Con_Printf ("Got a NaN origin on %s\n", pr_strings + ent->v.classname);
 			ent->v.origin[i] = 0;
 		}
+#pragma GCC diagnostic pop
 		if (ent->v.velocity[i] > sv_maxvelocity.value)
 			ent->v.velocity[i] = sv_maxvelocity.value;
 		else if (ent->v.velocity[i] < -sv_maxvelocity.value)
@@ -227,7 +229,8 @@ int SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 	float		d;
 	int			numplanes;
 	vec3_t		planes[MAX_CLIP_PLANES];
-	vec3_t		primal_velocity, original_velocity, new_velocity;
+	vec3_t		primal_velocity, original_velocity;
+	vec3_t 		new_velocity = {0, 0, 0};
 	int			i, j;
 	trace_t		trace;
 	vec3_t		end;
@@ -1664,26 +1667,13 @@ will fall if the floor is pulled out from under them.
 
 void SV_Physics_Step (edict_t *ent)
 {
-	qboolean	hitsound;
-
 // freefall if not onground
 	if ( ! ((int)ent->v.flags & (FL_ONGROUND | FL_FLY | FL_SWIM) ) )
 	{
-		if (ent->v.velocity[2] < sv_gravity.value*-0.1)
-			hitsound = true;
-		else
-			hitsound = false;
-
 		SV_AddGravity (ent);
 		SV_CheckVelocity (ent);
 		SV_FlyMove (ent, host_frametime, NULL);
 		SV_LinkEdict (ent, true);
-
-		/*if ( (int)ent->v.flags & FL_ONGROUND )	// just hit ground
-		{
-			if (hitsound)
-				SV_StartSound (ent, 0, "demon/dland2.wav", 255, 1);
-		}*/
 	}
 
 // regular thinking

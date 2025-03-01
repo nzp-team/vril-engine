@@ -118,6 +118,11 @@ LIBS		= $(GPROF_LIBS) $(GU_LIBS) $(AUDIO_LIBS) $(MISC_LIBS) $(STD_LIBS) $(NET_LI
 CFLAGS = -ffast-math -O3 -Ofast -G0 -Wall $(GPROF_FLAGS) -Did386="0" -DPSP $(MODE) $(HARDWARE_VIDEO_ONLY_FLAGS) \
 		-DSWIZZLE32 -DPSP_MP3_HWDECODE -DFULLBRIGHT -DHL_RENDER -Wno-strict-aliasing -DPSP_VFPU -DPLATFORM_DIRECTORY="psp" \
 		-DPLATFORM_RENDERER="gu"
+
+ifeq ($(WERROR),1)
+CFLAGS 		+= -Werror
+endif
+
 CXXFLAGS = -fno-rtti -Wcast-qual -Wno-write-strings -Wno-sign-compare -Wno-strict-aliasing
 ASFLAGS = $(CFLAGS) -c
 
@@ -125,8 +130,7 @@ include $(PSPSDK)/lib/build.mak
 
 clean:
 	rm -rf build/
-	rm source/psp/*.o
-	rm source/*.o
+	find . -type f -name '*.o' -exec rm {} +
 
 install: EBOOT.PBP
 	mkdir -p build/psp/

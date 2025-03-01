@@ -131,12 +131,12 @@ void Q_strncpy (char *dest, char *src, int count);
 int Q_strlen (char *str);
 char *Q_strrchr (char *s, char c);
 void Q_strcat (char *dest, char *src);
-int Q_strcmp (char *s1, char *s2);
-int Q_strncmp (char *s1, char *s2, int count);
 int Q_strcasecmp (char *s1, char *s2);
 int Q_strncasecmp (char *s1, char *s2, int n);
 int	Q_atoi (char *str);
 float Q_atof (char *str);
+int q_snprintf (char *str, size_t size, const char *format, ...);
+int q_vsnprintf(char *str, size_t size, const char *format, va_list args);
 
 //============================================================================
 
@@ -157,6 +157,7 @@ char *COM_SkipPath (char *pathname);
 void COM_StripExtension (char *in, char *out);
 void COM_FileBase (char *in, char *out);
 void COM_DefaultExtension (char *path, char *extension);
+char *COM_FileExtension (char *in);
 
 char	*va(char *format, ...);
 char *CopyString (char *in);
@@ -173,7 +174,7 @@ extern	char	com_gamedir[MAX_OSPATH];
 void COM_WriteFile (char *filename, void *data, int len);
 byte *COM_LoadFile (char *path, int usehunk);
 int COM_OpenFile (char *filename, int *hndl);
-int COM_FOpenFile (char *filename, int *file);
+int COM_FOpenFile (char *filename, FILE **file);
 void COM_CloseFile (int h);
 
 byte *COM_LoadStackFile (char *path, void *buffer, int bufsize);
@@ -185,7 +186,7 @@ void COM_LoadCacheFile (char *path, struct cache_user_s *cu);
 extern	struct cvar_s	registered;
 
 extern qboolean		standard_quake, rogue, hipnotic;
-void Q_strncpyz (char *dest, char *src, size_t size);
+void Q_strncpyz (char *dest, char *src, size_t size);        //Diabolickal HLBSP
 
 short ShortSwap (short l);
 int LongSwap (int l);

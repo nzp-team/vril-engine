@@ -30,7 +30,11 @@ CFLAGS	:=	-g -fpermissive -Wall -O3 -mword-relocations \
 			-fomit-frame-pointer -ffunction-sections \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS -DGLQUAKE -DPLATFORM_DIRECTORY="ctr" -DPLATFORM_RENDERER="gl"
+CFLAGS	+=	$(INCLUDE) -DARM11 -D__3DS__ -DGLQUAKE -DPLATFORM_DIRECTORY="ctr" -DPLATFORM_RENDERER="gl"
+
+ifeq ($(WERROR),1)
+CFLAGS 		+= -Werror
+endif
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 
@@ -89,7 +93,6 @@ COMMON_OBJS =	chase.c \
 				pr_cmds.c \
 				pr_edict.c \
 				pr_exec.c \
-				ctr/sbar.c \
 				sv_main.c \
 				sv_move.c \
 				sv_phys.c \

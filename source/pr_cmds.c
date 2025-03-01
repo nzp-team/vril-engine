@@ -20,13 +20,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "nzportable_def.h"
 
-#ifdef _3DS
+#ifdef __3DS__
 extern bool new3ds_flag;
 #elif __WII__
 #include <ogc/lwp_watchdog.h>
 #include <wiiuse/wpad.h>
 #include <ctype.h>
-#endif // _3DS, __WII__
+#endif // __3DS__, __WII__
 
 #define PR_MAX_TEMPSTRING 2048	// 2001-10-25 Enhanced temp string handling by Maddes
 #define	RETURN_EDICT(e) (((int *)pr_globals)[OFS_RETURN] = EDICT_TO_PROG(e))
@@ -291,8 +291,6 @@ bprint(style, value)
 */
 void PF_bprint (void)
 {
-	// 
-	float style = G_FLOAT(OFS_PARM0);
 	char *s = PF_VarString(1);
 	SV_BroadcastPrintf ("%s", s);
 }
@@ -1236,7 +1234,6 @@ string strtrim (string)
 void PF_strtrim (void)
 {
 	int		offset, length;
-	int		maxoffset;		// 2001-10-25 Enhanced temp string handling by Maddes
 	char	*str;
 	char 	*end;
 
@@ -1479,11 +1476,11 @@ This is where the magic happens
 
 #ifdef __PSP__
 #define MaxZombies 12
-#elif _3DS
+#elif __3DS__
 #define MaxZombies 18
 #elif __WII__
 #define MaxZombies 24
-#endif //__PSP__, _3DS, __WII__
+#endif //__PSP__, __3DS__, __WII__
 
 
 #define WAYPOINT_SET_NONE 	0
@@ -1933,13 +1930,15 @@ int get_closest_waypoint(int entnum) {
 
 
 void Do_Pathfind (void) {
-	#ifdef MEASURE_PF_PERF
+
+#ifdef MEASURE_PF_PERF
+
 	u64 t1, t2;
 	sceRtcGetCurrentTick(&t1);
-	#endif
+
+#endif // MEASURE_PF_PERF
 
 	int i, s;
-	trace_t   trace;
 
 	Con_DPrintf("====================\n");
 	Con_DPrintf("Starting Do_Pathfind\n");
@@ -2533,6 +2532,10 @@ void PF_fgets (void)
 
 	count = Sys_FileRead(h, &buffer, 1);
 	
+	// protection against crashes
+	if(!count)
+		return;
+	
 	if (count && buffer == '\r')	// carriage return
 	{
 		count = Sys_FileRead(h, &buffer, 1);	// skip
@@ -2933,10 +2936,8 @@ void PF_aim (void)
 	int		i, j;
 	trace_t	tr;
 	float	dist, bestdist;
-	float	speed;
 
 	ent = G_EDICT(OFS_PARM0);
-	speed = G_FLOAT(OFS_PARM1);
 	VectorAdd(ent->v.origin, ent->v.view_ofs, tempv);
 	VectorCopy (tempv, start);
 	start[2] += 20;
@@ -3580,7 +3581,7 @@ nzp_maxai()
 */
 void PF_MaxZombies(void)
 {
-#ifdef _3DS
+#ifdef __3DS__
 	if (new3ds_flag)
 		G_FLOAT(OFS_RETURN) = MaxZombies;
 	else

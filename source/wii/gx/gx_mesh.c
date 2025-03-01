@@ -263,8 +263,8 @@ void BuildTris (void)
 			s = (s + 0.5) / pheader->skinwidth;
 			t = (t + 0.5) / pheader->skinheight;
 
-			*(float *)&commands[numcommands++] = s;
-			*(float *)&commands[numcommands++] = t;
+			memcpy(&commands[numcommands++], &s, sizeof(float));
+			memcpy(&commands[numcommands++], &t, sizeof(float));
 		}
 	}
 

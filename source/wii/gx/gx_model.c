@@ -497,12 +497,12 @@ void Mod_LoadTextures (lump_t *l)
 						COM_StripExtension (loadmodel->name + 5, mapname);
 						//sprintf (filename, "textures/%s/%s", mapname, tx->name);
 						// don't keep map textures
-						data_ext = loadtextureimage (filename, 0, 0, true, true, false);
+						data_ext = loadtextureimage (filename, 0, 0, true, false);
 						if (data_ext <= 0)
 						{
 							//Con_Printf ("mpath %s\n", filename);
 							sprintf (filename, "textures/%s", tx->name);
-							data_ext = loadtextureimage (filename, 0, 0, true, true, false);
+							data_ext = loadtextureimage (filename, 0, 0, true, false);
 							if (data_ext <= 0) {
 								//Con_Printf ("mpath %s\n", filename);
 								//Con_Printf("no texture found, replacing with white (fixme) %s\n", tx->name);
@@ -825,7 +825,7 @@ void Mod_LoadTexinfo (lump_t *l)
 {
 	texinfo_t *in;
 	mtexinfo_t *out;
-	int 	i, j, count;
+	int 	i, j, k, count;
 	int		miptex;
 	float	len1, len2;
 
@@ -840,8 +840,11 @@ void Mod_LoadTexinfo (lump_t *l)
 
 	for ( i=0 ; i<count ; i++, in++, out++)
 	{
-		for (j=0 ; j<8 ; j++)
-			out->vecs[0][j] = LittleFloat (in->vecs[0][j]);
+		for (j=0 ; j<2 ; j++) {
+			for (k=0 ; k<4 ; k++) {
+				out->vecs[j][k] = LittleFloat (in->vecs[j][k]);
+			}
+		}
 		len1 = Length (out->vecs[0]);
 		len2 = Length (out->vecs[1]);
 		len1 = (len1 + len2)/2;
@@ -1507,7 +1510,7 @@ void Mod_LoadBrushModel (model_t *mod, void *buffer)
 		{	// duplicate the basic information
 			char	name[12];
 
-			sprintf (name, "*%i", i+1);
+			snprintf (name, 13, "*%i", i+1);
 			loadmodel = Mod_FindName (name);
 			*loadmodel = *mod;
 			strcpy (loadmodel->name, name);
@@ -1739,12 +1742,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 		pheader->gl_texturenum[0][0] = 
 		pheader->gl_texturenum[0][1] = 
 		pheader->gl_texturenum[0][2] = 
-		pheader->gl_texturenum[0][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, true, false, true);
+		pheader->gl_texturenum[0][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, true, true);
 		
 		pheader->gl_texturenum[1][0] = 
 		pheader->gl_texturenum[1][1] = 
 		pheader->gl_texturenum[1][2] = 
-		pheader->gl_texturenum[1][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, true, false, true);
+		pheader->gl_texturenum[1][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, true, true);
 
 		pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 		return (void *)pskintype;
@@ -1765,7 +1768,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] =
 			pheader->gl_texturenum[i][1] =
 			pheader->gl_texturenum[i][2] =
-			pheader->gl_texturenum[i][3] = loadtextureimage(model2, 0, 0, true, false, true);
+			pheader->gl_texturenum[i][3] = loadtextureimage(model2, 0, 0, true, true);
 
 			if (pheader->gl_texturenum[i][0] == 0) // did not find a matching TGA...
 			{
@@ -2036,13 +2039,13 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 
 	COM_StripExtension(loadmodel->name, sprite);
 	sprintf(sprite2, "%s.spr_%i", sprite, framenum);
-	pspriteframe->gl_texturenum = loadtextureimage(sprite2, 0, 0, true, false, true);
+	pspriteframe->gl_texturenum = loadtextureimage(sprite2, 0, 0, true, true);
 	
 	if (pspriteframe->gl_texturenum <= 0) // did not find a matching TGA...
 	{
 		//COM_StripExtension(loadmodel->name, sprite);
 		//sprintf(sprite2, "%s.spr", sprite);
-		//pspriteframe->gl_texturenum = loadtextureimage(sprite2, 0, 0, true, false, true);
+		//pspriteframe->gl_texturenum = loadtextureimage(sprite2, 0, 0, true, true);
 		int len = strlen(sprite2);
 		texname = sprite2 + len - 20;
 		if (pspriteframe->gl_texturenum <= 0) {

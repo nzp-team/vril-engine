@@ -1517,7 +1517,7 @@ void GL_BuildLightmaps (void)
 	//
 	for (i=0 ; i<MAX_LIGHTMAPS ; i++)
 	{
-		sprintf (name, "%d", i);
+		sprintf (name, "lm_identifier%d", i);
 		
 		if (!allocated[i][0])
 			break;		// no more used

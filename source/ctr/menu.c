@@ -86,6 +86,8 @@ enum
 } m_state;
 
 void M_Start_Menu_f (void);
+void M_Paused_Menu_f (void);
+void M_Menu_Restart_f(void);
 void M_Menu_Main_f (void);
 	void M_Menu_SinglePlayer_f (void);
 		void M_Menu_CustomMaps_f (void);
@@ -114,6 +116,7 @@ void M_Main_Key (int key);
 	void M_Menu_Credits_Key (int key);
 	void M_Quit_Key (int key);
 void M_GameOptions_Key (int key);
+void M_Menu_Exit_f(void);
 
 qboolean	m_entersound;		// play after drawing a frame, so caching
 								// won't disrupt the sound
@@ -1003,7 +1006,7 @@ void Map_Finder(void)
 		custom_maps[i].occupied = false;
 	}
 	
-	while(dp=readdir(dir))
+	while((dp = readdir(dir)))
 	{
 		
 		if(dp->d_name[0] == '.')
@@ -2253,7 +2256,7 @@ void M_Init (void)
 
 void M_Draw (void)
 {
-	if (m_state == m_none || key_dest != key_menu && key_dest != key_menu_pause)
+	if (m_state == m_none || (key_dest != key_menu && key_dest != key_menu_pause))
 		return;
 
 	if (!m_recursiveDraw)

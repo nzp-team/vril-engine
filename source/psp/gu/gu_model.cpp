@@ -194,7 +194,7 @@ Mod_ClearAll
 static byte *ent_file = NULL;
 void Mod_ClearAll (void)
 {
-	int		i,texture_index;
+	int		i;
 	model_t	*mod;
 
 	for (i=0 , mod=mod_known ; i<mod_numknown ; i++, mod++)
@@ -226,12 +226,12 @@ void Mod_ClearAll (void)
 	alphaskytexture	= -1;
 
 	//purge old sky textures
-	for (i=0; i<6; i++)
-		skyimage[i] = NULL;
+	for (i=0; i<5; i++)
+		skyimage[i] = 0;
 
 	//purge old lightmaps
 	for (i=0; i<MAX_LIGHTMAPS; i++)
-		lightmap_index[i] = NULL;
+		lightmap_index[i] = 0;
 }
 
 /*
@@ -308,7 +308,7 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 	unsigned *buf;
 	byte	stackbuf[1024];		// avoid dirtying the cache heap
     char		strip[128];
-	char		md3name[128];
+	char		md3name[132];
 
 	if (!mod->needload)
 	{
@@ -337,7 +337,7 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
     if (r_loadq3models.value)
 	{
 		COM_StripExtension(mod->name, &strip[0]);
-		sprintf (&md3name[0], "%s.md3", &strip[0]);
+		snprintf (&md3name[0], 132, "%s.md3", &strip[0]);
 
 		buf = (unsigned *)COM_LoadStackFile (md3name, stackbuf, sizeof(stackbuf));
 		if (!buf)
@@ -535,9 +535,9 @@ void Mod_LoadTextures (lump_t *l)
 	{
 		if (loadmodel->bspversion == HL_BSPVERSION)
 		{		
-			char filename[64];		// Filename to check r4w file
+			char filename[128];		// Filename to check r4w file
 			byte *data;
-			sprintf(filename, "textures/maps/%s/%s.r4w", sv.name, mt->name);		// search in textures/maps/MAPNAME/TEXNAME
+			snprintf(filename, 128, "textures/maps/%s/%s.r4w", sv.name, mt->name);		// search in textures/maps/MAPNAME/TEXNAME
 			
 			data = static_cast<byte*>(COM_LoadHunkFile(filename));
 			
@@ -552,14 +552,12 @@ void Mod_LoadTextures (lump_t *l)
 				int index = WAD3_LoadTextureClut4(mt);
 
 				if (index != 0) {
-					com_netpath[0] = 0;
 					tx->gl_texturenum = index;
 					tx->fullbright = -1;
 					tx->dt_texturenum = 0;
 				} else {
 					// Fall back to missing texture.
 					Con_Printf("Texture %s not found\n", mt->name);
-					com_netpath[0] = 0;
 					tx->gl_texturenum = nonetexture;
 				}
 	// 			// naievil -- try to push wad3 loading 
@@ -859,76 +857,6 @@ void Mod_LoadVisibility (lump_t *l)
 
 /*
 =================
-Mod_ParseWadsFromEntityLump
-For Half-life maps
-=================
-*/
-static void Mod_ParseWadsFromEntityLump(char *data)
-{
-	char *s, key[1024], value[1024];
-	int i, j, k;
-
-	if (!data || !(data = COM_Parse(data)))
-		return;
-
-	if (com_token[0] != '{')
-		return; // error
-
-	while (1)
-	{
-		if (!(data = COM_Parse(data)))
-			return; // error
-
-		if (com_token[0] == '}')
-			break; // end of worldspawn
-
-		Q_strncpyz(key, (com_token[0] == '_') ? com_token + 1 : com_token, sizeof(key));
-
-		for (s = key + strlen(key) - 1; s >= key && *s == ' '; s--)		// remove trailing spaces
-			*s = 0;
-
-		if (!(data = COM_Parse(data)))
-			return; // error
-
-		Q_strncpyz(value, com_token, sizeof(value));
-
-		if (!strcmp("MaxRange", key))
-            Cvar_Set("r_maxrange", value);
-
-		if (!strcmp("wad", key))
-		{
-			j = 0;
-			for (i = 0; i < strlen(value); i++)
-			{
-				if (value[i] != ';' && value[i] != '\\' && value[i] != '/' && value[i] != ':')
-					break;
-			}
-			if (!value[i])
-				continue;
-			for ( ; i < sizeof(value); i++)
-			{
-				// ignore path - the \\ check is for HalfLife... stupid windoze 'programmers'...
-				if (value[i] == '\\' || value[i] == '/' || value[i] == ':')
-				{
-					j = i + 1;
-				}
-                else if (value[i] == ';' || value[i] == 0)
-				{
-					k = value[i];
-					value[i] = 0;
-					if (value[j])
-						WAD3_LoadTextureWadFile (value + j);
-					j = i + 1;
-					if (!k)
-						break;
-				}
-			}
-		}
-    }
-}
-
-/*
-=================
 Mod_LoadEntities
 .ent file support by Crow_bar
 =================
@@ -964,9 +892,6 @@ void Mod_LoadEntities (lump_t *l)
 
 	loadmodel->entities = static_cast<char*>(Hunk_AllocName ( l->filelen, entfilename));
 	memcpy_vfpu(loadmodel->entities, mod_base + l->fileofs, l->filelen);
-
-	if (loadmodel->bspversion == HL_BSPVERSION)
-		Mod_ParseWadsFromEntityLump(loadmodel->entities);
 }
 
 
@@ -1070,7 +995,7 @@ void Mod_LoadTexinfo (lump_t *l)
 {
 	texinfo_t *in;
 	mtexinfo_t *out;
-	int 	i, j, count;
+	int 	i, j, k, count;
 	int		miptex;
 	float	len1, len2;
 
@@ -1085,8 +1010,11 @@ void Mod_LoadTexinfo (lump_t *l)
 
 	for ( i=0 ; i<count ; i++, in++, out++)
 	{
-		for (j=0 ; j<8 ; j++)
-			out->vecs[0][j] = LittleFloat (in->vecs[0][j]);
+		for (j=0 ; j<2 ; j++) {
+			for (k=0 ; k<4 ; k++) {
+				out->vecs[j][k] = LittleFloat (in->vecs[j][k]);
+			}
+		}
 		len1 = Length (out->vecs[0]);
 		len2 = Length (out->vecs[1]);
 		len1 = (len1 + len2)/2;
@@ -1809,9 +1737,9 @@ void Mod_LoadBrushModel (model_t *mod, void *buffer)
 
 		if (i < mod->numsubmodels-1)
 		{	// duplicate the basic information
-			char	name[10];
+			char	name[12];
 
-			sprintf (name, "*%i", i+1);
+			snprintf (name, 13, "*%i", i+1);
 			loadmodel = Mod_FindName (name);
 			*loadmodel = *mod;
 			strcpy (loadmodel->name, name);
@@ -2073,8 +2001,9 @@ extern int has_perk_deadshot;
 extern int has_perk_mulekick;
 void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 {
-	int		i, j, k;
-	char	name[64], model[64], model2[64];
+	int 	i = 0;
+	int		j, k;
+	char	name[128], model[64], model2[128];
 	int		s;
 	//byte	*copy;
 	byte	*skin;
@@ -2089,8 +2018,6 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d\n", numskins);
 
 	s = pheader->skinwidth * pheader->skinheight;
-
-	qboolean is_gun = model_is_gun(loadmodel->name);
 
 	if (model_is_zombie(loadmodel->name) == qtrue) {
 		Mod_FloodFillSkin(skin, pheader->skinwidth, pheader->skinheight);
@@ -2312,13 +2239,13 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			{
 				Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
 				COM_StripExtension(loadmodel->name, model);
-				sprintf (model2, "%s_%i_%i", model, i, j);
+				snprintf(model2, 128, "%s_%i_%i", model, i, j);
 				pheader->gl_texturenum[i][j&3] =
 				loadtextureimage (model2, 0, 0, qfalse, GU_LINEAR);
 				
 				if (pheader->gl_texturenum[i][j&3] == 0)// did not find a matching TGA...
 				{
-					sprintf (name, "%s_%i_%i", loadmodel->name, i, j);
+					snprintf (name, 128, "%s_%i_%i", loadmodel->name, i, j);
 					if(mod_h2)
 					{
 						pheader->gl_texturenum[i][j&3] =
@@ -3546,7 +3473,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum, 
 	dspriteframe_t		*pinframe;
 	mspriteframe_t		*pspriteframe;
 	int					width, height, size, origin[2];
-	char				name[64], sprite[64], sprite2[64];
+	char				name[128], sprite[64], sprite2[128];
 
 	pinframe = (dspriteframe_t *)pin;
 
@@ -3571,12 +3498,12 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum, 
 	pspriteframe->right = width + origin[0];
 
 	// HACK HACK HACK
-	sprintf (name, "%s.spr_%i", loadmodel->name, framenum);
+	snprintf(name, 128, "%s.spr_%i", loadmodel->name, framenum);
 
 	if (version == SPRITE_VERSION)
 	{
 		COM_StripExtension(loadmodel->name, sprite);
-		sprintf (sprite2, "%s.spr_%i", sprite, framenum);
+		snprintf (sprite2, 128, "%s.spr_%i", sprite, framenum);
 		pspriteframe->gl_texturenum = loadtextureimage (sprite2, 0, 0, qtrue, GU_LINEAR);
 		
 		if (pspriteframe->gl_texturenum == 0)// did not find a matching TGA...
@@ -3588,12 +3515,6 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum, 
 	{
 		size *= 4;
 		pspriteframe->gl_texturenum = GL_LoadImages (name, width, height, (byte *)(pinframe + 1), qtrue, GU_LINEAR, 0, 4);
-	}
-	else if (version == SPRITEHL_VERSION)
-	{
-		pspriteframe->gl_texturenum =
-		GL_LoadPalTex (name, width, height, (byte *)(pinframe + 1), qtrue, GU_LINEAR, 0, palette, PAL_RGBA);
-		Con_Printf("HL Sprite TEX - OK\n");
 	}
 	else
 	{
@@ -3675,132 +3596,39 @@ void Mod_LoadSpriteModel (model_t *mod, void *buffer)
     byte palette[256*4];
 	int sptype;
 
-    const unsigned char *datain;
-	datain = (unsigned char *)buffer;
-
 	version = LittleLong (((dsprite_t *)buffer)->version);
 
 	switch (version)
 	{
 	  case SPRITE_VERSION:
-      case SPRITEHL_VERSION:
       case SPRITE32_VERSION:
 		break;
 	  default:
-       Sys_Error ("%s has wrong version number (%i should be %i(q1),%i(hl),%i(dp))", mod->name, version, SPRITE_VERSION, SPRITEHL_VERSION, SPRITE32_VERSION);
+       Sys_Error ("%s has wrong version number (%i should be %i(q1), %i(dp))", mod->name, version, SPRITE_VERSION, SPRITE32_VERSION);
 	}
 
-	if (version == SPRITEHL_VERSION) //Not work
-	{
-		Con_Printf("Half_Life sprite begin loading\n");
-        int i, rendermode;
-		const unsigned char *in;
-		dspritehl_t *pinhlsprite;
+    dsprite_t *pinqsprite;
+	pinqsprite = (dsprite_t *)buffer;
 
-		pinhlsprite = (dspritehl_t *)datain;
-		datain += sizeof(dspritehl_t);
+    sptype = LittleLong (pinqsprite->type);
 
-        numframes = LittleLong (pinhlsprite->numframes);
+	numframes = LittleLong (pinqsprite->numframes);
 
-        size = sizeof (msprite_t) +	(numframes - 1) * sizeof (psprite->frames);
+	size = sizeof (msprite_t) +	(numframes - 1) * sizeof (psprite->frames);
 
-	    psprite = static_cast<msprite_t*>(Hunk_AllocName (size, loadname));
+	psprite = static_cast<msprite_t*>(Hunk_AllocName (size, loadname));
 
-	    mod->cache.data    = psprite;
+	mod->cache.data = psprite;
+	psprite->type = sptype;
 
-		psprite->numframes = LittleLong (pinhlsprite->numframes);
-		psprite->type      = LittleLong (pinhlsprite->type);
-		mod->synctype      = (synctype_t)LittleLong (pinhlsprite->synctype);
-		rendermode         = LittleLong (pinhlsprite->texFormat);
+	mod->synctype = static_cast<synctype_t>(LittleLong (pinqsprite->synctype));
 
-		in = datain;
-		datain += 2;
-		i = in[0] + in[1] * 256;
-		if (i != 256)
-			Host_Error ("Mod_LoadSpriteModel: unexpected number of palette colors %i (should be 256)", i);
-		in = datain;
-		datain += 768;
+	psprite->numframes = numframes;
+    psprite->maxwidth = LittleLong (pinqsprite->width);
+	psprite->maxheight = LittleLong (pinqsprite->height);
+	psprite->beamlength = LittleFloat (pinqsprite->beamlength);
 
-		switch(rendermode)
-		{
-		case SPR_NORMAL:
-			for (i = 0;i < 256;i++)
-			{
-				palette[i*4+2] = in[i*3+0];
-				palette[i*4+1] = in[i*3+1];
-				palette[i*4+0] = in[i*3+2];
-				palette[i*4+3] = 255;
-			}
-			break;
-		case SPR_ADDITIVE:
-			for (i = 0;i < 256;i++)
-			{
-				palette[i*4+2] = in[i*3+0];
-				palette[i*4+1] = in[i*3+1];
-				palette[i*4+0] = in[i*3+2];
-				palette[i*4+3] = 255;
-			}
-			// also passes additive == true to Mod_Sprite_SharedSetup
-			break;
-		case SPR_INDEXALPHA:
-			for (i = 0;i < 256;i++)
-			{
-				palette[i*4+2] = in[765];
-				palette[i*4+1] = in[766];
-				palette[i*4+0] = in[767];
-				palette[i*4+3] = i;
-				in += 3;
-			}
-			break;
-		case SPR_ALPHATEST:
-			for (i = 0;i < 256;i++)
-			{
-				palette[i*4+2] = in[i*3+0];
-				palette[i*4+1] = in[i*3+1];
-				palette[i*4+0] = in[i*3+2];
-				palette[i*4+3] = 255;
-			}
-			palette[255*4+0] = palette[255*4+1] = palette[255*4+2] = palette[255*4+3] = 0;
-			// should this use alpha test or alpha blend?  (currently blend)
-			break;
-		default:
-			Host_Error("Mod_LoadSpriteModel: unknown texFormat (%i, should be 0, 1, 2, or 3)", i);
-			return;
-		}
-
-        psprite->maxwidth = LittleLong (pinhlsprite->width);
-	    psprite->maxheight = LittleLong (pinhlsprite->height);
-	    psprite->beamlength = LittleFloat (pinhlsprite->beamlength);
-
-	    pframetype = (dspriteframetype_t *)(pinhlsprite + 1);
-        Con_Printf("Half_Life sprite end loading\n");
-	}
-	else
-	{
-        dsprite_t *pinqsprite;
-		pinqsprite = (dsprite_t *)datain;
-		datain += sizeof(dsprite_t);
-
-        sptype = LittleLong (pinqsprite->type);
-
-		numframes = LittleLong (pinqsprite->numframes);
-
-		size = sizeof (msprite_t) +	(numframes - 1) * sizeof (psprite->frames);
-
-		psprite = static_cast<msprite_t*>(Hunk_AllocName (size, loadname));
-
-		mod->cache.data = psprite;
-		psprite->type = sptype;
-
-		mod->synctype = static_cast<synctype_t>(LittleLong (pinqsprite->synctype));
-
-		psprite->numframes = numframes;
-        psprite->maxwidth = LittleLong (pinqsprite->width);
-	    psprite->maxheight = LittleLong (pinqsprite->height);
-	    psprite->beamlength = LittleFloat (pinqsprite->beamlength);
-
-	    pframetype = (dspriteframetype_t *)(pinqsprite + 1);
-	}
+	pframetype = (dspriteframetype_t *)(pinqsprite + 1);
 
 	mod->mins[0] = mod->mins[1] = -psprite->maxwidth/2;
 	mod->maxs[0] = mod->maxs[1] = psprite->maxwidth/2;

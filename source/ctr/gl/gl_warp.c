@@ -153,10 +153,6 @@ void GL_SubdivideSurface (msurface_t *fa)
 {
 	vec3_t		verts[64];
 	int			numverts;
-	int			i;
-	int			lindex;
-	float		*vec;
-	texture_t	*t;
 
 	warpface = fa;
 
@@ -164,9 +160,10 @@ void GL_SubdivideSurface (msurface_t *fa)
 	// convert edges back to a normal polygon
 	//
 	numverts = 0;
-	for (i=0 ; i<fa->numedges ; i++)
+	for (int i=0 ; i<fa->numedges ; i++)
 	{
-		lindex = loadmodel->surfedges[fa->firstedge + i];
+		float *vec;
+		int lindex = loadmodel->surfedges[fa->firstedge + i];
 
 		if (lindex > 0)
 			vec = loadmodel->vertexes[loadmodel->edges[lindex].v[0]].position;
@@ -279,10 +276,6 @@ will have them chained together.
 */
 void EmitBothSkyLayers (msurface_t *fa)
 {
-	int			i;
-	int			lindex;
-	float		*vec;
-
 	GL_DisableMultitexture();
 
 	GL_Bind (solidskytexture);
@@ -491,17 +484,9 @@ void Sky_Init (void)
 	Cmd_AddCommand ("sky",Sky_SkyCommand_f);
 
 	for (i=0; i<5; i++)
-		skyimage[i] = NULL;
+		skyimage[i] = 0;
 }
 
-static vec3_t	skyclip[6] = {
-	{1,1,0},
-	{1,-1,0},
-	{0,-1,1},
-	{0,1,1},
-	{1,0,1},
-	{-1,0,1}
-};
 int	c_sky;
 
 // 1 = s, 2 = t, 3 = 2048
@@ -515,22 +500,6 @@ static int	st_to_vec[6][3] =
 
 	{-2,-1,3},		// 0 degrees yaw, look straight up
 	{2,-1,-3}		// look straight down
-
-//	{-1,2,3},
-//	{1,2,-3}
-};
-
-// s = [0]/[2], t = [1]/[2]
-static int	vec_to_st[6][3] =
-{
-	{-2,3,1},
-	{2,3,-1},
-
-	{1,3,2},
-	{-1,3,-2},
-
-	{-2,-1,3},
-	{-2,1,-3}
 
 //	{-1,2,3},
 //	{1,2,-3}
@@ -624,9 +593,8 @@ float skyup[5][3] = {
 
 void R_DrawSkyBox (void)
 {
-	int		i, j, k;
+	int		i;
 	vec3_t	v;
-	float	s, t;
 
 	//Fog_DisableGFog();
 	//Fog_SetColorForSkyS();
@@ -732,7 +700,6 @@ void R_InitSky (miptex_t *mt)
 	unsigned	transpix;
 	int			r, g, b;
 	unsigned	*rgba;
-	extern	int			skytexturenum;
 
 	src = (byte *)mt + mt->offsets[0];
 

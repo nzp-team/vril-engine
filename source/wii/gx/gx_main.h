@@ -423,8 +423,7 @@ void Sky_NewMap (void);
 void R_DrawSkyBox (void);
 void R_ClearSkyBox (void);
 void EmitBothSkyLayers (msurface_t *fa);
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap, qboolean keep);
-byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int matchheight, int reverseRGBA);
-int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap);
+byte* loadimagepixels (char* filename, int matchwidth, int matchheight, int reverseRGBA);
+int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean keep);
 
 extern	qboolean	qmb_initialized;

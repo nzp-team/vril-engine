@@ -201,7 +201,7 @@ called at map load
 void Fog_ParseWorldspawn (void)
 {
 	char key[128], value[4096];
-	const char *data;
+	char *data;
 
 	fog_density_gl = DEFAULT_DENSITY;
 	//initially no fog
@@ -427,7 +427,7 @@ called before drawing stuff that should be fogged
 */
 void Fog_EnableGFog (void)
 {
-	if (!Fog_GetStart() == 0 || !Fog_GetEnd() <= 0) {
+	if (!(Fog_GetStart() == 0) || !(Fog_GetEnd() <= 0)) {
 		glEnable(GL_FOG);
 	}	
 }
@@ -441,8 +441,9 @@ called after drawing stuff that should be fogged
 */
 void Fog_DisableGFog (void)
 {
-	if (!Fog_GetStart() == 0 || !Fog_GetEnd() <= 0)
+	if (!(Fog_GetStart() == 0) || !(Fog_GetEnd() <= 0)) {
 		glDisable(GL_FOG);
+	}
 }
 
 /*

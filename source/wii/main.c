@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define TEST_CONNECTION		0
 #define USBGECKO_DEBUG		0
 #define WIFI_DEBUG			0
+#define BARNACLE_DEBUG		1
 
 // OGC includes.
 #include <ogc/lwp.h>
@@ -210,8 +211,6 @@ void alloc_main_heap (void) {
 
 int main(int argc, char* argv[])
 {
-	// is this safe to do? I'm not sure yet> 
-	// could lock out iOS functionality temporarily?
 	L2Enhance(); // sB activate 64-byte fetches for the L2 cache
 
 #if USBGECKO_DEBUG
@@ -223,6 +222,10 @@ int main(int argc, char* argv[])
 	printf("Now waiting for WI-FI debugger\n");
 	DEBUG_Init(GDBSTUB_DEVICE_WIFI, 8000); // Port 8000 (use whatever you want)
 	_break();
+#endif
+
+#if BARNACLE_DEBUG
+	CON_EnableBarnacle(EXI_CHANNEL_0, EXI_DEVICE_1);
 #endif
 
 	// Initialize.
@@ -247,7 +250,7 @@ int main(int argc, char* argv[])
 		Host_Frame(current_time - last_time);
 		last_time = current_time;
 		
-		if (rumble_on&&(current_time > time_wpad_off)) 
+		if (rumble_on&&(current_time > time_wpad_off))
 		{
 			WPAD_Rumble(0, false);
 			rumble_on = 0;

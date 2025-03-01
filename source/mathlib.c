@@ -54,6 +54,7 @@ float rsqrt( float number )
 	);
 	return d;
 #else
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 	int	i;
 	float	x, y;
 
@@ -67,6 +68,7 @@ float rsqrt( float number )
 	y = y * (1.5f - (x * y * y));	// first iteration
 
 	return y;
+#pragma GCC diagnostic pop
 #endif
 }
 
