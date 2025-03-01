@@ -299,6 +299,8 @@ typedef struct
 
 #include "render/r_main.h"
 
+#include "images.h"
+
 //=============================================================================
 
 // the host system specifies the base of the directory tree, the
