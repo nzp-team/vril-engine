@@ -27,12 +27,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern "C"
 {
 #include "../../../nzportable_def.h"
-void CL_CopyPlayerInfo (entity_t *ent, entity_t *player);
 }
 
 void GL_InitTextureUsage ();
 
-qboolean	r_loadq3player = false;
+qboolean	r_loadq3player = qfalse;
 
 int decal_blood1, decal_blood2, decal_blood3, decal_q3blood, decal_burn, decal_mark, decal_glow;
 
@@ -43,9 +42,10 @@ R_InitOtherTextures
 */
 void	R_InitOtherTextures (void)
 {
-	sniper_scope = Image_LoadImage ("gfx/hud/scope_256", IMAGE_TGA, 0, true, false);
+	sniper_scope = Draw_CachePic ("gfx/hud/scope_256");
 
-	zombie_skins[0][0] = Image_LoadImage ("models/ai/zfull.mdl_0", IMAGE_PCX, GU_LINEAR, true, false);
+	zombie_skins[0][0] = loadpcxas4bpp("models/ai/zfull.mdl_0", GU_LINEAR);
+	GL_MarkTextureAsPermanent(zombie_skins[0][0]);
 
 	// PSP PHAT: Only have 1 Zombie skin.. this saves 192kB of VRAM, well worth it.
 	if (psp_system_model == PSP_MODEL_PHAT) {
@@ -53,15 +53,21 @@ void	R_InitOtherTextures (void)
 		zombie_skins[1][0] = zombie_skins[0][0];
 		zombie_skins[1][1] = zombie_skins[0][0];
 	} else {
-		zombie_skins[0][1] = Image_LoadImage ("models/ai/zfull.mdl_1", IMAGE_PCX, GU_LINEAR, true, false);
-		zombie_skins[1][0] = Image_LoadImage ("models/ai/zfull.mdl_2", IMAGE_PCX, GU_LINEAR, true, false);
-		zombie_skins[1][1] = Image_LoadImage ("models/ai/zfull.mdl_3", IMAGE_PCX, GU_LINEAR, true, false);
+		zombie_skins[0][1] = loadpcxas4bpp("models/ai/zfull.mdl_1", GU_LINEAR);
+		zombie_skins[1][0] = loadpcxas4bpp("models/ai/zfull.mdl_2", GU_LINEAR);
+		zombie_skins[1][1] = loadpcxas4bpp("models/ai/zfull.mdl_3", GU_LINEAR);
+		GL_MarkTextureAsPermanent(zombie_skins[0][1]);
+		GL_MarkTextureAsPermanent(zombie_skins[1][0]);
+		GL_MarkTextureAsPermanent(zombie_skins[1][1]);
 	}
 
-	decal_burn	  = Image_LoadImage ("textures/decals/explo_burn01", IMAGE_TGA, GU_LINEAR, true, false);
+	decal_burn	  = loadtextureimage ("textures/decals/explo_burn01", 0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
+	GL_MarkTextureAsPermanent(decal_burn);
 	decal_blood1 = decal_blood2 = decal_blood3 = decal_q3blood = decal_burn;
-	decal_mark	  = Image_LoadImage ("textures/decals/particle_burn01", IMAGE_TGA, GU_LINEAR, true, false);
-	decal_glow	  = Image_LoadImage ("textures/decals/glow2", IMAGE_TGA, GU_LINEAR, true, false);
+	decal_mark	  = loadtextureimage ("textures/decals/particle_burn01", 0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
+	GL_MarkTextureAsPermanent(decal_mark);
+	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
+	GL_MarkTextureAsPermanent(decal_glow);
 }
 
 /*
@@ -155,7 +161,7 @@ void LoadMapConfig (void)
 		Cbuf_Execute ();
 	}
 
-	config_lock = false;
+	config_lock = qfalse;
 
 	//mapname = cl_map.string;
 	Con_Printf("loading cfg for %s\n", mapname);
@@ -194,7 +200,7 @@ void R_Envmap_f (void)
 		return;
 	}
 
-	envmap = true;
+	envmap = qtrue;
 
 	r_refdef.vrect.x = 0;
 	r_refdef.vrect.y = 0;
@@ -241,7 +247,7 @@ void R_Envmap_f (void)
 	GL_GetPixelsRGBA(buffer, 256, 256, 0);
 	COM_WriteFile ("env5.rgb", buffer, ENVMAP_SIZE);
 
-	envmap = false;
+	envmap = qfalse;
 
 	GL_EndRendering ();
 
@@ -260,6 +266,8 @@ R_Init
 void R_InitDecals (void);
 void R_ToggleDecals_f (void);
 void R_ToggleParticles_f (void);
+
+model_t* Mod_FindName(char* name);
 
 void R_Init (void)
 {
@@ -408,14 +416,8 @@ void R_NewMap (void)
 		LoadMapConfig();
 	}
 
-	// HACK HACK HACK - create two extra entities if drawing the player's multimodel
-	if (r_loadq3player)
-	{
-		memset (&q3player_body, 0, sizeof(tagentity_t));
-		CL_CopyPlayerInfo (&q3player_body.ent, &cl_entities[cl.viewentity]);
-		memset (&q3player_head, 0, sizeof(tagentity_t));
-		CL_CopyPlayerInfo (&q3player_head.ent, &cl_entities[cl.viewentity]);
-	}
+	zfull_mdl = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zfull.mdl"));
+	zcfull_mdl = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zcfull.mdl"));
 }
 
 

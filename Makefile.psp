@@ -44,6 +44,7 @@ COMMON_OBJS = \
 	\
 	source/images.o \
 	source/test_handler.o \
+	source/images.o \
 	source/chase.o \
 	source/cl_demo.o \
 	source/cl_input.o \
@@ -88,25 +89,30 @@ COMMON_OBJS = \
 	source/render/r_light.o
 
 HARDWARE_VIDEO_ONLY_OBJS = \
-	source/platform/psp/clipping.o \
-	source/platform/psp/vram.o \
-    source/platform/psp/gu/gu_psp.o \
-    source/platform/psp/gu/gu_resample.o \
-    source/platform/psp/gu/gu_images.o \
-    source/platform/psp/gu/gu_fullbright.o \
-    source/platform/psp/gu/gu_draw.o \
-    source/platform/psp/gu/gu_QMB.o \
-    source/platform/psp/gu/gu_decals_QMB.o \
-    source/platform/psp/gu/gu_part.o \
-    source/platform/psp/gu/gu_main.o \
-    source/platform/psp/gu/gu_mesh.o \
-    source/platform/psp/gu/gu_misc.o \
-    source/platform/psp/gu/gu_model.o \
-    source/platform/psp/gu/gu_screen.o \
-    source/platform/psp/gu/gu_surface.o \
-    source/platform/psp/gu/gu_warp.o \
-    source/platform/psp/gu/gu_fog.o \
-    source/platform/psp/gu/gu_dxtn.o
+	source/psp/clipping.o \
+	source/psp/vram.o \
+    source/psp/gu/gu_psp.o \
+    source/psp/gu/gu_resample.o \
+    source/psp/gu/gu_images.o \
+    source/psp/gu/gu_fullbright.o \
+    source/psp/gu/gu_hlmdl.o \
+    source/psp/gu/gu_draw.o \
+    source/psp/gu/gu_entity_fragment.o \
+    source/psp/gu/gu_QMB.o \
+    source/psp/gu/gu_decals_QMB.o \
+    source/psp/gu/gu_part.o \
+    source/psp/gu/gu_light.o \
+    source/psp/gu/gu_main.o \
+    source/psp/gu/gu_mesh.o \
+    source/psp/gu/gu_mhex2.o \
+    source/psp/gu/gu_misc.o \
+    source/psp/gu/gu_model.o \
+    source/psp/gu/gu_screen.o \
+    source/psp/gu/gu_surface.o \
+    source/psp/gu/gu_warp.o \
+    source/psp/gu/gu_fog.o \
+    source/psp/gu/gu_dxtn.o \
+	source/psp/gu/gu_colorquant.o
 HARDWARE_VIDEO_ONLY_FLAGS = -DPSP_HARDWARE_VIDEO
 
 OBJS = $(COMMON_OBJS) $(HARDWARE_VIDEO_ONLY_OBJS)
