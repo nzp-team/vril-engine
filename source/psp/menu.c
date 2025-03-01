@@ -431,7 +431,7 @@ void M_Load_Menu_Pics ()
 	for (int i = 0; i < MAX_CUSTOM_MAPS; i++) {
 		if (custom_maps[i].occupied == false) continue;
 		if (custom_maps[i].map_use_thumbnail == false) continue;
-		custom_maps[i].thumbnail_index = loadtextureimage(custom_maps[i].map_thumbnail_path, 0, 0, false, GU_LINEAR);
+		custom_maps[i].thumbnail_index = loadtextureimage(custom_maps[i].map_thumbnail_path, 0, 0, false, GU_LINEAR, qfalse, qfalse);
 	}
 }
 
