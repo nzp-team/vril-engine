@@ -34,19 +34,19 @@ R_InitOtherTextures
 void	R_InitOtherTextures (void)
 {
 	//static decals
-	decal_blood1  = loadtextureimage ("textures/decals/blood_splat01", 0, 0, qfalse, 0, qfalse, qtrue);
-	decal_blood2  = loadtextureimage ("textures/decals/blood_splat02", 0, 0, qfalse, 0, qfalse, qtrue);
-	decal_blood3  = loadtextureimage ("textures/decals/blood_splat03", 0, 0, qfalse, 0, qfalse, qtrue);
-    decal_q3blood = loadtextureimage ("textures/decals/blood_stain", 0, 0, qfalse, 0, qfalse, qtrue);
-	decal_burn	  = loadtextureimage ("textures/decals/explo_burn01", 0, 0, qfalse, 0, qfalse, qtrue);
-	decal_mark	  = loadtextureimage ("textures/decals/particle_burn01", 0, 0, qfalse, 0, qfalse, qtrue);
-	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, qfalse, 0, qfalse, qtrue);
+	decal_blood1  = loadtextureimage ("textures/decals/blood_splat01", 0, 0, false, 0, false, true);
+	decal_blood2  = loadtextureimage ("textures/decals/blood_splat02", 0, 0, false, 0, false, true);
+	decal_blood3  = loadtextureimage ("textures/decals/blood_splat03", 0, 0, false, 0, false, true);
+    decal_q3blood = loadtextureimage ("textures/decals/blood_stain", 0, 0, false, 0, false, true);
+	decal_burn	  = loadtextureimage ("textures/decals/explo_burn01", 0, 0, false, 0, false, true);
+	decal_mark	  = loadtextureimage ("textures/decals/particle_burn01", 0, 0, false, 0, false, true);
+	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, false, 0, false, true);
 
 	// external zombie skins
-	zombie_skins[0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, 0, qfalse, qfalse);
-	zombie_skins[1] = loadtextureimage ("models/ai/zfull.mdl_1", 0, 0, qtrue, 0, qfalse, qfalse);
-	zombie_skins[2] = loadtextureimage ("models/ai/zfull.mdl_2", 0, 0, qtrue, 0, qfalse, qfalse);
-	zombie_skins[3] = loadtextureimage ("models/ai/zfull.mdl_3", 0, 0, qtrue, 0, qfalse, qfalse);
+	zombie_skins[0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, true, 0, false, false);
+	zombie_skins[1] = loadtextureimage ("models/ai/zfull.mdl_1", 0, 0, true, 0, false, false);
+	zombie_skins[2] = loadtextureimage ("models/ai/zfull.mdl_2", 0, 0, true, 0, false, false);
+	zombie_skins[3] = loadtextureimage ("models/ai/zfull.mdl_3", 0, 0, true, 0, false, false);
 }
 
 /*

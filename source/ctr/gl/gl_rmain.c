@@ -101,28 +101,28 @@ cvar_t	gl_reporttjunctions = {"gl_reporttjunctions","0"};
 cvar_t	gl_doubleeyes = {"gl_doubleeys", "1"};
 
 //QMB
-cvar_t  r_explosiontype     = {"r_explosiontype",    "0",qtrue};
-cvar_t	r_laserpoint		= {"r_laserpoint",       "0",qtrue};
-cvar_t	r_part_explosions	= {"r_part_explosions",  "1",qtrue};
-cvar_t	r_part_trails		= {"r_part_trails",      "1",qtrue};
-cvar_t	r_part_sparks		= {"r_part_sparks",      "1",qtrue};
-cvar_t	r_part_spikes		= {"r_part_spikes",      "1",qtrue};
-cvar_t	r_part_gunshots	    = {"r_part_gunshots",    "1",qtrue};
-cvar_t	r_part_blood		= {"r_part_blood",       "1",qtrue};
-cvar_t	r_part_telesplash	= {"r_part_telesplash",  "1",qtrue};
-cvar_t	r_part_blobs		= {"r_part_blobs",       "1",qtrue};
-cvar_t	r_part_lavasplash	= {"r_part_lavasplash",  "1",qtrue};
-cvar_t	r_part_flames		= {"r_part_flames",      "1",qtrue};
-cvar_t	r_part_lightning	= {"r_part_lightning",   "1",qtrue};
-cvar_t	r_part_flies		= {"r_part_flies",       "1",qtrue};
-cvar_t	r_part_muzzleflash  = {"r_part_muzzleflash", "1",qtrue};
-cvar_t	r_flametype	        = {"r_flametype",        "2",qtrue};
+cvar_t  r_explosiontype     = {"r_explosiontype",    "0",true};
+cvar_t	r_laserpoint		= {"r_laserpoint",       "0",true};
+cvar_t	r_part_explosions	= {"r_part_explosions",  "1",true};
+cvar_t	r_part_trails		= {"r_part_trails",      "1",true};
+cvar_t	r_part_sparks		= {"r_part_sparks",      "1",true};
+cvar_t	r_part_spikes		= {"r_part_spikes",      "1",true};
+cvar_t	r_part_gunshots	    = {"r_part_gunshots",    "1",true};
+cvar_t	r_part_blood		= {"r_part_blood",       "1",true};
+cvar_t	r_part_telesplash	= {"r_part_telesplash",  "1",true};
+cvar_t	r_part_blobs		= {"r_part_blobs",       "1",true};
+cvar_t	r_part_lavasplash	= {"r_part_lavasplash",  "1",true};
+cvar_t	r_part_flames		= {"r_part_flames",      "1",true};
+cvar_t	r_part_lightning	= {"r_part_lightning",   "1",true};
+cvar_t	r_part_flies		= {"r_part_flies",       "1",true};
+cvar_t	r_part_muzzleflash  = {"r_part_muzzleflash", "1",true};
+cvar_t	r_flametype	        = {"r_flametype",        "2",true};
 //Shpuld
-cvar_t  r_model_brightness  = { "r_model_brightness", "1", qtrue};   // Toggle high brightness model lighting
+cvar_t  r_model_brightness  = { "r_model_brightness", "1", true};   // Toggle high brightness model lighting
 
 cvar_t	r_farclip	        = {"r_farclip",              "4096"};        //far cliping for q3 models
 
-cvar_t	r_flatlightstyles = {"r_flatlightstyles", "0", qfalse};
+cvar_t	r_flatlightstyles = {"r_flatlightstyles", "0", false};
 
 extern	cvar_t	gl_ztrick;
 extern 	cvar_t 	scr_fov_viewmodel;

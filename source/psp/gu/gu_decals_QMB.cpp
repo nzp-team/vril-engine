@@ -359,7 +359,7 @@ void R_SpawnDecalBSP (vec3_t org, char *texname, int size)
 	if (!qmb_initialized)
 		return;
 
-	int tex = loadtextureimage(va("decals/%s",texname),   0, 0, qfalse, GU_LINEAR, qfalse, qfalse);
+	int tex = loadtextureimage(va("decals/%s",texname),   0, 0, false, GU_LINEAR, false, false);
 
 	VectorClear (bestorg);
 	VectorClear (bestnormal);
@@ -440,10 +440,10 @@ qboolean DecalAddPolygon (decal_t *dec, int vertcount, vec3_t *vertices)
 
 	count = dec->vertexCount;
 	if (count + vertcount >= MAX_DECAL_VERTICES)
-		return qfalse;
+		return false;
 
 	if (dec->triangleCount + vertcount - 2 >= MAX_DECAL_TRIANGLES)
-		return qfalse;
+		return false;
 
 	// Add polygon as a triangle fan
 	for (a = 2 ; a < vertcount ; a++)
@@ -462,7 +462,7 @@ qboolean DecalAddPolygon (decal_t *dec, int vertcount, vec3_t *vertices)
 	}
 
 	dec->vertexCount = count;
-	return qtrue;
+	return true;
 }
 
 const double decalEpsilon = 0.001;

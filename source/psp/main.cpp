@@ -49,9 +49,9 @@ void VramSetSize(int kb);
 #include "module.h"
 
 // Running a dedicated server?
-qboolean isDedicated = qfalse;
+qboolean isDedicated = false;
 
-qboolean depthfl = qfalse;
+qboolean depthfl = false;
 
 extern	int  com_argc;
 extern	char **com_argv;
@@ -547,7 +547,7 @@ int user_main(SceSize argc, void* argp)
 	}
 
 	if (CheckParm(args, f_argc,"-32depth"))
-		depthfl = qtrue;
+		depthfl = true;
 
 	if (CheckParm(args, f_argc, "-gamedir")) 
 	{

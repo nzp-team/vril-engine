@@ -489,8 +489,8 @@ void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr)
 			// if it's above a certain treshold, assume a muzzleflash and mark for nodraw
 			// 10 is the approx lowest range of visible front to back in a view model, so that seems reasonable to work with
 			if (vdiff > 10)
-				nodraw[j] = qtrue;
-			else nodraw[j] = qfalse;
+				nodraw[j] = true;
+			else nodraw[j] = false;
 
 			// next set of verts
 			vertsf0++;

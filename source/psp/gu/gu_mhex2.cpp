@@ -374,7 +374,7 @@ void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr)
 	COM_StripExtension (m->name+strlen("models/"), cache+strlen(cache));
 	strcat (cache, ".ms2");
 
-   COM_FOpenFile (cache, &f, qtrue);
+   COM_FOpenFile (cache, &f, true);
 	if (f)
 	{
 		fread (&numcommands, 4, 1, f);

@@ -44,7 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ECONNREFUSED	11
 
 int totalAccessPoints = 0;
-cvar_t accesspoint = {"accesspoint", "1", qtrue};
+cvar_t accesspoint = {"accesspoint", "1", true};
 int accessPointNumber[100];
 
 #ifdef PROFILE
@@ -157,7 +157,7 @@ namespace quake
 					*colon = 0;
 
 				Con_Printf("UDP Initialized\n");
-				tcpipAvailable = qtrue;
+				tcpipAvailable = true;
 
 				return control_socket;
 			}
@@ -166,7 +166,7 @@ namespace quake
 
 			void shut_down (void)
 			{
-				listen(qfalse);
+				listen(false);
 				close_socket(control_socket);
 
 				pspSdkInetTerm();

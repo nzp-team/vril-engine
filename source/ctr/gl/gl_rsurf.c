@@ -1072,14 +1072,14 @@ void R_DrawBrushModel (entity_t *e)
 		sceGuBlendFunc(GU_ADD, GU_FIX, GU_FIX,
 		GU_COLOR(alpha1,alpha1,alpha1,alpha1),
 		GU_COLOR(alpha2,alpha2,alpha2,alpha2));
-		dlight = qfalse;
+		dlight = false;
 	}
 	else if (ISSOLID(e))
 	{
 		sceGuEnable(GU_ALPHA_TEST);
 		int c = (int)(e->renderamt * 255.0f);
 		sceGuAlphaFunc(GU_GREATER, c, 0xff);
-		dlight = qfalse;
+		dlight = false;
 	}
 	else if (ISGLOW(e))
 	{
@@ -1092,7 +1092,7 @@ void R_DrawBrushModel (entity_t *e)
 	{
 		sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 		sceGuColor(GU_RGBA(255, 255, 255, (int)(e->renderamt * 255.0f)));
-		dlight = qfalse;
+		dlight = false;
 	}
 	else if (ISCOLOR(e))
 	{

@@ -1089,7 +1089,7 @@ void SCR_DrawLoadScreen (void)
 				lscreen = Draw_CachePic("gfx/lscreen/lscreen");
 			}
 
-			loadscreeninit = qtrue;
+			loadscreeninit = true;
 		}
 
 		Draw_StretchPic(scr_vrect.x, scr_vrect.y, lscreen, 400, 240);
@@ -1127,11 +1127,11 @@ void SCR_SetUpToDrawConsole (void)
 // decide on the height of the console
 	if (!cl.worldmodel || cls.signon != SIGNONS)//blubs here, undid it actually
 	{
-		con_forcedup = qtrue;
+		con_forcedup = true;
 	}
 	else
 	{
-		con_forcedup = qfalse;
+		con_forcedup = false;
 	}
 
 	if (con_forcedup)
@@ -1582,13 +1582,13 @@ void SCR_UpdateScreen (void)
 	if (oldfov != scr_fov.value)
 	{
 		oldfov = scr_fov.value;
-		vid.recalc_refdef = qtrue;
+		vid.recalc_refdef = true;
 	}
 
 	if (oldscreensize != scr_viewsize.value)
 	{
 		oldscreensize = scr_viewsize.value;
-		vid.recalc_refdef = qtrue;
+		vid.recalc_refdef = true;
 	}
 
 	if (vid.recalc_refdef)

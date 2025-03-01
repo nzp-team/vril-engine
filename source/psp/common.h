@@ -28,7 +28,7 @@ typedef unsigned char 		byte;
 #undef false
 
 #ifdef __cplusplus
-typedef enum {qfalse, qtrue}	qboolean;
+typedef enum {false, true}	qboolean;
 #else
 typedef enum {false, true}	qboolean;
 #endif

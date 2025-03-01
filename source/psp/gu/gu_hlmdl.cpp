@@ -134,7 +134,7 @@ qboolean Mod_LoadHLModel (model_t *mod, void *buffer)
 	{
 		Con_Printf("Cannot load model %s - unknown version %i\n", mod->name, header->version);
 		Hunk_FreeToLowMark(start);
-		return qfalse;
+		return false;
 	}
 
     tex = (hlmdl_tex_t *) ((byte *) header + header->textures);
@@ -155,7 +155,7 @@ qboolean Mod_LoadHLModel (model_t *mod, void *buffer)
 
 	for(i = 0; i < header->numtextures; i++)
     {
-		tex[i].i = GL_LoadPalTex (tex[i].name, tex[i].w, tex[i].h, (byte *) header + tex[i].i, qtrue, GU_LINEAR, 0, (byte *) header + tex[i].w * tex[i].h + tex[i].i, PAL_RGB);
+		tex[i].i = GL_LoadPalTex (tex[i].name, tex[i].w, tex[i].h, (byte *) header + tex[i].i, true, GU_LINEAR, 0, (byte *) header + tex[i].w * tex[i].h + tex[i].i, PAL_RGB);
 	}
 //
 // move the complete, relocatable alias model to the cache
@@ -169,12 +169,12 @@ qboolean Mod_LoadHLModel (model_t *mod, void *buffer)
 	Cache_Alloc (&mod->cache, total, loadname);
 
 	if (!mod->cache.data)
-		return qfalse;
+		return false;
 
 	memcpy_vfpu(mod->cache.data, model, total);
 
 	Hunk_FreeToLowMark (start);
-	return qtrue;
+	return true;
 }
 
 /*

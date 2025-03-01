@@ -37,11 +37,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define PLATFORM_FILE(file) CONCAT(PLATFORM_DIRECTORY,/,file)
 #define RENDERER_FILE(file) CONCAT7(PLATFORM_DIRECTORY,/,PLATFORM_RENDERER,/,PLATFORM_RENDERER,_,file)
 
-#ifndef __PSP__
-#define qtrue 1
-#define qfalse 0
-#endif // __PSP__
-
 #ifdef __PSP__
 #define PSP_MODEL_PHAT		0
 #define PSP_MODEL_SLIM 		1
@@ -385,7 +380,7 @@ typedef struct
 	int target [8]; //Each waypoint can have up to 8 targets
 	float dist [8]; // Distance to the next waypoints
 	int came_from; // Used for pathfinding store where we got here to this
-	qboolean used; // Set to `qtrue` if this waypoint contains valid data (not an empty slot in a list)
+	qboolean used; // Set to `true` if this waypoint contains valid data (not an empty slot in a list)
 } waypoint_ai;
 
 extern waypoint_ai waypoints[MAX_WAYPOINTS];

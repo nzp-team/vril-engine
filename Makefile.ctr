@@ -75,6 +75,7 @@ COMMON_OBJS =	chase.c \
 				ctr/bsp_strlcpy.c \
 				cmd.c \
 				ctr/common.c \
+				images.c \
 				console.c \
 				crc.c \
 				cvar.c \

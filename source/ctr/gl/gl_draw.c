@@ -225,13 +225,13 @@ qpic_t	*Draw_CachePic (char *path)
 // load the pic from disk
 //
 
-	int index = loadtextureimage (str, 0, 0, qfalse, 0, qfalse qfalse);
+	int index = loadtextureimage (str, 0, 0, false, 0, false, false);
 	if(index)
 	{
 		pic->pic.width  = gltextures[index].original_width;
 		pic->pic.height = gltextures[index].original_height;
 
-		gltextures[index].islmp = qfalse;
+		gltextures[index].islmp = false;
 		gl = (glpic_t *)pic->pic.data;
 		gl->texnum = index;
 
@@ -258,7 +258,7 @@ qpic_t	*Draw_CachePic (char *path)
 	gl = (glpic_t *)pic->pic.data;
 	gl->texnum = GL_LoadPicTexture (dat);
 
-	gltextures[gl->texnum].islmp = qtrue;
+	gltextures[gl->texnum].islmp = true;
 	return &pic->pic;
 }
 

@@ -116,7 +116,7 @@ void VID_SetPaletteLM()
 	sceKernelDcacheWritebackRange(d_8to24tableLM, sizeof(d_8to24tableLM));
 	sceGuClutLoad(palette_size / 8, d_8to24tableLM);
     reloaded_pallete = 1;
-	last_palette_wasnt_tx = qtrue;
+	last_palette_wasnt_tx = true;
 }
 
 void VID_SetPaletteTX()
@@ -126,14 +126,14 @@ void VID_SetPaletteTX()
 	sceKernelDcacheWritebackRange(d_8to24table, sizeof(d_8to24table));
 	sceGuClutLoad(palette_size / 8, d_8to24table);
 	reloaded_pallete = 1;
-	last_palette_wasnt_tx = qfalse;
+	last_palette_wasnt_tx = false;
 }
 
 void VID_SetPalette4(unsigned char* clut4pal) {
 	sceGuClutMode(GU_PSM_8888, 0, 0xFF, 0);
 	sceKernelDcacheWritebackRange(clut4pal, sizeof(clut4pal));
 	sceGuClutLoad(2, clut4pal);
-	last_palette_wasnt_tx = qtrue;
+	last_palette_wasnt_tx = true;
 }
 
 void VID_SetPalette(unsigned char* palette)
@@ -156,7 +156,7 @@ void VID_SetPalette(unsigned char* palette)
 	sceKernelDcacheWritebackRange(d_8to24table, sizeof(d_8to24table));
 	sceGuClutLoad(palette_size / 8, d_8to24table);
 	reloaded_pallete = 1;
-	last_palette_wasnt_tx = qtrue;
+	last_palette_wasnt_tx = true;
 }
 
 void VID_ShiftPalette(unsigned char* palette)
@@ -400,7 +400,7 @@ u32 GL_GetDrawBuffer(void)
 void D_StartParticles (void)
 {
 	sceGuDepthMask(GU_TRUE);
-	if (r_particles_simple.value == qtrue)
+	if (r_particles_simple.value == true)
 	{
 		sceGuDisable(GU_TEXTURE_2D);
 	}
@@ -418,7 +418,7 @@ void D_StartParticles (void)
 void D_EndParticles (void)
 {
 	sceGuDepthMask(GU_FALSE);
-	if (r_particles_simple.value == qtrue)
+	if (r_particles_simple.value == true)
 	{
 		 sceGuEnable(GU_TEXTURE_2D);
 	}
@@ -685,7 +685,7 @@ void M_Exit_f (void)
 	if(dialog.buttonPressed == PSP_UTILITY_MSGDIALOG_RESULT_YES)
 	{
 		CL_Disconnect ();
-	    Host_ShutdownServer(qfalse);
+	    Host_ShutdownServer(false);
 	    Sys_Quit ();
     }
 }
