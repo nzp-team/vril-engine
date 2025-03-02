@@ -521,3 +521,8 @@ void Sys_FindClose (void)
 	findpattern = NULL;
 }
 
+#define EMULATOR_DEVCTL__EMIT_SCREENSHOT 0x00000020
+void Sys_CaptureScreenshot (void)
+{
+	sceIoDevctl("emulator:", EMULATOR_DEVCTL__EMIT_SCREENSHOT, NULL, 0, NULL, 0);
+}

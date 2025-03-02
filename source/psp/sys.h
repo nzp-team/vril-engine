@@ -73,3 +73,5 @@ void Sys_SetFPCW (void);
 
 // returns psp model
 int Sys_GetPSPModel(void);
+
+void Sys_CaptureScreenshot(void);

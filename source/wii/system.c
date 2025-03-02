@@ -197,6 +197,11 @@ void Sys_HighFPPrecision (void)
 {
 }
 
+void Sys_CaptureScreenshot(void)
+{
+	Sys_Error("Sys_CaptureScreenshot: Not implemented!");
+}
+
 /*
 ===============================================================================
 

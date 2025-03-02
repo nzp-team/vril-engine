@@ -39,6 +39,7 @@ COMMON_OBJS = \
 	source/psp/mp3.o \
 	source/psp/Random.o \
 	\
+	source/test_handler.o \
 	source/chase.o \
 	source/cl_demo.o \
 	source/cl_input.o \

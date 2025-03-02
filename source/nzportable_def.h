@@ -245,7 +245,6 @@ typedef struct
 	// dr_mabuse1981: HalfLife rendermodes fixed END
 } entity_state_t;
 
-
 #include "wad.h"
 #include "draw.h"
 #include "cvar.h"
@@ -255,6 +254,7 @@ typedef struct
 
 #include "protocol.h"
 #include "cmd.h"
+#include "test_handler.h"
 
 #include PLATFORM_FILE(render.h)
 #include PLATFORM_FILE(client.h)
