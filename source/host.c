@@ -626,6 +626,10 @@ void Host_ServerFrame (void)
 
 // send all messages to the clients
 	SV_SendClientMessages ();
+
+	if (sv.time >= 5.0f) {
+		TestHandler_MapBoot();
+	}
 }
 
 /*
@@ -901,6 +905,7 @@ void Host_Init (quakeparms_t *parms)
 	Mod_Init ();
 	NET_Init ();
 	SV_Init ();
+	TestHandler_Init ();
 
 #ifdef __PSP__
 	Con_Printf ("PSP NZP v%4.1f (PBP: "__TIME__" "__DATE__")\n", (float)(VERSION));

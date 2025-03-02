@@ -288,6 +288,11 @@ void Sys_LowFPPrecision (void)
 {
 }
 
+void Sys_CaptureScreenshot(void)
+{
+	Sys_Error("Sys_CaptureScreenshot: Not implemented!");
+}
+
 //=============================================================================
 
 bool game_running;

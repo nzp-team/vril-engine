@@ -1718,6 +1718,11 @@ float invertfloat(float input) {
 
 void HUD_Screenflash (void)
 {
+	// Screenflash can get in the way of debugging.
+	if (sys_testmode.value > 0) {
+		return;
+	}
+
 	int r, g, b, a;
 	float flash_alpha;
 
