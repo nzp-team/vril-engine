@@ -92,8 +92,7 @@ jobs:
       - name: Run PlayStation Portable Pull Request Tests
         run: |
           cd ./testing
-          PWD=$(pwd)
-          ./run_tests.sh --platform psp --test all --content "${PWD}/validate/"
+          ./run_tests.sh --platform psp --test all --content "$(pwd)/validate"
   Unify-and-Release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest

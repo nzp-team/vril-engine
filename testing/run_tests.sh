@@ -93,7 +93,7 @@ function run_test()
                 continue
             fi
 
-            local cmd="source ./tests/${pretty_sh}.sh ${PLATFORM}"
+            local cmd="source ./tests/${pretty_sh}.sh ${PLATFORM} ${CONTENT_DIR}"
             $cmd
         done
     else
