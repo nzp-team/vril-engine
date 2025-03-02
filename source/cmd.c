@@ -258,7 +258,7 @@ void Cmd_StuffCmds_f (void)
 		{
 			i++;
 
-			for (j=i ; (text[j] != '+') && (text[j] != '-') && (text[j] != 0) ; j++)
+			for (j=i ; (text[j] != '+') && (!(text[j] == '-' && text[j - 1] == ' ')) && (text[j] != 0) ; j++)
 				;
 
 			c = text[j];
