@@ -22,7 +22,7 @@ function print_help()
     echo "Usage: run_tests.sh --platform psp --test map-boot --content /path/to/validate/"
     echo "-p (--platform) : Platform to run tests for. Looks in setup directory."
     echo "-t (--test)     : Test to run. Use \"all\" to run all tests. Looks in tests directory."
-    echo "-g (--generate) : Generates bitmaps of all maps to use for validation. Argument is write directory."
+    echo "-g (--generate) : Generates master bitmaps of all maps to compare against."
     echo "-h (--help)     : Displays this message."
 }
 
