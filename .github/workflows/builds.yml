@@ -19,7 +19,6 @@ jobs:
           cd ../../../
           make -f Makefile.psp install WERROR=1
       - name: Upload Artifact
-        if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: psp-nzp-eboot
@@ -45,7 +44,6 @@ jobs:
         run: |
           make -f Makefile.ctr WERROR=1
       - name: Upload Artifact
-        if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: ctr-nzp-3dsx
@@ -69,6 +67,33 @@ jobs:
         working-directory: ./
         run: |
           make -f Makefile.rvl WERROR=1
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rvl-nzp-dol
+          path: ./build/wii/apps/nzportable/boot.dol
+  Pull-Request-Test-PSP:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:24.10
+      options: --shm-size=8192m
+    needs: [Compile-EBOOT, Compile-3DSX, Compile-DOL]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Wait for GitHub to keep up..
+        run: sleep 2s
+        shell: bash
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: /
+      - name: Run PlayStation Portable Pull Request Tests
+        run: |
+          cd ./testing
+          PWD=$(pwd)
+          ./run_tests.sh --platform psp --test all --content "${PWD}/validate/"
   Unify-and-Release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest

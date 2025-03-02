@@ -64,7 +64,8 @@ export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
 
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
-COMMON_OBJS =	chase.c \
+COMMON_OBJS =	test_handler.c \
+				chase.c \
                 cl_hud.c \
 				cl_demo.c \
 				cl_input.c \
