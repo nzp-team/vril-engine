@@ -1,0 +1,45 @@
+--- ppsspp/headless/Headless.cpp	2025-03-15 08:18:43
++++ ppsspp_patch/headless/Headless.cpp	2025-03-15 08:20:35
+@@ -162,6 +162,8 @@
+ 
+ 	fprintf(stderr, "  --graphics=BACKEND    use a different gpu backend\n");
+ 	fprintf(stderr, "                        options: gles, software, directx9, etc.\n");
++	fprintf(stderr, "  --system=MODEL		 use specified system model\n");
++	fprintf(stderr, "					     options: fat, slim (default)\n");
+ 	fprintf(stderr, "  --screenshot=FILE     compare against a screenshot\n");
+ 	fprintf(stderr, "  --max-mse=NUMBER      maximum allowed MSE error for screenshot\n");
+ 	fprintf(stderr, "  --timeout=SECONDS     abort test it if takes longer than SECONDS\n");
+@@ -338,6 +340,7 @@
+ 	GPUCore gpuCore = GPUCORE_SOFTWARE;
+ 	CPUCore cpuCore = CPUCore::JIT;
+ 	int debuggerPort = -1;
++	int systemModel = PSP_MODEL_SLIM;
+ 
+ 	std::vector<std::string> testFilenames;
+ 	const char *mountIso = nullptr;
+@@ -391,6 +394,16 @@
+ 			else
+ 				return printUsage(argv[0], "Unknown gpu backend specified after --graphics=. Allowed: software, directx9, directx11, vulkan, gles, null.");
+ 		}
++		else if (!strncmp(argv[i], "--system=", strlen("--system=")) && strlen(argv[i]) > strlen("--system="))
++		{
++			const char *systemName = argv[i] + strlen("--system=");
++			if (!strcasecmp(systemName, "fat"))
++				systemModel = PSP_MODEL_FAT;
++			else if (!strcasecmp(systemName, "slim"))
++				systemModel = PSP_MODEL_SLIM;
++			else
++				return printUsage(argv[0], "Unknown system model specified after --system=. Allowed: fat, slim.");
++		}
+ 		// Default to GLES if no value selected.
+ 		else if (!strcmp(argv[i], "--graphics")) {
+ #if PPSSPP_API(ANY_GL)
+@@ -493,7 +506,7 @@
+ 	g_Config.bEnableWlan = true;
+ 	g_Config.sMACAddress = "12:34:56:78:9A:BC";
+ 	g_Config.iFirmwareVersion = PSP_DEFAULT_FIRMWARE;
+-	g_Config.iPSPModel = PSP_MODEL_SLIM;
++	g_Config.iPSPModel = systemModel;
+ 	g_Config.iGlobalVolume = VOLUME_FULL;
+ 	g_Config.iReverbVolume = VOLUME_FULL;
+ 	g_Config.internalDataDirectory.clear();

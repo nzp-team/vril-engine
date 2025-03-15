@@ -23,6 +23,7 @@ function print_help()
     echo "-p (--platform) : Platform to run tests for. Looks in setup directory."
     echo "-t (--test)     : Test to run. Use \"all\" to run all tests. Looks in tests directory."
     echo "-g (--generate) : Generates master bitmaps of all maps to compare against."
+    echo "-m (--mode)     : Extra mode flag to pass into test scripts."
     echo "-h (--help)     : Displays this message."
 }
 
@@ -32,6 +33,7 @@ while true; do
         -t | --test ) TEST="$2"; shift 2 ;;
         -g | --generate ) TEST="generate-source"; shift 1 ;;
         -c | --content ) CONTENT_DIR="$2"; shift 2 ;;
+        -m | --mode ) MODE="$2"; shift 2 ;;
         -h | --help ) print_help; exit 0 ;;
         -- ) shift; break ;;
         * ) break ;;
@@ -93,12 +95,12 @@ function run_test()
                 continue
             fi
 
-            local cmd="source ./tests/${pretty_sh}.sh ${PLATFORM} ${CONTENT_DIR}"
+            local cmd="source ./tests/${pretty_sh}.sh ${PLATFORM} ${CONTENT_DIR} ${MODE}"
             $cmd
         done
     else
         echo "$(pwd)"
-        local cmd="source ./tests/${TEST}.sh ${PLATFORM} ${CONTENT_DIR}"
+        local cmd="source ./tests/${TEST}.sh ${PLATFORM} ${CONTENT_DIR} ${MODE}"
 
         $cmd
     fi
@@ -114,7 +116,7 @@ function main()
     # Begin prepping our environment.
     local dir=$(pwd)
     load_setup_script;
-    begin_setup;
+    begin_setup "${dir}";
     cd "${dir}"
 
     # Run our tests.
