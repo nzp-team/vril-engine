@@ -22,6 +22,8 @@ TIMEOUT=30
 # The PPSSPP branch we checkout and use.
 ppsspp_version="v1.17.1"
 
+testing_dir_path=""
+
 # tzdata will try to display an interactive install prompt by
 # default, so make sure we define our system as non-interactive.
 export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true
@@ -46,8 +48,13 @@ function clone_ppsspp
 
 function build_ppsspp
 {
+    cd /working/
+    print_info "Patching PPSSPP.."
+    local command="patch -p0 ppsspp/headless/Headless.cpp ${testing_dir_path}/setup/utils/ppsspp.patch"
+    echo "[${command}]"
+    $command
     print_info "Building PPSSPP.."
-    local command="./b.sh --headless"
+    command="./b.sh --headless"
     echo "[${command}]"
     cd /working/ppsspp
     ${command}
@@ -71,6 +78,8 @@ function obtain_nzportable
 
 function begin_setup()
 {
+    testing_dir_path="${1}"
+
     # Create our working directory.
     rm -rf /working
     mkdir -p /working/assets
@@ -96,10 +105,15 @@ function run_nzportable()
 {
     local mode="$1"
     local comp="$2"
+    local system="$3"
+
+    if [[ "${system}" == "" ]]; then
+        system="slim"
+    fi
 
     if [[ "${mode}" == "1" ]]; then
-        echo "/working/${EMULATOR_BIN} --screenshot=${comp} --timeout=${TIMEOUT} -r /working/nzportable/ /working/nzportable/EBOOT.PBP"
+        echo "/working/${EMULATOR_BIN} --system=${system} --screenshot=${comp} --timeout=${TIMEOUT} -r /working/nzportable/ /working/nzportable/EBOOT.PBP"
     else
-        echo "/working/${EMULATOR_BIN} --timeout=${TIMEOUT} -r /working/nzportable/ /working/nzportable/EBOOT.PBP"
+        echo "/working/${EMULATOR_BIN} --system=${system} --timeout=${TIMEOUT} -r /working/nzportable/ /working/nzportable/EBOOT.PBP"
     fi
 }
