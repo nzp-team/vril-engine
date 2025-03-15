@@ -15,6 +15,7 @@ set -o errexit
 
 PLATFORM="$1"
 CONTENT_DIR="$2"
+MODE="$3"
 
 source "setup/${PLATFORM}.sh"
 
@@ -46,7 +47,7 @@ function run_mapboot_test()
 
         # Load emulator and attempt to boot map
         print_info "Loading Nazi Zombies: Portable via [${EMULATOR_BIN}] with map [${pretty_bsp}].."
-        local command=$(run_nzportable "1" "${CONTENT_DIR}/${PLATFORM}/${pretty_bsp}.bmp")
+        local command=$(run_nzportable "1" "${CONTENT_DIR}/${PLATFORM}/${pretty_bsp}.bmp" "${MODE}")
         echo "[${command}]"
         ${command} > /dev/null 2>&1 || emulator_failed="1"
 
