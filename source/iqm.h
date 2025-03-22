@@ -198,7 +198,8 @@ typedef struct iqm_model_vertex_arrays_s {
 } iqm_model_vertex_arrays_t;
 
 
-uint32_t safe_strsize(char *str);
+size_t safe_strsize(char *str);
+size_t pad_n_bytes(size_t n_bytes);
 void iqm_parse_float_array(const void *iqm_data, const iqm_vert_array_t *vert_array, float *out, size_t n_elements, size_t element_len, float *default_value);
 void iqm_parse_uint8_array(const void *iqm_data, const iqm_vert_array_t *vert_array, uint8_t *out, size_t n_elements, size_t element_len, uint8_t max_value);
 const void *iqm_find_extension(const uint8_t *iqm_data, size_t iqm_data_size, const char *extension_name, size_t *extension_size);
@@ -245,7 +246,7 @@ typedef struct skeletal_material_s {
 
 
 // TODO - Remvoe this?
-struct skeletal_mesh_s;
+// Struct defined in platform-specific iqm
 typedef struct skeletal_mesh_s skeletal_mesh_t;
 
 
@@ -276,19 +277,19 @@ typedef struct skeletal_model_s {
     char **bone_name;
     int16_t *bone_parent_idx;
 
-    vec3_t *bone_rest_pos;
-    quat_t *bone_rest_rot;
-    vec3_t *bone_rest_scale;
+    vec3_t *bone_rest_pos;      // NOTE - Is NULL for anim-only models (n_meshes=0)
+    quat_t *bone_rest_rot;      // NOTE - Is NULL for anim-only models (n_meshes=0)
+    vec3_t *bone_rest_scale;    // NOTE - Is NULL for anim-only models (n_meshes=0)
 
     // Cached values set at load-time
     int fps_cam_bone_idx; // -1 if no camera bone, otherwise it contains the index of the bone named `fps_cam`
 
 
     // Custom properties to support bone hitboxes
-    bool *bone_hitbox_enabled;  // Whether or not to use the hitbox for each bone
-    vec3_t *bone_hitbox_ofs;    // Ofs of the bounding box for each bone
-    vec3_t *bone_hitbox_scale;  // Size of the bounding box for each bone
-    int *bone_hitbox_tag;       // Tag value returned for ray-hitbox intersections with each bone
+    bool *bone_hitbox_enabled;  // Whether or not to use the hitbox for each bone   // NOTE - Is NULL for anim-only models (n_meshes=0)
+    vec3_t *bone_hitbox_ofs;    // Ofs of the bounding box for each bone            // NOTE - Is NULL for anim-only models (n_meshes=0)
+    vec3_t *bone_hitbox_scale;  // Size of the bounding box for each bone           // NOTE - Is NULL for anim-only models (n_meshes=0)
+    int *bone_hitbox_tag;       // Tag value used when traceline hits bone hitbox   // NOTE - Is NULL for anim-only models (n_meshes=0)
 
 
 #ifdef IQM_BBOX_PER_MODEL_PER_ANIM
@@ -304,8 +305,8 @@ typedef struct skeletal_model_s {
 
     // The per-bone transform that takes us from rest-pose model-space to bone local space
     // These are static, so compute them once
-    mat3x4_t *bone_rest_transforms;
-    mat3x4_t *inv_bone_rest_transforms;
+    mat3x4_t *bone_rest_transforms;     // NOTE - Is NULL for anim-only models (n_meshes=0)
+    mat3x4_t *inv_bone_rest_transforms; // NOTE - Is NULL for anim-only models (n_meshes=0)
     
 
     // Animation frames data
@@ -382,7 +383,7 @@ typedef struct skeletal_skeleton_s {
 // Defined in platform-specific C++ IQM files, called from C
 // ----------------------------------------------------------------------------
 skeletal_mesh_t *load_iqm_meshes(const void *iqm_data, const iqm_model_vertex_arrays_t *iqm_vertex_arrays);
-uint32_t count_unpacked_skeletal_model_meshes_n_bytes(skeletal_model_t *skel_model);
+size_t count_unpacked_skeletal_model_meshes_n_bytes(skeletal_model_t *skel_model);
 void pack_skeletal_model_meshes(skeletal_model_t *unpacked_skel_model_in, skeletal_model_t *packed_skel_model_out, uint8_t **buffer_head_ptr);
 void free_unpacked_skeletal_model_meshes(skeletal_model_t *skel_model);
 void debug_print_skeletal_model_meshes(skeletal_model_t *skel_model, int is_packed);
@@ -393,6 +394,8 @@ void set_unpacked_skeletal_model_mesh_material_indices(skeletal_model_t *skel_mo
 
 
 #define PACKING_BYTE_PADDING 4
+
+
 #define PACK_MEMBER(dest_ptr, src_ptr, n_bytes, buffer_start, buffer_head) (_pack_member( (void**) dest_ptr, (void*) src_ptr, n_bytes, buffer_start, buffer_head))
 void _pack_member(void **dest_ptr, void *src_ptr, size_t n_bytes, uint8_t *buffer_start, uint8_t **buffer_head);
 void *_unpack_member(void *packed_member_ptr, void *buffer_start);
@@ -422,7 +425,7 @@ void PF_getmovedistance(void);
 void PF_skeleton_create(void);
 void PF_skeleton_destroy(void);
 void PF_skeleton_build(void);
-qboolean sv_intersect_skeletal_model_ent(edict_t *ent, vec3_t ray_start, vec3_t ray_end, float *trace_fraction, int *trace_bone_idx, int *trace_bone_hitbox_tag);
+bool sv_intersect_skeletal_model_ent(edict_t *ent, vec3_t ray_start, vec3_t ray_end, float *trace_fraction, int *trace_bone_idx, int *trace_bone_hitbox_tag);
 void PF_skel_get_bonename(void);
 void PF_skel_get_boneparent(void);
 void PF_skel_find_bone(void);
@@ -435,7 +438,7 @@ void PF_getframeduration(void);
 void PF_processmodelevents(void);
 void PF_skel_register_anim(void);
 void sv_skel_clear_all();
-qboolean sv_get_skeleton_bounds(int skel_idx, vec3_t mins, vec3_t maxs);
+bool sv_get_skeleton_bounds(int skel_idx, vec3_t mins, vec3_t maxs);
 int cl_get_camera_bone_view_transform(entity_t *view_ent, mat3x4_t camera_anim_view_matrix_out);
 
 

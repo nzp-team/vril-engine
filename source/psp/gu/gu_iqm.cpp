@@ -930,25 +930,25 @@ extern "C" skeletal_mesh_t *load_iqm_meshes(const void *iqm_data, const iqm_mode
 // Returns the total number of bytes required to store a skeletal_model_t's
 // list of meshes ONLY, including all data pointed to via internal pointers
 // 
-extern "C" uint32_t count_unpacked_skeletal_model_meshes_n_bytes(skeletal_model_t *skel_model) {
+extern "C" size_t count_unpacked_skeletal_model_meshes_n_bytes(skeletal_model_t *skel_model) {
 
-    uint32_t skel_model_n_bytes = 0;
+    size_t skel_model_n_bytes = 0;
 
-    skel_model_n_bytes += sizeof(skeletal_mesh_t) * skel_model->n_meshes;
+    skel_model_n_bytes += pad_n_bytes(sizeof(skeletal_mesh_t) * skel_model->n_meshes);
     for(int mesh_idx = 0; mesh_idx < skel_model->n_meshes; mesh_idx++) {
         skeletal_mesh_t *mesh = &skel_model->meshes[mesh_idx];
         skel_model_n_bytes += safe_strsize(mesh->material_name);
-        skel_model_n_bytes += sizeof(skeletal_submesh_t) * mesh->n_submeshes;
+        skel_model_n_bytes += pad_n_bytes(sizeof(skeletal_submesh_t) * mesh->n_submeshes);
 
 
         for(int submesh_idx = 0; submesh_idx < mesh->n_submeshes; submesh_idx++) {
             skeletal_submesh_t *submesh = &mesh->submeshes[submesh_idx];
 
             if(submesh->vert8s != NULL) {
-                skel_model_n_bytes += sizeof(skel_vertex_i8_t) * submesh->n_verts;
+                skel_model_n_bytes += pad_n_bytes(sizeof(skel_vertex_i8_t) * submesh->n_verts);
             }
             if(submesh->vert16s != NULL) {
-                skel_model_n_bytes += sizeof(skel_vertex_i16_t) * submesh->n_verts;
+                skel_model_n_bytes += pad_n_bytes(sizeof(skel_vertex_i16_t) * submesh->n_verts);
             }
         }
     }
@@ -1362,12 +1362,6 @@ void draw_skeleton_bboxes(entity_t *ent, skeletal_skeleton_t *skel, bool draw_sk
     // --------------------------------------------------
 
 
-    bool *bone_hitbox_enabled = UNPACK_MEMBER(skel->model->bone_hitbox_enabled, skel->model);
-    vec3_t *bone_hitbox_ofs = UNPACK_MEMBER(skel->model->bone_hitbox_ofs, skel->model);
-    vec3_t *bone_hitbox_scale = UNPACK_MEMBER(skel->model->bone_hitbox_scale, skel->model);
-    int *bone_hitbox_tag = UNPACK_MEMBER(skel->model->bone_hitbox_tag, skel->model);
-
-
     // ----------------------------------------------------
     // Draw skeleton bounds that contains all bones
     // ----------------------------------------------------
@@ -1460,7 +1454,13 @@ void draw_skeleton_bboxes(entity_t *ent, skeletal_skeleton_t *skel, bool draw_sk
     // ----------------------------------------------------
 
 
-    if(draw_bone_bboxes) {
+    bool *bone_hitbox_enabled = UNPACK_MEMBER(skel->model->bone_hitbox_enabled, skel->model);
+    vec3_t *bone_hitbox_ofs = UNPACK_MEMBER(skel->model->bone_hitbox_ofs, skel->model);
+    vec3_t *bone_hitbox_scale = UNPACK_MEMBER(skel->model->bone_hitbox_scale, skel->model);
+    int *bone_hitbox_tag = UNPACK_MEMBER(skel->model->bone_hitbox_tag, skel->model);
+
+
+    if(draw_bone_bboxes && bone_hitbox_enabled != NULL && bone_hitbox_ofs != NULL && bone_hitbox_scale != NULL && bone_hitbox_tag != NULL) {
         for(int i = 0; i < skel->model->n_bones; i++) {
             if(!bone_hitbox_enabled[i]) {
                 continue;
@@ -1595,6 +1595,9 @@ void draw_skeleton_bboxes(entity_t *ent, skeletal_skeleton_t *skel, bool draw_sk
 
 void draw_skeleton_rest_pose_bone_axes(skeletal_model_t *skel_model) {
     mat3x4_t *bone_transforms = UNPACK_MEMBER(skel_model->bone_rest_transforms, skel_model);
+    if(bone_transforms == NULL) {
+        return;
+    }
 
     // mat3x4_t ident_mat;
     // Matrix3x4_LoadIdentity(ident_mat);
@@ -1660,9 +1663,10 @@ void draw_skeleton_bone_axes(entity_t *ent, skeletal_skeleton_t *skel) {
     // -----------------------------------------
     sceGuDisable(GU_DEPTH_TEST);
     sceGuDisable(GU_TEXTURE_2D);
-    static float line_verts_x[6] = {0,0,0,     1,0,0}; // Verts for x-axis
-    static float line_verts_y[6] = {0,0,0,     0,1,0}; // Verts for y-axis
-    static float line_verts_z[6] = {0,0,0,     0,0,1}; // Verts for z-axis
+    float axis_len = 0.1;
+    static float line_verts_x[6] = {0,0,0,     axis_len,0,0}; // Verts for x-axis
+    static float line_verts_y[6] = {0,0,0,     0,axis_len,0}; // Verts for y-axis
+    static float line_verts_z[6] = {0,0,0,     0,0,axis_len}; // Verts for z-axis
 
     for(int i = 0; i < skel_model->n_bones; i++) {
         ScePspFMatrix4 bone_mat;
@@ -1983,8 +1987,6 @@ void R_DrawIQMModel(entity_t *ent) {
     // Con_Printf("Ent world bounds: (mins: [%.1f, %.1f, %.1f], maxs: [%.1f, %.1f, %.1f])\n", ent_world_mins[0], ent_world_mins[1], ent_world_mins[2], ent_world_maxs[0], ent_world_maxs[1], ent_world_maxs[2]);
     // Con_Printf("Ent scale: %d (default: %d, decoded: %f)\n", ent->scale, ENTSCALE_DEFAULT,ENTSCALE_DECODE(ent->scale));
 
-    // FIXME - Somehow vmodel ent has 0 scale? How does aliasmdl handle this?
-
     // --
     // Con_Printf("Ent model-to-world:\n");
     // Con_Printf("\t[%.1f, %.1f, %.1f, %.1f]\n", model_to_world_transform[0][0], model_to_world_transform[0][1], model_to_world_transform[0][2], model_to_world_transform[0][3]);
@@ -2207,10 +2209,10 @@ void R_DrawIQMModel(entity_t *ent) {
     }
 
     if(cl_skel != nullptr) {
-        // draw_skeleton_bone_axes(ent, cl_skel);
+        draw_skeleton_bone_axes(ent, cl_skel);
     }
     else {
-        // draw_skeleton_rest_pose_bone_axes(skel_model); // - enable this
+        // draw_skeleton_rest_pose_bone_axes(skel_model);
     }
 
     // TODO - Hide behind r_showbboxes cvar:

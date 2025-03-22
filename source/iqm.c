@@ -367,6 +367,11 @@ void build_skeleton(skeletal_skeleton_t *skeleton, skeletal_model_t *anim_model,
     mat3x4_t *bone_rest_transforms = UNPACK_MEMBER(skeleton->model->bone_rest_transforms, skeleton->model);
     mat3x4_t *inv_bone_rest_transforms = UNPACK_MEMBER(skeleton->model->inv_bone_rest_transforms, skeleton->model);
 
+    // If skeletal model used to define the skeleton doesn't have bone rest transforms defined, stop
+    if(bone_rest_transforms == NULL || inv_bone_rest_transforms == NULL) {
+        return;
+    }
+
     vec3_t *anim_model_frames_bone_pos = UNPACK_MEMBER(anim_model->frames_bone_pos, anim_model);
     quat_t *anim_model_frames_bone_rot = UNPACK_MEMBER(anim_model->frames_bone_rot, anim_model);
     vec3_t *anim_model_frames_bone_scale = UNPACK_MEMBER(anim_model->frames_bone_scale, anim_model);
@@ -527,6 +532,20 @@ void set_skeleton_bone_states_from_model(skeletal_skeleton_t *skeleton, skeletal
     vec3_t *model_bone_hitbox_ofs = UNPACK_MEMBER(skel_model->bone_hitbox_ofs, skel_model);
     vec3_t *model_bone_hitbox_scale = UNPACK_MEMBER(skel_model->bone_hitbox_scale, skel_model);
     int *model_bone_hitbox_tag = UNPACK_MEMBER(skel_model->bone_hitbox_tag, skel_model);
+
+    if(model_bone_hitbox_enabled == NULL) {
+        return;
+    }
+    if(model_bone_hitbox_ofs == NULL) {
+        return;
+    }
+    if(model_bone_hitbox_scale == NULL) {
+        return;
+    }
+    if(model_bone_hitbox_tag == NULL) {
+        return;
+    }
+
     for(int i = 0; i < skel_model->n_bones; i++) {
         skeleton->bone_hitbox_enabled[i] = model_bone_hitbox_enabled[i];
         skeleton->bone_hitbox_ofs[i][0] = model_bone_hitbox_ofs[i][0];
@@ -545,6 +564,15 @@ void set_skeleton_bone_states_from_model(skeletal_skeleton_t *skeleton, skeletal
 // Allocates enough memory in this skeleton to store bone states
 //
 void init_skeleton(skeletal_skeleton_t *skeleton, int skel_model_idx, skeletal_model_t *skel_model) {
+    if(skel_model == NULL || skel_model_idx < 0) {
+        return;
+    }
+    if(skel_model->n_meshes <= 0) {
+        // IQM Models with no meshes do not have valid skeleton rest pose data
+        // and therefore cannot be used to construct a skeleton
+        return;
+    }
+
     skeleton->modelindex = skel_model_idx;
     skeleton->model = skel_model;
     skeleton->anim_model = NULL;
@@ -675,6 +703,7 @@ void load_material_json_info(skeletal_material_t *material, cJSON *material_data
     material->transparent = false;
     material->fullbright = false;
     material->fog = true;
+    material->shade_smooth = true;
     material->add_color = false;
     material->add_color_red = 0.0f;
     material->add_color_green = 0.0f;
@@ -700,12 +729,12 @@ void load_material_json_info(skeletal_material_t *material, cJSON *material_data
     }
 
     cJSON *is_fullbright = cJSON_GetObjectItemCaseSensitive(material_data, "fullbright");
-    if(cJSON_IsBool(is_transparent)) {
-        material->fullbright = cJSON_IsTrue(is_transparent);
+    if(cJSON_IsBool(is_fullbright)) {
+        material->fullbright = cJSON_IsTrue(is_fullbright);
     }
 
     cJSON *uses_fog = cJSON_GetObjectItemCaseSensitive(material_data, "fog");
-    if(cJSON_IsBool(is_transparent)) {
+    if(cJSON_IsBool(uses_fog)) {
         material->fog = cJSON_IsTrue(uses_fog);
     }
 
@@ -716,8 +745,9 @@ void load_material_json_info(skeletal_material_t *material, cJSON *material_data
 
     cJSON *add_color = cJSON_GetObjectItemCaseSensitive(material_data, "add_color");
     if(cJSON_IsArray(add_color)) {
+        int add_color_array_len = cJSON_GetArraySize(add_color);
         bool numbers_valid = true;
-        for(int i = 0; i < cJSON_GetArraySize(add_color); i++) {
+        for(int i = 0; i < add_color_array_len; i++) {
             cJSON *number = cJSON_GetArrayItem(add_color, i);
             if(!cJSON_IsNumber(number)) {
                 Con_Printf("Warning - IQM JSON file \"%s\" material \"%s\" has \"add_color\" array index %d entry is non-numeric\n", json_file_name, material_name, i);
@@ -726,13 +756,13 @@ void load_material_json_info(skeletal_material_t *material, cJSON *material_data
             }
         }
         if(numbers_valid) {
-            if(cJSON_GetArraySize(add_color) == 3) {
+            if(add_color_array_len == 3) {
                 material->add_color = true;
                 material->add_color_red   = (float) cJSON_GetNumberValue(cJSON_GetArrayItem( add_color, 0));
                 material->add_color_green = (float) cJSON_GetNumberValue(cJSON_GetArrayItem( add_color, 1));
                 material->add_color_blue  = (float) cJSON_GetNumberValue(cJSON_GetArrayItem( add_color, 2));
             }
-            else if(cJSON_GetArraySize(add_color) == 4) {
+            else if(add_color_array_len == 4) {
                 material->add_color = true;
                 material->add_color_red   = (float) cJSON_GetNumberValue(cJSON_GetArrayItem( add_color, 0));
                 material->add_color_green = (float) cJSON_GetNumberValue(cJSON_GetArrayItem( add_color, 1));
@@ -778,101 +808,109 @@ void load_iqm_file_json_info(skeletal_model_t *skel_model, const char *iqm_file_
 
     // Parse bone_hitbox tag
     char **bone_names = skel_model->bone_name;
-    cJSON *bone_hitbox_tag = cJSON_GetObjectItemCaseSensitive(root, "bone_hitbox_tag");
-    if(cJSON_IsObject(bone_hitbox_tag)) {
-        for(int i = 0; i < skel_model->n_bones; i++) {
-            cJSON *bone_data = cJSON_GetObjectItemCaseSensitive(bone_hitbox_tag, bone_names[i]);
-            if(bone_data) {
-                if(cJSON_IsNumber(bone_data)) {
-                    // TODO - Verify it's an integer?
-                    skel_model->bone_hitbox_tag[i] = (int) cJSON_GetNumberValue(bone_data);
-                }
-                else {
-                    Con_Printf("Warning - IQM JSON file \"%s\" has non-integer \"bone_hitbox_tag\" value for bone \"%s\"\n", iqm_info_json_file, bone_names[i]);
+    if(skel_model->bone_hitbox_tag != NULL) {
+        cJSON *bone_hitbox_tag = cJSON_GetObjectItemCaseSensitive(root, "bone_hitbox_tag");
+        if(cJSON_IsObject(bone_hitbox_tag)) {
+            for(int i = 0; i < skel_model->n_bones; i++) {
+                cJSON *bone_data = cJSON_GetObjectItemCaseSensitive(bone_hitbox_tag, bone_names[i]);
+                if(bone_data) {
+                    if(cJSON_IsNumber(bone_data)) {
+                        // TODO - Verify it's an integer?
+                        skel_model->bone_hitbox_tag[i] = (int) cJSON_GetNumberValue(bone_data);
+                    }
+                    else {
+                        Con_Printf("Warning - IQM JSON file \"%s\" has non-integer \"bone_hitbox_tag\" value for bone \"%s\"\n", iqm_info_json_file, bone_names[i]);
+                    }
                 }
             }
         }
     }
 
     // Parse bone_hitbox_enabled
-    cJSON *bone_hitbox_enabled = cJSON_GetObjectItemCaseSensitive(root, "bone_hitbox_enabled");
-    if(cJSON_IsObject(bone_hitbox_enabled)) {
-        for(int i = 0; i < skel_model->n_bones; i++) {
-            cJSON *bone_data = cJSON_GetObjectItemCaseSensitive(bone_hitbox_enabled, bone_names[i]);
-            if(bone_data) {
-                if(cJSON_IsBool(bone_data)) {
-                    skel_model->bone_hitbox_enabled[i] = cJSON_IsTrue(bone_data);
-                }
-                else {
-                    Con_Printf("Warning - IQM JSON file \"%s\" has non-boolean \"bone_hitbox_enabled\" value for bone \"%s\"\n", iqm_info_json_file, bone_names[i]);
+    if(skel_model->bone_hitbox_enabled != NULL) {
+        cJSON *bone_hitbox_enabled = cJSON_GetObjectItemCaseSensitive(root, "bone_hitbox_enabled");
+        if(cJSON_IsObject(bone_hitbox_enabled)) {
+            for(int i = 0; i < skel_model->n_bones; i++) {
+                cJSON *bone_data = cJSON_GetObjectItemCaseSensitive(bone_hitbox_enabled, bone_names[i]);
+                if(bone_data) {
+                    if(cJSON_IsBool(bone_data)) {
+                        skel_model->bone_hitbox_enabled[i] = cJSON_IsTrue(bone_data);
+                    }
+                    else {
+                        Con_Printf("Warning - IQM JSON file \"%s\" has non-boolean \"bone_hitbox_enabled\" value for bone \"%s\"\n", iqm_info_json_file, bone_names[i]);
+                    }
                 }
             }
         }
     }
 
     // Parse bone_hitbox_ofs
-    cJSON *bone_hitbox_ofs = cJSON_GetObjectItemCaseSensitive(root, "bone_hitbox_ofs");
-    if(cJSON_IsObject(bone_hitbox_ofs)) {
-        for(int i = 0; i < skel_model->n_bones; i++) {
-            cJSON *bone_data = cJSON_GetObjectItemCaseSensitive(bone_hitbox_ofs, bone_names[i]);
-            if(bone_data) {
-                if(!cJSON_IsArray(bone_data)) {
-                    Con_Printf("Warning - IQM JSON file \"%s\" has non-array \"bone_hitbox_ofs\" value for bone \"%s\"\n", iqm_info_json_file, bone_names[i]);
-                    continue;
-                }
-                else if(cJSON_GetArraySize(bone_data) != 3) {
-                    Con_Printf("Warning - IQM JSON file \"%s\" has \"bone_hitbox_ofs\" array of size != 3 for bone \"%s\"\n", iqm_info_json_file, bone_names[i]);
-                    continue;
-                }
-                bool numbers_valid = true;
-                for(int j = 0; j < 3; j++) {
-                    cJSON *number = cJSON_GetArrayItem(bone_data, j);
-                    if(!cJSON_IsNumber(number)) {
-                        Con_Printf("Warning - IQM JSON file \"%s\" has \"bone_hitbox_ofs\" array index %d entry is non-numeric for bone \"%s\"\n", iqm_info_json_file, j, bone_names[i]);
-                        numbers_valid = false;
-                        break;
+    if(skel_model->bone_hitbox_ofs != NULL) {
+        cJSON *bone_hitbox_ofs = cJSON_GetObjectItemCaseSensitive(root, "bone_hitbox_ofs");
+        if(cJSON_IsObject(bone_hitbox_ofs)) {
+            for(int i = 0; i < skel_model->n_bones; i++) {
+                cJSON *bone_data = cJSON_GetObjectItemCaseSensitive(bone_hitbox_ofs, bone_names[i]);
+                if(bone_data) {
+                    if(!cJSON_IsArray(bone_data)) {
+                        Con_Printf("Warning - IQM JSON file \"%s\" has non-array \"bone_hitbox_ofs\" value for bone \"%s\"\n", iqm_info_json_file, bone_names[i]);
+                        continue;
                     }
-                }
-                if(!numbers_valid) {
-                    continue;
-                }
-                for(int j = 0; j < 3; j++) {
-                    cJSON *number = cJSON_GetArrayItem(bone_data, j);
-                    skel_model->bone_hitbox_ofs[i][j] = (float) cJSON_GetNumberValue(number);
+                    else if(cJSON_GetArraySize(bone_data) != 3) {
+                        Con_Printf("Warning - IQM JSON file \"%s\" has \"bone_hitbox_ofs\" array of size != 3 for bone \"%s\"\n", iqm_info_json_file, bone_names[i]);
+                        continue;
+                    }
+                    bool numbers_valid = true;
+                    for(int j = 0; j < 3; j++) {
+                        cJSON *number = cJSON_GetArrayItem(bone_data, j);
+                        if(!cJSON_IsNumber(number)) {
+                            Con_Printf("Warning - IQM JSON file \"%s\" has \"bone_hitbox_ofs\" array index %d entry is non-numeric for bone \"%s\"\n", iqm_info_json_file, j, bone_names[i]);
+                            numbers_valid = false;
+                            break;
+                        }
+                    }
+                    if(!numbers_valid) {
+                        continue;
+                    }
+                    for(int j = 0; j < 3; j++) {
+                        cJSON *number = cJSON_GetArrayItem(bone_data, j);
+                        skel_model->bone_hitbox_ofs[i][j] = (float) cJSON_GetNumberValue(number);
+                    }
                 }
             }
         }
     }
 
     // Parse bone_hitbox_scale
-    cJSON *bone_hitbox_scale = cJSON_GetObjectItemCaseSensitive(root, "bone_hitbox_scale");
-    if(cJSON_IsObject(bone_hitbox_scale)) {
-        for(int i = 0; i < skel_model->n_bones; i++) {
-            cJSON *bone_data = cJSON_GetObjectItemCaseSensitive(bone_hitbox_scale, bone_names[i]);
-            if(bone_data) {
-                if(!cJSON_IsArray(bone_data)) {
-                    Con_Printf("Warning - IQM JSON file \"%s\" has non-array \"bone_hitbox_scale\" value for bone \"%s\"\n", iqm_info_json_file, bone_names[i]);
-                    continue;
-                }
-                else if(cJSON_GetArraySize(bone_data) != 3) {
-                    Con_Printf("Warning - IQM JSON file \"%s\" has \"bone_hitbox_scale\" array of size != 3 for bone \"%s\"\n", iqm_info_json_file, bone_names[i]);
-                    continue;
-                }
-                bool numbers_valid = true;
-                for(int j = 0; j < 3; j++) {
-                    cJSON *number = cJSON_GetArrayItem(bone_data, j);
-                    if(!cJSON_IsNumber(number)) {
-                        Con_Printf("Warning - IQM JSON file \"%s\" has \"bone_hitbox_scale\" array index %d entry is non-numeric for bone \"%s\"\n", iqm_info_json_file, j, bone_names[i]);
-                        numbers_valid = false;
-                        break;
+    if(skel_model->bone_hitbox_scale != NULL) {
+        cJSON *bone_hitbox_scale = cJSON_GetObjectItemCaseSensitive(root, "bone_hitbox_scale");
+        if(cJSON_IsObject(bone_hitbox_scale)) {
+            for(int i = 0; i < skel_model->n_bones; i++) {
+                cJSON *bone_data = cJSON_GetObjectItemCaseSensitive(bone_hitbox_scale, bone_names[i]);
+                if(bone_data) {
+                    if(!cJSON_IsArray(bone_data)) {
+                        Con_Printf("Warning - IQM JSON file \"%s\" has non-array \"bone_hitbox_scale\" value for bone \"%s\"\n", iqm_info_json_file, bone_names[i]);
+                        continue;
                     }
-                }
-                if(!numbers_valid) {
-                    continue;
-                }
-                for(int j = 0; j < 3; j++) {
-                    cJSON *number = cJSON_GetArrayItem(bone_data, j);
-                    skel_model->bone_hitbox_scale[i][j] = (float) cJSON_GetNumberValue(number);
+                    else if(cJSON_GetArraySize(bone_data) != 3) {
+                        Con_Printf("Warning - IQM JSON file \"%s\" has \"bone_hitbox_scale\" array of size != 3 for bone \"%s\"\n", iqm_info_json_file, bone_names[i]);
+                        continue;
+                    }
+                    bool numbers_valid = true;
+                    for(int j = 0; j < 3; j++) {
+                        cJSON *number = cJSON_GetArrayItem(bone_data, j);
+                        if(!cJSON_IsNumber(number)) {
+                            Con_Printf("Warning - IQM JSON file \"%s\" has \"bone_hitbox_scale\" array index %d entry is non-numeric for bone \"%s\"\n", iqm_info_json_file, j, bone_names[i]);
+                            numbers_valid = false;
+                            break;
+                        }
+                    }
+                    if(!numbers_valid) {
+                        continue;
+                    }
+                    for(int j = 0; j < 3; j++) {
+                        cJSON *number = cJSON_GetArrayItem(bone_data, j);
+                        skel_model->bone_hitbox_scale[i][j] = (float) cJSON_GetNumberValue(number);
+                    }
                 }
             }
         }
@@ -889,9 +927,9 @@ void load_iqm_file_json_info(skeletal_model_t *skel_model, const char *iqm_file_
         skel_model->material_n_skins = (int*) malloc(sizeof(int) * n_materials);
         skel_model->materials = (skeletal_material_t**) malloc(sizeof(skeletal_material_t*) * n_materials);
 
-        int material_idx = 0;
-        cJSON *material_data = NULL;
-        cJSON_ArrayForEach(material_data, materials) {
+        for(int material_idx = 0; material_idx < n_materials; material_idx++) {
+            // Treating JSON object "materials" as an array, for same reason as above
+            cJSON *material_data = cJSON_GetArrayItem(materials, material_idx);
             const char *material_name = material_data->string;
             skel_model->material_names[material_idx] = strdup(material_name);
             Con_Printf("Material iter key: \"%s\"\n", material_name);
@@ -920,7 +958,6 @@ void load_iqm_file_json_info(skeletal_model_t *skel_model, const char *iqm_file_
                 load_material_json_info(&(skel_model->materials[material_idx][0]), NULL, iqm_info_json_file, material_name);
 
             }
-            material_idx++;
         }
     }
     Con_Printf("Deleting cJSON object...\n");
@@ -1149,6 +1186,9 @@ void calc_skel_model_bounds_for_rest_pose(skeletal_model_t *skel_model, vec3_t m
     // 
     // ------------------------------------------------------------------------
     mat3x4_t *bone_rest_transforms = UNPACK_MEMBER(skel_model->bone_rest_transforms, skel_model);
+    if(bone_rest_transforms == NULL) {
+        return;
+    }
 
     // NOTE - Though skeletons keep their own copy of bone hitbox ofs and scales
     // NOTE   This function disregards that and only uses the bone hitboxes as
@@ -1163,6 +1203,9 @@ void calc_skel_model_bounds_for_rest_pose(skeletal_model_t *skel_model, vec3_t m
     // NOTE   other non-model-based bounds caching system. - blubs 
     vec3_t *bone_hitbox_ofs = UNPACK_MEMBER(skel_model->bone_hitbox_ofs, skel_model);
     vec3_t *bone_hitbox_scale = UNPACK_MEMBER(skel_model->bone_hitbox_scale, skel_model);
+    if(bone_hitbox_ofs == NULL || bone_hitbox_scale == NULL) {
+        return;
+    }
 
     const int unit_bbox_n_corners = 8;
     static vec3_t unit_bbox_corners[8] = {
@@ -1287,6 +1330,10 @@ void calc_skel_model_bounds_for_anim(skeletal_model_t *skel_model, skeletal_mode
     uint32_t *framegroup_start_frame = UNPACK_MEMBER(anim_model->framegroup_start_frame, anim_model);
     uint32_t *framegroup_n_frames = UNPACK_MEMBER(anim_model->framegroup_n_frames, anim_model);
 
+    if(bone_rest_transforms == NULL) {
+        return;
+    }
+
 
     // NOTE - Though skeletons keep their own copy of bone hitbox ofs and scales
     // NOTE   This function disregards that and only uses the bone hitboxes as
@@ -1301,6 +1348,9 @@ void calc_skel_model_bounds_for_anim(skeletal_model_t *skel_model, skeletal_mode
     // NOTE   other non-model-based bounds caching system. - blubs 
     vec3_t *bone_hitbox_ofs = UNPACK_MEMBER(skel_model->bone_hitbox_ofs, skel_model);
     vec3_t *bone_hitbox_scale = UNPACK_MEMBER(skel_model->bone_hitbox_scale, skel_model);
+    if(bone_hitbox_ofs == NULL || bone_hitbox_scale == NULL) {
+        return;
+    }
 
 
     // Find the animation data bone index to pull for each skeleton bone index
@@ -1963,11 +2013,9 @@ skeletal_model_t *load_iqm_file(void *iqm_data) {
     Con_Printf("Parsing joints...\n");
 #endif // IQMDEBUG_LOADIQM_BONEINFO
     skel_model->n_bones = iqm_header->n_joints ? iqm_header->n_joints : iqm_header->n_poses;
+    // Skeleton bone names and parent indices are always included
     skel_model->bone_name = (char**) malloc(sizeof(char*) * skel_model->n_bones);
     skel_model->bone_parent_idx = (int16_t*) malloc(sizeof(int16_t) * skel_model->n_bones);
-    skel_model->bone_rest_pos = (vec3_t*) malloc(sizeof(vec3_t) * skel_model->n_bones);
-    skel_model->bone_rest_rot = (quat_t*) malloc(sizeof(quat_t) * skel_model->n_bones);
-    skel_model->bone_rest_scale = (vec3_t*) malloc(sizeof(vec3_t) * skel_model->n_bones);
 
     const iqm_joint_quaternion_t *iqm_joints = (const iqm_joint_quaternion_t*) ((uint8_t*) iqm_data + iqm_header->ofs_joints);
     for(uint32_t i = 0; i < iqm_header->n_joints; i++) {
@@ -1975,18 +2023,59 @@ skeletal_model_t *load_iqm_file(void *iqm_data) {
         skel_model->bone_name[i] = (char*) malloc(sizeof(char) * (strlen(joint_name) + 1));
         strcpy(skel_model->bone_name[i], joint_name);
         skel_model->bone_parent_idx[i] = iqm_joints[i].parent_joint_idx;
-        skel_model->bone_rest_pos[i][0] = iqm_joints[i].translate[0];
-        skel_model->bone_rest_pos[i][1] = iqm_joints[i].translate[1];
-        skel_model->bone_rest_pos[i][2] = iqm_joints[i].translate[2];
-        skel_model->bone_rest_rot[i][0] = iqm_joints[i].rotate[0];
-        skel_model->bone_rest_rot[i][1] = iqm_joints[i].rotate[1];
-        skel_model->bone_rest_rot[i][2] = iqm_joints[i].rotate[2];
-        skel_model->bone_rest_rot[i][3] = iqm_joints[i].rotate[3];
-        skel_model->bone_rest_scale[i][0] = iqm_joints[i].scale[0];
-        skel_model->bone_rest_scale[i][1] = iqm_joints[i].scale[1];
-        skel_model->bone_rest_scale[i][2] = iqm_joints[i].scale[2];
-        // -- 
     }
+
+
+    // Bone rest transforms are _only_ included if there is at least one mesh
+    skel_model->bone_rest_pos = NULL;
+    skel_model->bone_rest_rot = NULL;
+    skel_model->bone_rest_scale = NULL;
+    if(skel_model->n_meshes > 0 ) {
+        skel_model->bone_rest_pos = (vec3_t*) malloc(sizeof(vec3_t) * skel_model->n_bones);
+        skel_model->bone_rest_rot = (quat_t*) malloc(sizeof(quat_t) * skel_model->n_bones);
+        skel_model->bone_rest_scale = (vec3_t*) malloc(sizeof(vec3_t) * skel_model->n_bones);
+        for(uint32_t i = 0; i < iqm_header->n_joints; i++) {
+            skel_model->bone_rest_pos[i][0] = iqm_joints[i].translate[0];
+            skel_model->bone_rest_pos[i][1] = iqm_joints[i].translate[1];
+            skel_model->bone_rest_pos[i][2] = iqm_joints[i].translate[2];
+            skel_model->bone_rest_rot[i][0] = iqm_joints[i].rotate[0];
+            skel_model->bone_rest_rot[i][1] = iqm_joints[i].rotate[1];
+            skel_model->bone_rest_rot[i][2] = iqm_joints[i].rotate[2];
+            skel_model->bone_rest_rot[i][3] = iqm_joints[i].rotate[3];
+            skel_model->bone_rest_scale[i][0] = iqm_joints[i].scale[0];
+            skel_model->bone_rest_scale[i][1] = iqm_joints[i].scale[1];
+            skel_model->bone_rest_scale[i][2] = iqm_joints[i].scale[2];
+        }
+    }
+
+    // Bone hitboxes are _only_ defined if the model has at least one mesh
+    // --------------------------------------------------
+    // Set default hitbox values for all bones
+    // (These values may be overridden by JSON file)
+    // --------------------------------------------------
+    skel_model->bone_hitbox_enabled = NULL;
+    skel_model->bone_hitbox_ofs = NULL;
+    skel_model->bone_hitbox_scale = NULL;
+    skel_model->bone_hitbox_tag = NULL;
+    if(skel_model->n_meshes > 0 ) {
+        skel_model->bone_hitbox_enabled = (bool*) malloc(sizeof(bool) * skel_model->n_bones);
+        skel_model->bone_hitbox_ofs = (vec3_t*) malloc(sizeof(vec3_t) * skel_model->n_bones);
+        skel_model->bone_hitbox_scale = (vec3_t*) malloc(sizeof(vec3_t) * skel_model->n_bones);
+        skel_model->bone_hitbox_tag = (int*) malloc(sizeof(int) * skel_model->n_bones);
+        for(uint32_t i = 0; i < skel_model->n_bones; i++) {
+            skel_model->bone_hitbox_enabled[i] = false;
+            skel_model->bone_hitbox_ofs[i][0] = 0.0f;
+            skel_model->bone_hitbox_ofs[i][1] = 0.0f;
+            skel_model->bone_hitbox_ofs[i][2] = 0.0f;
+            skel_model->bone_hitbox_scale[i][0] = 1.0f;
+            skel_model->bone_hitbox_scale[i][1] = 1.0f;
+            skel_model->bone_hitbox_scale[i][2] = 1.0f;
+            skel_model->bone_hitbox_tag[i] = 0;
+        }
+    }
+    // --------------------------------------------------
+
+
 #ifdef IQMDEBUG_LOADIQM_BONEINFO
     Con_Printf("\tParsed %d bones.\n", skel_model->n_bones);
 #endif // IQMDEBUG_LOADIQM_BONEINFO
@@ -2007,36 +2096,35 @@ skeletal_model_t *load_iqm_file(void *iqm_data) {
 #endif // IQM_BBOX_PER_MODEL_PER_ANIM
 
 
-    // --------------------------------------------------
-    // Set default hitbox values for all bones
-    // (These values may be overridden by JSON file)
-    // --------------------------------------------------
-    skel_model->bone_hitbox_enabled = (bool*) malloc(sizeof(bool) * skel_model->n_bones);
-    skel_model->bone_hitbox_ofs = (vec3_t*) malloc(sizeof(vec3_t) * skel_model->n_bones);
-    skel_model->bone_hitbox_scale = (vec3_t*) malloc(sizeof(vec3_t) * skel_model->n_bones);
-    skel_model->bone_hitbox_tag = (int*) malloc(sizeof(int) * skel_model->n_bones);
-    for(uint32_t i = 0; i < skel_model->n_bones; i++) {
-        skel_model->bone_hitbox_enabled[i] = false;
-        skel_model->bone_hitbox_ofs[i][0] = 0.0f;
-        skel_model->bone_hitbox_ofs[i][1] = 0.0f;
-        skel_model->bone_hitbox_ofs[i][2] = 0.0f;
-        skel_model->bone_hitbox_scale[i][0] = 1.0f;
-        skel_model->bone_hitbox_scale[i][1] = 1.0f;
-        skel_model->bone_hitbox_scale[i][2] = 1.0f;
-        skel_model->bone_hitbox_tag[i] = 0;
-    }
+
 
 
 #ifdef IQMDEBUG_LOADIQM_BONEINFO
-    for(uint32_t i = 0; i < skel_model->n_bones; i++) {
-        Con_Printf("Parsed bone: %i, \"%s\" (parent bone: %d)\n", i, skel_model->bone_name[i], skel_model->bone_parent_idx[i]);
-        Con_Printf("\tPos: (%.2f, %.2f, %.2f)\n", skel_model->bone_rest_pos[i][0], skel_model->bone_rest_pos[i][1], skel_model->bone_rest_pos[i][2]);
-        Con_Printf("\tRot: (%.2f, %.2f, %.2f, %.2f)\n", skel_model->bone_rest_rot[i][0], skel_model->bone_rest_rot[i][1], skel_model->bone_rest_rot[i][2], skel_model->bone_rest_rot[i][3]);
-        Con_Printf("\tScale: (%.2f, %.2f, %.2f)\n", skel_model->bone_rest_scale[i][0], skel_model->bone_rest_scale[i][1], skel_model->bone_rest_scale[i][2]);
-        Con_Printf("\tDefault hitbox enabled: %d\n", skel_model->bone_hitbox_enabled[i]);
-        Con_Printf("\tDefault hitbox ofs: (%.2f, %.2f, %.2f)\n", skel_model->bone_hitbox_ofs[i][0], skel_model->bone_hitbox_ofs[i][1], skel_model->bone_hitbox_ofs[i][2]);
-        Con_Printf("\tDefault hitbox scale: (%.2f, %.2f, %.2f)\n", skel_model->bone_hitbox_scale[i][0], skel_model->bone_hitbox_scale[i][1], skel_model->bone_hitbox_scale[i][2]);
-        Con_Printf("\tDefault hitbox tag: %d\n", skel_model->bone_hitbox_tag[i]);
+    if(skel_model->bone_parent_idx != NULL) {
+        for(uint32_t i = 0; i < skel_model->n_bones; i++) {
+            Con_Printf("Parsed bone: %i, \"%s\" (parent bone: %d)\n", i, skel_model->bone_name[i], skel_model->bone_parent_idx[i]);
+            if(skel_model->bone_rest_pos != NULL) {
+                Con_Printf("\tPos: (%.2f, %.2f, %.2f)\n", skel_model->bone_rest_pos[i][0], skel_model->bone_rest_pos[i][1], skel_model->bone_rest_pos[i][2]);
+            }
+            if(skel_model->bone_rest_rot != NULL) {
+                Con_Printf("\tRot: (%.2f, %.2f, %.2f, %.2f)\n", skel_model->bone_rest_rot[i][0], skel_model->bone_rest_rot[i][1], skel_model->bone_rest_rot[i][2], skel_model->bone_rest_rot[i][3]);
+            }
+            if(skel_model->bone_rest_scale != NULL) {
+                Con_Printf("\tScale: (%.2f, %.2f, %.2f)\n", skel_model->bone_rest_scale[i][0], skel_model->bone_rest_scale[i][1], skel_model->bone_rest_scale[i][2]);
+            }
+            if(skel_model->bone_hitbox_enabled != NULL) {
+                Con_Printf("\tDefault hitbox enabled: %d\n", skel_model->bone_hitbox_enabled[i]);
+            }
+            if(skel_model->bone_hitbox_ofs != NULL) {
+                Con_Printf("\tDefault hitbox ofs: (%.2f, %.2f, %.2f)\n", skel_model->bone_hitbox_ofs[i][0], skel_model->bone_hitbox_ofs[i][1], skel_model->bone_hitbox_ofs[i][2]);
+            }
+            if(skel_model->bone_hitbox_scale != NULL) {
+                Con_Printf("\tDefault hitbox scale: (%.2f, %.2f, %.2f)\n", skel_model->bone_hitbox_scale[i][0], skel_model->bone_hitbox_scale[i][1], skel_model->bone_hitbox_scale[i][2]);
+            }
+            if(skel_model->bone_hitbox_tag != NULL) {
+                Con_Printf("\tDefault hitbox tag: %d\n", skel_model->bone_hitbox_tag[i]);
+            }
+        }
     }
 #endif // IQMDEBUG_LOADIQM_BONEINFO
 
@@ -2065,36 +2153,41 @@ skeletal_model_t *load_iqm_file(void *iqm_data) {
 
 
     // --------------------------------------------------
+    // When model has defined rest transforms...
     // Calculate static bone transforms that will be reused often
     // --------------------------------------------------
-    // Build the transform that takes us from model-space to each bone's bone-space for the rest pose.
-    // This is static, so compute once and cache
+    skel_model->bone_rest_transforms = NULL;
+    skel_model->inv_bone_rest_transforms = NULL;
+    if(skel_model->bone_rest_pos != NULL && skel_model->bone_rest_rot != NULL && skel_model->bone_rest_scale != NULL) {
+        // Build the transform that takes us from model-space to each bone's bone-space for the rest pose.
+        // This is static, so compute once and cache
 
-    // First build the bone-space --> model-space transform for each bone (We will invert it later)
-    skel_model->bone_rest_transforms = (mat3x4_t*) malloc(sizeof(mat3x4_t) * skel_model->n_bones);
-    skel_model->inv_bone_rest_transforms = (mat3x4_t*) malloc(sizeof(mat3x4_t) * skel_model->n_bones);
-    for(uint32_t i = 0; i < skel_model->n_bones; i++) {
-        // Rest bone-space transform (relative to parent)
-        Matrix3x4_scale_rotate_translate(
-            skel_model->bone_rest_transforms[i],
-            skel_model->bone_rest_scale[i],
-            skel_model->bone_rest_rot[i],
-            skel_model->bone_rest_pos[i]
-        );
-        // If we have a parent, concat parent transform to get model-space transform
-        int parent_bone_idx = skel_model->bone_parent_idx[i];
-        if(parent_bone_idx >= 0) {
-            mat3x4_t temp;
-            Matrix3x4_ConcatTransforms( temp, skel_model->bone_rest_transforms[parent_bone_idx], skel_model->bone_rest_transforms[i]);
-            Matrix3x4_Copy(skel_model->bone_rest_transforms[i], temp);
+        // First build the bone-space --> model-space transform for each bone (We will invert it later)
+        skel_model->bone_rest_transforms = (mat3x4_t*) malloc(sizeof(mat3x4_t) * skel_model->n_bones);
+        skel_model->inv_bone_rest_transforms = (mat3x4_t*) malloc(sizeof(mat3x4_t) * skel_model->n_bones);
+        for(uint32_t i = 0; i < skel_model->n_bones; i++) {
+            // Rest bone-space transform (relative to parent)
+            Matrix3x4_scale_rotate_translate(
+                skel_model->bone_rest_transforms[i],
+                skel_model->bone_rest_scale[i],
+                skel_model->bone_rest_rot[i],
+                skel_model->bone_rest_pos[i]
+            );
+            // If we have a parent, concat parent transform to get model-space transform
+            int parent_bone_idx = skel_model->bone_parent_idx[i];
+            if(parent_bone_idx >= 0) {
+                mat3x4_t temp;
+                Matrix3x4_ConcatTransforms( temp, skel_model->bone_rest_transforms[parent_bone_idx], skel_model->bone_rest_transforms[i]);
+                Matrix3x4_Copy(skel_model->bone_rest_transforms[i], temp);
+            }
+            // If we don't have a parent, the bone-space transform _is_ the model-space transform
         }
-        // If we don't have a parent, the bone-space transform _is_ the model-space transform
-    }
-    // Next, invert the transforms to get the model-space --> bone-space transform
-    // NOTE - `Matrix3x4_Invert_Simple` assumes uniform scaling
-    // NOTE - If we want non-uniform scaling, use `Matrix3x4_Invert_Affine`
-    for(uint32_t i = 0; i < skel_model->n_bones; i++) {
-        Matrix3x4_Invert_Simple( skel_model->inv_bone_rest_transforms[i], skel_model->bone_rest_transforms[i]);
+        // Next, invert the transforms to get the model-space --> bone-space transform
+        // NOTE - `Matrix3x4_Invert_Simple` assumes uniform scaling
+        // NOTE - If we want non-uniform scaling, use `Matrix3x4_Invert_Affine`
+        for(uint32_t i = 0; i < skel_model->n_bones; i++) {
+            Matrix3x4_Invert_Simple( skel_model->inv_bone_rest_transforms[i], skel_model->bone_rest_transforms[i]);
+        }
     }
     // --------------------------------------------------
 
@@ -2462,19 +2555,29 @@ skeletal_model_t *load_iqm_file(void *iqm_data) {
 // Additionally, pads an extra byte to get 2-byte aligned values 
 // (Since relocatable model tightly packs strings together, we must keep things 2-byte aligned)
 // 
-uint32_t safe_strsize(char *str) {
+size_t safe_strsize(char *str) {
     if(str == NULL) {
         return 0;
     }
 
-    uint32_t n_bytes = sizeof(char) * (strlen(str) + 1);
-
-    // Make 2-byte aligned
-    // n_bytes += (2 - (n_bytes % 2)) % 2;
+    size_t n_bytes = sizeof(char) * (strlen(str) + 1);
     // Make 4-byte aligned
-    n_bytes += (4 - (n_bytes % 4)) % 4;
+    n_bytes = pad_n_bytes(n_bytes);
     return n_bytes;
 }
+
+// 
+// Returns some number >= n_bytes that is divisible by 4
+//
+// Some platforms have limitations w.r.t. requiring read addresses to be 2-byte, 4-byte aligned
+// Because we're packing structs into contiguous memory, each packed struct should be padded
+// such that the next struct in the contiguous memory will always have an address that's 4-byte aligned
+// 
+size_t pad_n_bytes(size_t n_bytes) {
+    n_bytes += (PACKING_BYTE_PADDING - (n_bytes % PACKING_BYTE_PADDING)) % PACKING_BYTE_PADDING;
+    return n_bytes;
+}
+
 
 
 
@@ -2484,61 +2587,61 @@ uint32_t safe_strsize(char *str) {
 // of bytes required to store an unpacked skeletal_model_t as a packed contigous
 // block of memory
 // 
-uint32_t count_unpacked_skeletal_model_n_bytes(skeletal_model_t *skel_model) {
-    uint32_t skel_model_n_bytes = 0;
+size_t count_unpacked_skeletal_model_n_bytes(skeletal_model_t *skel_model) {
+    size_t skel_model_n_bytes = 0;
     skel_model_n_bytes += sizeof(skeletal_model_t);
 
     skel_model_n_bytes += count_unpacked_skeletal_model_meshes_n_bytes(skel_model);
 
     // -- bones --
-    skel_model_n_bytes += sizeof(char*) * skel_model->n_bones;
-    skel_model_n_bytes += sizeof(int16_t) * skel_model->n_bones;
-    skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
-    skel_model_n_bytes += sizeof(quat_t) * skel_model->n_bones;
-    skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
+    skel_model_n_bytes += pad_n_bytes(sizeof(char*) * skel_model->n_bones);
+    skel_model_n_bytes += pad_n_bytes(sizeof(int16_t) * skel_model->n_bones);
+    skel_model_n_bytes += pad_n_bytes(sizeof(vec3_t) * skel_model->n_bones);
+    skel_model_n_bytes += pad_n_bytes(sizeof(quat_t) * skel_model->n_bones);
+    skel_model_n_bytes += pad_n_bytes(sizeof(vec3_t) * skel_model->n_bones);
     for(int i = 0; i < skel_model->n_bones; i++) {
         skel_model_n_bytes += safe_strsize(skel_model->bone_name[i]);
     }
     // -- bone hitbox info --
-    skel_model_n_bytes += sizeof(bool) * skel_model->n_bones;
-    skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
-    skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones;
-    skel_model_n_bytes += sizeof(int) * skel_model->n_bones;
+    skel_model_n_bytes += pad_n_bytes(sizeof(bool) * skel_model->n_bones);
+    skel_model_n_bytes += pad_n_bytes(sizeof(vec3_t) * skel_model->n_bones);
+    skel_model_n_bytes += pad_n_bytes(sizeof(vec3_t) * skel_model->n_bones);
+    skel_model_n_bytes += pad_n_bytes(sizeof(int) * skel_model->n_bones);
     // -- cached bone rest transforms --
-    skel_model_n_bytes += sizeof(mat3x4_t) * skel_model->n_bones;
-    skel_model_n_bytes += sizeof(mat3x4_t) * skel_model->n_bones;
+    skel_model_n_bytes += pad_n_bytes(sizeof(mat3x4_t) * skel_model->n_bones);
+    skel_model_n_bytes += pad_n_bytes(sizeof(mat3x4_t) * skel_model->n_bones);
     // -- animation frames -- 
-    skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames;
-    skel_model_n_bytes += sizeof(quat_t) * skel_model->n_bones * skel_model->n_frames;
-    skel_model_n_bytes += sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames;
-    skel_model_n_bytes += sizeof(float) * skel_model->n_frames;
+    skel_model_n_bytes += pad_n_bytes(sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames);
+    skel_model_n_bytes += pad_n_bytes(sizeof(quat_t) * skel_model->n_bones * skel_model->n_frames);
+    skel_model_n_bytes += pad_n_bytes(sizeof(vec3_t) * skel_model->n_bones * skel_model->n_frames);
+    skel_model_n_bytes += pad_n_bytes(sizeof(float) * skel_model->n_frames);
     // -- animation framegroups --
-    skel_model_n_bytes += sizeof(char*) * skel_model->n_framegroups;
-    skel_model_n_bytes += sizeof(uint32_t) * skel_model->n_framegroups;
-    skel_model_n_bytes += sizeof(uint32_t) * skel_model->n_framegroups;
-    skel_model_n_bytes += sizeof(float) * skel_model->n_framegroups;
-    skel_model_n_bytes += sizeof(bool) * skel_model->n_framegroups;
+    skel_model_n_bytes += pad_n_bytes(sizeof(char*) * skel_model->n_framegroups);
+    skel_model_n_bytes += pad_n_bytes(sizeof(uint32_t) * skel_model->n_framegroups);
+    skel_model_n_bytes += pad_n_bytes(sizeof(uint32_t) * skel_model->n_framegroups);
+    skel_model_n_bytes += pad_n_bytes(sizeof(float) * skel_model->n_framegroups);
+    skel_model_n_bytes += pad_n_bytes(sizeof(bool) * skel_model->n_framegroups);
     for(int i = 0; i < skel_model->n_framegroups; i++) {
         skel_model_n_bytes += safe_strsize(skel_model->framegroup_name[i]);
     }
     // -- materials --
-    skel_model_n_bytes += sizeof(char*) * skel_model->n_materials;
-    skel_model_n_bytes += sizeof(int) * skel_model->n_materials;
-    skel_model_n_bytes += sizeof(skeletal_material_t*) * skel_model->n_materials;
+    skel_model_n_bytes += pad_n_bytes(sizeof(char*) * skel_model->n_materials);
+    skel_model_n_bytes += pad_n_bytes(sizeof(int) * skel_model->n_materials);
+    skel_model_n_bytes += pad_n_bytes(sizeof(skeletal_material_t*) * skel_model->n_materials);
     for(int i = 0; i < skel_model->n_materials; i++) {
         skel_model_n_bytes += safe_strsize(skel_model->material_names[i]);
-        skel_model_n_bytes += sizeof(skeletal_material_t) * skel_model->material_n_skins[i];
+        skel_model_n_bytes += pad_n_bytes(sizeof(skeletal_material_t) * skel_model->material_n_skins[i]);
     }
     // -- FTE Anim Events --
     if(skel_model->framegroup_n_events != NULL) {
-        skel_model_n_bytes += sizeof(uint16_t) * skel_model->n_framegroups;
-        skel_model_n_bytes += sizeof(float*) * skel_model->n_framegroups;
-        skel_model_n_bytes += sizeof(char**) * skel_model->n_framegroups;
-        skel_model_n_bytes += sizeof(uint32_t*) * skel_model->n_framegroups;
+        skel_model_n_bytes += pad_n_bytes(sizeof(uint16_t) * skel_model->n_framegroups);
+        skel_model_n_bytes += pad_n_bytes(sizeof(float*) * skel_model->n_framegroups);
+        skel_model_n_bytes += pad_n_bytes(sizeof(char**) * skel_model->n_framegroups);
+        skel_model_n_bytes += pad_n_bytes(sizeof(uint32_t*) * skel_model->n_framegroups);
         for(int i = 0; i < skel_model->n_framegroups; i++) {
-            skel_model_n_bytes += sizeof(float) * skel_model->framegroup_n_events[i];
-            skel_model_n_bytes += sizeof(char*) * skel_model->framegroup_n_events[i];
-            skel_model_n_bytes += sizeof(uint32_t) * skel_model->framegroup_n_events[i];
+            skel_model_n_bytes += pad_n_bytes(sizeof(float) * skel_model->framegroup_n_events[i]);
+            skel_model_n_bytes += pad_n_bytes(sizeof(char*) * skel_model->framegroup_n_events[i]);
+            skel_model_n_bytes += pad_n_bytes(sizeof(uint32_t) * skel_model->framegroup_n_events[i]);
             for(int j = 0; j < skel_model->framegroup_n_events[i]; j++) {
                 skel_model_n_bytes += safe_strsize(skel_model->framegroup_event_data_str[i][j]);
             }
@@ -2592,30 +2695,48 @@ void debug_print_skeletal_model(skeletal_model_t *skel_model, int is_packed) {
         const char *bone_name = OPT_UNPACK_MEMBER(bone_names[bone_idx], skel_model, is_packed);
         Con_Printf("skel_model->bone_name[%d] = \"%s\"\n",                bone_idx, bone_name);
         Con_Printf("skel_model->bone_parent_idx[%d] = %d\n",              bone_idx, bone_parent_idx[bone_idx]);
-        Con_Printf("skel_model->bone_rest_pos[%d] = [%f, %f, %f]\n",      bone_idx, bone_rest_pos[bone_idx][0], bone_rest_pos[bone_idx][1], bone_rest_pos[bone_idx][2]);
-        Con_Printf("skel_model->bone_rest_rot[%d] = [%f, %f, %f, %f]\n",  bone_idx, bone_rest_rot[bone_idx][0], bone_rest_rot[bone_idx][1], bone_rest_rot[bone_idx][2], bone_rest_rot[bone_idx][3]);
-        Con_Printf("skel_model->bone_rest_scale[%d] = [%f, %f, %f]\n",    bone_idx, bone_rest_scale[bone_idx][0], bone_rest_scale[bone_idx][1], bone_rest_scale[bone_idx][2]);
-        Con_Printf("skel_model->bone_hitbox_enabled[%d] = %d\n",          bone_idx, bone_hitbox_enabled[bone_idx]);
-        Con_Printf("skel_model->bone_hitbox_ofs[%d] = [%f, %f, %f]\n",    bone_idx, bone_hitbox_ofs[bone_idx][0], bone_hitbox_ofs[bone_idx][1], bone_hitbox_ofs[bone_idx][2]);
-        Con_Printf("skel_model->bone_hitbox_scale[%d] = [%f, %f, %f]\n",  bone_idx, bone_hitbox_scale[bone_idx][0], bone_hitbox_scale[bone_idx][1], bone_hitbox_scale[bone_idx][2]);
-        Con_Printf("skel_model->bone_hitbox_tag[%d] = %d\n",              bone_idx, bone_hitbox_tag[bone_idx]);
-
+        if(bone_rest_pos != NULL) {
+            Con_Printf("skel_model->bone_rest_pos[%d] = [%f, %f, %f]\n",      bone_idx, bone_rest_pos[bone_idx][0], bone_rest_pos[bone_idx][1], bone_rest_pos[bone_idx][2]);
+        }
+        if(bone_rest_rot != NULL) {
+            Con_Printf("skel_model->bone_rest_rot[%d] = [%f, %f, %f, %f]\n",  bone_idx, bone_rest_rot[bone_idx][0], bone_rest_rot[bone_idx][1], bone_rest_rot[bone_idx][2], bone_rest_rot[bone_idx][3]);
+        }
+        if(bone_rest_scale != NULL) {
+            Con_Printf("skel_model->bone_rest_scale[%d] = [%f, %f, %f]\n",    bone_idx, bone_rest_scale[bone_idx][0], bone_rest_scale[bone_idx][1], bone_rest_scale[bone_idx][2]);
+        }
+        if(bone_hitbox_enabled != NULL) {
+            Con_Printf("skel_model->bone_hitbox_enabled[%d] = %d\n",          bone_idx, bone_hitbox_enabled[bone_idx]);
+        }
+        if(bone_hitbox_ofs != NULL) {
+            Con_Printf("skel_model->bone_hitbox_ofs[%d] = [%f, %f, %f]\n",    bone_idx, bone_hitbox_ofs[bone_idx][0], bone_hitbox_ofs[bone_idx][1], bone_hitbox_ofs[bone_idx][2]);
+        }
+        if(bone_hitbox_scale != NULL) {
+            Con_Printf("skel_model->bone_hitbox_scale[%d] = [%f, %f, %f]\n",  bone_idx, bone_hitbox_scale[bone_idx][0], bone_hitbox_scale[bone_idx][1], bone_hitbox_scale[bone_idx][2]);
+        }
+        if(bone_hitbox_tag != NULL) {
+            Con_Printf("skel_model->bone_hitbox_tag[%d] = %d\n",              bone_idx, bone_hitbox_tag[bone_idx]);
+        }
 
         mat3x4_t *print_mat;
 
-        Con_Printf("skel_model->bone_rest_transforms[%d] = \n", bone_idx);
-        print_mat = &(bone_rest_transforms[bone_idx]);
-        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[0][0], (*print_mat)[0][1], (*print_mat)[0][2], (*print_mat)[0][3]);
-        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[1][0], (*print_mat)[1][1], (*print_mat)[1][2], (*print_mat)[1][3]);
-        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[2][0], (*print_mat)[2][1], (*print_mat)[2][2], (*print_mat)[2][3]);
-        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", 0.0f, 0.0f, 0.0f, 1.0f); // for 3x4 matrices, last row is implied to be [0,0,0,1]
+        if(bone_rest_transforms != NULL) {
+            Con_Printf("skel_model->bone_rest_transforms[%d] = \n", bone_idx);
+            print_mat = &(bone_rest_transforms[bone_idx]);
+            Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[0][0], (*print_mat)[0][1], (*print_mat)[0][2], (*print_mat)[0][3]);
+            Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[1][0], (*print_mat)[1][1], (*print_mat)[1][2], (*print_mat)[1][3]);
+            Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[2][0], (*print_mat)[2][1], (*print_mat)[2][2], (*print_mat)[2][3]);
+            Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", 0.0f, 0.0f, 0.0f, 1.0f); // for 3x4 matrices, last row is implied to be [0,0,0,1]
+        }
 
-        Con_Printf("skel_model->inv_bone_rest_transforms[%d] = \n", bone_idx);
-        print_mat = &(inv_bone_rest_transforms[bone_idx]);
-        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[0][0], (*print_mat)[0][1], (*print_mat)[0][2], (*print_mat)[0][3]);
-        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[1][0], (*print_mat)[1][1], (*print_mat)[1][2], (*print_mat)[1][3]);
-        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[2][0], (*print_mat)[2][1], (*print_mat)[2][2], (*print_mat)[2][3]);
-        Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", 0.0f, 0.0f, 0.0f, 1.0f); // for 3x4 matrices, last row is implied to be [0,0,0,1]
+        if(inv_bone_rest_transforms != NULL) {
+            Con_Printf("skel_model->inv_bone_rest_transforms[%d] = \n", bone_idx);
+            print_mat = &(inv_bone_rest_transforms[bone_idx]);
+            Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[0][0], (*print_mat)[0][1], (*print_mat)[0][2], (*print_mat)[0][3]);
+            Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[1][0], (*print_mat)[1][1], (*print_mat)[1][2], (*print_mat)[1][3]);
+            Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", (*print_mat)[2][0], (*print_mat)[2][1], (*print_mat)[2][2], (*print_mat)[2][3]);
+            Con_Printf("\t[%.2f, %.2f, %.2f, %.2f]\n", 0.0f, 0.0f, 0.0f, 1.0f); // for 3x4 matrices, last row is implied to be [0,0,0,1]
+        }
+
         Con_Printf("---------------------\n");
     }
     Con_Printf("skel_model->fps_cam_bone_idx = %d\n", skel_model->fps_cam_bone_idx);
@@ -2694,10 +2815,10 @@ void debug_print_skeletal_model(skeletal_model_t *skel_model, int is_packed) {
             Con_Printf("\tskel_model->materials[%d][%d].fog = %d\n",             material_idx, skin_idx, material_skins[skin_idx].fog);
             Con_Printf("\tskel_model->materials[%d][%d].shade_smooth = %d\n",    material_idx, skin_idx, material_skins[skin_idx].shade_smooth);
             Con_Printf("\tskel_model->materials[%d][%d].add_color = %d\n",       material_idx, skin_idx, material_skins[skin_idx].add_color);
-            Con_Printf("\tskel_model->materials[%d][%d].add_color_red = %d\n",   material_idx, skin_idx, material_skins[skin_idx].add_color_red);
-            Con_Printf("\tskel_model->materials[%d][%d].add_color_green = %d\n", material_idx, skin_idx, material_skins[skin_idx].add_color_green);
-            Con_Printf("\tskel_model->materials[%d][%d].add_color_blue = %d\n",  material_idx, skin_idx, material_skins[skin_idx].add_color_blue);
-            Con_Printf("\tskel_model->materials[%d][%d].add_color_alpha = %d\n", material_idx, skin_idx, material_skins[skin_idx].add_color_alpha);
+            Con_Printf("\tskel_model->materials[%d][%d].add_color_red = %f\n",   material_idx, skin_idx, material_skins[skin_idx].add_color_red);
+            Con_Printf("\tskel_model->materials[%d][%d].add_color_green = %f\n", material_idx, skin_idx, material_skins[skin_idx].add_color_green);
+            Con_Printf("\tskel_model->materials[%d][%d].add_color_blue = %f\n",  material_idx, skin_idx, material_skins[skin_idx].add_color_blue);
+            Con_Printf("\tskel_model->materials[%d][%d].add_color_alpha = %f\n", material_idx, skin_idx, material_skins[skin_idx].add_color_alpha);
             Con_Printf("\t----------\n");
         }
         Con_Printf("---------------------\n");
@@ -2752,13 +2873,13 @@ void debug_print_skeletal_model(skeletal_model_t *skel_model, int is_packed) {
 // Call via `PACK_MEMBER` macro for implicit type conversions
 //
 void _pack_member(void **dest_ptr, void *src_ptr, size_t n_bytes, uint8_t *buffer_start, uint8_t **buffer_head) {
-    // If src is nullptr, set dest to null_ptr and don't do anything else
-    if(src_ptr == NULL) {
+    // If src is NULL pointer, set dest to NULL pointer and don't do anything else
+    if(src_ptr == NULL || n_bytes == 0) {
         *dest_ptr = NULL;
         return;
     }
     // Pad to `PACKING_BYTE_PADDING` bytes
-    n_bytes += (PACKING_BYTE_PADDING - (n_bytes % PACKING_BYTE_PADDING)) % PACKING_BYTE_PADDING;
+    n_bytes = pad_n_bytes(n_bytes);
     memcpy(*buffer_head, src_ptr, n_bytes);
     *dest_ptr = *buffer_head;
     *buffer_head += n_bytes;
@@ -2776,6 +2897,9 @@ void _pack_member(void **dest_ptr, void *src_ptr, size_t n_bytes, uint8_t *buffe
 // Call via `UNPACK_MEMBER` macro to implicitly cast return type to same type as `packed_member_ptr`
 //
 void *_unpack_member(void *packed_member_ptr, void *buffer_start) {
+    if(packed_member_ptr == NULL) {
+        return NULL;
+    }
     return ((uint8_t*) buffer_start + (int) packed_member_ptr);
 }
 
@@ -2935,8 +3059,6 @@ void Mod_LoadIQMModel (model_t *model, void *buffer) {
     Con_Printf("Done assigning material indices to mesh...\n");
 
 
-    // FIXME - Need to split this into mesh-specific stuff and non-mesh-specific stuff
-
 #ifdef IQMDEBUG_LOADIQM_DEBUGSUMMARY
     debug_print_skeletal_model(unpacked_skel_model, false);
 #endif // IQMDEBUG_LOADIQM_DEBUGSUMMARY
@@ -2945,15 +3067,15 @@ void Mod_LoadIQMModel (model_t *model, void *buffer) {
 #ifdef IQMDEBUG_LOADIQM_PACKING
     Con_Printf("About to calculate skeletal model size...\n");
 #endif // IQMDEBUG_LOADIQM_PACKING
-    uint32_t skel_model_n_bytes = count_unpacked_skeletal_model_n_bytes(unpacked_skel_model);
+    size_t skel_model_n_bytes = count_unpacked_skeletal_model_n_bytes(unpacked_skel_model);
 #ifdef IQMDEBUG_LOADIQM_PACKING
-
     Con_Printf("Done calculating skeletal model size\n");
     Con_Printf("Skeletal model size (before padding): %d\n", skel_model_n_bytes);
 #endif // IQMDEBUG_LOADIQM_PACKING
 
+
     // Pad to four bytes:
-    skel_model_n_bytes += (4 - (skel_model_n_bytes % 4)) % 4;
+    skel_model_n_bytes = pad_n_bytes(skel_model_n_bytes);
 
 #ifdef IQMDEBUG_LOADIQM_PACKING
     Con_Printf("Skeletal model size (after padding): %d\n", skel_model_n_bytes);
@@ -3049,19 +3171,20 @@ void sv_skel_clear_all() {
         sv_skeletons[i].anim_starttime = 0.0f;
         sv_skeletons[i].anim_speed = 0.0f;
         sv_skeletons[i].last_build_time = 0.0f;
-        sv_skeletons[i].bone_hitbox_enabled = NULL;
-        sv_skeletons[i].bone_hitbox_ofs = NULL;
-        sv_skeletons[i].bone_hitbox_scale = NULL;
-        sv_skeletons[i].bone_hitbox_tag = NULL;
         sv_skeletons[i].anim_model = NULL;
-        sv_skeletons[i].bone_transforms = NULL;
-        sv_skeletons[i].bone_rest_to_pose_transforms = NULL;
 
+        // Free malloc-ed memory
+        free_pointer_and_clear( (void**) &(sv_skeletons[i].bone_hitbox_enabled));
+        free_pointer_and_clear( (void**) &(sv_skeletons[i].bone_hitbox_ofs));
+        free_pointer_and_clear( (void**) &(sv_skeletons[i].bone_hitbox_scale));
+        free_pointer_and_clear( (void**) &(sv_skeletons[i].bone_hitbox_tag));
+        free_pointer_and_clear( (void**) &(sv_skeletons[i].bone_transforms));
+        free_pointer_and_clear( (void**) &(sv_skeletons[i].bone_rest_to_pose_transforms));
+        free_pointer_and_clear( (void**) &(sv_skeletons[i].anim_bone_idx));
 #ifdef IQM_LOAD_NORMALS
-        sv_skeletons[i].bone_rest_to_pose_normal_transforms = NULL;
+        free_pointer_and_clear( (void**) &(sv_skeletons[i].bone_rest_to_pose_normal_transforms));
 #endif // IQM_LOAD_NORMALS
 
-        sv_skeletons[i].anim_bone_idx = NULL;
     }
     sv_n_skeletons = 0;
 }
@@ -3074,7 +3197,7 @@ void sv_skel_clear_all() {
 // Returns True if the skeleton is valid and mins / maxs were assigned
 // Returns False otherwise
 //
-qboolean sv_get_skeleton_bounds(int skel_idx, vec3_t mins, vec3_t maxs) {
+bool sv_get_skeleton_bounds(int skel_idx, vec3_t mins, vec3_t maxs) {
     if(skel_idx < 0 || skel_idx >= MAX_SKELETONS) {
         return false;
     }
@@ -3317,6 +3440,12 @@ void PF_skeleton_create(void) {
         Con_Printf("PF_skeleton_create: Invalid IQM model\n");
         return;
     }
+    if(skel_model->n_meshes <= 0) {
+        // IQM Models with no meshes do not have valid skeleton rest pose data
+        G_FLOAT(OFS_RETURN) = skel_idx;
+        Con_Printf("PF_skeleton_create: Specified IQM model has no skeleton\n");
+        return;
+    }
 
     for(int i = 0; i < MAX_SKELETONS; i++) {
         if(!sv_skeletons[i].in_use) {
@@ -3465,7 +3594,7 @@ void PF_skel_register_anim(void) {};
 //      true: if the entity has a valid skeleton that we checked against, and traceline code should skip normal entity AABB collision detection
 //      false: if the entity did not have a valid skeleton, and traceline code should resume normal entity AABB collision detection
 //
-qboolean sv_intersect_skeletal_model_ent(edict_t *ent, vec3_t ray_start, vec3_t ray_end, float *trace_fraction, int *trace_bone_idx, int *trace_bone_hitbox_tag) {
+bool sv_intersect_skeletal_model_ent(edict_t *ent, vec3_t ray_start, vec3_t ray_end, float *trace_fraction, int *trace_bone_idx, int *trace_bone_hitbox_tag) {
     if(ent == NULL) {
         // No ent
         // Revert to normal ent traceline collision detection
@@ -3493,6 +3622,13 @@ qboolean sv_intersect_skeletal_model_ent(edict_t *ent, vec3_t ray_start, vec3_t 
     if(sv_skeleton->model == NULL || sv_skeleton->anim_model == NULL) {
         Con_Printf("sv_intersect_skeletal_model: skelidx %d has no model or anim_model.\n", sv_skel_idx);
         // Skeleton exists and was created, but has not been built
+        // Revert to normal ent traceline collision detection
+        return false;
+    }
+    if( sv_skeleton->bone_transforms == NULL || sv_skeleton->bone_hitbox_enabled == NULL || sv_skeleton->bone_hitbox_ofs == NULL || 
+        sv_skeleton->bone_hitbox_scale == NULL || sv_skeleton->bone_hitbox_tag == NULL) {
+        Con_Printf("sv_intersect_skeletal_model: skelidx %d is missing bone data.\n", sv_skel_idx);
+        // Skeleton exists and was created, but was not built correctly
         // Revert to normal ent traceline collision detection
         return false;
     }
@@ -3757,6 +3893,9 @@ void PF_skel_set_bone_hitbox_enabled(void) {
     if(sv_skeletons[skel_idx].in_use == false) {
         return;
     }
+    if(sv_skeletons[skel_idx].bone_hitbox_enabled == NULL) {
+        return;
+    }
 
     // If selecting bone by bone index, set that bone
     if(bones_spec_type == SKEL_BONE_SELECT_TYPE_BY_IDX) {
@@ -3768,8 +3907,10 @@ void PF_skel_set_bone_hitbox_enabled(void) {
     }
     // If selecting bones by tag value, set value for bones whose tag value matches
     else if(bones_spec_type == SKEL_BONE_SELECT_TYPE_BY_HITBOX_TAG) {
+        if(sv_skeletons[skel_idx].bone_hitbox_tag == NULL) {
+            return;
+        }
         int bone_tag = bones_spec;
-
         for(int i = 0; i < sv_skeletons[skel_idx].model->n_bones; i++) {
             if(sv_skeletons[skel_idx].bone_hitbox_tag[i] == bone_tag) {
                 sv_skeletons[skel_idx].bone_hitbox_enabled[i] = val;
@@ -3792,6 +3933,9 @@ void PF_skel_set_bone_hitbox_ofs(void) {
     if(sv_skeletons[skel_idx].in_use == false) {
         return;
     }
+    if(sv_skeletons[skel_idx].bone_hitbox_ofs == NULL) {
+        return;
+    }
 
     // If selecting bone by bone index, set that bone
     if(bones_spec_type == SKEL_BONE_SELECT_TYPE_BY_IDX) {
@@ -3805,6 +3949,9 @@ void PF_skel_set_bone_hitbox_ofs(void) {
     }
     // If selecting bones by tag value, set value for bones whose tag value matches
     else if(bones_spec_type == SKEL_BONE_SELECT_TYPE_BY_HITBOX_TAG) {
+        if(sv_skeletons[skel_idx].bone_hitbox_tag == NULL) {
+            return;
+        }
         int bone_tag = bones_spec;
         for(int i = 0; i < sv_skeletons[skel_idx].model->n_bones; i++) {
             if(sv_skeletons[skel_idx].bone_hitbox_tag[i] == bone_tag) {
@@ -3830,6 +3977,9 @@ void PF_skel_set_bone_hitbox_scale(void) {
     if(sv_skeletons[skel_idx].in_use == false) {
         return;
     }
+    if(sv_skeletons[skel_idx].bone_hitbox_scale == NULL) {
+        return;
+    }
 
     // If selecting bone by bone index, set that bone
     if(bones_spec_type == SKEL_BONE_SELECT_TYPE_BY_IDX) {
@@ -3843,6 +3993,9 @@ void PF_skel_set_bone_hitbox_scale(void) {
     }
     // If selecting bones by tag value, set value for bones whose tag value matches
     else if(bones_spec_type == SKEL_BONE_SELECT_TYPE_BY_HITBOX_TAG) {
+        if(sv_skeletons[skel_idx].bone_hitbox_tag == NULL) {
+            return;
+        }
         int bone_tag = bones_spec;
         for(int i = 0; i < sv_skeletons[skel_idx].model->n_bones; i++) {
             if(sv_skeletons[skel_idx].bone_hitbox_tag[i] == bone_tag) {
@@ -3867,6 +4020,9 @@ void PF_skel_set_bone_hitbox_tag(void) {
         return;
     }
     if(sv_skeletons[skel_idx].in_use == false) {
+        return;
+    }
+    if(sv_skeletons[skel_idx].bone_hitbox_tag == NULL) {
         return;
     }
 
