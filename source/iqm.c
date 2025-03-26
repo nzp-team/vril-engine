@@ -192,13 +192,6 @@ void free_pointer_and_clear(void **ptr) {
 
 
 
-
-
-// Special IQM animation event
-#define IQM_ANIM_EVENT_CODE_MOVE_DIST 2
-
-
-
 #define MAX_SKELETONS 256
 skeletal_skeleton_t sv_skeletons[MAX_SKELETONS]; // Server-side skeleton objects
 skeletal_skeleton_t cl_skeletons[MAX_SKELETONS]; // Client-side skeleton objects
@@ -777,6 +770,10 @@ void load_material_json_info(skeletal_material_t *material, cJSON *material_data
 }
 
 
+//
+// Given a skel_model, loads it accompanying optional JSON file
+// NOTE: Assumes skel_model is unpacked
+//
 void load_iqm_file_json_info(skeletal_model_t *skel_model, const char *iqm_file_path) {
     char iqm_info_json_file[256];
     sprintf(iqm_info_json_file, "%s.json", iqm_file_path);
@@ -920,6 +917,8 @@ void load_iqm_file_json_info(skeletal_model_t *skel_model, const char *iqm_file_
     // Parse materials
     cJSON *materials = cJSON_GetObjectItemCaseSensitive(root, "materials");
     if(cJSON_IsObject(materials)) {
+        // "To get the size of an object... use cJSON_GetArraySize... because internally objects are stored as arrays." 
+        // - https://github.com/DaveGamble/cJSON/blob/master/README.md
         int n_materials = cJSON_GetArraySize(materials);
         Con_Printf("Found %d materials\n", n_materials);
         skel_model->n_materials = n_materials;
@@ -960,6 +959,59 @@ void load_iqm_file_json_info(skeletal_model_t *skel_model, const char *iqm_file_
             }
         }
     }
+
+    // Load per-framegroup per-frame movement distance and calculate cumulative sum
+    if(skel_model->n_framegroups > 0) {
+        // NOTE - skel_model->frames_move_dist has already been heap-alloced to skel_model->n_frames and filled with 0s
+
+        cJSON *framegroup_move_dists_json_obj = cJSON_GetObjectItemCaseSensitive(root, "framegroup_movement_distances");
+        if(cJSON_IsObject(framegroup_move_dists_json_obj)) {
+
+            // Loop through model's animation framegroups
+            for(int framegroup_idx = 0; framegroup_idx < skel_model->n_framegroups; framegroup_idx++) {
+
+                // If movement dist info specified for this framegroup's name in the JSON, load it
+                const char *framegroup_name = skel_model->framegroup_name[framegroup_idx];
+                cJSON *anim_framegroup_move_dists_json_obj = cJSON_GetObjectItemCaseSensitive(framegroup_move_dists_json_obj, framegroup_name);
+                if(cJSON_IsArray(anim_framegroup_move_dists_json_obj)) {
+
+                    int n_frames = cJSON_GetArraySize(anim_framegroup_move_dists_json_obj);
+
+                    if(n_frames != skel_model->framegroup_n_frames[framegroup_idx]) {
+                        Con_Printf("Warning - IQM JSON file \"%s\" field \"framegroup_movement_distances\" for anim \"%s\" specifies %d frames, but this anim in the IQM file has %d frames.\n", iqm_info_json_file, framegroup_name, n_frames, skel_model->framegroup_n_frames[framegroup_idx]);
+                        // Just warn and continue parsing
+                    }
+
+                    // Only read data up to frames that the anim actually has
+                    if(n_frames > skel_model->framegroup_n_frames[framegroup_idx]) {
+                        n_frames = skel_model->framegroup_n_frames[framegroup_idx];
+                    }
+
+                    for(int framegroup_frame_idx = 0; framegroup_frame_idx < n_frames; framegroup_frame_idx++) {
+                        cJSON *framegroup_frame_move_dist = cJSON_GetArrayItem(anim_framegroup_move_dists_json_obj, framegroup_frame_idx);
+                        if(!cJSON_IsNumber(framegroup_frame_move_dist)) {
+                            Con_Printf("Warning - IQM JSON file \"%s\" field \"framegroup_movement_distances\" for anim \"%s\" entry is non-numeric for framegroup frame \"%d\"\n", iqm_info_json_file, framegroup_name, framegroup_frame_idx);
+                            continue;
+                        }
+
+                        // Get global frame index (in interleaved frames array for all framegroups)
+                        int frame_idx = skel_model->framegroup_start_frame[framegroup_idx] + framegroup_frame_idx;
+                        // Store raw value at frame for now, we'll aggregate later
+                        skel_model->frames_move_dist[frame_idx] = (float) cJSON_GetNumberValue(framegroup_frame_move_dist);
+                    }
+                }
+
+                // Calculate inclusive cumulative sum for this framegroup's frames
+                int start_frame_idx = skel_model->framegroup_start_frame[framegroup_idx];
+                int end_frame_idx = start_frame_idx + skel_model->framegroup_n_frames[framegroup_idx];
+                for(int frame_idx = start_frame_idx + 1; frame_idx < end_frame_idx; frame_idx++) {
+                    skel_model->frames_move_dist[frame_idx] += skel_model->frames_move_dist[frame_idx - 1];
+                    Con_Printf("Walkdist framegroup %d frame %d cumsumdist: %f\n", framegroup_idx, frame_idx, skel_model->frames_move_dist[frame_idx]);
+                }
+            }
+        }
+    }
+
     Con_Printf("Deleting cJSON object...\n");
     cJSON_Delete(root);
     Con_Printf("Done Deleting cJSON object...\n");
@@ -2327,11 +2379,6 @@ skeletal_model_t *load_iqm_file(void *iqm_data) {
         for(uint16_t i = 0; i < iqm_fte_ext_event_n_events; i++) {
             int framegroup_idx = iqm_fte_ext_events[i].anim;
             uint32_t event_code = iqm_fte_ext_events[i].event_code;
-
-            // Movement anim events will be stored separately, skip them here
-            if(event_code == IQM_ANIM_EVENT_CODE_MOVE_DIST) {
-                continue;
-            }
             skel_model->framegroup_n_events[framegroup_idx]++;
         }
 
@@ -2364,11 +2411,6 @@ skeletal_model_t *load_iqm_file(void *iqm_data) {
             int event_framegroup_idx = iqm_fte_ext_events[i].anim;
             float event_time = iqm_fte_ext_events[i].timestamp;
             uint32_t event_code = iqm_fte_ext_events[i].event_code;
-
-            // Movement anim events will be stored separately, skip them here
-            if(event_code == IQM_ANIM_EVENT_CODE_MOVE_DIST) {
-                continue;
-            }
 
             // Allocate data for this string and copy the char array
             char *event_data_str = (char*) malloc(sizeof(char) * (strlen(iqm_event_data_str) + 1));
@@ -2416,75 +2458,6 @@ skeletal_model_t *load_iqm_file(void *iqm_data) {
             skel_model->framegroup_event_time[event_framegroup_idx][event_idx] = event_time;
             skel_model->framegroup_event_data_str[event_framegroup_idx][event_idx] = event_data_str;
             skel_model->framegroup_event_code[event_framegroup_idx][event_idx] = event_code;
-        }
-    }
-    // --------------------------------------------------
-
-
-    // --------------------------------------------------
-    // Parse movement speed IQM Animation events for each animation
-    // --------------------------------------------------
-
-    if(iqm_fte_ext_events != NULL) {
-        for(uint16_t i = 0; i < iqm_fte_ext_event_n_events; i++) {
-            const char *iqm_event_data_str = (const char*) ((uint8_t*) iqm_data + iqm_header->ofs_text + iqm_fte_ext_events[i].event_data_str);
-            int event_framegroup_idx = iqm_fte_ext_events[i].anim;
-            float event_time = iqm_fte_ext_events[i].timestamp;
-            uint32_t event_code = iqm_fte_ext_events[i].event_code;
-
-            // Skip non-movement-distance anim events
-            if(event_code != IQM_ANIM_EVENT_CODE_MOVE_DIST) {
-                continue;
-            }
-
-            // If walk distance is 0 or failed to parse, skip
-            float event_walk_dist = atof(iqm_event_data_str);
-            if(event_walk_dist == 0.0f) {
-                continue;
-            }
-
-            if(event_framegroup_idx < 0 || event_framegroup_idx >= skel_model->n_framegroups) {
-                continue;
-            }
-
-            int framegroup_n_frames = skel_model->framegroup_n_frames[event_framegroup_idx];
-            float framegroup_duration = framegroup_n_frames / skel_model->framegroup_fps[event_framegroup_idx];
-
-            // Calculate the nearest frame index to deposit this movement distance
-            int event_framegroup_frame_idx = (int) (event_time * skel_model->framegroup_fps[event_framegroup_idx]) % framegroup_n_frames;
-
-            Con_Printf("Walkdist event %d, data: %s\n", i, iqm_event_data_str);
-
-            Con_Printf("Walkdist event framegroup %d deposit dist %f at time %f (frames: %d, fps: %f, calculated frame: %d)\n", 
-                event_framegroup_idx, 
-                event_walk_dist,
-                event_time,
-                framegroup_n_frames,
-                skel_model->framegroup_fps[event_framegroup_idx],
-                event_framegroup_frame_idx 
-            );
-
-            skel_model->frames_move_dist[event_framegroup_frame_idx] += event_walk_dist;
-        }
-    }
-
-    for(int framegroup_idx = 0; framegroup_idx < skel_model->n_framegroups; framegroup_idx++) {
-        int start_frame_idx = skel_model->framegroup_start_frame[framegroup_idx];
-        int end_frame_idx = start_frame_idx + skel_model->framegroup_n_frames[framegroup_idx];
-        for(int frame_idx = start_frame_idx; frame_idx < end_frame_idx; frame_idx++) {
-            Con_Printf("Walkdist framegroup %d frame %d dist: %f\n", framegroup_idx, frame_idx, skel_model->frames_move_dist[frame_idx]);
-        }
-    }
-
-    // Calculate inclusive cumulative sum for walk distances
-    for(int framegroup_idx = 0; framegroup_idx < skel_model->n_framegroups; framegroup_idx++) {
-        int start_frame_idx = skel_model->framegroup_start_frame[framegroup_idx];
-        int end_frame_idx = start_frame_idx + skel_model->framegroup_n_frames[framegroup_idx];
-
-        for(int frame_idx = start_frame_idx + 1; frame_idx < end_frame_idx; frame_idx++) {
-            skel_model->frames_move_dist[frame_idx] += skel_model->frames_move_dist[frame_idx - 1];
-
-            Con_Printf("Walkdist framegroup %d frame %d cumsumdist: %f\n", framegroup_idx, frame_idx, skel_model->frames_move_dist[frame_idx]);
         }
     }
     // --------------------------------------------------

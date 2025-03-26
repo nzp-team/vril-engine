@@ -104,7 +104,7 @@ typedef struct skeletal_mesh_s {
     int material_idx;
     uint8_t n_submeshes = 0;
     struct skeletal_submesh_s *submeshes = nullptr;
-} skeletal_mesh_s;
+} skeletal_mesh_t;
 
 
 
