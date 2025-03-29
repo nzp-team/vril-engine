@@ -36,6 +36,10 @@ ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror
 endif
 
+ifeq ($(FANALYZER),1)
+CFLAGS		+= -fanalyzer
+endif
+
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 
 ASFLAGS	:=	-g $(ARCH)
