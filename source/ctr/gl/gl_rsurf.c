@@ -92,7 +92,7 @@ void R_AddDynamicLights (msurface_t *surf)
 		rad = cl_dlights[lnum].radius;
 		dist = DotProduct (cl_dlights[lnum].origin, surf->plane->normal) -
 				surf->plane->dist;
-		rad -= fabs(dist);
+		rad -= fabsf(dist);
 		minlight = cl_dlights[lnum].minlight;
 		if (rad < minlight)
 			continue;
@@ -475,8 +475,8 @@ void R_DrawSequentialPoly (msurface_t *s)
 			qglMTexCoord2fSGIS (TEXTURE0_SGIS, v[3], v[4]);
 			qglMTexCoord2fSGIS (TEXTURE1_SGIS, v[5], v[6]);
 
-			nv[0] = v[0] + 8*sin(v[1]*0.05+realtime)*sin(v[2]*0.05+realtime);
-			nv[1] = v[1] + 8*sin(v[0]*0.05+realtime)*sin(v[2]*0.05+realtime);
+			nv[0] = v[0] + 8*sinf(v[1]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
+			nv[1] = v[1] + 8*sinf(v[0]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
 			nv[2] = v[2];
 
 			glVertex3fv (nv);
@@ -518,8 +518,8 @@ void DrawGLWaterPoly (glpoly_t *p)
 	{
 		glTexCoord2f (v[3], v[4]);
 
-		nv[0] = v[0] + 8*sin(v[1]*0.05+realtime)*sin(v[2]*0.05+realtime);
-		nv[1] = v[1] + 8*sin(v[0]*0.05+realtime)*sin(v[2]*0.05+realtime);
+		nv[0] = v[0] + 8*sinf(v[1]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
+		nv[1] = v[1] + 8*sinf(v[0]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
 		nv[2] = v[2];
 
 		glVertex3fv (nv);
@@ -541,8 +541,8 @@ void DrawGLWaterPolyLightmap (glpoly_t *p)
 	{
 		glTexCoord2f (v[5], v[6]);
 
-		nv[0] = v[0] + 8*sin(v[1]*0.05+realtime)*sin(v[2]*0.05+realtime);
-		nv[1] = v[1] + 8*sin(v[0]*0.05+realtime)*sin(v[2]*0.05+realtime);
+		nv[0] = v[0] + 8*sinf(v[1]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
+		nv[1] = v[1] + 8*sinf(v[0]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
 		nv[2] = v[2];
 
 		glVertex3fv (nv);
@@ -869,7 +869,7 @@ void R_DrawWaterSurfaces (void)
 	msurface_t	*s;
 	texture_t	*t;
 
-	if (r_wateralpha.value == 1.0 && gl_texsort.value)
+	if (r_wateralpha.value == 1.0f && gl_texsort.value)
 		return;
 
 	//
@@ -878,7 +878,7 @@ void R_DrawWaterSurfaces (void)
 
     glLoadMatrixf (r_world_matrix);
 
-	if (r_wateralpha.value < 1.0) {
+	if (r_wateralpha.value < 1.0f) {
 		glEnable (GL_BLEND);
 		glColor4f (1,1,1,r_wateralpha.value);
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -919,7 +919,7 @@ void R_DrawWaterSurfaces (void)
 
 	}
 
-	if (r_wateralpha.value < 1.0) {
+	if (r_wateralpha.value < 1.0f) {
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
 		glColor4f (1,1,1,1);
@@ -963,14 +963,14 @@ void DrawTextureChains (void)
 		s = t->texturechain;
 		if (!s)
 			continue;
-		else if (i == mirrortexturenum && r_mirroralpha.value != 1.0)
+		else if (i == mirrortexturenum && r_mirroralpha.value != 1.0f)
 		{
 			R_MirrorChain (s);
 			continue;
 		}
 		else
 		{
-			if ((s->flags & SURF_DRAWTURB) && r_wateralpha.value != 1.0)
+			if ((s->flags & SURF_DRAWTURB) && r_wateralpha.value != 1.0f)
 				continue;	// draw translucent water later
 			for ( ; s ; s=s->texturechain)
 				R_RenderBrushPoly (s);
@@ -1045,7 +1045,7 @@ void R_DrawBrushModel (entity_t *e)
 	{
 		for (k=0 ; k<MAX_DLIGHTS ; k++)
 		{
-			if ((cl_dlights[k].die < cl.time) ||
+			if ((cl_dlights[k].die < (float)cl.time) ||
 				(!cl_dlights[k].radius))
 				continue;
 
@@ -1118,8 +1118,8 @@ void R_DrawBrushModel (entity_t *e)
 		dot = DotProduct (modelorg, pplane->normal) - pplane->dist;
 
 	// draw the polygon
-		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
-			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON)))
+		if (((psurf->flags & SURF_PLANEBACK) && (dot < (float)-BACKFACE_EPSILON)) ||
+			(!(psurf->flags & SURF_PLANEBACK) && (dot > (float)BACKFACE_EPSILON)))
 		{
 			R_RenderBrushPoly (psurf);
 		}
@@ -1148,7 +1148,7 @@ void R_RecursiveWorldNode (mnode_t *node)
 	mplane_t	*plane;
 	msurface_t	*surf, **mark;
 	mleaf_t		*pleaf;
-	double		dot;
+	float		dot;
 
 	if (node->contents == CONTENTS_SOLID)
 		return;		// solid
@@ -1218,9 +1218,9 @@ void R_RecursiveWorldNode (mnode_t *node)
 	{
 		surf = cl.worldmodel->surfaces + node->firstsurface;
 
-		if (dot < 0 -BACKFACE_EPSILON)
+		if (dot < (float)-BACKFACE_EPSILON)
 			side = SURF_PLANEBACK;
-		else if (dot > BACKFACE_EPSILON)
+		else if (dot > (float)BACKFACE_EPSILON)
 			side = 0;
 		{
 			for ( ; c ; c--, surf++)
@@ -1293,8 +1293,8 @@ void R_AddBrushModelToChains (entity_t * e)
 		mplane_t * pplane = psurf->plane;
 		float dot = DotProduct (modelorg, pplane->normal) - pplane->dist;
 		// draw the polygon
-		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
-			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON)))
+		if (((psurf->flags & SURF_PLANEBACK) && (dot < (float)-BACKFACE_EPSILON)) ||
+			(!(psurf->flags & SURF_PLANEBACK) && (dot > (float)BACKFACE_EPSILON)))
 		{
 			// psurf->flags &= ~SURF_NEEDSCLIPPING;
 			// psurf->flags |= SURF_NEEDSCLIPPING * (frustum_check > 1);
@@ -1552,10 +1552,10 @@ void BuildSurfaceDisplayList (msurface_t *fa)
 			VectorNormalize( v2 );
 
 			// skip co-linear points
-			#define COLINEAR_EPSILON 0.001
-			if ((fabs( v1[0] - v2[0] ) <= COLINEAR_EPSILON) &&
-				(fabs( v1[1] - v2[1] ) <= COLINEAR_EPSILON) && 
-				(fabs( v1[2] - v2[2] ) <= COLINEAR_EPSILON))
+			#define COLINEAR_EPSILON 0.001f
+			if ((fabsf( v1[0] - v2[0] ) <= COLINEAR_EPSILON) &&
+				(fabsf( v1[1] - v2[1] ) <= COLINEAR_EPSILON) && 
+				(fabsf( v1[2] - v2[2] ) <= COLINEAR_EPSILON))
 			{
 				int j;
 				for (j = i + 1; j < lnumverts; ++j)

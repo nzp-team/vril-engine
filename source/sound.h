@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define __SOUND__
 
 #define DEFAULT_SOUND_PACKET_VOLUME 255
-#define DEFAULT_SOUND_PACKET_ATTENUATION 1.0
+#define DEFAULT_SOUND_PACKET_ATTENUATION 1.0f
 
 typedef struct
 {

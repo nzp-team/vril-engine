@@ -436,7 +436,7 @@ void Cvar_SetValueQuick (cvar_t *var, const float value)
 		snprintf (val, sizeof(val), "%i", (int)value);
 	else
 	{
-		snprintf (val, sizeof(val), "%f", value);
+		snprintf (val, sizeof(val), "%f", (double)value);
 		// kill trailing zeroes
 		while (*ptr)
 			ptr++;
@@ -479,7 +479,7 @@ void Cvar_SetValue (const char *var_name, const float value)
 		snprintf (val, sizeof(val), "%i", (int)value);
 	else
 	{
-		snprintf (val, sizeof(val), "%f", value);
+		snprintf (val, sizeof(val), "%f", (double)value);
 		// kill trailing zeroes
 		while (*ptr)
 			ptr++;

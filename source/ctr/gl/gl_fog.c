@@ -53,17 +53,17 @@ void Fog_Update (float start, float end, float red, float green, float blue, flo
 	if (time > 0)
 	{
 		//check for a fade in progress
-		if (fade_done > cl.time)
+		if (fade_done > (float)cl.time)
 		{
 			float f;
 
-			f = (fade_done - cl.time) / fade_time;
-			old_start = f * old_start + (1.0 - f) * fog_start;
-			old_end = f * old_end + (1.0 - f) * fog_end;
-			old_red = f * old_red + (1.0 - f) * fog_red;
-			old_green = f * old_green + (1.0 - f) * fog_green;
-			old_blue = f * old_blue + (1.0 - f) * fog_blue;
-			old_density = f * old_density + (1.0 - f) * fog_density_gl;
+			f = (fade_done - (float)cl.time) / fade_time;
+			old_start = f * old_start + (1.0f - f) * fog_start;
+			old_end = f * old_end + (1.0f - f) * fog_end;
+			old_red = f * old_red + (1.0f - f) * fog_red;
+			old_green = f * old_green + (1.0f - f) * fog_green;
+			old_blue = f * old_blue + (1.0f - f) * fog_blue;
+			old_density = f * old_density + (1.0f - f) * fog_density_gl;
 		}
 		else
 		{
@@ -82,8 +82,8 @@ void Fog_Update (float start, float end, float red, float green, float blue, flo
 	fog_green = green;
 	fog_blue = blue;
 	fade_time = time;
-	fade_done = cl.time + time;
-	fog_density_gl = ((fog_start / fog_end))/3.5;
+	fade_done = (float)cl.time + time;
+	fog_density_gl = ((fog_start / fog_end))/3.5f;
 }
 
 /*
@@ -133,12 +133,12 @@ void Fog_FogCommand_f (void)
 		Con_Printf("   fog <start> <end> <red> <green> <blue>\n");
 		Con_Printf("   fog <start> <end> <red> <green> <blue> <fade>\n");
 		Con_Printf("current values:\n");
-		Con_Printf("   \"start\" is \"%f\"\n", fog_start);
-		Con_Printf("   \"end\" is \"%f\"\n", fog_end);
-		Con_Printf("   \"red\" is \"%f\"\n", fog_red);
-		Con_Printf("   \"green\" is \"%f\"\n", fog_green);
-		Con_Printf("   \"blue\" is \"%f\"\n", fog_blue);
-		Con_Printf("   \"fade\" is \"%f\"\n", fade_time);
+		Con_Printf("   \"start\" is \"%f\"\n", (double)fog_start);
+		Con_Printf("   \"end\" is \"%f\"\n", (double)fog_end);
+		Con_Printf("   \"red\" is \"%f\"\n", (double)fog_red);
+		Con_Printf("   \"green\" is \"%f\"\n", (double)fog_green);
+		Con_Printf("   \"blue\" is \"%f\"\n", (double)fog_blue);
+		Con_Printf("   \"fade\" is \"%f\"\n", (double)fade_time);
 		break;
 	case 2: //TEST
 		Fog_Update(fog_start,
@@ -251,10 +251,10 @@ void Fog_ParseWorldspawn (void)
 			sscanf(value, "%f %f %f %f %f", &fog_start, &fog_end, &fog_red, &fog_green, &fog_blue);
 		}
 
-		fog_density_gl = ((fog_start / fog_end))/3.5;
+		fog_density_gl = ((fog_start / fog_end))/3.5f;
 	}
 
-	if (r_refdef.fog_start <= 0.01 || r_refdef.fog_end <= 0.01) {
+	if (r_refdef.fog_start <= 0.01f || r_refdef.fog_end <= 0.01f) {
 		r_refdef.fog_start = 0.0f;
 		r_refdef.fog_end = 0.0f;
 	}
@@ -274,28 +274,28 @@ float *Fog_GetColor (void)
 	float f;
 	int i;
 
-	if (fade_done > cl.time)
+	if (fade_done > (float)cl.time)
 	{
-		f = (fade_done - cl.time) / fade_time;
-		c[0] = f * old_red + (1.0 - f) * fog_red;
-		c[1] = f * old_green + (1.0 - f) * fog_green;
-		c[2] = f * old_blue + (1.0 - f) * fog_blue;
-		c[3] = 1.0;
+		f = (fade_done - (float)cl.time) / fade_time;
+		c[0] = f * old_red + (1.0f - f) * fog_red;
+		c[1] = f * old_green + (1.0f - f) * fog_green;
+		c[2] = f * old_blue + (1.0f - f) * fog_blue;
+		c[3] = 1.0f;
 	}
 	else
 	{
 		c[0] = fog_red;
 		c[1] = fog_green;
 		c[2] = fog_blue;
-		c[3] = 1.0;
+		c[3] = 1.0f;
 	}
 
 	//find closest 24-bit RGB value, so solid-colored sky can match the fog perfectly
 	for (i=0;i<3;i++)
-		c[i] = (float)(rint(c[i] * 255)) / 255.0f;
+		c[i] = (float)(rintf(c[i] * 255)) / 255.0f;
 
 	for (i = 0; i < 3; i++)
-		c[i] /= 64.0;
+		c[i] /= 64.0f;
 
 	return c;
 }
@@ -312,10 +312,10 @@ float Fog_GetDensity (void)
 {
 	float f;
 
-	if (fade_done > cl.time)
+	if (fade_done > (float)cl.time)
 	{
-		f = (fade_done - cl.time) / fade_time;
-		return f * old_density + (1.0 - f) * fog_density_gl;
+		f = (fade_done - (float)cl.time) / fade_time;
+		return f * old_density + (1.0f - f) * fog_density_gl;
 	}
 	else
 		return fog_density_gl;
@@ -375,10 +375,10 @@ float Fog_GetStart (void)
 {
 	float f;
 
-	if (fade_done > cl.time)
+	if (fade_done > (float)cl.time)
 	{
-		f = (fade_done - cl.time) / fade_time;
-		return f * old_start + (1.0 - f) * fog_start;
+		f = (fade_done - (float)cl.time) / fade_time;
+		return f * old_start + (1.0f - f) * fog_start;
 	}
 	else
 		return fog_start;
@@ -394,10 +394,10 @@ float Fog_GetEnd (void)
 {
 	float f;
 
-	if (fade_done > cl.time)
+	if (fade_done > (float)cl.time)
 	{
-		f = (fade_done - cl.time) / fade_time;
-		return f * old_start + (1.0 - f) * fog_end;
+		f = (fade_done - (float)cl.time) / fade_time;
+		return f * old_start + (1.0f - f) * fog_end;
 	}
 	else
 		return fog_end;

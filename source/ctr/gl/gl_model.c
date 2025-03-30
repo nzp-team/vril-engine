@@ -745,11 +745,11 @@ void Mod_LoadTexinfo (lump_t *l)
 		len1 = Length (out->vecs[0]);
 		len2 = Length (out->vecs[1]);
 		len1 = (len1 + len2)/2;
-		if (len1 < 0.32)
+		if (len1 < 0.32f)
 			out->mipadjust = 4;
-		else if (len1 < 0.49)
+		else if (len1 < 0.49f)
 			out->mipadjust = 3;
-		else if (len1 < 0.99)
+		else if (len1 < 0.99f)
 			out->mipadjust = 2;
 		else
 			out->mipadjust = 1;
@@ -1272,7 +1272,7 @@ float RadiusFromBounds (vec3_t mins, vec3_t maxs)
 
 	for (i=0 ; i<3 ; i++)
 	{
-		corner[i] = fabs(mins[i]) > fabs(maxs[i]) ? fabs(mins[i]) : fabs(maxs[i]);
+		corner[i] = fabsf(mins[i]) > fabsf(maxs[i]) ? fabsf(mins[i]) : fabsf(maxs[i]);
 	}
 
 	return Length (corner);
@@ -1433,9 +1433,9 @@ void Mod_LoadBrushModel (model_t *mod, void *buffer)
 
 		if (i < mod->numsubmodels-1)
 		{	// duplicate the basic information
-			char	name[11];
+			char	name[13];
 
-			snprintf (name, 12, "*%i", i+1);
+			snprintf (name, sizeof(name)-1, "*%i", i+1);
 			loadmodel = Mod_FindName (name);
 			*loadmodel = *mod;
 			strcpy (loadmodel->name, name);
@@ -2013,7 +2013,7 @@ void * Mod_LoadSpriteGroup (void * pin, mspriteframe_t **ppframe, int framenum)
 	for (i=0 ; i<numframes ; i++)
 	{
 		*poutintervals = LittleFloat (pin_intervals->interval);
-		if (*poutintervals <= 0.0)
+		if (*poutintervals <= 0.0f)
 			Sys_Error ("Mod_LoadSpriteGroup: interval<=0");
 
 		poutintervals++;
@@ -2068,10 +2068,10 @@ void Mod_LoadSpriteModel (model_t *mod, void *buffer)
 	mod->synctype = LittleLong (pin->synctype);
 	psprite->numframes = numframes;
 
-	mod->mins[0] = mod->mins[1] = -psprite->maxwidth/2;
-	mod->maxs[0] = mod->maxs[1] = psprite->maxwidth/2;
-	mod->mins[2] = -psprite->maxheight/2;
-	mod->maxs[2] = psprite->maxheight/2;
+	mod->mins[0] = mod->mins[1] = -psprite->maxwidth/2.0f;
+	mod->maxs[0] = mod->maxs[1] = psprite->maxwidth/2.0f;
+	mod->mins[2] = -psprite->maxheight/2.0f;
+	mod->maxs[2] = psprite->maxheight/2.0f;
 	
 //
 // load the frames

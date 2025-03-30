@@ -485,9 +485,9 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 	row = num>>4;
 	col = num&15;
 
-	frow = row*0.0625;
-	fcol = col*0.0625;
-	size = 0.0625*scale;
+	frow = row*0.0625f;
+	fcol = col*0.0625f;
+	size = 0.0625f*scale;
 
 	GL_Bind (char_texture);
 
@@ -530,9 +530,9 @@ void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, floa
 		// Hooray for variable-spacing!
 		if (*str == ' ')
 			x += 4 * (int)scale;
-        else if ((int)*str < 33 || (int)*str > 126)
+		else if ((int)*str < 33 || (int)*str > 126)
             x += 8 * (int)scale;
-        else
+		else
             x += (font_kerningamount[(int)(*str - 33)] + 1) * (int)scale;
 		
 		str++;
@@ -547,9 +547,9 @@ int getTextWidth(char *str, float scale)
         // Hooray for variable-spacing!
 		if (str[i] == ' ')
 			width += 4 * (int)scale;
-        else if ((int)str[i] < 33 || (int)str[i] > 126)
+		else if ((int)str[i] < 33 || (int)str[i] > 126)
             width += 8 * (int)scale;
-        else
+		else
             width += (font_kerningamount[(int)(str[i] - 33)] + 1) * (int)scale;
     }
 
@@ -1125,7 +1125,7 @@ void Draw_Crosshair (void)
 			cur_spread = CrossHairMaxSpread();
     }
 	// crosshair not moving
-    else if (crosshair_spread_time < sv.time && crosshair_spread_time)
+	else if (crosshair_spread_time < sv.time && crosshair_spread_time)
     {
         cur_spread = cur_spread - 4;
 		crosshair_opacity = 255;
@@ -1146,27 +1146,27 @@ void Draw_Crosshair (void)
 			crosshair_offset = CrossHairMaxSpread();
 
 		if (sv_player->v.view_ofs[2] == 8) {
-			crosshair_offset *= 0.80;
+			crosshair_offset *= 0.80f;
 		} else if (sv_player->v.view_ofs[2] == -10) {
-			crosshair_offset *= 0.65;
+			crosshair_offset *= 0.65f;
 		}
 
-		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5;
+		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5f;
 
-		x_value = (vid.width - 3)/2 - crosshair_offset_step;
-		y_value = (vid.height - 1)/2;
+		x_value = (vid.width - 3)/2.0f - crosshair_offset_step;
+		y_value = (vid.height - 1)/2.0f;
 		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
 
-		x_value = (vid.width - 3)/2 + crosshair_offset_step;
-		y_value = (vid.height - 1)/2;
+		x_value = (vid.width - 3)/2.0f + crosshair_offset_step;
+		y_value = (vid.height - 1)/2.0f;
 		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
 
-		x_value = (vid.width - 1)/2;
-		y_value = (vid.height - 3)/2 - crosshair_offset_step;
+		x_value = (vid.width - 1)/2.0f;
+		y_value = (vid.height - 3)/2.0f - crosshair_offset_step;
 		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
 
-		x_value = (vid.width - 1)/2;
-		y_value = (vid.height - 3)/2 + crosshair_offset_step;
+		x_value = (vid.width - 1)/2.0f;
+		y_value = (vid.height - 3)/2.0f + crosshair_offset_step;
 		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
 	}
 	// Area of Effect (o)
@@ -1187,22 +1187,22 @@ void Draw_Crosshair (void)
 		crosshair_pulse_grenade = false;
 
 		crosshair_offset = 12 + cur_spread;
-		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5;
+		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5f;
 
-		x_value = (vid.width - 3)/2 - crosshair_offset_step;
-		y_value = (vid.height - 1)/2;
+		x_value = (vid.width - 3)/2.0f - crosshair_offset_step;
+		y_value = (vid.height - 1)/2.0f;
 		Draw_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
 
-		x_value = (vid.width - 3)/2 + crosshair_offset_step;
-		y_value = (vid.height - 1)/2;
+		x_value = (vid.width - 3)/2.0f + crosshair_offset_step;
+		y_value = (vid.height - 1)/2.0f;
 		Draw_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
 
-		x_value = (vid.width - 1)/2;
-		y_value = (vid.height - 3)/2 - crosshair_offset_step;
+		x_value = (vid.width - 1)/2.0f;
+		y_value = (vid.height - 3)/2.0f - crosshair_offset_step;
 		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
 
-		x_value = (vid.width - 1)/2;
-		y_value = (vid.height - 3)/2 + crosshair_offset_step;
+		x_value = (vid.width - 1)/2.0f;
+		y_value = (vid.height - 3)/2.0f + crosshair_offset_step;
 		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
 	}
 }
@@ -2257,7 +2257,10 @@ PixEncode:
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_JPEG
 #define STBI_ONLY_PNG
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdouble-promotion"
 #include "../../stb_image.h"
+#pragma GCC diagnostic pop
 byte* LoadSTBI(FILE *f, int width, int height)
 {
 	int bpp;

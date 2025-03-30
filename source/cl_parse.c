@@ -126,12 +126,12 @@ void CL_ParseStartSoundPacket(void)
 
     field_mask = MSG_ReadByte();
 
-    if (field_mask & SND_VOLUME)
+	if (field_mask & SND_VOLUME)
 		volume = MSG_ReadByte ();
 	else
 		volume = DEFAULT_SOUND_PACKET_VOLUME;
 
-    if (field_mask & SND_ATTENUATION)
+	if (field_mask & SND_ATTENUATION)
 		attenuation = MSG_ReadByte () / 64.0;
 	else
 		attenuation = DEFAULT_SOUND_PACKET_ATTENUATION;
@@ -608,7 +608,7 @@ void CL_ParseUpdate (int bits)
 // Tomaz - QC Alpha Scale Glow Begin
 	if (bits & U_RENDERAMT)
 	    ent->renderamt = MSG_ReadFloat();
-    else
+	else
 	    ent->renderamt = 0;
 
     if (bits & U_RENDERMODE)
@@ -618,17 +618,17 @@ void CL_ParseUpdate (int bits)
 
 	if (bits & U_RENDERCOLOR1)
 	    ent->rendercolor[0] = MSG_ReadFloat();
-    else
+	else
 	    ent->rendercolor[0] = 0;
 
 	if (bits & U_RENDERCOLOR2)
 	    ent->rendercolor[1] = MSG_ReadFloat();
-    else
+	else
 	    ent->rendercolor[1] = 0;
 
 	if (bits & U_RENDERCOLOR3)
 	    ent->rendercolor[2] = MSG_ReadFloat();
-    else
+	else
 	    ent->rendercolor[2] = 0;
 // Tomaz - QC Alpha Scale Glow End
 
@@ -1167,7 +1167,7 @@ void CL_ParseServerMessage (void)
 
 		case svc_time:
 			cl.mtime[1] = cl.mtime[0];
-			cl.mtime[0] = MSG_ReadFloat ();
+			cl.mtime[0] = (double)MSG_ReadFloat ();
 			break;
 
 		case svc_clientdata:

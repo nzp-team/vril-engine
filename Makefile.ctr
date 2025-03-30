@@ -26,7 +26,7 @@ APP_DESCRIPTION := Call of Duty Zombies remake
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
-CFLAGS	:=	-g -fpermissive -Wall -O3 -mword-relocations \
+CFLAGS	:=	-g -Wall -Wdouble-promotion -O3 -mword-relocations \
 			-fomit-frame-pointer -ffunction-sections \
 			$(ARCH)
 

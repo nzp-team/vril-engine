@@ -495,7 +495,7 @@ void Host_Savegame_f (void)
 	Host_SavegameComment (comment);
 	fprintf (f, "%s\n", comment);
 	for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
-		fprintf (f, "%f\n", svs.clients->spawn_parms[i]);
+		fprintf (f, "%f\n", (double)svs.clients->spawn_parms[i]);
 	fprintf (f, "%d\n", current_skill);
 	fprintf (f, "%s\n", sv.name);
 	fprintf (f, "%f\n",sv.time);
@@ -529,7 +529,7 @@ Host_Loadgame_f
 */
 void Host_Loadgame_f (void)
 {
-	char	name[MAX_OSPATH];
+	char	name[MAX_OSPATH+1];
 	FILE	*f;
 	char	mapname[MAX_QPATH];
 	float	time, tfloat;
@@ -551,7 +551,10 @@ void Host_Loadgame_f (void)
 
 	cls.demonum = -1;		// stop demo loop in case this fails
 
-	snprintf(name, MAX_OSPATH + 1, "%s/%s", com_gamedir, Cmd_Argv(1));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+	snprintf(name, MAX_OSPATH, "%s/%s", com_gamedir, Cmd_Argv(1));
+#pragma GCC diagnostic pop
 	COM_DefaultExtension (name, ".sav");
 
 // we can't call SCR_BeginLoadingPlaque, because too much stack space has
@@ -578,7 +581,7 @@ void Host_Loadgame_f (void)
 		fscanf (f, "%f\n", &spawn_parms[i]);
 // this silliness is so we can load 1.06 save files, which have float skill values
 	fscanf (f, "%f\n", &tfloat);
-	current_skill = (int)(tfloat + 0.1);
+	current_skill = (int)(tfloat + 0.1f);
 	Cvar_SetValue ("skill", (float)current_skill);
 
 	fscanf (f, "%s\n",mapname);
@@ -651,7 +654,7 @@ void Host_Loadgame_f (void)
 	}
 
 	sv.num_edicts = entnum;
-	sv.time = time;
+	sv.time = (double)time;
 
 	fclose (f);
 

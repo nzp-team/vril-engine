@@ -611,21 +611,21 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 			p->size = 1.175;
 			VectorCopy (org, p->org);
 			tempSize = size * 2;
-			p->vel[0] = (rand() % (int)tempSize) - ((int)tempSize / 2);
-			p->vel[1] = (rand() % (int)tempSize) - ((int)tempSize / 2);
-			p->vel[2] = (rand() % (int)tempSize) - ((int)tempSize / 2);
+			p->vel[0] = (int)(rand() % (int)tempSize) - (int)((int)tempSize / 2);
+			p->vel[1] = (int)(rand() % (int)tempSize) - (int)((int)tempSize / 2);
+			p->vel[2] = (int)(rand() % (int)tempSize) - (int)((int)tempSize / 2);
 			break;
 		case p_rayspark:
-			p->size = 1.175;
+			p->size = 1.175f;
 			VectorCopy (org, p->org);
 			tempSize = size * 2;
-			p->vel[0] = (rand() % (int)tempSize) - ((int)tempSize/6);
-			p->vel[1] = (rand() % (int)tempSize) - ((int)tempSize/6);
+			p->vel[0] = (int)(rand() % (int)tempSize) - (int)((int)tempSize/6);
+			p->vel[1] = (int)(rand() % (int)tempSize) - (int)((int)tempSize/6);
 			p->vel[2] = /*(rand() % (int)tempSize) - (*/(int)tempSize;
 			break;
 		case p_raysmoke:
 			for (j=0 ; j<3 ; j++)
-				p->org[j] = org[j] + ((rand() & 31) - 16) / 2.0;
+				p->org[j] = org[j] + ((rand() & 31) - 16) / 2.0f;
 
 			p->vel[0] = ((rand() % 10)+2);
 			p->vel[1] = ((rand() % 10)+2);
@@ -634,7 +634,7 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 			break;
 		case p_smoke:
 			for (j=0 ; j<3 ; j++)
-				p->org[j] = org[j] + ((rand() & 31) - 16) / 2.0;
+				p->org[j] = org[j] + ((rand() & 31) - 16) / 2.0f;
 			for (j=0 ; j<3 ; j++)
 				p->vel[j] = ((rand() % 10) - 5) / 20.0;
 			p->growth = 4.5;
@@ -659,7 +659,7 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 			break;
 
 		case p_bubble:
-			p->start += (rand() & 15) / 36.0;
+			p->start += (rand() & 15) / 36.0f;
 			p->org[0] = org[0] + ((rand() & 31) - 16);
 			p->org[1] = org[1] + ((rand() & 31) - 16);
 			p->org[2] = org[2] + ((rand() & 63) - 32);
@@ -737,7 +737,7 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 			VectorCopy (org, p->org);
 			p->rotspeed = (rand() & 45) - 90;
 			//p->size = size * (rand() % 6) / 4;//r00k
-			p->size = size * (0.75 +((0.05 * (rand() % 20)) * 0.5));//blubs: resultant size range: [size * 0.75, size * 1.25)
+			p->size = size * (0.75f +((0.05f * (rand() % 20)) * 0.5f));//blubs: resultant size range: [size * 0.75, size * 1.25)
 			break;
 
 		case p_teleflare:
@@ -748,7 +748,7 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 			break;
 
 		case p_blood1:
-			p->size = size * (rand() % 2) + 0.50;//r00k
+			p->size = size * (rand() % 2) + 0.50f;//r00k
 			for (j=0 ; j<3 ; j++)
 				p->org[j] = org[j] + (rand() & 15) - 8;
 			for (j=0 ; j<3 ; j++)
@@ -764,7 +764,7 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 			break;
 
 		case p_blood3:
-			p->size = size * (rand() % 20) / 5.0;
+			p->size = size * (rand() % 20) / 5.0f;
 			VectorCopy (org, p->org);
 			for (j=0 ; j<3 ; j++)
 				p->vel[j] = (rand() % 40) - 20;
@@ -848,28 +848,28 @@ __inline static void AddParticleTrail (part_type_t type, vec3_t start, vec3_t en
 	case p_alphatrail:
 	case p_trailpart:
 	case p_lavatrail:
-		count = length / 1.1;
+		count = length / 1.1f;
 		break;
 
 	case p_blood3:
-		count = length / 8;
+		count = length / 8.0f;
 		break;
 
 	case p_bubble:
 	case p_bubble2:
-		count = length / 5.0;
+		count = length / 5.0f;
 		break;
 
 	case p_smoke:
-		count = length / 3.8;
+		count = length / 3.8f;
 		break;
 
 	case p_dpsmoke:
-		count = length / 2.5;
+		count = length / 2.5f;
 		break;
 
 	case p_dpfire:
-		count = length / 2.8;
+		count = length / 2.8f;
 		break;
 
 	default:
@@ -899,10 +899,10 @@ __inline static void AddParticleTrail (part_type_t type, vec3_t start, vec3_t en
 		case p_blood3:
 			VectorCopy (point, p->org);
 			for (j=0 ; j<3 ; j++)
-				p->org[j] += ((rand() & 15) - 8) / 8.0;
+				p->org[j] += ((rand() & 15) - 8) / 8.0f;
 			for (j=0 ; j<3 ; j++)
-				p->vel[j] = ((rand() & 15) - 8) / 2.0;
-			p->size = size * (rand() % 20) / 10.0;
+				p->vel[j] = ((rand() & 15) - 8) / 2.0f;
+			p->size = size * (rand() % 20) / 10.0f;
 			p->growth = 6;
 			break;
 
@@ -917,19 +917,19 @@ __inline static void AddParticleTrail (part_type_t type, vec3_t start, vec3_t en
 			VectorCopy (point, p->org);
 
 			for (j=0 ; j<3 ; j++)
-				p->org[j] += ((rand() & 15) - 8) / 8.0;
+				p->org[j] += ((rand() & 15) - 8) / 8.0f;
 
 			for (j=0 ; j<3 ; j++)
-				p->vel[j] = ((rand() & 15) - 8) / 2.0;
+				p->vel[j] = ((rand() & 15) - 8) / 2.0f;
 
-			p->size = size * (rand() % 20) / 10.0;
+			p->size = size * (rand() % 20) / 10.0f;
 			p->growth = 1;
 			break;
 
 		case p_smoke:
 			VectorCopy (point, p->org);
 			for (j=0 ; j<3 ; j++)
-				p->org[j] += ((rand() & 7) - 4) / 8.0;
+				p->org[j] += ((rand() & 7) - 4) / 8.0f;
 			p->vel[0] = p->vel[1] = 0;
 			p->vel[2] = rand() & 3;
 			p->growth = 4.5;
@@ -1001,7 +1001,7 @@ inline static void QMB_UpdateParticles(void)
 
 	particle_count = 0;
 	frametime = fabs(cl.ctime - cl.oldtime);
-	grav = sv_gravity.value / 800.0;
+	grav = sv_gravity.value / 800.0f;
 
 	for (i=0 ; i<num_particletypes ; i++)
 	{
@@ -1321,8 +1321,8 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
     float subTexBottom = ptex->coords[p->texindex][3];
 
     glTexCoord2f(subTexLeft, subTexTop);
-    VectorMA(p->org, -scale * 0.5, up, p_downleft);
-    VectorMA(p_downleft, -scale * 0.5, right, p_downleft);
+    VectorMA(p->org, -scale * 0.5f, up, p_downleft);
+    VectorMA(p_downleft, -scale * 0.5f, right, p_downleft);
     glVertex3fv (p_downleft);
 
     glTexCoord2f(subTexRight, subTexTop);
@@ -1702,10 +1702,10 @@ void QMB_Shockwave_Splash(vec3_t org, int radius)
 
 	angle[2] = 0;
 
-	for (theta = 0; theta < 6.283185307179586476925286766559; theta += 0.069813170079773183076947630739545)
+	for (theta = 0; theta < 6.283185307179586476925286766559f; theta += 0.069813170079773183076947630739545f)
 	{
-		angle[0] = cos(theta) * radius;
-		angle[1] = sin(theta) * radius;
+		angle[0] = cosf(theta) * radius;
+		angle[1] = sinf(theta) * radius;
 		AddParticle(p_shockwave, org, 1, 2, 0.625f, NULL, angle);
 	}
 }
@@ -1801,15 +1801,15 @@ __inline static void AddColoredParticle (part_type_t type, vec3_t org, int count
 			p->size = 1.175;
 			VectorCopy (org, p->org);
 			tempSize = size * 2;
-			p->vel[0] = (rand() % (int)tempSize) - ((int)tempSize / 4);
-			p->vel[1] = (rand() % (int)tempSize) - ((int)tempSize / 4);
-			p->vel[2] = (rand() % (int)tempSize) - ((int)tempSize / 6);
+			p->vel[0] = (rand() % (int)tempSize) - (int)((int)tempSize / 4);
+			p->vel[1] = (rand() % (int)tempSize) - (int)((int)tempSize / 4);
+			p->vel[2] = (rand() % (int)tempSize) - (int)((int)tempSize / 6);
 			break;
 
 		case p_fire:
 			VectorCopy (org, p->org);
 			for (j=0 ; j<3 ; j++)
-				p->vel[j] = ((rand() % 160) - 80) * (size / 25.0);
+				p->vel[j] = ((rand() % 160) - 80) * (size / 25.0f);
 			break;
 
 		default:
@@ -1914,7 +1914,7 @@ void QMB_Blood_Splat(part_type_t type, vec3_t org) //Shpuldified
 			VectorMA (org, 70, neworg, neworg);
 
 			AddParticle (type, org, 5, 1, 2, color, neworg);
-			angle[1] += 360 / 4;
+			angle[1] += 360.0f / 4;
 		}
 	}
 }
@@ -1981,12 +1981,12 @@ void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int col, int count)
 
 			if (ISUNDERWATER(contents))//R00k
 			{
-				AddParticle (p_bubble, org, 1, 2, 0.825f + ((rand() % 10) - 5) / 40.0, NULL, zerodir);
+				AddParticle (p_bubble, org, 1, 2, 0.825f + ((rand() % 10) - 5) / 40.0f, NULL, zerodir);
 			}
 			else
 
 			{
-				AddParticle (p_smoke, org, 1, 4, 0.825f + ((rand() % 10) - 5) / 40.0, NULL, zerodir);
+				AddParticle (p_smoke, org, 1, 4, 0.825f + ((rand() % 10) - 5) / 40.0f, NULL, zerodir);
 			}
 		}
 		break;
@@ -2002,12 +2002,12 @@ void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int col, int count)
 
 		if (ISUNDERWATER(contents))//R00k
 		{
-			AddParticle (p_bubble, org, 1, 2, 0.825f + ((rand() % 10) - 5) / 40.0, NULL, zerodir);
+			AddParticle (p_bubble, org, 1, 2, 0.825f + ((rand() % 10) - 5) / 40.0f, NULL, zerodir);
 		}
 		else
 
 		{
-			AddParticle (p_smoke, org, 3, 12, 1.225f + ((rand() % 10) - 5) / 40.0, NULL, zerodir);
+			AddParticle (p_smoke, org, 3, 12, 1.225f + ((rand() % 10) - 5) / 40.0f, NULL, zerodir);
 		}
 		break;
 
@@ -2022,12 +2022,12 @@ void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int col, int count)
 
 			if (ISUNDERWATER(contents))//R00k
 			{
-				AddParticle (p_bubble, neworg, 1, 2, 0.825f + ((rand() % 10) - 5) / 40.0, NULL, zerodir);
+				AddParticle (p_bubble, neworg, 1, 2, 0.825f + ((rand() % 10) - 5) / 40.0f, NULL, zerodir);
 			}
 			else
 
 			{
-				AddParticle (p_smoke, neworg, 1, 6, 0.825f + ((rand() % 10) - 5) / 40.0, NULL, zerodir);
+				AddParticle (p_smoke, neworg, 1, 6, 0.825f + ((rand() % 10) - 5) / 40.0f, NULL, zerodir);
 			}
 
 			if ((i % particlecount) == 0)
@@ -2055,14 +2055,14 @@ void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int col, int count)
 		color[0] = 0;
 		color[1] = 255;
 		color[2] = 0;
-		AddParticle (p_raysmoke, org, 3, 25, 1.225f + ((rand() % 10) - 2) / 40.0, color, zerodir);
+		AddParticle (p_raysmoke, org, 3, 25, 1.225f + ((rand() % 10) - 2) / 40.0f, color, zerodir);
 		AddParticle (p_rayspark, org, 12, 75, 0.6f,  color, zerodir);
 		break;
 	case 512:
 		color[0] = 255;
 		color[1] = 0;
 		color[2] = 0;
-		AddParticle (p_raysmoke, org, 3, 25, 1.225f + ((rand() % 10) - 2) / 40.0, color, zerodir);
+		AddParticle (p_raysmoke, org, 3, 25, 1.225f + ((rand() % 10) - 2) / 40.0f, color, zerodir);
 		AddParticle (p_rayspark, org, 12, 75, 0.6f,  color, zerodir);
 		break;
 	default:
@@ -2231,19 +2231,19 @@ void QMB_MuzzleFlash(vec3_t org)
 		if(size == 0 || cl.stats[STAT_ZOOM] == 2)
 			return;
 
-        switch(rand() % 3 + 1)
+        switch(rand() % 3)
         {
+            case 0:
+                AddParticle (p_muzzleflash, org, 1, size, timemod * (float)frametime, color, zerodir);
+                break;
             case 1:
-                AddParticle (p_muzzleflash, org, 1, size, timemod * frametime, color, zerodir);
+                AddParticle (p_muzzleflash2, org, 1, size, timemod * (float)frametime, color, zerodir);
                 break;
             case 2:
-                AddParticle (p_muzzleflash2, org, 1, size, timemod * frametime, color, zerodir);
-                break;
-            case 3:
-                AddParticle (p_muzzleflash3, org, 1, size, timemod * frametime, color, zerodir);
+                AddParticle (p_muzzleflash3, org, 1, size, timemod * (float)frametime, color, zerodir);
                 break;
             default:
-                AddParticle (p_muzzleflash, org, 1, size, timemod * frametime, color, zerodir);
+                AddParticle (p_muzzleflash, org, 1, size, timemod * (float)frametime, color, zerodir);
                 break;
         }
 	}
@@ -2407,7 +2407,7 @@ void QMB_BlobExplosion (vec3_t org)
 	AddParticle (p_fire, org, 15, 30, 1.4, color, zerodir);
 
 	vel[2] = 0;
-	for (theta = 0 ; theta < 6.28318530717958647692528676655901 ; theta += 0.0897597901025655210989326680937001)
+	for (theta = 0 ; theta < 6.28318530717958647692528676655901f ; theta += 0.0897597901025655210989326680937001f)
 	{
 		color[0] = (60 + (rand() & 15));
 		color[1] = (65 + (rand() & 15));
@@ -2419,24 +2419,24 @@ void QMB_BlobExplosion (vec3_t org)
 		neworg[0] = org[0] + vfpu_cosf(theta) * 6;
 		neworg[1] = org[1] + vfpu_sinf(theta) * 6;
 		#else
-		vel[0] = cos(theta) * 125;
-		vel[1] = sin(theta) * 125;
-		neworg[0] = org[0] + cos(theta) * 6;
-		neworg[1] = org[1] + sin(theta) * 6;
+		vel[0] = cosf(theta) * 125;
+		vel[1] = sinf(theta) * 125;
+		neworg[0] = org[0] + cosf(theta) * 6;
+		neworg[1] = org[1] + sinf(theta) * 6;
 		#endif
 		neworg[2] = org[2] + 0 - 10;
 		AddParticle (p_shockwave, neworg, 1, 4, 0.8, color, vel);
 		neworg[2] = org[2] + 0 + 10;
 		AddParticle (p_shockwave, neworg, 1, 4, 0.8, color, vel);
 
-		vel[0] *= 1.15;
-		vel[1] *= 1.15;
+		vel[0] *= 1.15f;
+		vel[1] *= 1.15f;
 		#ifdef PSP_VFPU
 		neworg[0] = org[0] + vfpu_cosf(theta) * 13;
 		neworg[1] = org[1] + vfpu_sinf(theta) * 13;
 		#else
-		neworg[0] = org[0] + cos(theta) * 13;
-		neworg[1] = org[1] + sin(theta) * 13;
+		neworg[0] = org[0] + cosf(theta) * 13;
+		neworg[1] = org[1] + sinf(theta) * 13;
 		#endif
 		neworg[2] = org[2] + 0;
 		AddParticle (p_shockwave, neworg, 1, 6, 1.0, color, vel);
@@ -2498,9 +2498,9 @@ void QMB_TeleportSplash (vec3_t org)
 			AngleVectors (angle, NULLVEC, NULLVEC, neworg);
 			VectorMA (org, 70, neworg, neworg);
 			AddParticle (p_sparkray, org, 1, 6 + (i & 3), 5, color, neworg);
-			angle[2] += 360 / 5;
+			angle[2] += 360.0f / 5;
 		}
-		angle[0] += 180 / 5;
+		angle[0] += 180.0f / 5;
 	}
 }
 
@@ -2520,16 +2520,16 @@ void QMB_InfernoFlame (vec3_t org)
 		}
 		else
 		{
-			AddParticle (p_inferno_flame, org, 1, 30, 13.125 * frametime, NULL, zerodir);
-			AddParticle (p_inferno_trail, org, 2, 1.75, 45.0 * frametime, NULL, zerodir);
-			AddParticle (p_inferno_trail, org, 2, 1.0, 52.5 * frametime, NULL, zerodir);
+			AddParticle (p_inferno_flame, org, 1, 30, 13.125f * frametime, NULL, zerodir);
+			AddParticle (p_inferno_trail, org, 2, 1.75, 45.0f * frametime, NULL, zerodir);
+			AddParticle (p_inferno_trail, org, 2, 1.0, 52.5f * frametime, NULL, zerodir);
 		}
 	}
 }
 
 void QMB_StaticBubble (entity_t *ent)
 {
-	AddParticle (p_staticbubble, ent->origin, 1, ent->frame == 1 ? 1.85 : 2.9, 0.001, NULL, zerodir);
+	AddParticle (p_staticbubble, ent->origin, 1, ent->frame == 1 ? 1.85f : 2.9f, 0.001f, NULL, zerodir);
 }
 
 void QMB_TorchFlame (vec3_t org)
@@ -2685,9 +2685,9 @@ void QMB_Lightning_Splash(vec3_t org)
 			VectorMA (org, 20, neworg, neworg);
 			AddParticle (p_spark, org, 2, 85, 0.05f, NULL, zerodir);
 			AddParticle (p_spark, org, 2, 100, 0.1f, col2, neworg);
-			angle[2] += 360 / 5;
+			angle[2] += 360.0f / 5;
 	  }
-	  angle[0] += 180 / 5;
+	  angle[0] += 180.0f / 5;
 	}
 	color[0] = 224 + (rand() & 31);
 	color[1] = 100 + (rand() & 31);
@@ -2817,13 +2817,13 @@ void QMB_EntityParticles (entity_t *ent)
 
 	for (i=0 ; i<NUMVERTEXNORMALS ; i++)
 	{
-		angle = cl.time * avelocities[i][0];
-		sy = sin(angle);
-		cy = cos(angle);
-		angle = cl.time * avelocities[i][1];
-		sp = sin(angle);
-		cp = cos(angle);
-		angle = cl.time * avelocities[i][2];
+		angle = (float)cl.time * avelocities[i][0];
+		sy = sinf(angle);
+		cy = cosf(angle);
+		angle = (float)cl.time * avelocities[i][1];
+		sp = sinf(angle);
+		cp = cosf(angle);
+		angle = (float)cl.time * avelocities[i][2];
 
 		forward[0] = cp*cy;
 		forward[1] = cp*sy;

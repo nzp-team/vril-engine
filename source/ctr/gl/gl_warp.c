@@ -77,8 +77,8 @@ void SubdividePolygon (int numverts, float *verts)
 
 	for (i=0 ; i<3 ; i++)
 	{
-		m = (mins[i] + maxs[i]) * 0.5;
-		m = gl_subdivide_size.value * floor (m/gl_subdivide_size.value + 0.5);
+		m = (mins[i] + maxs[i]) * 0.5f;
+		m = gl_subdivide_size.value * floorf (m/gl_subdivide_size.value + 0.5f);
 		if (maxs[i] - m < 8)
 			continue;
 		if (m - mins[i] < 8)
@@ -210,11 +210,11 @@ void EmitWaterPolys (msurface_t *fa)
 			os = v[3];
 			ot = v[4];
 
-			s = os + turbsin[(int)((ot*0.125+realtime) * TURBSCALE) & 255];
-			s *= (1.0/64);
+			s = os + turbsin[(int)((ot*0.125f+(float)realtime) * (float)TURBSCALE) & 255];
+			s *= (1.0f/64);
 
-			t = ot + turbsin[(int)((os*0.125+realtime) * TURBSCALE) & 255];
-			t *= (1.0/64);
+			t = ot + turbsin[(int)((os*0.125f+(float)realtime) * (float)TURBSCALE) & 255];
+			t *= (1.0f/64);
 
 			glTexCoord2f (s, t);
 			glVertex3fv (v);
@@ -249,14 +249,14 @@ void EmitSkyPolys (msurface_t *fa)
 			dir[2] *= 3;	// flatten the sphere
 
 			length = dir[0]*dir[0] + dir[1]*dir[1] + dir[2]*dir[2];
-			length = sqrt (length);
+			length = sqrtf (length);
 			length = 6*63/length;
 
 			dir[0] *= length;
 			dir[1] *= length;
 
-			s = (speedscale + dir[0]) * (1.0/128);
-			t = (speedscale + dir[1]) * (1.0/128);
+			s = (speedscale + dir[0]) * (1.0f/128);
+			t = (speedscale + dir[1]) * (1.0f/128);
 
 			glTexCoord2f (s, t);
 			glVertex3fv (v);
@@ -544,19 +544,19 @@ void MakeSkyVec (float s, float t, int axis)
 	}
 
 	// avoid bilerp seam
-	s = (s+1)*0.5;
-	t = (t+1)*0.5;
+	s = (s+1)*0.5f;
+	t = (t+1)*0.5f;
 
-	if (s < 1.0/512)
-		s = 1.0/512;
-	else if (s > 511.0/512)
-		s = 511.0/512;
-	if (t < 1.0/512)
-		t = 1.0/512;
-	else if (t > 511.0/512)
-		t = 511.0/512;
+	if (s < 1.0f/512)
+		s = 1.0f/512;
+	else if (s > 511.0f/512)
+		s = 511.0f/512;
+	if (t < 1.0f/512)
+		t = 1.0f/512;
+	else if (t > 511.0f/512)
+		t = 511.0f/512;
 
-	t = 1.0 - t;
+	t = 1.0f - t;
 	glTexCoord2f (s, t);
 	glVertex3fv (v);
 }

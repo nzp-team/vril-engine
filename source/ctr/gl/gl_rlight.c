@@ -212,10 +212,10 @@ start:
 			impact[j] = light->origin[j] - surf->plane->normal[j]*dist;
 		// clamp center of light to corner and check brightness
 		l = DotProduct (impact, surf->texinfo->vecs[0]) + surf->texinfo->vecs[0][3] - surf->texturemins[0];
-		s = l+0.5;if (s < 0) s = 0;else if (s > surf->extents[0]) s = surf->extents[0];
+		s = l+0.5f;if (s < 0) s = 0;else if (s > surf->extents[0]) s = surf->extents[0];
 		s = l - s;
 		l = DotProduct (impact, surf->texinfo->vecs[1]) + surf->texinfo->vecs[1][3] - surf->texturemins[1];
-		t = l+0.5;if (t < 0) t = 0;else if (t > surf->extents[1]) t = surf->extents[1];
+		t = l+0.5f;if (t < 0) t = 0;else if (t > surf->extents[1]) t = surf->extents[1];
 		t = l - t;
 		// compare to minimum light
 		if ((s*s+t*t+dist*dist) < maxdist)
@@ -252,7 +252,7 @@ void R_PushDlights (void)
 
 	for (i=0 ; i<MAX_DLIGHTS ; i++, l++)
 	{
-		if (l->die < cl.time || !l->radius)
+		if (l->die < (float)cl.time || !l->radius)
 			continue;
 		R_MarkLights (l, i, cl.worldmodel->nodes);
 	}
@@ -330,8 +330,8 @@ loc0:
 		// ericw -- added double casts to force 64-bit precision.
 		// Without them the zombie at the start of jam3_ericw.bsp was
 		// incorrectly being lit up in SSE builds.
-			ds = (int) ((double) DoublePrecisionDotProduct (mid, surf->texinfo->vecs[0]) + surf->texinfo->vecs[0][3]);
-			dt = (int) ((double) DoublePrecisionDotProduct (mid, surf->texinfo->vecs[1]) + surf->texinfo->vecs[1][3]);
+			ds = (int) ((double) DoublePrecisionDotProduct (mid, surf->texinfo->vecs[0]) + (double)surf->texinfo->vecs[0][3]);
+			dt = (int) ((double) DoublePrecisionDotProduct (mid, surf->texinfo->vecs[1]) + (double)surf->texinfo->vecs[1][3]);
 
 			if (ds < surf->texturemins[0] || dt < surf->texturemins[1])
 				continue;
@@ -354,7 +354,7 @@ loc0:
 
 				for (maps = 0;maps < MAXLIGHTMAPS && surf->styles[maps] != 255;maps++)
 				{
-					scale = (float) d_lightstylevalue[surf->styles[maps]] * 1.0 / 256.0;
+					scale = (float) d_lightstylevalue[surf->styles[maps]] * 1.0f / 256.0f;
 					r00 += (float) lightmap[      0] * scale;g00 += (float) lightmap[      1] * scale;b00 += (float) lightmap[2] * scale;
 					r01 += (float) lightmap[      3] * scale;g01 += (float) lightmap[      4] * scale;b01 += (float) lightmap[5] * scale;
 					r10 += (float) lightmap[line3+0] * scale;g10 += (float) lightmap[line3+1] * scale;b10 += (float) lightmap[line3+2] * scale;

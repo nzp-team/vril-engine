@@ -556,10 +556,10 @@ Returns false if the time is too short to run a frame
 */
 qboolean Host_FilterTime (float time)
 {
-	realtime += time;
+	realtime += (double)time;
 #ifndef __WII__
    if (cl_maxfps.value < 1) Cvar_SetValue("cl_maxfps", 30);
-   if (!cls.timedemo && realtime - oldrealtime < 1.0/cl_maxfps.value)
+   if (!cls.timedemo && realtime - oldrealtime < 1.0/(double)cl_maxfps.value)
 		return false;		// framerate is too high
 #else
 	if (!cls.timedemo && realtime - oldrealtime < 1.0f/60.0f)
@@ -571,10 +571,10 @@ qboolean Host_FilterTime (float time)
 
 	//johnfitz -- host_timescale is more intuitive than host_framerate
 	if (host_timescale.value > 0)
-		host_frametime *= host_timescale.value;
+		host_frametime *= (double)host_timescale.value;
 	//johnfitz
 	else if (host_framerate.value > 0)
-		host_frametime = host_framerate.value;
+		host_frametime = (double)host_framerate.value;
 	else // don't allow really long or short frames
 		host_frametime = CLAMP (0.001, host_frametime, 0.1); //johnfitz -- use CLAMP
 
@@ -631,7 +631,7 @@ void Host_ServerFrame (void)
 // send all messages to the clients
 	SV_SendClientMessages ();
 
-	if (sv.time >= 5.0f) {
+	if (sv.time >= 5.0) {
 		TestHandler_MapBoot();
 	}
 }
@@ -889,7 +889,7 @@ void Host_Init (quakeparms_t *parms)
 	host_parms = *parms;
 
 	if (parms->memsize < minimum_memory)
-		Sys_Error ("Only %4.1f megs of memory available, can't execute game", parms->memsize / (float)0x100000);
+		Sys_Error ("Only %4.1f megs of memory available, can't execute game", parms->memsize / (double)0x100000);
 
 	com_argc = parms->argc;
 	com_argv = parms->argv;
@@ -924,7 +924,7 @@ void Host_Init (quakeparms_t *parms)
 
 	Con_Printf ("VRAM Size: %i bytes\n", sceGeEdramGetSize());
 #elif __3DS__
-	Con_Printf ("3DS NZP v%4.1f (3DSX: "__TIME__" "__DATE__")\n", (float)(VERSION));
+	Con_Printf ("3DS NZP v%4.1f (3DSX: "__TIME__" "__DATE__")\n", (double)(VERSION));
 
 	if (new3ds_flag)
 		Con_Printf ("3DS Model: NEW Nintendo 3DS\n");

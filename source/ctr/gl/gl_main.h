@@ -49,7 +49,7 @@ extern	TEXSUBIMAGEPTR TexSubImage2DFunc;
 extern	int texture_extension_number;
 extern	int		texture_mode;
 
-extern	float	gldepthmin, gldepthmax;
+extern	double	gldepthmin, gldepthmax;
 
 void GL_Upload32 (unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha);
 void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
@@ -110,7 +110,7 @@ half-life Render Modes. Crow_bar
 
 // r_local.h -- private refresh defs
 
-#define ALIAS_BASE_SIZE_RATIO		(1.0 / 11.0)
+#define ALIAS_BASE_SIZE_RATIO		(1.0f / 11.0f)
 					// normalizing factor so player model works out to about
 					//  1 pixel per triangle
 #define	MAX_LBM_HEIGHT		480

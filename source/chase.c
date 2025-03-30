@@ -171,9 +171,9 @@ void Chase_Update (void)
       dist = 1;
 
    #ifdef PSP_VFPU
-   r_refdef.viewangles[PITCH] = -vfpu_atanf(stop[2] / dist) / M_PI * 180;
+   r_refdef.viewangles[PITCH] = -vfpu_atanf(stop[2] / dist) * ((float)M_PI / 180.0f);
    #else
-   r_refdef.viewangles[PITCH] = -atan(stop[2] / dist) / M_PI * 180;
+   r_refdef.viewangles[PITCH] = -atanf(stop[2] / dist) * ((float)M_PI / 180.0f);
    #endif
 
    // move towards destination

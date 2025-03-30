@@ -195,7 +195,7 @@ record <demoname> <map> [cd track]
 void CL_Record_f (void)
 {
 	int		c;
-	char	name[MAX_OSPATH];
+	char	name[MAX_OSPATH+1];
 	int		track;
 	char	forcetrack[16];
 
@@ -229,8 +229,10 @@ void CL_Record_f (void)
 	}
 	else
 		track = -1;	
-
-	snprintf (name, MAX_OSPATH + 1, "%s/%s", com_gamedir, Cmd_Argv(1));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+	snprintf (name, MAX_OSPATH, "%s/%s", com_gamedir, Cmd_Argv(1));
+#pragma GCC diagnostic pop
 	
 //
 // start the map up
@@ -344,7 +346,7 @@ void CL_FinishTimeDemo (void)
 	
 // the first frame didn't count
 	frames = (host_framecount - cls.td_startframe) - 1;
-	time = realtime - cls.td_starttime;
+	time = realtime - (double)cls.td_starttime;
 	if (time < 1)
 		time = 1;
 	Con_Printf ("%i frames %5.1f seconds %5.1f fps\n", frames, time, frames/time);

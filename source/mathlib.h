@@ -39,8 +39,8 @@ typedef	int	fixed16_t;
 #define M_PI		3.14159265358979323846	// matches value in gcc v2 math.h
 #endif
 
-#define RAD2DEG( x )	((float)(x) * (float)(180.f / M_PI))
-#define DEG2RAD( x )	((float)(x) * (float)(M_PI / 180.f))
+#define RAD2DEG( x )	((float)(x) * (float)(180.f / (float)M_PI))
+#define DEG2RAD( x )	((float)(x) * (float)((float)M_PI / 180.f))
 
 struct mplane_s;
 
@@ -66,7 +66,9 @@ extern	int nanmask;
 #define VectorNegate(a, b)	((b)[0] = -(a)[0], (b)[1] = -(a)[1], (b)[2] = -(a)[2])
 #define VectorSet(v, x, y, z)	((v)[0] = (x), (v)[1] = (y), (v)[2] = (z))
 #define VectorRandom(v) {do{(v)[0] = lhrandom(-1, 1);(v)[1] = lhrandom(-1, 1);(v)[2] = lhrandom(-1, 1);}while(DotProduct(v, v) > 1);}
-#define DoublePrecisionDotProduct(x,y) ((double)(x)[0]*(y)[0]+(double)(x)[1]*(y)[1]+(double)(x)[2]*(y)[2])
+#define DoublePrecisionDotProduct(x, y) \
+    ((double)(x)[0] * (double)(y)[0] + (double)(x)[1] * (double)(y)[1] + (double)(x)[2] * (double)(y)[2])
+
 #define VSM(a,b,c) {c[0]=a[0]*b;c[1]=a[1]*b;c[2]=a[2]*b;}
 
 #define VectorNormalizeFast( v ){float	ilength = (float)rsqrt(DotProduct(v,v));v[0] *= ilength;v[1] *= ilength;v[2] *= ilength; }
@@ -108,7 +110,7 @@ void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
 int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct mplane_s *plane);
 
 
-#define anglemod(a) ((360.0/65536) * ((int)((a)*(65536/360.0)) & 65535))
+#define anglemod(a) ((360.0f/65536) * ((int)((a)*(65536/360.0f)) & 65535))
 
 #define VectorL2Compare(v, w, m)					\
 	(_mathlib_temp_float1 = (m) * (m),				\
