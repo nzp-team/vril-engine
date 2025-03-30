@@ -37,6 +37,10 @@ ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror
 endif
 
+ifeq ($(FANALYZER),1)
+CFLAGS		+= -fanalyzer
+endif
+
 CXXFLAGS = $(CFLAGS)
 
 LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
