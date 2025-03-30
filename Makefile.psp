@@ -124,6 +124,10 @@ ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror
 endif
 
+ifeq ($(FANALYZER),1)
+CFLAGS		+= -fanalyzer
+endif
+
 CXXFLAGS = -fno-rtti -Wcast-qual -Wno-write-strings -Wno-sign-compare -Wno-strict-aliasing
 ASFLAGS = $(CFLAGS) -c
 
