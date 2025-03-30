@@ -90,18 +90,16 @@ void SV_CheckVelocity (edict_t *ent)
 //
 	for (i=0 ; i<3 ; i++)
 	{
-#pragma GCC diagnostic ignored "-Wstrict-aliasing"
-		if (IS_NAN(ent->v.velocity[i]))
+		if (isnanf(ent->v.velocity[i]))
 		{
 			Con_Printf ("Got a NaN velocity on %s\n", pr_strings + ent->v.classname);
 			ent->v.velocity[i] = 0;
 		}
-		if (IS_NAN(ent->v.origin[i]))
+		if (isnanf(ent->v.origin[i]))
 		{
 			Con_Printf ("Got a NaN origin on %s\n", pr_strings + ent->v.classname);
 			ent->v.origin[i] = 0;
 		}
-#pragma GCC diagnostic pop
 		if (ent->v.velocity[i] > sv_maxvelocity.value)
 			ent->v.velocity[i] = sv_maxvelocity.value;
 		else if (ent->v.velocity[i] < -sv_maxvelocity.value)
@@ -124,10 +122,10 @@ qboolean SV_RunThink (edict_t *ent)
 	float	thinktime;
 
 	thinktime = ent->v.nextthink;
-	if (thinktime <= 0 || thinktime > sv.time + host_frametime)
+	if (thinktime <= 0 || thinktime > (float)sv.time + (float)host_frametime)
 		return true;
 
-	if (thinktime < sv.time)
+	if (thinktime < (float)sv.time)
 		thinktime = sv.time;	// don't let things stay in the past.
 								// it is possible to start that way
 								// by a trigger with a local time.
@@ -201,7 +199,7 @@ int ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbounce)
 	{
 		change = normal[i]*backoff;
 		out[i] = in[i] - change;
-		if (out[i] > -STOP_EPSILON && out[i] < STOP_EPSILON)
+		if (out[i] > (float)-STOP_EPSILON && out[i] < (float)STOP_EPSILON)
 			out[i] = 0;
 	}
 
@@ -275,7 +273,7 @@ int SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 		if (!trace.ent)
 			Sys_Error ("SV_FlyMove: !trace.ent");
 
-		if (trace.plane.normal[2] > 0.7)
+		if (trace.plane.normal[2] > 0.7f)
 		{
 			blocked |= 1;		// floor
 			if (trace.ent->v.solid == SOLID_BSP)
@@ -375,8 +373,8 @@ void SV_AddGravity (edict_t *ent)
 	if (val && val->_float)
 		ent_gravity = val->_float;
 	else
-		ent_gravity = 1.0;
-	ent->v.velocity[2] -= ent_gravity * sv_gravity.value * host_frametime;
+		ent_gravity = 1.0f;
+	ent->v.velocity[2] -= ent_gravity * sv_gravity.value * (float)host_frametime;
 }
 
 
@@ -751,7 +749,7 @@ void SV_Physics_Pusher (edict_t *ent)
 	oldltime = ent->v.ltime;
 
 	thinktime = ent->v.nextthink;
-	if (thinktime < ent->v.ltime + host_frametime)
+	if (thinktime < ent->v.ltime + (float)host_frametime)
 	{
 		movetime = thinktime - ent->v.ltime;
 		if (movetime < 0)
@@ -861,7 +859,7 @@ qboolean SV_CheckWater (edict_t *ent)
 	{
 		ent->v.watertype = cont;
 		ent->v.waterlevel = 1;
-		point[2] = ent->v.origin[2] + (ent->v.mins[2] + ent->v.maxs[2])*0.5;
+		point[2] = ent->v.origin[2] + (ent->v.mins[2] + ent->v.maxs[2])*0.5f;
 		cont = SV_PointContents (point);
 		if (cont <= CONTENTS_WATER)
 		{
@@ -891,7 +889,7 @@ void SV_WallFriction (edict_t *ent, trace_t *trace)
 	AngleVectors (ent->v.v_angle, forward, right, up);
 	d = DotProduct (trace->plane.normal, forward);
 
-	d += 0.5;
+	d += 0.5f;
 	if (d >= 0)
 		return;
 
@@ -1019,7 +1017,7 @@ void SV_WalkMove (edict_t *ent)
 	VectorCopy (vec3_origin, upmove);
 	VectorCopy (vec3_origin, downmove);
 	upmove[2] = STEPSIZE;
-	downmove[2] = -STEPSIZE + oldvel[2]*host_frametime;
+	downmove[2] = -STEPSIZE + oldvel[2]*(float)host_frametime;
 
 // move up
 	SV_PushEntity (ent, upmove, vec3_origin);	// FIXME: don't link?
@@ -1034,8 +1032,8 @@ void SV_WalkMove (edict_t *ent)
 // in the clipping hulls
 	if (clip)
 	{
-		if ( fabsf(oldorg[1] - ent->v.origin[1]) < 0.03125
-		&& fabsf(oldorg[0] - ent->v.origin[0]) < 0.03125 )
+		if ( fabsf(oldorg[1] - ent->v.origin[1]) < 0.03125f
+		&& fabsf(oldorg[0] - ent->v.origin[0]) < 0.03125f )
 		{	// stepping up didn't make any progress
 			clip = SV_TryUnstick (ent, oldvel);
 		}
@@ -1048,7 +1046,7 @@ void SV_WalkMove (edict_t *ent)
 // move down
 	downtrace = SV_PushEntity (ent, downmove, vec3_origin);	// FIXME: don't link?
 
-	if (downtrace.plane.normal[2] > 0.7)
+	if (downtrace.plane.normal[2] > 0.7f)
 	{
 		if (ent->v.solid == SOLID_BSP)
 		{
@@ -1150,7 +1148,7 @@ void SV_MonsterWalkMove (edict_t *ent)
 	VectorCopy (vec3_origin, upmove);
 	VectorCopy (vec3_origin, downmove);
 	upmove[2] = STEPSIZE;
-	downmove[2] = -STEPSIZE + oldvel[2]*host_frametime;
+	downmove[2] = -STEPSIZE + oldvel[2]*(float)host_frametime;
 
 // move up
 	SV_PushMonsterEntity (ent, upmove);	// FIXME: don't link?
@@ -1178,7 +1176,7 @@ void SV_MonsterWalkMove (edict_t *ent)
 // move down
 	downtrace = SV_PushMonsterEntity (ent, downmove);	// FIXME: don't link?
 
-	if (downtrace.plane.normal[2] > 0.7)
+	if (downtrace.plane.normal[2] > 0.7f)
 	{
 		if (downtrace.ent->v.solid == SOLID_BSP)
 		{
@@ -1288,13 +1286,13 @@ void SV_PushAwayZombies(edict_t *ent)
 		if( other_ent->v.movetype != MOVETYPE_WALK)
 			continue;
 		for (j=0 ; j<3 ; j++)
-			eorg[j] = org[j] - (other_ent->v.origin[j] + (other_ent->v.mins[j] + other_ent->v.maxs[j])*0.5);
+			eorg[j] = org[j] - (other_ent->v.origin[j] + (other_ent->v.mins[j] + other_ent->v.maxs[j])*0.5f);
 		if (Length(eorg) > rad)
 			continue;
 		
 		//Process nearby zombie
 		for(j = 0; j < 2; j++)//only x & y
-			other_ent->v.velocity[j] += (other_ent->v.origin[j] - ent->v.origin[j]) * 0.001;//push away other zombie
+			other_ent->v.velocity[j] += (other_ent->v.origin[j] - ent->v.origin[j]) * 0.001f;//push away other zombie
 			//ent->v.velocity[j] += (ent->v.origin[j] - other_ent->v.origin[j]) * 0.01;//push away self
 	}
 }
@@ -1322,7 +1320,7 @@ void SV_Physics_Walk(edict_t 	*ent)
 
 	//if (!((int)ent->v.flags & (FL_ONGROUND)))
 	//{
-		ent->v.velocity[2] -= 1.0 * sv_gravity.value * host_frametime;
+		ent->v.velocity[2] -= 1.0f * sv_gravity.value * (float)host_frametime;
 		SV_CheckVelocity (ent);
 	//}
 
@@ -1336,7 +1334,7 @@ void SV_Physics_Walk(edict_t 	*ent)
 	trace_t	downtrace;
 	vec3_t	groundlocation;
 	VectorCopy(ent->v.origin,groundlocation);
-	groundlocation[2] += -STEPSIZE + ent->v.velocity[2]*host_frametime;
+	groundlocation[2] += -STEPSIZE + ent->v.velocity[2]*(float)host_frametime;
 	
 	downtrace = SV_Move(ent->v.origin,ent->v.mins,ent->v.maxs,groundlocation, MOVE_NOMONSTERS,ent);
 
@@ -1345,7 +1343,7 @@ void SV_Physics_Walk(edict_t 	*ent)
 		VectorCopy (downtrace.endpos, ent->v.origin);
 	
 		ent->v.flags = (int) ent->v.flags & ~FL_ONGROUND;
-		if (downtrace.plane.normal[2] > 0.7)
+		if (downtrace.plane.normal[2] > 0.7f)
 		{
 			if(downtrace.ent)
 			{
@@ -1625,7 +1623,7 @@ void SV_Physics_Toss (edict_t *ent)
 	ClipVelocity (ent->v.velocity, trace.plane.normal, ent->v.velocity, backoff);
 
 // stop if on ground
-	if (trace.plane.normal[2] > 0.7)
+	if (trace.plane.normal[2] > 0.7f)
 	{
 #ifdef QUAKE2
 		if (ent->v.velocity[2] < 60 || (ent->v.movetype != MOVETYPE_BOUNCE && ent->v.movetype != MOVETYPE_BOUNCEMISSILE))

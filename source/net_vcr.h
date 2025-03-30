@@ -17,7 +17,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-// net_vcr.h
+// net_vcr.
+
+#include "nzportable_def.h"
 
 #define VCR_OP_CONNECT					1
 #define VCR_OP_GETMESSAGE				2

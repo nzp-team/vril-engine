@@ -195,7 +195,7 @@ void R_InterpolateEntity(entity_t *e, int shadow)	// Tomaz - New Shadow
 	
 	// positional interpolation
 	
-	timepassed = realtime - e->translate_start_time;
+	timepassed = (float)realtime - e->translate_start_time;
 	
 	//notes to self (blubs)
 	//-Added this method, and commented out the check for r_i_model_transforms.value
@@ -222,7 +222,7 @@ void R_InterpolateEntity(entity_t *e, int shadow)	// Tomaz - New Shadow
 	}
 	else
 	{
-		blend =  timepassed / 0.4;//0.1 not sure what this value should be...
+		blend =  timepassed / 0.4f;//0.1 not sure what this value should be...
 		//technically this value should be the total amount of time that we take from 1 position to the next, it's practically how long it should take us to go from one location to the next...
 		if (cl.paused || blend > 1)
 			blend = 0;
@@ -233,7 +233,7 @@ void R_InterpolateEntity(entity_t *e, int shadow)	// Tomaz - New Shadow
 	glTranslatef (e->origin[0] + (blend * deltaVec[0]),  e->origin[1] + (blend * deltaVec[1]),  e->origin[2] + (blend * deltaVec[2]));
 
 	// orientation interpolation (Euler angles, yuck!)
-	timepassed = realtime - e->rotate_start_time;
+	timepassed = (float)realtime - e->rotate_start_time;
 	
 	if (e->rotate_start_time == 0 || timepassed > 1)
 	{
@@ -251,7 +251,7 @@ void R_InterpolateEntity(entity_t *e, int shadow)	// Tomaz - New Shadow
 	}
 	else
 	{
-		blend = timepassed / 0.1;
+		blend = timepassed / 0.1f;
 		if (cl.paused || blend > 1)
 			blend = 1;
 	}
@@ -271,11 +271,11 @@ void R_InterpolateEntity(entity_t *e, int shadow)	// Tomaz - New Shadow
 		}
 	}
 
-	glRotatef ((e->angles1[YAW] + ( blend * deltaVec[YAW])) * (M_PI / 180.0f),  0, 0, 1);
+	glRotatef ((e->angles1[YAW] + ( blend * deltaVec[YAW])) * ((float)M_PI / 180.0f),  0, 0, 1);
 	if (shadow == 0)
 	{
-		glRotatef ((-e->angles1[PITCH] + (-blend * deltaVec[PITCH])) * (M_PI / 180.0f),  0, 1, 0);
-    	glRotatef ((e->angles1[ROLL] + ( blend * deltaVec[ROLL])) * (M_PI / 180.0f),  1, 0, 0);
+		glRotatef ((-e->angles1[PITCH] + (-blend * deltaVec[PITCH])) * ((float)M_PI / 180.0f),  0, 1, 0);
+    	glRotatef ((e->angles1[ROLL] + ( blend * deltaVec[ROLL])) * ((float)M_PI / 180.0f),  1, 0, 0);
 	}
 }
 
@@ -342,7 +342,7 @@ mspriteframe_t *R_GetSpriteFrame (entity_t *currententity)
 		numframes = pspritegroup->numframes;
 		fullinterval = pintervals[numframes-1];
 
-		time = cl.time + currententity->syncbase;
+		time = (float)cl.time + currententity->syncbase;
 
 	// when loading in Mod_LoadSpriteGroup, we guaranteed all interval values
 	// are positive, so we don't have to worry about division by 0
@@ -607,7 +607,7 @@ void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 	verts += posenum * paliashdr->poseverts;
 	order = (int *)((byte *)paliashdr + paliashdr->commands);
 
-	height = -lheight + 1.0;
+	height = -lheight + 1.0f;
 
 	while (1)
 	{
@@ -671,7 +671,7 @@ void R_SetupAliasFrame (int frame, aliashdr_t *paliashdr)
 	if (numposes > 1)
 	{
 		interval = paliashdr->frames[frame].interval;
-		pose += (int)(cl.time / interval) % numposes;
+		pose += (int)((float)cl.time / interval) % numposes;
 	}
 	
 	GL_DrawAliasFrame(paliashdr, pose);
@@ -718,7 +718,7 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 		if (numposes > 1)
 		{
 			e->frame_interval = paliashdr->frames[frame].interval;
-			pose += (int)(cl.time / e->frame_interval) % numposes;
+			pose += (int)((float)cl.time / e->frame_interval) % numposes;
 		}
 		else
 		{
@@ -739,7 +739,7 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 			blend = 0;
 		}
 		else
-			blend = (realtime - e->frame_start_time) / e->frame_interval;
+			blend = ((float)realtime - e->frame_start_time) / e->frame_interval;
 		// wierd things start happening if blend passes 1
 		if (cl.paused || blend > 1) blend = 1;
 
@@ -1013,7 +1013,7 @@ void R_DrawAliasModel (entity_t *e)
 
 	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
 	{
-		if (cl_dlights[lnum].die >= cl.time)
+		if (cl_dlights[lnum].die >= (float)cl.time)
 		{
 			VectorSubtract (currententity->origin,
 							cl_dlights[lnum].origin,
@@ -1045,12 +1045,12 @@ void R_DrawAliasModel (entity_t *e)
 		|| !strcmp (clmodel->name, "progs/flame.mdl") )
 		ambientlight = shadelight = 256;
 
-	shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
-	shadelight = shadelight / 200.0;
+	shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0f))) & (SHADEDOT_QUANT - 1)];
+	shadelight = shadelight / 200.0f;
 	
-	an = e->angles[1]/180*M_PI;
-	shadevector[0] = cos(-an);
-	shadevector[1] = sin(-an);
+	an = e->angles[1]/180*(float)M_PI;
+	shadevector[0] = cosf(-an);
+	shadevector[1] = sinf(-an);
 	shadevector[2] = 1;
 	VectorNormalize (shadevector);
 
@@ -1107,7 +1107,7 @@ void R_DrawAliasModel (entity_t *e)
 
 		// Special handling of view model to keep FOV from altering look.  Pretty good.  Not perfect but rather close.
 		if ((e == &cl.viewent || e == &cl.viewent2) && scr_fov_viewmodel.value) {
-			float scale = 1.0f / tan (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
+			float scale = 1.0f / tanf (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
 			if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) scale *= ENTSCALE_DECODE(e->scale);
 			glTranslatef (paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
 			glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
@@ -1340,7 +1340,7 @@ void R_DrawView2Model (void)
 			continue;
 		if (!dl->radius)
 			continue;
-		if (dl->die < cl.time)
+		if (dl->die < (float)cl.time)
 			continue;
 
 		VectorSubtract (currententity->origin, dl->origin, dist);
@@ -1409,7 +1409,7 @@ void R_DrawViewModel (void)
 			continue;
 		if (!dl->radius)
 			continue;
-		if (dl->die < cl.time)
+		if (dl->die < (float)cl.time)
 			continue;
 
 		VectorSubtract (currententity->origin, dl->origin, dist);
@@ -1503,13 +1503,13 @@ void R_SetFrustum (void)
 		// naievil -- hi, this is floored because any basically non integer(? i think short precision float) value made the rendering all fucked up
 		// so hope this helps (it does). This reduces some accuracy but it is not as important
 		// rotate VPN right by FOV_X/2 degrees
-		RotatePointAroundVector( frustum[0].normal, vup, vpn, floor(-(90-r_refdef.fov_x / 2 )) );
+		RotatePointAroundVector( frustum[0].normal, vup, vpn, floorf(-(90-r_refdef.fov_x / 2 )) );
 		// rotate VPN left by FOV_X/2 degrees
-		RotatePointAroundVector( frustum[1].normal, vup, vpn, floor(90-r_refdef.fov_x / 2) );
+		RotatePointAroundVector( frustum[1].normal, vup, vpn, floorf(90-r_refdef.fov_x / 2) );
 		// rotate VPN up by FOV_X/2 degrees
-		RotatePointAroundVector( frustum[2].normal, vright, vpn, floor(90-r_refdef.fov_y / 2) );
+		RotatePointAroundVector( frustum[2].normal, vright, vpn, floorf(90-r_refdef.fov_y / 2) );
 		// rotate VPN down by FOV_X/2 degrees
-		RotatePointAroundVector( frustum[3].normal, vright, vpn, floor(-( 90 - r_refdef.fov_y / 2 )) );
+		RotatePointAroundVector( frustum[3].normal, vright, vpn, floorf(-( 90 - r_refdef.fov_y / 2 )) );
 	}
 
 	for (i=0 ; i<4 ; i++)
@@ -1691,7 +1691,7 @@ R_Clear
 */
 void R_Clear (void)
 {
-	if (r_mirroralpha.value != 1.0)
+	if (r_mirroralpha.value != 1.0f)
 	{
 		if (gl_clear.value)
 			glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1758,8 +1758,8 @@ void R_Mirror (void)
 	d = DotProduct (vpn, mirror_plane->normal);
 	VectorMA (vpn, -2*d, mirror_plane->normal, vpn);
 
-	r_refdef.viewangles[0] = -asin (vpn[2])/M_PI*180;
-	r_refdef.viewangles[1] = atan2 (vpn[1], vpn[0])/M_PI*180;
+	r_refdef.viewangles[0] = -asinf (vpn[2])/(float)M_PI*180;
+	r_refdef.viewangles[1] = atan2f (vpn[1], vpn[0])/(float)M_PI*180;
 	r_refdef.viewangles[2] = -r_refdef.viewangles[2];
 
 	ent = &cl_entities[cl.viewentity];

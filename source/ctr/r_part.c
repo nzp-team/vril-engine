@@ -145,13 +145,13 @@ void R_EntityParticles (entity_t *ent)
 
 	for (i=0 ; i<NUMVERTEXNORMALS ; i++)
 	{
-		angle = cl.time * avelocities[i][0];
-		sy = sin(angle);
-		cy = cos(angle);
-		angle = cl.time * avelocities[i][1];
-		sp = sin(angle);
-		cp = cos(angle);
-		angle = cl.time * avelocities[i][2];
+		angle = (float)cl.time * avelocities[i][0];
+		sy = sinf(angle);
+		cy = cosf(angle);
+		angle = (float)cl.time * avelocities[i][1];
+		sp = sinf(angle);
+		cp = cosf(angle);
+		angle = (float)cl.time * avelocities[i][2];
 	
 		forward[0] = cp*cy;
 		forward[1] = cp*sy;
@@ -722,13 +722,13 @@ void R_Classic_DrawParticles (void)
 	time3 = frametime * 15;
 	time2 = frametime * 10; // 15;
 	time1 = frametime * 5;
-	grav = frametime * sv_gravity.value * 0.05;
+	grav = frametime * sv_gravity.value * 0.05f;
 	dvel = 4*frametime;
 	
 	for ( ;; ) 
 	{
 		kill = active_particles;
-		if (kill && kill->die < cl.time)
+		if (kill && kill->die < (float)cl.time)
 		{
 			active_particles = kill->next;
 			kill->next = free_particles;
@@ -743,7 +743,7 @@ void R_Classic_DrawParticles (void)
 		for ( ;; )
 		{
 			kill = p->next;
-			if (kill && kill->die < cl.time)
+			if (kill && kill->die < (float)cl.time)
 			{
 				p->next = kill->next;
 				kill->next = free_particles;
@@ -760,7 +760,7 @@ void R_Classic_DrawParticles (void)
 		if (scale < 20)
 			scale = 1;
 		else
-			scale = 1 + scale * 0.004;
+			scale = 1 + scale * 0.004f;
 		
 		glColor4ubv (p->color);
 		glTexCoord2f (0,0);
