@@ -28,7 +28,7 @@ int		texture_mode = GL_LINEAR;
 
 int		texture_extension_number = 1;
 
-float	gldepthmin, gldepthmax;
+double	gldepthmin, gldepthmax;
 
 cvar_t	gl_ztrick = {"gl_ztrick","0"};
 
@@ -61,8 +61,8 @@ void GL_Init (void)
 
 #pragma GCC diagnostic pop
 
-	glClearDepth (1.0f);
-	glClearColor ((float)(16/255),(float)(32/255),(float)(64/255),1);
+	glClearDepth (1.0);
+	glClearColor ((float)(16.0f/255),(float)(32.0f/255),(float)(64.0f/255),1);
 	glCullFace(GL_FRONT);
 	glEnable(GL_TEXTURE_2D);
 
@@ -177,8 +177,8 @@ static void Check_Gamma (unsigned char *pal)
 
 	for (i=0 ; i<768 ; i++)
 	{
-		f = pow ( (pal[i]+1)/256.0 , vid_gamma );
-		inf = f*255 + 0.5;
+		f = powf ( (pal[i]+1)/256.0 , vid_gamma );
+		inf = f*255 + 0.5f;
 		if (inf < 0)
 			inf = 0;
 		if (inf > 255)
@@ -229,7 +229,7 @@ void	VID_Init (unsigned char *palette)
 	vid.height = 240;
 
 	vid.aspect = ((float)vid.height / (float)vid.width) *
-				(320.0 / 240.0);
+				(320.0f / 240.0f);
 	vid.numpages = 2;
 
 	GL_Init();

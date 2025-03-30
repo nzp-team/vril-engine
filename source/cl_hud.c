@@ -280,8 +280,8 @@ void HUD_NewMap (void)
 	point_change_interval = 0;
 	point_change_interval_neg = 0;
 
-	round_center_x = (vid.width - sb_round[0]->width) /2;
-	round_center_y = (vid.height - sb_round[0]->height) /2;
+	round_center_x = (vid.width - sb_round[0]->width) / 2.0f;
+	round_center_y = (vid.height - sb_round[0]->height) / 2.0f;
 	
 	bettyprompt_time = 0;
 	nameprint_time = 0;
@@ -310,8 +310,7 @@ int HUD_itoa (int num, char *buf)
 		num = -num;
 	}
 
-	for (pow10 = 10 ; num >= pow10 ; pow10 *= 10)
-	;
+	for (pow10 = 10 ; num >= pow10 ; pow10 *= 10);
 
 	do
 	{
@@ -477,10 +476,10 @@ void HUD_Parse_Point_Change (int points, int negative, int x_start, int y_start)
 	point_change[i].negative = negative;
 
 	f = HUD_itoa (points, str);
-	point_change[i].x = x_start + (10.0 + 8.0*f * hud_scale_factor);
+	point_change[i].x = x_start + (10.0f + 8.0f*f * hud_scale_factor);
 	point_change[i].y = y_start;
-	point_change[i].move_x = (1.0 * hud_scale_factor);
-	point_change[i].move_y = ((rand ()&0x7fff) / ((float)0x7fff)) - (0.5 * hud_scale_factor);
+	point_change[i].move_x = (1.0f * hud_scale_factor);
+	point_change[i].move_y = ((rand ()&RAND_MAX) / ((float)RAND_MAX)) - (0.5f * hud_scale_factor);
 
 	point_change[i].alive_time = Sys_FloatTime() + 0.4;
 }
@@ -609,9 +608,9 @@ void HUD_Blood (void)
 	//this function scales linearly from health = 0 to health = 100
 	//alpha = (100.0 - (float)cl.stats[STAT_HEALTH])/100*255;
 	//but we want the picture to be fully visible at health = 20, so use this function instead
-	alpha = (100.0 - ((1.25 * (float) cl.stats[STAT_HEALTH]) - 25))/100*255;
+	alpha = (100.0f - ((1.25f * cl.stats[STAT_HEALTH]) - 25))/100*255;
 	
-	if (alpha <= 0.0)
+	if (alpha <= 0.0f)
 		return;
     
 #ifdef PSP_VFPU
@@ -620,14 +619,14 @@ void HUD_Blood (void)
 	float modifier = (sin(cl.time * 10) * 20) - 20;//always negative
 #endif // PSP_VFPU
 
-	if(modifier < -35.0)
-		modifier = -35.0;
+	if(modifier < -35.0f)
+		modifier = -35.0f;
     
 	alpha += modifier;
     
-	if(alpha < 0.0)
+	if(alpha < 0.0f)
 		return;
-	float color = 255.0 + modifier;
+	float color = 255.0f + modifier;
     
 	Draw_ColoredStretchPic(0, 0, fx_blood_lu, vid.width, vid.height, color, color, color, alpha);
 }
@@ -680,19 +679,19 @@ void HUD_WorldText(int alpha)
 		if (!strcmp("chaptertitle", key)) // search for chaptertitle key
 		{
 			has_chaptertitle = true;
-			Draw_ColoredString(6 * hud_scale_factor, vid.height/2 + (10 * hud_scale_factor), value, 255, 255, 255, alpha, hud_scale_factor);	
+			Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (10 * hud_scale_factor), value, 255, 255, 255, alpha, hud_scale_factor);	
 		}
 		if (!strcmp("location", key)) // search for location key
 		{
-			Draw_ColoredString(6 * hud_scale_factor, vid.height/2 + (20 * hud_scale_factor), value, 255, 255, 255, alpha, hud_scale_factor);
+			Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (20 * hud_scale_factor), value, 255, 255, 255, alpha, hud_scale_factor);
 		}
 		if (!strcmp("date", key)) // search for date key
 		{
-			Draw_ColoredString(6 * hud_scale_factor, vid.height/2 + (30 * hud_scale_factor), value, 255, 255, 255, alpha, hud_scale_factor);
+			Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (30 * hud_scale_factor), value, 255, 255, 255, alpha, hud_scale_factor);
 		}
 		if (!strcmp("person", key)) // search for person key
 		{
-			Draw_ColoredString(6 * hud_scale_factor, vid.height/2 + (40 * hud_scale_factor), value, 255, 255, 255, alpha, hud_scale_factor);
+			Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (40 * hud_scale_factor), value, 255, 255, 255, alpha, hud_scale_factor);
 		}
 	}
 }
@@ -795,7 +794,7 @@ void HUD_Rounds (void)
 		HUD_WorldText(value2);
 		
 		if (has_chaptertitle == false)
-			Draw_ColoredString(6 * hud_scale_factor, vid.height/2 + (10 * hud_scale_factor), "'Nazi Zombies'", 255, 255, 255, value2, hud_scale_factor);
+			Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (10 * hud_scale_factor), "'Nazi Zombies'", 255, 255, 255, value2, hud_scale_factor);
 		
 		value -= cl.time * 0.4;
 		value2 += cl.time * 0.4;
@@ -811,7 +810,7 @@ void HUD_Rounds (void)
 		HUD_WorldText(255);
 		
 		if (has_chaptertitle == false)
-			Draw_ColoredString(6 * hud_scale_factor, vid.height/2 + (10 * hud_scale_factor), "'Nazi Zombies'", 255, 255, 255, 255, hud_scale_factor);
+			Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (10 * hud_scale_factor), "'Nazi Zombies'", 255, 255, 255, 255, hud_scale_factor);
 
 		value2 += cl.time * 0.4;
 
@@ -825,7 +824,7 @@ void HUD_Rounds (void)
 		HUD_WorldText(value2);
 		
 		if (has_chaptertitle == false)
-			Draw_ColoredString(6 * hud_scale_factor, vid.height/2 + (10 * hud_scale_factor), "'Nazi Zombies'", 255, 255, 255, value2, hud_scale_factor);
+			Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (10 * hud_scale_factor), "'Nazi Zombies'", 255, 255, 255, value2, hud_scale_factor);
 
 		value2 -= cl.time * 0.4;
 
@@ -860,8 +859,8 @@ void HUD_Rounds (void)
 	{
 		Draw_ColoredStretchPic(round_center_x, round_center_y, sb_round[0], 
 		sb_round[0]->width * hud_scale_factor, sb_round[0]->height * hud_scale_factor, 107, 1, 0, 255);
-		round_center_x = round_center_x - (229/108) - (0.2 * hud_scale_factor);
-		round_center_y = round_center_y + (0.95 * hud_scale_factor); // don't move y too quickly
+		round_center_x = round_center_x - (229.0f/108.0f) - (0.2f * hud_scale_factor);
+		round_center_y = round_center_y + (0.95f * hud_scale_factor); // don't move y too quickly
 		if (round_center_x <= 5 * hud_scale_factor)
 			round_center_x = 5 * hud_scale_factor;
 		if (round_center_y >= vid.height - (sb_round[0]->height * hud_scale_factor) - 2)
@@ -948,7 +947,7 @@ void HUD_Rounds (void)
 	}
 	else if (cl.stats[STAT_ROUNDCHANGE] == 4)//blink white
 	{
-		if (endroundchange > cl.time) {
+		if (endroundchange > (float)cl.time) {
 			blinking = (((int)(realtime*475)&510) - 255);
 			blinking = abs(blinking);
 		} else {
@@ -1385,13 +1384,13 @@ void HUD_Powerups (void)
 
 	// both are avail draw fixed order
 	if (count == 2) {
-		Draw_StretchPic((vid.width/2) - (27 * hud_scale_factor), vid.height - (29 * hud_scale_factor), x2pic, scale, scale);
-		Draw_StretchPic((vid.width/2) + (3 * hud_scale_factor), vid.height - (29 * hud_scale_factor), instapic, scale, scale);
+		Draw_StretchPic((vid.width/2.0f) - (27 * hud_scale_factor), vid.height - (29 * hud_scale_factor), x2pic, scale, scale);
+		Draw_StretchPic((vid.width/2.0f) + (3 * hud_scale_factor), vid.height - (29 * hud_scale_factor), instapic, scale, scale);
 	} else {
 		if (cl.stats[STAT_X2])
-			Draw_StretchPic((vid.width/2) - (13 * hud_scale_factor), vid.height - (29 * hud_scale_factor), x2pic, scale, scale);
+			Draw_StretchPic((vid.width/2.0f) - (13 * hud_scale_factor), vid.height - (29 * hud_scale_factor), x2pic, scale, scale);
 		if(cl.stats[STAT_INSTA])
-			Draw_StretchPic ((vid.width/2) - (13 * hud_scale_factor), vid.height - (29 * hud_scale_factor), instapic, scale, scale);
+			Draw_StretchPic ((vid.width/2.0f) - (13 * hud_scale_factor), vid.height - (29 * hud_scale_factor), instapic, scale, scale);
 	}
 }
 
@@ -1437,7 +1436,7 @@ void HUD_Achievement (void)
 
 	if (achievement_unlocked == 1)
 	{
-		smallsec = smallsec + 0.7;
+		smallsec = smallsec + 0.7f;
 		if (smallsec >= 55)
 			smallsec = 55;
 		//Background image

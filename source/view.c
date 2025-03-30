@@ -133,11 +133,11 @@ float V_CalcBob (float speed,float which)//0 = regular, 1 = side bobbing
 		return bob;
 
 	// Bob idle-y, instead of presenting as if in-motion.
-	if (speed < 0.1) {
+	if (speed < 0.1f) {
 		if(cl.stats[STAT_ZOOM] == 1)
-			speed = 0.05;
+			speed = 0.05f;
 		else
-			speed = 0.25;
+			speed = 0.25f;
 
 #ifdef PSP_VFPU
 
@@ -149,9 +149,9 @@ float V_CalcBob (float speed,float which)//0 = regular, 1 = side bobbing
 #else
 
 		if (which == 0)
-			bob = cl_bobup.value * 10 * speed * (sprint * sprint) * sin(cl.time * 3.25 * sprint);
+			bob = cl_bobup.value * 10 * speed * (sprint * sprint) * sinf((float)cl.time * 3.25f * sprint);
 		else
-			bob = cl_bobside.value * 50 * speed * (sprint * sprint * sprint) * sin((cl.time * sprint) - (M_PI * 0.25));
+			bob = cl_bobside.value * 50 * speed * (sprint * sprint * sprint) * sinf(((float)cl.time * sprint) - ((float)M_PI * 0.25f));
 
 #endif // PSP_VFPU
 
@@ -159,7 +159,7 @@ float V_CalcBob (float speed,float which)//0 = regular, 1 = side bobbing
 	// Normal walk/sprint bob.
 	else {
 		if(cl.stats[STAT_ZOOM] == 3)
-			sprint = 1.8; //this gets sprinting speed in comparison to walk speed per weapon
+			sprint = 1.8f; //this gets sprinting speed in comparison to walk speed per weapon
 
 		//12.048 -> 4.3 = 100 -> 36ish, so replace 100 with 36
 
@@ -173,9 +173,9 @@ float V_CalcBob (float speed,float which)//0 = regular, 1 = side bobbing
 #else
 
 		if(which == 0)
-			bob = cl_bobup.value * 36 * speed * (sprint * sprint) * sin((cl.time * 12.5 * sprint));//Pitch Bobbing 10
+			bob = cl_bobup.value * 36 * speed * (sprint * sprint) * sinf(((float)cl.time * 12.5f * sprint));//Pitch Bobbing 10
 		else if(which == 1)
-			bob = cl_bobside.value * 36 * speed * (sprint * sprint * sprint) * sin((cl.time * 6.25 * sprint) - (M_PI * 0.25));//Yaw Bobbing 5
+			bob = cl_bobside.value * 36 * speed * (sprint * sprint * sprint) * sinf(((float)cl.time * 6.25f * sprint) - ((float)M_PI * 0.25f));//Yaw Bobbing 5
 
 #endif // PSP_VFPU 
 
@@ -239,11 +239,11 @@ float V_CalcVBob(float speed, float which)
 			bob = speed * 8.6 * (1/sprint) * vfpu_sinf((cl.time * 6.25 * sprint) - (M_PI * 0.25));//5
 		#else
 		if(which == 0)
-			bob = speed * 8.6 * (1/sprint) * sin((cl.time * 12.5 * sprint));//10
+			bob = speed * 8.6f * (1/sprint) * sinf((float)cl.time * 12.5f * sprint);//10
 		else if(which == 1)
-			bob = speed * 8.6 * (1/sprint) * sin((cl.time * 6.25 * sprint) - (M_PI * 0.25));//5
+			bob = speed * 8.6f * (1/sprint) * sinf(((float)cl.time * 6.25f * sprint) - ((float)M_PI * 0.25f));//5
 		else if(which == 2)
-			bob = speed * 8.6 * (1/sprint) * sin((cl.time * 6.25 * sprint) - (M_PI * 0.25));//5
+			bob = speed * 8.6f * (1/sprint) * sinf(((float)cl.time * 6.25f * sprint) - ((float)M_PI * 0.25f));//5
 		#endif
 	}
 	else
@@ -257,21 +257,21 @@ float V_CalcVBob(float speed, float which)
 			bob = speed * 8.6 * (1/sprint) * vfpu_cosf((cl.time * 6.25 * sprint));
 		#else
 		if(which == 0)
-			bob = speed * 8.6 * (1/sprint) * cos((cl.time * 6.25 * sprint));
+			bob = speed * 8.6f * (1/sprint) * cosf((float)cl.time * 6.25f * sprint);
 		else if(which == 1)
-			bob = speed * 8.6 * (1/sprint) * cos((cl.time * 12.5 * sprint));
+			bob = speed * 8.6f * (1/sprint) * cosf((float)cl.time * 12.5f * sprint);
 		else if(which == 2)
-			bob = speed * 8.6 * (1/sprint) * cos((cl.time * 6.25 * sprint));
+			bob = speed * 8.6f * (1/sprint) * cosf((float)cl.time * 6.25f * sprint);
 		#endif
 	}
 
 
-	if(speed > 0.1 && which == 0)
+	if(speed > 0.1f && which == 0)
 	{
 		#ifdef PSP_VFPU
 		if(canStep && vfpu_sinf(cl.time * 12.5 * sprint) < -0.8)
 		#else
-		if(canStep && sin(cl.time * 12.5 * sprint) < -0.8)
+		if(canStep && sinf((float)cl.time * 12.5f * sprint) < -0.8f)
 		#endif
 		{
 			PlayStepSound();
@@ -280,7 +280,7 @@ float V_CalcVBob(float speed, float which)
 		#ifdef PSP_VFPU
 		if(vfpu_sinf(cl.time * 12.5 * sprint) > 0.9)
 		#else
-		if(sin(cl.time * 12.5 * sprint) > 0.9)
+		if(sinf((float)cl.time * 12.5f * sprint) > 0.9f)
 		#endif
 		{
 			canStep = 1;
@@ -349,7 +349,7 @@ void V_DriftPitch (void)
 		if ( fabsf(cl.cmd.forwardmove) < cl_forwardspeed)
 			cl.driftmove = 0;
 		else
-			cl.driftmove += host_frametime;
+			cl.driftmove += (float)host_frametime;
 
 		if ( cl.driftmove > v_centermove.value)
 		{
@@ -366,8 +366,8 @@ void V_DriftPitch (void)
 		return;
 	}
 
-	move = host_frametime * cl.pitchvel;
-	cl.pitchvel += host_frametime * v_centerspeed.value;
+	move = (float)host_frametime * cl.pitchvel;
+	cl.pitchvel += (float)host_frametime * v_centerspeed.value;
 
 //Con_Printf ("move: %f (%f)\n", move, host_frametime);
 
@@ -420,7 +420,7 @@ void BuildGammaTable (float g)
 {
 	int		i, inf;
 
-	if (g == 1.0)
+	if (g == 1.0f)
 	{
 		for (i=0 ; i<256 ; i++)
 			gammatable[i] = i;
@@ -429,7 +429,7 @@ void BuildGammaTable (float g)
 
 	for (i=0 ; i<256 ; i++)
 	{
-		inf = 255 * powf ( (i+0.5f)/255.5f , g ) + 0.5;
+		inf = 255 * powf ( (i+0.5f)/255.5f , g ) + 0.5f;
 		if (inf < 0)
 			inf = 0;
 		if (inf > 255)
@@ -604,9 +604,9 @@ void V_CalcBlend (void)
 		b = b*(1-a2) + cl.cshifts[j].destcolor[2]*a2;
 	}
 
-	v_blend[0] = r/255.0;
-	v_blend[1] = g/255.0;
-	v_blend[2] = b/255.0;
+	v_blend[0] = r/255.0f;
+	v_blend[1] = g/255.0f;
+	v_blend[2] = b/255.0f;
 	v_blend[3] = a;
 	if (v_blend[3] > 1)
 		v_blend[3] = 1;
@@ -752,12 +752,12 @@ void CalcGunAngle (void)
 	yaw = r_refdef.viewangles[YAW];
 	pitch = -r_refdef.viewangles[PITCH];
 
-	yaw = angledelta(yaw - r_refdef.viewangles[YAW]) * 0.4;
+	yaw = angledelta(yaw - r_refdef.viewangles[YAW]) * 0.4f;
 	if (yaw > 10)
 		yaw = 10;
 	if (yaw < -10)
 		yaw = -10;
-	pitch = angledelta(-pitch - r_refdef.viewangles[PITCH]) * 0.4;
+	pitch = angledelta(-pitch - r_refdef.viewangles[PITCH]) * 0.4f;
 	if (pitch > 10)
 		pitch = 10;
 	if (pitch < -10)
@@ -797,20 +797,20 @@ void CalcGunAngle (void)
 
 	float side;
 	side = V_CalcRoll (cl_entities[cl.viewentity].angles, cl.velocity);
-	cl.viewent.angles[ROLL] = angledelta(cl.viewent.angles[ROLL] - ((cl.viewent.angles[ROLL] - (side * 5)) * 0.5));
+	cl.viewent.angles[ROLL] = angledelta(cl.viewent.angles[ROLL] - ((cl.viewent.angles[ROLL] - (side * 5)) * 0.5f));
 
 #ifndef __WII__
 	//^^^ Model swaying
 	if(cl.stats[STAT_ZOOM] == 1)
 	{
-		cl.viewent.angles[YAW] = (r_refdef.viewangles[YAW] + yaw) - (angledelta((r_refdef.viewangles[YAW] + yaw) - OldYawTheta ) * 0.3);//0.6
+		cl.viewent.angles[YAW] = (r_refdef.viewangles[YAW] + yaw) - (angledelta((r_refdef.viewangles[YAW] + yaw) - OldYawTheta ) * 0.3f);//0.6
 	}
 	else
 	{
-		cl.viewent.angles[YAW] = (r_refdef.viewangles[YAW] + yaw) - (angledelta((r_refdef.viewangles[YAW] + yaw) - OldYawTheta ) * 0.6);//0.6
+		cl.viewent.angles[YAW] = (r_refdef.viewangles[YAW] + yaw) - (angledelta((r_refdef.viewangles[YAW] + yaw) - OldYawTheta ) * 0.6f);//0.6
 	}
 
-	cl.viewent.angles[PITCH] = -1 * ((r_refdef.viewangles[PITCH] + pitch) - (angledelta((r_refdef.viewangles[PITCH] + pitch) + OldPitchTheta ) * 0.2));
+	cl.viewent.angles[PITCH] = -1 * ((r_refdef.viewangles[PITCH] + pitch) - (angledelta((r_refdef.viewangles[PITCH] + pitch) + OldPitchTheta ) * 0.2f));
 
 	//cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch);
 #else
@@ -864,9 +864,9 @@ void CalcGunAngle (void)
 	OldYawTheta = cl.viewent.angles[YAW];
 	OldPitchTheta = cl.viewent.angles[PITCH];
 	//readd this
-	cl.viewent2.angles[ROLL] = cl.viewent.angles[ROLL] -= v_idlescale.value * sinf(cl.time*v_iroll_cycle.value * 2) * v_iroll_level.value;
-	cl.viewent2.angles[PITCH] = cl.viewent.angles[PITCH] -= v_idlescale.value * sinf(cl.time*v_ipitch_cycle.value * 2) * v_ipitch_level.value;
-	cl.viewent2.angles[YAW] = cl.viewent.angles[YAW] -= v_idlescale.value * sinf(cl.time*v_iyaw_cycle.value * 2) * v_iyaw_level.value;
+	cl.viewent2.angles[ROLL] = cl.viewent.angles[ROLL] -= v_idlescale.value * sinf((float)cl.time*v_iroll_cycle.value * 2) * v_iroll_level.value;
+	cl.viewent2.angles[PITCH] = cl.viewent.angles[PITCH] -= v_idlescale.value * sinf((float)cl.time*v_ipitch_cycle.value * 2) * v_ipitch_level.value;
+	cl.viewent2.angles[YAW] = cl.viewent.angles[YAW] -= v_idlescale.value * sinf((float)cl.time*v_iyaw_cycle.value * 2) * v_iyaw_level.value;
 
 	//Evaluating total offset
 		CWeaponRot[PITCH] -= cl.viewent.angles[PITCH];
@@ -912,9 +912,9 @@ Idle swaying
 */
 void V_AddIdle (void)
 {
-	r_refdef.viewangles[ROLL] += v_idlescale.value * sinf(cl.time*v_iroll_cycle.value) * v_iroll_level.value;
-	r_refdef.viewangles[PITCH] += v_idlescale.value * sinf(cl.time*v_ipitch_cycle.value) * v_ipitch_level.value;
-	r_refdef.viewangles[YAW] += v_idlescale.value * sinf(cl.time*v_iyaw_cycle.value) * v_iyaw_level.value;
+	r_refdef.viewangles[ROLL] += v_idlescale.value * sinf((float)cl.time*v_iroll_cycle.value) * v_iroll_level.value;
+	r_refdef.viewangles[PITCH] += v_idlescale.value * sinf((float)cl.time*v_ipitch_cycle.value) * v_ipitch_level.value;
+	r_refdef.viewangles[YAW] += v_idlescale.value * sinf((float)cl.time*v_iyaw_cycle.value) * v_iyaw_level.value;
 }
 
 
@@ -936,7 +936,7 @@ void V_CalcViewRoll (void)
 	{
 		r_refdef.viewangles[ROLL] += v_dmg_time/v_kicktime.value*v_dmg_roll;
 		r_refdef.viewangles[PITCH] += v_dmg_time/v_kicktime.value*v_dmg_pitch;
-		v_dmg_time -= host_frametime;
+		v_dmg_time -= (float)host_frametime;
 	}
 
 
@@ -996,7 +996,7 @@ void DropRecoilKick (void)
 	len = VectorNormalize (cl.gun_kick);
 
 	//Con_Printf ("len = %f\n",len);
-	len = len - 5*host_frametime;
+	len = len - 5*(float)host_frametime;
 	if (len < 0)
 		len = 0;
 	VectorScale (cl.gun_kick, len, cl.gun_kick);
@@ -1037,9 +1037,9 @@ void V_CalcRefdef (void)
 // never let it sit exactly on a node line, because a water plane can
 // dissapear when viewed with the eye exactly on it.
 // the server protocol only specifies to 1/16 pixel, so add 1/32 in each axis
-	r_refdef.vieworg[0] += 1.0/32;
-	r_refdef.vieworg[1] += 1.0/32;
-	r_refdef.vieworg[2] += 1.0/32;
+	r_refdef.vieworg[0] += 1.0f/32;
+	r_refdef.vieworg[1] += 1.0f/32;
+	r_refdef.vieworg[2] += 1.0f/32;
 
 	VectorCopy (cl.viewangles, r_refdef.viewangles);
 	V_CalcViewRoll ();
@@ -1089,7 +1089,7 @@ void V_CalcRefdef (void)
 		}
 	}
 
-	cVerticalOffset += (VerticalOffset - cVerticalOffset) * 0.3;
+	cVerticalOffset += (VerticalOffset - cVerticalOffset) * 0.3f;
 
 	temp_up[0] *= cVerticalOffset;
 	temp_up[1] *= cVerticalOffset;
@@ -1126,9 +1126,9 @@ void V_CalcRefdef (void)
 		ADSOffset[2] = 0;
 	}
 	//Side offset
-	cADSOfs [0] += (ADSOffset[0] - cADSOfs[0]) * 0.25;
-	cADSOfs [1] += (ADSOffset[1] - cADSOfs[1]) * 0.25;
-	cADSOfs [2] += (ADSOffset[2] - cADSOfs[2]) * 0.25;
+	cADSOfs [0] += (ADSOffset[0] - cADSOfs[0]) * 0.25f;
+	cADSOfs [1] += (ADSOffset[1] - cADSOfs[1]) * 0.25f;
+	cADSOfs [2] += (ADSOffset[2] - cADSOfs[2]) * 0.25f;
 
 	temp_right[0] *= cADSOfs[0];
 	temp_right[1] *= cADSOfs[0];
@@ -1146,7 +1146,7 @@ void V_CalcRefdef (void)
 	view->origin[1] +=(temp_forward[1] + temp_right[1] + temp_up[1]);
 	view->origin[2] +=(temp_forward[2] + temp_right[2] + temp_up[2]);
 
-	float speed = (0.2 + sqrt((cl.velocity[0] * cl.velocity[0])	+	(cl.velocity[1] * cl.velocity[1])));
+	float speed = (0.2f + sqrtf((cl.velocity[0] * cl.velocity[0])	+	(cl.velocity[1] * cl.velocity[1])));
 	speed = speed/190;
 
 	float		bob, bobside = 0;
@@ -1160,8 +1160,8 @@ void V_CalcRefdef (void)
 	{
 		if (cl_sidebobbing.value)
 		{
-			view->origin[i] += right[i]*bobside*0.4;
-			view->origin[i] += up[i]*bob*0.5;
+			view->origin[i] += right[i]*bobside*0.4f;
+			view->origin[i] += up[i]*bob*0.5f;
 //			view2->origin[i] += right[i]*bobside*0.2;
 //			view2->origin[i] += up[i]*bob*0.2;
 //			mz->origin[i] += right[i]*bobside*0.2;
@@ -1169,7 +1169,7 @@ void V_CalcRefdef (void)
 		}
 		else
 		{
-			view->origin[i] += forward[i]*bob*0.4;
+			view->origin[i] += forward[i]*bob*0.4f;
 //			view2->origin[i] += forward[i]*bob*0.4;
 //			mz->origin[i] += forward[i]*bob*0.4;
 		}
@@ -1186,9 +1186,9 @@ void V_CalcRefdef (void)
 	vbob[1] = V_CalcVBob(speed,1) * cl_bob.value * 50;
 	vbob[2] = V_CalcVBob(speed,2) * cl_bob.value * 50;
 
-	r_refdef.viewangles[YAW] = angledelta(r_refdef.viewangles[YAW] + (vbob[0] * 0.1));
-	r_refdef.viewangles[PITCH] = angledelta(r_refdef.viewangles[PITCH] + (vbob[1] * 0.1));
-	r_refdef.viewangles[ROLL] = anglemod(r_refdef.viewangles[ROLL] + (vbob[2] * 0.05));
+	r_refdef.viewangles[YAW] = angledelta(r_refdef.viewangles[YAW] + (vbob[0] * 0.1f));
+	r_refdef.viewangles[PITCH] = angledelta(r_refdef.viewangles[PITCH] + (vbob[1] * 0.1f));
+	r_refdef.viewangles[ROLL] = anglemod(r_refdef.viewangles[ROLL] + (vbob[2] * 0.05f));
 
 
 
@@ -1213,9 +1213,9 @@ void V_CalcRefdef (void)
 // set up the refresh position
 
 	//blubs's punchangle interpolation
-	lastPunchAngle[0] += (cl.punchangle[0] - lastPunchAngle[0]) * 0.5;
-	lastPunchAngle[1] += (cl.punchangle[1] - lastPunchAngle[1]) * 0.5;
-	lastPunchAngle[2] += (cl.punchangle[2] - lastPunchAngle[2]) * 0.5;
+	lastPunchAngle[0] += (cl.punchangle[0] - lastPunchAngle[0]) * 0.5f;
+	lastPunchAngle[1] += (cl.punchangle[1] - lastPunchAngle[1]) * 0.5f;
+	lastPunchAngle[2] += (cl.punchangle[2] - lastPunchAngle[2]) * 0.5f;
 	//VectorCopy(cl.punchangle,lastPunchAngle);
 
 	VectorAdd (r_refdef.viewangles, lastPunchAngle, r_refdef.viewangles);
@@ -1635,7 +1635,7 @@ void V_RenderView (void)
 		int		i;
 		
 		vid.rowbytes <<= 1;
-		vid.aspect *= 0.5;
+		vid.aspect *= 0.5f;
 		
 		r_refdef.viewangles[YAW] -= lcd_yaw.value;
 		for (i=0 ; i<3 ; i++)
