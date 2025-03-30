@@ -129,7 +129,7 @@ edict_t *ED_Alloc (void)
 		e = EDICT_NUM(i);
 		// the first couple seconds of server time can involve a lot of
 		// freeing and allocating, so relax the replacement policy
-		if (e->free && ( e->freetime < 2 || sv.time - e->freetime > 0.5 ) )
+		if (e->free && ( e->freetime < 2 || (float)sv.time - e->freetime > 0.5f ) )
 		{
 			ED_ClearEdict (e);
 			return e;
@@ -347,10 +347,11 @@ char *PR_ValueString (etype_t type, eval_t *val)
 		sprintf (line, "void");
 		break;
 	case ev_float:
-		sprintf (line, "%5.1f", val->_float);
+		sprintf (line, "%5.1f", (double)val->_float);
 		break;
 	case ev_vector:
-		sprintf (line, "'%5.1f %5.1f %5.1f'", val->vector[0], val->vector[1], val->vector[2]);
+		sprintf (line, "'%5.1f %5.1f %5.1f'",
+			(double)val->vector[0], (double)val->vector[1], (double)val->vector[2]);
 		break;
 	case ev_pointer:
 		sprintf (line, "pointer");
@@ -399,10 +400,11 @@ char *PR_UglyValueString (etype_t type, eval_t *val)
 		sprintf (line, "void");
 		break;
 	case ev_float:
-		sprintf (line, "%f", val->_float);
+		sprintf (line, "%f", (double)val->_float);
 		break;
 	case ev_vector:
-		sprintf (line, "%f %f %f", val->vector[0], val->vector[1], val->vector[2]);
+		sprintf (line, "%f %f %f",
+			(double)val->vector[0], (double)val->vector[1], (double)val->vector[2]);
 		break;
 	default:
 		sprintf (line, "bad type %i", type);

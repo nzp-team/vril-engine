@@ -179,7 +179,7 @@ void SCR_DrawCenterString (void)
 
 // the finale prints the characters one at a time
 	if (cl.intermission)
-		remaining = scr_printspeed.value * (cl.time - scr_centertime_start);
+		remaining = scr_printspeed.value * ((float)cl.time - scr_centertime_start);
 	else
 		remaining = 9999;
 
@@ -231,7 +231,7 @@ void SCR_CheckDrawCenterString (void)
 	if (scr_center_lines > scr_erase_lines)
 		scr_erase_lines = scr_center_lines;
 
-	scr_centertime_off -= host_frametime;
+	scr_centertime_off -= (float)host_frametime;
 	
 	if (scr_centertime_off <= 0 && !cl.intermission)
 		return;
@@ -545,7 +545,7 @@ void SCR_CheckDrawUseString (void)
 {
 	scr_copytop = 1;
 
-	scr_usetime_off -= host_frametime;
+	scr_usetime_off -= (float)host_frametime;
 
 	if ((scr_usetime_off <= 0 && !cl.intermission) || key_dest != key_game || cl.stats[STAT_HEALTH] <= 0)
 		return;
@@ -566,13 +566,13 @@ float CalcFov (float fov_x, float width, float height)
         float   x;
 
         if (fov_x < 1 || fov_x > 179)
-                Sys_Error ("Bad fov: %f", fov_x);
+                Sys_Error ("Bad fov: %f", (double)fov_x);
 
-        x = width/tanf(fov_x/360*M_PI);
+        x = width/tanf(fov_x/360.0f*(float)M_PI);
 
         a = atanf (height/x);
 
-        a = a*360/M_PI;
+        a = a*360.0f/(float)M_PI;
 
         return a;
 }
@@ -623,7 +623,7 @@ static void SCR_CalcRefdef (void)
 	else
 		sb_lines = 24+16+8;
 
-	if (scr_viewsize.value >= 100.0) {
+	if (scr_viewsize.value >= 100.0f) {
 		full = true;
 		size = 100.0;
 	} else
@@ -634,7 +634,7 @@ static void SCR_CalcRefdef (void)
 		size = 100;
 		sb_lines = 0;
 	}
-	size /= 100.0;
+	size /= 100.0f;
 
 	h = vid.height - sb_lines;
 
@@ -775,9 +775,9 @@ int Random_Int (int max_int)
 	float	f;
 	f = (rand ()&0x7fff) / ((float)0x7fff) * max_int;
 	if (f > 0)
-		return (int)(f + 0.5) + 1;
+		return (int)(f + 0.5f) + 1;
 	else
-		return (int)(f - 0.5) + 1;
+		return (int)(f - 0.5f) + 1;
 }
 /*
 ==============
@@ -1122,20 +1122,20 @@ void SCR_SetUpToDrawConsole (void)
 		scr_con_current = scr_conlines;
 	}
 	else if (key_dest == key_console)
-		scr_conlines = vid.height/2;	// half screen
+		scr_conlines = vid.height/2.0f;	// half screen
 	else
 		scr_conlines = 0;				// none visible
 
 	if (scr_conlines < scr_con_current)
 	{
-		scr_con_current -= scr_conspeed.value*host_frametime;
+		scr_con_current -= scr_conspeed.value*(float)host_frametime;
 		if (scr_conlines > scr_con_current)
 			scr_con_current = scr_conlines;
 
 	}
 	else if (scr_conlines > scr_con_current)
 	{
-		scr_con_current += scr_conspeed.value*host_frametime;
+		scr_con_current += scr_conspeed.value*(float)host_frametime;
 		if (scr_conlines < scr_con_current)
 			scr_con_current = scr_conlines;
 	}
@@ -1395,7 +1395,7 @@ needs almost the entire 256k of stack space!
 ==================
 */
 
-int GetWeaponZoomAmmount (void)
+int GetWeaponZoomAmount (void)
 {
     switch (cl.stats[STAT_ACTIVEWEAPON])
     {
@@ -1507,7 +1507,7 @@ void SCR_UpdateScreen (void)
 
 	if (scr_disabled_for_loading)
 	{
-		if (realtime - scr_disabled_time > 60)
+		if ((float)realtime - scr_disabled_time > 60)
 		{
 			scr_disabled_for_loading = false;
 			Con_Printf ("load failed.\n");
@@ -1531,10 +1531,10 @@ void SCR_UpdateScreen (void)
 			original_view_fov = scr_fov_viewmodel.value;
 		}
 			
-		if(scr_fov.value > (GetWeaponZoomAmmount() + 1))//+1 for accounting for floating point inaccurraces
+		if(scr_fov.value > (GetWeaponZoomAmount() + 1))//+1 for accounting for floating point inaccurraces
 		{
-			scr_fov.value += ((original_fov - GetWeaponZoomAmmount()) - scr_fov.value) * 0.25;
-			scr_fov_viewmodel.value += ((original_view_fov - GetWeaponZoomAmmount()) - scr_fov_viewmodel.value) * 0.25;
+			scr_fov.value += ((original_fov - GetWeaponZoomAmount()) - scr_fov.value) * 0.25f;
+			scr_fov_viewmodel.value += ((original_view_fov - GetWeaponZoomAmount()) - scr_fov_viewmodel.value) * 0.25f;
 			Cvar_SetValue("fov",scr_fov.value);
 			Cvar_SetValue("r_viewmodel_fov", scr_fov_viewmodel.value);
 		}
@@ -1549,8 +1549,8 @@ void SCR_UpdateScreen (void)
 	{
 		if(scr_fov.value < (original_fov + 1))//+1 for accounting for floating point inaccuracies
 		{
-			scr_fov.value += (original_fov - scr_fov.value) * 0.25;
-			scr_fov_viewmodel.value += (original_view_fov - scr_fov_viewmodel.value) * 0.25;
+			scr_fov.value += (original_fov - scr_fov.value) * 0.25f;
+			scr_fov_viewmodel.value += (original_view_fov - scr_fov_viewmodel.value) * 0.25f;
 			Cvar_SetValue("fov",scr_fov.value);
 			Cvar_SetValue("r_viewmodel_fov", scr_fov_viewmodel.value);
 		}

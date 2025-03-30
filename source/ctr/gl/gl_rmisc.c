@@ -306,7 +306,7 @@ void R_NewMap (void)
 			skytexturenum = i;
 		if (!strncmp(cl.worldmodel->textures[i]->name,"window02_1",10) )
 			mirrortexturenum = i;
- 		cl.worldmodel->textures[i]->texturechain = NULL;
+		cl.worldmodel->textures[i]->texturechain = NULL;
 	}
 	//R_LoadSkys ();
 }
@@ -337,7 +337,7 @@ void R_TimeRefresh_f (void)
 	glFinish ();
 	stop = Sys_FloatTime ();
 	time = stop-start;
-	Con_Printf ("%f seconds (%f fps)\n", time, 128/time);
+	Con_Printf ("%f seconds (%f fps)\n", (double)time, (double)128/(double)time);
 
 	glDrawBuffer  (GL_BACK);
 	GL_EndRendering ();

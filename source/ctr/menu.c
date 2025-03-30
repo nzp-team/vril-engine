@@ -319,34 +319,34 @@ static void M_Paused_Menu_Draw ()
 	// Header
 	Draw_ColoredString(10, 10, "PAUSED", 255, 255, 255, 255, 2);
 
-	if ((M_Paused_Cusor == 0))
+	if (M_Paused_Cusor == 0)
 		Draw_ColoredString(10, 135, "Resume", 255, 0, 0, 255, 1);
 	else
 		Draw_ColoredString(10, 135, "Resume", 255, 255, 255, 255, 1);
 
-	if ((M_Paused_Cusor == 1))
+	if (M_Paused_Cusor == 1)
 		Draw_ColoredString(10, 145, "Restart", 255, 0, 0, 255, 1);
 	else
 		Draw_ColoredString(10, 145, "Restart", 255, 255, 255, 255, 1);
 
-	if ((M_Paused_Cusor == 2))
+	if (M_Paused_Cusor == 2)
 		Draw_ColoredString(10, 155, "Settings", 255, 0, 0, 255, 1);
 	else
 		Draw_ColoredString(10, 155, "Settings", 255, 255, 255, 255, 1);
 
 	if (waypoint_mode.value) {
-		if ((M_Paused_Cusor == 3))
+		if (M_Paused_Cusor == 3)
 			Draw_ColoredString(10, 165, "Save Waypoints", 255, 0, 0, 255, 1);
 		else
 			Draw_ColoredString(10, 165, "Save Waypoints", 255, 255, 255, 255, 1);
 	} else {
-		if ((M_Paused_Cusor == 3))
+		if (M_Paused_Cusor == 3)
 			Draw_ColoredString(10, 165, "Achievements", 255, 0, 0, 255, 1);
 		else
 			Draw_ColoredString(10, 165, "Achievements", 255, 255, 255, 255, 1);
 	}
 
-	if ((M_Paused_Cusor == 4))
+	if (M_Paused_Cusor == 4)
 		Draw_ColoredString(10, 175, "Main Menu", 255, 0, 0, 255, 1);
 	else
 		Draw_ColoredString(10, 175, "Main Menu", 255, 255, 255, 255, 1);
@@ -1316,15 +1316,15 @@ void M_AdjustSliders (int dir)
 		Cvar_SetValue ("viewsize", scr_viewsize.value);
 		break;
 	case 4:	// gamma
-		v_gamma.value -= dir * 0.05;
-		if (v_gamma.value < 0.5)
-			v_gamma.value = 0.5;
+		v_gamma.value -= dir * 0.05f;
+		if (v_gamma.value < 0.5f)
+			v_gamma.value = 0.5f;
 		if (v_gamma.value > 1)
-			v_gamma.value = 1;
+			v_gamma.value = 1.0f;
 		Cvar_SetValue ("gamma", v_gamma.value);
 		break;
 	case 5:	// mouse speed
-		sensitivity.value += dir * 0.5;
+		sensitivity.value += dir * 0.5f;
 		if (sensitivity.value < 1)
 			sensitivity.value = 1;
 		if (sensitivity.value > 11)
@@ -1332,7 +1332,7 @@ void M_AdjustSliders (int dir)
 		Cvar_SetValue ("sensitivity", sensitivity.value);
 		break;
 	case 6:	// music volume
-		bgmvolume.value += dir * 0.1;
+		bgmvolume.value += dir * 0.1f;
 		if (bgmvolume.value < 0)
 			bgmvolume.value = 0;
 		if (bgmvolume.value > 1)
@@ -1340,7 +1340,7 @@ void M_AdjustSliders (int dir)
 		Cvar_SetValue ("bgmvolume", bgmvolume.value);
 		break;
 	case 7:	// sfx volume
-		volume.value += dir * 0.1;
+		volume.value += dir * 0.1f;
 		if (volume.value < 0)
 			volume.value = 0;
 		if (volume.value > 1)
@@ -1425,7 +1425,7 @@ void M_Options_Draw (void)
 	M_DrawSlider (220, 56, r);
 
 	M_Print (16, 64, "            Brightness");
-	r = (1.0 - v_gamma.value) / 0.5;
+	r = (1.0f - v_gamma.value) / 0.5f;
 	M_DrawSlider (220, 64, r);
 
 	M_Print (16, 72, "           Mouse Speed");

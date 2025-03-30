@@ -176,7 +176,7 @@ void SetMinMaxSize (edict_t *e, float *min, float *max, qboolean rotate)
 	// find min / max for rotations
 		angles = e->v.angles;
 
-		a = angles[1]/180 * M_PI;
+		a = angles[1]/180 * (float)M_PI;
 
 		xvector[0] = cosf(a);
 		xvector[1] = sinf(a);
@@ -461,7 +461,7 @@ void PF_vectoyaw (void)
 		yaw = 0;
 	else
 	{
-		yaw = (int) (atan2f(value1[1], value1[0]) * 180 / M_PI);
+		yaw = (int) (atan2f(value1[1], value1[0]) * 180 / (float)M_PI);
 		if (yaw < 0)
 			yaw += 360;
 	}
@@ -495,12 +495,12 @@ void PF_vectoangles (void)
 	}
 	else
 	{
-		yaw = (int) (atan2f(value1[1], value1[0]) * 180 / M_PI);
+		yaw = (int) (atan2f(value1[1], value1[0]) * 180 / (float)M_PI);
 		if (yaw < 0)
 			yaw += 360;
 
 		forward = sqrtf (value1[0]*value1[0] + value1[1]*value1[1]);
-		pitch = (int) (atan2f(value1[2], forward) * 180 / M_PI);
+		pitch = (int) (atan2f(value1[2], forward) * 180 / (float)M_PI);
 		if (pitch < 0)
 			pitch += 360;
 	}
@@ -625,7 +625,7 @@ void PF_sound (void)
 		Sys_Error ("SV_StartSound: volume = %i", volume);
 
 	if (attenuation < 0 || attenuation > 4)
-		Sys_Error ("SV_StartSound: attenuation = %f", attenuation);
+		Sys_Error ("SV_StartSound: attenuation = %f", (double)attenuation);
 
 	if (channel < 0 || channel > 7)
 		Sys_Error ("SV_StartSound: channel = %i", channel);
@@ -1121,7 +1121,7 @@ void PF_findradius (void)
 		if (ent->v.solid == SOLID_NOT)
 			continue;
 		for (j=0 ; j<3 ; j++)
-			eorg[j] = org[j] - (ent->v.origin[j] + (ent->v.mins[j] + ent->v.maxs[j])*0.5);
+			eorg[j] = org[j] - (ent->v.origin[j] + (ent->v.mins[j] + ent->v.maxs[j])*0.5f);
 
 		if (DotProduct(eorg, eorg) > rad)
 			continue;
@@ -1154,7 +1154,7 @@ void PF_ftos (void)
 	if (v == (int)v)
 		sprintf (pr_string_temp, "%d",(int)v);
 	else
-		sprintf (pr_string_temp, "%5.1f",v);
+		sprintf (pr_string_temp, "%5.1f",(double)v);
 	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
 }
 
@@ -1167,7 +1167,8 @@ void PF_fabs (void)
 
 void PF_vtos (void)
 {
-	sprintf (pr_string_temp, "'%5.1f %5.1f %5.1f'", G_VECTOR(OFS_PARM0)[0], G_VECTOR(OFS_PARM0)[1], G_VECTOR(OFS_PARM0)[2]);
+	sprintf (pr_string_temp, "'%5.1f %5.1f %5.1f'",
+		(double)G_VECTOR(OFS_PARM0)[0], (double)G_VECTOR(OFS_PARM0)[1], (double)G_VECTOR(OFS_PARM0)[2]);
 	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
 }
 
@@ -1233,7 +1234,7 @@ string strtrim (string)
 */
 void PF_strtrim (void)
 {
-	int		offset, length;
+	int		length;
 	char	*str;
 	char 	*end;
 
@@ -1241,7 +1242,6 @@ void PF_strtrim (void)
 
 	// figure out the new start
 	while (*str == ' ' || *str == '\t' || *str == '\n' || *str == '\r') {
-		offset++;
 		str++;
 	}
 
@@ -1252,8 +1252,6 @@ void PF_strtrim (void)
 
 	length = end - str;
 
-	if (offset < 0)
-		offset = 0;
 // 2001-10-25 Enhanced temp string handling by Maddes  start
 	if (length >= PR_MAX_TEMPSTRING)
 		length = PR_MAX_TEMPSTRING-1;
@@ -1392,6 +1390,7 @@ string strtolower (string)
 void PF_strtolower(void)
 {
 	char *s;
+	int len;
 
 	s = G_STRING(OFS_PARM0);
 
@@ -1405,9 +1404,12 @@ void PF_strtolower(void)
 		strncpy(pr_string_temp, s, PR_MAX_TEMPSTRING);
 		pr_string_temp[PR_MAX_TEMPSTRING-1] = 0;
 	}
-
-	for(int i = 0; i < strlen(s); i++)
-  		pr_string_temp[i] = tolower(pr_string_temp[i]);
+	len = strlen(s);
+	for(int i = 0; i < len; i++)
+	{
+  		if (pr_string_temp[i] >= 'A' && pr_string_temp[i] <= 'Z')
+		    pr_string_temp[i] = pr_string_temp[i] - 'a'-'A'; 
+	}
 
 	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
 }
@@ -1500,7 +1502,7 @@ zombie_ai zombie_list[MaxZombies];
 void sv_way_print_sorted_open_set() {
 	Con_Printf("Sorted open-set F-scores: ");
 	for(int i = 0; i < openset_length; i++) {
-		Con_Printf("%.0f, ",waypoints[openset_waypoints[i]].f_score);
+		Con_Printf("%.0f, ",(double)waypoints[openset_waypoints[i]].f_score);
 	}
 	Con_Printf("\n");
 }
@@ -1792,7 +1794,9 @@ void Get_Waypoint_Near (void) {
 			}
 		}
 	}
-	Con_DPrintf("'%5.1f %5.1f %5.1f', %f is %f, (%i, %i)\n", waypoints[best].origin[0],waypoints[best].origin[1], waypoints[best].origin[2], best_dist, dist, i, best);
+	Con_DPrintf("'%5.1f %5.1f %5.1f', %f is %f, (%i, %i)\n",
+		(double)waypoints[best].origin[0], (double)waypoints[best].origin[1], (double)waypoints[best].origin[2],
+		(double)best_dist, (double)dist, i, best);
 	VectorCopy (waypoints[best].origin, G_VECTOR(OFS_RETURN));
 }
 
@@ -1980,7 +1984,7 @@ void Do_Pathfind (void) {
 			Con_Printf("\tWaypoint path distances: [");
 			for(i = process_list_length - 1; i >= 0; i--) {
 				float waypoint_dist = VectorDistanceSquared(zombie->v.origin, waypoints[process_list[i]].origin);
-				Con_Printf("%.2f, ", waypoint_dist);
+				Con_Printf("%.2f, ", (double)waypoint_dist);
 			}
 			Con_Printf("]\n");
 
@@ -2116,8 +2120,10 @@ void Get_Next_Waypoint (void) {
 
 	if(developer.value == 3){
 		Con_Printf("Get_Next_Waypoint for ent %d\n", entnum);
-		Con_Printf("\tEnt origin: (%f, %f, %f)\n", ent->v.origin[0], ent->v.origin[1], ent->v.origin[2]);
-		Con_Printf("\tSearch start origin: (%f, %f, %f)\n", start[0], start[1], start[2]);
+		Con_Printf("\tEnt origin: (%f, %f, %f)\n",
+			(double)ent->v.origin[0], (double)ent->v.origin[1], (double)ent->v.origin[2]);
+		Con_Printf("\tSearch start origin: (%f, %f, %f)\n",
+			(double)start[0], (double)start[1], (double)start[2]);
 	}
 
 	int zombie_idx = -1;
@@ -2354,7 +2360,7 @@ void Get_Next_Waypoint (void) {
 		// Calculate the number in [0,1] corresponding to how far along the edge we are checking
 		cur_frac = ((float) cur_frac_numerator) / (2 << i);
 		if(developer.value == 3){
-			Con_Printf("\tBinary search iter: %d/%d, frac: %f\n", i, n_iters, cur_frac);
+			Con_Printf("\tBinary search iter: %d/%d, frac: %f\n", i, n_iters, (double)cur_frac);
 		}
 		VectorLerp(edge_start, cur_frac, edge_end, cur_point);
 
@@ -2371,7 +2377,7 @@ void Get_Next_Waypoint (void) {
 
 	if(developer.value == 3){
 		Con_Printf("\tpath after binary search: (%f x between waypoints (%d,%d), then [", 
-			best_point_frac, 
+			(double)best_point_frac, 
 			edge_start_waypoint_idx, 
 			edge_end_waypoint_idx
 		);
@@ -2394,7 +2400,7 @@ void Get_Next_Waypoint (void) {
 	// ------------------------------------------------------------------------
 	if(VectorDistanceSquared(start,best_point) < 64) {
 		// If trying to walk to the next waypoint already, skip a waypoint on the path
-		if(best_point_frac >= 1.0) {
+		if(best_point_frac >= 1.0f) {
 			zombie_list[zombie_idx].pathlist_length -= 1;
 		}
 
@@ -2424,7 +2430,8 @@ void Get_Next_Waypoint (void) {
 		}
 		Con_Printf("]\n");
 
-		Con_Printf("\tFinal best point: (%f, %f, %f)\n", best_point[0], best_point[1], best_point[2]);
+		Con_Printf("\tFinal best point: (%f, %f, %f)\n",
+			(double)best_point[0], (double)best_point[1], (double)best_point[2]);
 	}
 
 	VectorCopy(best_point, G_VECTOR(OFS_RETURN));
@@ -2754,7 +2761,7 @@ void PF_walkmove (void)
 		return;
 	}
 
-	yaw = yaw*M_PI*2 / 360;
+	yaw = yaw*((float)M_PI / 180);
 
 	move[0] = cosf(yaw)*dist;
 	move[1] = sinf(yaw)*dist;
@@ -2848,9 +2855,9 @@ void PF_rint (void)
 	float	f;
 	f = G_FLOAT(OFS_PARM0);
 	if (f > 0)
-		G_FLOAT(OFS_RETURN) = (int)(f + 0.5);
+		G_FLOAT(OFS_RETURN) = (int)(f + 0.5f);
 	else
-		G_FLOAT(OFS_RETURN) = (int)(f - 0.5);
+		G_FLOAT(OFS_RETURN) = (int)(f - 0.5f);
 }
 void PF_floor (void)
 {
@@ -2971,7 +2978,7 @@ void PF_aim (void)
 			continue;	// don't aim at teammate
 		for (j=0 ; j<3 ; j++)
 			end[j] = check->v.origin[j]
-			+ 0.5*(check->v.mins[j] + check->v.maxs[j]);
+			+ 0.5f*(check->v.mins[j] + check->v.maxs[j]);
 		VectorSubtract (end, start, dir);
 		VectorNormalize (dir);
 		dist = DotProduct (dir, pr_global_struct->v_forward);

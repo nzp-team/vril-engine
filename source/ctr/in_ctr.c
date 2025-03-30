@@ -64,7 +64,7 @@ float IN_CalcInput(int axis, float speed, float tolerance, float acceleration) {
 		return 0.0f;
 	}
 
-	float abs_value = fabs(value);
+	float abs_value = fabsf(value);
 
 	if (abs_value < tolerance) {
 		return 0.0f;
@@ -143,13 +143,13 @@ void IN_Move (usercmd_t *cmd)
 
 	// cut look speed in half when facing enemy, unless mag is empty
 	if ((in_aimassist.value) && (sv_player->v.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0) {
-		speed *= 0.5;
+		speed *= 0.5f;
 	}
 	// additionally, slice look speed when ADS/scopes
 	if (cl.stats[STAT_ZOOM] == 1)
-		speed *= 0.5;
+		speed *= 0.5f;
 	else if (cl.stats[STAT_ZOOM] == 2)
-		speed *= 0.25;
+		speed *= 0.25f;
 	
 	// Are we using the left or right stick for looking?
 	if (!in_anub_mode.value) { // Left
@@ -161,13 +161,13 @@ void IN_Move (usercmd_t *cmd)
 	}
 
 	const float yawScale = 30.0f;
-	cl.viewangles[YAW] -= yawScale * look_x * host_frametime;
+	cl.viewangles[YAW] -= yawScale * look_x * (float)host_frametime;
 
 	// Set the pitch.
 	const bool invertPitch = m_pitch.value < 0;
 	const float pitchScale = yawScale * (invertPitch ? 1 : -1);
 
-	cl.viewangles[PITCH] += pitchScale * look_y * host_frametime;
+	cl.viewangles[PITCH] += pitchScale * look_y * (float)host_frametime;
 
 	// Don't look too far up or down.
 	if (cl.viewangles[PITCH] > 80.0f)
@@ -188,8 +188,8 @@ void IN_Move (usercmd_t *cmd)
 	}
 
 	cl_backspeed = cl_forwardspeed = cl_sidespeed = sv_player->v.maxspeed;
-	cl_sidespeed *= 0.8;
-	cl_backspeed *= 0.7;
+	cl_sidespeed *= 0.8f;
+	cl_backspeed *= 0.7f;
 
 	move_x = IN_CalcInput(input_x, cl_sidespeed, deadZone, acceleration);
 
