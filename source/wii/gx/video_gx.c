@@ -201,7 +201,15 @@ void GL_Init (void)
 
 	GX_SetZCompLoc(false); // ELUTODO
 	
-	GL_DisableMultitexture();
+	// setup the vertex descriptor
+	// tells the flipper to expect direct data
+	GX_ClearVtxDesc();
+	GX_SetVtxDesc(GX_VA_POS, GX_DIRECT);
+	GX_SetVtxDesc(GX_VA_CLR0, GX_DIRECT);
+	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
+
+	GX_SetNumTexGens(1);
+	GX_SetNumTevStages(1);
 	
 	// setup the vertex attribute table
 	// describes the data
@@ -220,7 +228,6 @@ void GL_Init (void)
 	GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
 
 	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
-	//GX_SetTexCoordGen(GX_TEXCOORD1, GX_TG_MTX2x4, GX_TG_TEX1, GX_IDENTITY);
 
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
@@ -244,7 +251,7 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 	
 	// ELUTODO: really necessary?
 	//GX_InvVtxCache();
-	//GX_InvalidateTexAll();
+	GX_InvalidateTexAll();
 }
 
 void GL_EndRendering (void)
@@ -263,6 +270,9 @@ void GL_EndRendering (void)
 	VIDEO_Flush();
 	// Keep framerate		
 	VIDEO_WaitVSync();
+	if (rmode->viTVMode & VI_NON_INTERLACE) {
+		VIDEO_WaitVSync();
+	}
 	
 	fb ^= 1;
 }	

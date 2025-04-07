@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // ELUTODO: mipmap
 
-cvar_t		gl_max_size = {"gl_max_size", "1024"};
+cvar_t		gl_max_size = {"gl_max_size", "512"};
 cvar_t 		vid_retromode = {"vid_retromode", "1", false};
 
 gltexture_t	gltextures[MAX_GLTEXTURES];
@@ -103,33 +103,27 @@ void	R_InitTextures (void)
 					*dest++ = 0xff;
 			}
 	}	
-	
 }
 
-void GL_Bind0 (int texnum)
+void GL_Bind (int texnum)
 {
-	if (currenttexture0 == texnum)
-		return;
-
 	if (!gltextures[texnum].used)
 		Sys_Error("Tried to bind a inactive texture0.");
 
 	currenttexture0 = texnum;
-	GX_LoadTexObj(&(gltextures[texnum].gx_tex), GX_TEXMAP0);
+	GX_LoadTexObj(&gltextures[texnum].gx_tex, GX_TEXMAP0);
 }
 
 void GX_SetMinMag (int minfilt, int magfilt)
 {
-	if(gltextures[currenttexture0].data != NULL)
-	{
+	if(gltextures[currenttexture0].data != NULL) {
 		GX_InitTexObjFilterMode(&gltextures[currenttexture0].gx_tex, minfilt, magfilt);
 	};
 }
 
 void GX_SetMaxAniso (int aniso)
 {
-	if(gltextures[currenttexture0].data != NULL)
-	{
+	if(gltextures[currenttexture0].data != NULL) {
 		GX_InitTexObjMaxAniso(&gltextures[currenttexture0].gx_tex, aniso);
 	};
 }
@@ -179,11 +173,12 @@ int GL_FindTexture (char *identifier)
 	int		i;
 	gltexture_t	*glt;
 
-	for (i=0, glt=gltextures ; i<numgltextures ; i++, glt++)
-	{
-		if (gltextures[i].used)
-			if (!strcmp (identifier, glt->identifier))
-				return gltextures[i].texnum;
+	for (i=0, glt=gltextures ; i<numgltextures ; i++, glt++) {
+		if (glt->used) {
+			if (!strcmp (identifier, glt->identifier)) {
+				return glt->texnum;
+			}
+		}
 	}
 
 	return -1;
@@ -224,7 +219,7 @@ int GX_RGBA_To_RGB5A3(u32 srccolor, qboolean flip)
 	u16 color;
 
 	u32 r, g, b, a;
-	if (flip){
+	if (flip) {
 		r = srccolor & 0xFF;
 		srccolor >>= 8;
 		g = srccolor & 0xFF;
@@ -242,17 +237,14 @@ int GX_RGBA_To_RGB5A3(u32 srccolor, qboolean flip)
 		r = srccolor & 0xFF;
 	}
 	
-	if (a > 0xe0)
-	{
+	if (a > 0xe0) {
 		r = r >> 3;
 		g = g >> 3;
 		b = b >> 3;
 
 		color = (r << 10) | (g << 5) | b;
 		color |= 0x8000;
-	}
-	else
-	{
+	} else {
 		r = r >> 4;
 		g = g >> 4;
 		b = b >> 4;
@@ -317,7 +309,7 @@ GL_MipMap
 
 Operates in place, quartering the size of the texture
 ================
-*/
+
 void GX_MipMap (byte *in, int width, int height)
 {
 	int		i, j;
@@ -353,6 +345,25 @@ static int _calc_mipmap_offset(int level, int w, int h, int b) {
 	return size;
 }
 
+int _calc_mipmap_level(int width, int height) 
+{
+	int max_mip;
+
+	while (width > 4 && height > 4)
+	{
+		width >>= 1;
+		height >>= 1;
+		max_mip++;
+	};
+	
+	if (max_mip != 0) {
+		// account for memory offset
+		max_mip += 1; 
+	}
+
+	return max_mip;
+}
+*/
 // FIXME, temporary
 static	unsigned	scaled[640*480];
 static	unsigned	trans[640*480];
@@ -366,11 +377,11 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 {
 	int	s;
 	int	scaled_width, scaled_height;
-	int sw, sh;
-	u32 texbuffs;
-	u32 texbuffs_mip;
-	int max_mip_level;
-	heap_iblock info;
+	//int sw = 0;
+	//int sh = 0;
+	// start at mip level 0
+	//int max_mip_level = 0;
+	u32 tex_buffersize;
 
 	for (scaled_width = 1 << 5 ; scaled_width < width ; scaled_width<<=1)
 		;
@@ -393,34 +404,31 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 		memcpy(scaled, data, scaled_width * scaled_height * 4);
 	}
 	
-	// start at mip level 0
-	max_mip_level = 0;	
+	/*
 	if (mipmap) {
 		sw = scaled_width;
 		sh = scaled_height;
 		
-		while (sw > 4 && sh > 4)
-		{
-			sw >>= 1;
-			sh >>= 1;
-			max_mip_level++;
-		};
-		
-		if (max_mip_level != 0) {
-			// account for memory offset
-			max_mip_level += 1; 
-		}
+		max_mip_level = _calc_mipmap_level(sw, sh);
 	}
-	
+	*/
+
 	//get exact buffer size of memory aligned on a 32byte boundery
-	texbuffs = GX_GetTexBufferSize (scaled_width, scaled_height, GX_TF_RGB5A3, mipmap ? GX_TRUE : GX_FALSE, max_mip_level);
-	destination->data = __lwp_heap_allocate(&texture_heap, texbuffs/*scaled_width * scaled_height * 2*/);	
-	__lwp_heap_getinfo(&texture_heap, &info);
+	//tex_buffersize = GX_GetTexBufferSize (scaled_width, scaled_height, GX_TF_RGB5A3, mipmap ? GX_TRUE : GX_FALSE, max_mip_level);
+	tex_buffersize = GX_GetTexBufferSize (scaled_width, scaled_height, GX_TF_RGB5A3, 0, 0);
+	//destination->data = memalign(32, tex_buffersize);
+	destination->data = __lwp_heap_allocate(&texture_heap, tex_buffersize);	
+
 	if (developer.value == 4) {
-		Con_Printf ("tex buff size %d\n", texbuffs);
-		Con_Printf("Used Heap: %dM\n", info.used_size / (1024*1024));
+		heap_iblock info;
+		__lwp_heap_getinfo(&texture_heap, &info);
+
+		printf("identifier: %s\n", destination->identifier);
+		printf("tex buff size %d\n", tex_buffersize);
+		printf("used heap: %dM\n", info.used_size / (1024*1024));
+		printf("\n");
 	}
-	
+
 	if (!destination->data)
 		Sys_Error("GL_Upload32: Out of memory.");
 	
@@ -433,45 +441,21 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 	
 	destination->scaled_width = scaled_width;
 	destination->scaled_height = scaled_height;
+
+	GX_CopyRGBA8_To_RGB5A3((u16 *)destination->data, scaled, 0, 0, scaled_width, scaled_height, scaled_width, flipRGBA);
 	
 	//
 	// sBTODO finish mipmap implementation 
 	//
-	
+	/*
 	if (mipmap == true) {
 		
 		int	mip_level;
-		int sw, sh;
 		unsigned mipmaptex[640*480];
 		
-		texbuffs_mip = GX_GetTexBufferSize (scaled_width, scaled_height, GX_TF_RGB5A3, GX_TRUE, max_mip_level);	
-		
-		// this should never happen currently however, 
-		// I plan on circumventing reloading textures
-		// which are already loaded, and this check will be neccesary 
-		// once that happens
-		if (texbuffs < texbuffs_mip) {
-			// copy the texture mem to a temporary buffer
-			unsigned char * tempbuf = malloc(texbuffs);
-			memcpy(tempbuf,destination->data,texbuffs);
-			
-			// free the used heap memory
-			if (!__lwp_heap_free(&texture_heap, destination->data))
-				Sys_Error ("Failed to free texture mem for mipmap");
-			
-			// reallocate in a section of memory big enough for mipmaps and copy in the OG texture buffer
-			destination->data = __lwp_heap_allocate (&texture_heap, texbuffs_mip);
-			memcpy(destination->data,tempbuf,texbuffs);
-			free (tempbuf);
-		}
-		
-		// copy texture to dst addr and convert to RGB5A3
-		GX_CopyRGBA8_To_RGB5A3((u16 *)destination->data, scaled, 0, 0, scaled_width, scaled_height, scaled_width, flipRGBA);
 		// copy texture to new buffer
 		memcpy((void *)mipmaptex, scaled, scaled_width * scaled_height * 4);
 		
-		sw = scaled_width;
-		sh = scaled_height;
 		mip_level = 1;
 		
 		//Con_Printf ("mip max: %i\n", mip_level);
@@ -497,37 +481,30 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 			dst_addr += offset;
 			
 			//Con_Printf ("mipmap mem offset: %i\n", offset);
-			
 			mip_level++;
 			
 			GX_CopyRGBA8_To_RGB5A3((u16 *)dst_addr, (u32 *)mipmaptex, 0, 0, sw, sh, sw, flipRGBA);
-			DCFlushRange(dst_addr, sw * sh * 2);
+			DCFlushRange(dst_addr, sw * sh * 4);
 			GX_InitTexObj(&destination->gx_tex, dst_addr, sw, sh, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, GX_TRUE);
 			GX_InitTexObjLOD(&destination->gx_tex, GX_LIN_MIP_LIN, GX_LIN_MIP_LIN, mip_level, max_mip_level, 0, GX_ENABLE, GX_ENABLE, GX_ANISO_2);	
 		}
 		
-		DCFlushRange(destination->data, texbuffs_mip/*scaled_width * scaled_height * 2*/);
-		GX_InvalidateTexAll();
 		GX_InitTexObj(&destination->gx_tex, destination->data, scaled_width, scaled_height, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, GX_TRUE);
-		GX_InitTexObjLOD(&destination->gx_tex, GX_LIN_MIP_LIN, GX_LIN_MIP_LIN, 0, max_mip_level, 0, GX_ENABLE, GX_ENABLE, GX_ANISO_2);			
-		//GX_LoadTexObj((&destination->gx_tex), GX_TEXMAP0);
-	
+		GX_InitTexObjLOD(&destination->gx_tex, GX_LIN_MIP_LIN, GX_LIN_MIP_LIN, 0, max_mip_level, 0, GX_ENABLE, GX_ENABLE, GX_ANISO_2);
+		DCFlushRange(destination->data, texbuffs);
+		GX_InvalidateTexAll();			
+
 		if (vid_retromode.value == 1) {
 			GX_InitTexObjFilterMode(&destination->gx_tex, GX_NEAR_MIP_NEAR, GX_NEAR_MIP_NEAR);
 		} else {
 			GX_InitTexObjFilterMode(&destination->gx_tex, GX_LIN_MIP_LIN, GX_LIN_MIP_LIN);
 		}
 		
-	} else {
-		GX_CopyRGBA8_To_RGB5A3((u16 *)destination->data, scaled, 0, 0, scaled_width, scaled_height, scaled_width, flipRGBA);	
-		DCFlushRange(destination->data, texbuffs/*scaled_width * scaled_height * 2*/);
+	} else {*/
+		DCFlushRange(destination->data, tex_buffersize);
 		GX_InvalidateTexAll();
-		GX_InitTexObj(&destination->gx_tex, destination->data, scaled_width, scaled_height, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, /*mipmap ? GX_TRUE :*/ GX_FALSE);
-		// do not init mipmaps for lightmaps
-		if (destination->type != 1) {
-			GX_InitTexObjLOD(&destination->gx_tex, GX_LIN_MIP_LIN, GX_LIN_MIP_LIN, 0, max_mip_level, 0, GX_ENABLE, GX_ENABLE, GX_ANISO_2);
-		}
-	}
+		GX_InitTexObj(&destination->gx_tex, destination->data, scaled_width, scaled_height, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, GX_FALSE);
+	//}
 }
 
 /*
@@ -606,69 +583,48 @@ void Build_Gamma_Table (void) {
 GL_LoadTexture
 ================
 */
-
-//Diabolickal TGA Begin
-
-int lhcsumtable[256];
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, qboolean keep, int bytesperpixel)
 {
-	int			i, s, lhcsum;
+	int i;
 	gltexture_t	*glt;
-	// occurances. well this isn't exactly a checksum, it's better than that but
-	// not following any standards.
-	lhcsum = 0;
-	s = width*height*bytesperpixel;
-	
-	for (i = 0;i < 256;i++) lhcsumtable[i] = i + 1;
-	for (i = 0;i < s;i++) lhcsum += (lhcsumtable[data[i] & 255]++);
 
-	// see if the texture is already present
-	if (identifier[0])
-	{
-		for (i=0, glt=gltextures ; i<numgltextures ; i++, glt++)
-		{
-			if (glt->used)
-			{
-				if (!strcmp (identifier, glt->identifier))
-				{
-					if (width != glt->width || height != glt->height)
-					{
-						Con_Printf ("GL_LoadTexture: cache mismatch, reloading");
-						if (!__lwp_heap_free(&texture_heap, glt->data))
-							Sys_Error("GL_ClearTextureCache: Error freeing data.");
-						goto reload; // best way to do it
-					}
-					return glt->texnum;
-				}
-			}
+	// Out of textures?
+	if (numgltextures == MAX_GLTEXTURES)
+		Sys_Error ("GL_GetTextureIndex: Out of GL textures\n");
+
+	int texture_index = GL_FindTexture(identifier);
+	if (texture_index > 0) {
+		return texture_index;
+	}
+
+	numgltextures++;
+
+	for (i = 0, glt=gltextures; i < numgltextures; i++, glt++) {
+		if (!glt->used) {
+			texture_index = i;
+			break;
 		}
 	}
 
-	for (i = 0, glt = gltextures; i < numgltextures; i++, glt++)
-	{
-		if (!glt->used)
-			break;
-	}
+	if (texture_index < 0)
+		Sys_Error("Could not find a free GL texture! %i %s\n", numgltextures, identifier);
 
-	if (i == MAX_GLTEXTURES)
-		Sys_Error ("GL_LoadTexture: numgltextures == MAX_GLTEXTURES\n");
-
-reload:
 	strcpy (glt->identifier, identifier);
-	
-	gltextures[glt->texnum].checksum = lhcsum;
-	gltextures[glt->texnum].lhcsum = lhcsum;
-	
-	glt->texnum = i;
+	glt->texnum = texture_index;
 	glt->width = width;
 	glt->height = height;
 	glt->mipmap = mipmap;
 	glt->type = 0;
 	glt->keep = keep;
 	glt->used = true;
-	
-	GL_Bind0 (glt->texnum);
-	
+	/*
+	printf("\n");
+	printf("tex index %i numgl %i name %s\n", glt->texnum, numgltextures, identifier);
+	printf("gltexture[i] = %i\n", gltextures[texture_index].texnum);
+	printf("gltextures[i].identifier  = %s\n", gltextures[texture_index].identifier);
+	printf("\n");
+	*/
+	GL_Bind (glt->texnum);
 	if (bytesperpixel == 1) {
 		GL_Upload8 (glt, data, width, height, mipmap, alpha);
 	}
@@ -679,9 +635,6 @@ reload:
 		Sys_Error("GL_LoadTexture: unknown bytesperpixel\n");
 	}
 
-	if (glt->texnum == numgltextures)
-		numgltextures++;
-
 	return glt->texnum;
 }
 
@@ -690,18 +643,18 @@ reload:
 GL_LoadLightmapTexture
 ======================
 */
-int GL_LoadLightmapTexture (char *identifier, int width, int height, byte *data)
+int GL_LoadLightmapTexture (char *identifier, int width, int height, byte *data, int lightmap_textures)
 {
 	gltexture_t	*glt;
 
 	// They need to be allocated sequentially
-	if (numgltextures == MAX_GLTEXTURES)
+	if (lightmap_textures == MAX_GLTEXTURES)
 		Sys_Error ("GL_LoadLightmapTexture: numgltextures == MAX_GLTEXTURES\n");
 
-	glt = &gltextures[numgltextures];
+	glt = &gltextures[lightmap_textures];
 	strcpy (glt->identifier, identifier);
 	//Con_Printf("Identifier: %s", identifier);
-	glt->texnum = numgltextures;
+	glt->texnum = lightmap_textures;
 	glt->width = width;
 	glt->height = height;
 	glt->mipmap = false; // ELUTODO
@@ -709,12 +662,10 @@ int GL_LoadLightmapTexture (char *identifier, int width, int height, byte *data)
 	glt->keep = false;
 	glt->used = true;
 
-	GL_Upload32 (glt, (unsigned *)data, width, height, false /*mipmap?*/, false, false);
+	GL_Upload32 (glt, (unsigned *)data, width, height, false, false, false);
 
 	if (width != glt->scaled_width || height != glt->scaled_height)
 		Sys_Error("GL_LoadLightmapTexture: Tried to scale lightmap\n");
-
-	numgltextures++;
 
 	return glt->texnum;
 }
@@ -741,7 +692,7 @@ void GL_UpdateLightmapTextureRegion32 (gltexture_t *destination, unsigned *data,
 		for (x = xoffset; x < realwidth; x++)
 			dest[GX_LinearToTiled(x, y, width)] = GX_RGBA_To_RGB5A3(data[x + y * realwidth], false);
 	
-	DCFlushRange(destination->data, destination->scaled_width * destination->scaled_height * 2/*sizeof(data)*/);
+	DCFlushRange(destination->data, destination->scaled_width * destination->scaled_height * 4/*sizeof(data)*/);
 	GX_InvalidateTexAll();
 }
 
@@ -760,106 +711,57 @@ void GL_UpdateLightmapTextureRegion (int pic_id, int width, int height, int xoff
 	GL_UpdateLightmapTextureRegion32 (destination, (unsigned *)data, width, height, xoffset, yoffset, false, true);
 }
 
-/*
-================
-GL_LoadPicTexture
-================
-*/
-int GL_LoadPicTexture (qpic_t *pic, char *name)
-{
-	return GL_LoadTexture (name, pic->width, pic->height, pic->data, false, true, true, 1);
-}
-
-// ELUTODO: clean the disable/enable multitexture calls around the engine
-
-void GL_DisableMultitexture(void)
-{
-	// ELUTODO: we shouldn't need the color atributes for the vertices...
-
-	// setup the vertex descriptor
-	// tells the flipper to expect direct data
-	GX_ClearVtxDesc();
-	GX_SetVtxDesc(GX_VA_POS, GX_DIRECT);
-	GX_SetVtxDesc(GX_VA_CLR0, GX_DIRECT);
-	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
-
-	GX_SetNumTexGens(1);
-	GX_SetNumTevStages(1);
-}
-
-void GL_EnableMultitexture(void)
-{
-	// ELUTODO: we shouldn't need the color atributes for the vertices...
-
-	// setup the vertex descriptor
-	// tells the flipper to expect direct data
-	GX_ClearVtxDesc();
-	GX_SetVtxDesc(GX_VA_POS, GX_DIRECT);
-	GX_SetVtxDesc(GX_VA_CLR0, GX_DIRECT);
-	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
-	GX_SetVtxDesc(GX_VA_TEX1, GX_DIRECT);
-
-	GX_SetNumTexGens(2);
-	GX_SetNumTevStages(2);
-}
-
 void GL_ClearTextureCache(void)
 {
 	int i;
 	int oldnumgltextures = numgltextures;
 	void *newdata;
-	u32 texbuffs;
-	qboolean mipmap;
-	int mip_level;
-	int sw, sh;
+	u32 tex_buffersize;
+	//qboolean mipmap;
+	//int mip_level;
+	//int sw, sh;
 
 	numgltextures = 0;
 
-	for (i = 0; i < oldnumgltextures; i++)
-	{
-		if (gltextures[i].used)
-		{
-			
-			if (gltextures[i].keep)
-			{
+	for (i = 0; i < oldnumgltextures; i++) {
+		if (gltextures[i].used) {
+			if (gltextures[i].keep) {
+				/*
 				mipmap = gltextures[i].mipmap;
 				
-				mip_level = 1;
+				mip_level = 0;
 		
 				if (mipmap) {
 					sw = gltextures[i].scaled_width;
 					sh = gltextures[i].scaled_height;
 					
-					while (sw > 4 && sh > 4)
-					{
-						sw >>= 1;
-						sh >>= 1;
-						mip_level++;
-					};
+					mip_level = _calc_mipmap_level(sw, sh);
 				}
+				*/
+				//tex_buffersize = GX_GetTexBufferSize	(gltextures[i].scaled_width, gltextures[i].scaled_height, GX_TF_RGB5A3, mipmap ? GX_TRUE : GX_FALSE, mip_level);
 				
-				texbuffs = GX_GetTexBufferSize	(gltextures[i].scaled_width, gltextures[i].scaled_height, GX_TF_RGB5A3, mipmap ? GX_TRUE : GX_FALSE, mip_level);
-				
+				tex_buffersize = GX_GetTexBufferSize	(gltextures[i].scaled_width, gltextures[i].scaled_height, GX_TF_RGB5A3, 0, 0);
 				numgltextures = i + 1;
 		
-				newdata = __lwp_heap_allocate(&texture_heap, texbuffs/*gltextures[i].scaled_width * gltextures[i].scaled_height * sizeof(data)*/);
+				//newdata = memalign(32, tex_buffersize);
+				newdata = __lwp_heap_allocate(&texture_heap, tex_buffersize);
 				if (!newdata)
 					Sys_Error("GL_ClearTextureCache: Out of memory.");
 		
 				// ELUTODO Pseudo-defragmentation that helps a bit :)
-				memcpy(newdata, gltextures[i].data, texbuffs/*gltextures[i].scaled_width * gltextures[i].scaled_height * sizeof(data)*/);
-		
+				memcpy(newdata, gltextures[i].data, tex_buffersize);
+
 				if (!__lwp_heap_free(&texture_heap, gltextures[i].data))
 					Sys_Error("GL_ClearTextureCache: Error freeing data.");
-		
+				
+				//gltextures[i].data = memalign(32, tex_buffersize);
 				gltextures[i].data = newdata;
-				GX_InitTexObj(&gltextures[i].gx_tex, gltextures[i].data, gltextures[i].scaled_width, gltextures[i].scaled_height, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, mipmap ? GX_TRUE : GX_FALSE);
-		
-				DCFlushRange(gltextures[i].data, texbuffs/*gltextures[i].scaled_width * gltextures[i].scaled_height * sizeof(data)*/);
-			}
-			else
-			{
+				DCFlushRange(gltextures[i].data, tex_buffersize);
+				GX_InitTexObj(&gltextures[i].gx_tex, gltextures[i].data, gltextures[i].scaled_width, gltextures[i].scaled_height, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, GX_FALSE);		
+			} else {
+
 				gltextures[i].used = false;
+
 				if (!__lwp_heap_free(&texture_heap, gltextures[i].data))
 					Sys_Error("GL_ClearTextureCache: Error freeing data.");
 			}

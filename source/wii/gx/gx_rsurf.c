@@ -27,7 +27,7 @@ int			skytexturenum;
 
 int		lightmap_bytes;		// 1, 2, or 4
 
-int		lightmap_textures;
+int		lightmap_textures = 0;
 
 unsigned		blocklights[3*18*18]; // LordHavoc: .lit support (*3 for RGB) to the definitions at the top
 
@@ -35,6 +35,7 @@ unsigned		blocklights[3*18*18]; // LordHavoc: .lit support (*3 for RGB) to the d
 #define	BLOCK_HEIGHT	128
 
 #define	MAX_LIGHTMAPS	64
+
 int			active_lightmaps;
 
 typedef struct glRect_s {
@@ -353,7 +354,7 @@ void R_DrawSequentialPoly (msurface_t *s)
 
 		t = R_TextureAnimation (s->texinfo->texture);
 		// Binds world to texture env 0
-		GL_Bind0 (t->gl_texturenum);
+		GL_Bind (t->gl_texturenum);
 		GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
 		// Binds lightmap to texenv 1
 		GL_EnableMultitexture();
@@ -371,7 +372,7 @@ void R_DrawSequentialPoly (msurface_t *s)
 			theRect->w = 0;
 		}
 		v = p->verts[0];
-		GL_Bind0 (t->gl_texturenum);	
+		GL_Bind (t->gl_texturenum);	
 		GX_Begin(GX_TRIANGLEFAN, GX_VTXFMT1, p->numverts);
 		for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
 		{
@@ -391,7 +392,7 @@ void R_DrawSequentialPoly (msurface_t *s)
 	if (s->flags & SURF_DRAWTURB)
 	{
 		//GL_DisableMultitexture();
-		GL_Bind0 (s->texinfo->texture->gl_texturenum);
+		GL_Bind (s->texinfo->texture->gl_texturenum);
 		EmitWaterPolys (s);
 		return;
 	}
@@ -404,7 +405,7 @@ void R_DrawSequentialPoly (msurface_t *s)
 	p = s->polys;
 
 	t = R_TextureAnimation (s->texinfo->texture);
-	GL_Bind0 (t->gl_texturenum);
+	GL_Bind (t->gl_texturenum);
 
 	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
 	GL_EnableMultitexture();
@@ -536,25 +537,12 @@ void R_BlendLightmaps (void)
 		p = lightmap_polys[i];
 		if (!p)
 			continue;
-		GL_Bind0(lightmap_textures+i);
+		GL_Bind(lightmap_textures+i);
 		if (lightmap_modified[i])
 		{
 			lightmap_modified[i] = false;
 			theRect = &lightmap_rectchange[i];
-//			GX_LoadAndBind (lightmaps+i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes, BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes, BLOCK_WIDTH, BLOCK_HEIGHT, gx_lightmap_format);
-//			GX_LoadAndBind (lightmaps+(i*BLOCK_HEIGHT+theRect->t)*BLOCK_WIDTH*lightmap_bytes, (BLOCK_HEIGHT+theRect->t)*BLOCK_WIDTH*lightmap_bytes, BLOCK_WIDTH, theRect->h, gx_lightmap_format);
-
-
-			//GX_LoadSubAndBind (lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes, 0, theRect->t, BLOCK_WIDTH, theRect->h, gx_lightmap_format);
-									//      data,													xoffset, yoffset, width, 		height		format
-									
-									
 			GL_UpdateLightmapTextureRegion (lightmap_textures + i, BLOCK_WIDTH, theRect->h, 0, theRect->t, lightmaps+i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes);
-			
-											//     picid, 			width,		height,	  xoffset,  yoffset,		data
-			
-			//GL_LoadLightmapTexture ("", BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
-			//GL_UpdateLightmapTextureRegion (lightmap_textures + i, BLOCK_WIDTH, theRect->h, 0, theRect->t, lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
 			theRect->l = BLOCK_WIDTH;
 			theRect->t = BLOCK_HEIGHT;
 			theRect->h = 0;
@@ -666,7 +654,7 @@ void R_RenderBrushPoly (msurface_t *fa)
 	}
 		
 	t = R_TextureAnimation (fa->texinfo->texture);
-	GL_Bind0 (t->gl_texturenum);
+	GL_Bind (t->gl_texturenum);
 	if (vid_retromode.value == 1)
 		GX_SetMinMag (GX_NEAR, GX_NEAR);
 	else
@@ -765,7 +753,7 @@ void R_DrawWaterSurfaces (void)
 	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
 /*
 	for ( s = waterchain ; s ; s=s->texturechain) {
-		GL_Bind0 (s->texinfo->texture->gl_texturenum);
+		GL_Bind (s->texinfo->texture->gl_texturenum);
 		EmitWaterPolys (s);
 	}
 		
@@ -784,7 +772,7 @@ void R_DrawWaterSurfaces (void)
 
 		// set modulate mode explicitly
 			
-		GL_Bind0 (t->gl_texturenum);
+		GL_Bind (t->gl_texturenum);
 
 		for ( ; s ; s=s->texturechain)
 			EmitWaterPolys (s);
@@ -1480,14 +1468,11 @@ void GL_BuildLightmaps (void)
 
 	r_framecount = 1;		// no dlightcache
 
-	lightmap_textures = numgltextures;
-	/*
-	if (!lightmap_textures)
-	{
-		lightmap_textures = texture_extension_number;
-		texture_extension_number += MAX_LIGHTMAPS;
-	}	
-	*/
+	if (lightmap_textures == 0) {
+		lightmap_textures = numgltextures;
+		numgltextures += MAX_LIGHTMAPS;
+	}
+	
 	lightmap_bytes = 4;
 
 	for (j=1 ; j<MAX_MODELS ; j++)
@@ -1526,7 +1511,7 @@ void GL_BuildLightmaps (void)
 		lightmap_rectchange[i].t = BLOCK_HEIGHT;
 		lightmap_rectchange[i].w = 0;
 		lightmap_rectchange[i].h = 0;
-		// sB load lightmaps with an identifier
-		GL_LoadLightmapTexture (name, BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes);
+		// sB load lightmaps with an identifier?
+		GL_LoadLightmapTexture ("", BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes, lightmap_textures+i);
 	}
 }
