@@ -180,7 +180,7 @@ byte* LoadSTBI_Image(FILE *f)
 byte* Image_LoadPixels(char* filename, int image_format)
 {
 	FILE	*f;
-	char name[132];
+	char name[133];
 
 	if (image_format & IMAGE_PCX) {
 		snprintf (name, 132, "%s.pcx", filename);
@@ -202,6 +202,10 @@ byte* Image_LoadPixels(char* filename, int image_format)
 
 	if (image_format & IMAGE_JPG) {
 		snprintf (name, 132, "%s.jpg", filename);
+		if (COM_FOpenFile(name, &f) != -1)
+			return LoadSTBI_Image (f);
+
+		snprintf (name, 133, "%s.jpeg", filename);
 		if (COM_FOpenFile(name, &f) != -1)
 			return LoadSTBI_Image (f);
 	}
