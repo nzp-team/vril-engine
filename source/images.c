@@ -57,7 +57,7 @@ void tex_filebase (char *in, char *out)
   mem fix by Crow_bar.
 =================================================================
 */
-
+#pragma pack(1)
 typedef struct
 {
     char	manufacturer;
@@ -95,6 +95,7 @@ byte* LoadPCX(FILE* f, int matchwidth, int matchheight)
 
     if (pcx->manufacturer != 0x0a || pcx->version != 5 || pcx->encoding != 1 ||
         pcx->bits_per_pixel != 8 || pcx->xmax >= 640 || pcx->ymax >= 480) {
+		fclose(f);
         Sys_Error("Bad pcx file\n");
         return NULL;
     }
@@ -115,13 +116,11 @@ byte* LoadPCX(FILE* f, int matchwidth, int matchheight)
     unsigned char palette[768];
     fread(palette, 1, 768, f);
 
-    fseek(f, sizeof(pcxbuf) - 4, SEEK_SET);
+    fseek(f, 128, SEEK_SET);
 
     int count = (pcx->xmax + 1) * (pcx->ymax + 1);
-    byte* image_rgba = (byte*)(Q_malloc(4 * count));
+    byte* image_rgba = (unsigned char*)(Q_malloc(4 * count));
 	byte* pix = image_rgba;
-
-	printf("w: %i h: %i size: %i\n", pcx->xmax + 1, pcx->ymax + 1, (count*4));
 
     for (int y = 0; y <= pcx->ymax; y++) {
         for (int x = 0; x <= pcx->xmax;) {
@@ -186,8 +185,7 @@ byte* Image_LoadPixels(char* filename, int image_format)
 	if (image_format & IMAGE_PCX) {
 		snprintf (name, 132, "%s.pcx", filename);
 		if (COM_FOpenFile(name, &f) != -1)
-			//return LoadPCX (f, 0, 0);
-			return NULL;
+			return LoadPCX (f, 0, 0);
 	}
 
 	if (image_format & IMAGE_TGA) {
