@@ -48,8 +48,7 @@ int menu_wh2;
 int menu_ch;
 //qpic_t *menu_wn;
 int menu_custom;
-#define MAX_CUSTOMMAPS 64
-int menu_cuthum[MAX_CUSTOMMAPS];
+int menu_cuthum;
 
 achievement_list_t achievement_list[MAX_ACHIEVEMENTS];
 
@@ -178,6 +177,16 @@ void M_PrintWhite (int cx, int cy, char *str)
 	}
 }
 
+void M_DrawTransPic (int x, int y, qpic_t *pic)
+{
+	Draw_TransPic (x + ((vid.width - 320)>>1), y, pic);
+}
+
+void M_DrawPic (int x, int y, qpic_t *pic)
+{
+	Draw_Pic (x + ((vid.width - 320)>>1), y, pic);
+}
+
 byte identityTable[256];
 byte translationTable[256];
 
@@ -205,6 +214,13 @@ void M_BuildTranslationTable(int top, int bottom)
 			dest[BOTTOM_RANGE+j] = source[bottom+15-j];
 }
 
+
+void M_DrawTransPicTranslate (int x, int y, qpic_t *pic)
+{
+	Draw_TransPicTranslate (x + ((vid.width - 320)>>1), y, pic, translationTable);
+}
+
+
 void M_DrawTextBox (int x, int y, int width, int lines)
 {
 
@@ -221,7 +237,7 @@ void M_Load_Menu_Pics ()
 	menu_wh2 	= Image_LoadImage("gfx/menu/nzp_warehouse2", IMAGE_PNG, 0, false, false);
 	//menu_wn 	= Draw_CachePic("gfx/menu/wahnsinn");
 	menu_ch 	= Image_LoadImage("gfx/menu/christmas_special", IMAGE_PNG, 0, false, false);
-	menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_PNG, 0, false, false);
+	menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_TGA | IMAGE_PNG, 0, false, false);
 }
 
 void M_Start_Menu_f ()
@@ -415,8 +431,11 @@ int	m_main_cursor;
 
 void M_Menu_Main_f (void)
 {
-	M_Load_Menu_Pics();
-	
+	if (key_dest != key_menu)
+	{
+		m_save_demonum = cls.demonum;
+		cls.demonum = -1;
+	}
 	key_dest = key_menu;
 	m_state = m_main;
 	m_entersound = true;
@@ -1107,9 +1126,9 @@ void M_Menu_CustomMaps_Draw (void)
 		if (m_map_cursor == i) {
 
 			if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
-				menu_cuthum[i] = Image_LoadImage(custom_maps[i + multiplier].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
-				if (menu_cuthum[i] > 0) {
-					Draw_StretchPic(185, 40, menu_cuthum[i], 175, 100);
+				menu_cuthum = Image_LoadImage(custom_maps[i + multiplier].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+				if (menu_cuthum != NULL) {
+					Draw_StretchPic(185, 40, menu_cuthum, 175, 100);
 				}
 			}
 			

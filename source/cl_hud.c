@@ -44,26 +44,26 @@ int		fragpic;
 int		bettypic;
 
 #if defined(__PSP__) || defined(__vita__)
-int 	b_circle;
-int 	b_square;
-int 	b_cross;
-int 	b_triangle;
+qpic_t 		*b_circle;
+qpic_t 		*b_square;
+qpic_t 		*b_cross;
+qpic_t 		*b_triangle;
 #elif __3DS__
 int 	b_abutton;
 int 	b_bbutton;
 int 	b_xbutton;
 int 	b_ybutton;
 #elif __WII__
-int 	b_abutton;
-int 	b_bbutton;
-int		b_cbutton;
-int 	b_zbutton;
-int 	b_minus;
-int 	b_plus;
-int 	b_one;
-int 	b_two;
-int 	b_home;
-#endif // __PSP__, __3DS__, __WII__
+qpic_t 		*b_abutton;
+qpic_t 		*b_bbutton;
+qpic_t		*b_cbutton;
+qpic_t 		*b_zbutton;
+qpic_t 		*b_minus;
+qpic_t 		*b_plus;
+qpic_t 		*b_one;
+qpic_t 		*b_two;
+qpic_t 		*b_home;
+#endif // __PSP__, __vita__, __3DS__, __WII__
 
 int 	b_left;
 int 	b_right;
@@ -197,19 +197,19 @@ void HUD_Init (void)
 	bettypic = Image_LoadImage ("gfx/hud/betty", IMAGE_TGA, 0, true, false);
 
 #ifdef __PSP__
-	b_circle = Image_LoadImage ("gfx/butticons/circle", IMAGE_PNG, 0, true, false);
-	b_square = Image_LoadImage ("gfx/butticons/square", IMAGE_PNG, 0, true, false);
-	b_cross = Image_LoadImage ("gfx/butticons/cross", IMAGE_PNG, 0, true, false);
-	b_triangle = Image_LoadImage ("gfx/butticons/triangle", IMAGE_PNG, 0, true, false);
-	b_left = Image_LoadImage ("gfx/butticons/left", IMAGE_PNG, 0, true, false);
-	b_right = Image_LoadImage ("gfx/butticons/right", IMAGE_PNG, 0, true, false);
-	b_up = Image_LoadImage ("gfx/butticons/up", IMAGE_PNG, 0, true, false);
-	b_down = Image_LoadImage ("gfx/butticons/down", IMAGE_PNG, 0, true, false);
-	b_lt = Image_LoadImage ("gfx/butticons/lt", IMAGE_PNG, 0, true, false);
-	b_rt = Image_LoadImage ("gfx/butticons/rt", IMAGE_PNG, 0, true, false);
-	b_start = Image_LoadImage ("gfx/butticons/start", IMAGE_PNG, 0, true, false);
-	b_select = Image_LoadImage ("gfx/butticons/select", IMAGE_PNG, 0, true, false);
-	b_home = Image_LoadImage ("gfx/butticons/home", IMAGE_PNG, 0, true, false);
+	b_circle = Image_LoadImage ("gfx/butticons/circle", true);
+	b_square = Image_LoadImage ("gfx/butticons/square", true);
+	b_cross = Image_LoadImage ("gfx/butticons/cross", true);
+	b_triangle = Image_LoadImage ("gfx/butticons/triangle", true);
+	b_left = Image_LoadImage ("gfx/butticons/left", true);
+	b_right = Image_LoadImage ("gfx/butticons/right", true);
+	b_up = Image_LoadImage ("gfx/butticons/up", true);
+	b_down = Image_LoadImage ("gfx/butticons/down", true);
+	b_lt = Image_LoadImage ("gfx/butticons/lt", true);
+	b_rt = Image_LoadImage ("gfx/butticons/rt", true);
+	b_start = Image_LoadImage ("gfx/butticons/start", true);
+	b_select = Image_LoadImage ("gfx/butticons/select", true);
+	b_home = Image_LoadImage ("gfx/butticons/home", true);
 #elif __3DS__
 	b_abutton = Image_LoadImage ("gfx/butticons/facebt_a", IMAGE_TGA, 0, true, false);
 	b_bbutton = Image_LoadImage ("gfx/butticons/facebt_b", IMAGE_TGA, 0, true, false);
@@ -960,7 +960,7 @@ void HUD_Rounds (void)
 				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
 				sb_round[icon_num], 11 * hud_scale_factor, 48 * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 
-				x_offset = x_offset + (11 * hud_scale_factor) + 3;
+				x_offset = x_offset + (32 * hud_scale_factor) + 3;
 			}
 		}
 		else
@@ -1028,7 +1028,7 @@ void HUD_Rounds (void)
 				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
 				sb_round[icon_num], 11 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
 
-				x_offset = x_offset + (11 * hud_scale_factor) + 3;
+				x_offset = x_offset + (32 * hud_scale_factor) + 3;
 			}
 		}
 		else
