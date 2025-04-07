@@ -905,7 +905,7 @@ static qsocket_t *_Datagram_CheckNewConnections (void)
 		MSG_WriteByte(&net_message, CCREP_PLAYER_INFO);
 		MSG_WriteByte(&net_message, playerNumber);
 		MSG_WriteString(&net_message, client->name);
-		MSG_WriteLong(&net_message, client->colors);
+		//MSG_WriteLong(&net_message, client->colors);
 		MSG_WriteLong(&net_message, 0);
 		MSG_WriteLong(&net_message, (int)(net_time - client->netconnection->connecttime));
 		MSG_WriteString(&net_message, client->netconnection->address);

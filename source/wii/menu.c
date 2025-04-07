@@ -151,17 +151,17 @@ typedef struct
 usermap_t custom_maps[50];
 
 // Backgrounds
-qpic_t *menu_bk;
+int menu_bk;
 
 // Map screens
-qpic_t *menu_ndu;
-qpic_t *menu_wh;
-qpic_t *menu_wh2;
+int menu_ndu;
+int menu_wh;
+int menu_wh2;
 //qpic_t *menu_kn;
-qpic_t *menu_ch;
+int menu_ch;
 //qpic_t *menu_wn;
-qpic_t *menu_custom;
-qpic_t *menu_cuthum;
+int menu_custom;
+int menu_cuthum;
 
 extern cvar_t	waypoint_mode;
 
@@ -225,12 +225,12 @@ void M_PrintWhite (int cx, int cy, char *str)
 	}
 }
 
-void M_DrawTransPic (int x, int y, qpic_t *pic)
+void M_DrawTransPic (int x, int y, int pic)
 {
 	Draw_TransPic (x + ((vid.conwidth - 320)>>1), y, pic);
 }
 
-void M_DrawPic (int x, int y, qpic_t *pic)
+void M_DrawPic (int x, int y, int pic)
 {
 	Draw_Pic (x + ((vid.conwidth - 320)>>1), y, pic);
 }
@@ -263,14 +263,14 @@ void M_BuildTranslationTable(int top, int bottom)
 }
 
 
-void M_DrawTransPicTranslate (int x, int y, qpic_t *pic)
+void M_DrawTransPicTranslate (int x, int y, int pic)
 {
 	Draw_TransPicTranslate (x + ((vid.conwidth - 320)>>1), y, pic, translationTable);
 }
 
 void M_DrawTextBox (int x, int y, int width, int lines)
 {
-	
+/*
 	qpic_t	*p;
 	int		cx, cy;
 	int		n;
@@ -324,6 +324,7 @@ void M_DrawTextBox (int x, int y, int width, int lines)
 	M_DrawTransPic (cx, cy+8, p);
 
 	return;
+*/
 }
 
 //=============================================================================
@@ -488,7 +489,7 @@ void M_Menu_Credits_f (void)
 void M_Credits_Draw (void)
 {
    	// Background
-	menu_bk = Draw_CachePic("gfx/menu/menu_background");
+	menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
 	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
 	// Fill black to make everything easier to see
@@ -672,12 +673,24 @@ void M_Exit_Draw (void)
 //=============================================================================
 /* MAIN MENU */
 
+void M_Load_Menu_Pics ()
+{
+	menu_bk 	= Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
+	menu_ndu 	= Image_LoadImage("gfx/menu/nacht_der_untoten", IMAGE_PNG, 0, false, false);
+	//menu_kn 	= Draw_CachePic("gfx/menu/kino_der_toten");
+	menu_wh 	= Image_LoadImage("gfx/menu/nzp_warehouse", IMAGE_PNG, 0, false, false);
+	menu_wh2 	= Image_LoadImage("gfx/menu/nzp_warehouse2", IMAGE_PNG, 0, false, false);
+	//menu_wn 	= Draw_CachePic("gfx/menu/wahnsinn");
+	menu_ch 	= Image_LoadImage("gfx/menu/christmas_special", IMAGE_PNG, 0, false, false);
+	menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_TGA | IMAGE_PNG, 0, false, false);
+}
+
 void M_Start_Menu_f ()
 {
+	M_Load_Menu_Pics();
 	key_dest = key_menu;
 	m_state = m_start;
 	m_entersound = true;
-	//CDAudio_Play("tracks/tensioned_by_the_damned.mp3", false);
 }
 
 static void M_Start_Menu_Draw ()
@@ -688,7 +701,7 @@ static void M_Start_Menu_Draw ()
 	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 255);
 	
 	// Background
-	menu_bk = Draw_CachePic("gfx/menu/menu_background");
+	menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
 	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
 	Draw_ColoredString((vid.width/2) - 64, (vid.height - 64), str, 255, 0, 0, 185, 2);
@@ -729,7 +742,7 @@ void M_Main_Draw (void)
 	int y = 60;
 	
 	// Background
-	menu_bk = Draw_CachePic("gfx/menu/menu_background");
+	menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
 	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
 	// Fill black to make everything easier to see
@@ -872,14 +885,15 @@ void M_SinglePlayer_Draw (void)
 	int y = 60;
 	
 	// Precache all menu pics
-	menu_ndu = Draw_CachePic("gfx/menu/nacht_der_untoten");
-	menu_wh2 = Draw_CachePic("gfx/menu/nzp_warehouse2");
-	menu_wh = Draw_CachePic("gfx/menu/nzp_warehouse");
-	menu_ch = Draw_CachePic("gfx/menu/christmas_special");
-	menu_custom = Draw_CachePic("gfx/menu/custom");
+	menu_bk 	= Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
+	menu_ndu 	= Image_LoadImage("gfx/menu/nacht_der_untoten", IMAGE_PNG, 0, false, false);
+	//menu_kn 	= Draw_CachePic("gfx/menu/kino_der_toten");
+	menu_wh 	= Image_LoadImage("gfx/menu/nzp_warehouse", IMAGE_PNG, 0, false, false);
+	menu_wh2 	= Image_LoadImage("gfx/menu/nzp_warehouse2", IMAGE_PNG, 0, false, false);
+	//menu_wn 	= Draw_CachePic("gfx/menu/wahnsinn");
+	menu_ch 	= Image_LoadImage("gfx/menu/christmas_special", IMAGE_PNG, 0, false, false);
+	menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_TGA | IMAGE_PNG, 0, false, false);
 	
-	// Background
-	menu_bk = Draw_CachePic("gfx/menu/menu_background");
 	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
 	// Fill black to make everything easier to see
@@ -1101,7 +1115,7 @@ char* remove_windows_newlines(const char* line)
     char* result = (char*)malloc(len + 1);
     
     if (result == NULL) {
-        return NULL;
+        return "";
     }
     
     char* q = result;
@@ -1123,6 +1137,7 @@ char *COM_FileExtension (char *in);
 void Map_Finder(void)
 {
 	struct dirent *dp;
+	char* setting_path;
     DIR *dir = opendir(va("%s/maps", com_gamedir)); // Open the directory - dir contains a pointer to manage the dir
 
 	if(dir < 0)
@@ -1146,16 +1161,27 @@ void Map_Finder(void)
 		if(!strcmp(COM_FileExtension(dp->d_name),"bsp")|| !strcmp(COM_FileExtension(dp->d_name),"BSP"))
 	    {
 			char ntype[32];
+			setting_path 								  	= malloc(sizeof(char)*64);
+			custom_maps[user_maps_num].map_thumbnail_path 	= malloc(sizeof(char)*64);
 
 			COM_StripExtension(dp->d_name, ntype);
 			custom_maps[user_maps_num].occupied = true;
 			custom_maps[user_maps_num].map_name = malloc(sizeof(char)*32);
+			if (!custom_maps[user_maps_num].map_name) {
+				free(setting_path);
+				free(custom_maps[user_maps_num].map_thumbnail_path);
+				closedir(dir);
+				return;
+			}
 			sprintf(custom_maps[user_maps_num].map_name, "%s", ntype);
 
-			char* 		setting_path;
-
-			setting_path 								  	= malloc(sizeof(char)*64);
-			custom_maps[user_maps_num].map_thumbnail_path 	= malloc(sizeof(char)*64);
+			
+			if(!setting_path || !custom_maps[user_maps_num].map_thumbnail_path) {
+				free(setting_path);
+				free(custom_maps[user_maps_num].map_thumbnail_path);
+				closedir(dir);
+				return;
+			}
 			strcpy(setting_path, 									va("%s/maps/", com_gamedir));
 			strcpy(custom_maps[user_maps_num].map_thumbnail_path, 	"gfx/menu/custom/");
 			strcat(setting_path, 									custom_maps[user_maps_num].map_name);
@@ -1185,7 +1211,28 @@ void Map_Finder(void)
 				custom_maps[user_maps_num].map_desc_8 = malloc(sizeof(char)*64);
 				custom_maps[user_maps_num].map_author = malloc(sizeof(char)*64);
 
+				if(!custom_maps[user_maps_num].map_name_pretty ||
+					!custom_maps[user_maps_num].map_desc_1 ||
+					!custom_maps[user_maps_num].map_desc_2 ||
+					!custom_maps[user_maps_num].map_desc_3 ||
+					!custom_maps[user_maps_num].map_desc_4 ||
+					!custom_maps[user_maps_num].map_desc_5 ||
+					!custom_maps[user_maps_num].map_desc_6 ||
+					!custom_maps[user_maps_num].map_desc_7 ||
+					!custom_maps[user_maps_num].map_desc_8 ||
+					!custom_maps[user_maps_num].map_author) {
+					fclose(setting_file);
+					closedir(dir);
+					return;
+				}
+
 				char* buffer = (char*)calloc(sz+1, 2);
+				if(!buffer) {
+					free(setting_path);
+					fclose(setting_file);
+					closedir(dir);
+					return;
+				}
 				fread(buffer, sz, 1, setting_file);
 
 				strtok(buffer, "\n");
@@ -1210,8 +1257,9 @@ void Map_Finder(void)
 				}
 				free(buffer);
 				buffer = 0;
-				fclose(setting_file);
 			}
+			free(setting_path);
+			fclose(setting_file);
 			user_maps_num++;
 		}
 	}
@@ -1232,7 +1280,7 @@ void M_Menu_CustomMaps_f (void)
 void M_Menu_CustomMaps_Draw (void)
 {
 	// Background
-	menu_bk = Draw_CachePic("gfx/menu/menu_background");
+	menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
 	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
 	// Fill black to make everything easier to see
@@ -1253,13 +1301,12 @@ void M_Menu_CustomMaps_Draw (void)
 		multiplier = 0;
 	
 	// Precache all menu pics 
-	// Draw_CachePic will save the pic and return it when needed
 	for (int i = 0; i < 15; i++) {
 		if (custom_maps[i + multiplier].occupied == false)
 			continue;
 		
 		if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
-				menu_cuthum = Draw_CachePic(custom_maps[i + multiplier].map_thumbnail_path);
+				menu_cuthum = Image_LoadImage(custom_maps[i + multiplier].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
 			}
 	}
 
@@ -1270,8 +1317,8 @@ void M_Menu_CustomMaps_Draw (void)
 		if (m_map_cursor == i) {
 
 			if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
-				menu_cuthum = Draw_CachePic(custom_maps[i + multiplier].map_thumbnail_path);
-				if (menu_cuthum != NULL) {
+				menu_cuthum = Image_LoadImage(custom_maps[i + multiplier].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+				if (menu_cuthum > 0) {
 					Draw_StretchPic(265, 55, menu_cuthum, 320, 200);
 				}
 			}
@@ -2206,10 +2253,10 @@ void M_Keys_Draw (void)
 	int		keys[2];
 	char	*name;
 	int		x, y;
-	//qpic_t	*p;
 
-	//p = Draw_CachePic ("gfx/ttl_cstm.lmp");
-	//M_DrawPic ( (320-p->width)/2, 4, p);
+	menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
+	if (key_dest != key_menu_pause)
+		Draw_StretchPic (0, 0, menu_bk, vid.width, vid.height);
 
 	if (bind_grab)
 		M_PrintScaled (12, 32, "Press a key or button for this action");
@@ -3114,8 +3161,6 @@ void M_NetStart_Change (int dir)
 	//PGM 03/02/97 added 1 for dmatch episode
 		else if (rogue)
 			count = 4;
-		else if (registered.value)
-			count = 7;
 		else
 			count = 2;
 

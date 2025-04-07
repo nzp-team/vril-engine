@@ -25,19 +25,19 @@ void Draw_Init (void);
 void Draw_Character (int x, int y, int num);
 void Draw_CharacterRGBA (int x, int y, int num, float r, float g, float b, float a, float scale);
 void Draw_DebugChar (char num);
-void Draw_Pic (int x, int y, qpic_t *pic);
+void Draw_Pic (int x, int y,  int texnum);
 #ifdef __PSP__
 void Draw_PicIndex (int x, int y, int width, int height, int texture_index);
 #endif // __PSP__
-void Draw_StretchPic (int x, int y, qpic_t *pic, int x_value, int y_value);
-void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float a);
-void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value, int r, int g, int b, int a);
+void Draw_StretchPic (int x, int y,  int texnum, int x_value, int y_value);
+void Draw_ColorPic (int x, int y, int texnum, float r, float g , float b, float a);
+void Draw_ColoredStretchPic (int x, int y,  int texnum, int x_value, int y_value, int r, int g, int b, int a);
 void Draw_ColoredString (int x, int y, char *text, float r, float g, float b, float a, float scale);
 void Draw_ColoredStringCentered(int y, char *text, float r, float g, float b, float a, float scale);
-void Draw_TransPic (int x, int y, qpic_t *pic);
-void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation);
+void Draw_TransPic (int x, int y,  int texnum);
+void Draw_TransPicTranslate (int x, int y,  int texnum, byte *translation);
 void Draw_ConsoleBackground (int lines);
-void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha);
+void Draw_AlphaPic (int x, int y,  int texnum, float alpha);
 #ifdef __PSP__
 void Draw_Fill (int x, int y, int w, int h, int c);
 #endif
@@ -59,9 +59,6 @@ extern char loading_name[32];
 extern float loading_num_step;
 extern int font_kerningamount[96];
 
-qpic_t *Draw_CachePic (char *path);
 #ifdef __PSP__
 qpic_t *Draw_CacheImg (char *path);
-#elif __WII__
-qpic_t *Draw_LMP (char *path);
 #endif

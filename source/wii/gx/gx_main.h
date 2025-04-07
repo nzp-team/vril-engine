@@ -256,7 +256,7 @@ extern	mplane_t	*mirror_plane;
 
 extern	float	r_world_matrix[16];
 
-void GL_Bind0 (int texnum);
+void GL_Bind (int texnum);
 
 extern vrect_t scr_vrect;
 
@@ -274,7 +274,7 @@ typedef struct
 {
 	int			texnum;
 	GXTexObj	gx_tex;
-	char		identifier[64];
+	char		identifier[32];
 	int			width, height;
 	qboolean	mipmap;
 	unsigned	*data;
@@ -288,18 +288,35 @@ typedef struct
 	qboolean	used;
 	
 	qboolean	islmp;
-	
-	int 		checksum;
+	qboolean	iscachepic;
 	
 	// Diabolicka TGA
 	int			bytesperpixel;
-	int			lhcsum;
 	// Diabolickal end
 } gltexture_t;
+
+typedef struct
+{
+	int			texnum;
+	float		sl, tl, sh, th;
+} glpic_t;
+
+typedef struct cachepic_s
+{
+	char		name[MAX_QPATH];
+	qpic_t		pic;
+	byte		padding[32];	// for appended glpic
+} cachepic_t;
+
+#define	MAX_CACHED_PICS	128
+extern int numcachepics;
+extern cachepic_t cachepics[MAX_CACHED_PICS];
 
 #define	MAX_GLTEXTURES	1024
 extern int numgltextures;
 extern gltexture_t	gltextures[MAX_GLTEXTURES];
+
+extern  int	skyimage[5]; // Where sky images are stored
 
 void QGX_ZMode(qboolean state);
 void QGX_Alpha(qboolean state);
@@ -307,7 +324,7 @@ void QGX_Blend(qboolean state);
 void QGX_BlendMap(qboolean state);
 
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, qboolean keep, int bytesperpixel);
-int GL_LoadLightmapTexture (char *identifier, int width, int height, byte *data);
+int GL_LoadLightmapTexture (char *identifier, int width, int height, byte *data, int lightmap_textures);
 void GL_UpdateTexture (int pic_id, char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha);
 void GL_UpdateLightmapTextureRegion (int pic_id, int width, int height, int xoffset, int yoffset, byte *data);
 int GL_FindTexture (char *identifier);
@@ -332,9 +349,6 @@ void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
 void R_RotateForEntity (entity_t *e, unsigned char scale);
 void R_StoreEfrags (efrag_t **ppefrag);
 void GL_Set2D (void);
-
-void GL_DisableMultitexture(void);
-void GL_EnableMultitexture(void);
 
 //johnfitz -- fog functions called from outside gx_fog.c
 void Fog_ParseServerMessage (void);
@@ -372,10 +386,8 @@ extern qboolean in_osk;
 //#define OSK_YSTART (((glheight) - ((glheight) / (osk_line_size) * (osk_num_lines))) / 2)
 
 // Draw.c extensions
-extern void Draw_TransAlphaPic (int x, int y, qpic_t *pic, float alpha);
-extern void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha);
-extern void Draw_AlphaTileClear (int x, int y, int w, int h, float alpha);
-//extern qpic_t		*conback;
+extern void Draw_TransAlphaPic (int x, int y, int pic, float alpha);
+extern void Draw_AlphaPic (int x, int y, int pic, float alpha);
 
 // input extensions
 extern float in_pitchangle;

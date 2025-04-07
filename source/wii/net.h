@@ -225,7 +225,7 @@ double SetNetTime(void);
 
 typedef struct
 {
-	char	name[16];
+	char	name[32];
 	char	map[16];
 	char	cname[32];
 	int		users;

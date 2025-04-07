@@ -253,20 +253,20 @@ char		scr_usestring[64];
 char 		scr_usestring2[64];
 float		scr_usetime_off = 0.0f;
 int			button_pic_x;
-extern qpic_t 		*b_abutton;
-extern qpic_t 		*b_bbutton;
-extern qpic_t 		*b_ybutton;
-extern qpic_t 		*b_xbutton;
-extern qpic_t 		*b_left;
-extern qpic_t 		*b_right;
-extern qpic_t 		*b_up;
-extern qpic_t 		*b_down;
-extern qpic_t 		*b_lt;
-extern qpic_t 		*b_rt;
-extern qpic_t 		*b_start;
-extern qpic_t 		*b_select;
-extern qpic_t		*b_zlt;
-extern qpic_t 		*b_zrt;
+extern int 		b_abutton;
+extern int 		b_bbutton;
+extern int 		b_ybutton;
+extern int 		b_xbutton;
+extern int 		b_left;
+extern int 		b_right;
+extern int 		b_up;
+extern int 		b_down;
+extern int 		b_lt;
+extern int 		b_rt;
+extern int 		b_start;
+extern int 		b_select;
+extern int		b_zlt;
+extern int 		b_zrt;
 
 /*
 ==============
@@ -276,7 +276,7 @@ Similiar to above, but will also print the current button for the action.
 ==============
 */
 
-qpic_t *GetButtonIcon (char *buttonname)
+int GetButtonIcon (char *buttonname)
 {
 	int		j;
 	int		l;
