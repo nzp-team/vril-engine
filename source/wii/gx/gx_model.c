@@ -178,6 +178,12 @@ void Mod_ClearAll (void)
 	for (i=0 , mod=mod_known ; i<mod_numknown ; i++, mod++)
 		if (mod->type != mod_alias)
 			mod->needload = true;
+
+	GL_ClearTextureCache();
+
+	//purge old sky textures
+	for (i=0; i<5; i++)
+		skyimage[i] = 0;
 }
 
 /*
@@ -479,47 +485,36 @@ void Mod_LoadTextures (lump_t *l)
 			R_InitSky (mt);
 		} else {
 			if (loadmodel->bspversion == HL_BSPVERSION) {
-				if (1) {
-					data = WAD3_LoadTexture(mt);
-					
-					bool choosealpha = mt->name[0] == '{' ? true : false; // naievil -- need to choose alpha mode for certain textures
-					if(data == NULL)
+				data = WAD3_LoadTexture(mt);
+				
+				bool choosealpha = mt->name[0] == '{' ? true : false; // naievil -- need to choose alpha mode for certain textures
+				if(data == NULL)
+				{
+					//external textures -- first look in "textures/mapname/" then look in "textures/"
+					int mark = Hunk_LowMark ();
+					COM_StripExtension (loadmodel->name + 5, mapname);
+					sprintf (filename, "textures/%s/%s", mapname, tx->name);
+					data_ext = Image_LoadImage (filename, IMAGE_PCX | IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, true);
+					if (data_ext <= 0)
 					{
-						//external textures -- first look in "textures/mapname/" then look in "textures/"
-						
-						// sB WIP and still undecided if we want this feature on Wii.
-						// if it is included, maybe it should only be a backup to maps
-						// which weren't compiled with -nowadtextures
-						// this does work as a backup option ATM anyways..//
-						
-
-						//mark = Hunk_LowMark ();
-						COM_StripExtension (loadmodel->name + 5, mapname);
-						//sprintf (filename, "textures/%s/%s", mapname, tx->name);
-						// don't keep map textures
-						data_ext = loadtextureimage (filename, 0, 0, true, 0, false, false);
-						if (data_ext <= 0)
-						{
+						//Con_Printf ("mpath %s\n", filename);
+						sprintf (filename, "textures/%s", tx->name);
+						data_ext = Image_LoadImage (filename, IMAGE_PCX | IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, true);
+						if (data_ext <= 0) {
 							//Con_Printf ("mpath %s\n", filename);
-							sprintf (filename, "textures/%s", tx->name);
-							data_ext = loadtextureimage (filename, 0, 0, true, 0, false, false);
-							if (data_ext <= 0) {
-								//Con_Printf ("mpath %s\n", filename);
-								//Con_Printf("no texture found, replacing with white (fixme) %s\n", tx->name);
-								tx->gl_texturenum = white_texturenum;
-							}
+							//Con_Printf("no texture found, replacing with white (fixme) %s\n", tx->name);
+							Con_Printf("Couldn't load Halflife BSP textures!\n Replacing with white texture\n");
+							tx->gl_texturenum = white_texturenum;
 						}
-						//Hunk_FreeToLowMark (mark);
-					} else {
-						tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(data), true, choosealpha, false, 4);
-						free(data);
 					}
+					Hunk_FreeToLowMark (mark);
+				} else {
+					tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, data, true, choosealpha, false, 4);
+					free(data);
 				}
-			}
-			else {
+			} else { // not HLBSP
 				tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(tx+1), true, false, false, 1);
-			}
-			
+			}		
 		}
 		strcpy(loading_name, mt->name);
         loading_cur_step++;
@@ -1716,7 +1711,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 {
 	int		i, j, k;
 	char	name[128], model[128], model2[256];
-	char 	*texname = malloc(32);
+	char 	texname[32];
 	int		s;
 	byte	*skin;
 	byte	*texels;
@@ -1742,12 +1737,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 		pheader->gl_texturenum[0][0] = 
 		pheader->gl_texturenum[0][1] = 
 		pheader->gl_texturenum[0][2] = 
-		pheader->gl_texturenum[0][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, true, 0, true, false);
+		pheader->gl_texturenum[0][3] = Image_LoadImage("models/weapons/m1911/v_biatch.mdl_0", IMAGE_PCX, 0, true, false);
 		
 		pheader->gl_texturenum[1][0] = 
 		pheader->gl_texturenum[1][1] = 
 		pheader->gl_texturenum[1][2] = 
-		pheader->gl_texturenum[1][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, true, 0, true, false);
+		pheader->gl_texturenum[1][3] = Image_LoadImage("models/weapons/m1911/v_biatch.mdl_0", IMAGE_PCX, 0, true, false);
 
 		pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 		return (void *)pskintype;
@@ -1768,13 +1763,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] =
 			pheader->gl_texturenum[i][1] =
 			pheader->gl_texturenum[i][2] =
-			pheader->gl_texturenum[i][3] = loadtextureimage(model2, 0, 0, true, 0, true, false);
+			pheader->gl_texturenum[i][3] = Image_LoadImage(model2, IMAGE_PCX, 0, true, false);
 
 			if (pheader->gl_texturenum[i][0] == 0) // did not find a matching TGA...
 			{
 				sprintf(name, "%s_%i", loadmodel->name, i);
-				int len = strlen(name);
-				texname = name + len - 20;
+				tex_filebase(name, texname);
 				pheader->gl_texturenum[i][0] =
 				pheader->gl_texturenum[i][1] =
 				pheader->gl_texturenum[i][2] =
@@ -1800,8 +1794,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 						memcpy (texels, (byte *)(pskintype), s);
 					}
 					sprintf (name, "%s_%i_%i", loadmodel->name, i,j);
-					int len = strlen(name);
-					texname = name + len - 20;
+					tex_filebase(name, texname);
 					pheader->gl_texturenum[i][j&3] = GL_LoadTexture (texname, pheader->skinwidth, 
 						pheader->skinheight, (byte *)(pskintype), false, false, true, 1);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
@@ -2007,7 +2000,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	//unsigned short		*ppixout;
 	//byte				*ppixin;
 	char				/*name[128], */sprite[128], sprite2[256];
-	char				*texname = malloc(32);
+	char				texname[32];
 
 	pinframe = (dspriteframe_t *)pin;
 
@@ -2039,15 +2032,11 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 
 	COM_StripExtension(loadmodel->name, sprite);
 	sprintf(sprite2, "%s.spr_%i", sprite, framenum);
-	pspriteframe->gl_texturenum = loadtextureimage(sprite2, 0, 0, true, 0, true, false);
+	pspriteframe->gl_texturenum = Image_LoadImage(sprite2, IMAGE_TGA, 0, true, false);
 	
 	if (pspriteframe->gl_texturenum <= 0) // did not find a matching TGA...
 	{
-		//COM_StripExtension(loadmodel->name, sprite);
-		//sprintf(sprite2, "%s.spr", sprite);
-		//pspriteframe->gl_texturenum = loadtextureimage(sprite2, 0, 0, true, 0, true, false);
-		int len = strlen(sprite2);
-		texname = sprite2 + len - 20;
+		tex_filebase(sprite2, texname);
 		if (pspriteframe->gl_texturenum <= 0) {
 			pspriteframe->gl_texturenum = GL_LoadTexture (texname, width, height, (byte *)(pinframe + 1), false, true, true, 1);
 		}

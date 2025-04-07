@@ -208,7 +208,7 @@ FILE IO
 #define MAX_HANDLES             16
 FILE    *sys_handles[MAX_HANDLES];
 
-int             findhandle (void)
+int	findhandle (void)
 {
 	int             i;
 	
@@ -235,7 +235,7 @@ int Sys_FileOpenRead (char *path, int *hndl)
 	i = findhandle ();
 
 	f = fopen(path, "rb");
-	if (f <= 0)
+	if (f == NULL)
 	{
 		*hndl = -1;
 		return -1;

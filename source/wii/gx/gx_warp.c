@@ -288,7 +288,7 @@ void EmitBothSkyLayers (msurface_t *fa)
 {
 	//GL_DisableMultitexture();
 
-	GL_Bind0 (solidskytexture);
+	GL_Bind (solidskytexture);
 	if (vid_retromode.value == 1)
 		GX_SetMinMag (GX_NEAR, GX_NEAR);
 	else
@@ -299,7 +299,7 @@ void EmitBothSkyLayers (msurface_t *fa)
 	EmitSkyPolys (fa);
 
 	QGX_Blend(true);
-	GL_Bind0 (alphaskytexture);
+	GL_Bind (alphaskytexture);
 	if (vid_retromode.value == 1)
 		GX_SetMinMag (GX_NEAR, GX_NEAR);
 	else
@@ -325,7 +325,7 @@ void R_DrawSkyChain (msurface_t *s)
 
 	//GL_DisableMultitexture();
 
-	GL_Bind0(solidskytexture);
+	GL_Bind(solidskytexture);
 	if (vid_retromode.value == 1)
 		GX_SetMinMag (GX_NEAR, GX_NEAR);
 	else
@@ -337,7 +337,7 @@ void R_DrawSkyChain (msurface_t *s)
 		EmitSkyPolys (fa);
 
 	QGX_Blend(true);
-	GL_Bind0 (alphaskytexture);
+	GL_Bind (alphaskytexture);
 	if (vid_retromode.value == 1)
 		GX_SetMinMag (GX_NEAR, GX_NEAR);
 	else
@@ -389,11 +389,11 @@ void Sky_LoadSkyBox(char* name)
         //int mark = Hunk_LowMark ();
 		
 		sprintf (skytexname, "%s%s", name, suf[i]);
-		skyimage[i] = loadtextureimage (va("gfx/env/%s%s", name, suf[i]), 0, 0, false, 0, false, false);
+		skyimage[i] = Image_LoadImage (va("gfx/env/%s%s", name, suf[i]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
 		if(skyimage[i] == 0)
 		{
-			//Con_Printf("Sky: %s%s not found, used std\n", "gfx/env/ndu%s", suf[i]);
-			skyimage[i] = loadtextureimage (va("gfx/env/ndu%s", suf[i]), 0, 0, false, 0, false, false);
+			Con_Printf("Sky: %s%s not found, used std\n", "gfx/env/ndu%s", suf[i]);
+			skyimage[i] = Image_LoadImage (va("gfx/env/ndu%s", suf[i]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
 		    if(skyimage[i] == 0)
 		    {
 				Con_Printf("STD SKY NOT FOUND!");
@@ -407,11 +407,11 @@ void Sky_LoadSkyBox(char* name)
 	//int mark = Hunk_LowMark ();
 	
 	sprintf (skytexname, "%sup", name);
-	skyimage[4] = loadtextureimage (va("gfx/env/%sup", name), 0, 0, false, 0, false, false);
+	skyimage[4] = Image_LoadImage (va("gfx/env/%sup", name), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
 	if(skyimage[4] == 0)
 	{
 		Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[4]);
-		skyimage[4] = loadtextureimage (va("gfx/env/ndu%s", suf[4]), 0, 0, false, 0, false, false);
+		skyimage[4] = Image_LoadImage (va("gfx/env/ndu%s", suf[4]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
 		if(skyimage[4] == 0)
 		{
 			Con_Printf("STD SKY NOT FOUND!");
@@ -665,7 +665,7 @@ void R_DrawSkyBox (void)
 		// < 0 check would work at fov 90 or less, just guess a value that's high enough?
 		if (dot < -0.25f) continue;
 		
-		GL_Bind0(skyimage[skytexorder[i]]);
+		GL_Bind(skyimage[skytexorder[i]]);
 		if (vid_retromode.value == 1)
 			GX_SetMinMag (GX_NEAR, GX_NEAR);
 		else

@@ -101,12 +101,8 @@ extern	cvar_t	cl_crossy;
 
 qboolean	scr_initialized;		// ready to draw
 
-qpic_t		*scr_ram;
-qpic_t		*scr_net;
-qpic_t		*scr_turtle;
-
-qpic_t      *hitmark;
-qpic_t 		*lscreen;
+int     	hitmark;
+int 		lscreen;
 
 int			loadingScreen;
 int			ShowBlslogo;
@@ -260,19 +256,19 @@ char 		scr_usestring2[64];
 float		scr_usetime_off = 0.0f;
 int			button_pic_x;
 
-extern qpic_t 		*b_abutton;
-extern qpic_t 		*b_bbutton;
-extern qpic_t 		*b_cbutton;
-extern qpic_t 		*b_zbutton;
-extern qpic_t 		*b_left;
-extern qpic_t 		*b_right;
-extern qpic_t 		*b_up;
-extern qpic_t		*b_down;
-extern qpic_t 		*b_minus;
-extern qpic_t 		*b_plus;
-extern qpic_t 		*b_home;
-extern qpic_t 		*b_one;
-extern qpic_t 		*b_two;
+extern int 	b_abutton;
+extern int 	b_bbutton;
+extern int 	b_cbutton;
+extern int 	b_zbutton;
+extern int 	b_left;
+extern int 	b_right;
+extern int 	b_up;
+extern int	b_down;
+extern int 	b_minus;
+extern int 	b_plus;
+extern int 	b_home;
+extern int 	b_one;
+extern int 	b_two;
 
 /*
 ==============
@@ -282,7 +278,7 @@ Similiar to above, but will also print the current button for the action.
 ==============
 */
 
-qpic_t *GetButtonIcon (char *buttonname)
+int GetButtonIcon (char *buttonname)
 {
 	
 	int		j;
@@ -715,88 +711,9 @@ void SCR_Init (void)
 	Cmd_AddCommand ("sizeup",SCR_SizeUp_f);
 	Cmd_AddCommand ("sizedown",SCR_SizeDown_f);
 	
-	hitmark = Draw_CachePic("gfx/hud/hit_marker");
+	hitmark = Image_LoadImage("gfx/hud/hit_marker", IMAGE_TGA, 0, true, false);
 
 	scr_initialized = true;
-}
-
-
-
-/*
-==============
-SCR_DrawRam
-==============
-*/
-void SCR_DrawRam (void)
-{
-	if (!scr_showram.value)
-		return;
-
-	if (!r_cache_thrash)
-		return;
-
-	Draw_Pic (scr_vrect.x+32, scr_vrect.y, scr_ram);
-}
-
-/*
-==============
-SCR_DrawTurtle
-==============
-*/
-void SCR_DrawTurtle (void)
-{
-	static int	count;
-	
-	if (!scr_showturtle.value)
-		return;
-
-	if (host_frametime < 0.1)
-	{
-		count = 0;
-		return;
-	}
-
-	count++;
-	if (count < 3)
-		return;
-
-	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
-}
-
-/*
-==============
-SCR_DrawNet
-==============
-*/
-void SCR_DrawNet (void)
-{
-	if (realtime - cl.last_received_message < 0.3)
-		return;
-	if (cls.demoplayback)
-		return;
-
-	Draw_Pic (scr_vrect.x+64, scr_vrect.y, scr_net);
-}
-
-/*
-==============
-DrawPause
-==============
-*/
-void SCR_DrawPause (void)
-{
-	//qpic_t	*pic;
-
-	if (!scr_showpause.value)		// turn off for screenshots
-		return;
-
-	if (!cl.paused)
-		return;
-	/*
-	pic = Draw_CachePic ("gfx/pause.lmp");
-	Draw_Pic ( (vid.conwidth - pic->width)/2, 
-		(vid.conheight - 48 - pic->height)/2, pic);
-	*/
 }
 
 /*
@@ -841,24 +758,6 @@ void SCR_DrawFPS (void)
 
 /*
 ==============
-SCR_DrawLoading
-==============
-*/
-void SCR_DrawLoading (void)
-{
-	//qpic_t	*pic;
-
-	if (!scr_drawloading)
-		return;
-	/*	
-	pic = Draw_CachePic ("gfx/loading.lmp");
-	Draw_Pic ( (vid.conwidth - pic->width)/2, 
-		(vid.conheight - 48 - pic->height)/2, pic);
-	*/
-}
-
-/*
-==============
 SCR_DrawLoadScreen
 ==============
 */
@@ -894,7 +793,7 @@ double loadingtimechange;
 int loadingdot;
 int loadingtextwidth;
 char *lodinglinetext;
-qpic_t *awoo;
+int awoo;
 char *ReturnLoadingtex (void)
 {
     int StringNum = Random_Int(80);
@@ -1158,11 +1057,13 @@ void SCR_DrawLoadScreen (void)
 
 			char* lpath;
 			lpath = (char*)malloc(sizeof(char)*128);
+			if(!lpath)
+				return;
 			strcpy(lpath, "gfx/lscreen/");
 			strcat(lpath, loadname2);
 
-			lscreen = Draw_CachePic(lpath);
-			awoo = Draw_CachePic("gfx/menu/awoo");
+			lscreen = Image_LoadImage(lpath, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+			awoo = Image_LoadImage("gfx/menu/awoo", IMAGE_TGA, 0, false, false);
 
 			if (lscreen == 0)
 				load_screen_exists = false;	
@@ -1773,7 +1674,6 @@ void SCR_UpdateScreen (void)
 	
 	//muff - to show FPS on screen
 	SCR_DrawFPS ();
-	SCR_DrawPause ();
 	SCR_CheckDrawCenterString ();
 	SCR_CheckDrawUseString ();
 	HUD_Draw ();

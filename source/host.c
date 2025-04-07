@@ -513,10 +513,6 @@ extern float crosshair_offset_step;
 void Host_ClearMemory (void)
 {
 	Con_DPrintf ("Clearing memory\n");
-	
-#ifdef __WII__
-	GL_ClearTextureCache();
-#endif
 
 	Mod_ClearAll ();
 

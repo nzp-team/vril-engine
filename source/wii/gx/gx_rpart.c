@@ -707,7 +707,7 @@ void R_Classic_DrawParticles (void)
 	float			scale;
 	unsigned		color;
 
-	GL_Bind0(particletexture);
+	GL_Bind(particletexture);
 	QGX_Blend (true);
 
 	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);

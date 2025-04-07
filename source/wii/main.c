@@ -66,7 +66,7 @@ double current_time = 0;
 int rumble_on = 0;
 
 // Set up the heap.
-static size_t	heap_size	= 37 * 1024 * 1024;
+static size_t	heap_size	= 32 * 1024 * 1024;
 static char		*heap;
 static u32		real_heap_size;
 float sys_frame_length;
@@ -204,6 +204,7 @@ void alloc_main_heap (void) {
 	}	
 	else
 	{
+		printf("heap size: %i\n", real_heap_size);
 		SYS_SetArena2Lo(heap + real_heap_size);
 		_CPU_ISR_Restore(level);
 	}

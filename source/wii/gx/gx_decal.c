@@ -547,7 +547,7 @@ void R_DrawDecals (void)
 		*/
 		GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
 
-		GL_Bind0 (p->texture);
+		GL_Bind (p->texture);
 		/*
 		dcolor = 1;
 		if (((p->die - cl.time) < 0.5) && (!p->bspdecal))

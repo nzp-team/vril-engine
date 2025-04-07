@@ -416,7 +416,7 @@ void QMB_InitParticles (void)
 
 	loading_num_step = loading_num_step + 24;
 	
-	particleimage = loadtextureimage("textures/particles/particlefont", 0, 0, false, 0, true, false);
+	particleimage = Image_LoadImage("textures/particles/particlefont", IMAGE_TGA, 0, true, false);
 	if (particleimage <= 0)
 	{
 		//Clear_LoadingFill ();
@@ -445,7 +445,7 @@ void QMB_InitParticles (void)
 	
 	max_s = max_t = 64.0;
 	
-	particleimage = loadtextureimage("textures/particles/flame", 0, 0, false, 0, true, false);
+	particleimage = Image_LoadImage("textures/particles/flame", IMAGE_TGA, 0, true, false);
 	if (particleimage <= 0)
 	{
 		//Clear_LoadingFill ();
@@ -458,7 +458,7 @@ void QMB_InitParticles (void)
 
 	max_s = max_t = 64.0;
 	
-	particleimage = loadtextureimage("textures/particles/inferno", 0, 0, false, 0, true, false);
+	particleimage = Image_LoadImage("textures/particles/inferno", IMAGE_TGA, 0, true, false);
 	if (particleimage <= 0)
 	{
 		//Clear_LoadingFill ();
@@ -470,7 +470,7 @@ void QMB_InitParticles (void)
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	particleimage = loadtextureimage("textures/particles/zing1", 0, 0, false, 0, true, false);
+	particleimage = Image_LoadImage("textures/particles/zing1", IMAGE_TGA, 0, true, false);
 	if (particleimage <= 0)
 	{
         //Clear_LoadingFill ();
@@ -484,7 +484,7 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 	max_s = max_t = 128.0;
 	
-	particleimage = loadtextureimage("textures/mzfl/mzfl0", 0, 0, false, 0, true, false);
+	particleimage = Image_LoadImage("textures/mzfl/mzfl0", IMAGE_TGA, 0, true, false);
 	if (particleimage <= 0)
 	{
 		//Clear_LoadingFill ();
@@ -496,7 +496,7 @@ void QMB_InitParticles (void)
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	particleimage = loadtextureimage("textures/mzfl/mzfl1", 0, 0, false, 0, true, false);
+	particleimage = Image_LoadImage("textures/mzfl/mzfl1", IMAGE_TGA, 0, true, false);
 	if (particleimage <= 0)
 	{
 		//Clear_LoadingFill ();
@@ -507,7 +507,7 @@ void QMB_InitParticles (void)
 
     loading_cur_step++;	
 	SCR_UpdateScreen ();
-	particleimage = loadtextureimage("textures/mzfl/mzfl2", 0, 0, false, 0, true, false);
+	particleimage = Image_LoadImage("textures/mzfl/mzfl2", IMAGE_TGA, 0, true, false);
 	if (particleimage <= 0)
 	{
         //Clear_LoadingFill ();
@@ -520,7 +520,7 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 	
 	max_s = max_t = 64.0;
-	particleimage = loadtextureimage("textures/particles/bloodcloud", 0, 0, false, 0, true, false);
+	particleimage = Image_LoadImage("textures/particles/bloodcloud", IMAGE_TGA, 0, true, false);
 	if (particleimage <= 0)
 	{
 		Con_Printf("could not load bloodcloud texture");
@@ -1050,6 +1050,10 @@ void QMB_ClearParticles (void)
 
 	free (particles);		// free
 	QMB_AllocParticles ();	// and alloc again
+
+	if(!particles)
+		return;
+		
 	particle_count = 0;
 	memset (particles, 0, r_numparticles * sizeof(particle_t));
 	free_particles = &particles[0];
@@ -1399,8 +1403,6 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
     //glDepthMask (GL_FALSE);
 	//GX_SetZMode(GX_FALSE, GX_ALWAYS, GX_FALSE);
 	
-	//GL_Bind0 (ptex->texnum);
-   
     //glBegin (GL_QUADS);
     GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 
@@ -1668,7 +1670,7 @@ void QMB_DrawParticles (void)
 			case pd_billboard:
 				ptex = &particle_textures[pt->texture];
 				//GL_Bind (ptex->texnum);
-				GL_Bind0 (ptex->texnum);
+				GL_Bind (ptex->texnum);
 				if (vid_retromode.value == 1)
 					GX_SetMinMag (GX_NEAR, GX_NEAR);
 				else
@@ -1706,7 +1708,7 @@ void QMB_DrawParticles (void)
 
 			case pd_billboard_vel:
 				ptex = &particle_textures[pt->texture];
-				GL_Bind0 (ptex->texnum);
+				GL_Bind (ptex->texnum);
 				for (p = pt->start ; p ; p = p->next)
 				{
 					if (particle_time < p->start || particle_time >= p->die)

@@ -343,7 +343,7 @@ void R_DrawSpriteModel (entity_t *e)
 
 	//GL_DisableMultitexture();
 
-    GL_Bind0(frame->gl_texturenum);
+    GL_Bind(frame->gl_texturenum);
 	
 	if (vid_retromode.value == 1)
 		GX_SetMinMag (GX_NEAR, GX_NEAR);
@@ -898,7 +898,7 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
 
 	anim = (int)(cl.time*10) & 3;
-	GL_Bind0(paliashdr->gl_texturenum[e->skinnum][anim]);
+	GL_Bind(paliashdr->gl_texturenum[e->skinnum][anim]);
 
 	/*
 	if (gl_smoothmodels.value)
@@ -1105,28 +1105,28 @@ void R_DrawAliasModel (entity_t *e)
 		switch(e->skinnum)
 		{
 			case 0:
-				GL_Bind0(zombie_skins[0]);
+				GL_Bind(zombie_skins[0]);
 				if (vid_retromode.value == 1)
 					GX_SetMinMag (GX_NEAR, GX_NEAR);
 				else
 					GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 				break;
 			case 1:
-				GL_Bind0(zombie_skins[1]);
+				GL_Bind(zombie_skins[1]);
 				if (vid_retromode.value == 1)
 					GX_SetMinMag (GX_NEAR, GX_NEAR);
 				else
 					GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 				break;
 			case 2:
-				GL_Bind0(zombie_skins[2]);
+				GL_Bind(zombie_skins[2]);
 				if (vid_retromode.value == 1)
 					GX_SetMinMag (GX_NEAR, GX_NEAR);
 				else
 					GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 				break;
 			case 3:
-				GL_Bind0(zombie_skins[3]);
+				GL_Bind(zombie_skins[3]);
 				if (vid_retromode.value == 1)
 					GX_SetMinMag (GX_NEAR, GX_NEAR);
 				else
@@ -1134,7 +1134,7 @@ void R_DrawAliasModel (entity_t *e)
 				break;
 			default: //out of bounds? assuming 0
 				Con_Printf("Zombie tex out of bounds: Tex[%i]\n",e->skinnum);
-				GL_Bind0(zombie_skins[0]);
+				GL_Bind(zombie_skins[0]);
 				GX_SetMinMag (GX_LINEAR, GX_NEAR);
 				break;
 		}
@@ -1142,7 +1142,7 @@ void R_DrawAliasModel (entity_t *e)
 	else
 	{
 		anim = (int)(cl.time*10) & 3;
-		GL_Bind0(paliashdr->gl_texturenum[currententity->skinnum][anim]);
+		GL_Bind(paliashdr->gl_texturenum[currententity->skinnum][anim]);
 		if (vid_retromode.value == 1)
 			GX_SetMinMag (GX_NEAR, GX_NEAR);
 		else
@@ -1475,7 +1475,7 @@ void R_PolyBlend (void)
 	QGX_Alpha(false);
 	QGX_Blend(true);
 	QGX_ZMode(false);
-	GL_Bind0(white_texturenum); // ELUTODO: do not use a texture
+	GL_Bind(white_texturenum); // ELUTODO: do not use a texture
 	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
 
 	c_guMtxIdentity(view);
@@ -1861,7 +1861,10 @@ void R_RenderScene (void)
 	// for the entities, we load the matrices separately
 	R_DrawEntitiesOnList ();
 
-	//GL_DisableMultitexture();
+	GX_ClearVtxDesc();
+	GX_SetVtxDesc(GX_VA_POS, GX_DIRECT);
+	GX_SetVtxDesc(GX_VA_CLR0, GX_DIRECT);
+	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
 
 	GX_LoadPosMtxImm(view, GX_PNMTX0);
 	// sBTODO: Fix TexCoord mapping for decals 

@@ -29,14 +29,11 @@ static char     *argvdummy = " ";
 static char     *safeargvs[NUM_SAFE_ARGVS] =
 	{"-stdvid", "-nolan", "-nosound", "-nocdaudio", "-nojoy", "-nomouse", "-dibonly"};
 
-cvar_t  registered = {"registered","1"};
 cvar_t  cmdline = {"cmdline","0", false, true};
 
 qboolean        com_modified;   // set true if using non-id files
 
 qboolean		proghack;
-
-int             static_registered = 1;  // only for startup check, then set
 
 qboolean		msg_suppress_1 = 0;
 
@@ -1001,50 +998,6 @@ int COM_CheckParm (char *parm)
 	return 0;
 }
 
-/*
-================
-COM_CheckRegistered
-
-Looks for the pop.txt file and verifies it.
-Sets the "registered" cvar.
-Immediately exits out if an alternate game was attempted to be started without
-being registered.
-================
-*/
-void COM_CheckRegistered (void)
-{
-	int             h;
-	unsigned short  check[128];
-	int                     i;
-
-	COM_OpenFile("gfx/pop.lmp", &h);
-	static_registered = 1;
-
-	if (h == -1)
-	{
-#if WINDED
-	Sys_Error ("This dedicated server requires a full registered copy of Quake");
-#endif
-		Con_Printf ("Playing shareware version.\n");
-//		if (com_modified)
-//			Sys_Error ("You must have the registered version to use modified games");
-		return;
-	}
-
-	Sys_FileRead (h, check, sizeof(check));
-	COM_CloseFile (h);
-	
-	for (i=0 ; i<128 ; i++)
-		if (pop[i] != (unsigned short)BigShort (check[i]))
-			Sys_Error ("Corrupted data file.");
-	
-	Cvar_Set ("cmdline", com_cmdline);
-	Cvar_Set ("registered", "1");
-	static_registered = 1;
-	Con_Printf ("Playing registered version.\n");
-}
-
-
 void COM_Path_f (void);
 
 
@@ -1147,12 +1100,10 @@ void COM_Init (char *basedir)
 		LittleFloat = FloatSwap;
 	}
 
-	Cvar_RegisterVariable (&registered);
 	Cvar_RegisterVariable (&cmdline);
 	Cmd_AddCommand ("path", COM_Path_f);
 
 	COM_InitFilesystem ();
-	COM_CheckRegistered ();
 }
 
 
@@ -1364,11 +1315,11 @@ Sets com_filesize and one of handle or file
 int COM_FindFile (char *filename, int *handle, FILE **file)
 {
 	searchpath_t    *search;
-	char            netpath[128];
-	char            cachepath[MAX_OSPATH*2];
+    char            netpath[128];
+	char            cachepath[MAX_OSPATH * 2];
 	pack_t          *pak;
-	int             i;
-	int             findtime, cachetime;
+	int                     i;
+	int                     findtime, cachetime;
 
 	if (file && handle)
 		Sys_Error ("COM_FindFile: both handle and file set");
@@ -1403,16 +1354,17 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 					}
 					else
 					{       // open a new file on the pakfile
-						Sys_FileOpenRead(pak->filename, (int *)file);
-						if ((*file) >= 0)
-							Sys_FileSeek((int)file, pak->files[i].filepos);
+						*file = fopen (pak->filename, "rb");
+						if (*file)
+							fseek (*file, pak->files[i].filepos, SEEK_SET);
 					}
 					com_filesize = pak->files[i].filelen;
 					return com_filesize;
 				}
 		}
 		else
-		{       
+		{               
+			// check a file in the directory tree
 			snprintf (netpath, MAX_OSPATH * 2, "%s/%s", search->filename, filename);
 			
 			findtime = Sys_FileTime (netpath);
@@ -1423,7 +1375,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 			if (!com_cachedir[0])
 				strcpy (cachepath, netpath);
 			else
-			{
+			{	
 				snprintf(cachepath, MAX_OSPATH * 2, "%s%s", com_cachedir, netpath);
 
 				cachetime = Sys_FileTime (cachepath);
@@ -1433,14 +1385,14 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 				strcpy (netpath, cachepath);
 			}	
 
-			//Sys_Printf ("FindFile: %s\n",netpath);
+			Sys_Printf ("FindFile: %s\n",netpath);
 			com_filesize = Sys_FileOpenRead (netpath, &i);
 			if (handle)
 				*handle = i;
 			else
 			{
 				Sys_FileClose (i);
-				Sys_FileOpenRead(netpath, (int *)file);
+				*file = fopen (netpath, "rb");
 			}
 			return com_filesize;
 		}
@@ -1452,7 +1404,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 	if (handle)
 		*handle = -1;
 	else
-		*file = (FILE *)-1;
+		*file = NULL;
 	com_filesize = -1;
 	return -1;
 }
@@ -1549,7 +1501,7 @@ byte *COM_LoadFile (char *path, int usehunk)
 	}
 	else if (usehunk == 5)
 	{
-		buf = malloc(len+1);
+		buf = Q_malloc(len+1);
 	}
 	else
 		Sys_Error ("COM_LoadFile: bad usehunk");

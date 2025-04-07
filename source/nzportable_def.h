@@ -258,8 +258,8 @@ typedef struct
 #include "sound.h"
 
 #include "progs.h"
+#include "server.h"
 
-#include PLATFORM_FILE(server.h)
 #include RENDERER_FILE(model.h)
 
 #include "input.h"
