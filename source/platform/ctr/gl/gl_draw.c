@@ -34,9 +34,7 @@ cvar_t		gl_max_size = {"gl_max_size", "1024"};
 cvar_t		gl_picmip = {"gl_picmip", "0"};
 
 byte		*draw_chars;				// 8*8 graphic characters
-qpic_t		*sniper_scope;
-
-qpic_t		*draw_backtile;
+int			sniper_scope;
 
 int			translate_texture;
 int			char_texture;
@@ -182,85 +180,7 @@ void Scrap_Upload (void)
 //=============================================================================
 /* Support Routines */
 
-typedef struct cachepic_s
-{
-	char		name[MAX_QPATH];
-	qpic_t		pic;
-	byte		padding[32];	// for appended glpic
-} cachepic_t;
-
-#define	MAX_CACHED_PICS		128
-cachepic_t	menu_cachepics[MAX_CACHED_PICS];
-int			menu_numcachepics;
-
 byte		menuplyr_pixels[4096];
-
-int		pic_texels;
-int		pic_count;
-
-/*
-================
-Draw_CachePic
-================
-*/
-qpic_t	*Draw_CachePic (char *path)
-{
-	cachepic_t	*pic;
-	int			i;
-	qpic_t		*dat;
-	glpic_t		*gl;
-	char		str[128];
-
-	strcpy (str, path);
-	for (pic=menu_cachepics, i=0 ; i<menu_numcachepics ; pic++, i++)
-		if (!strcmp (str, pic->name))
-			return &pic->pic;
-
-	if (menu_numcachepics == MAX_CACHED_PICS)
-		Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
-	menu_numcachepics++;
-	strcpy (pic->name, str);
-
-//
-// load the pic from disk
-//
-
-	int index = loadtextureimage (str, 0, 0, false, 0, false, false);
-	if(index)
-	{
-		pic->pic.width  = gltextures[index].original_width;
-		pic->pic.height = gltextures[index].original_height;
-
-		gltextures[index].islmp = false;
-		gl = (glpic_t *)pic->pic.data;
-		gl->texnum = index;
-
-		return &pic->pic;
-	}
-
-	dat = (qpic_t *)COM_LoadTempFile (str);
-	if (!dat)
-	{
-		strcat (str, ".lmp");
-		dat = (qpic_t *)COM_LoadTempFile (str);
-		if (!dat)
-		{
-			Con_Printf ("Draw_CachePic: failed to load file %s\n", str);
-			return NULL;
-		}
-	}
-	SwapPic (dat);
-
-
-	pic->pic.width = dat->width;
-	pic->pic.height = dat->height;
-
-	gl = (glpic_t *)pic->pic.data;
-	gl->texnum = GL_LoadPicTexture (dat);
-
-	gltextures[gl->texnum].islmp = true;
-	return &pic->pic;
-}
 
 typedef struct
 {
@@ -382,7 +302,7 @@ void Draw_Init (void)
 	Cmd_AddCommand ("gl_texturemode", &Draw_TextureMode_f);
 
 	// now turn them into textures
-	char_texture = loadtextureimage ("gfx/charset", 0, 0, false, 0, false, false);
+	char_texture = Image_LoadImage ("gfx/charset", IMAGE_TGA, 0, true, false);
 	if (char_texture == 0)// did not find a matching TGA...
 		Sys_Error ("Could not load charset, make sure you have every folder and file installed properly\nDouble check that all of your files are in their correct places\nAnd that you have installed the game properly.\n");
 
@@ -405,7 +325,7 @@ void Draw_Init (void)
 	//
 	// get the other pics we need
 	//
-	sniper_scope = Draw_CachePic ("gfx/hud/scope");
+	sniper_scope = Image_LoadImage ("gfx/hud/scope", IMAGE_TGA, 0, true, false);
 
 	Clear_LoadingFill ();
 
@@ -579,18 +499,17 @@ void Draw_DebugChar (char num)
 Draw_AlphaPic
 =============
 */
-void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha)
+void Draw_AlphaPic (int x, int y, int pic, float alpha)
 {
 	Draw_ColorPic(x, y, pic, 255, 255, 255, alpha);
 }
-
 
 /*
 =============
 Draw_Pic
 =============
 */
-void Draw_Pic (int x, int y, qpic_t *pic)
+void Draw_Pic (int x, int y, int pic)
 {
 	Draw_ColorPic(x, y, pic, 255, 255, 255, 255);
 }
@@ -600,13 +519,10 @@ void Draw_Pic (int x, int y, qpic_t *pic)
 Draw_ColoredStretchPic
 =============
 */
-void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value, int r, int g, int b, int a)
+void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, int r, int g, int b, int a)
 {
-	glpic_t			*gl;
-
 	if (scrap_dirty)
 		Scrap_Upload ();
-	gl = (glpic_t *)pic->data;
 
 	glEnable(GL_BLEND);
 	glDisable(GL_ALPHA_TEST);
@@ -614,7 +530,7 @@ void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-	GL_Bind (gl->texnum);
+	GL_Bind (pic);
 	glBegin (GL_QUADS);
 	glTexCoord2f (0, 0);
 	glVertex2f (x, y);
@@ -634,19 +550,15 @@ void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value
 Draw_StretchPic
 =============
 */
-void Draw_StretchPic (int x, int y, qpic_t *pic, int x_value, int y_value)
+void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
 {
-	glpic_t			*gl;
-
 	if (scrap_dirty)
 		Scrap_Upload ();
-	gl = (glpic_t *)pic->data;
-
 
 	glEnable(GL_ALPHA_TEST);
 	glColor4f(1,1,1,1);
 
-	GL_Bind (gl->texnum);
+	GL_Bind (pic);
 	glBegin (GL_QUADS);
 	glTexCoord2f (0, 0);
 	glVertex2f (x, y);
@@ -666,30 +578,27 @@ void Draw_StretchPic (int x, int y, qpic_t *pic, int x_value, int y_value)
 Draw_ColorPic
 =============
 */
-void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float a)
+void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 {
-	glpic_t			*gl;
-
 	if (scrap_dirty)
 		Scrap_Upload ();
-	gl = (glpic_t *)pic->data;
 
 	glDisable(GL_ALPHA_TEST);
 	glEnable(GL_BLEND);
 	glColor4f(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	GL_Bind (gl->texnum);
+	GL_Bind (pic);
 
 	glBegin (GL_QUADS);
 	glTexCoord2f (0, 0);
 	glVertex2f (x, y);
 	glTexCoord2f (1, 0);
-	glVertex2f (x+pic->width, y);
+	glVertex2f (x+gltextures[pic].width, y);
 	glTexCoord2f (1, 1);
-	glVertex2f (x+pic->width, y+pic->height);
+	glVertex2f (x+gltextures[pic].width, y+gltextures[pic].height);
 	glTexCoord2f (0, 1);
-	glVertex2f (x, y+pic->height);
+	glVertex2f (x, y+gltextures[pic].height);
 	glEnd ();
 
 	glDisable(GL_BLEND);
@@ -702,10 +611,10 @@ void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float
 Draw_TransPic
 =============
 */
-void Draw_TransPic (int x, int y, qpic_t *pic)
+void Draw_TransPic (int x, int y, int pic)
 {
-	if (x < 0 || (unsigned)(x + pic->width) > vid.width || y < 0 ||
-		 (unsigned)(y + pic->height) > vid.height)
+	if (x < 0 || (unsigned)(x + gltextures[pic].width) > vid.width || y < 0 ||
+		 (unsigned)(y + gltextures[pic].height) > vid.height)
 	{
 		Sys_Error ("bad coordinates");
 	}
@@ -721,7 +630,7 @@ Draw_TransPicTranslate
 Only used for the player color selection menu
 =============
 */
-void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation)
+void Draw_TransPicTranslate (int x, int y, int pic, byte *translation)
 {
 	int				v, u;
 	unsigned		trans[64*64], *dest;
@@ -733,10 +642,10 @@ void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation)
 	dest = trans;
 	for (v=0 ; v<64 ; v++, dest += 64)
 	{
-		src = &menuplyr_pixels[ ((v*pic->height)>>6) *pic->width];
+		src = &menuplyr_pixels[ ((v*gltextures[pic].height)>>6) *gltextures[pic].width];
 		for (u=0 ; u<64 ; u++)
 		{
-			p = src[(u*pic->width)>>6];
+			p = src[(u*gltextures[pic].width)>>6];
 			if (p == 255)
 				dest[u] = p;
 			else
@@ -754,11 +663,11 @@ void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation)
 	glTexCoord2f (0, 0);
 	glVertex2f (x, y);
 	glTexCoord2f (1, 0);
-	glVertex2f (x+pic->width, y);
+	glVertex2f (x+gltextures[pic].width, y);
 	glTexCoord2f (1, 1);
-	glVertex2f (x+pic->width, y+pic->height);
+	glVertex2f (x+gltextures[pic].width, y+gltextures[pic].height);
 	glTexCoord2f (0, 1);
-	glVertex2f (x, y+pic->height);
+	glVertex2f (x, y+gltextures[pic].height);
 	glEnd ();
 }
 
@@ -772,31 +681,6 @@ Draw_ConsoleBackground
 void Draw_ConsoleBackground (int lines)
 {
 	Draw_FillByColor(0, 0, vid.width, lines, 0, 0, 0, 255);
-}
-
-
-/*
-=============
-Draw_TileClear
-
-This repeats a 64*64 tile graphic to fill the screen around a sized down
-refresh window.
-=============
-*/
-void Draw_TileClear (int x, int y, int w, int h)
-{
-	glColor3f (1,1,1);
-	GL_Bind (*(int *)draw_backtile->data);
-	glBegin (GL_QUADS);
-	glTexCoord2f (x/64.0, y/64.0);
-	glVertex2f (x, y);
-	glTexCoord2f ( (x+w)/64.0, y/64.0);
-	glVertex2f (x+w, y);
-	glTexCoord2f ( (x+w)/64.0, (y+h)/64.0);
-	glVertex2f (x+w, y+h);
-	glTexCoord2f ( x/64.0, (y+h)/64.0 );
-	glVertex2f (x, y+h);
-	glEnd ();
 }
 
 /*
@@ -909,7 +793,7 @@ byte *StringToRGB (char *s)
 extern cvar_t crosshair;
 extern qboolean croshhairmoving;
 //extern cvar_t cl_zoom;
-extern qpic_t *hitmark;
+extern int hitmark;
 double Hitmark_Time, crosshair_spread_time;
 float cur_spread;
 float crosshair_offset_step;
@@ -1097,7 +981,7 @@ void Draw_Crosshair (void)
 	if (cl.stats[STAT_ZOOM] == 2)
 		Draw_Pic (-39, -15, sniper_scope);
    	if (Hitmark_Time > sv.time)
-        Draw_Pic ((vid.width - hitmark->width)/2,(vid.height - hitmark->height)/2, hitmark);
+        Draw_Pic ((vid.width - gltextures[hitmark].width)/2,(vid.height - gltextures[hitmark].height)/2, hitmark);
 
 	// Make sure to do this after hitmark drawing.
 	if (cl.stats[STAT_ZOOM] == 2 || cl.stats[STAT_ZOOM] == 1)

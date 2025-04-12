@@ -240,7 +240,7 @@ int Image_LoadImage(char* filename, int image_format, int filter, qboolean keep,
 #endif
 
 	if(texture_index < 0)
-		Sys_Error("loadtextureimage: failed to load texture %s\n", texname);
+		Sys_Error("Image_LoadImage: failed to load texture %s\n", texname);
 
 	free(data);
 

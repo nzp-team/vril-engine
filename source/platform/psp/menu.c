@@ -420,18 +420,18 @@ int M_Start_Cusor;
 
 void M_Load_Menu_Pics ()
 {
-	menu_bk = loadtextureimage("gfx/menu/menu_background", 0, 0, false, GU_LINEAR, false, false);
-	menu_ndu 	= loadtextureimage("gfx/menu/nacht_der_untoten", 0, 0, false, GU_LINEAR, false, false);
+	menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA | IMAGE_PNG, 0, true, false);
+	menu_ndu 	= Image_LoadImage("gfx/menu/nacht_der_untoten", IMAGE_TGA | IMAGE_PNG, 0, false, false);
 	//menu_kn 	= Draw_CacheImg("gfx/menu/kino_der_toten");
-	menu_wh 	= loadtextureimage("gfx/menu/nzp_warehouse", 0, 0, false, GU_LINEAR, false, false);
-	menu_wh2 	= loadtextureimage("gfx/menu/nzp_warehouse2", 0, 0, false, GU_LINEAR, false, false);
+	menu_wh 	= Image_LoadImage("gfx/menu/nzp_warehouse", IMAGE_TGA | IMAGE_PNG, 0, false, false);
+	menu_wh2 	= Image_LoadImage("gfx/menu/nzp_warehouse2", IMAGE_TGA | IMAGE_PNG, 0, false, false);
 	//menu_wn 	= Draw_CacheImg("gfx/menu/wahnsinn");
-	menu_ch 	= loadtextureimage("gfx/menu/christmas_special", 0, 0, false, GU_LINEAR, false, false);
-	menu_custom = loadtextureimage("gfx/menu/custom", 0, 0, false, GU_LINEAR, false, false);
+	menu_ch 	= Image_LoadImage("gfx/menu/christmas_special", IMAGE_TGA | IMAGE_PNG, 0, false, false);
+	menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_TGA | IMAGE_PNG, 0, false, false);
 	for (int i = 0; i < MAX_CUSTOM_MAPS; i++) {
 		if (custom_maps[i].occupied == false) continue;
 		if (custom_maps[i].map_use_thumbnail == false) continue;
-		custom_maps[i].thumbnail_index = loadtextureimage(custom_maps[i].map_thumbnail_path, 0, 0, false, GU_LINEAR, false, false);
+		custom_maps[i].thumbnail_index = Image_LoadImage(custom_maps[i].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
 	}
 }
 
@@ -584,6 +584,8 @@ int	m_main_cursor;
 
 void M_Menu_Main_f (void)
 {
+	M_Load_Menu_Pics();
+
 	key_dest = key_menu;
 	m_state = m_main;
 	m_entersound = true;

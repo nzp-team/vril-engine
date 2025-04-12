@@ -724,6 +724,7 @@ void SCR_Init (void)
 
 	hitmark = Image_LoadImage("gfx/hud/hit_marker", IMAGE_TGA, 0, true, false);
 
+
 	scr_initialized = true;
 }
 
