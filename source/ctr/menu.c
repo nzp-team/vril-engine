@@ -179,16 +179,6 @@ void M_PrintWhite (int cx, int cy, char *str)
 	}
 }
 
-void M_DrawTransPic (int x, int y, qpic_t *pic)
-{
-	Draw_TransPic (x + ((vid.width - 320)>>1), y, pic);
-}
-
-void M_DrawPic (int x, int y, qpic_t *pic)
-{
-	Draw_Pic (x + ((vid.width - 320)>>1), y, pic);
-}
-
 byte identityTable[256];
 byte translationTable[256];
 
@@ -215,13 +205,6 @@ void M_BuildTranslationTable(int top, int bottom)
 		for (j=0 ; j<16 ; j++)
 			dest[BOTTOM_RANGE+j] = source[bottom+15-j];
 }
-
-
-void M_DrawTransPicTranslate (int x, int y, qpic_t *pic)
-{
-	Draw_TransPicTranslate (x + ((vid.width - 320)>>1), y, pic, translationTable);
-}
-
 
 void M_DrawTextBox (int x, int y, int width, int lines)
 {
@@ -1129,7 +1112,7 @@ void M_Menu_CustomMaps_Draw (void)
 
 			if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
 				menu_cuthum = Image_LoadImage(custom_maps[i + multiplier].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
-				if (menu_cuthum != NULL) {
+				if (menu_cuthum != 0) {
 					Draw_StretchPic(185, 40, menu_cuthum, 175, 100);
 				}
 			}

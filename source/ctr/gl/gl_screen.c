@@ -99,8 +99,8 @@ extern	cvar_t	crosshair;
 
 qboolean	scr_initialized;		// ready to draw
 
-qpic_t      *hitmark;
-qpic_t 		*lscreen;
+int      	hitmark;
+int 		lscreen;
 
 int			scr_fullupdate;
 
@@ -722,7 +722,7 @@ void SCR_Init (void)
 	Cmd_AddCommand ("sizeup",SCR_SizeUp_f);
 	Cmd_AddCommand ("sizedown",SCR_SizeDown_f);
 
-	hitmark = Draw_CachePic("gfx/hud/hit_marker");
+	hitmark = Image_LoadImage("gfx/hud/hit_marker", IMAGE_TGA, 0, true, false);
 
 
 	scr_initialized = true;
@@ -770,23 +770,6 @@ void SCR_DrawFPS (void)
 
 
 //=============================================================================
-
-/*
-==============
-SCR_DrawLoading
-==============
-*/
-void SCR_DrawLoading (void)
-{
-	qpic_t	*pic;
-
-	if (!scr_drawloading)
-		return;
-
-	pic = Draw_CachePic ("gfx/loading.lmp");
-	Draw_Pic ( (vid.width - pic->width)/2,
-		(vid.height - 48 - pic->height)/2, pic);
-}
 
 int Random_Int (int max_int)
 {
@@ -1083,10 +1066,10 @@ void SCR_DrawLoadScreen (void)
 	if (loadingScreen) {
 		Draw_FillByColor(0, 0, 400, 240, 0, 0, 0, 255);
 		if (!loadscreeninit) {
-			lscreen = Draw_CachePic(va("gfx/lscreen/%s", loadname2));
+			lscreen = Image_LoadImage(va("gfx/lscreen/%s", loadname2), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
 
-			if (lscreen == NULL || lscreen == 0) {
-				lscreen = Draw_CachePic("gfx/lscreen/lscreen");
+			if (lscreen == 0 || lscreen == 0) {
+				lscreen = Image_LoadImage("gfx/lscreen/lscreen", IMAGE_PNG, 0, false, false);
 			}
 
 			loadscreeninit = true;
