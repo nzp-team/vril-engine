@@ -602,7 +602,7 @@ void Mod_LoadTextures (lump_t *l)
 		else
 		{
 			sprintf (texname, "textures/%s", mt->name);
-			tx->gl_texturenum = loadtextureimage (texname, 0, 0, false, GU_LINEAR, false, false);
+			tx->gl_texturenum = Image_LoadImage (texname, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, GU_LINEAR, false, true);
 			if(tx->gl_texturenum == 0)
 			{
 				tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(tx_pixels), true, GU_LINEAR, level);
@@ -610,7 +610,7 @@ void Mod_LoadTextures (lump_t *l)
 /*
 		          //Crow_bar mult detail textures
 				  sprintf (detname, "gfx/detail/%s", mt->name);
-			      tx->dt_texturenum = loadtextureimage (detname, 0, 0, false, GU_LINEAR, false, false);
+			      tx->dt_texturenum = Image_LoadImage (detname, 0, 0, false, GU_LINEAR, false, false);
 			      mapTextureNameList.push_back(tx->dt_texturenum);
 */
 			tx->dt_texturenum = 0;
@@ -2064,7 +2064,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
 			pheader->gl_texturenum[i][2] = 
-			pheader->gl_texturenum[i][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, true, GU_LINEAR, false, false);
+			pheader->gl_texturenum[i][3] = Image_LoadImage("models/weapons/m1911/v_biatch.mdl_0", IMAGE_PCX, GU_LINEAR, true, false);
 
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 			return (void *)pskintype;
@@ -2077,7 +2077,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_0", 0, 0, true, GU_LINEAR, false, false);
+					pheader->gl_texturenum[i][3] = Image_LoadImage("models/machines/v_perk.mdl_0", IMAGE_PCX, GU_LINEAR, true, false);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 				} else if (!has_perk_revive && i == 0) {
 					pheader->gl_texturenum[i][0] =
@@ -2090,7 +2090,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_1", 0, 0, true, GU_LINEAR, false, false);
+					pheader->gl_texturenum[i][3] = Image_LoadImage("models/machines/v_perk.mdl_1", IMAGE_PCX, GU_LINEAR, true, false);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 				} else if (!has_perk_juggernog && i == 1) {
 					pheader->gl_texturenum[i][0] =
@@ -2103,7 +2103,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_2", 0, 0, true, GU_LINEAR, false, false);
+					pheader->gl_texturenum[i][3] = Image_LoadImage("models/machines/v_perk.mdl_2", IMAGE_PCX, GU_LINEAR, true, false);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 				} else if (!has_perk_speedcola && i == 2) {
 					pheader->gl_texturenum[i][0] =
@@ -2116,7 +2116,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_3", 0, 0, true, GU_LINEAR, false, false);
+					pheader->gl_texturenum[i][3] = Image_LoadImage("models/machines/v_perk.mdl_3", IMAGE_PCX, GU_LINEAR, true, false);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 				} else if (!has_perk_doubletap && i == 3) {
 					pheader->gl_texturenum[i][0] =
@@ -2129,7 +2129,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_4", 0, 0, true, GU_LINEAR, false, false);
+					pheader->gl_texturenum[i][3] = Image_LoadImage("models/machines/v_perk.mdl_4", IMAGE_PCX, GU_LINEAR, true, false);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 				} else if (!has_perk_staminup && i == 4) {
 					pheader->gl_texturenum[i][0] =
@@ -2142,7 +2142,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_5", 0, 0, true, GU_LINEAR, false, false);
+					pheader->gl_texturenum[i][3] = Image_LoadImage("models/machines/v_perk.mdl_5", IMAGE_PCX, GU_LINEAR, true, false);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 				} else if (!has_perk_flopper && i == 5) {
 					pheader->gl_texturenum[i][0] =
@@ -2155,7 +2155,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_6", 0, 0, true, GU_LINEAR, false, false);
+					pheader->gl_texturenum[i][3] = Image_LoadImage("models/machines/v_perk.mdl_6", IMAGE_PCX, GU_LINEAR, true, false);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 				} else if (!has_perk_deadshot && i == 6) {
 					pheader->gl_texturenum[i][0] =
@@ -2168,7 +2168,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_7", 0, 0, true, GU_LINEAR, false, false);
+					pheader->gl_texturenum[i][3] = Image_LoadImage("models/machines/v_perk.mdl_7", IMAGE_PCX, GU_LINEAR, true, false);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 				} else if (!has_perk_mulekick && i == 7) {
 					pheader->gl_texturenum[i][0] =
@@ -2197,7 +2197,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
 			pheader->gl_texturenum[i][2] = 
-			pheader->gl_texturenum[i][3] = loadtextureimage("models/weapons/v_papskin", 0, 0, true, GU_LINEAR, false, false);
+			pheader->gl_texturenum[i][3] = Image_LoadImage("models/weapons/v_papskin", IMAGE_PCX, GU_LINEAR, true, false);
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 			return (void *)pskintype;
 		}
@@ -2211,7 +2211,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
 			pheader->gl_texturenum[i][2] = 
-			pheader->gl_texturenum[i][3] = loadtextureimage (model2, 0, 0, true, GU_LINEAR, false, false);
+			pheader->gl_texturenum[i][3] = Image_LoadImage (model2, IMAGE_PCX, GU_LINEAR, true, false);
 
 			if (pheader->gl_texturenum[i][0] == 0)// did not find a matching TGA...
 			{
@@ -2240,7 +2240,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 				COM_StripExtension(loadmodel->name, model);
 				snprintf(model2, 128, "%s_%i_%i", model, i, j);
 				pheader->gl_texturenum[i][j&3] =
-				loadtextureimage (model2, 0, 0, false, GU_LINEAR, false, false);
+				Image_LoadImage (model2, IMAGE_PCX, GU_LINEAR, true, false);
 				
 				if (pheader->gl_texturenum[i][j&3] == 0)// did not find a matching TGA...
 				{
@@ -2698,7 +2698,7 @@ void Mod_LoadQ2AliasModel (model_t *mod, void *buffer)
 		pinskins = static_cast<char*>((void*)((int) pinmodel + LittleLong(pinmodel->ofs_skins)));
 		for (i = 0;i < pheader->num_skins;i++)
 		{
-			pheader->gl_texturenum[i] = loadtextureimage (pinskins, 0, 0, true, GU_LINEAR, false, false);
+			pheader->gl_texturenum[i] = Image_LoadImage (pinskins, IMAGE_PCX, GU_LINEAR, true, false);
 			pinskins += MD2MAX_SKINNAME;
 		}
 	}
@@ -2947,22 +2947,22 @@ void Mod_LoadQ3ModelTexture (char *identifier, int flags, int *gl_texnum)
 	char	loadpath[64];
 
 	Q_snprintfz (loadpath, sizeof(loadpath), "textures/q3models/%s", identifier);
-	*gl_texnum = loadtextureimage (loadpath, 0, 0, true, GU_LINEAR, false, false);
+	*gl_texnum = Image_LoadImage (loadpath, IMAGE_PCX, GU_LINEAR, true, false);
 
 	if (!*gl_texnum)
 	{
 		Q_snprintfz (loadpath, sizeof(loadpath), "textures/%s", identifier);
-		*gl_texnum = loadtextureimage (loadpath, 0, 0, true, GU_LINEAR, false, false);
+		*gl_texnum = Image_LoadImage (loadpath, IMAGE_PCX, GU_LINEAR, true, false);
 	}
 	if (!*gl_texnum)
 	{
 		Q_snprintfz (loadpath, sizeof(loadpath), "progs/%s", identifier);
-		*gl_texnum = loadtextureimage (loadpath, 0, 0, true, GU_LINEAR, false, false);
+		*gl_texnum = Image_LoadImage (loadpath, IMAGE_PCX, GU_LINEAR, true, false);
 	}
 	if (!*gl_texnum)
 	{
 		Q_snprintfz (loadpath, sizeof(loadpath), "maps/%s", identifier);
-		*gl_texnum = loadtextureimage (loadpath, 0, 0, true, GU_LINEAR, false, false);
+		*gl_texnum = Image_LoadImage (loadpath, IMAGE_PCX, GU_LINEAR, true, false);
 	}
 }
 
@@ -3501,7 +3501,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum, 
 	{
 		COM_StripExtension(loadmodel->name, sprite);
 		snprintf (sprite2, 128, "%s.spr_%i", sprite, framenum);
-		pspriteframe->gl_texturenum = loadtextureimage (sprite2, 0, 0, true, GU_LINEAR, false, false);
+		pspriteframe->gl_texturenum = Image_LoadImage (sprite2, IMAGE_TGA, GU_LINEAR, true, false);
 		
 		if (pspriteframe->gl_texturenum == 0)// did not find a matching TGA...
 		{
@@ -3511,7 +3511,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum, 
 	else if (version == SPRITE32_VERSION)
 	{
 		size *= 4;
-		pspriteframe->gl_texturenum = GL_LoadImages (name, width, height, (byte *)(pinframe + 1), true, GU_LINEAR, 0, 4);
+		pspriteframe->gl_texturenum = GL_LoadImages (name, width, height, (byte *)(pinframe + 1), true, GU_LINEAR, 0, 4, true);
 	}
 	else
 	{
@@ -3740,7 +3740,7 @@ qboolean Mod_LoadQ2SpriteModel (model_t *mod, void *buffer)
 
 		frame = psprite->frames[i].frameptr = static_cast<mspriteframe_t*>(Hunk_AllocName(sizeof(mspriteframe_t), loadname));
 
-		frame->gl_texturenum = loadtextureimage (pframetype->name, 0, 0, true, GU_LINEAR, false, false);
+		frame->gl_texturenum = Image_LoadImage (pframetype->name, IMAGE_TGA, GU_LINEAR, true, false);
 
 		frame->width = LittleLong(pframetype->width);
 		frame->height = LittleLong(pframetype->height);

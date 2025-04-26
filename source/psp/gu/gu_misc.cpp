@@ -43,10 +43,9 @@ R_InitOtherTextures
 */
 void	R_InitOtherTextures (void)
 {
-	sniper_scope = Draw_CachePic ("gfx/hud/scope_256");
+	sniper_scope = Image_LoadImage ("gfx/hud/scope_256", IMAGE_TGA, 0, true, false);
 
-	zombie_skins[0][0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, true, GU_LINEAR, false, false);
-	GL_MarkTextureAsPermanent(zombie_skins[0][0]);
+	zombie_skins[0][0] = Image_LoadImage ("models/ai/zfull.mdl_0", IMAGE_PCX, GU_LINEAR, true, false);
 
 	// PSP PHAT: Only have 1 Zombie skin.. this saves 192kB of VRAM, well worth it.
 	if (psp_system_model == PSP_MODEL_PHAT) {
@@ -54,21 +53,15 @@ void	R_InitOtherTextures (void)
 		zombie_skins[1][0] = zombie_skins[0][0];
 		zombie_skins[1][1] = zombie_skins[0][0];
 	} else {
-		zombie_skins[0][1] = loadtextureimage ("models/ai/zfull.mdl_1", 0, 0, true, GU_LINEAR, false, false);
-		zombie_skins[1][0] = loadtextureimage ("models/ai/zfull.mdl_2", 0, 0, true, GU_LINEAR, false, false);
-		zombie_skins[1][1] = loadtextureimage ("models/ai/zfull.mdl_3", 0, 0, true, GU_LINEAR, false, false);
-		GL_MarkTextureAsPermanent(zombie_skins[0][1]);
-		GL_MarkTextureAsPermanent(zombie_skins[1][0]);
-		GL_MarkTextureAsPermanent(zombie_skins[1][1]);
+		zombie_skins[0][1] = Image_LoadImage ("models/ai/zfull.mdl_1", IMAGE_PCX, GU_LINEAR, true, false);
+		zombie_skins[1][0] = Image_LoadImage ("models/ai/zfull.mdl_2", IMAGE_PCX, GU_LINEAR, true, false);
+		zombie_skins[1][1] = Image_LoadImage ("models/ai/zfull.mdl_3", IMAGE_PCX, GU_LINEAR, true, false);
 	}
 
-	decal_burn	  = loadtextureimage ("textures/decals/explo_burn01", 0, 0, false, GU_LINEAR, false, false);
-	GL_MarkTextureAsPermanent(decal_burn);
+	decal_burn	  = Image_LoadImage ("textures/decals/explo_burn01", IMAGE_TGA, GU_LINEAR, true, false);
 	decal_blood1 = decal_blood2 = decal_blood3 = decal_q3blood = decal_burn;
-	decal_mark	  = loadtextureimage ("textures/decals/particle_burn01", 0, 0, false, GU_LINEAR, false, false);
-	GL_MarkTextureAsPermanent(decal_mark);
-	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, false, GU_LINEAR, false, false);
-	GL_MarkTextureAsPermanent(decal_glow);
+	decal_mark	  = Image_LoadImage ("textures/decals/particle_burn01", IMAGE_TGA, GU_LINEAR, true, false);
+	decal_glow	  = Image_LoadImage ("textures/decals/glow2", IMAGE_TGA, GU_LINEAR, true, false);
 }
 
 /*

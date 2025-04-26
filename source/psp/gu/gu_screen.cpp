@@ -107,7 +107,7 @@ extern "C"	cvar_t	crosshair;
 
 qboolean	scr_initialized;		// ready to draw
 
-qpic_t      *hitmark;
+int hitmark;
 /*qpic_t 		*ls_ndu;
 qpic_t 		*ls_warehouse;
 qpic_t      *ls_xmas;*/
@@ -271,19 +271,19 @@ char		scr_usestring[64];
 char 		scr_usestring2[64];
 float		scr_usetime_off = 0.0f;
 int			button_pic_x;
-extern qpic_t 		*b_circle;
-extern qpic_t 		*b_square;
-extern qpic_t 		*b_cross;
-extern qpic_t 		*b_triangle;
-extern qpic_t 		*b_left;
-extern qpic_t 		*b_right;
-extern qpic_t 		*b_up;
-extern qpic_t 		*b_down;
-extern qpic_t 		*b_lt;
-extern qpic_t 		*b_rt;
-extern qpic_t 		*b_start;
-extern qpic_t 		*b_select;
-extern qpic_t 		*b_home;
+extern int 	b_circle;
+extern int 	b_square;
+extern int 	b_cross;
+extern int 	b_triangle;
+extern int 	b_left;
+extern int 	b_right;
+extern int 	b_up;
+extern int 	b_down;
+extern int 	b_lt;
+extern int 	b_rt;
+extern int 	b_start;
+extern int 	b_select;
+extern int 	b_home;
 
 /*
 ==============
@@ -293,7 +293,7 @@ Similiar to above, but will also print the current button for the action.
 ==============
 */
 
-qpic_t *GetButtonIcon (char *buttonname)
+int GetButtonIcon (char *buttonname)
 {
 	int		j;
 	int		l;
@@ -680,30 +680,9 @@ void SCR_Init (void)
 //
 	Cmd_AddCommand ("screenshot",SCR_ScreenShot_f);
 
-    hitmark 		= Draw_CachePic("gfx/hud/hit_marker");
+    hitmark = Image_LoadImage("gfx/hud/hit_marker", IMAGE_TGA, 0, true, false);
 
 	scr_initialized = true;
-}
-
-
-/*
-==============
-DrawPause
-==============
-*/
-void SCR_DrawPause (void)
-{
-	qpic_t	*pic;
-
-	if (!scr_showpause.value)		// turn off for screenshots
-		return;
-
-	if (!cl.paused)
-		return;
-
-	pic = Draw_CachePic ("gfx/pause.lmp");
-	Draw_Pic ( (vid.width - pic->width)/2,
-		(vid.height - 48 - pic->height)/2, pic);
 }
 
 /*
@@ -712,7 +691,6 @@ void SCR_DrawPause (void)
 SCR_DrawFPS
 ==============
 */
-
 
 void Draw_FrontText(const char* text, int x, int y, unsigned int color, int fw);
 void SCR_DrawFPS (void)
@@ -843,23 +821,6 @@ void SCR_DrawBAT (void)
 
 }
 
-/*
-==============
-SCR_DrawLoading
-==============
-*/
-void SCR_DrawLoading (void)
-{
-	qpic_t	*pic;
-
-	if (!scr_drawloading)
-		return;
-
-	pic = Draw_CachePic ("gfx/loading.lmp");
-	Draw_Pic ( (vid.width - pic->width)/2,
-		(vid.height - 48 - pic->height)/2, pic);
-}
-
 int Random_Int (int max_int)
 {
 	float	f;
@@ -892,7 +853,7 @@ SCR_DrawLoadScreen
 double loadingtimechange;
 int loadingdot;
 char *lodinglinetext;
-qpic_t *awoo;
+int awoo;
 char *ReturnLoadingtex (void)
 {
     int StringNum = Random_Int(61);
@@ -1098,13 +1059,13 @@ void SCR_DrawLoadScreen (void)
 			char lpath[32];
 			strcpy(lpath, "gfx/lscreen/");
 			strcat(lpath, loadname2);
-			lscreen_index = loadtextureimage(lpath, 0, 0, false, GU_LINEAR, false, false);
-			awoo = Draw_CacheImg("gfx/menu/awoo");
+			lscreen_index = Image_LoadImage(lpath, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, GU_LINEAR, false, false);
+			awoo = Image_LoadImage("gfx/menu/awoo", IMAGE_TGA, GU_LINEAR, true, false);
 			loadscreeninit = true;
 		}
 
 		if (lscreen_index > 0)
-			Draw_PicIndex(scr_vrect.x, scr_vrect.y, 480, 272, lscreen_index);
+			Draw_StretchPic(scr_vrect.x, scr_vrect.y, lscreen_index, 480, 272);
 
 		Draw_FillByColor(0, 0, 480, 24, 0, 0, 0, 150);
 		Draw_FillByColor(0, 248, 480, 24, 0, 0, 0, 150);
@@ -1568,7 +1529,6 @@ void SCR_UpdateScreen (void)
 	//muff - to show FPS on screen
 	SCR_DrawFPS ();
 	SCR_DrawBAT ();
-	SCR_DrawPause ();
 	SCR_CheckDrawCenterString ();
 	SCR_CheckDrawUseString ();
 	HUD_Draw ();

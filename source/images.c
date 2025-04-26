@@ -232,7 +232,7 @@ int Image_LoadImage(char* filename, int image_format, int filter, qboolean keep,
 		return 0;
 	
 #ifdef __PSP__
-	texture_index = GL_LoadImages (texname, image_width, image_height, data, true, filter, 0, 4);
+	texture_index = GL_LoadImages (texname, image_width, image_height, data, true, filter, 0, 4, keep);
 #elif __3DS__
     texture_index = GL_LoadTexture (texname, image_width, image_height, data, mipmap, true, 4);
 #elif __WII__
@@ -243,36 +243,6 @@ int Image_LoadImage(char* filename, int image_format, int filter, qboolean keep,
 		Sys_Error("Image_LoadImage: failed to load texture %s\n", texname);
 
 	free(data);
-
-	return texture_index;
-}
-
-
-// Hacky thing to only load a top half of an image for skybox sides, hard to imagine other use for this
-int loadskyboxsideimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter)
-{
-	int texture_index;
-	byte *data;
-
-	int hunk_start = Hunk_LowMark();
-	data = Image_LoadPixels (filename, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG);
-	int hunk_stop = Hunk_LowMark();
-
-	if(!data)
-	{
-		return 0;
-	}
-    
-#ifdef __PSP__
-	int newheight = image_height * 0.5;
-	texture_index = GL_LoadImages (filename, image_width, newheight, data, true, filter, 0, 4);
-#endif
-
-	// Only free the hunk if it was used.
-	if (hunk_start != hunk_stop)
-		Hunk_FreeToLowMark(hunk_start);
-	else
-		free(data);
 
 	return texture_index;
 }
@@ -297,7 +267,7 @@ int loadrgbafrompal (char* name, int width, int height, byte* data)
         rgbadata[i * 4 + 3] = 255; // Set alpha to opaque
 	}
 
-	int ret = GL_LoadImages(name, width, height, rgbadata, true, GU_LINEAR, 0, 4);
+	int ret = GL_LoadImages(name, width, height, rgbadata, true, GU_LINEAR, 0, 4, true);
 
 	free(rgbadata);
 	return ret;

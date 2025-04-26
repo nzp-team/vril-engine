@@ -26,9 +26,6 @@ void Draw_Character (int x, int y, int num);
 void Draw_CharacterRGBA (int x, int y, int num, float r, float g, float b, float a, float scale);
 void Draw_DebugChar (char num);
 void Draw_Pic (int x, int y,  int texnum);
-#ifdef __PSP__
-void Draw_PicIndex (int x, int y, int width, int height, int texture_index);
-#endif // __PSP__
 void Draw_StretchPic (int x, int y,  int texnum, int x_value, int y_value);
 void Draw_ColorPic (int x, int y, int texnum, float r, float g , float b, float a);
 void Draw_ColoredStretchPic (int x, int y,  int texnum, int x_value, int y_value, int r, int g, int b, int a);
@@ -46,6 +43,9 @@ void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a);
 void Draw_FadeScreen (void);
 void Draw_String (int x, int y, char *str);
 int getTextWidth(char *str, float scale);
+#ifdef __PSP__
+int GL_FindTexture (const char *identifier);
+#endif
 
 //other
 void Clear_LoadingFill (void);
@@ -58,7 +58,3 @@ extern int loading_step;
 extern char loading_name[32];
 extern float loading_num_step;
 extern int font_kerningamount[96];
-
-#ifdef __PSP__
-qpic_t *Draw_CacheImg (char *path);
-#endif
