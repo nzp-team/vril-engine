@@ -34,7 +34,7 @@ typedef unsigned char 		byte;
 #define BYTE_DEFINED 1
 #endif
 
-typedef unsigned int qboolean;
+typedef enum {false, true}	qboolean;
 
 //============================================================================
 

@@ -42,7 +42,7 @@ R_InitOtherTextures
 */
 void	R_InitOtherTextures (void)
 {
-	sniper_scope = Draw_CachePic ("gfx/hud/scope_256");
+	sniper_scope = Image_LoadImage ("gfx/hud/scope_256", IMAGE_TGA, 0, true, false);
 
 	zombie_skins[0][0] = loadpcxas4bpp("models/ai/zfull.mdl_0", GU_LINEAR);
 	GL_MarkTextureAsPermanent(zombie_skins[0][0]);
@@ -61,13 +61,10 @@ void	R_InitOtherTextures (void)
 		GL_MarkTextureAsPermanent(zombie_skins[1][1]);
 	}
 
-	decal_burn	  = loadtextureimage ("textures/decals/explo_burn01", 0, 0, false, GU_LINEAR, false, false);
-	GL_MarkTextureAsPermanent(decal_burn);
+	decal_burn	  = Image_LoadImage ("textures/decals/explo_burn01", IMAGE_TGA, GU_LINEAR, true, false);
 	decal_blood1 = decal_blood2 = decal_blood3 = decal_q3blood = decal_burn;
-	decal_mark	  = loadtextureimage ("textures/decals/particle_burn01", 0, 0, false, GU_LINEAR, false, false);
-	GL_MarkTextureAsPermanent(decal_mark);
-	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, false, GU_LINEAR, false, false);
-	GL_MarkTextureAsPermanent(decal_glow);
+	decal_mark	  = Image_LoadImage ("textures/decals/particle_burn01", IMAGE_TGA, GU_LINEAR, true, false);
+	decal_glow	  = Image_LoadImage ("textures/decals/glow2", IMAGE_TGA, GU_LINEAR, true, false);
 }
 
 /*
