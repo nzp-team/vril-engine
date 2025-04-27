@@ -48,30 +48,6 @@ jobs:
         with:
           name: ctr-nzp-3dsx
           path: ./build/3ds/bin/nzportable.3dsx
-  Compile-DOL:
-    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
-    container:
-      image: devkitpro/devkitppc
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup libogc2
-        run: |
-          sudo dkp-pacman-key --recv-keys C8A2759C315CFBC3429CC2E422B803BA8AA3D7CE --keyserver keyserver.ubuntu.com
-          sudo dkp-pacman-key --lsign-key C8A2759C315CFBC3429CC2E422B803BA8AA3D7CE
-          sudo sed -i '/^\[dkp-libs\]$/,$d' /opt/devkitpro/pacman/etc/pacman.conf
-          sudo echo -e '[extremscorner-devkitpro]\nServer = https://packages.extremscorner.org/devkitpro/linux/$arch' >> /opt/devkitpro/pacman/etc/pacman.conf
-          sudo dkp-pacman -Sy
-          sudo dkp-pacman -S --noconfirm --ask 4 gamecube-tools-git libogc2-git libogc2-libdvm-git
-      - name: Build
-        working-directory: ./
-        run: |
-          make -f Makefile.rvl WERROR=1
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: rvl-nzp-dol
-          path: ./build/wii/apps/nzportable/boot.dol
   Pull-Request-Test-PSP1000:
     if: github.event_name == 'pull_request'
     name: PSP-1000 Pull Request Tests
