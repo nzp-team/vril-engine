@@ -960,7 +960,7 @@ void HUD_Rounds (void)
 				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
 				sb_round[icon_num], 11 * hud_scale_factor, 48 * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 
-				x_offset = x_offset + (32 * hud_scale_factor) + 3;
+				x_offset = x_offset + (11 * hud_scale_factor) + 3;
 			}
 		}
 		else
@@ -1028,7 +1028,7 @@ void HUD_Rounds (void)
 				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
 				sb_round[icon_num], 11 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
 
-				x_offset = x_offset + (32 * hud_scale_factor) + 3;
+				x_offset = x_offset + (11 * hud_scale_factor) + 3;
 			}
 		}
 		else
