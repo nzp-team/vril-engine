@@ -177,6 +177,8 @@ extern float goal_crosshair_yaw;
 void wii_apply_weapon_offset (Mtx in, Mtx rot) {
 	
 	float rotTransX, rotTransY, rotTransZ, adsTransX, adsTransY, adsTransZ;
+
+	if (cl.stats[STAT_ZOOM] == 1 && ads_center.value == 1) return;
 	
 	// rough center for all weapons
 	rotTransX = 0; // up/down
