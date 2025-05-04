@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <unistd.h>
 #endif
 #include <fcntl.h>
+
 #include "nzportable_def.h"
 
 int 		con_linewidth;
@@ -224,9 +225,16 @@ Con_Init
 */
 void Con_Init (void)
 {
+	// rbaldwin2 -- FIXME: remove force console debug
+	#ifdef __NSPIRE__
+	char	*t2 = "/condebug.log.tns";
+
+	con_debuglog = 1;
+	#else
 	char	*t2 = "/condebug.log";
 
 	con_debuglog = COM_CheckParm("-condebug");
+	#endif
 
 	if (con_debuglog)
 	{

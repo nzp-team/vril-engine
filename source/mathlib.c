@@ -760,6 +760,31 @@ void FloorDivMod (float numer, float denom, int *quotient,
 	*rem = r;
 }
 
+void FloorDivModFixed( int numer, int denom, int *quotient, int *rem )
+{
+	int		q, r, x;
+
+	if (numer >= 0 )
+	{
+		x = udiv_64_32( numer, denom );
+		q = x;
+		r = numer - (x * denom); /* fixme: udiv_64_32 calculates the remainder already */
+	}
+	else
+	{
+		x = udiv_64_32( -numer, denom );
+		q = -x;
+		r = -numer - (x * denom); /* fixme: udiv_64_32 calculates the remainder already */
+		if( r != 0 )
+		{
+			q--;
+			r = denom - r;
+		}
+	}
+
+	*quotient = q;
+	*rem = r;
+}
 
 /*
 ===================

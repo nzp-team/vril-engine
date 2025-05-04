@@ -278,7 +278,11 @@ void Host_WriteConfiguration (void)
 // config.cfg cvars
 	if (host_initialized && !isDedicated)
 	{
+		#if __NSPIRE__
+		f = fopen (va("%s/config.cfg.tns",com_gamedir), "w");
+		#else
 		f = fopen (va("%s/config.cfg",com_gamedir), "w");
+		#endif
 		if (!f)
 		{
 			Con_Printf ("Couldn't write config.cfg.\n");
@@ -932,6 +936,8 @@ void Host_Init (quakeparms_t *parms)
 		Con_Printf ("3DS Model: Nintendo 3DS\n");
 #elif __WII__
 	Con_Printf ("WII NZP v%4.1f (DOL: "__TIME__" "__DATE__")\n", (float)(VERSION));
+#elif __NSPIRE__
+	Con_Printf ("NSPIRE NZP v%4.1f (DOL: "__TIME__" "__DATE__")\n", (float)(VERSION));
 #endif // __PSP__, __3DS__
 
 	Con_Printf ("%4.1f megabyte Quake hunk \n",parms->memsize/ (1024*1024.0));

@@ -61,6 +61,18 @@ extern int psp_system_model;
 
 #define	GAMENAME	"nzp"
 
+#define NSPIRE_SMALL_OPTS 1
+
+#ifdef __NSPIRE__
+#define atof atof_dummy_syscall
+#include <os.h>
+#include <math.h>
+#include <stdarg.h>
+#include <setjmp.h>
+#include "nspire/nspire_math.h"
+#undef atof
+double atof( const char *str );
+#else
 #include <math.h>
 #include <string.h>
 #include <stdarg.h>
@@ -69,6 +81,7 @@ extern int psp_system_model;
 #include <setjmp.h>
 #include <stdbool.h>
 #include <ctype.h>
+#endif // __NSPIRE__
 
 #define	VID_LockBuffer()
 #define	VID_UnlockBuffer()
@@ -266,6 +279,10 @@ typedef struct
 
 #include PLATFORM_FILE(server.h)
 #include RENDERER_FILE(model.h)
+
+#ifdef __NSPIRE__ 
+#include "nspire/d_iface.h"
+#endif // __NSPIRE__
 
 #include "input.h"
 #include "world.h"

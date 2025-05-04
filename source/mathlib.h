@@ -101,6 +101,7 @@ void R_ConcatTransforms (float in1[3][4], float in2[3][4], float out[3][4]);
 
 void FloorDivMod (float numer, float denom, int *quotient,
 		int *rem);
+void FloorDivModFixed( int numer, int denom, int *quotient, int *rem );
 fixed16_t Invert24To16(fixed16_t val);
 int GreatestCommonDivisor (int i1, int i2);
 
@@ -209,3 +210,41 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, 
 extern int _mathlib_temp_int1, _mathlib_temp_int2, _mathlib_temp_int3;
 extern float _mathlib_temp_float1, _mathlib_temp_float2, _mathlib_temp_float3;
 extern vec3_t _mathlib_temp_vec1, _mathlib_temp_vec2, _mathlib_temp_vec3;
+
+
+#ifdef __NSPIRE__
+typedef	long long fixed32_t;
+extern void test_float32_shift( float *f, int shift );
+#define CALCG_FIXED_FTOF32( f, f32 ) \
+do {								\
+	float temp;						\
+	temp = f;						\
+	test_float32_shift( &temp, 32 );	\
+	f32 = ( fixed32_t )( temp );		\
+} while( 0 )
+
+extern void test_float32_shift( float *f, int shift );
+
+#define FIXED_FIXEDTOFLOAT( in_fixed, out_float, frac ) \
+do {										\
+	float temp;								\
+	temp = ( float )in_fixed;				\
+	test_float32_shift( &temp, -(frac) );	\
+	out_float = temp;						\
+} while( 0 )
+
+#define FIXED_FLOATTOFIXED( in_float, out_fixed, frac ) \
+do {									\
+	float temp;							\
+	temp = in_float;					\
+	test_float32_shift( &temp, frac );	\
+	out_fixed = ( fixed16_t) ( temp );	\
+} while( 0 )
+
+#define FIXED_SHIFT_FLOAT( in_float, out_float, shift ) \
+do {									\
+	out_float = in_float;				\
+	test_float32_shift( &out_float, shift );	\
+} while( 0 )
+//
+#endif

@@ -1480,6 +1480,8 @@ This is where the magic happens
 #define MaxZombies 18
 #elif __WII__
 #define MaxZombies 24
+#elif __NSPIRE__
+#define MaxZombies 5
 #endif //__PSP__, __3DS__, __WII__
 
 
@@ -3080,7 +3082,9 @@ void PF_GetSoundLen (void)
 		G_FLOAT(OFS_RETURN) = -1;
 		return;
 	}
-
+#ifdef __NSPIRE__
+	G_FLOAT(OFS_RETURN) = 0.0;
+#else
 	info = GetWavinfo (name, data, com_filesize);
 	if (info.channels != 1)
 	{
@@ -3090,6 +3094,7 @@ void PF_GetSoundLen (void)
 	}
 
 	G_FLOAT(OFS_RETURN) = (float)info.samples/(float)info.rate;
+#endif
 }
 
 /*
