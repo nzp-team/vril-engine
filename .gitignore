@@ -9,3 +9,4 @@ EBOOT.PBP
 EBOOT2000.PBP
 *.map
 *.d
+*.tns
