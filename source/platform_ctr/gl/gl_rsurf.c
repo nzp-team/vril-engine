@@ -1112,7 +1112,7 @@ void R_DrawWorld (void)
 	R_AddStaticBrushModelsToChains (); // shpuld
 
 	DrawTextureChains ();
-	Fog_SetupFrame (/*false*/); //johnfitz
+	Fog_SetupFrame (false); //johnfitz
 
 	R_BlendLightmaps();
 }

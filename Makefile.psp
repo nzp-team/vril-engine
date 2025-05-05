@@ -5,9 +5,9 @@ PSPLIBSDIR = $(PSPSDK)/..
 TARGET = nzportable
 PSP_EBOOT_TITLE = Nazi Zombies: Portable
 
-PSP_EBOOT_ICON	= source/psp/pics/icon.png
-PSP_EBOOT_SND0	= source/psp/pics/snd0.at3
-PSP_EBOOT_PIC1	= source/psp/pics/pic.png
+PSP_EBOOT_ICON	= source/platform_psp/pics/icon.png
+PSP_EBOOT_SND0	= source/platform_psp/pics/snd0.at3
+PSP_EBOOT_PIC1	= source/platform_psp/pics/pic.png
 
 PSP_FW_VERSION=400
 
@@ -22,22 +22,22 @@ endif
 endif
 
 COMMON_OBJS = \
-	source/psp/battery.o \
-	source/psp/thread.o \
-	source/psp/VramExt.o \
-	source/psp/input.o \
-	source/psp/main.o \
-	source/psp/math.o \
-	source/psp/sound.o \
-	source/psp/system.o \
-	source/psp/module.o \
-	source/psp/network.o \
-	source/psp/network_psp.o \
-	source/psp/gethost.o \
-	source/psp/fnmatch.o \
-	source/psp/cd.o \
-	source/psp/mp3.o \
-	source/psp/Random.o \
+	source/platform_psp/battery.o \
+	source/platform_psp/thread.o \
+	source/platform_psp/VramExt.o \
+	source/platform_psp/input.o \
+	source/platform_psp/main.o \
+	source/platform_psp/math.o \
+	source/platform_psp/sound.o \
+	source/platform_psp/system.o \
+	source/platform_psp/module.o \
+	source/platform_psp/network.o \
+	source/platform_psp/network_psp.o \
+	source/platform_psp/gethost.o \
+	source/platform_psp/fnmatch.o \
+	source/platform_psp/cd.o \
+	source/platform_psp/mp3.o \
+	source/platform_psp/Random.o \
 	\
 	source/images.o \
 	source/test_handler.o \
@@ -49,19 +49,19 @@ COMMON_OBJS = \
 	source/cl_tent.o \
 	source/cl_slist.o \
     source/cmd.o \
-	source/psp/common.o \
+	source/platform_psp/common.o \
 	source/console.o \
 	source/crc.o \
 	source/cvar.o \
 	source/host.o \
 	source/host_cmd.o \
-	source/psp/keys.o \
+	source/platform_psp/keys.o \
 	source/mathlib.o \
 	source/matrixlib.o \
-	source/psp/menu.o \
-	source/psp/net_dgrm.o \
+	source/platform_psp/menu.o \
+	source/platform_psp/net_dgrm.o \
 	source/net_loop.o \
-	source/psp/net_main.o \
+	source/platform_psp/net_main.o \
 	source/net_vcr.o \
 	source/pr_cmds.o \
 	source/pr_edict.o \
@@ -78,38 +78,40 @@ COMMON_OBJS = \
 	source/wad.o \
 	source/world.o \
 	source/zone.o \
-	source/crypter.o
+	source/crypter.o \
+	source/render/r_fog.o
 
 HARDWARE_VIDEO_ONLY_OBJS = \
-	source/psp/clipping.o \
-	source/psp/vram.o \
-    source/psp/gu/gu_psp.o \
-    source/psp/gu/gu_resample.o \
-    source/psp/gu/gu_fullbright.o \
-    source/psp/gu/gu_hlmdl.o \
-    source/psp/gu/gu_draw.o \
-    source/psp/gu/gu_entity_fragment.o \
-    source/psp/gu/gu_QMB.o \
-    source/psp/gu/gu_decals_QMB.o \
-    source/psp/gu/gu_part.o \
-    source/psp/gu/gu_light.o \
-    source/psp/gu/gu_main.o \
-    source/psp/gu/gu_mesh.o \
-    source/psp/gu/gu_mhex2.o \
-    source/psp/gu/gu_misc.o \
-    source/psp/gu/gu_model.o \
-    source/psp/gu/gu_screen.o \
-    source/psp/gu/gu_surface.o \
-    source/psp/gu/gu_warp.o \
-    source/psp/gu/gu_fog.o \
-    source/psp/gu/gu_dxtn.o \
-	source/psp/gu/gu_colorquant.o
+	source/platform_psp/clipping.o \
+	source/platform_psp/vram.o \
+    source/platform_psp/gu/gu_psp.o \
+    source/platform_psp/gu/gu_resample.o \
+    source/platform_psp/gu/gu_images.o \
+    source/platform_psp/gu/gu_fullbright.o \
+    source/platform_psp/gu/gu_hlmdl.o \
+    source/platform_psp/gu/gu_draw.o \
+    source/platform_psp/gu/gu_entity_fragment.o \
+    source/platform_psp/gu/gu_QMB.o \
+    source/platform_psp/gu/gu_decals_QMB.o \
+    source/platform_psp/gu/gu_part.o \
+    source/platform_psp/gu/gu_light.o \
+    source/platform_psp/gu/gu_main.o \
+    source/platform_psp/gu/gu_mesh.o \
+    source/platform_psp/gu/gu_mhex2.o \
+    source/platform_psp/gu/gu_misc.o \
+    source/platform_psp/gu/gu_model.o \
+    source/platform_psp/gu/gu_screen.o \
+    source/platform_psp/gu/gu_surface.o \
+    source/platform_psp/gu/gu_warp.o \
+    source/platform_psp/gu/gu_fog.o \
+    source/platform_psp/gu/gu_dxtn.o \
+	source/platform_psp/gu/gu_colorquant.o
 HARDWARE_VIDEO_ONLY_FLAGS = -DPSP_HARDWARE_VIDEO
 
 OBJS = $(COMMON_OBJS) $(HARDWARE_VIDEO_ONLY_OBJS)
 
 GU_LIBS	= -lpspgum_vfpu -lpspvfpu -lpspgu -lpspvram
-AUDIO_LIBS	= -lpspaudiolib -lpspaudio -lpspaudiocodec -lpspmp3 source/psp/m33libs/libpspkubridge.a
+AUDIO_LIBS	= -lpspaudiolib -lpspaudio -lpspaudiocodec -lpspmp3 source/platform_psp/m33libs/libpspkubridge.a
 
 MISC_LIBS	= -lpsppower -lpspmath -lpsphprm -ljpeg -lpng -lz
 NET_LIBS    = -lpspwlan -lpspnet_adhoc -lpspnet_adhocctl

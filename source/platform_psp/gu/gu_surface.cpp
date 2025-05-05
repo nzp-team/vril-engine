@@ -93,8 +93,6 @@ void 	VID_SetPaletteLM();
 void 	VID_SetPaletteTX();
 // switch palette for textures
 
-void Fog_SetupFrame (bool worldgeom);
-
 /*
 ===============
 R_AddDynamicLights

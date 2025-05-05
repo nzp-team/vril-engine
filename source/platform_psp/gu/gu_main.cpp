@@ -38,9 +38,6 @@ using namespace quake;
 //prototypes
 extern "C" void V_CalcBlend (void);
 
-void Fog_SetupFrame (bool worldgeom);
-void Fog_EnableGFog (void); 
-void Fog_DisableGFog (void);
 void R_DrawDecals (void);
 void R_RenderDecals (void);
 void R_MarkLeaves (void);
@@ -3623,4 +3620,23 @@ void R_RenderView (void)
 		Con_Printf ("%4i world poly\n",  c_brush_polys);
 		Con_Printf ("%4i entity poly\n",  c_alias_polys);
 	}
+}
+
+// MARK: Vril Graphics Wrapper
+
+void Platform_Graphics_SetTextureMode(int texture_mode)
+{
+	switch(texture_mode) {
+		case GFX_REPLACE:
+			sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
+			break;
+		default:
+			Sys_Error("Platform_Graphics_SetTextureMode: Received unknown texture mode [%d]\n", texture_mode);
+			break;
+	}
+}
+
+void Platform_Graphics_Color(float red, float green, float blue, float alpha)
+{
+	sceGuColor(GU_COLOR(red, green, blue, alpha));
 }
