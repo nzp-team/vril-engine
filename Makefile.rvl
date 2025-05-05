@@ -16,10 +16,10 @@ include $(DEVKITPRO)/libogc2/wii_rules
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
 TARGET		:=	boot
-TARGETDIR   :=  build/wii/apps/nzportable
+TARGETDIR   :=  build/platform_rvl/apps/nzportable
 BUILD		:=	obj
-SOURCES		:=	source/wii\
-			source/wii/gx\
+SOURCES		:=	source/platform_rvl\
+			source/platform_rvl/gx\
 			source\
 
 INCLUDES	:=
@@ -31,7 +31,7 @@ INCLUDES	:=
 
 CFLAGS	=		$(MACHDEP) $(INCLUDE) \
 			-g -Wall -O2 -Wcast-align -fno-merge-constants -fstrict-aliasing -fsingle-precision-constant -fno-aggressive-loop-optimizations \
-			-DGXQUAKE -DNQ_HACK -Wtrigraphs -D__WII__ -DPLATFORM_DIRECTORY="wii" -DPLATFORM_RENDERER="gx"
+			-DGXQUAKE -DNQ_HACK -Wtrigraphs -D__WII__ -DPLATFORM_DIRECTORY="rvl" -DPLATFORM_RENDERER="gx"
 
 ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror

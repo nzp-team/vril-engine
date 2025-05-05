@@ -321,19 +321,6 @@ void Fog_DisableGFog (void)
 
 /*
 =============
-Fog_NewMap
-
-called whenever a map is loaded
-=============
-*/
-
-void Fog_NewMap (void)
-{
-	Fog_ParseWorldspawn (); //for global fog
-}
-
-/*
-=============
 Fog_Init
 
 called when quake initializes

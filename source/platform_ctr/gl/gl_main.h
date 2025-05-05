@@ -1,6 +1,5 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
-Copyright (C) 2007 Peter Mackay and Chris Swindle.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -9,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
 
 See the GNU General Public License for more details.
 
@@ -18,49 +17,64 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
+  
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
-#include <psptypes.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 
 void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);
-u32 GL_GetDrawBuffer(void);
-
-void GL_Upload8(int texture_index, byte *data, int width, int height);
-void GL_Upload16(int texture_index, byte *data, int width, int height);
-int  GL_LoadTexture(const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level);
-// CLUT4
-int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, byte *data, int filter, qboolean swizzled);
-int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int height, byte *data, const byte *pal, int filter);
-
-int GL_LoadTextureLM (const char *identifier, int width, int height, byte *data, int bpp, int filter, qboolean update, int forcopy);
-int GL_LoadImages (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp);
-int GL_LoadTexturePixels (byte *data, char *identifier, int width, int height, int mode);
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
-int loadskyboxsideimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
-int GL_LoadPaletteTexture (const char *identifier, int width, int height, const byte *data, byte *palette, int paltype, qboolean stretch_to_power_of_two, int filter, int mipmap_level);
-
-//Crow_bar
-void GL_GetPixelsBGR (byte *buffer, int width, int height, int i);
-void GL_GetPixelsRGB (byte *buffer, int width, int height, int i);
-void GL_GetPixelsRGBA(byte *buffer, int width, int height, int i);
-
-void swizzle_fast(u8* out, const u8* in, unsigned int width, unsigned int height);
 
 
-#define PAL_RGB  24
-#define PAL_RGBA 32
-#define PAL_Q2   64 //Quake II palette
-#define PAL_H2   65 //Hexen II palette
+#ifdef _WIN32
+// Function prototypes for the Texture Object Extension routines
+typedef GLboolean (APIENTRY *ARETEXRESFUNCPTR)(GLsizei, const GLuint *,
+                    const GLboolean *);
+typedef void (APIENTRY *BINDTEXFUNCPTR)(GLenum, GLuint);
+typedef void (APIENTRY *DELTEXFUNCPTR)(GLsizei, const GLuint *);
+typedef void (APIENTRY *GENTEXFUNCPTR)(GLsizei, GLuint *);
+typedef GLboolean (APIENTRY *ISTEXFUNCPTR)(GLuint);
+typedef void (APIENTRY *PRIORTEXFUNCPTR)(GLsizei, const GLuint *,
+                    const GLclampf *);
+typedef void (APIENTRY *TEXSUBIMAGEPTR)(int, int, int, int, int, int, int, int, void *);
 
-int GL_LoadPalTex (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, byte *palette, int paltype);
+extern	BINDTEXFUNCPTR bindTexFunc;
+extern	DELTEXFUNCPTR delTexFunc;
+extern	TEXSUBIMAGEPTR TexSubImage2DFunc;
+#endif
 
-int GL_LoadPalletedTexture (byte *in, char *identifier, int width, int height, int mode);
+extern	int texture_extension_number;
+extern	int		texture_mode;
 
-void GL_UnloadTexture (const int texture_index);
-void GL_UnloadAllTextures ();
-void GL_MarkTextureAsPermanent (const int texture_index);
+extern	float	gldepthmin, gldepthmax;
+
+void GL_Upload32 (unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha);
+void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
+void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
+int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel);
+int GL_FindTexture (char *identifier);
+
+typedef struct
+{
+	float	x, y, z;
+	float	s, t;
+	float	r, g, b;
+} glvert_t;
+
+extern glvert_t glv;
 
 extern	int glx, gly, glwidth, glheight;
+
+#ifdef _WIN32
+extern	PROC glArrayElementEXT;
+extern	PROC glColorPointerEXT;
+extern	PROC glTexturePointerEXT;
+extern	PROC glVertexPointerEXT;
+#endif
+
 
 /*
 ---------------------------------
@@ -93,6 +107,9 @@ half-life Render Modes. Crow_bar
 ---------------------------------
 */
 
+
+// r_local.h -- private refresh defs
+
 #define ALIAS_BASE_SIZE_RATIO		(1.0 / 11.0)
 					// normalizing factor so player model works out to about
 					//  1 pixel per triangle
@@ -105,8 +122,6 @@ half-life Render Modes. Crow_bar
 #define SKYMASK			(SKYSIZE - 1)
 
 #define BACKFACE_EPSILON	0.01
-
-#define MAX_LIGHTMAPS       128
 
 
 void R_TimeRefresh_f (void);
@@ -150,24 +165,33 @@ typedef enum {
 	pt_static, pt_grav, pt_slowgrav, pt_fire, pt_explode, pt_explode2, pt_blob, pt_blob2
 } ptype_t;
 
-// !!! if this is changed, it must be changed in d_ifacea.h too !!!
-typedef struct particle2_s
+typedef	byte	col_t[4];
+
+typedef struct particle_s
 {
-// driver-usable fields
-	vec3_t		org;
-	float		color;
-// drivers never touch the following fields
-	struct particle2_s	*next;
-	vec3_t		vel;
-	float		ramp;
-	float		die;
-	ptype_t		type;
-} particle2_t;
+	struct	particle_s	*next;
+	vec3_t				org, endorg;
+	col_t				color;
+	float				growth;
+	vec3_t				vel;
+	float 				ramp;
+	ptype_t 			type;
+	float				rotangle;
+	float				rotspeed;
+	float				size;
+	float				start;
+	float				die;
+	byte				hit;
+	byte				texindex;
+	byte				bounces;
+} particle_t;
+
 
 //====================================================
 
 
 extern	entity_t	r_worldentity;
+extern	qboolean	r_cache_thrash;		// compatability
 extern	vec3_t		modelorg, r_entorigin;
 extern	entity_t	*currententity;
 extern	int			r_visframecount;	// ??? what difs?
@@ -192,52 +216,14 @@ extern	mleaf_t		*r_viewleaf, *r_oldviewleaf;
 extern	texture_t	*r_notexture_mip;
 extern	int		d_lightstylevalue[256];	// 8.8 fraction of base light value
 
-extern  int	    skyimage[5]; // Where sky images are stored
-extern  int 	lightmap_index[MAX_LIGHTMAPS]; // Where lightmaps are stored
-
-extern  int     reloaded_pallete;
-
 extern	qboolean	envmap;
 extern	int	currenttexture;
 extern	int	cnttextures[2];
 extern	int	particletexture;
 extern	int	playertextures;
-//extern	int	playertextures[MAX_SCOREBOARD];
 
 extern	int	skytexturenum;		// index in cl.loadmodel, not gl texture object
 
-extern	cvar_t  scr_conheight;
-extern 	cvar_t 	scr_fov;
-
-extern	cvar_t	r_partalpha;
-
-extern	cvar_t  r_maxrange;
-
-extern	cvar_t	r_restexf;
-extern	cvar_t	r_texcompr;
-
-extern	cvar_t	r_skyfog;
-extern	cvar_t	r_skyvflip;
-extern	cvar_t	r_skydis;
-
-extern  cvar_t	r_caustics;
-extern	cvar_t	r_detail;
-extern  cvar_t	r_detail_mipmaps;
-extern  cvar_t	r_detail_mipmaps_func;
-extern  cvar_t	r_detail_mipmaps_bias;
-extern  cvar_t  r_model_brightness;
-extern  cvar_t  r_farclip;
-extern  cvar_t  r_loadq3models;
-
-extern  cvar_t  r_i_model_animation;
-extern  cvar_t  r_i_model_transform;
-extern  cvar_t  r_asynch;
-
-extern  cvar_t  cl_loadmapcfg;
-extern  cvar_t  r_fastsky;
-extern  cvar_t  r_skycolor;
-extern  cvar_t  r_skyfogblend;
-extern	cvar_t	r_waterripple;
 extern	cvar_t	r_norefresh;
 extern	cvar_t	r_drawentities;
 extern	cvar_t	r_drawworld;
@@ -251,23 +237,8 @@ extern	cvar_t	r_mirroralpha;
 extern	cvar_t	r_wateralpha;
 extern	cvar_t	r_dynamic;
 extern	cvar_t	r_novis;
-extern	cvar_t	r_tex_scale_down;
-extern	cvar_t	r_particles_simple;
-extern  cvar_t	r_vsync;
-extern  cvar_t	r_mipmaps;
-extern  cvar_t	r_mipmaps_func;
-extern  cvar_t	r_mipmaps_bias;
-extern  cvar_t	r_retro; // dr_mabuse1981: "retro filter" (makes textures drawn with GU_NEAREST).
-extern	cvar_t	gl_keeptjunctions;
-extern  cvar_t	r_waterwarp;
-
-extern  cvar_t  r_showbboxes;
-extern  cvar_t  r_showbboxes_full;
-
-extern  cvar_t  r_polyblend;
-
-extern  cvar_t  r_showtris;
-extern  cvar_t  r_showtris_full;
+extern  cvar_t  r_farclip;
+extern 	cvar_t 	r_skyfog;
 
 extern  cvar_t  r_laserpoint;
 extern  cvar_t  r_particle_count;
@@ -283,7 +254,6 @@ extern  cvar_t	r_part_lavasplash;
 extern	cvar_t	r_part_flames;
 extern	cvar_t	r_part_lightning;
 extern	cvar_t	r_part_flies;
-extern	cvar_t	r_particle_count;
 extern	cvar_t	r_bounceparticles;
 extern	cvar_t  r_explosiontype;
 extern  cvar_t	r_part_muzzleflash;
@@ -294,70 +264,97 @@ extern  cvar_t	r_decal_bullets;
 extern  cvar_t	r_decal_sparks;
 extern  cvar_t	r_decal_explosions;
 extern  cvar_t  r_coronas;
+extern  cvar_t  r_model_brightness;
 
-// cypress - simplified cvars for decals/particles (5/27/2020)
-// almost 3 years, wowza! - ivy~ (03 feb 2023)
-extern cvar_t 	r_runqmbparticles;
+extern	cvar_t	gl_clear;
+extern	cvar_t	gl_cull;
+extern	cvar_t	gl_poly;
+extern	cvar_t	gl_texsort;
+extern	cvar_t	gl_smoothmodels;
+extern	cvar_t	gl_affinemodels;
+extern	cvar_t	gl_polyblend;
+extern	cvar_t	gl_keeptjunctions;
+extern	cvar_t	gl_reporttjunctions;
+extern	cvar_t	gl_flashblend;
+extern	cvar_t	gl_nocolors;
+extern	cvar_t	gl_doubleeyes;
 
+extern	int		gl_lightmap_format;
+extern	int		gl_solid_format;
+extern	int		gl_alpha_format;
+
+extern	cvar_t	gl_max_size;
+extern	cvar_t	gl_playermip;
 
 extern	int			mirrortexturenum;	// quake texturenum, not gltexturenum
 extern	qboolean	mirror;
 extern	mplane_t	*mirror_plane;
 
-extern	ScePspFMatrix4	r_world_matrix;
+extern	float	r_world_matrix[16];
 
-void GL_Bind   (int texture_index);
-void GL_BindLM (int texture_index);
-void GL_Copy   (int texture_index, int sx, int sy, int dx, int dy, int w, int h);
+extern	const char *gl_vendor;
+extern	const char *gl_renderer;
+extern	const char *gl_version;
+extern	const char *gl_extensions;
 
-// Added by PM
+void R_TranslatePlayerSkin (int playernum);
+void GL_Bind (int texnum);
+
+// Multitexture
+#define    TEXTURE0_SGIS				0x835E
+#define    TEXTURE1_SGIS				0x835F
+
+#ifndef _WIN32
+#define APIENTRY /* */
+#endif
+
+typedef void (APIENTRY *lpMTexFUNC) (GLenum, GLfloat, GLfloat);
+typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
+extern lpMTexFUNC qglMTexCoord2fSGIS;
+extern lpSelTexFUNC qglSelectTextureSGIS;
+
+extern qboolean gl_mtexable;
+
 int R_LightPoint (vec3_t p);
 void R_DrawBrushModel (entity_t *e);
 void R_AnimateLight (void);
 void R_DrawWorld (void);
-void R_RenderDlights (void);
 void R_DrawParticles (void);
 void R_DrawWaterSurfaces (void);
 void R_RenderBrushPoly (msurface_t *fa);
 void R_InitParticles (void);
 void R_ClearParticles (void);
-void GL_BuildLightmaps (void);
-void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr);
-void GL_Set2D (void);
+qboolean R_CullBox (vec3_t emins, vec3_t emaxs);
+void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
+void R_RotateForEntity (entity_t *e, unsigned char scale);
+void R_ClearSkyBox (void);
+void R_DrawSkyBox (void);
+
+void V_CalcBlend (void);
+
+void GL_DisableMultitexture(void);
+void GL_EnableMultitexture(void);
 void GL_SubdivideSurface (msurface_t *fa);
-void GL_Surface (msurface_t *fa); // dr_mabuse1981: fuck you lag.
+void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr);
+void GL_BuildLightmaps (void);
+void GL_Set2D (void);
+
 void EmitWaterPolys (msurface_t *fa);
 void EmitSkyPolys (msurface_t *fa);
 void EmitReflectivePolys (msurface_t *fa);
 void EmitScrollPolys (msurface_t *fa);
 void EmitBothSkyLayers (msurface_t *fa);
-// void EmitUnderWaterPolys (void);
-void EmitDetailPolys (void);
-void R_DrawSkyChain (msurface_t *s);
-int R_FrustumCheckBox (vec3_t mins, vec3_t maxs);
-int R_FrustumCheckSphere (vec3_t centre, float radius);
-int R_CullBox (vec3_t emins, vec3_t emaxs);
-qboolean R_CullSphere (vec3_t centre, float radius);
-void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
-void R_RotateForEntity (entity_t *e, int shadow, unsigned char scale);
-void R_BlendedRotateForEntity (entity_t *e, int shadow, unsigned char scale);
-void R_RotateForViewEntity (entity_t *ent); //clone (R_RotateForEntity)
-void R_RotateForTagEntity (tagentity_t *tagent, md3tag_t *tag, float *m); //for q3 models
+
 void R_StoreEfrags (efrag_t **ppefrag);
-void D_StartParticles (void);
-// void D_DrawParticle (particle_t *pparticle);
-void D_DrawParticle (particle2_t *pparticle, vec3_t up, vec3_t right, float scale);
-void D_EndParticles (void);
 
-void Fog_Init (void);
-void Fog_NewMap (void);
-
-void Sky_LoadSkyBox (char *name);
-void Sky_NewMap (void);
 void Sky_Init (void);
-void R_ClearSkyBox (void);
-void R_DrawSkyBox (void);
+void Sky_NewMap (void);
 
+qboolean VID_Is8bit(void);
+
+void Sky_LoadSkyBox(char* name);
+
+// naievil -- fixme: none of these work
 //-----------------------------------------------------
 void QMB_InitParticles (void);
 void QMB_ClearParticles (void);
@@ -385,42 +382,7 @@ void QMB_Q3Gunshot (vec3_t org, int skinnum, float alpha);
 void QMB_Q3Teleport (vec3_t org, float alpha);
 void QMB_Q3TorchFlame (vec3_t org, float size);
 
-extern	qboolean	qmb_initialized;
-
 void R_SpawnDecal (vec3_t center, vec3_t normal, vec3_t tangent, int tex, int size, int isbsp);
-void R_SpawnDecalStatic(vec3_t org, int tex, int size);
-void R_SpawnDecalBSP (vec3_t org, char *texname, int size);
+void R_SpawnDecalStatic (vec3_t org, int tex, int size);
 
-void CheckParticles (void);
-
-void UnloadWads (void); //By Crow_bar
-#if 0
-void ShowErrorDialog(const unsigned int error);
-void ShowMessageDialog(const char *message, int enableYesno);
-#endif
-//====================================================
-
-void Fog_ParseServerMessage (void);
-
-typedef struct {
-	float s, t;
-	unsigned int color;
-	float x, y, z;
-} part_vertex;
-
-typedef struct {
-	part_vertex first, second;
-} psp_particle;
-
-
-psp_particle* D_CreateBuffer (int size);
-void 	  	  D_DeleteBuffer (psp_particle* vertices);
-int 	      D_DrawParticleBuffered (psp_particle* vertices, particle2_t *pparticle, vec3_t up, vec3_t right, float scale);
-
-
-extern int			zombie_skins[2][2];
-extern qpic_t*		sniper_scope;
-
-extern int faces_rejected, faces_checked, faces_clipped;
-
-void convert_8bpp_to_4bpp(const byte* indata, const byte* inpal, int width, int height, byte* outdata, byte* outpal);
+extern	qboolean	qmb_initialized;
