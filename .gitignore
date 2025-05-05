@@ -11,3 +11,4 @@ EBOOT2000.PBP
 *.d
 .vscode/*
 .DS_Store
+*.unc*
