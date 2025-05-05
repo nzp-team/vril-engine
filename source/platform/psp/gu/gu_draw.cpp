@@ -62,6 +62,22 @@ float 	loading_num_step;
 int 	loading_step;
 float 	loading_cur_step_bk;
 
+#define CLUT4
+
+typedef struct 
+{
+#ifdef CLUT4
+	unsigned char *palette;
+	ScePspRGBA8888 *palette_2;
+#else
+    ScePspRGBA8888 *palette;
+#endif
+
+	// Buffers.
+	texel*	ram;
+	texel*	vram;
+} plattexture_t;
+
 typedef struct
 {
 	// Source.
@@ -78,18 +94,11 @@ typedef struct
 	int 	mipmaps;
 	int     bpp;
 	int     swizzle;
-	qboolean islmp;
-	unsigned char *palette;
-	ScePspRGBA8888 *palette_2;
- #else
-    ScePspRGBA8888 *palette;
-#endif
+
+	plattexture_t platform_specific;
+
     qboolean	palette_active;
 	qboolean	keep;
-
-	// Buffers.
-	texel*	ram;
-	texel*	vram;
 } gltexture_t;
 
 void VID_SetPalette4(unsigned char* clut4pal);
@@ -2402,11 +2411,10 @@ GL_UnloadTexture
 void GL_UnloadTexture(int texture_index)
 {
 	if (gltextures_used[texture_index] == false) return;
+	if (gltextures[texture_index].keep) return;
 	if (gltextures_is_permanent[texture_index]) return;
 
-	gltexture_t& texture = gltextures[texture_index];
-
-	if (texture.keep) return;
+	gltexture_t &texture = gltextures[texture_index];
 
 	// Con_Printf("Unloading: %s,%d\n",texture.identifier, texture.bpp);
 	// Source.
@@ -2489,7 +2497,7 @@ int GL_FindTexture(const char *identifier) {
 		{
 			if (gltextures_used[i] == true)
 			{
-				const gltexture_t& texture = gltextures[i];
+				const gltexture_t &texture = gltextures[i];
 				if (!strcmp (identifier, texture.identifier))
 				{
 					return i;
@@ -2980,7 +2988,7 @@ int GL_LoadImages (const char *identifier, int width, int height, byte *data, qb
 	
 	texture_index = GL_GetTextureIndex();
 
-	gltexture_t& texture = gltextures[texture_index];
+	gltexture_t &texture = gltextures[texture_index];
 	// Fill in the source data.
 	strcpy(texture.identifier, identifier);
 	texture.original_width			= width;
@@ -3095,7 +3103,7 @@ int GL_LoadImages (const char *identifier, int width, int height, byte *data, qb
 	// Allocate the RAM.
 	std::size_t buffer_size = GL_GetTexSize(texture.format, texture.width, texture.height, 0);
 
-	Con_DPrintf("Loading: %s [%dx%d](%0.2f KB)\n",texture.identifier,texture.width,texture.height, (float) buffer_size/1024);
+	//Con_DPrintf("Loading: %s [%dx%d](%0.2f KB)\n",texture.identifier,texture.width,texture.height, (float) buffer_size/1024);
 
 	texture.ram	= static_cast<texel*>(memalign(16, buffer_size));
 

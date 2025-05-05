@@ -401,8 +401,6 @@ void QMB_InitParticles (void)
 		return;
 	}
 
-	GL_MarkTextureAsPermanent(particleimage);
-
 	loading_cur_step++;
 	strcpy(loading_name, "Particles");
 	SCR_UpdateScreen ();
@@ -431,7 +429,6 @@ void QMB_InitParticles (void)
 		return;
 	}
 
-	GL_MarkTextureAsPermanent(particleimage);
 	ADD_PARTICLE_TEXTURE(ptex_q3flame, particleimage, 0, 1, 0, 0, 64, 64);
 	
 	max_s = max_t = 64.0;
@@ -444,8 +441,6 @@ void QMB_InitParticles (void)
 		return;
 	}
 
-	GL_MarkTextureAsPermanent(particleimage);
-
     max_s = max_t = 256.0;
 	ADD_PARTICLE_TEXTURE(ptex_flame, particleimage, 0, 1, 0, 0, 256, 256);
 
@@ -457,8 +452,6 @@ void QMB_InitParticles (void)
         //Clear_LoadingFill ();
 		return;
 	}
-
-	GL_MarkTextureAsPermanent(particleimage);
 
 	max_s = 256.0; max_t = 128.0;
 	ADD_PARTICLE_TEXTURE(ptex_lightning, particleimage, 0, 1, 0, 0, 256, 128);//R00k changed
@@ -473,8 +466,6 @@ void QMB_InitParticles (void)
 		return;
 	}
 
-	GL_MarkTextureAsPermanent(particleimage);
-
 	//max_s = max_t = 256.0;
 	ADD_PARTICLE_TEXTURE(ptex_muzzleflash, particleimage, 0, 1, 0, 0, 128, 128);
 
@@ -487,8 +478,6 @@ void QMB_InitParticles (void)
 		return;
 	}
 
-	GL_MarkTextureAsPermanent(particleimage);
-
 	//max_s = max_t = 256.0;
 	ADD_PARTICLE_TEXTURE(ptex_muzzleflash2, particleimage, 0, 1, 0, 0, 128, 128);
 
@@ -499,8 +488,6 @@ void QMB_InitParticles (void)
         //Clear_LoadingFill ();
 		return;
 	}
-
-	GL_MarkTextureAsPermanent(particleimage);
 
 	//max_s = max_t = 256.0;
 	ADD_PARTICLE_TEXTURE(ptex_muzzleflash3, particleimage, 0, 1, 0, 0, 128, 128);
@@ -514,8 +501,6 @@ void QMB_InitParticles (void)
         //Clear_LoadingFill ();
 		return;
 	}
-
-	GL_MarkTextureAsPermanent(particleimage);
 
 	//max_s = max_t = 256.0;
 	ADD_PARTICLE_TEXTURE(ptex_bloodcloud, particleimage, 0, 1, 0, 0, 64, 64);
