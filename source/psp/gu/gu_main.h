@@ -56,7 +56,6 @@ int GL_LoadPalletedTexture (byte *in, char *identifier, int width, int height, i
 
 void GL_UnloadTexture (const int texture_index);
 void GL_UnloadAllTextures ();
-void GL_MarkTextureAsPermanent (const int texture_index);
 
 extern	int glx, gly, glwidth, glheight;
 
