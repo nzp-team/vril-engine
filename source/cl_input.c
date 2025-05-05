@@ -306,7 +306,7 @@ void CL_AdjustAngles (void)
 	float	cl_sensitivity;
 
 	if (in_speed.state & 1)
-		speed = host_frametime * cl_anglespeedkey.value;
+		speed = (float)host_frametime * cl_anglespeedkey.value;
 	else
 		speed = host_frametime;
 
@@ -319,13 +319,13 @@ void CL_AdjustAngles (void)
 	// cut look speed in half when facing enemy, unless
 	// mag is empty
 	if ((in_aimassist.value) && (sv_player->v.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0) {
-		speed *= 0.5;
+		speed *= 0.5f;
 	}
 	// additionally, slice look speed when ADS/scopes
 	if (cl.stats[STAT_ZOOM] == 1)
-		speed *= 0.5;
+		speed *= 0.5f;
 	else if (cl.stats[STAT_ZOOM] == 2)
-		speed *= 0.25;
+		speed *= 0.25f;
 	
 #ifdef __PSP__
 	cl_sensitivity = in_sensitivity.value;
@@ -395,12 +395,12 @@ void CL_BaseMove (usercmd_t *cmd)
 	cl_backspeed = cl_forwardspeed = cl_sidespeed = sv_player->v.maxspeed;
 
 	// Throttle side and back speeds
-	cl_sidespeed *= 0.8;
-	cl_backspeed *= 0.7;
+	cl_sidespeed *= 0.8f;
+	cl_backspeed *= 0.7f;
 	
 	if (waypoint_mode.value)
-		cl_backspeed = cl_forwardspeed = cl_sidespeed *= 1.5;
-		
+		cl_backspeed = cl_forwardspeed = cl_sidespeed *= 1.5f;
+			
 	if (in_strafe.state & 1)
 	{
 		cmd->sidemove += cl_sidespeed * CL_KeyState (&in_right);
@@ -459,7 +459,7 @@ int infront(edict_t *ent1, edict_t *ent2)
 	AngleVectors(temp_angle,temp_forward,temp_right,temp_up);
 
 	dot = DotProduct(vec,temp_forward);
-	if(dot > 0.98)
+	if(dot > 0.98f)
 	{
 		return 1;
 	}
@@ -514,7 +514,7 @@ void CL_Aim_Snap(void)
 
 	if (cl.perks & 64)
     	znum = EN_Find(0,"ai_zombie_head");
-  	else
+	else
     	znum = EN_Find(0,"ai_zombie");
 
 	z = EDICT_NUM(znum);

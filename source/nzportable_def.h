@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // nzportable_def.h -- primary header for client
 
+#pragma once
+
 #ifndef PLATFORM_DIRECTORY
 #error "Unknown platform! (Please build with -DPLATFORM_DIRECTORY='your_platform')"
 #endif // PLATFORM_DIRECTORY

@@ -54,21 +54,22 @@ float rsqrt( float number )
 	);
 	return d;
 #else
-#pragma GCC diagnostic ignored "-Wstrict-aliasing"
-	int	i;
+	// GCC says union type punning is okay
+	typedef union { int32_t i; float f; } FloatAccessor ;
+
+	FloatAccessor fa;
 	float	x, y;
 
 	if( number == 0.0f )
 		return 0.0f;
 
 	x = number * 0.5f;
-	i = *(int *)&number;	// evil floating point bit level hacking
-	i = 0x5f3759df - (i >> 1);	// what the fuck?
-	y = *(float *)&i;
+	fa.f = number;	// Virtuous floating point bit level hacking
+	fa.i = 0x5f3759df - (fa.i >> 1);	// what the fuck?
+	y = fa.f;
 	y = y * (1.5f - (x * y * y));	// first iteration
 
 	return y;
-#pragma GCC diagnostic pop
 #endif
 }
 
@@ -80,8 +81,8 @@ SinCos
 void SinCos( float radians, float *sine, float *cosine )
 {
 #ifndef __PSP__
-	*sine = sin(radians);
-	*cosine = cos(radians);
+	*sine = sinf(radians);
+	*cosine = cosf(radians);
 #else
 
 #ifdef PSP_VFPU
@@ -499,16 +500,16 @@ void vectoangles (vec3_t vec, vec3_t ang)
 		#ifdef PSP_VFPU
 		yaw = vec[0] ? (vfpu_atan2f(vec[1], vec[0]) * 180 / M_PI) : (vec[1] > 0) ? 90 : 270;
 		#else
-		yaw = vec[0] ? (atan2(vec[1], vec[0]) * 180 / M_PI) : (vec[1] > 0) ? 90 : 270;
+		yaw = vec[0] ? (atan2f(vec[1], vec[0]) * 180 / (float)M_PI) : (vec[1] > 0) ? 90 : 270;
 		#endif
 		if (yaw < 0)
 			yaw += 360;
 
-		forward = sqrt (vec[0] * vec[0] + vec[1] * vec[1]);
+		forward = sqrtf (vec[0] * vec[0] + vec[1] * vec[1]);
 		#ifdef PSP_VFPU
 		pitch = vfpu_atan2f (vec[2], forward) * 180 / M_PI;
 		#else
-		pitch = atan2 (vec[2], forward) * 180 / M_PI;
+		pitch = atan2f (vec[2], forward) * 180 / (float)M_PI;
 		#endif
 		if (pitch < 0)
 			pitch += 360;
@@ -524,7 +525,7 @@ void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 	float		angle;
 	float		sr, sp, sy, cr, cp, cy;
 	
-	angle = angles[YAW] * (M_PI*2 / 360);
+	angle = angles[YAW] * ((float)M_PI / 180.0f);
 	#ifdef PSP_VFPU
 	sy = vfpu_sinf(angle);
 	cy = vfpu_cosf(angle);
@@ -532,7 +533,7 @@ void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 	sy = sinf(angle);
 	cy = cosf(angle);
 	#endif
-	angle = angles[PITCH] * (M_PI*2 / 360);
+	angle = angles[PITCH] * ((float)M_PI / 180);
 	#ifdef PSP_VFPU
 	sp = vfpu_sinf(angle);
 	cp = vfpu_cosf(angle);
@@ -540,7 +541,7 @@ void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 	sp = sinf(angle);
 	cp = cosf(angle);
 	#endif
-	angle = angles[ROLL] * (M_PI*2 / 360);
+	angle = angles[ROLL] * ((float)M_PI / 360);
 	#ifdef PSP_VFPU
 	sr = vfpu_sinf(angle);
 	cr = vfpu_cosf(angle);
@@ -610,7 +611,7 @@ float VecLength2(vec3_t v1, vec3_t v2)
 {
 	vec3_t k;
 	VectorSubtract(v1, v2, k);
-	return sqrt(k[0]*k[0] + k[1]*k[1] + k[2]*k[2]);
+	return sqrtf(k[0]*k[0] + k[1]*k[1] + k[2]*k[2]);
 }
 
 float VectorNormalize (vec3_t v)
@@ -731,10 +732,10 @@ void FloorDivMod (float numer, float denom, int *quotient,
 	int		q, r;
 	float	x;
 
-	if (denom <= 0.0)
-		Sys_Error ("FloorDivMod: bad denominator %d\n", denom);
+	if (denom <= 0.0f)
+		Sys_Error ("FloorDivMod: bad denominator %d\n", (double)denom);
 
-	if (numer >= 0.0)
+	if (numer >= 0.0f)
 	{
 
 		x = floorf(numer / denom);
@@ -801,7 +802,7 @@ fixed16_t Invert24To16(fixed16_t val)
 		return (0xFFFFFFFF);
 
 	return (fixed16_t)
-			(((float)0x10000 * (float)0x1000000 / (float)val) + 0.5);
+			(((float)0x10000 * (float)0x1000000 / (float)val) + 0.5f);
 }
 
 #endif
@@ -819,29 +820,29 @@ void AngleQuaternion( const vec3_t angles, vec4_t quaternion )
 	float		sr, sp, sy, cr, cp, cy;
 
 	// FIXME: rescale the inputs to 1/2 angle
-	angle = angles[2] * 0.5;
+	angle = angles[2] * 0.5f;
 	#ifdef PSP_VFPU
 	sy = vfpu_sinf(angle);
 	cy = vfpu_cosf(angle);
 	#else
-	sy = sin(angle);
-	cy = cos(angle);
+	sy = sinf(angle);
+	cy = cosf(angle);
 	#endif
-	angle = angles[1] * 0.5;
+	angle = angles[1] * 0.5f;
 	#ifdef PSP_VFPU
 	sp = vfpu_sinf(angle);
 	cp = vfpu_cosf(angle);
 	#else
-	sp = sin(angle);
-	cp = cos(angle);
+	sp = sinf(angle);
+	cp = cosf(angle);
 	#endif
-	angle = angles[0] * 0.5;
+	angle = angles[0] * 0.5f;
 	#ifdef PSP_VFPU
 	sr = vfpu_sinf(angle);
 	cr = vfpu_cosf(angle);
 	#else
-	sr = sin(angle);
-	cr = cos(angle);
+	sr = sinf(angle);
+	cr = cosf(angle);
 	#endif
 
 	quaternion[0] = sr*cp*cy-cr*sp*sy; // X
@@ -853,17 +854,17 @@ void AngleQuaternion( const vec3_t angles, vec4_t quaternion )
 void QuaternionMatrix( const vec4_t quaternion, float (*matrix)[4] )
 {
 
-	matrix[0][0] = 1.0 - 2.0 * quaternion[1] * quaternion[1] - 2.0 * quaternion[2] * quaternion[2];
-	matrix[1][0] = 2.0 * quaternion[0] * quaternion[1] + 2.0 * quaternion[3] * quaternion[2];
-	matrix[2][0] = 2.0 * quaternion[0] * quaternion[2] - 2.0 * quaternion[3] * quaternion[1];
+	matrix[0][0] = 1.0f - 2.0f * quaternion[1] * quaternion[1] - 2.0f * quaternion[2] * quaternion[2];
+	matrix[1][0] = 2.0f * quaternion[0] * quaternion[1] + 2.0f * quaternion[3] * quaternion[2];
+	matrix[2][0] = 2.0f * quaternion[0] * quaternion[2] - 2.0f * quaternion[3] * quaternion[1];
 
-	matrix[0][1] = 2.0 * quaternion[0] * quaternion[1] - 2.0 * quaternion[3] * quaternion[2];
-	matrix[1][1] = 1.0 - 2.0 * quaternion[0] * quaternion[0] - 2.0 * quaternion[2] * quaternion[2];
-	matrix[2][1] = 2.0 * quaternion[1] * quaternion[2] + 2.0 * quaternion[3] * quaternion[0];
+	matrix[0][1] = 2.0f * quaternion[0] * quaternion[1] - 2.0f * quaternion[3] * quaternion[2];
+	matrix[1][1] = 1.0f - 2.0f * quaternion[0] * quaternion[0] - 2.0f * quaternion[2] * quaternion[2];
+	matrix[2][1] = 2.0f * quaternion[1] * quaternion[2] + 2.0f * quaternion[3] * quaternion[0];
 
-	matrix[0][2] = 2.0 * quaternion[0] * quaternion[2] + 2.0 * quaternion[3] * quaternion[1];
-	matrix[1][2] = 2.0 * quaternion[1] * quaternion[2] - 2.0 * quaternion[3] * quaternion[0];
-	matrix[2][2] = 1.0 - 2.0 * quaternion[0] * quaternion[0] - 2.0 * quaternion[1] * quaternion[1];
+	matrix[0][2] = 2.0f * quaternion[0] * quaternion[2] + 2.0f * quaternion[3] * quaternion[1];
+	matrix[1][2] = 2.0f * quaternion[1] * quaternion[2] - 2.0f * quaternion[3] * quaternion[0];
+	matrix[2][2] = 1.0f - 2.0f * quaternion[0] * quaternion[0] - 2.0f * quaternion[1] * quaternion[1];
 }
 
 void QuaternionSlerp( const vec4_t p, vec4_t q, float t, vec4_t qt )
@@ -886,21 +887,21 @@ void QuaternionSlerp( const vec4_t p, vec4_t q, float t, vec4_t qt )
 
 	cosom = p[0]*q[0] + p[1]*q[1] + p[2]*q[2] + p[3]*q[3];
 
-	if ((1.0 + cosom) > 0.00000001) {
-		if ((1.0 - cosom) > 0.00000001) {
-			omega = acos( cosom );
+	if ((1.0f + cosom) > 0.00000001f) {
+		if ((1.0f - cosom) > 0.00000001f) {
+			omega = acosf( cosom );
 			#ifdef PSP_VFPU
 			sinom = vfpu_sinf( omega );
 			sclp = vfpu_sinf( (1.0 - t)*omega) / sinom;
 			sclq = vfpu_sinf( t*omega ) / sinom;
 			#else
-			sinom = sin( omega );
-			sclp = sin( (1.0 - t)*omega) / sinom;
-			sclq = sin( t*omega ) / sinom;
+			sinom = sinf( omega );
+			sclp = sinf( (1.0f - t)*omega) / sinom;
+			sclq = sinf( t*omega ) / sinom;
 			#endif
 		}
 		else {
-			sclp = 1.0 - t;
+			sclp = 1.0f - t;
 			sclq = t;
 		}
 		for (i = 0; i < 4; i++) {
@@ -916,8 +917,8 @@ void QuaternionSlerp( const vec4_t p, vec4_t q, float t, vec4_t qt )
 		sclp = vfpu_sinf( (1.0 - t) * 0.5 * M_PI);
 		sclq = vfpu_sinf( t * 0.5 * M_PI);
 		#else
-		sclp = sin( (1.0 - t) * 0.5 * M_PI);
-		sclq = sin( t * 0.5 * M_PI);
+		sclp = sinf( (1.0f - t) * 0.5f * (float)M_PI);
+		sclq = sinf( t * 0.5f * (float)M_PI);
 		#endif
 		for (i = 0; i < 3; i++) {
 			qt[i] = sclp * p[i] + sclq * qt[i];

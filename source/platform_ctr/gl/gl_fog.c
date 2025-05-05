@@ -30,7 +30,6 @@ Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, floa
 	float color[4] = {red, green, blue, alpha};
 
     glFogfv(GL_FOG_COLOR, color);
-	//glFogf(GL_FOG_DENSITY, 0.2f);
 	glFogf(GL_FOG_START, start);
 	glFogf(GL_FOG_END, end);
 }

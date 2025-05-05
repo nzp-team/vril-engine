@@ -56,15 +56,15 @@ Fog_Update(float start, float end, float red, float green, float blue, float tim
     // save previous settings for fade
     if (time > 0) {
         // check for a fade in progress
-        if (fade_done > cl.time) {
+        if (fade_done > (float)cl.time) {
             float f;
 
-            f         = (fade_done - cl.time) / fade_time;
-            old_start = f * old_start + (1.0 - f) * r_refdef.fog_start;
-            old_end   = f * old_end + (1.0 - f) * r_refdef.fog_end;
-            old_red   = f * old_red + (1.0 - f) * r_refdef.fog_red;
-            old_green = f * old_green + (1.0 - f) * r_refdef.fog_green;
-            old_blue  = f * old_blue + (1.0 - f) * r_refdef.fog_blue;
+            f         = (fade_done - (float)cl.time) / fade_time;
+            old_start = f * old_start + (1.0f - f) * r_refdef.fog_start;
+            old_end   = f * old_end + (1.0f - f) * r_refdef.fog_end;
+            old_red   = f * old_red + (1.0f - f) * r_refdef.fog_red;
+            old_green = f * old_green + (1.0f - f) * r_refdef.fog_green;
+            old_blue  = f * old_blue + (1.0f - f) * r_refdef.fog_blue;
         } else {
             old_start = r_refdef.fog_start;
             old_end   = r_refdef.fog_end;
@@ -80,7 +80,7 @@ Fog_Update(float start, float end, float red, float green, float blue, float tim
     r_refdef.fog_green = green;
     r_refdef.fog_blue  = blue;
     fade_time = time;
-    fade_done = cl.time + time;
+    fade_done = (float)cl.time + time;
 } /* Fog_Update */
 
 /**
@@ -123,12 +123,12 @@ Fog_FogCommand_f(void)
             Con_Printf("   fog <start> <end> <red> <green> <blue>\n");
             Con_Printf("   fog <start> <end> <red> <green> <blue> <fade>\n");
             Con_Printf("current values:\n");
-            Con_Printf("   \"start\" is \"%f\"\n", r_refdef.fog_start);
-            Con_Printf("   \"end\" is \"%f\"\n", r_refdef.fog_end);
-            Con_Printf("   \"red\" is \"%f\"\n", r_refdef.fog_red);
-            Con_Printf("   \"green\" is \"%f\"\n", r_refdef.fog_green);
-            Con_Printf("   \"blue\" is \"%f\"\n", r_refdef.fog_blue);
-            Con_Printf("   \"fade\" is \"%f\"\n", fade_time);
+            Con_Printf("   \"start\" is \"%f\"\n", (double)r_refdef.fog_start);
+            Con_Printf("   \"end\" is \"%f\"\n", (double)r_refdef.fog_end);
+            Con_Printf("   \"red\" is \"%f\"\n", (double)r_refdef.fog_red);
+            Con_Printf("   \"green\" is \"%f\"\n", (double)r_refdef.fog_green);
+            Con_Printf("   \"blue\" is \"%f\"\n", (double)r_refdef.fog_blue);
+            Con_Printf("   \"fade\" is \"%f\"\n", (double)fade_time);
             break;
         case 2: // TEST
             Fog_Update(r_refdef.fog_start,
@@ -242,7 +242,7 @@ Fog_ParseWorldspawn(void)
         }
     }
 
-    if (r_refdef.fog_start <= 0.01 || r_refdef.fog_end <= 0.01) {
+    if (r_refdef.fog_start <= 0.01f || r_refdef.fog_end <= 0.01f) {
         r_refdef.fog_start = 0.0f;
         r_refdef.fog_end   = 0.0f;
     }
@@ -260,13 +260,13 @@ Fog_SetupFrame(bool is_world_geometry)
     float c[4];
     float f, s, e;
 
-    if (fade_done > cl.time) {
-        f    = (fade_done - cl.time) / fade_time;
-        s    = f * old_start + (1.0 - f) * r_refdef.fog_start;
-        e    = f * old_end + (1.0 - f) * r_refdef.fog_end;
-        c[0] = f * old_red + (1.0 - f) * r_refdef.fog_red;
-        c[1] = f * old_green + (1.0 - f) * r_refdef.fog_green;
-        c[2] = f * old_blue + (1.0 - f) * r_refdef.fog_blue;
+    if (fade_done > (float)cl.time) {
+        f    = (fade_done - (float)cl.time) / fade_time;
+        s    = f * old_start + (1.0f - f) * r_refdef.fog_start;
+        e    = f * old_end + (1.0f - f) * r_refdef.fog_end;
+        c[0] = f * old_red + (1.0f - f) * r_refdef.fog_red;
+        c[1] = f * old_green + (1.0f - f) * r_refdef.fog_green;
+        c[2] = f * old_blue + (1.0f - f) * r_refdef.fog_blue;
         c[3] = r_skyfog.value;
     } else {
         s    = r_refdef.fog_start;
@@ -274,7 +274,7 @@ Fog_SetupFrame(bool is_world_geometry)
         c[0] = r_refdef.fog_red;
         c[1] = r_refdef.fog_green;
         c[2] = r_refdef.fog_blue;
-        c[3] = 1.0;
+        c[3] = 1.0f;
         c[3] = r_skyfog.value;
     }
 
@@ -340,9 +340,9 @@ Fog_GetStart(void)
 {
     float f;
 
-    if (fade_done > cl.time) {
-        f = (fade_done - cl.time) / fade_time;
-        return f * old_start + (1.0 - f) * r_refdef.fog_start;
+    if (fade_done > (float)cl.time) {
+        f = (fade_done - (float)cl.time) / fade_time;
+        return f * old_start + (1.0f - f) * r_refdef.fog_start;
     } else
         return r_refdef.fog_start;
 }
@@ -357,9 +357,9 @@ Fog_GetEnd(void)
 {
     float f;
 
-    if (fade_done > cl.time) {
-        f = (fade_done - cl.time) / fade_time;
-        return f * old_start + (1.0 - f) * r_refdef.fog_end;
+    if (fade_done > (float)cl.time) {
+        f = (fade_done - (float)cl.time) / fade_time;
+        return f * old_start + (1.0f - f) * r_refdef.fog_end;
     } else
         return r_refdef.fog_end;
 }

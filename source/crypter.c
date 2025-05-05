@@ -12,16 +12,16 @@ char rotate(char c, int key)
     if(c < 'A')
 	   c += l;
 
-    if(c > 'Z')
+	if(c > 'Z')
 	   c -= l;
 
-    return c;
+	return c;
 }
 
 char encrypt(char c, int key)
 {
     if(c >= 'a' && c <= 'z')
-	   c = toupper(c);
+	   c = c + ('A'-'a'); // toupper
 
 	if(c >= 'A' && c <= 'Z')
 	   c = rotate(c, key);
