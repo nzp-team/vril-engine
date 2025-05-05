@@ -14,7 +14,7 @@ jobs:
       - name: Build
         working-directory: ./
         run: |
-          cd source/psp/libpspmath
+          cd source/platform_psp/libpspmath
           make && make install
           cd ../../../
           make -f Makefile.psp install WERROR=1
