@@ -349,9 +349,6 @@ void D_StartParticles (void);
 void D_DrawParticle (particle2_t *pparticle, vec3_t up, vec3_t right, float scale);
 void D_EndParticles (void);
 
-void Fog_Init (void);
-void Fog_NewMap (void);
-
 void Sky_LoadSkyBox (char *name);
 void Sky_NewMap (void);
 void Sky_Init (void);
@@ -399,8 +396,6 @@ void ShowErrorDialog(const unsigned int error);
 void ShowMessageDialog(const char *message, int enableYesno);
 #endif
 //====================================================
-
-void Fog_ParseServerMessage (void);
 
 typedef struct {
 	float s, t;

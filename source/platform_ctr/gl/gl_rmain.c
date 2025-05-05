@@ -1859,3 +1859,22 @@ void R_RenderView (void)
 		Con_Printf ("%3i ms  %4i wpoly %4i epoly\n", (int)((time2-time1)*1000), c_brush_polys, c_alias_polys); 
 	}
 }
+
+// MARK: Vril Graphics Wrapper
+
+void Platform_Graphics_SetTextureMode(int texture_mode)
+{
+	switch(texture_mode) {
+		case GFX_REPLACE:
+			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+			break;
+		default:
+			Sys_Error("Platform_Graphics_SetTextureMode: Received unknown texture mode [%d]\n", texture_mode);
+			break;
+	}
+}
+
+void Platform_Graphics_Color(float red, float green, float blue, float alpha)
+{
+	glColor4f(red, green, blue, alpha);
+}

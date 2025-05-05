@@ -393,7 +393,7 @@ void R_NewMap (void)
 	GL_BuildLightmaps ();
 
 	Sky_NewMap (); //johnfitz -- skybox in worldspawn
-    Fog_NewMap (); //johnfitz -- global fog in worldspawn
+    Fog_ParseWorldspawn ();
 
 	// identify sky texture
 	skytexturenum = -1;

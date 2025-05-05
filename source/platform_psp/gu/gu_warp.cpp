@@ -1290,11 +1290,6 @@ void MakeSkyVec (float s, float t, int axis)
 	t_axis = t;
 }
 
-void Fog_EnableGFog (void);
-void Fog_DisableGFog (void);
-void Fog_SetColorForSkyS (void);
-void Fog_SetColorForSkyE (void);
-
 void DrawSkyFogBlend (float skydepth) {
 	float skyfogblend = r_skyfogblend.value;
 
