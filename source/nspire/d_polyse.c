@@ -705,6 +705,8 @@ typedef struct {
 	fixed16_t r_lstepx;
 } d_polyset_draw_spans_8_nspire_t;
 
+extern void D_NSpirePolysetDrawSpan (d_polyset_draw_spans_8_nspire_t *);
+
 void D_PolysetDrawSpans8 (spanpackage_t *pspanpackage)
 {
 	int		lcount;
