@@ -1154,7 +1154,7 @@ void ClipSkyPolygon (int nump, vec3_t vecs, int stage)
 	int		i, j;
 
 	if (nump > MAX_CLIP_VERTS-2)
-		Sys_Error ("ClipSkyPolygon: MAX_CLIP_VERTS");
+		Sys_Error ("MAX_CLIP_VERTS");
 	if (stage == 6)
 	{	// fully clipped, so draw it
 		DrawSkyPolygon (nump, vecs);

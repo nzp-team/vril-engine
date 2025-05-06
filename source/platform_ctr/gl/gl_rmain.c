@@ -1809,7 +1809,7 @@ void R_RenderView (void)
 		return;
 
 	if (!r_worldentity.model || !cl.worldmodel)
-		Sys_Error ("R_RenderView: NULL worldmodel");
+		Sys_Error ("NULL worldmodel");
 
 	if (r_speeds.value)
 	{
@@ -1859,7 +1859,7 @@ void Platform_Graphics_SetTextureMode(int texture_mode)
 			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 			break;
 		default:
-			Sys_Error("Platform_Graphics_SetTextureMode: Received unknown texture mode [%d]\n", texture_mode);
+			Sys_Error("Received unknown texture mode [%d]\n", texture_mode);
 			break;
 	}
 }

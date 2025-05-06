@@ -225,6 +225,7 @@ extern int psp_system_model;
 #include PLATFORM_FILE(vid.h)
 #include PLATFORM_FILE(sys.h)
 
+#include "system.h"
 #include "zone.h"
 #include "mathlib.h"
 #include "bspfile.h"

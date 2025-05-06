@@ -349,31 +349,19 @@ void Sys_PrintSystemInfo(void)
 	Con_Printf ("VRAM Size: %i bytes\n", sceGeEdramGetSize());
 }
 
-void Sys_Error (char *error, ...)
+void Sys_SystemError(char *error)
 {
-	// Clear the sound buffer.
-	S_ClearBuffer();
-
-	// Put the error message in a buffer.
-	va_list args;
-	va_start(args, error);
-	char buffer[1024];
-	memset(buffer, 0, sizeof(buffer));
-	vsnprintf(buffer, sizeof(buffer) - 1, error, args);
-	va_end(args);
-
-	Con_Printf(buffer);
 	// Print the error message to the debug screen.
 	if (!debugScreenInitialized)
 	{
 		pspDebugScreenInit();
 		debugScreenInitialized = true;
 	}
-	pspDebugScreenSetTextColor(0xffffff);
-	pspDebugScreenPrintf("The following error occurred:\n");
 	pspDebugScreenSetTextColor(0x0000ff);
-	pspDebugScreenPrintData(buffer, strlen(buffer));
+	pspDebugScreenPrintf("=== Vril Engine Exception ===\n");
 	pspDebugScreenSetTextColor(0xffffff);
+	pspDebugScreenPrintf(error);
+	pspDebugScreenSetTextColor(0xffff00);
 	pspDebugScreenPrintf("\n\nPress CROSS to quit.\n");
 
 	// Wait for a button press.

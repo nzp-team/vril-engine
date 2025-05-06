@@ -523,7 +523,7 @@ void Draw_TransPic (int x, int y, int pic)
 	if (x < 0 || (unsigned)(x + gltextures[pic].width) > vid.width || y < 0 ||
 		 (unsigned)(y + gltextures[pic].height) > vid.height)
 	{
-		Sys_Error ("Draw_TransPic: bad coordinates");
+		Sys_Error ("bad coordinates");
 	}
 		
 	Draw_Pic (x, y, pic);
@@ -1108,7 +1108,7 @@ void GL_Upload32 (unsigned *data, int width, int height,  qboolean mipmap, qbool
 		scaled_height = gl_max_size.value;
 
 	if (scaled_width * scaled_height > sizeof(scaled)/4)
-		Sys_Error ("GL_LoadTexture: too big");
+		Sys_Error ("too big");
 
 	samples = alpha ? gl_alpha_format : gl_solid_format;
 
@@ -1188,7 +1188,7 @@ void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean a
 	else
 	{
 		if (s&3)
-			Sys_Error ("GL_Upload8: s&3");
+			Sys_Error ("s&3");
 		for (i=0 ; i<s ; i+=4)
 		{
 			trans[i] = d_8to24table[data[i]];

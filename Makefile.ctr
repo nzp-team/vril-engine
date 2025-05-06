@@ -68,7 +68,8 @@ export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
 
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
-COMMON_OBJS =	test_handler.c \
+COMMON_OBJS =	system.o \
+				test_handler.c \
 				chase.c \
                 cl_hud.c \
 				cl_demo.c \
@@ -193,7 +194,13 @@ endif
 .PHONY: $(BUILD) clean all
 
 #---------------------------------------------------------------------------------
-all: $(BUILD)
+all: _build_info.h $(BUILD)
+
+_build_info.h:
+	rm -rf $(CURDIR)/source/_build_info.h
+	echo "#define GIT_HASH \"$(shell git rev-parse --short HEAD)$(shell git diff --quiet || echo -dirty)\"" > $(CURDIR)/source/_build_info.h
+	echo "#define GIT_BRANCH \"$(shell git rev-parse --abbrev-ref HEAD)\"" >> $(CURDIR)/source/_build_info.h
+	echo "#define BUILD_DATE \"$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")\"" >> $(CURDIR)/source/_build_info.h
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
@@ -214,6 +221,7 @@ $(BUILD):
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
+	@rm -fr $(CURDIR)/source/_build_info.h
 	@rm -fr $(BUILD)
 
 

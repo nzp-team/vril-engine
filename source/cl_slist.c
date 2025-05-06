@@ -78,7 +78,7 @@ void SList_Shutdown (void)
 void SList_Set (int i, char *addr, char *desc)
 {
 	if (i >= MAX_SERVER_LIST || i < 0)
-		Sys_Error ("SList_Set: Bad index %d", i);
+		Sys_Error("Bad index %d", i);
 
 	if (slist[i].server)
 		Z_Free (slist[i].server);
@@ -92,7 +92,7 @@ void SList_Set (int i, char *addr, char *desc)
 void SList_Reset_NoFree (int i)
 {
 	if (i >= MAX_SERVER_LIST || i < 0)
-		Sys_Error ("SList_Reset_NoFree: Bad index %d", i);
+		Sys_Error("Bad index %d", i);
 
 	slist[i].description = slist[i].server = NULL;
 }
@@ -100,7 +100,7 @@ void SList_Reset_NoFree (int i)
 void SList_Reset (int i)
 {
 	if (i >= MAX_SERVER_LIST || i < 0)
-		Sys_Error ("SList_Reset: Bad index %d", i);
+		Sys_Error("Bad index %d", i);
 
 	if (slist[i].server)
 	{
@@ -120,9 +120,9 @@ void SList_Switch (int a, int b)
 	server_entry_t	temp;
 
 	if (a >= MAX_SERVER_LIST || a < 0)
-		Sys_Error ("SList_Switch: Bad index %d", a);
+		Sys_Error("Bad index %d", a);
 	if (b >= MAX_SERVER_LIST || b < 0)
-		Sys_Error ("SList_Switch: Bad index %d", b);
+		Sys_Error("Bad index %d", b);
 
 #ifdef __PSP__
 	memcpy_vfpu(&temp, &slist[a], sizeof(temp));

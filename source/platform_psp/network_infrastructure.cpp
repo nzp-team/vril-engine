@@ -143,7 +143,7 @@ namespace quake
 					pspSdkInetTerm();
 					sceUtilityUnloadNetModule(PSP_NET_MODULE_INET);
 					sceUtilityUnloadNetModule(PSP_NET_MODULE_COMMON);
-					Sys_Error("init: Unable to open control socket\n");
+					Sys_Error("Unable to open control socket\n");
 				}
 
 				((struct sockaddr_in *)&broadcast_addr)->sin_family = AF_INET;
@@ -186,7 +186,7 @@ namespace quake
 					if (accept_socket != -1)
 						return;
 					if ((accept_socket = open_socket(net_hostport)) == -1)
-						Sys_Error ("listen: Unable to open accept socket\n");
+						Sys_Error ("Unable to open accept socket\n");
 					return;
 				}
 

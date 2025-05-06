@@ -631,7 +631,7 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 	//assert (size > 0 && time > 0);
 
 	if (type < 0 || type >= num_particletypes)
-		Sys_Error ("AddParticle: Invalid type (%d)", type);
+		Sys_Error ("Invalid type (%d)", type);
 
 	pt = &particle_types[particle_type_index[type]];
 
@@ -869,7 +869,7 @@ __inline static void AddParticleTrail (part_type_t type, vec3_t start, vec3_t en
 	//assert (size > 0 && time > 0);
 
 	if (type < 0 || type >= num_particletypes)
-		Sys_Error ("AddParticle: Invalid type (%d)", type);
+		Sys_Error ("Invalid type (%d)", type);
 
 	pt = &particle_types[particle_type_index[type]];
 
@@ -1872,7 +1872,7 @@ __inline static void AddColoredParticle (part_type_t type, vec3_t org, int count
 	//assert (size > 0 && time > 0);
 
 	if (type < 0 || type >= num_particletypes)
-		Sys_Error ("AddColoredParticle: Invalid type (%d)", type);
+		Sys_Error ("Invalid type (%d)", type);
 
 	pt = &particle_types[particle_type_index[type]];
 
