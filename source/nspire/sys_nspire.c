@@ -168,10 +168,8 @@ unsigned int ui32_nspire_cx_timer_load_value;
 unsigned long long ui64_nspire_cx_timer_start_value;
 unsigned long long ui64_nspire_cx_timer_current_value;
 unsigned int ui32_last_nspire_cx_timer_value;
-
 #define NSPIRE_CX_TIMER_LOAD_VALUE (*(volatile unsigned int * )0x900D0000)
 #define NSPIRE_CX_TIMER_VALUE (*(volatile unsigned int * )0x900D0004)
-
 void Sys_Init( void )
 {
 	if( has_colors )
@@ -539,7 +537,6 @@ void Sys_NSpireInput( void )
 }
 
 //=============================================================================
-
 void main_s( int argc, char **argv )
 {
 	char *pc_basedir_term;

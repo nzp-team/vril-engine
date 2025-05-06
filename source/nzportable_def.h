@@ -70,6 +70,7 @@ extern int psp_system_model;
 #include <stdarg.h>
 #include <setjmp.h>
 #include "nspire/nspire_math.h"
+#include <ctype.h>
 #undef atof
 double atof( const char *str );
 #else

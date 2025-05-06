@@ -110,7 +110,7 @@ void	VID_Update (vrect_t *rects)
 
 			i_line_left = rects->width;
 			pui8_line = &vid_buffer[ i_y * BASEWIDTH ];
-			pui_dst = &ptr[ i_y * i_width ];
+			pui_dst = (unsigned int *)&ptr[ i_y * i_width ];
 			while( i_line_left >= 16 )
 			{
 				i_pel = pui8_line[ 0 ];

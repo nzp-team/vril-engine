@@ -1369,6 +1369,7 @@ WARNING: be very careful calling this from elsewhere, because the refresh
 needs almost the entire 256k of stack space!
 ==================
 */
+void Draw_Crosshair (void);
 void SCR_UpdateScreen (void)
 {
 	static float	oldscr_viewsize;

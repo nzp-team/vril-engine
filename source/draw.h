@@ -38,14 +38,17 @@ void Draw_TransPic (int x, int y, qpic_t *pic);
 void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation);
 void Draw_ConsoleBackground (int lines);
 void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha);
-#ifdef __PSP__
+//#ifdef __PSP__
 void Draw_Fill (int x, int y, int w, int h, int c);
-#endif
+//#endif
 void Draw_LoadingFill(void);
 void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a);
 void Draw_FadeScreen (void);
 void Draw_String (int x, int y, char *str);
+void Draw_TileClear (int x, int y, int w, int h);
 int getTextWidth(char *str, float scale);
+
+byte findclosestpalmatch(byte r, byte g, byte b, byte a);
 
 //other
 void Clear_LoadingFill (void);
