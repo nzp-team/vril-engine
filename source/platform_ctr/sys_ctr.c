@@ -162,6 +162,16 @@ void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 {
 }
 
+void Sys_PrintSystemInfo(void)
+{
+	Con_Printf ("3DS NZP v%4.1f (3DSX: "__TIME__" "__DATE__")\n", (double)(VERSION));
+
+	if (new3ds_flag)
+		Con_Printf ("3DS Model: NEW Nintendo 3DS\n");
+	else
+		Con_Printf ("3DS Model: Nintendo 3DS\n");
+}
+
 void Sys_Error (char *error, ...)
 {
 	consoleInit(GFX_BOTTOM, NULL);

@@ -23,8 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef __PSP__
 #include "platform_psp/thread.h"
-#include "platform_psp/module.h"
-#include <pspge.h>
 #include <pspsysevent.h>
 #endif // __PSP__
 
@@ -911,30 +909,8 @@ void Host_Init (quakeparms_t *parms)
 	SV_Init ();
 	TestHandler_Init ();
 
-#ifdef __PSP__
-	Con_Printf ("PSP NZP v%4.1f (PBP: "__TIME__" "__DATE__")\n", (float)(VERSION));
-	Con_Printf ("%4.1f megabyte PSP application heap \n",1.0f*PSP_HEAP_SIZE_MB);
-
-	switch(psp_system_model) {
-		case PSP_MODEL_PHAT: Con_Printf("PSP Model: PSP-1000 model unit\n"); break;
-		case PSP_MODEL_SLIM: Con_Printf("PSP Model: PSP-SLIM model unit\n"); break;
-		case PSP_MODEL_PSVITA: Con_Printf("PSP Model: PS VITA model unit\n"); break;
-		default: break;
-	}
-
-	Con_Printf ("VRAM Size: %i bytes\n", sceGeEdramGetSize());
-#elif __3DS__
-	Con_Printf ("3DS NZP v%4.1f (3DSX: "__TIME__" "__DATE__")\n", (double)(VERSION));
-
-	if (new3ds_flag)
-		Con_Printf ("3DS Model: NEW Nintendo 3DS\n");
-	else
-		Con_Printf ("3DS Model: Nintendo 3DS\n");
-#elif __WII__
-	Con_Printf ("WII NZP v%4.1f (DOL: "__TIME__" "__DATE__")\n", (float)(VERSION));
-#endif // __PSP__, __3DS__
-
-	Con_Printf ("%4.1f megabyte Quake hunk \n",parms->memsize/ (1024*1024.0));
+	Sys_PrintSystemInfo();
+	Con_Printf ("%4.1f megabyte Quake hunk \n", parms->memsize / (1024*1024.0));
 
 	R_InitTextures ();		// needed even for dedicated servers
 	if (cls.state != ca_dedicated)

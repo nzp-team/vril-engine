@@ -46,6 +46,8 @@ void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length);
 //
 void Sys_DebugLog(char *file, char *fmt, ...);
 
+void Sys_PrintSystemInfo(void);
+
 void Sys_Error (char *error, ...);
 // an error will cause the entire program to exit
 

@@ -34,6 +34,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 FILE *logfile;
 
+void Sys_PrintSystemInfo(void)
+{
+	Con_Printf ("WII NZP v%4.1f (DOL: "__TIME__" "__DATE__")\n", (float)(VERSION));
+}
+
 void Sys_Error (char *error, ...)
 {
 	// Clear the sound buffer.
