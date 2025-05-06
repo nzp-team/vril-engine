@@ -550,7 +550,7 @@ int SV_HullPointContents (hull_t *hull, int num, vec3_t p)
 	while (num >= 0)
 	{
 		if (num < hull->firstclipnode || num > hull->lastclipnode)
-			Sys_Error ("SV_HullPointContents: bad node number");
+			Sys_Error ("bad node number");
 
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
@@ -845,7 +845,7 @@ void SV_WorldTransformAABB( matrix4x4 transform, const vec3_t mins, const vec3_t
 	{
 		if( outmins[i] > outmaxs[i] )
 		{
-			Sys_Error("World_TransformAABB: backwards mins/maxs\n");
+			Sys_Error("backwards mins/maxs\n");
 			outmins[0] = outmins[1] = outmins[2] = 0;
 			outmaxs[0] = outmaxs[1] = outmaxs[2] = 0;
 			return;

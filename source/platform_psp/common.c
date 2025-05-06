@@ -503,7 +503,7 @@ void MSG_WriteChar (sizebuf_t *sb, int c)
 	
 #ifdef PARANOID
 	if (c < -128 || c > 127)
-		Sys_Error ("MSG_WriteChar: range error");
+		Sys_Error ("range error");
 #endif
 
 	buf = SZ_GetSpace (sb, 1);
@@ -516,7 +516,7 @@ void MSG_WriteByte (sizebuf_t *sb, int c)
 	
 #ifdef PARANOID
 	if (c < 0 || c > 255)
-		Sys_Error ("MSG_WriteByte: range error");
+		Sys_Error ("range error");
 #endif
 
 	buf = SZ_GetSpace (sb, 1);
@@ -529,7 +529,7 @@ void MSG_WriteShort (sizebuf_t *sb, int c)
 	
 #ifdef PARANOID
 	if (c < ((short)0x8000) || c > (short)0x7fff)
-		Sys_Error ("MSG_WriteShort: range error");
+		Sys_Error ("range error");
 #endif
 
 	buf = SZ_GetSpace (sb, 2);
@@ -751,10 +751,10 @@ void *SZ_GetSpace (sizebuf_t *buf, int length)
 		Con_Printf("buf->cursize: %d, length: %d, buf->maxsize: %d\n", buf->cursize, length, buf->maxsize);
 
 		if (!buf->allowoverflow)
-			Sys_Error ("SZ_GetSpace: overflow without allowoverflow set");
+			Sys_Error ("overflow without allowoverflow set");
 		
 		if (length > buf->maxsize)
-			Sys_Error ("SZ_GetSpace: %i is > full buffer size", length);
+			Sys_Error ("%i is > full buffer size", length);
 			
 		buf->overflowed = true;
 		Con_Printf ("SZ_GetSpace: overflow");
@@ -1301,9 +1301,9 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 	int                     findtime, cachetime;
 
 	if (file && handle)
-		Sys_Error ("COM_FindFile: both handle and file set");
+		Sys_Error ("both handle and file set");
 	if (!file && !handle)
-		Sys_Error ("COM_FindFile: neither handle or file set");
+		Sys_Error ("neither handle or file set");
 		
 //
 // search through the path, one element at a time
@@ -1479,10 +1479,10 @@ byte *COM_LoadFile (char *path, int usehunk)
 			buf = loadbuf;
 	}
 	else
-		Sys_Error ("COM_LoadFile: bad usehunk");
+		Sys_Error ("bad usehunk");
 
 	if (!buf)
-		Sys_Error ("COM_LoadFile: not enough space for %s", path);
+		Sys_Error ("not enough space for %s", path);
 		
 	((byte *)buf)[len] = 0;
 

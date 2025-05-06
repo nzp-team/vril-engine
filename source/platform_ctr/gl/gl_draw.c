@@ -160,7 +160,7 @@ int Scrap_AllocBlock (int w, int h, int *x, int *y)
 		return texnum;
 	}
 
-	Sys_Error ("Scrap_AllocBlock: full");
+	Sys_Error ("full");
 	return 0; // naievil -- will never be reached only for warning removal
 }
 
@@ -708,7 +708,7 @@ void Draw_TransPic (int x, int y, qpic_t *pic)
 	if (x < 0 || (unsigned)(x + pic->width) > vid.width || y < 0 ||
 		 (unsigned)(y + pic->height) > vid.height)
 	{
-		Sys_Error ("Draw_TransPic: bad coordinates");
+		Sys_Error ("bad coordinates");
 	}
 		
 	Draw_Pic (x, y, pic);
@@ -1429,7 +1429,7 @@ static	unsigned	scaled[1024*512];	// [512*256];
 		scaled_height = gl_max_size.value;
 
 	if (scaled_width * scaled_height > sizeof(scaled)/4)
-		Sys_Error ("GL_LoadTexture: too big");
+		Sys_Error ("too big");
 
 	samples = alpha ? gl_alpha_format : gl_solid_format;
 
@@ -1516,7 +1516,7 @@ void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboole
 		scaled_height = gl_max_size.value;
 
 	if (scaled_width * scaled_height > sizeof(scaled))
-		Sys_Error ("GL_LoadTexture: too big");
+		Sys_Error ("too big");
 
 	texels += scaled_width * scaled_height;
 
@@ -1598,7 +1598,7 @@ static	unsigned	trans[640*480];		// FIXME, temporary
 	else
 	{
 		if (s&3)
-			Sys_Error ("GL_Upload8: s&3");
+			Sys_Error ("s&3");
 		for (i=0 ; i<s ; i+=4)
 		{
 			trans[i] = d_8to24table[data[i]];
@@ -1677,7 +1677,7 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 			GL_Upload32 ((unsigned*)data, width, height, mipmap, true);
 		}
 		else {
-			Sys_Error("GL_LoadTexture: unknown bytesperpixel\n");
+			Sys_Error("unknown bytesperpixel\n");
 		}
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	}

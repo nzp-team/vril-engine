@@ -903,16 +903,16 @@ byte *LoadBMP (FILE *fin, int matchwidth, int matchheight)
 	}
 	if ( bmpHeader.id[0] != 'B' && bmpHeader.id[1] != 'M' )
 	{
-		Sys_Error("LoadBMP: only Windows-style BMP files supported \n");
+		Sys_Error("only Windows-style BMP files supported \n");
 	}
 
 	if ( bmpHeader.compression != 0 )
 	{
-		Sys_Error("LoadBMP: only uncompressed BMP files supported \n");
+		Sys_Error("only uncompressed BMP files supported \n");
 	}
 	if ( bmpHeader.bitsPerPixel < 8 )
 	{
-		Sys_Error("LoadBMP: monochrome and 4-bit BMP files not supported \n");
+		Sys_Error("monochrome and 4-bit BMP files not supported \n");
 	}
 
 	image_width  = columns = bmpHeader.width;
@@ -973,7 +973,7 @@ byte *LoadBMP (FILE *fin, int matchwidth, int matchheight)
 				*pixbuf++ = alpha;
 				break;
 			default:
-				Sys_Error("LoadBMP: illegal pixel_size '%d' in file\n", bmpHeader.bitsPerPixel);
+				Sys_Error("illegal pixel_size '%d' in file\n", bmpHeader.bitsPerPixel);
 				break;
 			}
 		}

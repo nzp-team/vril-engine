@@ -95,7 +95,7 @@ void *Mod_Extradata (model_t *mod)
 	Mod_LoadModel (mod, qtrue);
 
 	if (!mod->cache.data)
-		Sys_Error ("Mod_Extradata: caching failed");
+		Sys_Error ("caching failed");
 	return mod->cache.data;
 }
 
@@ -111,7 +111,7 @@ mleaf_t *Mod_PointInLeaf (vec3_t p, model_t *model)
 	mplane_t	*plane;
 
 	if (!model || !model->nodes)
-		Sys_Error ("Mod_PointInLeaf: bad model");
+		Sys_Error ("bad model");
 
 	node = model->nodes;
 	while (1)
@@ -246,7 +246,7 @@ model_t *Mod_FindName (char *name)
 	model_t	*mod;
 
 	if (!name[0])
-		Sys_Error ("Mod_ForName: NULL name");
+		Sys_Error ("NULL name");
 
 /*
 	if (!name[0])
@@ -346,7 +346,7 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 			if (!buf)
 			{
 				if (crash)
-					Sys_Error ("Mod_NumForName: %s not found", mod->name);
+					Sys_Error ("%s not found", mod->name);
 				return NULL;
 			}
 		}
@@ -366,7 +366,7 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 		if (!buf)
 		{
 			if (crash)
-				Sys_Error ("Mod_NumForName: %s not found", mod->name);
+				Sys_Error ("%s not found", mod->name);
 			return NULL;
 		}
 	}
@@ -1481,7 +1481,7 @@ void Mod_LoadMarksurfaces (lump_t *l)
 	{
 		j = LittleShort(in[i]);
 		if (j >= loadmodel->numsurfaces)
-			Sys_Error ("Mod_ParseMarksurfaces: bad surface number");
+			Sys_Error("bad surface number");
 		out[i] = loadmodel->surfaces + j;
 	}
 }
@@ -2015,7 +2015,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 	skin = (byte *)(pskintype + 1);
 
 	if (numskins < 1 || numskins > MAX_SKINS)
-		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d\n", numskins);
+		Sys_Error ("Invalid # of skins: %d\n", numskins);
 
 	s = pheader->skinwidth * pheader->skinheight;
 
@@ -2337,7 +2337,7 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	pheader->numframes = LittleLong (pinmodel->numframes);
 	numframes = pheader->numframes;
 	if (numframes < 1)
-		Sys_Error ("Mod_LoadAliasModel: Invalid # of frames: %d\n", numframes);
+		Sys_Error ("Invalid # of frames: %d\n", numframes);
 
 	pheader->size = LittleFloat (pinmodel->size) * ALIAS_BASE_SIZE_RATIO;
 	mod->synctype = static_cast<synctype_t>(LittleLong (pinmodel->synctype));
@@ -3231,25 +3231,25 @@ void Mod_LoadQ3AliasModel (model_t *mod, void *buffer)
 
 	version = LittleLong (header->version);
 	if (version != MD3_VERSION)
-		Sys_Error ("Mod_LoadQ3Model: %s has wrong version number (%i should be %i)", md3name, version, MD3_VERSION);
+		Sys_Error ("%s has wrong version number (%i should be %i)", md3name, version, MD3_VERSION);
 
 // endian-adjust all data
 	header->numframes = LittleLong (header->numframes);
 
 	if (header->numframes < 1)
-		Sys_Error ("Mod_LoadQ3Model: model %s has no frames", md3name);
+		Sys_Error ("model %s has no frames", md3name);
 	else if (header->numframes > MAXMD3FRAMES)
-		Sys_Error ("Mod_LoadQ3Model: model %s has too many frames", md3name);
+		Sys_Error ("model %s has too many frames", md3name);
 
 	header->numtags = LittleLong (header->numtags);
 	if (header->numtags > MAXMD3TAGS)
-		Sys_Error ("Mod_LoadQ3Model: model %s has too many tags", md3name);
+		Sys_Error ("model %s has too many tags", md3name);
 
 	header->numsurfs = LittleLong (header->numsurfs);
 	if (header->numsurfs < 1)
-		Sys_Error ("Mod_LoadQ3Model: model %s has no surfaces", md3name);
+		Sys_Error ("model %s has no surfaces", md3name);
 	else if (header->numsurfs > MAXMD3SURFS)
-		Sys_Error ("Mod_LoadQ3Model: model %s has too many surfaces", md3name);
+		Sys_Error ("model %s has too many surfaces", md3name);
 
 	header->numskins = LittleLong (header->numskins);
 	header->ofsframes = LittleLong (header->ofsframes);
@@ -3291,25 +3291,25 @@ void Mod_LoadQ3AliasModel (model_t *mod, void *buffer)
 		surf->flags = LittleLong (surf->flags);
 		surf->numframes = LittleLong (surf->numframes);
 		if (surf->numframes != header->numframes)
-			Sys_Error ("Mod_LoadQ3Model: number of frames don't match in %s", md3name);
+			Sys_Error ("number of frames don't match in %s", md3name);
 
 		surf->numshaders = LittleLong (surf->numshaders);
 		if (surf->numshaders <= 0)
-			Sys_Error ("Mod_LoadQ3Model: model %s has no shaders", md3name);
+			Sys_Error ("model %s has no shaders", md3name);
 		else if (surf->numshaders > MAXMD3SHADERS)
-			Sys_Error ("Mod_LoadQ3Model: model %s has too many shaders", md3name);
+			Sys_Error ("model %s has too many shaders", md3name);
 
 		surf->numverts = LittleLong (surf->numverts);
 		if (surf->numverts <= 0)
-			Sys_Error ("Mod_LoadQ3Model: model %s has no vertices", md3name);
+			Sys_Error ("model %s has no vertices", md3name);
 		else if (surf->numverts > MAXMD3VERTS)
-			Sys_Error ("Mod_LoadQ3Model: model %s has too many vertices", md3name);
+			Sys_Error ("model %s has too many vertices", md3name);
 
 		surf->numtris = LittleLong (surf->numtris);
 		if (surf->numtris <= 0)
-			Sys_Error ("Mod_LoadQ3Model: model %s has no triangles", md3name);
+			Sys_Error ("model %s has no triangles", md3name);
 		else if (surf->numtris > MAXMD3TRIS)
-			Sys_Error ("Mod_LoadQ3Model: model %s has too many triangles", md3name);
+			Sys_Error ("model %s has too many triangles", md3name);
 
 		surf->ofstris = LittleLong (surf->ofstris);
 		surf->ofsshaders = LittleLong (surf->ofsshaders);
@@ -3518,7 +3518,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum, 
 	}
 	else
 	{
-		Sys_Error("Mod_LoadSpriteFrame: Non sprite type");
+		Sys_Error("Non sprite type");
 	}
 
 	return (void *)((byte *)pinframe + sizeof (dspriteframe_t) + size);
@@ -3563,7 +3563,7 @@ void * Mod_LoadSpriteGroup (void * pin, mspriteframe_t **ppframe, int framenum, 
 		*poutintervals = LittleFloat (pin_intervals->interval);
 		if (*poutintervals <= 0.0)
 		{
-			Sys_Error ("Mod_LoadSpriteGroup: interval<=0");
+			Sys_Error ("interval<=0");
 		}
 		poutintervals++;
 		pin_intervals++;
@@ -3725,7 +3725,7 @@ qboolean Mod_LoadQ2SpriteModel (model_t *mod, void *buffer)
 //
 	if (numframes < 1)
 	{
-		Sys_Error ("Mod_LoadSpriteModel: Invalid # of frames: %d\n", numframes);
+		Sys_Error ("Invalid # of frames: %d\n", numframes);
 		Hunk_FreeToLowMark(hunkstart);
 		return qfalse;
 	}

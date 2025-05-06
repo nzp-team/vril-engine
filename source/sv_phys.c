@@ -271,7 +271,7 @@ int SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 			 break;		// moved the entire distance
 
 		if (!trace.ent)
-			Sys_Error ("SV_FlyMove: !trace.ent");
+			Sys_Error ("!trace.ent");
 
 		if (trace.plane.normal[2] > 0.7f)
 		{
@@ -1427,7 +1427,7 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		break;
 
 	default:
-		Sys_Error ("SV_Physics_client: bad movetype %i", (int)ent->v.movetype);
+		Sys_Error ("bad movetype %i", (int)ent->v.movetype);
 	}
 
 //
@@ -1735,7 +1735,7 @@ void SV_Physics (void)
 		|| ent->v.movetype == MOVETYPE_FLYMISSILE)
 			SV_Physics_Toss (ent);
 		else
-			Sys_Error ("SV_Physics: bad movetype %i", (int)ent->v.movetype);
+			Sys_Error ("bad movetype %i", (int)ent->v.movetype);
 	}
 
 	if (EndFrame)
