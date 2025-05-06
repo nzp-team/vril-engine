@@ -26,8 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspmath.h>
 #endif
 
-void Sys_Error (char *error, ...);
-
 vec3_t vec3_origin = {0,0,0};
 int nanmask = 255<<23;
 
@@ -237,7 +235,7 @@ Split out like this for ASM to call.
 */
 void BOPS_Error (void)
 {
-	Sys_Error ("BoxOnPlaneSide:  Bad signbits");
+	Sys_Error ("Bad signbits");
 }
 
 /*
@@ -468,7 +466,7 @@ int BoxOnPlaneSide(vec3_t emins, vec3_t emaxs, mplane_t *p)
 		break;
 	default:
 		dist1 = dist2 = 0;		// shut up compiler
-		Sys_Error ("BoxOnPlaneSide:  Bad signbits");
+		Sys_Error ("Bad signbits");
 		break;
 	}
 
@@ -733,7 +731,7 @@ void FloorDivMod (float numer, float denom, int *quotient,
 	float	x;
 
 	if (denom <= 0.0f)
-		Sys_Error ("FloorDivMod: bad denominator %d\n", (double)denom);
+		Sys_Error ("bad denominator %d\n", (double)denom);
 
 	if (numer >= 0.0f)
 	{

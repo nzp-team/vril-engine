@@ -15,7 +15,7 @@ Now you can navigate back to the root of the repository and build an `EBOOT`.
 
 ```bash
 cd ../../../
-make -f Makefile.psp install
+make -f Makefile.psp
 ```
 
 We also provide a prebuilt EBOOT on the [Releases](https://github.com/nzp-team/vril-engine/releases/tag/bleeding-edge) page.

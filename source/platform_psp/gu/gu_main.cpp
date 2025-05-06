@@ -3631,7 +3631,7 @@ void Platform_Graphics_SetTextureMode(int texture_mode)
 			sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 			break;
 		default:
-			Sys_Error("Platform_Graphics_SetTextureMode: Received unknown texture mode [%d]\n", texture_mode);
+			Sys_Error("Received unknown texture mode [%d]\n", texture_mode);
 			break;
 	}
 }

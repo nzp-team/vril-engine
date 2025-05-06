@@ -172,17 +172,14 @@ void Sys_PrintSystemInfo(void)
 		Con_Printf ("3DS Model: Nintendo 3DS\n");
 }
 
-void Sys_Error (char *error, ...)
+void Sys_SystemError(char *error)
 {
-	consoleInit(GFX_BOTTOM, NULL);
-	
-	va_list		argptr;
+	consoleInit(GFX_TOP, NULL);
 
-	printf ("Sys_Error: ");	
-	va_start (argptr,error);
-	vprintf (error,argptr);
-	va_end (argptr);
-	printf ("\n");
+	printf("%s=== Vril Engine Exception ===\n", CONSOLE_RED);
+	printf("%s%s\n\n", CONSOLE_WHITE, error);
+	
+	printf("%sPress START to quit.\n", CONSOLE_CYAN);
 
 	while(!(hidKeysDown() & KEY_START))
 		hidScanInput();
@@ -302,7 +299,7 @@ void Sys_LowFPPrecision (void)
 
 void Sys_CaptureScreenshot(void)
 {
-	Sys_Error("Sys_CaptureScreenshot: Not implemented!");
+	Sys_Error("Not implemented!");
 }
 
 //=============================================================================

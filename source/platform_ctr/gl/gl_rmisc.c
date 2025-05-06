@@ -339,7 +339,7 @@ void R_TranslatePlayerSkin (int playernum)
 	} else
 		original = (byte *)paliashdr + paliashdr->texels[currententity->skinnum];
 	if (s & 3)
-		Sys_Error ("R_TranslateSkin: s&3");
+		Sys_Error ("s&3");
 
 	inwidth = paliashdr->skinwidth;
 	inheight = paliashdr->skinheight;

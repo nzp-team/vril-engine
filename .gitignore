@@ -12,3 +12,4 @@ EBOOT2000.PBP
 .vscode/*
 .DS_Store
 *.unc*
+source/_build_info.h

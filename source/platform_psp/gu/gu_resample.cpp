@@ -318,7 +318,7 @@ void Image_Resample (void *indata, int inwidth, int inheight,void *outdata, int 
 	else if (bpp == 3)
 		Image_Resample24(indata, inwidth, inheight, outdata, outwidth, outheight, quality);
 	else
-		Sys_Error("Image_Resample: unsupported bpp (%d)", bpp);
+		Sys_Error("unsupported bpp (%d)", bpp);
 }
 
 /*
@@ -372,7 +372,7 @@ void Image_MipReduce (byte *in, byte *out, int *width, int *height, int bpp)
 			}
 			else
 			{
-				Sys_Error("Image_MipReduce: unsupported bpp (%d)", bpp);
+				Sys_Error("unsupported bpp (%d)", bpp);
 			}
 		}
 		else
@@ -409,7 +409,7 @@ void Image_MipReduce (byte *in, byte *out, int *width, int *height, int bpp)
 			}
 			else
 			{
-				Sys_Error("Image_MipReduce: unsupported bpp (%d)", bpp);
+				Sys_Error("unsupported bpp (%d)", bpp);
 			}
 		}
 	}
@@ -450,12 +450,12 @@ void Image_MipReduce (byte *in, byte *out, int *width, int *height, int bpp)
 		}
 		else
 		{
-			Sys_Error("Image_MipReduce: unsupported bpp (%d)", bpp);
+			Sys_Error("unsupported bpp (%d)", bpp);
 		}
 	}
 	else
 	{
-		Sys_Error("Image_MipReduce: Input texture has dimensions %dx%d", width, height);
+		Sys_Error("Input texture has dimensions %dx%d", width, height);
 	}
 }
 

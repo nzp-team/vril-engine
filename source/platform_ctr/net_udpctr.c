@@ -124,7 +124,7 @@ void UDP_Listen (qboolean state)
 		if (net_acceptsocket != -1)
 			return;
 		if ((net_acceptsocket = UDP_OpenSocket (net_hostport)) == -1)
-			Sys_Error ("UDP_Listen: Unable to open accept socket\n");
+			Sys_Error ("Unable to open accept socket\n");
 		return;
 	}
 

@@ -267,9 +267,9 @@ texture_t *R_TextureAnimation (texture_t *base)
 	{
 		base = base->anim_next;
 		if (!base)
-			Sys_Error ("R_TextureAnimation: broken cycle");
+			Sys_Error ("broken cycle");
 		if (++count > 100)
-			Sys_Error ("R_TextureAnimation: infinite cycle");
+			Sys_Error ("infinite cycle");
 	}
 
 	return base;
@@ -1453,7 +1453,7 @@ int AllocBlock (int w, int h, int *x, int *y)
 		return texnum;
 	}
 
-	Sys_Error ("AllocBlock: full");
+	Sys_Error ("full");
 	return 0; //johnfitz -- shut up compiler
 }
 

@@ -998,7 +998,7 @@ void Draw_TransPic (int x, int y, qpic_t *pic)
 	if (x < 0 || (unsigned)(x + pic->width) > vid.width || y < 0 ||
 		 (unsigned)(y + pic->height) > vid.height)
 	{
-		Sys_Error ("Draw_TransPic: bad coordinates");
+		Sys_Error ("bad coordinates");
 	}
 
 	Draw_Pic (x, y, pic);
@@ -2933,7 +2933,7 @@ int GL_LoadPalTex (const char *identifier, int width, int height, byte *data, qb
 	}
 	else
     {
-	    Sys_Error("GL_LoadPalTex: Unknow palette type");
+	    Sys_Error("Unknown palette type");
 	}
 
 
@@ -3374,7 +3374,7 @@ int GL_LoadTexture8Pal32 (char *identifier, int width, int height, byte *data, b
 	s = width*height;
 
 	if (s&3)
-		Sys_Error ("GL_Upload8: s&3");
+		Sys_Error ("s&3");
 
 	byte *trans = (byte*)memalign(16, s*4);
 	for (i=0 ; i<s ; i++)
@@ -3396,7 +3396,7 @@ int GL_LoadTexture8Pal24 (char *identifier, int width, int height, byte *data, b
 	s = width*height;
 
 	if (s&3)
-		Sys_Error ("GL_Upload8: s&3");
+		Sys_Error ("s&3");
 
 	byte *trans = (byte*)memalign(16, s*4);
 	for (i=0 ; i<s ; i++)

@@ -81,13 +81,13 @@ int Datagram_SendMessage (qsocket_t *sock, sizebuf_t *data)
 
 #ifdef DEBUG
 	if (data->cursize == 0)
-		Sys_Error("Datagram_SendMessage: zero length message\n");
+		Sys_Error("zero length message\n");
 
 	if (data->cursize > NET_MAXMESSAGE)
-		Sys_Error("Datagram_SendMessage: message too big %u\n", data->cursize);
+		Sys_Error("message too big %u\n", data->cursize);
 
 	if (sock->canSend == false)
-		Sys_Error("SendMessage: called with canSend == false\n");
+		Sys_Error("called with canSend == false\n");
 #endif
 
 	Q_memcpy(sock->sendMessage, data->data, data->cursize);
@@ -207,10 +207,10 @@ int Datagram_SendUnreliableMessage (qsocket_t *sock, sizebuf_t *data)
 
 #ifdef DEBUG
 	if (data->cursize == 0)
-		Sys_Error("Datagram_SendUnreliableMessage: zero length message\n");
+		Sys_Error("zero length message\n");
 
 	if (data->cursize > MAX_DATAGRAM)
-		Sys_Error("Datagram_SendUnreliableMessage: message too big %u\n", data->cursize);
+		Sys_Error("message too big %u\n", data->cursize);
 #endif
 
 	packetLen = NET_HEADERSIZE + data->cursize;

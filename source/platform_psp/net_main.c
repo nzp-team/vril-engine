@@ -159,7 +159,7 @@ void NET_FreeQSocket(qsocket_t *sock)
 				break;
 			}
 		if (!s)
-			Sys_Error ("NET_FreeQSocket: not active\n");
+			Sys_Error ("not active\n");
 	}
 
 	// add it to free list
@@ -834,7 +834,7 @@ void NET_Init (void)
 		if (i < com_argc-1)
 			DEFAULTnet_hostport = Q_atoi (com_argv[i+1]);
 		else
-			Sys_Error ("NET_Init: you must specify a number after -port");
+			Sys_Error ("you must specify a number after -port");
 	}
 	net_hostport = DEFAULTnet_hostport;
 

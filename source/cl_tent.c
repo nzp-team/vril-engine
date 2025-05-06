@@ -327,7 +327,7 @@ void CL_ParseTEnt (void)
 		break;
 
 	default:
-		Sys_Error ("CL_ParseTEnt: bad type");
+		Sys_Error ("bad type");
 	}
 }
 
