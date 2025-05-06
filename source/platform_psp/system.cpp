@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspkernel.h>
 #include <psppower.h>
 #include <psprtc.h>
+#include <pspge.h>
 
 #ifdef PROFILE
 #include <pspprof.h>
@@ -51,6 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern "C"
 {
 #include "sys.h"
+#include "module.h"
 #include "../nzportable_def.h"
 }
 #include "fnmatch.h"
@@ -330,6 +332,21 @@ void Sys_mkdir (char *path)
 {
 	Sys_Printf("Mkdir: %s\n", path);
 	sceIoMkdir(path, 0x777);
+}
+
+void Sys_PrintSystemInfo(void)
+{
+	Con_Printf ("PSP NZP v%4.1f (PBP: " __TIME__ " " __DATE__ ")\n", (float)(VERSION));
+	Con_Printf ("%4.1f megabyte PSP application heap \n",1.0f * PSP_HEAP_SIZE_MB);
+
+	switch(psp_system_model) {
+		case PSP_MODEL_PHAT: Con_Printf("PSP Model: PSP-1000 model unit\n"); break;
+		case PSP_MODEL_SLIM: Con_Printf("PSP Model: PSP-SLIM model unit\n"); break;
+		case PSP_MODEL_PSVITA: Con_Printf("PSP Model: PS VITA model unit\n"); break;
+		default: break;
+	}
+
+	Con_Printf ("VRAM Size: %i bytes\n", sceGeEdramGetSize());
 }
 
 void Sys_Error (char *error, ...)
