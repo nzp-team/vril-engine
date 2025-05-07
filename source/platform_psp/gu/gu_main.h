@@ -311,9 +311,7 @@ void GL_BindLM (int texture_index);
 void GL_Copy   (int texture_index, int sx, int sy, int dx, int dy, int w, int h);
 
 // Added by PM
-int R_LightPoint (vec3_t p);
 void R_DrawBrushModel (entity_t *e);
-void R_AnimateLight (void);
 void R_DrawWorld (void);
 void R_RenderDlights (void);
 void R_DrawParticles (void);
@@ -338,7 +336,6 @@ int R_FrustumCheckBox (vec3_t mins, vec3_t maxs);
 int R_FrustumCheckSphere (vec3_t centre, float radius);
 int R_CullBox (vec3_t emins, vec3_t emaxs);
 qboolean R_CullSphere (vec3_t centre, float radius);
-void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
 void R_RotateForEntity (entity_t *e, int shadow, unsigned char scale);
 void R_BlendedRotateForEntity (entity_t *e, int shadow, unsigned char scale);
 void R_RotateForViewEntity (entity_t *ent); //clone (R_RotateForEntity)
@@ -417,5 +414,3 @@ extern int			zombie_skins[2][2];
 extern qpic_t*		sniper_scope;
 
 extern int faces_rejected, faces_checked, faces_clipped;
-
-void convert_8bpp_to_4bpp(const byte* indata, const byte* inpal, int width, int height, byte* outdata, byte* outpal);

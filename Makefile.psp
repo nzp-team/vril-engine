@@ -82,7 +82,9 @@ COMMON_OBJS = \
 	source/zone.o \
 	source/crypter.o \
 	source/render/r_fog.o \
-	source/render/r_entity_fragments.o
+	source/render/r_entity_fragments.o \
+	source/render/r_color_quantization.o \
+	source/render/r_light.o
 
 HARDWARE_VIDEO_ONLY_OBJS = \
 	source/platform_psp/clipping.o \
@@ -96,7 +98,6 @@ HARDWARE_VIDEO_ONLY_OBJS = \
     source/platform_psp/gu/gu_QMB.o \
     source/platform_psp/gu/gu_decals_QMB.o \
     source/platform_psp/gu/gu_part.o \
-    source/platform_psp/gu/gu_light.o \
     source/platform_psp/gu/gu_main.o \
     source/platform_psp/gu/gu_mesh.o \
     source/platform_psp/gu/gu_mhex2.o \
@@ -106,8 +107,7 @@ HARDWARE_VIDEO_ONLY_OBJS = \
     source/platform_psp/gu/gu_surface.o \
     source/platform_psp/gu/gu_warp.o \
     source/platform_psp/gu/gu_fog.o \
-    source/platform_psp/gu/gu_dxtn.o \
-	source/platform_psp/gu/gu_colorquant.o
+    source/platform_psp/gu/gu_dxtn.o
 HARDWARE_VIDEO_ONLY_FLAGS = -DPSP_HARDWARE_VIDEO
 
 OBJS = $(COMMON_OBJS) $(HARDWARE_VIDEO_ONLY_OBJS)
