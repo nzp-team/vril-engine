@@ -1,8 +1,7 @@
 /*
- * Copyright (C) 1996-2001 Id Software, Inc.
- * Copyright (C) 2002-2009 John Fitzgibbons and others
+ * Copyright (C) 1996-1997 Id Software, Inc.
+ * Copyright (C) 2007 Peter Mackay and Chris Swindle.
  * Copyright (C) 2010-2014 QuakeSpasm developers
- * Copyright (C) 2023 NZ:P Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,18 +19,18 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
  */
-// r_main.h -- Agnostic render header
-#ifndef _RENDER_MAIN_H_
-#define _RENDER_MAIN_H_
+// r_light.h -- Light updating and sampling header
 
-#include "r_color_quantization.h"
-#include "r_entity_fragments.h"
-#include "r_light.h"
-#include "r_fog.h"
+#ifndef _RENDER_LIGHT_H_
+#define _RENDER_LIGHT_H_
 
-#define GFX_REPLACE     0
+void
+R_AnimateLight(void);
+void
+R_MarkLights(dlight_t * light, int bit, mnode_t * node);
+void
+R_PushDlights(void);
+int
+R_LightPoint(vec3_t p);
 
-void Platform_Graphics_SetTextureMode(int texture_mode);
-void Platform_Graphics_Color(float red, float green, float blue, float alpha);
-
-#endif // _RENDER_MAIN_H_
+#endif // _RENDER_LIGHT_H_

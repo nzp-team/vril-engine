@@ -3473,8 +3473,6 @@ void R_RenderScene (void)
 	S_ExtraUpdate ();	// don't let sound get messed up if going slow
 	
 	R_DrawEntitiesOnList();
-
-	R_RenderDlights ();		//pointless jump? -xaa
 	
 	R_DrawDecals();
 	R_DrawParticles ();

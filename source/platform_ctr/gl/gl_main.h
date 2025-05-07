@@ -315,9 +315,7 @@ extern lpSelTexFUNC qglSelectTextureSGIS;
 
 extern qboolean gl_mtexable;
 
-int R_LightPoint (vec3_t p);
 void R_DrawBrushModel (entity_t *e);
-void R_AnimateLight (void);
 void R_DrawWorld (void);
 void R_DrawParticles (void);
 void R_DrawWaterSurfaces (void);
@@ -325,7 +323,6 @@ void R_RenderBrushPoly (msurface_t *fa);
 void R_InitParticles (void);
 void R_ClearParticles (void);
 qboolean R_CullBox (vec3_t emins, vec3_t emaxs);
-void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
 void R_RotateForEntity (entity_t *e, unsigned char scale);
 void R_ClearSkyBox (void);
 void R_DrawSkyBox (void);
