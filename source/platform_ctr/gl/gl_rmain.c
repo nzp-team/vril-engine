@@ -1668,8 +1668,6 @@ void R_RenderScene (void)
 
 	GL_DisableMultitexture();
 
-	//R_RenderDlights ();
-
 	R_DrawParticles ();
 }
 
