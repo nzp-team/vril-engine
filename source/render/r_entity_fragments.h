@@ -20,22 +20,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
  */
-// r_fog.h -- Fog header
+// r_entity_fragments.h -- Entity fragment header
 
-// MARK: Global
+#ifndef _ENTITY_FRAGMENTS_H_
+#define _ENTITY_FRAGMENTS_H_
 
-void Fog_SetupFrame(bool is_world_geometry);
-void Fog_Init(void);
-void Fog_ParseWorldspawn(void);
-void Fog_ParseServerMessage(void);
-void Fog_EnableGFog(void);
-void Fog_DisableGFog(void);
-void Fog_SetColorForSkyS(void);
-void Fog_SetColorForSkyE(void);
+typedef struct efrag_s {
+    struct efrag_s *  leafnext;
+    struct entity_s * entity;
+} efrag_t;
 
-// MARK: Platform-specific
+void
+R_AddEfrags(entity_t * ent);
 
-void Platform_Fog_Init(void);
-void Platform_Fog_Disable(void);
-void Platform_Fog_Enable(void);
-void Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, float green, float blue, float alpha);
+#endif // _ENTITY_FRAGMENTS_H_

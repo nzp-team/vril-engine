@@ -27,14 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 //=============================================================================
 
-typedef struct efrag_s
-{
-	struct mleaf_s		*leaf;
-	struct efrag_s		*leafnext;
-	struct entity_s		*entity;
-	struct efrag_s		*entnext;
-} efrag_t;
-
 //johnfitz -- for lerping
 #define LERP_MOVESTEP	(1<<0) //this is a MOVETYPE_STEP entity, enable movement lerp
 #define LERP_RESETANIM	(1<<1) //disable anim lerping until next anim frame
@@ -162,14 +154,12 @@ extern	struct texture_s	*r_notexture_mip;
 
 void R_Init (void);
 void R_InitTextures (void);
-void R_InitEfrags (void);
 void R_RenderView (void);		// must set r_refdef first
 void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect);
 								// called whenever r_refdef or vid change
 void R_InitSky (struct miptex_s *mt);	// called at level load
 
 void R_AddEfrags (entity_t *ent);
-void R_RemoveEfrags (entity_t *ent);
 
 void R_NewMap (void);
 

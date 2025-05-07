@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // client.h
 
+#include "../render/r_entity_fragments.h"
+
 typedef struct
 {
 	vec3_t	viewangles;
@@ -231,6 +233,7 @@ typedef struct
 // refresh related state
 	struct model_s	*worldmodel;	// cl_entitites[0].model
 	struct efrag_s	*free_efrags;
+	int			num_efrags;
 	int			num_entities;	// held in cl_entities array
 	int			num_statics;	// held in cl_staticentities array
 	entity_t	viewent;			// the gun model
