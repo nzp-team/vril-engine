@@ -27,14 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 //=============================================================================
 
-typedef struct efrag_s
-{
-	struct mleaf_s		*leaf;
-	struct efrag_s		*leafnext;
-	struct entity_s		*entity;
-	struct efrag_s		*entnext;
-} efrag_t;
-
 typedef struct entity_s
 {
 	qboolean				forcelink;		// model changed
@@ -188,15 +180,11 @@ extern	struct texture_s	*r_notexture_mip;
 
 void R_Init (void);
 void R_InitTextures (void);
-void R_InitEfrags (void);
 void R_RenderView (void);		// must set r_refdef first
 void R_DrawLine(vec3_t start,vec3_t end, vec3_t rgb);//blubs added this
 
 void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect);
 void R_InitSky (byte *mt);	// called at level load
-
-void R_AddEfrags (entity_t *ent);
-void R_RemoveEfrags (entity_t *ent);
 
 void R_NewMap (void);
 

@@ -82,7 +82,8 @@ COMMON_OBJS = \
 	source/world.o \
 	source/zone.o \
 	source/crypter.o \
-	source/render/r_fog.o
+	source/render/r_fog.o \
+	source/render/r_entity_fragments.o
 
 HARDWARE_VIDEO_ONLY_OBJS = \
 	source/platform_psp/clipping.o \
@@ -93,7 +94,6 @@ HARDWARE_VIDEO_ONLY_OBJS = \
     source/platform_psp/gu/gu_fullbright.o \
     source/platform_psp/gu/gu_hlmdl.o \
     source/platform_psp/gu/gu_draw.o \
-    source/platform_psp/gu/gu_entity_fragment.o \
     source/platform_psp/gu/gu_QMB.o \
     source/platform_psp/gu/gu_decals_QMB.o \
     source/platform_psp/gu/gu_part.o \

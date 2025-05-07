@@ -286,7 +286,6 @@ typedef struct
 #include "images.h"
 
 #include "render/r_main.h"
-#include "render/r_fog.h"
 
 //=============================================================================
 
