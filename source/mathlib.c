@@ -531,7 +531,7 @@ void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 	sy = sinf(angle);
 	cy = cosf(angle);
 	#endif
-	angle = angles[PITCH] * ((float)M_PI / 180);
+	angle = angles[PITCH] * ((float)M_PI / 180.0f);
 	#ifdef PSP_VFPU
 	sp = vfpu_sinf(angle);
 	cp = vfpu_cosf(angle);
@@ -539,7 +539,7 @@ void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 	sp = sinf(angle);
 	cp = cosf(angle);
 	#endif
-	angle = angles[ROLL] * ((float)M_PI / 360);
+	angle = angles[ROLL] * ((float)M_PI / 180.0f);
 	#ifdef PSP_VFPU
 	sr = vfpu_sinf(angle);
 	cr = vfpu_cosf(angle);
