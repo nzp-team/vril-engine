@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // nzportable_def.h -- primary header for client
 
-//#define	GLTEST			// experimental stuff
+#pragma once
 
 #ifndef PLATFORM_DIRECTORY
 #error "Unknown platform! (Please build with -DPLATFORM_DIRECTORY='your_platform')"
@@ -32,10 +32,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define STRINGIFY_MACRO(x) STR(x)
 #define STR(x) #x
 #define EXPAND(x) x
-#define CONCAT(n1, n2, n3) STRINGIFY_MACRO(EXPAND(n1)EXPAND(n2)EXPAND(n3))
-#define CONCAT7(n1, n2, n3, n4, n5, n6, n7) STRINGIFY_MACRO(EXPAND(n1)EXPAND(n2)EXPAND(n3)EXPAND(n4)EXPAND(n5)EXPAND(n6)EXPAND(n7))
-#define PLATFORM_FILE(file) CONCAT(PLATFORM_DIRECTORY,/,file)
-#define RENDERER_FILE(file) CONCAT7(PLATFORM_DIRECTORY,/,PLATFORM_RENDERER,/,PLATFORM_RENDERER,_,file)
+#define CONCAT(n1, n2, n3, n4) STRINGIFY_MACRO(EXPAND(n1)EXPAND(n2)EXPAND(n3)EXPAND(n4))
+#define CONCAT8(n1, n2, n3, n4, n5, n6, n7, n8) STRINGIFY_MACRO(EXPAND(n1)EXPAND(n2)EXPAND(n3)EXPAND(n4)EXPAND(n5)EXPAND(n6)EXPAND(n7)EXPAND(n8))
+#define PLATFORM_FILE(file) CONCAT(platform_,PLATFORM_DIRECTORY,/,file)
+#define RENDERER_FILE(file) CONCAT8(platform_,PLATFORM_DIRECTORY,/,PLATFORM_RENDERER,/,PLATFORM_RENDERER,_,file)
 
 #ifndef __PSP__
 #define qtrue 1
@@ -69,7 +69,7 @@ extern int psp_system_model;
 #include <math.h>
 #include <stdarg.h>
 #include <setjmp.h>
-#include "nspire/nspire_math.h"
+#include "platform_nspire/nspire_math.h"
 #include <ctype.h>
 #undef atof
 double atof( const char *str );
@@ -239,6 +239,7 @@ double atof( const char *str );
 #include PLATFORM_FILE(vid.h)
 #include PLATFORM_FILE(sys.h)
 
+#include "system.h"
 #include "zone.h"
 #include "mathlib.h"
 #include "bspfile.h"
@@ -282,7 +283,7 @@ typedef struct
 #include RENDERER_FILE(model.h)
 
 #ifdef __NSPIRE__ 
-#include "nspire/d_iface.h"
+#include "platform_nspire/d_iface.h"
 #endif // __NSPIRE__
 
 #include "input.h"
@@ -299,6 +300,8 @@ typedef struct
 #include "cdaudio.h"
 
 #include RENDERER_FILE(main.h)
+
+#include "render/r_main.h"
 
 //=============================================================================
 

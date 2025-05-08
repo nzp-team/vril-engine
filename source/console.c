@@ -507,7 +507,7 @@ void Con_DrawInput (void)
 	text = key_lines[edit_line];
 	
 // add the cursor frame
-	text[key_linepos] = 10+((int)(realtime*con_cursorspeed)&1);
+	text[key_linepos] = 10+((int)((float)realtime*con_cursorspeed)&1);
 	
 // fill out remainder with spaces
 	for (i=key_linepos+1 ; i< con_linewidth ; i++)
@@ -549,7 +549,7 @@ void Con_DrawNotify (void)
 		time = con_times[i % NUM_CON_TIMES];
 		if (time == 0)
 			continue;
-		time = realtime - time;
+		time = (float)realtime - time;
 		if (time > con_notifytime.value)
 			continue;
 		text = con_text + (i % con_totallines)*con_linewidth;
@@ -577,7 +577,7 @@ void Con_DrawNotify (void)
 			Draw_Character ( (x+5)<<3, v, chat_buffer[x]);
 			x++;
 		}
-		Draw_Character ( (x+5)<<3, v, 10+((int)(realtime*con_cursorspeed)&1));
+		Draw_Character ( (x+5)<<3, v, 10+((int)((float)realtime*con_cursorspeed)&1));
 		v += 8;
 	}
 	

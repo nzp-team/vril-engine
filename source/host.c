@@ -22,9 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "nzportable_def.h"
 
 #ifdef __PSP__
-#include "psp/thread.h"
-#include "psp/module.h"
-#include <pspge.h>
+#include "platform_psp/thread.h"
 #include <pspsysevent.h>
 #endif // __PSP__
 
@@ -560,10 +558,10 @@ Returns false if the time is too short to run a frame
 */
 qboolean Host_FilterTime (float time)
 {
-	realtime += time;
+	realtime += (double)time;
 #ifndef __WII__
    if (cl_maxfps.value < 1) Cvar_SetValue("cl_maxfps", 30);
-   if (!cls.timedemo && realtime - oldrealtime < 1.0/cl_maxfps.value)
+   if (!cls.timedemo && realtime - oldrealtime < 1.0/(double)cl_maxfps.value)
 		return false;		// framerate is too high
 #else
 	if (!cls.timedemo && realtime - oldrealtime < 1.0f/60.0f)
@@ -575,15 +573,16 @@ qboolean Host_FilterTime (float time)
 
 	//johnfitz -- host_timescale is more intuitive than host_framerate
 	if (host_timescale.value > 0)
-		host_frametime *= host_timescale.value;
+		host_frametime *= (double)host_timescale.value;
 	//johnfitz
 	else if (host_framerate.value > 0)
-		host_frametime = host_framerate.value;
+		host_frametime = (double)host_framerate.value;
 	else // don't allow really long or short frames
 		host_frametime = CLAMP (0.001, host_frametime, 0.1); //johnfitz -- use CLAMP
 
 	return true;
 }
+
 
 
 /*
@@ -893,7 +892,7 @@ void Host_Init (quakeparms_t *parms)
 	host_parms = *parms;
 
 	if (parms->memsize < minimum_memory)
-		Sys_Error ("Only %4.1f megs of memory available, can't execute game", parms->memsize / (float)0x100000);
+		Sys_Error ("Only %4.1f megs of memory available, can't execute game", parms->memsize / (double)0x100000);
 
 	com_argc = parms->argc;
 	com_argv = parms->argv;
@@ -915,32 +914,9 @@ void Host_Init (quakeparms_t *parms)
 	SV_Init ();
 	TestHandler_Init ();
 
-#ifdef __PSP__
-	Con_Printf ("PSP NZP v%4.1f (PBP: "__TIME__" "__DATE__")\n", (float)(VERSION));
-	Con_Printf ("%4.1f megabyte PSP application heap \n",1.0f*PSP_HEAP_SIZE_MB);
 
-	switch(psp_system_model) {
-		case PSP_MODEL_PHAT: Con_Printf("PSP Model: PSP-1000 model unit\n"); break;
-		case PSP_MODEL_SLIM: Con_Printf("PSP Model: PSP-SLIM model unit\n"); break;
-		case PSP_MODEL_PSVITA: Con_Printf("PSP Model: PS VITA model unit\n"); break;
-		default: break;
-	}
-
-	Con_Printf ("VRAM Size: %i bytes\n", sceGeEdramGetSize());
-#elif __3DS__
-	Con_Printf ("3DS NZP v%4.1f (3DSX: "__TIME__" "__DATE__")\n", (float)(VERSION));
-
-	if (new3ds_flag)
-		Con_Printf ("3DS Model: NEW Nintendo 3DS\n");
-	else
-		Con_Printf ("3DS Model: Nintendo 3DS\n");
-#elif __WII__
-	Con_Printf ("WII NZP v%4.1f (DOL: "__TIME__" "__DATE__")\n", (float)(VERSION));
-#elif __NSPIRE__
-	Con_Printf ("NSPIRE NZP v%4.1f (DOL: "__TIME__" "__DATE__")\n", (float)(VERSION));
-#endif // __PSP__, __3DS__
-
-	Con_Printf ("%4.1f megabyte Quake hunk \n",parms->memsize/ (1024*1024.0));
+	Sys_PrintSystemInfo();
+	Con_Printf ("%4.1f megabyte Quake hunk \n", parms->memsize / (1024*1024.0));
 
 	R_InitTextures ();		// needed even for dedicated servers
 	if (cls.state != ca_dedicated)

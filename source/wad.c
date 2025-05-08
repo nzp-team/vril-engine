@@ -74,7 +74,7 @@ void W_LoadWadFile (char *filename)
 	
 	wad_base = COM_LoadHunkFile (filename);
 	if (!wad_base)
-		Sys_Error ("W_LoadWadFile: couldn't load %s", filename);
+		Sys_Error ("couldn't load %s", filename);
 
 	header = (wadinfo_t *)wad_base;
 	
@@ -118,7 +118,7 @@ lumpinfo_t	*W_GetLumpinfo (char *name)
 			return lump_p;
 	}
 	
-	Sys_Error ("W_GetLumpinfo: %s not found", name);
+	Sys_Error ("%s not found", name);
 	return NULL;
 }
 
@@ -136,7 +136,7 @@ void *W_GetLumpNum (int num)
 	lumpinfo_t	*lump;
 	
 	if (num < 0 || num > wad_numlumps)
-		Sys_Error ("W_GetLumpNum: bad number: %i", num);
+		Sys_Error ("bad number: %i", num);
 		
 	lump = wad_lumps + num;
 	
@@ -249,7 +249,7 @@ static byte *ConvertWad3ToRGBA(miptex_t *tex) {
    int i, p, image_size;
 
    if (!tex->offsets[0])
-      Sys_Error("ConvertWad3ToRGBA: tex->offsets[0] == 0");
+      Sys_Error("tex->offsets[0] == 0");
 
    image_size = tex->width * tex->height;
    in = (byte *) ((byte *) tex + tex->offsets[0]);
@@ -277,7 +277,7 @@ int WAD3_LoadTextureClut4(miptex_t *mt)
 {
 	// Check that texture has data
     if (!mt->offsets[0]) {
-        Sys_Error("WAD3_LoadTextureClut4: mt->offsets[0] == 0");
+        Sys_Error("mt->offsets[0] == 0");
         return 0;
     }
 

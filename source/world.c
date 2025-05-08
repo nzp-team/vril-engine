@@ -251,7 +251,7 @@ areanode_t *SV_CreateAreaNode (int depth, vec3_t mins, vec3_t maxs)
 	else
 		anode->axis = 1;
 
-	anode->dist = 0.5 * (maxs[anode->axis] + mins[anode->axis]);
+	anode->dist = 0.5f * (maxs[anode->axis] + mins[anode->axis]);
 	VectorCopy (mins, mins1);
 	VectorCopy (mins, mins2);
 	VectorCopy (maxs, maxs1);
@@ -550,7 +550,7 @@ int SV_HullPointContents (hull_t *hull, int num, vec3_t p)
 	while (num >= 0)
 	{
 		if (num < hull->firstclipnode || num > hull->lastclipnode)
-			Sys_Error ("SV_HullPointContents: bad node number");
+			Sys_Error ("bad node number");
 
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
@@ -696,8 +696,8 @@ reenter:
 	}
 	else
 	{
-		t1 = DoublePrecisionDotProduct (plane->normal, p1) - plane->dist;
-		t2 = DoublePrecisionDotProduct (plane->normal, p2) - plane->dist;
+		t1 = DoublePrecisionDotProduct (plane->normal, p1) - (double)plane->dist;
+		t2 = DoublePrecisionDotProduct (plane->normal, p2) - (double)plane->dist;
 	}
 
 	/*if its completely on one side, resume on that side*/
@@ -744,19 +744,19 @@ reenter:
 		/*we impacted the back of the node, so flip the plane*/
 		trace->plane.dist = -plane->dist;
 		VectorNegate(plane->normal, trace->plane.normal);
-		midf = (t1 + DIST_EPSILON) / (t1 - t2);
+		midf = (t1 + (float)DIST_EPSILON) / (t1 - t2);
 	}
 	else
 	{
 		/*we impacted the front of the node*/
 		trace->plane.dist = plane->dist;
 		VectorCopy(plane->normal, trace->plane.normal);
-		midf = (t1 - DIST_EPSILON) / (t1 - t2);
+		midf = (t1 - (float)DIST_EPSILON) / (t1 - t2);
 	}
 
-	t1 = DoublePrecisionDotProduct (trace->plane.normal, ctx->start) - trace->plane.dist;
-	t2 = DoublePrecisionDotProduct (trace->plane.normal, ctx->end) - trace->plane.dist;
-	midf = (t1 - DIST_EPSILON) / (t1 - t2);
+	t1 = DoublePrecisionDotProduct (trace->plane.normal, ctx->start) - (double)trace->plane.dist;
+	t2 = DoublePrecisionDotProduct (trace->plane.normal, ctx->end) - (double)trace->plane.dist;
+	midf = (t1 - (float)DIST_EPSILON) / (t1 - t2);
 
 	midf = CLAMP(0, midf, 1);
 	trace->fraction = midf;
@@ -845,7 +845,7 @@ void SV_WorldTransformAABB( matrix4x4 transform, const vec3_t mins, const vec3_t
 	{
 		if( outmins[i] > outmaxs[i] )
 		{
-			Sys_Error("World_TransformAABB: backwards mins/maxs\n");
+			Sys_Error("backwards mins/maxs\n");
 			outmins[0] = outmins[1] = outmins[2] = 0;
 			outmaxs[0] = outmaxs[1] = outmaxs[2] = 0;
 			return;
@@ -1012,7 +1012,7 @@ void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 		trace.fraction < clip->trace.fraction)
 		{
 			trace.ent = touch;
-		 	if (clip->trace.startsolid)
+			if (clip->trace.startsolid)
 			{
 				clip->trace = trace;
 				clip->trace.startsolid = true;

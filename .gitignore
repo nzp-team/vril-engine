@@ -9,4 +9,8 @@ EBOOT.PBP
 EBOOT2000.PBP
 *.map
 *.d
+.vscode/*
+.DS_Store
+*.unc*
+source/_build_info.h
 *.tns

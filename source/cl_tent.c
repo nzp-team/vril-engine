@@ -99,7 +99,7 @@ void CL_ParseBeam (model_t *m)
 // find a free beam
 	for (i=0, b=cl_beams ; i< MAX_BEAMS ; i++, b++)
 	{
-		if (!b->model || b->endtime < cl.time)
+		if (!b->model || b->endtime < (float)cl.time)
 		{
 			b->entity = ent;
 			b->model = m;
@@ -327,7 +327,7 @@ void CL_ParseTEnt (void)
 		break;
 
 	default:
-		Sys_Error ("CL_ParseTEnt: bad type");
+		Sys_Error ("bad type");
 	}
 }
 
@@ -406,7 +406,7 @@ void CL_UpdateTEnts (void)
 // update lightning
 	for (i=0, b=cl_beams ; i< MAX_BEAMS ; i++, b++)
 	{
-		if (!b->model || b->endtime < cl.time)
+		if (!b->model || b->endtime < (float)cl.time)
 			continue;
 
 		// if coming from the player, update the start position
@@ -473,12 +473,12 @@ void CL_UpdateTEnts (void)
 		}
 		else
 		{
-			yaw = (int) (atan2f(dist[1], dist[0]) * 180 / M_PI);
+			yaw = (int) (atan2f(dist[1], dist[0]) * (180 / (float)M_PI));
 			if (yaw < 0)
 				yaw += 360;
 
 			forward = sqrtf (dist[0]*dist[0] + dist[1]*dist[1]);
-			pitch = (int) (atan2f(dist[2], forward) * 180 / M_PI);
+			pitch = (int) (atan2f(dist[2], forward) * (180 / (float)M_PI));
 			if (pitch < 0)
 				pitch += 360;
 		}

@@ -61,7 +61,7 @@ void VCR_ReadNext (void)
 		Sys_Error ("=== END OF PLAYBACK===\n");
 	}
 	if (next.op < 1 || next.op > VCR_MAX_MESSAGE)
-		Sys_Error ("VCR_ReadNext: bad op");
+		Sys_Error ("bad op");
 }
 
 

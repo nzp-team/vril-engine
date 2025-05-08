@@ -267,7 +267,7 @@ sfx_t *S_FindName (char *name)
 	sfx_t	*sfx;
 
 	if (!name)
-		Sys_Error ("S_FindName: NULL\n");
+		Sys_Error ("name is NULL\n");
 
 	if (strlen(name) >= MAX_QPATH)
 		Sys_Error ("Sound name too long: %s", name);
@@ -278,7 +278,7 @@ sfx_t *S_FindName (char *name)
 			return &known_sfx[i];
 
 	if (num_sfx == MAX_SFX)
-		Sys_Error ("S_FindName: out of sfx_t");
+		Sys_Error ("out of sfx_t");
 
 	sfx = &known_sfx[i];
 	strcpy (sfx->name, name);
@@ -482,12 +482,12 @@ void SND_Spatialize(channel_t *ch)
 	lscale = SND_InverseSpatializationLScaleLUT[dot_index];
 
 // add in distance effect
-	scale = (1.0 - dist) * rscale;
+	scale = (1.0f - dist) * rscale;
 	ch->rightvol = (int) (ch->master_vol * scale);
 	if (ch->rightvol < 0)
 		ch->rightvol = 0;
 
-	scale = (1.0 - dist) * lscale;
+	scale = (1.0f - dist) * lscale;
 	ch->leftvol = (int) (ch->master_vol * scale);
 	if (ch->leftvol < 0)
 		ch->leftvol = 0;
@@ -703,13 +703,13 @@ void S_UpdateAmbientSounds (void)
 	// don't adjust volume too fast
 		if (chan->master_vol < vol)
 		{
-			chan->master_vol += host_frametime * ambient_fade.value;
+			chan->master_vol += (float)host_frametime * ambient_fade.value;
 			if (chan->master_vol > vol)
 				chan->master_vol = vol;
 		}
 		else if (chan->master_vol > vol)
 		{
-			chan->master_vol -= host_frametime * ambient_fade.value;
+			chan->master_vol -= (float)host_frametime * ambient_fade.value;
 			if (chan->master_vol < vol)
 				chan->master_vol = vol;
 		}
@@ -970,7 +970,7 @@ qboolean	volume_changed;
 void S_VolumeDown_f (void)
 {
 	//S_LocalSound ("misc/menu3.wav");
-	volume.value -= 0.1;
+	volume.value -= 0.1f;
 	volume.value = bound(0, volume.value, 1);
 	//Cvar_SetValueByRef (&volume, volume.value);
 	volume_changed = true;
@@ -979,7 +979,7 @@ void S_VolumeDown_f (void)
 void S_VolumeUp_f (void)
 {
 	//S_LocalSound ("misc/menu3.wav");
-	volume.value += 0.1;
+	volume.value += 0.1f;
 	volume.value = bound(0, volume.value, 1);
 	//Cvar_SetValueByRef (&volume, volume.value);
 	volume_changed = true;

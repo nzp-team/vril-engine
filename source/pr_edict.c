@@ -129,7 +129,7 @@ edict_t *ED_Alloc (void)
 		e = EDICT_NUM(i);
 		// the first couple seconds of server time can involve a lot of
 		// freeing and allocating, so relax the replacement policy
-		if (e->free && ( e->freetime < 2 || sv.time - e->freetime > 0.5 ) )
+		if (e->free && ( e->freetime < 2 || (float)sv.time - e->freetime > 0.5f ) )
 		{
 			ED_ClearEdict (e);
 			return e;
@@ -137,7 +137,7 @@ edict_t *ED_Alloc (void)
 	}
 
 	if (i == MAX_EDICTS)
-		Sys_Error ("ED_Alloc: no free edicts");
+		Sys_Error ("no free edicts");
 
 	sv.num_edicts++;
 	e = EDICT_NUM(i);
@@ -343,10 +343,11 @@ char *PR_ValueString (etype_t type, eval_t *val)
 		sprintf (line, "void");
 		break;
 	case ev_float:
-		sprintf (line, "%5.1f", val->_float);
+		sprintf (line, "%5.1f", (double)val->_float);
 		break;
 	case ev_vector:
-		sprintf (line, "'%5.1f %5.1f %5.1f'", val->vector[0], val->vector[1], val->vector[2]);
+		sprintf (line, "'%5.1f %5.1f %5.1f'",
+			(double)val->vector[0], (double)val->vector[1], (double)val->vector[2]);
 		break;
 	case ev_pointer:
 		sprintf (line, "pointer");
@@ -395,10 +396,11 @@ char *PR_UglyValueString (etype_t type, eval_t *val)
 		sprintf (line, "void");
 		break;
 	case ev_float:
-		sprintf (line, "%f", val->_float);
+		sprintf (line, "%f", (double)val->_float);
 		break;
 	case ev_vector:
-		sprintf (line, "%f %f %f", val->vector[0], val->vector[1], val->vector[2]);
+		sprintf (line, "%f %f %f",
+			(double)val->vector[0], (double)val->vector[1], (double)val->vector[2]);
 		break;
 	default:
 		sprintf (line, "bad type %i", type);
@@ -696,17 +698,17 @@ void ED_ParseGlobals (char *data)
 		if (com_token[0] == '}')
 			break;
 		if (!data)
-			Sys_Error ("ED_ParseEntity: EOF without closing brace");
+			Sys_Error ("EOF without closing brace");
 
 		strcpy (keyname, com_token);
 
 	// parse value
 		data = COM_Parse (data);
 		if (!data)
-			Sys_Error ("ED_ParseEntity: EOF without closing brace");
+			Sys_Error ("EOF without closing brace");
 
 		if (com_token[0] == '}')
-			Sys_Error ("ED_ParseEntity: closing brace without data");
+			Sys_Error ("closing brace without data");
 
 		key = ED_FindGlobal (keyname);
 		if (!key)
@@ -859,7 +861,7 @@ char *ED_ParseEdict (char *data, edict_t *ent)
 		if (com_token[0] == '}')
 			break;
 		if (!data)
-			Sys_Error ("ED_ParseEntity: EOF without closing brace");
+			Sys_Error ("EOF without closing brace");
 
 // anglehack is to allow QuakeEd to write single scalar angles
 // and allow them to be turned into vectors. (FIXME...)
@@ -888,10 +890,10 @@ if (!strcmp(com_token, "light"))
 	// parse value
 		data = COM_Parse (data);
 		if (!data)
-			Sys_Error ("ED_ParseEntity: EOF without closing brace");
+			Sys_Error ("EOF without closing brace");
 
 		if (com_token[0] == '}')
-			Sys_Error ("ED_ParseEntity: closing brace without data");
+			Sys_Error ("closing brace without data");
 
 		init = true;
 
@@ -966,7 +968,7 @@ void ED_LoadFromFile (char *data)
 		if (!data)
 			break;
 		if (com_token[0] != '{')
-			Sys_Error ("ED_LoadFromFile: found %s when expecting {",com_token);
+			Sys_Error ("found %s when expecting {",com_token);
 
 		if (!ent)
 			ent = EDICT_NUM(0);
@@ -1028,8 +1030,8 @@ void PR_LoadProgs (void)
 	progs = (dprograms_t *)COM_LoadHunkFile ("progs.dat");
 
 	if (!progs) {
-		Sys_Error("PR_LoadProgs: couldn't load progs.dat");
-		Host_Error ("PR_LoadProgs: couldn't load progs.dat");
+		Sys_Error("couldn't load progs.dat");
+		Host_Error ("couldn't load progs.dat");
 	}
 
 	Con_DPrintf ("Programs occupy %iK.\n", com_filesize/1024);
@@ -1206,7 +1208,7 @@ void PR_LoadProgs (void)
 	{
 		pr_fielddefs[i].type = LittleShort (pr_fielddefs[i].type);
 		if (pr_fielddefs[i].type & DEF_SAVEGLOBAL)
-			Sys_Error ("PR_LoadProgs: pr_fielddefs[i].type & DEF_SAVEGLOBAL");
+			Sys_Error ("pr_fielddefs[i].type & DEF_SAVEGLOBAL");
 		pr_fielddefs[i].ofs = LittleShort (pr_fielddefs[i].ofs);
 		pr_fielddefs[i].s_name = LittleLong (pr_fielddefs[i].s_name);
 	}
@@ -1301,7 +1303,7 @@ void PR_Init (void)
 inline edict_t *EDICT_NUM(int n)
 {
 	if (n < 0 || n >= sv.max_edicts)
-		Sys_Error ("EDICT_NUM: bad number %i", n);
+		Sys_Error ("bad number %i", n);
 	return (edict_t *)((byte *)sv.edicts+ (n)*pr_edict_size);
 }
 
@@ -1313,6 +1315,6 @@ int NUM_FOR_EDICT(edict_t *e)
 	b = b / pr_edict_size;
 
 	if (b < 0 || b >= sv.num_edicts)
-		Sys_Error ("NUM_FOR_EDICT: bad pointer");
+		Sys_Error ("bad pointer");
 	return b;
 }

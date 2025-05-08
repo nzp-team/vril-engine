@@ -125,13 +125,13 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 	int			ent;
 
 	if (volume < 0 || volume > 255)
-		Sys_Error ("SV_StartSound: volume = %i", volume);
+		Sys_Error ("volume = %i", volume);
 
 	if (attenuation < 0 || attenuation > 4)
-		Sys_Error ("SV_StartSound: attenuation = %f", attenuation);
+		Sys_Error ("attenuation = %f", (double)attenuation);
 
 	if (channel < 0 || channel > 7)
-		Sys_Error ("SV_StartSound: channel = %i", channel);
+		Sys_Error ("channel = %i", channel);
 
 	if (sv.datagram.cursize > MAX_DATAGRAM-16)
 		return;
@@ -168,7 +168,7 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 	MSG_WriteShort (&sv.datagram, channel);
 	MSG_WriteByte (&sv.datagram, sound_num);
 	for (i=0 ; i<3 ; i++)
-		MSG_WriteCoord (&sv.datagram, entity->v.origin[i]+0.5*(entity->v.mins[i]+entity->v.maxs[i]));
+		MSG_WriteCoord (&sv.datagram, entity->v.origin[i]+0.5f*(entity->v.mins[i]+entity->v.maxs[i]));
 }
 
 /*
@@ -205,7 +205,7 @@ void SV_SendServerinfo (client_t *client)
 	else
 		MSG_WriteByte (&client->message, GAME_COOP);
 
-	sprintf (message, pr_strings+sv.edicts->v.message);
+	sprintf (message, "%s", pr_strings+sv.edicts->v.message);
 
 	MSG_WriteString (&client->message,message);
 
@@ -329,7 +329,7 @@ void SV_CheckForNewClients (void)
 			if (!svs.clients[i].active)
 				break;
 		if (i == svs.maxclients)
-			Sys_Error ("Host_CheckForNewClients: no free clients");
+			Sys_Error ("no free clients");
 
 		svs.clients[i].netconnection = ret;
 		SV_ConnectClient (i);
@@ -492,7 +492,7 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg, qboolean nomap)
 		for (i=0 ; i<3 ; i++)
 		{
 			miss = ent->v.origin[i] - ent->baseline.origin[i];
-			if ( miss < -0.1 || miss > 0.1 )
+			if ( miss < -0.1f || miss > 0.1f )
 				bits |= U_ORIGIN1<<i;
 		}
 
@@ -530,7 +530,7 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg, qboolean nomap)
 
 	{
 		//Smal Size
-		if ((val = GETEDICTFIELDVALUE(ent, eval_renderamt)) && val->_float != 255.0) // HalfLife support
+		if ((val = GETEDICTFIELDVALUE(ent, eval_renderamt)) && val->_float != 255.0f) // HalfLife support
 			 renderamt = val->_float / 255.0f;
 
 		if ((val = GETEDICTFIELDVALUE(ent, eval_rendermode)) && val->_float != 0) // HalfLife support
@@ -1012,7 +1012,7 @@ int SV_ModelIndex (char *name)
 			return i;
 	}
 
-	Sys_Error ("SV_ModelIndex: model %s not precached", name);
+	Sys_Error ("model %s not precached", name);
 	return -1;
 }
 
@@ -1164,7 +1164,7 @@ void SV_SpawnServer (char *server)
 //
 	if (coop.value)
 		Cvar_SetValue ("deathmatch", 0);
-	current_skill = (int)(skill.value + 0.5);
+	current_skill = (int)(skill.value + 0.5f);
 	if (current_skill < 0)
 		current_skill = 0;
 	if (current_skill > 3)
@@ -1500,14 +1500,14 @@ void Load_Waypoint_NZPBETA() {
 		}
 		Con_DPrintf("Waypoint (%i)\n target1: (%i, %f),\n target2: (%i, %f),\n target3: (%i, %f),\n target4: (%i, %f),\n target5: (%i, %f),\n target6: (%i, %f),\n target7: (%i, %f),\n target8: (%i, %f)\n",
 			i,
-			waypoints[i].target[0], waypoints[i].dist[0],
-			waypoints[i].target[1], waypoints[i].dist[1],
-			waypoints[i].target[2], waypoints[i].dist[2],
-			waypoints[i].target[3], waypoints[i].dist[3],
-			waypoints[i].target[4], waypoints[i].dist[4],
-			waypoints[i].target[5], waypoints[i].dist[5],
-			waypoints[i].target[6], waypoints[i].dist[6],
-			waypoints[i].target[7], waypoints[i].dist[7]
+			waypoints[i].target[0], (double)waypoints[i].dist[0],
+			waypoints[i].target[1], (double)waypoints[i].dist[1],
+			waypoints[i].target[2], (double)waypoints[i].dist[2],
+			waypoints[i].target[3], (double)waypoints[i].dist[3],
+			waypoints[i].target[4], (double)waypoints[i].dist[4],
+			waypoints[i].target[5], (double)waypoints[i].dist[5],
+			waypoints[i].target[6], (double)waypoints[i].dist[6],
+			waypoints[i].target[7], (double)waypoints[i].dist[7]
 		);
 	}
 	W_fclose(h);
@@ -1680,14 +1680,14 @@ void Load_Waypoint () {
 		}
 		Con_DPrintf("Waypoint (%i)\n target1: (%i, %f),\n target2: (%i, %f),\n target3: (%i, %f),\n target4: (%i, %f),\n target5: (%i, %f),\n target6: (%i, %f),\n target7: (%i, %f),\n target8: (%i, %f)\n",
 			i,
-			waypoints[i].target[0], waypoints[i].dist[0],
-			waypoints[i].target[1], waypoints[i].dist[1],
-			waypoints[i].target[2], waypoints[i].dist[2],
-			waypoints[i].target[3], waypoints[i].dist[3],
-			waypoints[i].target[4], waypoints[i].dist[4],
-			waypoints[i].target[5], waypoints[i].dist[5],
-			waypoints[i].target[6], waypoints[i].dist[6],
-			waypoints[i].target[7], waypoints[i].dist[7]
+			waypoints[i].target[0], (double)waypoints[i].dist[0],
+			waypoints[i].target[1], (double)waypoints[i].dist[1],
+			waypoints[i].target[2], (double)waypoints[i].dist[2],
+			waypoints[i].target[3], (double)waypoints[i].dist[3],
+			waypoints[i].target[4], (double)waypoints[i].dist[4],
+			waypoints[i].target[5], (double)waypoints[i].dist[5],
+			waypoints[i].target[6], (double)waypoints[i].dist[6],
+			waypoints[i].target[7], (double)waypoints[i].dist[7]
 		);
 	}
 	W_fclose(h);

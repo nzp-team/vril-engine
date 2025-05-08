@@ -92,8 +92,6 @@ CL_ClearState
 */
 void CL_ClearState (void)
 {
-	int			i;
-
 	if (!sv.active)
 		Host_ClearMemory ();
 
@@ -116,9 +114,6 @@ void CL_ClearState (void)
 // allocate the efrags and chain together into a free list
 //
 	cl.free_efrags = cl_efrags;
-	for (i=0 ; i<MAX_EFRAGS-1 ; i++)
-		cl.free_efrags[i].entnext = &cl.free_efrags[i+1];
-	cl.free_efrags[i].entnext = NULL;
 }
 
 /*
@@ -295,7 +290,11 @@ void CL_PrintEntities_f (void)
 			continue;
 		}
 		Con_Printf ("%s:%2i  (%5.1f,%5.1f,%5.1f) [%5.1f %5.1f %5.1f]\n"
-		,ent->model->name,ent->frame, ent->origin[0], ent->origin[1], ent->origin[2], ent->angles[0], ent->angles[1], ent->angles[2]);
+		,ent->model->name,ent->frame,
+		(double)ent->origin[0], (double)ent->origin[1], (double)ent->origin[2],
+		(double)ent->angles[0],
+		(double)ent->angles[1],
+		(double)ent->angles[2]);
 	}
 }
 
@@ -411,7 +410,7 @@ dlight_t *CL_AllocDlight (int key)
 	dl = cl_dlights;
 	for (i=0 ; i<MAX_DLIGHTS ; i++, dl++)
 	{
-		if (dl->die < cl.time)
+		if (dl->die < (float)cl.time)
 		{
 			memset (dl, 0, sizeof(*dl));
 			dl->key = key;
@@ -434,7 +433,7 @@ void CL_NewDlight (int key, vec3_t origin, float radius, float time, int type)
 	dl = CL_AllocDlight (key);
 	VectorCopy (origin, dl->origin);
 	dl->radius = radius;
-	dl->die = cl.time + time;
+	dl->die = (float)cl.time + time;
 	dl->type = type;
 
 }
@@ -456,7 +455,7 @@ void CL_DecayLights (void)
 	dl = cl_dlights;
 	for (i=0 ; i<MAX_DLIGHTS ; i++, dl++)
 	{
-		if (dl->die < cl.time || !dl->radius)
+		if (dl->die < (float)cl.time || !dl->radius)
 			continue;
 
 		dl->radius -= time*dl->decay;
@@ -486,28 +485,28 @@ float CL_LerpPoint (void)
 		return 1;
 	}
 
-	if (f > 0.1)
+	if (f > 0.1f)
 	{	// dropped packet, or start of demo
 		cl.mtime[1] = cl.mtime[0] - 0.1;
-		f = 0.1;
+		f = 0.1f;
 	}
 
-	frac = (cl.ctime - cl.mtime[1]) / f;
+	frac = (float)(cl.ctime - cl.mtime[1]) / f;
 	if (frac < 0)
 	{
-		if (frac < -0.01)
+		if (frac < -0.01f)
 		{
 			cl.ctime = cl.time = cl.mtime[1];
 		}
-		frac = 0;
+		frac = 0.0f;
 	}
 	else if (frac > 1)
 	{
-		if (frac > 1.01)
+		if (frac > 1.01f)
 		{
 			cl.ctime = cl.time = cl.mtime[0];
 		}
-		frac = 1;
+		frac = 1/-f;
 	}
 
 	return frac;
@@ -523,7 +522,7 @@ vec3_t 	mdlflag_poweruprotate_startangles;
 vec3_t 	mdlflag_poweruprotate_differenceangles;
 vec3_t 	mdlflag_poweruprotate_currentangles;
 
-double 	last_puframetime = 0.0f;
+double 	last_puframetime = 0.0;
 
 /*
 ===============
@@ -535,9 +534,9 @@ void CL_UpdatePowerUpAngles (void)
 	// Don't update more than once per frame.
 	if (last_puframetime != host_frametime) {
 		// New cycle, dictate new rotation time and target angle. 
-		if (mdlflag_poweruprotate_duration <= cl.time) {
+		if (mdlflag_poweruprotate_duration <= (float)cl.time) {
 			mdlflag_poweruprotate_starttime = cl.time;
-			mdlflag_poweruprotate_duration = cl.time + (float)((rand() % 25 + 25)/10.0f); // Take between 2.5 and 5 seconds.
+			mdlflag_poweruprotate_duration = (float)cl.time + (float)((rand() % 25 + 25)/10.0f); // Take between 2.5 and 5 seconds.
 
 			mdlflag_poweruprotate_startangles[0] = mdlflag_poweruprotate_currentangles[0];
 			mdlflag_poweruprotate_startangles[1] = mdlflag_poweruprotate_currentangles[1];
@@ -557,11 +556,11 @@ void CL_UpdatePowerUpAngles (void)
 				if (mdlflag_poweruprotate_currentangles[i] > target_angles[i])
 					mdlflag_poweruprotate_differenceangles[i] = (mdlflag_poweruprotate_currentangles[i] - target_angles[i]) * -1;
 				else
-					mdlflag_poweruprotate_differenceangles[i] = fabs(mdlflag_poweruprotate_currentangles[i] - target_angles[i]);
+					mdlflag_poweruprotate_differenceangles[i] = fabsf(mdlflag_poweruprotate_currentangles[i] - target_angles[i]);
 			}
 		}
 
-		float percentage_complete = (cl.time - mdlflag_poweruprotate_starttime) / (mdlflag_poweruprotate_duration - mdlflag_poweruprotate_starttime);
+		float percentage_complete = ((float)cl.time - mdlflag_poweruprotate_starttime) / (mdlflag_poweruprotate_duration - mdlflag_poweruprotate_starttime);
 
 		for(int j = 0; j < 2; j++) {
 			mdlflag_poweruprotate_currentangles[j] = mdlflag_poweruprotate_startangles[j] + (mdlflag_poweruprotate_differenceangles[j] * percentage_complete);
@@ -619,9 +618,7 @@ void CL_RelinkEntities (void)
 	for (i=1,ent=cl_entities+1 ; i<cl.num_entities ; i++,ent++)
 	{
 		if (!ent->model)
-		{	// empty slot
-			if (ent->forcelink)
-				R_RemoveEfrags (ent);	// just became empty
+		{
 			continue;
 		}
 
@@ -977,9 +974,9 @@ int CL_ReadFromServer (void)
 		//{
 			//Con_Printf("++++++++++++++Got a new server message!+++++++++\n");
 		//}
-			cl.last_received_message = realtime;
+		cl.last_received_message = realtime;
 			//Con_Printf("ParseServerMessage \n");
-			CL_ParseServerMessage ();
+		CL_ParseServerMessage ();
 		//}
 
 	} while (ret && cls.state == ca_connected);
@@ -1017,8 +1014,8 @@ void CL_SendCmd (void)
 		CL_BaseMove (&cmd);
 
 	// allow mice or other external controllers to add to the move
-	if (!in_disable_analog.value)
-		IN_Move (&cmd);
+		if (!in_disable_analog.value)
+			IN_Move (&cmd);
 
 	// send the unreliable message
 		CL_SendMove (&cmd);

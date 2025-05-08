@@ -14,7 +14,7 @@ BUILD		:=	build
 SOURCES		:=	source
 #DATA		:=	data
 INCLUDES	:=	include
-ICON		:= 	source/ctr/art/icon.png
+ICON		:= 	source/platform_ctr/art/icon.png
 #ROMFS		:=	romfs 
 
 APP_AUTHOR 		:= NZ:P Team
@@ -26,7 +26,7 @@ APP_DESCRIPTION := Call of Duty Zombies remake
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
-CFLAGS	:=	-g -fpermissive -Wall -O3 -mword-relocations \
+CFLAGS	:=	-g -Wall -Wdouble-promotion -O3 -mword-relocations \
 			-fomit-frame-pointer -ffunction-sections \
 			$(ARCH)
 
@@ -68,7 +68,8 @@ export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
 
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
-COMMON_OBJS =	test_handler.c \
+COMMON_OBJS =	system.o \
+				test_handler.c \
 				chase.c \
                 cl_hud.c \
 				cl_demo.c \
@@ -77,23 +78,23 @@ COMMON_OBJS =	test_handler.c \
 				cl_parse.c \
 				cl_tent.c \
 				cl_slist.c \
-				ctr/bsp_strlcpy.c \
+				platform_ctr/bsp_strlcpy.c \
 				cmd.c \
-				ctr/common.c \
+				platform_ctr/common.c \
 				console.c \
 				crc.c \
 				cvar.c \
 				host.c \
 				host_cmd.c \
-				ctr/keys.c \
+				platform_ctr/keys.c \
 				mathlib.c \
 				matrixlib.c \
-				ctr/menu.c \
-				ctr/net_dgrm.c \
-				ctr/net_udpctr.c \
+				platform_ctr/menu.c \
+				platform_ctr/net_dgrm.c \
+				platform_ctr/net_udpctr.c \
 				net_loop.c \
-				ctr/net_bsd.c \
-				ctr/net_main.c \
+				platform_ctr/net_bsd.c \
+				platform_ctr/net_main.c \
 				net_vcr.c \
 				pr_cmds.c \
 				pr_edict.c \
@@ -106,29 +107,30 @@ COMMON_OBJS =	test_handler.c \
 				wad.c \
 				world.c \
 				zone.c \
-				ctr/sys_ctr.c \
+				platform_ctr/sys_ctr.c \
 				snd_dma.c \
 				snd_mix.c \
 				snd_mem.c \
-				ctr/snd_ctr.c \
-				ctr/in_ctr.c \
-				ctr/cd_null.c \
-				ctr/gl/gl_qmb.c \
-				ctr/gl/gl_decal.c \
-				ctr/gl/gl_draw.c \
-		    	ctr/gl/gl_fog.c \
-				ctr/gl/gl_mesh.c \
-				ctr/gl/gl_model.c \
-				ctr/gl/gl_refrag.c \
-				ctr/gl/gl_rlight.c \
-				ctr/gl/gl_rmain.c \
-				ctr/gl/gl_rmisc.c \
-				ctr/gl/gl_rsurf.c \
-				ctr/gl/gl_screen.c \
-				ctr/gl/gl_warp.c \
-				ctr/gl/gl_vidctr.c \
-				ctr/r_part.c \
-				ctr/touch_ctr.c \
+				platform_ctr/snd_ctr.c \
+				platform_ctr/in_ctr.c \
+				platform_ctr/cd_null.c \
+				platform_ctr/gl/gl_qmb.c \
+				platform_ctr/gl/gl_decal.c \
+				platform_ctr/gl/gl_draw.c \
+				render/r_fog.c \
+		    	platform_ctr/gl/gl_fog.c \
+				platform_ctr/gl/gl_mesh.c \
+				platform_ctr/gl/gl_model.c \
+				render/r_entity_fragments.c \
+				render/r_light.c \
+				platform_ctr/gl/gl_rmain.c \
+				platform_ctr/gl/gl_rmisc.c \
+				platform_ctr/gl/gl_rsurf.c \
+				platform_ctr/gl/gl_screen.c \
+				platform_ctr/gl/gl_warp.c \
+				platform_ctr/gl/gl_vidctr.c \
+				platform_ctr/r_part.c \
+				platform_ctr/touch_ctr.c \
 				crypter.c
 
 CFILES		:=	$(COMMON_OBJS)
@@ -191,18 +193,26 @@ endif
 .PHONY: $(BUILD) clean all
 
 #---------------------------------------------------------------------------------
-all: $(BUILD)
+all: _build_info.h $(BUILD)
+
+_build_info.h:
+	rm -rf $(CURDIR)/source/_build_info.h
+	echo "#define GIT_HASH \"$(shell git rev-parse --short HEAD)$(shell git diff --quiet || echo -dirty)\"" > $(CURDIR)/source/_build_info.h
+	echo "#define GIT_BRANCH \"$(shell git rev-parse --abbrev-ref HEAD)\"" >> $(CURDIR)/source/_build_info.h
+	echo "#define BUILD_DATE \"$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")\"" >> $(CURDIR)/source/_build_info.h
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
-	@mkdir -p $(BUILD)/ctr
-	@mkdir -p $(BUILD)/ctr/gl
+	@mkdir -p $(BUILD)/platform_ctr
+	@mkdir -p $(BUILD)/platform_ctr/gl
+	@mkdir -p $(BUILD)/render
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile.ctr
 	@mkdir -p $(BUILD)/3ds
 	@mkdir -p $(BUILD)/3ds/bin/
 	@mv $(BUILD)/*.o $(BUILD)/3ds/
 	@mv $(BUILD)/*.d $(BUILD)/3ds/
-	@mv $(BUILD)/ctr $(BUILD)/3ds/
+	@mv $(BUILD)/platform_ctr $(BUILD)/3ds/
+	@mv $(BUILD)/render $(BUILD)/3ds/
 	@mv $(BUILD)/$(TARGET).lst $(BUILD)/3ds/
 	@mv $(BUILD)/$(TARGET).map $(BUILD)/3ds/
 	@mv $(TARGET).* $(BUILD)/3ds/bin/
@@ -210,6 +220,7 @@ $(BUILD):
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
+	@rm -fr $(CURDIR)/source/_build_info.h
 	@rm -fr $(BUILD)
 
 
