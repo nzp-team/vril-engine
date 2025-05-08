@@ -506,7 +506,7 @@ float CL_LerpPoint (void)
 		{
 			cl.ctime = cl.time = cl.mtime[0];
 		}
-		frac = 1/-f;
+		frac = 1;
 	}
 
 	return frac;
