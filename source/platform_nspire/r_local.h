@@ -333,4 +333,5 @@ void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
 
 #endif
 
-#define MAX_ENTITY_DIST_CLIP 	589824 // 768*768
+#define MAX_ENTITY_DIST_CLIP 	262144 // 512*512
+#define MAX_ZOMBIE_ENTITY_DIST_CLIP 	589824 // 768*768

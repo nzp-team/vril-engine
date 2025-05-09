@@ -569,14 +569,6 @@ void R_DrawEntitiesOnList_(void)
 		if (currententity == &cl_entities[cl.viewentity])
 			continue;	// don't draw the player
 
-		// Check if the entity is > certain distance from our player
-		VectorSubtract(cl_visedicts[i]->origin, r_origin, delta);
-		dist_sqr = DotProduct(delta, delta);
-		if (dist_sqr > MAX_ENTITY_DIST_CLIP)
-		{
-		    continue;
-		}
-
 		switch (currententity->model->type)
 		{
 		case mod_sprite:
@@ -586,6 +578,24 @@ void R_DrawEntitiesOnList_(void)
 			break;
 
 		case mod_alias:
+			// Check if the entity is > certain distance from our player
+			VectorSubtract(cl_visedicts[i]->origin, r_origin, delta);
+			dist_sqr = DotProduct(delta, delta);
+			if (currententity->model->name[7] == 'a' && currententity->model->name[8] == 'i')
+			{
+				if (dist_sqr > MAX_ZOMBIE_ENTITY_DIST_CLIP)
+				{
+				    continue;
+				}
+			}
+			else
+			{
+				if (dist_sqr > MAX_ENTITY_DIST_CLIP)
+				{
+				    continue;
+				}
+			}
+
 			VectorCopy (currententity->origin, r_entorigin);
 			VectorSubtract (r_origin, r_entorigin, modelorg);
 
