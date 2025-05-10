@@ -6,15 +6,13 @@ This repository contains the PlayStation Portable and Nintendo 3DS engine for NZ
 ## Building for PlayStation Portable
 Building requires a full install of [psptoolchain](https://github.com/pspdev/psptoolchain/). You can either follow the instructions on the GitHub repository or use a Docker container (we recommend [the official one](https://hub.docker.com/r/pspdev/pspdev))!
 
-With the psptoolchain installed, you now need to install `libpspmath`, which we have included in the GitHub repository:
+With the psptoolchain installed, you now need to install `libpspmath` via the PSPSDK package manager:
 ```bash
-cd source/psp/libpspmath
-make && make install
+psp-pacman -Syu libpspmath
 ```
-Now you can navigate back to the root of the repository and build an `EBOOT`.
+Now you can navigate to the root of the repository and build an `EBOOT`.
 
 ```bash
-cd ../../../
 make -f Makefile.psp
 ```
 
