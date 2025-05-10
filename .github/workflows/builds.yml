@@ -15,7 +15,6 @@ jobs:
         working-directory: ./
         run: |
           psp-pacman -Sy libpspmath --noconfirm
-          cd source/
           make -f Makefile.psp WERROR=1
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
