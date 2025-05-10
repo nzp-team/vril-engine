@@ -29,18 +29,11 @@ extern bool new3ds_flag;
 extern bool croshhairmoving;
 extern float crosshair_opacity;
 
-extern cvar_t in_analog_strafe;
-extern cvar_t in_x_axis_adjust;
-extern cvar_t in_y_axis_adjust;
 extern cvar_t in_mlook; //Heffo - mlook cvar
-
-cvar_t in_anub_mode = {"in_anub_mode", "0", true};
+extern cvar_t in_anub_mode;
 
 void IN_Init (void)
 {
-	Cvar_RegisterVariable (&in_analog_strafe);
-	Cvar_RegisterVariable (&in_anub_mode);
-
 	if (new3ds_flag) {
 		Cvar_SetValue("in_anub_mode", 1);
 	}

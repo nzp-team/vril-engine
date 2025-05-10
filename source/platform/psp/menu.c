@@ -34,7 +34,7 @@ extern cvar_t	accesspoint;
 extern cvar_t	r_wateralpha;
 extern cvar_t	r_vsync;
 extern cvar_t	in_disable_analog;
-extern cvar_t	in_analog_strafe;
+extern cvar_t	in_anub_mode;
 extern cvar_t	in_x_axis_adjust;
 extern cvar_t	in_y_axis_adjust;
 extern cvar_t	crosshair;
@@ -2689,7 +2689,7 @@ void M_AdjustSliders (int dir, int m_submenu, int options_cursor)
 				break;
 			case OPT_MOUSELOOK:
 				Cvar_SetValue ("in_mlook", !in_mlook.value);
-				Cvar_SetValue ("in_analog_strafe", !in_analog_strafe.value);
+				Cvar_SetValue ("in_anub_mode", !in_anub_mode.value);
 				break;
         }
     }
@@ -3081,14 +3081,14 @@ void M_Gameplay_Draw (void)
 
 	// A-Nub Mode
 	if (gameplay_cursor == OPT_MOUSELOOK) {
-		Draw_ColoredString(10, 105, "A-Nub Mode", 255, 0, 0, 255, 1);
+		Draw_ColoredString(10, 105, "Left A-Nub Mode", 255, 0, 0, 255, 1);
 	} else {
-		Draw_ColoredString(10, 105, "A-Nub Mode", 255, 255, 255, 255, 1);
+		Draw_ColoredString(10, 105, "Left A-Nub Mode", 255, 255, 255, 255, 1);
 	}
 	if (in_mlook.value) {
-		Draw_ColoredString(225, 105, "Look", 255, 255, 255, 255, 1);
+		Draw_ColoredString(225, 105, "Look (Right is Move)", 255, 255, 255, 255, 1);
 	} else {
-		Draw_ColoredString(225, 105, "Move (Buggy!)", 255, 255, 255, 255, 1);
+		Draw_ColoredString(225, 105, "Move (Right is Look)", 255, 255, 255, 255, 1);
 	}
 
 	// Back
@@ -3110,7 +3110,7 @@ void M_Gameplay_Draw (void)
 			Draw_ColoredString(10, 230, "Adjust Look Sensitivity.", 255, 255, 255, 255, 1);
 			break;
 		case OPT_IN_ACCELERATION:
-			Draw_ColoredString(10, 230, "Adjust Acceleration when A-Nub Mode is set to 'Look'.", 255, 255, 255, 255, 1);
+			Draw_ColoredString(10, 230, "Adjust Acceleration for A-Nub that is set to 'Look'.", 255, 255, 255, 255, 1);
 			break;
 		case OPT_INVMOUSE:
 			Draw_ColoredString(10, 230, "Invert A-Nub Look.", 255, 255, 255, 255, 1);
@@ -3119,7 +3119,7 @@ void M_Gameplay_Draw (void)
 			Draw_ColoredString(10, 230, "Adjust how Tolerant the A-Nub is to change.", 255, 255, 255, 255, 1);
 			break;
 		case OPT_MOUSELOOK:
-			Draw_ColoredString(10, 230, "Toggle whether to use the A-Nub for Look or Movement.", 255, 255, 255, 255, 1);
+			Draw_ColoredString(10, 230, "Toggle whether to use the Left A-Nub for Look or Movement.", 255, 255, 255, 255, 1);
 			break;
 	}
 
