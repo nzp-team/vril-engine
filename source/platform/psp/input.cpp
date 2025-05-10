@@ -65,9 +65,10 @@ extern "C" int bind_grab;
 using namespace quake;
 using namespace quake::input;
 
-extern cvar_t in_analog_strafe;
-extern cvar_t in_x_axis_adjust;
-extern cvar_t in_y_axis_adjust;
+extern bool croshhairmoving;
+extern float crosshair_opacity;
+
+extern cvar_t in_anub_mode;
 extern cvar_t in_mlook; //Heffo - mlook cvar
 
 void IN_Init (void)
@@ -282,15 +283,8 @@ extern cvar_t scr_fov;
 extern int original_fov, final_fov;
 void IN_Move (usercmd_t *cmd)
 {
-	unsigned char analog_strafe = 0;
-	// Don't let the pitch drift back to centre if analog nub look is on.
-	if (in_mlook.value)
-		V_StopPitchDrift();
-	else {
-		if (in_analog_strafe.value || (in_strafe.state & 1))	{
-			analog_strafe = 1;
-		}
-	}
+	V_StopPitchDrift();
+
 	// Read the pad state.
 	SceCtrlData pad;
 	sceCtrlPeekBufferPositive(&pad, 1);
@@ -300,63 +294,90 @@ void IN_Move (usercmd_t *cmd)
 	float speed;
 	float deadZone = in_tolerance.value;
 	float acceleration = in_acceleration.value;
-	int   x_adjust = in_x_axis_adjust.value;
-	int   y_adjust = in_y_axis_adjust.value;
+	float look_x, look_y;
 
-	//shpuld begin
-	if (!analog_strafe) {
-		speed = in_sensitivity.value;
+	//
+	// Analog look tweaks
+	//
+	speed = in_sensitivity.value;
 
-		// ==== Aim Assist + ====
-		// cut look speed in half when facing enemy, unless
-		// mag is empty
-		if ((in_aimassist.value) && (sv_player->v.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0) {
-			speed *= 0.5;
-		}
-		// additionally, slice look speed when ADS/scopes
-		if (cl.stats[STAT_ZOOM] == 1)
-			speed *= 0.5;
-		else if (cl.stats[STAT_ZOOM] == 2)
-			speed *= 0.25;
-	} else {
-		speed = sv_player->v.maxspeed/150;
-		if (cl.stats[STAT_ZOOM] == 1)
-			speed *= 2;
-		else if (cl.stats[STAT_ZOOM] == 2)
-			speed *= 4;
+	// cut look speed in half when facing enemy, unless mag is empty
+	if ((in_aimassist.value) && (sv_player->v.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0) {
+		speed *= 0.5f;
 	}
-	//shpuld end
 
-	float x = IN_CalcInput(pad.Lx+x_adjust, speed, deadZone, acceleration);
-	float y = IN_CalcInput(pad.Ly+y_adjust, speed, deadZone, acceleration);
+	// additionally, slice look speed when ADS/scopes
+	if (cl.stats[STAT_ZOOM] == 1)
+		speed *= 0.5f;
+	else if (cl.stats[STAT_ZOOM] == 2)
+		speed *= 0.25f;
+	
+	// Are we using the left or right stick for looking?
+	if (!in_anub_mode.value) { // Left
+		look_x = IN_CalcInput(pad.Lx, speed, deadZone, acceleration);
+		look_y = IN_CalcInput(pad.Ly, speed, deadZone, acceleration) * -1;
+	} else { // Right
+		look_x = IN_CalcInput(pad.Rsrv[0], speed, deadZone, acceleration);
+		look_y = IN_CalcInput(pad.Rsrv[1], speed, deadZone, acceleration) * -1;
+	}
 
-	// Set the yaw.
+	const float yawScale = 30.0f;
+	cl.viewangles[YAW] -= yawScale * look_x * (float)host_frametime;
 
-	// Analog nub look?
-	if (!analog_strafe) {
-		const float yawScale = 30.0f;
-		cl.viewangles[YAW] -= yawScale * x * host_frametime;
+	// Set the pitch.
+	const bool invertPitch = m_pitch.value < 0;
+	const float pitchScale = yawScale * (invertPitch ? 1 : -1);
 
-		if (in_mlook.value)
-		{
-			// Set the pitch.
-			const bool invertPitch = m_pitch.value < 0;
-			const float pitchScale = yawScale * (invertPitch ? -1 : 1);
-			cl.viewangles[PITCH] += pitchScale * y * host_frametime;
+	cl.viewangles[PITCH] += pitchScale * look_y * (float)host_frametime;
 
-			// Don't look too far up or down.
-			if (cl.viewangles[PITCH] > 80.0f)
-				cl.viewangles[PITCH] = 80.0f;
-			if (cl.viewangles[PITCH] < -70.0f)
-				cl.viewangles[PITCH] = -70.0f;
-		}
-		else
-		{
-			// Move using up and down.
-			cmd->forwardmove -= cl_forwardspeed * y;
-		}
+	// Don't look too far up or down.
+	if (cl.viewangles[PITCH] > 80.0f)
+		cl.viewangles[PITCH] = 80.0f;
+	if (cl.viewangles[PITCH] < -70.0f)
+		cl.viewangles[PITCH] = -70.0f;
+
+	// Ability to move with the left nub on NEW model systems
+	float move_x, move_y;
+	float input_x, input_y;
+
+	if (in_anub_mode.value) {
+		input_x = pad.Lx;
+		input_y = 255 - pad.Ly;
 	} else {
-		cmd->sidemove += cl_sidespeed * x;
-		cmd->forwardmove -= cl_forwardspeed * y;
+		input_x = pad.Rsrv[0];
+		input_y = 255 - pad.Rsrv[1];
+	}
+
+	cl_backspeed = cl_forwardspeed = cl_sidespeed = sv_player->v.maxspeed;
+	cl_sidespeed *= 0.8f;
+	cl_backspeed *= 0.7f;
+
+	move_x = IN_CalcInput(input_x, cl_sidespeed, deadZone, acceleration);
+
+	if (input_y > 0)
+		move_y = IN_CalcInput(input_y, cl_forwardspeed, deadZone, acceleration);
+	else
+		move_y = IN_CalcInput(input_y, cl_backspeed, deadZone, acceleration);
+
+	// cypress -- explicitly setting instead of adding so we always prioritize
+	// analog movement over standard bindings if both are at play
+	if (move_x != 0 || move_y != 0) {
+		cmd->sidemove = move_x;
+		cmd->forwardmove = move_y;
+	} 
+
+	// crosshair stuff
+	if (input_x < 50 && input_x > -50 && input_y < 50 && input_y > -50) {
+		croshhairmoving = false;
+
+		crosshair_opacity += 22;
+
+		if (crosshair_opacity >= 255)
+			crosshair_opacity = 255;
+	} else {
+		croshhairmoving = true;
+		crosshair_opacity -= 8;
+		if (crosshair_opacity <= 128)
+			crosshair_opacity = 128;
 	}
 }

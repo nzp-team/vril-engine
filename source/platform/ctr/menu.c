@@ -23,9 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern cvar_t	r_wateralpha;
 extern cvar_t	r_vsync;
 extern cvar_t	in_disable_analog;
-extern cvar_t	in_analog_strafe;
-extern cvar_t	in_x_axis_adjust;
-extern cvar_t	in_y_axis_adjust;
+extern cvar_t	in_anub_mode;
 extern cvar_t	crosshair;
 extern cvar_t	r_dithering;
 //extern cvar_t	r_retro;
