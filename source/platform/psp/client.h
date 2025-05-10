@@ -283,9 +283,7 @@ extern	cvar_t	lookstrafe;
 extern	cvar_t	in_sensitivity;
 extern	cvar_t	in_tolerance;
 extern	cvar_t	in_acceleration;
-extern  cvar_t  in_analog_strafe;
-extern  cvar_t  in_x_axis_adjust;
-extern  cvar_t  in_y_axis_adjust;
+extern  cvar_t  in_anub_mode;
 
 extern	cvar_t	in_mlook; //Heffo - mlook cvar
 

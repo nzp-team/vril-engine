@@ -282,7 +282,6 @@ extern	cvar_t	sensitivity;
 extern	cvar_t	in_tolerance;
 extern	cvar_t	in_acceleration;
 extern 	cvar_t 	in_aimassist;
-extern 	cvar_t	in_analog_strafe;
 
 extern	cvar_t	m_pitch;
 extern	cvar_t	m_yaw;
