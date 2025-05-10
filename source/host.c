@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "nzportable_def.h"
 
 #ifdef __PSP__
-#include "platform_psp/thread.h"
+#include "platform/psp/thread.h"
 #include <pspsysevent.h>
 #endif // __PSP__
 

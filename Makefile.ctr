@@ -14,7 +14,7 @@ BUILD		:=	build
 SOURCES		:=	source
 #DATA		:=	data
 INCLUDES	:=	include
-ICON		:= 	source/platform_ctr/art/icon.png
+ICON		:= 	source/platform/ctr/art/icon.png
 #ROMFS		:=	romfs 
 
 APP_AUTHOR 		:= NZ:P Team
@@ -78,24 +78,24 @@ COMMON_OBJS =	system.o \
 				cl_parse.c \
 				cl_tent.c \
 				cl_slist.c \
-				platform_ctr/bsp_strlcpy.c \
+				platform/ctr/bsp_strlcpy.c \
 				cmd.c \
-				platform_ctr/common.c \
+				platform/ctr/common.c \
 				images.c \
 				console.c \
 				crc.c \
 				cvar.c \
 				host.c \
 				host_cmd.c \
-				platform_ctr/keys.c \
+				platform/ctr/keys.c \
 				mathlib.c \
 				matrixlib.c \
-				platform_ctr/menu.c \
-				platform_ctr/net_dgrm.c \
-				platform_ctr/net_udpctr.c \
+				platform/ctr/menu.c \
+				platform/ctr/net_dgrm.c \
+				platform/ctr/net_udpctr.c \
 				net_loop.c \
-				platform_ctr/net_bsd.c \
-				platform_ctr/net_main.c \
+				platform/ctr/net_bsd.c \
+				platform/ctr/net_main.c \
 				net_vcr.c \
 				pr_cmds.c \
 				pr_edict.c \
@@ -108,30 +108,30 @@ COMMON_OBJS =	system.o \
 				wad.c \
 				world.c \
 				zone.c \
-				platform_ctr/sys_ctr.c \
+				platform/ctr/sys_ctr.c \
 				snd_dma.c \
 				snd_mix.c \
 				snd_mem.c \
-				platform_ctr/snd_ctr.c \
-				platform_ctr/in_ctr.c \
-				platform_ctr/cd_null.c \
-				platform_ctr/gl/gl_qmb.c \
-				platform_ctr/gl/gl_decal.c \
-				platform_ctr/gl/gl_draw.c \
+				platform/ctr/snd_ctr.c \
+				platform/ctr/in_ctr.c \
+				platform/ctr/cd_null.c \
+				platform/ctr/gl/gl_qmb.c \
+				platform/ctr/gl/gl_decal.c \
+				platform/ctr/gl/gl_draw.c \
 				render/r_fog.c \
-		    	platform_ctr/gl/gl_fog.c \
-				platform_ctr/gl/gl_mesh.c \
-				platform_ctr/gl/gl_model.c \
+		    	platform/ctr/gl/gl_fog.c \
+				platform/ctr/gl/gl_mesh.c \
+				platform/ctr/gl/gl_model.c \
 				render/r_entity_fragments.c \
 				render/r_light.c \
-				platform_ctr/gl/gl_rmain.c \
-				platform_ctr/gl/gl_rmisc.c \
-				platform_ctr/gl/gl_rsurf.c \
-				platform_ctr/gl/gl_screen.c \
-				platform_ctr/gl/gl_warp.c \
-				platform_ctr/gl/gl_vidctr.c \
-				platform_ctr/r_part.c \
-				platform_ctr/touch_ctr.c \
+				platform/ctr/gl/gl_rmain.c \
+				platform/ctr/gl/gl_rmisc.c \
+				platform/ctr/gl/gl_rsurf.c \
+				platform/ctr/gl/gl_screen.c \
+				platform/ctr/gl/gl_warp.c \
+				platform/ctr/gl/gl_vidctr.c \
+				platform/ctr/r_part.c \
+				platform/ctr/touch_ctr.c \
 				crypter.c
 
 CFILES		:=	$(COMMON_OBJS)
@@ -204,15 +204,15 @@ _build_info.h:
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
-	@mkdir -p $(BUILD)/platform_ctr
-	@mkdir -p $(BUILD)/platform_ctr/gl
+	@mkdir -p $(BUILD)/platform/ctr
+	@mkdir -p $(BUILD)/platform/ctr/gl
 	@mkdir -p $(BUILD)/render
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile.ctr
 	@mkdir -p $(BUILD)/3ds
 	@mkdir -p $(BUILD)/3ds/bin/
 	@mv $(BUILD)/*.o $(BUILD)/3ds/
 	@mv $(BUILD)/*.d $(BUILD)/3ds/
-	@mv $(BUILD)/platform_ctr $(BUILD)/3ds/
+	@mv $(BUILD)/platform/ctr $(BUILD)/3ds/
 	@mv $(BUILD)/render $(BUILD)/3ds/
 	@mv $(BUILD)/$(TARGET).lst $(BUILD)/3ds/
 	@mv $(BUILD)/$(TARGET).map $(BUILD)/3ds/

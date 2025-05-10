@@ -5,9 +5,9 @@ PSPLIBSDIR = $(PSPSDK)/..
 TARGET = nzportable
 PSP_EBOOT_TITLE = Nazi Zombies: Portable
 
-PSP_EBOOT_ICON	= source/platform_psp/pics/icon.png
-PSP_EBOOT_SND0	= source/platform_psp/pics/snd0.at3
-PSP_EBOOT_PIC1	= source/platform_psp/pics/pic.png
+PSP_EBOOT_ICON	= source/platform/psp/pics/icon.png
+PSP_EBOOT_SND0	= source/platform/psp/pics/snd0.at3
+PSP_EBOOT_PIC1	= source/platform/psp/pics/pic.png
 
 PSP_FW_VERSION=400
 
@@ -25,22 +25,22 @@ endif
 
 COMMON_OBJS = \
 	source/system.o \
-	source/platform_psp/battery.o \
-	source/platform_psp/thread.o \
-	source/platform_psp/VramExt.o \
-	source/platform_psp/input.o \
-	source/platform_psp/main.o \
-	source/platform_psp/math.o \
-	source/platform_psp/sound.o \
-	source/platform_psp/system.o \
-	source/platform_psp/module.o \
-	source/platform_psp/network.o \
-	source/platform_psp/network_psp.o \
-	source/platform_psp/gethost.o \
-	source/platform_psp/fnmatch.o \
-	source/platform_psp/cd.o \
-	source/platform_psp/mp3.o \
-	source/platform_psp/Random.o \
+	source/platform/psp/battery.o \
+	source/platform/psp/thread.o \
+	source/platform/psp/VramExt.o \
+	source/platform/psp/input.o \
+	source/platform/psp/main.o \
+	source/platform/psp/math.o \
+	source/platform/psp/sound.o \
+	source/platform/psp/system.o \
+	source/platform/psp/module.o \
+	source/platform/psp/network.o \
+	source/platform/psp/network_psp.o \
+	source/platform/psp/gethost.o \
+	source/platform/psp/fnmatch.o \
+	source/platform/psp/cd.o \
+	source/platform/psp/mp3.o \
+	source/platform/psp/Random.o \
 	\
 	source/images.o \
 	source/test_handler.o \
@@ -52,19 +52,19 @@ COMMON_OBJS = \
 	source/cl_tent.o \
 	source/cl_slist.o \
     source/cmd.o \
-	source/platform_psp/common.o \
+	source/platform/psp/common.o \
 	source/console.o \
 	source/crc.o \
 	source/cvar.o \
 	source/host.o \
 	source/host_cmd.o \
-	source/platform_psp/keys.o \
+	source/platform/psp/keys.o \
 	source/mathlib.o \
 	source/matrixlib.o \
-	source/platform_psp/menu.o \
-	source/platform_psp/net_dgrm.o \
+	source/platform/psp/menu.o \
+	source/platform/psp/net_dgrm.o \
 	source/net_loop.o \
-	source/platform_psp/net_main.o \
+	source/platform/psp/net_main.o \
 	source/net_vcr.o \
 	source/pr_cmds.o \
 	source/pr_edict.o \
@@ -88,33 +88,33 @@ COMMON_OBJS = \
 	source/render/r_light.o
 
 HARDWARE_VIDEO_ONLY_OBJS = \
-	source/platform_psp/clipping.o \
-	source/platform_psp/vram.o \
-    source/platform_psp/gu/gu_psp.o \
-    source/platform_psp/gu/gu_resample.o \
-    source/platform_psp/gu/gu_images.o \
-    source/platform_psp/gu/gu_fullbright.o \
-    source/platform_psp/gu/gu_hlmdl.o \
-    source/platform_psp/gu/gu_draw.o \
-    source/platform_psp/gu/gu_QMB.o \
-    source/platform_psp/gu/gu_decals_QMB.o \
-    source/platform_psp/gu/gu_part.o \
-    source/platform_psp/gu/gu_main.o \
-    source/platform_psp/gu/gu_mesh.o \
-    source/platform_psp/gu/gu_mhex2.o \
-    source/platform_psp/gu/gu_misc.o \
-    source/platform_psp/gu/gu_model.o \
-    source/platform_psp/gu/gu_screen.o \
-    source/platform_psp/gu/gu_surface.o \
-    source/platform_psp/gu/gu_warp.o \
-    source/platform_psp/gu/gu_fog.o \
-    source/platform_psp/gu/gu_dxtn.o
+	source/platform/psp/clipping.o \
+	source/platform/psp/vram.o \
+    source/platform/psp/gu/gu_psp.o \
+    source/platform/psp/gu/gu_resample.o \
+    source/platform/psp/gu/gu_images.o \
+    source/platform/psp/gu/gu_fullbright.o \
+    source/platform/psp/gu/gu_hlmdl.o \
+    source/platform/psp/gu/gu_draw.o \
+    source/platform/psp/gu/gu_QMB.o \
+    source/platform/psp/gu/gu_decals_QMB.o \
+    source/platform/psp/gu/gu_part.o \
+    source/platform/psp/gu/gu_main.o \
+    source/platform/psp/gu/gu_mesh.o \
+    source/platform/psp/gu/gu_mhex2.o \
+    source/platform/psp/gu/gu_misc.o \
+    source/platform/psp/gu/gu_model.o \
+    source/platform/psp/gu/gu_screen.o \
+    source/platform/psp/gu/gu_surface.o \
+    source/platform/psp/gu/gu_warp.o \
+    source/platform/psp/gu/gu_fog.o \
+    source/platform/psp/gu/gu_dxtn.o
 HARDWARE_VIDEO_ONLY_FLAGS = -DPSP_HARDWARE_VIDEO
 
 OBJS = $(COMMON_OBJS) $(HARDWARE_VIDEO_ONLY_OBJS)
 
 GU_LIBS	= -lpspgum_vfpu -lpspvfpu -lpspgu -lpspvram
-AUDIO_LIBS	= -lpspaudiolib -lpspaudio -lpspaudiocodec -lpspmp3 source/platform_psp/m33libs/libpspkubridge.a
+AUDIO_LIBS	= -lpspaudiolib -lpspaudio -lpspaudiocodec -lpspmp3 source/platform/psp/m33libs/libpspkubridge.a
 
 MISC_LIBS	= -lpsppower -lpspmath -lpsphprm -ljpeg -lpng -lz
 NET_LIBS    = -lpspwlan -lpspnet_adhoc -lpspnet_adhocctl
