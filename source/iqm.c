@@ -812,7 +812,6 @@ void load_iqm_file_json_info(skeletal_model_t *skel_model, const char *iqm_file_
                 cJSON *bone_data = cJSON_GetObjectItemCaseSensitive(bone_hitbox_tag, bone_names[i]);
                 if(bone_data) {
                     if(cJSON_IsNumber(bone_data)) {
-                        // TODO - Verify it's an integer?
                         skel_model->bone_hitbox_tag[i] = (int) cJSON_GetNumberValue(bone_data);
                     }
                     else {
@@ -1138,8 +1137,6 @@ int cl_get_camera_bone_view_transform(entity_t *view_ent, mat3x4_t camera_anim_v
     // Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", *print_mat[2][0], *print_mat[2][1], *print_mat[2][2], *print_mat[2][3]);
     // Con_Printf("\t\t\t[%.2f, %.2f, %.2f, %.2f]\n", 0.0f, 0.0f, 0.0f, 1.0f);
 
-    // // TODO - Print the rest-to-local bone pose
-    // // TODO - Print the 
     // Con_Printf("---------------------------------------------------------\n");
     
     // cl_skel->bone_rest_to_pose_transforms[fps_cam_bone_idx];
@@ -2185,7 +2182,7 @@ skeletal_model_t *load_iqm_file(void *iqm_data) {
         // i-th bone's parent index must be less than i
         if((int) i <= skel_model->bone_parent_idx[i]) {
             Con_Printf("Error: IQM file bones are sorted incorrectly. Bone %d is located before its parent bone %d.\n", i, skel_model->bone_parent_idx[i]);
-            // FIXME - Deallocate all allocated memory
+            free_unpacked_skeletal_model(skel_model);
             return NULL;
         }
     }
@@ -4094,40 +4091,6 @@ void run_model_event_callback(float timestamp, int event_code, char *event_data,
     pr_string_temp[event_data_len] = 0;
     // Con_Printf("\ttempstring content: \"%s\"\n", pr_string_temp);
     G_INT(OFS_PARM2) = pr_string_temp - pr_strings;
-
-    // ----------------------
-    // char temp_str[256];
-    // int event_data_len = 0;
-    // if(event_data != NULL) {
-    //     event_data_len = strlen(event_data);
-    //     if(event_data_len >= 256) {
-    //         event_data_len = 255;
-    //     }
-    //     if(event_data_len < 0) {
-    //         event_data_len = 0;
-    //     }
-    //     strncpy(temp_str, event_data, event_data_len);
-    // }
-    // // Null-terminate the string
-    // temp_str[event_data_len] = 0;
-    // G_INT(OFS_PARM2) = temp_str - pr_strings;
-    // ----------------------
-
-    // Send offset to temp string in global strings list
-    // -----------
-    // This works
-    // -----------
-    // G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
-    // -----------
-    // G_INT(OFS_PARM1) = pr_string_temp - pr_strings;
-
-	// strcpy(tempc, Cmd_Argv(G_FLOAT(OFS_PARM0)));
-    // G_INT(OFS_PARM3) = local_str - pr_strings;
-
-    // G_STRING(OFS_PARM2) = pr_string_temp; // Compile error
-    // G_STRING(OFS_PARM2) = pr_string_temp - pr_strings; // Compile error
-    // G_INT(OFS_PARM3) = pr_string_temp - pr_strings;
-    // G_INT(OFS_PARM4) = pr_string_temp - pr_strings;
     // ------------------------------------
 
 

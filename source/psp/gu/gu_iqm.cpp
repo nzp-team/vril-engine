@@ -13,10 +13,9 @@ extern"C" {
 
 
 extern vec3_t lightcolor; // LordHavoc: .lit support
-extern char	skybox_name[32];
+// extern char	skybox_name[32]; // Used for test material reflections
 extern void Fog_DisableGFog();
 extern void Fog_EnableGFog();
-// extern char *PF_VarString (int	first);
 
 
 
