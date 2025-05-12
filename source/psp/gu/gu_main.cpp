@@ -4124,6 +4124,8 @@ void R_RenderView (void)
 
 	// render normal view
 	R_RenderScene ();
+	cl_sv_draw_navmesh();
+	
 
 	R_DrawViewModel ();
 	R_DrawView2Model ();

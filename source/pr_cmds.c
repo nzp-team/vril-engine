@@ -3855,6 +3855,11 @@ ebfs_builtin_t pr_ebfs_builtins[] =
 	{  616, "skel_register_anim", PF_skel_register_anim },						// blubs -- Pre-calculates and caches the AABB for a skeletal model playing a skeletal animation
 // #endif // IQM_BBOX_PER_MODEL_PER_ANIM
 
+	// Navmesh debug functions
+	{  620, "nav_set_test_start_pos", PF_sv_navmesh_set_test_start_pos },
+	{  621, "nav_set_test_goal_pos",  PF_sv_navmesh_set_test_goal_pos },
+
+
 	// { PR_DEFAULT_FUNCNO_EXTENSION_FIND, "extension_find", PF_extension_find },	// 2001-10-20 Extension System by Lord Havoc/Maddes
 	// {   0, "registercvar", PF_cvar_create },	// 0 indicates that this entry is just for remapping (because of name change)
 	// {   0, "checkextension", PF_extension_find },

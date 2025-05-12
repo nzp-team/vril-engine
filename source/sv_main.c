@@ -1379,6 +1379,7 @@ void SV_SpawnServer (char *server)
 			SV_SendServerinfo (host_client);
 
 	Load_Waypoint ();
+	sv_load_navmesh();
 	Con_DPrintf ("Server spawned.\n");
 }
 

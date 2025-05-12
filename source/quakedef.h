@@ -281,6 +281,7 @@ typedef struct
 #endif // _3DS
 #include "progs.h"
 
+#include "sv_nav.h"
 
 #ifdef _3DS
 #include "ctr/server.h"
