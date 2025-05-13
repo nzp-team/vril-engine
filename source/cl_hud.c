@@ -1309,7 +1309,7 @@ HUD_Perks
 #define 	P_DEAD 		64
 #define 	P_MULE 		128
 
-int perk_order[9];
+int perk_order[8];
 int current_perk_order;
 
 void HUD_Perks (void)
