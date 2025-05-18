@@ -45,7 +45,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef __PSP__
 #define PSP_MODEL_PHAT		0
 #define PSP_MODEL_SLIM 		1
-#define PSP_MODEL_PSVITA 	2
+#define PSP_MODEL_GO		2
+#define PSP_MODEL_PSVITA 	3
+#define PSP_MODEL_PPSSPP	4
 
 extern int psp_system_model;
 #endif // __PSP__
