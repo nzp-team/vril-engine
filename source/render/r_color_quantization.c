@@ -35,7 +35,34 @@ bucket_t buckets[16];
 int bucket_counts[16];
 int num_buckets = 0;
 
+int bucket_queue_start = 0;
+int bucket_queue_end = 0;
+byte bucket_queue[64];
+
 byte byte_to_halfbyte_map[256];
+
+void
+push_bucket_to_queue(int bucket)
+{
+    // Realisticilly this should not go past num_buckets * 2 - 1
+    if (bucket_queue_end >= 64) {
+        return;
+    }
+    bucket_queue[bucket_queue_end] = bucket;
+    bucket_queue_end += 1;
+}
+
+void
+bucket_queue_advance()
+{
+    bucket_queue_start += 1;
+}
+
+int
+bucket_queue_length()
+{
+    return bucket_queue_end - bucket_queue_start;
+}
 
 void
 add_to_bucket(int bucket, int color)
@@ -59,6 +86,8 @@ init_buckets()
     memset(colentries, 0, sizeof(colentries));
     memset(byte_to_halfbyte_map, 0, sizeof(byte_to_halfbyte_map));
     num_buckets = 0;
+    bucket_queue_start = 0;
+    bucket_queue_end = 0;
 }
 
 int
@@ -83,11 +112,17 @@ get_color_index(int bucket, int index)
 void
 sort_and_cut_bucket(int current_bucket, int depth, int target)
 {
+    // We already have max colors
     if (num_buckets >= target) {
         return;
     }
 
     int count = bucket_counts[current_bucket];
+    // This bucket only has one color, can't get better than that
+    if (count <= 1) {
+        return;
+    }
+
     // find the highest range and count pixels in bucket
     byte minR = 255;
     byte maxR = 0;
@@ -141,11 +176,11 @@ sort_and_cut_bucket(int current_bucket, int depth, int target)
         }
     }
 
-    // median cut
+    // median cut, careful to not do split at 0 or length-1
     int pixelsCounted = 0;
-    int split         = 0;
+    int split         = 1;
     for (int i = 0; i < count; i++) {
-        if (pixelsCounted > pixelsInBucket * 0.5) {
+        if ((i > 0) && (pixelsCounted > pixelsInBucket * 0.5 || (i >= count - 2))) {
             split = i;
             break;
         }
@@ -162,10 +197,14 @@ sort_and_cut_bucket(int current_bucket, int depth, int target)
         remove_last_from_bucket(current_bucket);
     }
 
-    if (depth >= 3) return;
-
-    sort_and_cut_bucket(current_bucket, depth + 1, target);
-    sort_and_cut_bucket(next_bucket, depth + 1, target);
+    // queue up next buckets, favor one with more colors when choosing order
+    if (split > (count / 2)) {
+        push_bucket_to_queue(current_bucket);
+        push_bucket_to_queue(next_bucket);
+    } else {
+        push_bucket_to_queue(next_bucket);
+        push_bucket_to_queue(current_bucket);
+    }
 } /* sort_and_cut_bucket */
 
 void
@@ -207,8 +246,14 @@ convert_8bpp_to_4bpp(const byte * indata, const byte * inpal, int width, int hei
     }
 
     // could check if bucket has 16 colors or less and early out
-
-    sort_and_cut_bucket(current_bucket, 0, has_transparency ? 15 : 16);
+  
+    int target_colors_count = MIN(16, colors_used);
+    target_colors_count = has_transparency ? (target_colors_count - 1) : target_colors_count;
+    push_bucket_to_queue(current_bucket);
+    while (bucket_queue_length() > 0) {
+        sort_and_cut_bucket(bucket_queue[bucket_queue_start], 0, target_colors_count);
+        bucket_queue_advance();
+    }
 
     if (has_transparency) {
         int transparent_bucket = get_new_bucket();
