@@ -241,7 +241,12 @@ namespace quake
 			calculate_frustum(projection_view_matrix, &projection_view_frustum);
 			calculate_frustum(wide_projection_view_matrix, &wide_projection_view_frustum);
 
+			// Set 500, 600 and 700, all reserved for clipping use
 			__asm__ volatile (
+				// Set 600 for comparisons in is_clipping, moved from there to do it only once a frame
+				"vzero.q	C600\n"					// C600 = [0.0f, 0.0f, 0.0f. 0.0f]
+				"vzero.s	S613\n"					// S613 = 0.0f, otherwise it's unset
+				// Set 700 for clipping frustum
 				"ulv.q		C700, %4\n"				// Load plane into register
 				"ulv.q		C710, %5\n"				// Load plane into register
 				"ulv.q		C720, %6\n"				// Load plane into register
@@ -261,6 +266,7 @@ namespace quake
 			);
 
 			__asm__ volatile (
+				// Set 500 for wide frustum
 				"ulv.q		C500, %4\n"				// Load plane into register
 				"ulv.q		C510, %5\n"				// Load plane into register
 				"ulv.q		C520, %6\n"				// Load plane into register
@@ -377,7 +383,6 @@ namespace quake
 				"mul		$10,  $10,  $9\n"		// $10 = $10 * $9
 				"addu		$10,  $10,  $8\n"		// $10 = $10 + $8
 				"addiu		%0,   $0,   1\n"		// res = 1
-				"vzero.q	C600\n"					// C600 = [0.0f, 0.0f, 0.0f. 0.0f]
 			"0:\n"									// loop
 				"lv.s		S610,  8($8)\n"			// S610 = v[i].xyz[0]
 				"lv.s		S611,  12($8)\n"		// S611 = v[i].xyz[1]

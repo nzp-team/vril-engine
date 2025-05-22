@@ -851,6 +851,7 @@ int ClipFace (msurface_t * fa)
 		return fa->polys->numverts;
 	}
 
+
 	// shpuld: moved clipping here to have it in one place only
 	int verts_total = 0;
 	glpoly_t* poly = fa->polys;
@@ -1486,7 +1487,7 @@ void R_RecursiveWorldNode (mnode_t *node, bool nofrustumcheck)
 				|| surf->texinfo->texture != cl.worldmodel->textures[mirrortexturenum])
 				{
 					surf->flags &= ~SURF_NEEDSCLIPPING;
-					surf->flags |= SURF_NEEDSCLIPPING * (frustum_check > 1);
+					surf->flags |= SURF_NEEDSCLIPPING * (frustum_check >= 1);
 
 					surf->texturechain = surf->texinfo->texture->texturechain;
 					surf->texinfo->texture->texturechain = surf;
@@ -1547,7 +1548,7 @@ void R_AddBrushModelToChains (entity_t * e)
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON)))
 		{
 			psurf->flags &= ~SURF_NEEDSCLIPPING;
-			psurf->flags |= SURF_NEEDSCLIPPING * (frustum_check > 1);
+			psurf->flags |= SURF_NEEDSCLIPPING * (frustum_check >= 1);
 
 			psurf->texturechain = psurf->texinfo->texture->texturechain;
 			psurf->texinfo->texture->texturechain = psurf;

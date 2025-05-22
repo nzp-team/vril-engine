@@ -75,7 +75,7 @@ int			mirrortexturenum;	// quake texturenum, not gltexturenum
 int 		game_fps; 			// should probably move this somewhere less.. lame
 
 mplane_t	*mirror_plane;
-mplane_t 	frustum[4];
+mplane_t 	frustum[5];
 
 // screen size info
 refdef_t 	r_refdef;
@@ -318,13 +318,12 @@ int R_FrustumCheckBox (vec3_t mins, vec3_t maxs)
 {
 	int i, res;
 	int intersections = 0;
-	for (i=0 ; i<4 ; i++)
+	for (i=0 ; i<5 ; i++)
 	{
 		res = BoxOnPlaneSide (mins, maxs, &frustum[i]);
 		if (res == 2) return -1; 
 		if (res == 3) ++intersections;
 	}
-
 	return intersections;
 }
 
@@ -339,7 +338,7 @@ int R_FrustumCheckSphere (vec3_t centre, float radius)
 	mplane_t	*p;
 	int intersections = 0;
 
-	for (i=0, p=frustum ; i<4 ; i++, p++)
+	for (i=0, p=frustum ; i<5 ; i++, p++)
 	{
 		res = PlaneDiff(centre, p);
 		if (res <= -radius) return -1;
@@ -389,7 +388,7 @@ qboolean R_CullSphere (vec3_t centre, float radius)
 	int		i;
 	mplane_t	*p;
 
-	for (i=0, p=frustum ; i<4 ; i++, p++)
+	for (i=0, p=frustum ; i<5 ; i++, p++)
 	{
 		if (PlaneDiff(centre, p) <= -radius)
 			return true;
@@ -3331,21 +3330,17 @@ void R_RenderScene (void)
 
 	//setfrustum
 	// disabled as well
-	if (r_refdef.fov_x == 90) {
-		// front side is visible
-		VectorAdd(vpn, vright, frustum[0].normal);
-		VectorSubtract(vpn, vright, frustum[1].normal);
 
-		VectorAdd(vpn, vright, frustum[1].normal);
-		VectorSubtract(vpn, vup, frustum[3].normal);
-	} else {
-		RotatePointAroundVector( frustum[0].normal, vup, vpn,    -( vecx_point_transform ) );
-		RotatePointAroundVector( frustum[1].normal, vup, vpn,     ( vecx_point_transform ) );
-		RotatePointAroundVector( frustum[2].normal, vright, vpn,  ( vecy_point_transform ) );
-		RotatePointAroundVector( frustum[3].normal, vright, vpn, -( vecy_point_transform ) );
-	}
+	// near plane
+	VectorCopy(vpn, frustum[0].normal);
+	// sides
+	RotatePointAroundVector(frustum[1].normal, vup, vpn, -vecx_point_transform);
+	RotatePointAroundVector(frustum[2].normal, vup, vpn, vecx_point_transform);
+	// up/down
+	RotatePointAroundVector(frustum[3].normal, vright, vpn, vecy_point_transform);
+	RotatePointAroundVector(frustum[4].normal, vright, vpn, -vecy_point_transform);
 
-	for (i=0 ; i<4 ; i++) {
+	for (i=0 ; i<5 ; i++) {
 		frustum[i].type = PLANE_ANYZ;
 		frustum[i].dist = DotProduct (r_origin, frustum[i].normal);
 		frustum[i].signbits = SignbitsForPlane (&frustum[i]);
@@ -3454,7 +3449,7 @@ void R_RenderScene (void)
 	// the smaller the number, the more polys get clipped and by extension more polys also rejected
 	// at a sweet spot we want to maximize rejected polys but minimize (clipped - rejected) amount at the same time
 	// it's a balancing act and every change has to be benchmarked. between 2.5, 2.2 and 2.0, 2.2 was the fastest.
-	clipping::begin_frame(fovy, fmin(165.f, fovy * 2.2f), fovx);
+	clipping::begin_frame(fovy, fmin(160.0f, fovy * 2.2f), fovx);
 
 	sceGumMatrixMode(GU_PROJECTION);
 	sceGumLoadIdentity();
