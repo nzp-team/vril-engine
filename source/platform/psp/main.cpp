@@ -514,6 +514,11 @@ int user_main(SceSize argc, void* argp)
 
 	psp_system_model = Sys_GetPSPModel();
 
+	extern bool system_has_right_stick;
+
+	system_has_right_stick = Sys_HasRightStick();
+
+
 	// Disable floating point exceptions.
 	// If this isn't done, Quake crashes from (presumably) divide by zero
 	// operations.
@@ -742,10 +747,32 @@ int Sys_GetPSPModel(void)
 		return PSP_MODEL_PSVITA;
 	}
 
+	// Thanks to Linblow for providing code for detecting PPSSPP
+	int res;
+	int ret = sceIoDevctl("emulator:", 3, &res, 4, NULL, 0);
+	if (ret == 0) return PSP_MODEL_PPSSPP;
+
 	int model = kuKernelGetModel();
 
 	if (model == 0)
 		return PSP_MODEL_PHAT;
+	if (model == 4)
+		return PSP_MODEL_GO;
 
 	return PSP_MODEL_SLIM;
+}
+
+bool Sys_HasRightStick(void)
+{
+	int psp_system_model = Sys_GetPSPModel();
+	if (psp_system_model == PSP_MODEL_PSVITA || psp_system_model == PSP_MODEL_PPSSPP) {
+		return true;
+	} else if (psp_system_model == PSP_MODEL_GO) {
+		SceCtrlData pad;
+		sceCtrlPeekBufferPositive(&pad, 1);
+		if (pad.Rsrv[0] != 0 && pad.Rsrv[1] != 0) {
+			return true;
+		}
+	}
+	return false;
 }

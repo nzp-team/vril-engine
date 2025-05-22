@@ -342,7 +342,10 @@ void Sys_PrintSystemInfo(void)
 	switch(psp_system_model) {
 		case PSP_MODEL_PHAT: Con_Printf("PSP Model: PSP-1000 model unit\n"); break;
 		case PSP_MODEL_SLIM: Con_Printf("PSP Model: PSP-SLIM model unit\n"); break;
+		case PSP_MODEL_GO: Con_Printf("PSP Model: PSP-Go model unit\n"); break;
 		case PSP_MODEL_PSVITA: Con_Printf("PSP Model: PS VITA model unit\n"); break;
+		case PSP_MODEL_PPSSPP: Con_Printf("PSP Model: PPSSPP Emulator\n"); break;
+
 		default: break;
 	}
 

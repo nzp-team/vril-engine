@@ -281,6 +281,7 @@ float IN_CalcInput(int axis, float speed, float tolerance, float acceleration) {
 
 extern cvar_t scr_fov;
 extern int original_fov, final_fov;
+bool system_has_right_stick;
 void IN_Move (usercmd_t *cmd)
 {
 	V_StopPitchDrift();
@@ -288,6 +289,10 @@ void IN_Move (usercmd_t *cmd)
 	// Read the pad state.
 	SceCtrlData pad;
 	sceCtrlPeekBufferPositive(&pad, 1);
+
+	// The right stick always returns 0 when it's not present
+	// so to make sure we don't constantly walk diagonally left, initialize to 128
+	if (!system_has_right_stick) pad.Rsrv[0] = pad.Rsrv[1] = 128;
 
 	// Convert the inputs to floats in the range [-1, 1].
 	// Implement the dead zone.

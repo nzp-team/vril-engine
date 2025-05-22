@@ -75,5 +75,7 @@ void Sys_SetFPCW (void);
 
 // returns psp model
 int Sys_GetPSPModel(void);
+// returns if the console has a right stick
+bool Sys_HasRightStick(void);
 
 void Sys_CaptureScreenshot(void);
