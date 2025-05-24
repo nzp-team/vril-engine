@@ -203,17 +203,15 @@ void GL_Bind (int texture_index)
 	// Which texture is it?
 	const gltexture_t& texture = gltextures[texture_index];
 
+	sceGuTexMode(texture.format, texture.mipmaps , 0, texture.swizzle);
 
 	// HACK HACK HACK: avoid setting this all the time
-	if (last_palette_wasnt_tx == qtrue)
+	if (texture.format == GU_PSM_T8 && last_palette_wasnt_tx) {
 		VID_SetPaletteTX();
-
-	if (texture.format == GU_PSM_T4) {
+	} else if (texture.format == GU_PSM_T4) {
 		VID_SetPalette4(texture.palette);
 	}
 
-	sceGuTexMode(texture.format, texture.mipmaps , 0, texture.swizzle);
-	
 	// Set the Texture filter.
 	if (r_retro.value)
 		sceGuTexFilter(GU_NEAREST, GU_NEAREST);
