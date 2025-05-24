@@ -131,7 +131,7 @@ void VID_SetPaletteTX()
 
 void VID_SetPalette4(unsigned char* clut4pal) {
 	sceGuClutMode(GU_PSM_8888, 0, 0xFF, 0);
-	sceKernelDcacheWritebackRange(clut4pal, sizeof(clut4pal));
+	sceKernelDcacheWritebackRange(clut4pal, 4 * 16);
 	sceGuClutLoad(2, clut4pal);
 	last_palette_wasnt_tx = true;
 }
