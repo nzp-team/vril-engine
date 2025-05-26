@@ -949,7 +949,7 @@ void CL_ParseClientdata (int bits)
 		cl.stats[STAT_AMMO] = i;
 	}
 
-	i = MSG_ReadByte ();
+	i = MSG_ReadShort ();
 	if (cl.stats[STAT_CURRENTMAG] != i)
 	{
 		HUD_Change_time = Sys_FloatTime() + 6;
@@ -999,7 +999,7 @@ void CL_ParseClientdata (int bits)
 	if (cl.stats[STAT_WEAPON2FRAME] != i)
 		cl.stats[STAT_WEAPON2FRAME] = i;
 
-	i = MSG_ReadByte ();
+	i = MSG_ReadShort ();
 	if (cl.stats[STAT_CURRENTMAG2] != i)
 		cl.stats[STAT_CURRENTMAG2] = i;
 }
