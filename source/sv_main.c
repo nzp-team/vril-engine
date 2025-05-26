@@ -771,7 +771,7 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	MSG_WriteShort (msg, ent->v.secondary_grenades);
 	MSG_WriteShort (msg, ent->v.health);
 	MSG_WriteShort (msg, ent->v.currentammo);
-	MSG_WriteByte (msg, ent->v.currentmag);
+	MSG_WriteShort (msg, ent->v.currentmag);
 	MSG_WriteByte (msg, ent->v.zoom);
 
 	MSG_WriteByte (msg, ent->v.weapon);
@@ -783,7 +783,7 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	MSG_WriteShort (msg, SV_ModelIndex(pr_strings+ent->v.weapon2model));
 	MSG_WriteByte (msg, ent->v.weapon2skin);
 	MSG_WriteByte (msg, ent->v.weapon2frame);
-	MSG_WriteByte (msg, ent->v.currentmag2);
+	MSG_WriteShort (msg, ent->v.currentmag2);
 }
 
 /*
