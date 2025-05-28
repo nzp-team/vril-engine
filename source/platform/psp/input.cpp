@@ -71,6 +71,8 @@ extern float crosshair_opacity;
 extern cvar_t in_anub_mode;
 extern cvar_t in_mlook; //Heffo - mlook cvar
 
+extern bool system_has_right_stick;
+
 void IN_Init (void)
 {
 	// Set up the controller.
@@ -319,6 +321,10 @@ void IN_Move (usercmd_t *cmd)
 	} else { // Right
 		look_x = IN_CalcInput(pad.Rsrv[0], speed, deadZone, acceleration);
 		look_y = IN_CalcInput(pad.Rsrv[1], speed, deadZone, acceleration) * -1;
+
+		if (!system_has_right_stick) {
+			look_x = look_y = 0;
+		}
 	}
 
 	const float yawScale = 30.0f;
@@ -346,6 +352,10 @@ void IN_Move (usercmd_t *cmd)
 	} else {
 		input_x = pad.Rsrv[0];
 		input_y = 255 - pad.Rsrv[1];
+
+		if (!system_has_right_stick) {
+			input_x = input_y = 128;
+		}
 	}
 
 	cl_backspeed = cl_forwardspeed = cl_sidespeed = sv_player->v.maxspeed;

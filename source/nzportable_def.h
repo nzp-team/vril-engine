@@ -42,14 +42,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define qfalse 0
 #endif // __PSP__
 
-#ifdef __PSP__
-#define PSP_MODEL_PHAT		0
-#define PSP_MODEL_SLIM 		1
-#define PSP_MODEL_PSVITA 	2
-
-extern int psp_system_model;
-#endif // __PSP__
-
 #define	QUAKE_GAME			// as opposed to utilities
 
 #define	VERSION				2.0

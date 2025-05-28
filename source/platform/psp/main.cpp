@@ -42,6 +42,8 @@ extern "C"
 #include "thread.h"
 #include "m33libs/kubridge.h"
 void VramSetSize(int kb);
+int psp_system_model;
+bool system_has_right_stick;
 }
 
 #include "battery.hpp"
@@ -52,8 +54,6 @@ qboolean depthfl = false;
 
 extern	int  com_argc;
 extern	char **com_argv;
-
-int psp_system_model;
 
 void Sys_ReadCommandLineFile (char* netpath);
 
@@ -510,6 +510,8 @@ int user_main(SceSize argc, void* argp)
 	setUpCallbackThread();
 
 	psp_system_model = Sys_GetPSPModel();
+	system_has_right_stick = Sys_HasRightStick();
+
 
 	// Disable floating point exceptions.
 	// If this isn't done, Quake crashes from (presumably) divide by zero
@@ -731,18 +733,48 @@ void Sys_ReadCommandLineFile (char* netpath)
 
 int Sys_GetPSPModel(void) 
 {
-	// pspemu has this module on its flash0 partition
+	// PS VITA's pspemu exclussively has this module on its flash0 partition,
+	// Credit to DaedalusX64 for this concept.
 	int vitaprx = sceIoOpen("flash0:/kd/registry.prx", PSP_O_RDONLY | PSP_O_WRONLY, 0777);
-
 	if (vitaprx >= 0) {
 		sceIoClose(vitaprx);
 		return PSP_MODEL_PSVITA;
 	}
 
+#if 0
+	// PPSSPP will return zero (success) for trying to read the emulator: device,
+	// Credit to Linblow for this concept.
+	int device_result = 0;
+	int device_ret = sceIoDevctl("emulator:", 3, &device_result, 0, NULL, 0);
+	if (device_result == 0) return PSP_MODEL_EMULATED;
+#endif
+
+	// Use kuBridge and trust the Kernel to report the system model.
 	int model = kuKernelGetModel();
+	switch (model) {
+		case 0: return PSP_MODEL_PHAT;
+		case 1: return PSP_MODEL_SLIM;
+		case 2: return PSP_MODEL_BRITE;
+		case 4: return PSP_MODEL_GO;
+		case 10: return PSP_MODEL_STREET;
+		default: break;
+	}
 
-	if (model == 0)
-		return PSP_MODEL_PHAT;
+	// Fallback.
+	return PSP_MODEL_UNKNOWN;
+}
 
-	return PSP_MODEL_SLIM;
+bool Sys_HasRightStick(void)
+{
+	int psp_system_model = Sys_GetPSPModel();
+	if (psp_system_model == PSP_MODEL_PSVITA /*|| psp_system_model == PSP_MODEL_EMULATED*/) {
+		return true;
+	} else /*if (psp_system_model == PSP_MODEL_GO)*/ {
+		SceCtrlData pad;
+		sceCtrlPeekBufferPositive(&pad, 1);
+		if (pad.Rsrv[0] != 0 && pad.Rsrv[1] != 0) {
+			return true;
+		}
+	}
+	return false;
 }

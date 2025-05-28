@@ -340,9 +340,14 @@ void Sys_PrintSystemInfo(void)
 	Con_Printf ("%4.1f megabyte PSP application heap \n",1.0f * PSP_HEAP_SIZE_MB);
 
 	switch(psp_system_model) {
-		case PSP_MODEL_PHAT: Con_Printf("PSP Model: PSP-1000 model unit\n"); break;
-		case PSP_MODEL_SLIM: Con_Printf("PSP Model: PSP-SLIM model unit\n"); break;
+		case PSP_MODEL_PHAT: Con_Printf("PSP Model: PSP-FAT (1000)\n"); break;
+		case PSP_MODEL_SLIM: Con_Printf("PSP Model: PSP-SLIM (2000)\n"); break;
+		case PSP_MODEL_BRITE: Con_Printf("PSP Model: PSP-BRITE (3000)\n"); break;
+		case PSP_MODEL_GO: Con_Printf("PSP Model: PSP-GO (4000)\n"); break;
+		case PSP_MODEL_STREET: Con_Printf("PSP Model: PSP-STREET (E-1000)\n"); break;
 		case PSP_MODEL_PSVITA: Con_Printf("PSP Model: PS VITA model unit\n"); break;
+		case PSP_MODEL_EMULATED: Con_Printf("PSP Model: Emulated\n"); break;
+		case PSP_MODEL_UNKNOWN: Con_Printf("PSP Model: Unknown (Please report this!)\n"); break;
 		default: break;
 	}
 
