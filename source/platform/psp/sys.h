@@ -19,6 +19,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // sys.h -- non-portable functions
 
+#define PSP_MODEL_PHAT		0
+#define PSP_MODEL_SLIM 		1
+#define PSP_MODEL_BRITE     2
+#define PSP_MODEL_GO        3
+#define PSP_MODEL_STREET    4
+#define PSP_MODEL_PSVITA 	5
+#define PSP_MODEL_EMULATED  6
+#define PSP_MODEL_UNKNOWN   100
+
+extern int psp_system_model;
+
 //
 // file IO
 //
@@ -75,5 +86,6 @@ void Sys_SetFPCW (void);
 
 // returns psp model
 int Sys_GetPSPModel(void);
+bool Sys_HasRightStick(void);
 
 void Sys_CaptureScreenshot(void);
