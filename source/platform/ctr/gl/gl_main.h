@@ -366,7 +366,6 @@ void Sky_LoadSkyBox(char* name);
 void QMB_InitParticles (void);
 void QMB_ClearParticles (void);
 void QMB_DrawParticles (void);
-void QMB_Q3TorchFlame (vec3_t org, float size);
 void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count);
 void QMB_RocketTrail (vec3_t start, vec3_t end, trail_type_t type);
 void QMB_BlobExplosion (vec3_t org);
@@ -385,9 +384,6 @@ void QMB_LightningBeam (vec3_t start, vec3_t end);
 void QMB_EntityParticles (entity_t *ent);
 void QMB_MuzzleFlash (vec3_t org);
 void QMB_MuzzleFlashLG (vec3_t org);
-void QMB_Q3Gunshot (vec3_t org, int skinnum, float alpha);
-void QMB_Q3Teleport (vec3_t org, float alpha);
-void QMB_Q3TorchFlame (vec3_t org, float size);
 
 void R_SpawnDecal (vec3_t center, vec3_t normal, vec3_t tangent, int tex, int size, int isbsp);
 void R_SpawnDecalStatic (vec3_t org, int tex, int size);

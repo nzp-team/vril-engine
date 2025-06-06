@@ -316,10 +316,7 @@ extern	qboolean	host_initialized;		// true if into command execution
 extern	double		host_frametime;
 extern	byte		*host_basepal;
 extern	byte		*host_colormap;
-#ifdef __PSP__
-extern	byte		*host_q2pal;
-extern	byte		*host_h2pal;
-#endif // __PSP__
+
 extern	int			host_framecount;	// incremented every frame, never reset
 extern	double		realtime;			// not bounded in any way, changed at
 										// start of every frame, never reset

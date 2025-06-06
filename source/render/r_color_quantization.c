@@ -208,10 +208,14 @@ sort_and_cut_bucket(int current_bucket, int depth, int target)
 } /* sort_and_cut_bucket */
 
 void
-convert_8bpp_to_4bpp(const byte * indata, const byte * inpal, int width, int height, byte * outdata, byte * outpal)
+convert_8bpp_to_4bpp(const byte * indata, const byte * inpal, int inpal_bpp, int width, int height, byte * outdata, byte * outpal)
 {
     init_buckets();
     int current_bucket = get_new_bucket();
+
+    if (inpal_bpp != 3 && inpal_bpp != 4) {
+        Con_Printf("convert_8bpp_to_4bpp: invalid palette bpp %i\n", inpal_bpp);
+    }
 
     // Set bucket pixelcounts
     for (int pixi = 0; pixi < width * height; pixi++) {
@@ -231,9 +235,15 @@ convert_8bpp_to_4bpp(const byte * indata, const byte * inpal, int width, int hei
         }
         colors_used++;
 
-        ce->r = inpal[i * 3 + 0];
-        ce->g = inpal[i * 3 + 1];
-        ce->b = inpal[i * 3 + 2];
+        if (inpal_bpp == 3) {
+            ce->r = inpal[i * 3 + 0];
+            ce->g = inpal[i * 3 + 1];
+            ce->b = inpal[i * 3 + 2];
+        } else {
+            ce->r = inpal[i * 4 + 0];
+            ce->g = inpal[i * 4 + 1];
+            ce->b = inpal[i * 4 + 2];
+        }
         ce->a = 255;
         if (ce->r == 0 && ce->g == 0 && ce->b == 255) {
             ce->r = ce->g = ce->b = 128;
@@ -297,3 +307,55 @@ convert_8bpp_to_4bpp(const byte * indata, const byte * inpal, int width, int hei
         ((unsigned int *) outpal)[i] = (alpha << 24) + (b << 16) + (g << 8) + r;
     }
 } /* convert_8bpp_to_4bpp */
+
+int
+closest_color_from_4bb_pal(byte r, byte g, byte b, byte a, const byte * pal)
+{
+    int closest_distance = __INT_MAX__;
+    int closest = 0;
+    for (int i = 0; i < 16; i++) {
+        byte pr = pal[i * 4 + 0]; 
+        byte pg = pal[i * 4 + 1]; 
+        byte pb = pal[i * 4 + 2]; 
+        byte pa = pal[i * 4 + 3];
+
+        int sqdist = (pr - r)*(pr - r) + (pg - g)*(pg - g) + (pb - b)*(pb - b) + (pa - a)*(pa - a);
+        if (sqdist < closest_distance) {
+            closest = i;
+            closest_distance = sqdist;
+        }
+    }
+    return closest;
+}
+
+void
+convert_8bpp_to_4bpp_with_hint(const byte * indata, const byte * inpal, int inpal_bpp, int width, int height, byte * outdata, const byte * palhint)
+{
+    int MAX_COLORS = 256;
+    memset(byte_to_halfbyte_map, 0, sizeof(byte_to_halfbyte_map));
+    
+    for (int i = 0; i < MAX_COLORS; i++) {
+        byte r, g, b, a;
+        if (inpal_bpp == 3) {
+            r = inpal[i * 3 + 0];
+            g = inpal[i * 3 + 1];
+            b = inpal[i * 3 + 2];
+            a = 255;
+        } else {
+            r = inpal[i * 4 + 0];
+            g = inpal[i * 4 + 1];
+            b = inpal[i * 4 + 2];
+            a = inpal[i * 4 + 3];
+        }
+        byte_to_halfbyte_map[i] = closest_color_from_4bb_pal(r, g, b, a, palhint);
+    }
+    
+    int image_size = width * height * 0.5;
+
+    for (int i = 0; i < image_size; i++) {
+        byte color_index = indata[i * 2];
+        outdata[i]  = byte_to_halfbyte_map[color_index];
+        color_index = indata[i * 2 + 1];
+        outdata[i] += byte_to_halfbyte_map[color_index] << 4;
+    }
+}

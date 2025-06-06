@@ -1213,56 +1213,33 @@ int SetFlameModelState (void)
 		VectorCopy (currententity->origin, liteorg);
 		if (currententity->baseline.modelindex == cl_modelindex[mi_flame0])
 		{
-			if (r_part_flames.value == 2)
-			{
-				liteorg[2] += 14;
-				QMB_Q3TorchFlame (liteorg, 15);
-			}
-			else
-			{
-				liteorg[2] += 5.5;
+			liteorg[2] += 5.5;
 
-				if(r_flametype.value == 2)
-				  QMB_FlameGt (liteorg, 7, 0.8);
-				else
-				  QMB_TorchFlame(liteorg);
-			}
+			if(r_flametype.value == 2)
+				QMB_FlameGt (liteorg, 7, 0.8);
+			else
+				QMB_TorchFlame(liteorg);
 		}
 		else if (currententity->baseline.modelindex == cl_modelindex[mi_flame1])
 		{
-			if (r_part_flames.value == 2)
-			{
-				liteorg[2] += 14;
-				QMB_Q3TorchFlame (liteorg, 15);
-			}
+			liteorg[2] += 5.5;
+
+			if(r_flametype.value > 1)
+				QMB_FlameGt (liteorg, 7, 0.8);
 			else
-			{
-				liteorg[2] += 5.5;
+				QMB_TorchFlame(liteorg);
 
-				if(r_flametype.value > 1)
-				  QMB_FlameGt (liteorg, 7, 0.8);
-				else
-			      QMB_TorchFlame(liteorg);
-
-			}
 			currententity->model = cl.model_precache[cl_modelindex[mi_flame0]];
 		}
 		else if (currententity->baseline.modelindex == cl_modelindex[mi_flame2])
 		{
-			if (r_part_flames.value == 2)
-            {
-				liteorg[2] += 14;
-				QMB_Q3TorchFlame (liteorg, 32);
-            }
-			else
-			{
-                liteorg[2] -= 1;
+			liteorg[2] -= 1;
 
-				if(r_flametype.value > 1)
-				  QMB_FlameGt (liteorg, 12, 1);
-				else
-			      QMB_BigTorchFlame(liteorg);
-			}
+			if(r_flametype.value > 1)
+				QMB_FlameGt (liteorg, 12, 1);
+			else
+				QMB_BigTorchFlame(liteorg);
+
 			return -1;	//continue;
 		}
         else if (!strcmp(currententity->model->name, "progs/wyvflame.mdl"))

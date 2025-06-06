@@ -336,10 +336,6 @@ extern	entity_t		*cl_visedicts[MAX_VISEDICTS];
 extern	int				cl_numstaticbrushmodels;
 extern	entity_t		*cl_staticbrushmodels[MAX_VISEDICTS];
 
-
-
-extern	tagentity_t	 q3player_body, q3player_head;
-
 // model indexes
 typedef	enum modelindex_s
 {
@@ -348,8 +344,6 @@ typedef	enum modelindex_s
 	mi_flame0,
 	mi_flame1,
 	mi_flame2,
-	mi_q3torso,
-	mi_q3head,
 /*
 	mi_vw_light,
 	mi_vw_nail1,

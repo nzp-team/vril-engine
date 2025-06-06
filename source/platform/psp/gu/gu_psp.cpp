@@ -79,24 +79,11 @@ void* framebuffer;
 // Regular globals.
 ScePspRGBA8888 ALIGNED(16)	d_8to24table[palette_size];
 ScePspRGBA8888 ALIGNED(16)	d_8to24tableLM[palette_size];
-ScePspRGBA8888 ALIGNED(16)	d_8to24tableQ2[palette_size];
-ScePspRGBA8888 ALIGNED(16)	d_8to24tableH2[palette_size];
 int reloaded_pallete = 1;
 
 extern cvar_t	r_vsync;
 extern cvar_t	r_dithering;
 
-void VID_ConvectPalette(ScePspRGBA8888 *out, unsigned char* in)
-{
-    // Convert the palette to PSP format.
-	for (ScePspRGBA8888* color = &out[0]; color < &out[palette_size]; ++color)
-	{
-		const unsigned int r = *in++;
-		const unsigned int g = *in++;
-		const unsigned int b = *in++;
-		*color = GU_RGBA(r, g, b, 0xff);
-	}
-}
 void VID_InitPaleteLM()
 {
 	// Convert the palette to PSP format.
@@ -270,8 +257,6 @@ void VID_Init(unsigned char* palette)
 	// Set the palette.
 	VID_SetPalette(palette);
 	VID_InitPaleteLM();
-	VID_ConvectPalette(d_8to24tableQ2, host_q2pal);
-	VID_ConvectPalette(d_8to24tableH2, host_h2pal);
 }
 
 void VID_Shutdown(void)

@@ -27,8 +27,6 @@ int			num_temp_entities;
 entity_t	cl_temp_entities[MAX_TEMP_ENTITIES];
 beam_t		cl_beams[MAX_BEAMS];
 
-model_t		*cl_q3gunshot_mod, *cl_q3teleport_mod;
-
 sfx_t			*cl_sfx_r_exp3;
 
 extern sfx_t			*cl_sfx_step[4];
@@ -54,7 +52,6 @@ CL_ClearTEnts
 void CL_ClearTEnts (void)
 {
 	//cl_bolt1_mod = cl_bolt2_mod = cl_bolt3_mod = cl_beam_mod = NULL;
-	cl_q3gunshot_mod = cl_q3teleport_mod = NULL;
 
 	memset (&cl_beams, 0, sizeof(cl_beams));
 }
@@ -147,8 +144,6 @@ void CL_ParseTEnt (void)
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
-        if (r_part_spikes.value == 2 && !cl_q3gunshot_mod)
-			cl_q3gunshot_mod = Mod_ForName ("progs/bullet.md3", true);
 		R_RunParticleEffect (pos, vec3_origin, 20, 30);
 		//S_StartSound (-1, 0, cl_sfx_wizhit, pos, 1, 1);
 		break;
@@ -157,8 +152,6 @@ void CL_ParseTEnt (void)
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
-        if (r_part_spikes.value == 2 && !cl_q3gunshot_mod)
-			cl_q3gunshot_mod = Mod_ForName ("progs/bullet.md3", true);
 		R_RunParticleEffect (pos, vec3_origin, 226, 20);
 		//S_StartSound (-1, 0, cl_sfx_knighthit, pos, 1, 1);
 		break;
@@ -167,8 +160,6 @@ void CL_ParseTEnt (void)
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
-        if (r_part_spikes.value == 2 && !cl_q3gunshot_mod)
-			cl_q3gunshot_mod = Mod_ForName ("progs/bullet.md3", true);
 		//R00k--start
 		if (r_decal_bullets.value)
 		{
@@ -183,8 +174,6 @@ void CL_ParseTEnt (void)
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
-        if (r_part_spikes.value == 2 && !cl_q3gunshot_mod)
-			cl_q3gunshot_mod = Mod_ForName ("progs/bullet.md3", true);
 		R_RunParticleEffect (pos, vec3_origin, 0, 20);
 
 		//R00k--start
@@ -200,8 +189,6 @@ void CL_ParseTEnt (void)
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
-        if (r_part_gunshots.value == 2 && !cl_q3gunshot_mod)
-			cl_q3gunshot_mod = Mod_ForName ("progs/bullet.md3", true);
 
 		//R00k--start
 		if (r_decal_bullets.value)
@@ -300,8 +287,6 @@ void CL_ParseTEnt (void)
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
-        if (r_part_telesplash.value == 2 && !cl_q3teleport_mod)
-			cl_q3teleport_mod = Mod_ForName ("progs/telep.md3", true);
 		R_TeleportSplash (pos);
 		break;
 

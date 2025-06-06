@@ -909,6 +909,10 @@ void R_RenderBrushPoly (msurface_t *fa)
 
 	c_brush_polys++;
 
+	// cypress -- use our new texflag hack
+	if (fa->flags & TEXFLAG_NODRAW)
+		return;
+	
 	// sky and water use multiple polys per surface,
 	// this makes clipping more tricky, but they don't have LMs so no prob.
 	if (fa->flags & SURF_DRAWSKY)
@@ -934,9 +938,6 @@ void R_RenderBrushPoly (msurface_t *fa)
 	if (verts_count <= 0)
 		return;
 
-	// cypress -- use our new texflag hack
-	if (fa->flags & TEXFLAG_NODRAW)
-		return;
 
 	switch(fa->flags) {
 		case TEXFLAG_REFLECT:
@@ -1162,7 +1163,6 @@ R_DrawBrushModel
 */
 void R_DrawBrushModel (entity_t *e)
 {
-	int			k;
 	vec3_t		mins, maxs;
 	int			i;
 	msurface_t	*psurf;
@@ -1218,19 +1218,22 @@ void R_DrawBrushModel (entity_t *e)
 
 	psurf = &clmodel->surfaces[clmodel->firstmodelsurface];
 
-// calculate dynamic lighting for bmodel if it's not an
-// instanced model
-	if (clmodel->firstmodelsurface != 0/* && !gl_flashblend.value*/)
+	// calculate dynamic lighting for bmodel if it's not an
+	// instanced model
+	// shpuld: remove dynamic lighting stuff for extra cycles
+	// if (clmodel->firstmodelsurface != 0/* && !gl_flashblend.value*/)
+	/*
 	{
 		for (k=0 ; k<MAX_DLIGHTS ; k++)
 		{
 			if ((cl_dlights[k].die < cl.time) ||
-				(!cl_dlights[k].radius))
-				continue;
-
+			(!cl_dlights[k].radius))
+			continue;
+			
 			R_MarkLights (&cl_dlights[k], 1<<k,	clmodel->nodes + clmodel->hulls[0].firstclipnode);
 		}
 	}
+	*/
 
 	sceGumPushMatrix();
 
