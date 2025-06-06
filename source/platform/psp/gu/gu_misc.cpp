@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern "C"
 {
 #include "../../../nzportable_def.h"
-void CL_CopyPlayerInfo (entity_t *ent, entity_t *player);
 }
 
 void GL_InitTextureUsage ();
@@ -45,7 +44,7 @@ void	R_InitOtherTextures (void)
 {
 	sniper_scope = Draw_CachePic ("gfx/hud/scope_256");
 
-	zombie_skins[0][0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, qtrue, GU_LINEAR);
+	zombie_skins[0][0] = loadpcxas4bpp("models/ai/zfull.mdl_0", GU_LINEAR);
 	GL_MarkTextureAsPermanent(zombie_skins[0][0]);
 
 	// PSP PHAT: Only have 1 Zombie skin.. this saves 192kB of VRAM, well worth it.
@@ -54,9 +53,9 @@ void	R_InitOtherTextures (void)
 		zombie_skins[1][0] = zombie_skins[0][0];
 		zombie_skins[1][1] = zombie_skins[0][0];
 	} else {
-		zombie_skins[0][1] = loadtextureimage ("models/ai/zfull.mdl_1", 0, 0, qtrue, GU_LINEAR);
-		zombie_skins[1][0] = loadtextureimage ("models/ai/zfull.mdl_2", 0, 0, qtrue, GU_LINEAR);
-		zombie_skins[1][1] = loadtextureimage ("models/ai/zfull.mdl_3", 0, 0, qtrue, GU_LINEAR);
+		zombie_skins[0][1] = loadpcxas4bpp("models/ai/zfull.mdl_1", GU_LINEAR);
+		zombie_skins[1][0] = loadpcxas4bpp("models/ai/zfull.mdl_2", GU_LINEAR);
+		zombie_skins[1][1] = loadpcxas4bpp("models/ai/zfull.mdl_3", GU_LINEAR);
 		GL_MarkTextureAsPermanent(zombie_skins[0][1]);
 		GL_MarkTextureAsPermanent(zombie_skins[1][0]);
 		GL_MarkTextureAsPermanent(zombie_skins[1][1]);
@@ -268,6 +267,8 @@ void R_InitDecals (void);
 void R_ToggleDecals_f (void);
 void R_ToggleParticles_f (void);
 
+model_t* Mod_FindName(char* name);
+
 void R_Init (void)
 {
 	Cmd_AddCommand ("timerefresh",     R_TimeRefresh_f);
@@ -415,14 +416,8 @@ void R_NewMap (void)
 		LoadMapConfig();
 	}
 
-	// HACK HACK HACK - create two extra entities if drawing the player's multimodel
-	if (r_loadq3player)
-	{
-		memset (&q3player_body, 0, sizeof(tagentity_t));
-		CL_CopyPlayerInfo (&q3player_body.ent, &cl_entities[cl.viewentity]);
-		memset (&q3player_head, 0, sizeof(tagentity_t));
-		CL_CopyPlayerInfo (&q3player_head.ent, &cl_entities[cl.viewentity]);
-	}
+	zfull_mdl = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zfull.mdl"));
+	zcfull_mdl = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zcfull.mdl"));
 }
 
 

@@ -333,8 +333,6 @@ typedef	enum modelindex_s
 	mi_flame0,
 	mi_flame1,
 	mi_flame2,
-	mi_q3torso,
-	mi_q3head,
 /*
 	mi_vw_light,
 	mi_vw_nail1,

@@ -25,18 +25,20 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);
 u32 GL_GetDrawBuffer(void);
 
+#define	MAX_GLTEXTURES	1024
 void GL_Upload8(int texture_index, byte *data, int width, int height);
 void GL_Upload16(int texture_index, byte *data, int width, int height);
 int  GL_LoadTexture(const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level);
 // CLUT4
 int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, byte *data, int filter, qboolean swizzled);
-int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int height, byte *data, const byte *pal, int filter);
+int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int height, byte *data, const byte *pal, int filter, int inpal_bpp, const byte *palhint);
 
 int GL_LoadTextureLM (const char *identifier, int width, int height, byte *data, int bpp, int filter, qboolean update, int forcopy);
 int GL_LoadImages (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp);
 int GL_LoadTexturePixels (byte *data, char *identifier, int width, int height, int mode);
 int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
 int loadskyboxsideimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
+int loadpcxas4bpp (char* filename, int filter);
 int GL_LoadPaletteTexture (const char *identifier, int width, int height, const byte *data, byte *palette, int paltype, qboolean stretch_to_power_of_two, int filter, int mipmap_level);
 
 //Crow_bar
@@ -49,8 +51,6 @@ void swizzle_fast(u8* out, const u8* in, unsigned int width, unsigned int height
 
 #define PAL_RGB  24
 #define PAL_RGBA 32
-#define PAL_Q2   64 //Quake II palette
-#define PAL_H2   65 //Hexen II palette
 
 int GL_LoadPalTex (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, byte *palette, int paltype);
 
@@ -337,8 +337,6 @@ int R_CullBox (vec3_t emins, vec3_t emaxs);
 qboolean R_CullSphere (vec3_t centre, float radius);
 void R_RotateForEntity (entity_t *e, int shadow, unsigned char scale);
 void R_BlendedRotateForEntity (entity_t *e, int shadow, unsigned char scale);
-void R_RotateForViewEntity (entity_t *ent); //clone (R_RotateForEntity)
-void R_RotateForTagEntity (tagentity_t *tagent, md3tag_t *tag, float *m); //for q3 models
 void R_StoreEfrags (efrag_t **ppefrag);
 void D_StartParticles (void);
 // void D_DrawParticle (particle_t *pparticle);
@@ -355,7 +353,6 @@ void R_DrawSkyBox (void);
 void QMB_InitParticles (void);
 void QMB_ClearParticles (void);
 void QMB_DrawParticles (void);
-void QMB_Q3TorchFlame (vec3_t org, float size);
 void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count);
 void QMB_RocketTrail (vec3_t start, vec3_t end, trail_type_t type);
 void QMB_BlobExplosion (vec3_t org);
@@ -374,9 +371,6 @@ void QMB_LightningBeam (vec3_t start, vec3_t end);
 void QMB_EntityParticles (entity_t *ent);
 void QMB_MuzzleFlash (vec3_t org);
 void QMB_MuzzleFlashLG (vec3_t org);
-void QMB_Q3Gunshot (vec3_t org, int skinnum, float alpha);
-void QMB_Q3Teleport (vec3_t org, float alpha);
-void QMB_Q3TorchFlame (vec3_t org, float size);
 
 extern	qboolean	qmb_initialized;
 
@@ -408,7 +402,8 @@ psp_particle* D_CreateBuffer (int size);
 void 	  	  D_DeleteBuffer (psp_particle* vertices);
 int 	      D_DrawParticleBuffered (psp_particle* vertices, particle2_t *pparticle, vec3_t up, vec3_t right, float scale);
 
-
+extern aliashdr_t*	zfull_mdl;
+extern aliashdr_t*	zcfull_mdl;
 extern int			zombie_skins[2][2];
 extern qpic_t*		sniper_scope;
 

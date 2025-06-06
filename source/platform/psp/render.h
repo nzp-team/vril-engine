@@ -41,12 +41,6 @@ typedef struct entity_s
 	vec3_t					msg_angles[2];	// last two updates (0 is newest)
 	vec3_t					angles;
 
-	// LordHavoc: added support for Q2 interpolation
-	int				        draw_lastpose, draw_pose; 	// for interpolation
-	float				    draw_lerpstart; 		    // for interpolation
-	struct model_s			*draw_lastmodel; 		    // for interpolation
-    // LordHavoc: added support for Q2 interpolation
-
 	// Tomaz - QC Alpha Scale Glow Begin
     float		renderamt;
     float		rendermode;
@@ -60,7 +54,6 @@ typedef struct entity_s
 	int						frame;
 	float					syncbase;		// for client-side animations
 	byte					*colormap;
-    int						examp;		// for Alias models
 	int						effects;		// light, particals, etc
 	int						skinnum;		// for Alias models
 	int						visframe;		// last frame this entity was
@@ -76,57 +69,31 @@ typedef struct entity_s
 
 	int						dlightframe;	// dynamic lighting
 	int						dlightbits;
-    // light lerping - pox@planetquake.com
-    float    last_shadelight;
 
    int               last_frame;
    int               current_frame;
    float             interpolation;
 
-   qboolean			noshadow;
-
-   int						keynum;
-
-   float	bonecontrols[4];
-
-   int						oldframe;
-   float					framelerp;
-
     	// FIXME: could turn these into a union
-	int						trivial_accept;
 	struct mnode_s			*topnode;		// for bmodels, first world node
 
 	int		modelindex;
-	vec3_t	trail_origin;
-	qboolean traildrawn;
-
-	float				lastShadeLight;
 
 	float                   frame_start_time;
     float                   frame_interval;
     int                     pose1;
     int                     pose2;
 
-    int                     z_head;
-    int                     z_larm;
-    int                     z_rarm;
+    short                     z_head;
+    short                     z_larm;
+    short                     z_rarm;
 
+	// for batch drawing entities  
+	short next_visedict;
     // fenix@io.com: model transform interpolation
     //  that splits bmodel, or NULL if
     //  not split
 } entity_t;
-
-// md3 related
-typedef struct tagentity_s
-{
-	entity_t	ent;
-
-	float		tag_translate_start_time;
-	vec3_t		tag_pos1, tag_pos2;
-
-	float		tag_rotate_start_time[3];
-	vec3_t		tag_rot1[3], tag_rot2[3];
-} tagentity_t;
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct

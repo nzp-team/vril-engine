@@ -391,9 +391,6 @@ void QMB_LightningBeam (vec3_t start, vec3_t end);
 void QMB_EntityParticles (entity_t *ent);
 void QMB_MuzzleFlash (vec3_t org);
 void QMB_RayFlash (vec3_t org, float weapon);
-void QMB_Q3Gunshot (vec3_t org, int skinnum, float alpha);
-void QMB_Q3Teleport (vec3_t org, float alpha);
-void QMB_Q3TorchFlame (vec3_t org, float size);
 
 void R_SpawnDecal (vec3_t center, vec3_t normal, vec3_t tangent, int tex, int size, int isbsp);
 void R_SpawnDecalStatic (vec3_t org, int tex, int size);

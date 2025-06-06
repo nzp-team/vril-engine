@@ -112,9 +112,6 @@ typedef	enum
     pd_billboard_vel,
 	pd_hide,
 	pd_beam,
-    pd_q3flame,
-	pd_q3gunshot,
-	pd_q3teleport
 } part_draw_t;
 
 typedef	struct particle_type_s
@@ -551,10 +548,10 @@ void QMB_InitParticles (void)
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
-	
+
 	//old: ADD_PARTICLE_TYPE(p_q3flame, pd_q3flame, GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA, ptex_q3flame, 204, 0, 0, pm_static, -1);
 	ADD_PARTICLE_TYPE(p_q3flame, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_q3flame, 180, 0.66, 0, pm_nophysics, 0);
-
+	
 	loading_cur_step++;
 	strcpy(loading_name, "particles");
 	SCR_UpdateScreen ();
@@ -1585,103 +1582,6 @@ void QMB_DrawParticles (void)
 					DRAW_PARTICLE_BILLBOARD(ptex, p, velcoord);
 				}
 				break;
-
-			/*case pd_q3flame:
-				ptex = &particle_textures[pt->texture];
-				GL_Bind (ptex->texnum);
-				for (p = pt->start ; p ; p = p->next)
-				{
-					float	varray_vertex[16];
-					float	xhalf = p->size / 2.0, yhalf = p->size;
-				//	vec3_t	org, v, end, normal;
-
-					if (particle_time < p->start || particle_time >= p->die)
-						continue;
-
-					glDisable (GL_CULL_FACE);
-
-					for (j=0 ; j<2 ; j++)
-					{
-						glPushMatrix ();
-
-		                glTranslatef(p->org[0], p->org[1], p->org[2]);
-
-						//glRotatef (!j ? 45 : -45, 0, 0, 1);
-
-		                // naievil -- I don't know the equivalent of this
-		                //sceGumRotateZ(!j ? 45 : -45 * (M_PI / 180.0f));
-
-						glColor4f(p->color[0]/255, p->color[1]/255, p->color[2]/255, p->color[3]/255);
-
-				// sigh. The best would be if the flames were always orthogonal to their surfaces
-				// but I'm afraid it's impossible to get that work (w/o progs modification of course)
-						varray_vertex[0] = 0;
-						varray_vertex[1] = xhalf;
-						varray_vertex[2] = -yhalf;
-						varray_vertex[4] = 0;
-						varray_vertex[5] = xhalf;
-						varray_vertex[6] = yhalf;
-						varray_vertex[8] = 0;
-						varray_vertex[9] = -xhalf;
-						varray_vertex[10] = yhalf;
-						varray_vertex[12] = 0;
-						varray_vertex[13] = -xhalf;
-						varray_vertex[14] = -yhalf;
-
-	                    struct vertex
-			            {
-	                    float u, v;
-						float x, y, z;
-			            };
-
-						struct vertex* const out = (struct vertex*)(malloc(sizeof(struct vertex) * 4));
-
-						out[0].u = ptex->coords[p->texindex][0];
-						out[0].v = ptex->coords[p->texindex][3];
-						out[0].x = varray_vertex[0];
-	                    out[0].y = varray_vertex[1];
-	                    out[0].z = varray_vertex[2];
-
-
-						out[1].u = ptex->coords[p->texindex][0];
-						out[1].v = ptex->coords[p->texindex][1];
-						out[1].x = varray_vertex[4];
-	                    out[1].y = varray_vertex[5];
-	                    out[1].z = varray_vertex[6];
-
-
-						out[2].u = ptex->coords[p->texindex][2];
-						out[2].v = ptex->coords[p->texindex][1];
-						out[2].x = varray_vertex[8];
-	                    out[2].y = varray_vertex[9];
-	                    out[2].z = varray_vertex[10];
-
-
-						out[3].u = ptex->coords[p->texindex][2];
-						out[3].v = ptex->coords[p->texindex][3];
-						out[3].x = varray_vertex[12];
-	                    out[3].y = varray_vertex[13];
-	                    out[3].z = varray_vertex[14];
-
-						glBegin (GL_TRIANGLE_FAN);
-						glVertex4fv (out);
-						glEnd ();
-						glPopMatrix ();
-					}
-					glEnable (GL_CULL_FACE);
-	                glColor4f(1,1,1,1); //return to normal color
-				}
-				break;
-
-			case pd_q3gunshot:
-				for (p = pt->start ; p ; p = p->next)
-					QMB_Q3Gunshot (p->org, (int)p->texindex, (float)p->color[3] / 255.0);
-				break;
-
-			case pd_q3teleport:
-				for (p = pt->start ; p ; p = p->next)
-					QMB_Q3Teleport (p->org, (float)p->color[3] / 255.0);
-				break;*/
 			default:
 					//assert (!"QMB_DrawParticles: unexpected drawtype");
 					break;
@@ -2550,19 +2450,6 @@ void QMB_BigTorchFlame (vec3_t org)
 		AddParticle (p_torch_flame, org, 2, 7, 0.5, NULL, zerodir);
 }
 
-void QMB_Q3TorchFlame (vec3_t org, float size)
-{
-	static double flametime = 0;
-
-	if (flametime + 0.125 < cl.time || flametime >= cl.time)
-		flametime = cl.time;
-	else
-		return;
-
-	if (fabs(cl.ctime - cl.oldtime))
-		AddParticle (p_q3flame, org, 1, size, 0.25, NULL, zerodir);
-}
-
 void QMB_ShamblerCharge (vec3_t org)
 {
 	vec3_t	pos, vec, dir;
@@ -2728,65 +2615,6 @@ void QMB_LightningBeam (vec3_t start, vec3_t end)
 		}
 	}
 }
-
-#if 0
-void R_DrawQ3Model (entity_t *ent);
-
-void QMB_Q3Gunshot (vec3_t org, int skinnum, float alpha)
-{
-	vec3_t		neworg, normal, v, newend;
-	entity_t	*ent;
-	extern model_t *cl_q3gunshot_mod;
-
-	if (!(ent = CL_NewTempEntity()))
-		return;
-
-	VectorCopy (org, ent->origin);
-	ent->model = cl_q3gunshot_mod;
-
-	VectorCopy (cl_entities[cl.viewentity].origin, neworg);
-	VectorSubtract (ent->origin, neworg, v);
-	VectorScale (v, 2, v);
-	VectorAdd (neworg, v, newend);
-
-	if (TraceLineN(neworg, newend, newend, normal))
-		vectoangles (normal, ent->angles);
-
-	ent->skinnum = skinnum;
-	ent->rendermode = TEX_ADDITIVE;
-	ent->renderamt = alpha;
-
-	R_DrawQ3Model (ent);
-}
-
-void QMB_Q3Teleport (vec3_t org, float alpha)
-{
-	entity_t	*ent;
-	extern model_t *cl_q3teleport_mod;
-
-	if (!(ent = CL_NewTempEntity()))
-		return;
-
-	VectorCopy (org, ent->origin);
-	ent->model = cl_q3teleport_mod;
-	ent->rendermode = TEX_ADDITIVE;
-	ent->renderamt = alpha;
-
-	R_DrawQ3Model (ent);
-}
-
-
-#else 
-void QMB_Q3Gunshot (vec3_t org, int skinnum, float alpha)
-{
-	Con_Printf("Q3 drawing is not enabled!\n");
-}
-
-void QMB_Q3Teleport (vec3_t org, float alpha)
-{
-	Con_Printf("Q3 drawing is not enabled!\n");
-}
-#endif
 
 
 #define NUMVERTEXNORMALS	162

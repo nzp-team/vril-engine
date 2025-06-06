@@ -59,10 +59,6 @@ cvar_t	in_anub_mode = {"in_anub_mode", "0", true};
 //=================================================//
 modelindex_t		cl_modelindex[NUM_MODELINDEX]; //
 char				*cl_modelnames[NUM_MODELINDEX];//
-												   //
-#ifdef __PSP__
-tagentity_t			q3player_body, q3player_head;  //
-#endif // __PSP__
 //=================================================//
 client_static_t	cls;
 client_state_t	cl;
@@ -339,43 +335,6 @@ void SetPal (int i)
 	}
 #endif
 }
-
-#ifdef __PSP__
-void CL_CopyPlayerInfo (entity_t *ent, entity_t *player)
-{
-	memcpy_vfpu(&ent->baseline, &player->baseline, sizeof(entity_state_t));
-
-	ent->msgtime = player->msgtime;
-	memcpy_vfpu(ent->msg_origins, player->msg_origins, sizeof(ent->msg_origins));
-	VectorCopy (player->origin, ent->origin);
-	memcpy_vfpu(ent->msg_angles, player->msg_angles, sizeof(ent->msg_angles));
-	VectorCopy (player->angles, ent->angles);
-
-	ent->model = (ent == &q3player_body.ent) ? cl.model_precache[cl_modelindex[mi_q3torso]] : cl.model_precache[cl_modelindex[mi_q3head]];
-
-	ent->efrag = player->efrag;
-
-	ent->frame = player->frame;
-	ent->syncbase = player->syncbase;
-	ent->colormap = player->colormap;
-	ent->effects = player->effects;
-	ent->skinnum = player->skinnum;
-	ent->visframe = player->visframe;
-	ent->dlightframe = player->dlightframe;
-	ent->dlightbits = player->dlightbits;
-
-	ent->trivial_accept = player->trivial_accept;
-	ent->topnode = player->topnode;
-
-	ent->modelindex = (ent == &q3player_body.ent) ? cl_modelindex[mi_q3torso] : cl_modelindex[mi_q3head];
-
-	ent->noshadow = player->noshadow;
-
-	ent->rendermode = player->rendermode;
-    ent->renderamt = player->renderamt;
-    //ent->rendercolor = player->rendercolor;
-}
-#endif // __PSP__
 
 /*
 ===============
