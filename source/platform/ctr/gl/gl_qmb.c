@@ -68,6 +68,7 @@ typedef	enum
 	p_muzzleflash,
 	p_muzzleflash2,
 	p_muzzleflash3,
+	p_q3flame,
 	num_particletypes
 } part_type_t;
 
@@ -202,6 +203,10 @@ static byte *ColorForParticle (part_type_t type)
 	case p_smoke:
 		color[0] = color[1] = color[2] = 128;
 		color[3] = 64;
+		break;
+
+	case p_q3flame:
+		color[0] = color[1] = color[2] = 255;
 		break;
 
 	case p_fire:
@@ -543,6 +548,9 @@ void QMB_InitParticles (void)
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
+
+	//old: ADD_PARTICLE_TYPE(p_q3flame, pd_q3flame, GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA, ptex_q3flame, 204, 0, 0, pm_static, -1);
+	ADD_PARTICLE_TYPE(p_q3flame, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_q3flame, 180, 0.66, 0, pm_nophysics, 0);
 	
 	loading_cur_step++;
 	strcpy(loading_name, "particles");
@@ -1843,6 +1851,18 @@ void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int col, int count)
 		color[2] = 26;
 		AddParticle (p_chunk, org, 1, 1, 0.75, color, zerodir);
 		AddParticle (p_spark, org, 12, 75, 0.4, color, zerodir);
+		return;
+	}
+	else if(col == 111) //we will use this color for flames
+	{
+		color[0] = color[1] = color[2] = 255;
+		AddParticle (p_q3flame, org, 3, 3, 2, color, dir);
+		return;
+	}
+	else if(col == 112) //we will use this color for big flames
+	{
+		color[0] = color[1] = color[2] = 255;
+		AddParticle (p_q3flame, org, 3, 6, 2, color, dir);
 		return;
 	}
 
