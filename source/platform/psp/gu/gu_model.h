@@ -391,9 +391,7 @@ typedef enum
 {
 mod_brush,
 mod_sprite,
-mod_alias,
-mod_halflife,
-mod_md3
+mod_alias
 }
 modtype_t;
 
@@ -497,124 +495,6 @@ typedef struct
 
 #define ALIASTYPE_MDL 1
 #define ALIASTYPE_MD2 2
-
-//==============================================================================
-//===================================Q3 Models==================================
-//==============================================================================
-
-#define MD3IDHEADER		(('3'<<24)+('P'<<16)+('D'<<8)+'I')
-#define	MD3_VERSION	15
-
-typedef struct
-{
-	int		ident;
-	int		version;
-	char		name[MAX_QPATH];
-	int      	flags;
-	int		numframes;
-	int		numtags;
-	int		numsurfs;
-	int		numskins;
-	int		ofsframes;
-	int		ofstags;
-	int		ofssurfs;
-	int		ofsend;
-} md3header_t;
-
-typedef struct
-{
-	vec3_t		mins, maxs;
-	vec3_t		pos;
-	float		radius;
-	char		name[16];
-} md3frame_t;
-
-typedef struct
-{
-	char		name[MAX_QPATH];
-	vec3_t		pos;
-	vec3_t		rot[3];
-} md3tag_t;
-
-typedef struct
-{
-	int		ident;
-	char		name[MAX_QPATH];
-	int		flags;
-	int		numframes;
-	int		numshaders;
-	int		numverts;
-	int		numtris;
-	int		ofstris;
-	int		ofsshaders;
-	int		ofstc;
-	int		ofsverts;
-	int		ofsend;
-} md3surface_t;
-
-typedef struct
-{
-	char		name[MAX_QPATH];
-	int		index;
-} md3shader_t;
-
-typedef struct
-{
-	char		name[MAX_QPATH];
-	int		index;
-	int		gl_texnum, fb_texnum;
-} md3shader_mem_t;
-
-typedef struct
-{
-	int		indexes[3];
-} md3triangle_t;
-
-typedef struct
-{
-	float		s, t;
-} md3tc_t;
-
-typedef struct
-{
-	short		vec[3];
-	unsigned short	normal;
-} md3vert_t;
-
-typedef struct
-{
-	vec3_t		vec;
-	vec3_t		normal;
-	byte		anorm_pitch, anorm_yaw;
-	unsigned short	oldnormal;	// needed for normal lighting
-} md3vert_mem_t;
-
-#define	MD3_XYZ_SCALE	(1.0 / 64)
-
-#define	MAXMD3FRAMES	1024
-#define	MAXMD3TAGS	16
-#define	MAXMD3SURFS	32
-#define	MAXMD3SHADERS	256
-#define	MAXMD3VERTS	4096
-#define	MAXMD3TRIS	8192
-
-typedef struct animdata_s
-{
-	int	offset;
-	int	num_frames;
-	int	loop_frames;
-	float	interval;
-} animdata_t;
-
-typedef enum animtype_s
-{
-	both_death1, both_death2, both_death3, both_dead1, both_dead2, both_dead3,
-	torso_attack, torso_attack2, torso_stand, torso_stand2,
-	legs_walk,legs_run, legs_idle,
-	NUM_ANIMTYPES
-} animtype_t;
-
-extern	animdata_t	anims[NUM_ANIMTYPES];
 
 //==============================================================================
 

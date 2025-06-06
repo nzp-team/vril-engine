@@ -54,8 +54,6 @@ jmp_buf 	host_abortserver;
 
 byte		*host_basepal;
 byte		*host_colormap;
-byte		*host_q2pal;
-byte		*host_h2pal;
 
 cvar_t	host_framerate = {"host_framerate","0"};	// set for slow motion
 cvar_t	host_speeds = {"host_speeds","0"};			// set for running times
@@ -923,15 +921,6 @@ void Host_Init (quakeparms_t *parms)
 		if (!host_colormap)
 			Sys_Error ("Couldn't load gfx/colormap.lmp");
 
-#ifdef __PSP__
-		host_q2pal = (byte *)COM_LoadHunkFile ("gfx/q2pal.lmp");
-		if (!host_q2pal)
-			Sys_Error ("Couldn't load gfx/q2pal.lmp");
-
-		host_h2pal = (byte *)COM_LoadHunkFile ("gfx/h2pal.lmp");
-		if (!host_h2pal)
-			Sys_Error ("Couldn't load gfx/h2pal.lmp");
-#endif // __PSP__
 		VID_Init (host_basepal);
 		Draw_Init ();
 		SCR_Init ();
