@@ -46,6 +46,24 @@ jobs:
         with:
           name: ctr-nzp-3dsx
           path: ./build/3ds/bin/nzportable.3dsx
+  Compile-TNS:
+    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    container:
+      image: bensuperpc/ndless:latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Build with Ndless SDK
+        working-directory: ./
+        run: |
+          make -f Makefile.nspire WERROR=1
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nspire-tns
+          path: ./build/nspire/bin/nZP.tns
   Pull-Request-Test-PSP1000:
     if: github.event_name == 'pull_request'
     name: PSP-1000 Pull Request Tests

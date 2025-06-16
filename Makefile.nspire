@@ -90,7 +90,7 @@ OBJS = $(patsubst %.c, %.o, $(COMMON_OBJS))
 OBJS += $(patsubst %.S, %.o, $(shell find ./source/platform/nspire -name \*.S))
 
 EXE = nZP
-DISTDIR = .
+DISTDIR = build/nspire/bin
 vpath %.tns $(DISTDIR)
 vpath %.elf $(DISTDIR)
 
@@ -116,6 +116,7 @@ $(EXE).tns: $(EXE).elf
 	$(GENZEHN) --input $^ --output $@.zehn $(ZEHNFLAGS)
 	make-prg $@.zehn $@
 	rm $@.zehn
+	mv $(EXE).tns $(DISTDIR)
 
 clean:
 	rm -f $(OBJS) $(DISTDIR)/$(EXE).tns $(DISTDIR)/$(EXE).elf $(DISTDIR)/$(EXE).zehn
