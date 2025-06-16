@@ -61,7 +61,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <math.h>
 #include <stdarg.h>
 #include <setjmp.h>
-#include "platform_nspire/nspire_math.h"
+#include "platform/nspire/nspire_math.h"
 #include <ctype.h>
 #undef atof
 double atof( const char *str );
@@ -275,7 +275,7 @@ typedef struct
 #include RENDERER_FILE(model.h)
 
 #ifdef __NSPIRE__ 
-#include "platform_nspire/d_iface.h"
+#include "platform/nspire/d_iface.h"
 #endif // __NSPIRE__
 
 #include "input.h"
