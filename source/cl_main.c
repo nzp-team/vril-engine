@@ -54,9 +54,7 @@ cvar_t	m_forward = {"m_forward","1", true};
 cvar_t	m_side = {"m_side","0.8", true};
 
 cvar_t	in_disable_analog = {"in_disable_analog", "0", true};
-cvar_t	in_analog_strafe = {"in_analog_strafe", "0", true};
-cvar_t  in_x_axis_adjust = {"in_x_axis_adjust", "0", true};
-cvar_t  in_y_axis_adjust = {"in_y_axis_adjust", "0", true};
+cvar_t	in_anub_mode = {"in_anub_mode", "0", true};
 
 //=================================================//
 modelindex_t		cl_modelindex[NUM_MODELINDEX]; //
@@ -1088,9 +1086,7 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&in_tolerance);
 	Cvar_RegisterVariable (&in_acceleration);
 	Cvar_RegisterVariable (&in_disable_analog);
-	Cvar_RegisterVariable (&in_analog_strafe);
-	Cvar_RegisterVariable (&in_x_axis_adjust);
-	Cvar_RegisterVariable (&in_y_axis_adjust);
+	Cvar_RegisterVariable (&in_anub_mode);
 	
 #ifdef __WII__
 	Cvar_RegisterVariable (&ads_center);

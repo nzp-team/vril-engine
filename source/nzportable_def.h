@@ -34,20 +34,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define EXPAND(x) x
 #define CONCAT(n1, n2, n3, n4) STRINGIFY_MACRO(EXPAND(n1)EXPAND(n2)EXPAND(n3)EXPAND(n4))
 #define CONCAT8(n1, n2, n3, n4, n5, n6, n7, n8) STRINGIFY_MACRO(EXPAND(n1)EXPAND(n2)EXPAND(n3)EXPAND(n4)EXPAND(n5)EXPAND(n6)EXPAND(n7)EXPAND(n8))
-#define PLATFORM_FILE(file) CONCAT(platform_,PLATFORM_DIRECTORY,/,file)
-#define RENDERER_FILE(file) CONCAT8(platform_,PLATFORM_DIRECTORY,/,PLATFORM_RENDERER,/,PLATFORM_RENDERER,_,file)
+#define PLATFORM_FILE(file) CONCAT(platform/,PLATFORM_DIRECTORY,/,file)
+#define RENDERER_FILE(file) CONCAT8(platform/,PLATFORM_DIRECTORY,/,PLATFORM_RENDERER,/,PLATFORM_RENDERER,_,file)
 
 #ifndef __PSP__
 #define qtrue 1
 #define qfalse 0
-#endif // __PSP__
-
-#ifdef __PSP__
-#define PSP_MODEL_PHAT		0
-#define PSP_MODEL_SLIM 		1
-#define PSP_MODEL_PSVITA 	2
-
-extern int psp_system_model;
 #endif // __PSP__
 
 #define	QUAKE_GAME			// as opposed to utilities
