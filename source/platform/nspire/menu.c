@@ -314,7 +314,7 @@ void M_Main_Draw (void)
 
 	int y;
 	int i = 0;
-	for (y = 22, i = 0; i <= MAIN_ITEMS; y = y + 22, i++)
+	for (y = 22, i = 0; i < MAIN_ITEMS; y = y + 22, i++)
 	{
 		Draw_String (16, y, main_menu_items[i]);
 	}
@@ -1276,7 +1276,8 @@ void M_UnbindCommand (char *command)
 
 void M_Keys_Draw (void)
 {
-	int		i, l;
+	int		l;
+	unsigned i;
 	int		keys[2];
 	char	*name;
 	int		x, y;
@@ -1365,7 +1366,7 @@ void M_Keys_Key (int k)
 	case K_RIGHTARROW:
 		S_LocalSound ("misc/menu1.wav");
 		keys_cursor++;
-		if (keys_cursor >= NUMCOMMANDS)
+		if (keys_cursor >= (int)NUMCOMMANDS)
 			keys_cursor = 0;
 		break;
 

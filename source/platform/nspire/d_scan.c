@@ -764,41 +764,49 @@ void D_DrawZSpans (espan_t *pspan)
 				izi += izistep;
 				*pdest = ltemp;
 				pdest++;
+				/* fall through */
 			case 7:
 				ltemp = izi >> 16;
 				izi += izistep;
 				*pdest = ltemp;
 				pdest++;
+				/* fall through */
 			case 6:
 				ltemp = izi >> 16;
 				izi += izistep;
 				*pdest = ltemp;
 				pdest++;
+				/* fall through */
 			case 5:
 				ltemp = izi >> 16;
 				izi += izistep;
 				*pdest = ltemp;
 				pdest++;
+				/* fall through */
 			case 4:
 				ltemp = izi >> 16;
 				izi += izistep;
 				*pdest = ltemp;
 				pdest++;
+				/* fall through */
 			case 3:
 				ltemp = izi >> 16;
 				izi += izistep;
 				*pdest = ltemp;
 				pdest++;
+				/* fall through */
 			case 2:
 				ltemp = izi >> 16;
 				izi += izistep;
 				*pdest = ltemp;
 				pdest++;
+				/* fall through */
 			case 1:
 				ltemp = izi >> 16;
 				izi += izistep;
 				*pdest = ltemp;
 				pdest++;
+				/* fall through */
 			case 0:
 				;
 			}

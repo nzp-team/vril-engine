@@ -704,7 +704,8 @@ float MSG_ReadFloat (void)
 char *MSG_ReadString (void)
 {
 	static char     string[2048];
-	int             l,c;
+	int             c;
+	unsigned 		l;
 	
 	l = 0;
 	do
@@ -1312,7 +1313,8 @@ needed.  This is for the convenience of developers using ISDN from home.
 void COM_CopyFile (char *netpath, char *cachepath)
 {
 	int             in, out;
-	int             remaining, count;
+	int             count;
+	unsigned 		remaining;
 	char    buf[4096];
 	
 	remaining = Sys_FileOpenRead (netpath, &in);            
@@ -1711,7 +1713,7 @@ void COM_AddGameDirectory (char *dir)
 //
 	/*printf("G+++AA\n");*/
 
-	sprintf (pakfile, "%s/nzp.pak.tns", dir, i);
+	sprintf (pakfile, "%s/nzp.pak.tns", dir);
 	printf("G+++AAA %s\n", pakfile );
 
 	pak = COM_LoadPackFile (pakfile);

@@ -419,8 +419,8 @@ void Mod_LoadTextures (lump_t *l)
 
 			if (data) {
 
-				int converted_counter = 0;
-				for (int i = 0; i < mt->width * mt->height * 4; i+= 4) {
+				unsigned converted_counter = 0;
+				for (unsigned i = 0; i < mt->width * mt->height * 4; i+= 4) {
 					converted_pixels[converted_counter] = findclosestpalmatch(data[i], data[i + 1], data[i + 2], data[i + 3]);
 					converted_counter++;
 				}
@@ -433,8 +433,8 @@ void Mod_LoadTextures (lump_t *l)
 				//	converted_counter++;
 				//}
 
-				for (int i = 0; i < mt->height/2; i++) { // 64x64 projection
-					for (int j = 0; j < mt->width; j++) {
+				for (unsigned i = 0; i < mt->height/2; i++) { // 64x64 projection
+					for (unsigned j = 0; j < mt->width; j++) {
 						//Con_Printf("index: %d\n", i * (mt->width) + j * (mt->width / 64));
 						converted_pixels[converted_counter] = converted_pixels[(i * (mt->width) + j * (mt->width / 64) << 1)];
 						converted_counter++;
@@ -442,8 +442,8 @@ void Mod_LoadTextures (lump_t *l)
 						converted_counter++;
 					}
 				}
-				for (int i = 0; i < mt->height/4; i++) { // 32x32 projection
-					for (int j = 0; j < mt->width/2; j++) {
+				for (unsigned i = 0; i < mt->height/4; i++) { // 32x32 projection
+					for (unsigned j = 0; j < mt->width/2; j++) {
 						converted_pixels[converted_counter] = converted_pixels[(i * (mt->width) + j * (mt->width / 32) << 1)];
 						converted_counter++;
 						converted_pixels[converted_counter] = converted_pixels[(i * (mt->width) + j * (mt->width / 32) << 1)];
@@ -451,8 +451,8 @@ void Mod_LoadTextures (lump_t *l)
 					}
 				}
 
-				for (int i = 0; i < mt->height/8; i++) { // 16x16 projection 
-					for (int j = 0; j < mt->width/4; j++) {
+				for (unsigned i = 0; i < mt->height/8; i++) { // 16x16 projection 
+					for (unsigned j = 0; j < mt->width/4; j++) {
 						converted_pixels[converted_counter] = converted_pixels[(i * (mt->width) + j * (mt->width / 16)) << 1];
 						converted_counter++;
 						converted_pixels[converted_counter] = converted_pixels[(i * (mt->width) + j * (mt->width / 16)) << 1];
@@ -726,7 +726,7 @@ void Mod_LoadTexinfo (lump_t *l)
 {
 	texinfo_t *in;
 	mtexinfo_t *out;
-	int 	i, j, count;
+	int 	i, j, k, count;
 	int		miptex;
 	float	len1, len2;
 
@@ -741,8 +741,11 @@ void Mod_LoadTexinfo (lump_t *l)
 
 	for ( i=0 ; i<count ; i++, in++, out++)
 	{
-		for (j=0 ; j<8 ; j++)
-			out->vecs[0][j] = LittleFloat (in->vecs[0][j]);
+		for (j = 0; j < 2; j++) {
+		    for (k = 0; k < 4; k++) {
+		        out->vecs[j][k] = LittleFloat(in->vecs[j][k]);
+		    }
+		}
 		len1 = Length (out->vecs[0]);
 		len2 = Length (out->vecs[1]);
 		len1 = (len1 + len2)/2;
@@ -1305,7 +1308,7 @@ void Mod_LoadBrushModel (model_t *mod, void *buffer)
 // swap all the lumps
 	mod_base = (byte *)header;
 
-	for (i=0 ; i<sizeof(dheader_t)/4 ; i++)
+	for (i=0 ; i < (int)sizeof(dheader_t)/4 ; i++)
 		((int *)header)[i] = LittleLong ( ((int *)header)[i]);
 
 // load into heap

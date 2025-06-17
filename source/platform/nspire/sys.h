@@ -68,3 +68,4 @@ void Sys_SetFPCW (void);
 
 void Sys_CaptureScreenshot(void);
 
+void Sys_PrintSystemInfo(void);

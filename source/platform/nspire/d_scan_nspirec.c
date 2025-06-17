@@ -236,7 +236,7 @@ void draw_span_nspire_fw_c( draw_span8_nspire_t *ps_dset )
 	int spancount;
 	fixed16_t f16_psnext;
 	fixed16_t f16_ptnext;
-	register int f16_rps, f16_rpt, f16_sstep, f16_tstep;
+	register int f16_rps = 0, f16_rpt = 0, f16_sstep = 0, f16_tstep = 0;
 
 	ps_dset->f16_s = 0;
 	ps_dset->f16_t = 0;
@@ -316,7 +316,7 @@ void draw_span_nspire_bw_c( draw_span8_nspire_t *ps_dset )
 	int spancount;
 	fixed16_t f16_psnext;
 	fixed16_t f16_ptnext;
-	register int f16_rps, f16_rpt, f16_sstep, f16_tstep;
+	register int f16_rps = 0, f16_rpt = 0, f16_sstep = 0, f16_tstep = 0;
 
 	ps_dset->f16_s = 0;
 	ps_dset->f16_t = 0;

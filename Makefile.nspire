@@ -10,6 +10,16 @@ GCCFLAGS = -W -marm
 LDFLAGS =
 ZEHNFLAGS = --name "nZP"
 
+ifeq ($(WERROR),1)
+GCCFLAGS += -Werror
+endif
+
+ifeq ($(FANALYZER),1)
+GCCFLAGS+= -fanalyzer
+endif
+
+GCCFLAGS += -Wno-missing-field-initializers
+
 GCCFLAGS += -O2 -DOLD_SCREEN_API -fomit-frame-pointer -D__NSPIRE__ -DPLATFORM_DIRECTORY="nspire" -DPLATFORM_RENDERER="cpu" 
 
 COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \

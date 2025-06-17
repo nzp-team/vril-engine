@@ -49,7 +49,7 @@ char *PF_VarString (int	first)
 	{
 		maxlen = PR_MAX_TEMPSTRING - strlen(pr_varstring_temp) - 1;	// -1 is EndOfString
 		add = G_STRING((OFS_PARM0+i*3));
-		if (maxlen > strlen(add))
+		if (maxlen > (int)strlen(add))
 		{
 			strcat (pr_varstring_temp, add);
 		}
@@ -1310,7 +1310,7 @@ void PF_strcat (void)
 	maxlen = PR_MAX_TEMPSTRING - strlen(pr_string_temp) - 1;	// -1 is EndOfString
 	if (maxlen > 0)
 	{
-		if (maxlen > strlen(s2))
+		if (maxlen > (int)strlen(s2))
 		{
 			strcat (pr_string_temp, s2);
 		}

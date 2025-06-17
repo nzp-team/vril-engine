@@ -534,7 +534,8 @@ void Host_Loadgame_f (void)
 	char	mapname[MAX_QPATH];
 	float	time, tfloat;
 	char	str[32768], *start;
-	int		i, r;
+	int		r;
+	unsigned i;
 	edict_t	*ent;
 	int		entnum;
 	int		version;

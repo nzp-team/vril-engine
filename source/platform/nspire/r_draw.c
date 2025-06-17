@@ -481,7 +481,7 @@ void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 	edge->u = ( f16_u << 4 ) + 0xFFFFF;
 #endif
 
-	if( edge->u_step == 0x80000000 && v2 != v )
+	if( edge->u_step == (fixed16_t)0x80000000 && v2 != v )
 	{
 		edge = edge;
 	}
@@ -541,7 +541,8 @@ void test_float32_shift( float *f, int shift )
 	int i_float;
 	int i_e;
 
-	i_float = *(int*)f;
+    memcpy(&i_float, f, sizeof(i_float));  // safe cast
+	// i_float = *(int*)f;
 	i_e = ( i_float >> 23 ) & 0xff;
 	i_e += shift;
 	if( i_e > 0xfe )
@@ -870,7 +871,7 @@ void R_RenderFace (msurface_t *fa, int clipflags)
 				if (r_pedge->cachededgeoffset & FULLY_CLIPPED_CACHED)
 				{
 					if ((r_pedge->cachededgeoffset & FRAMECOUNT_MASK) ==
-						r_framecount)
+						(unsigned)r_framecount)
 					{
 						r_lastvertvalid = false;
 						continue;
@@ -914,7 +915,7 @@ void R_RenderFace (msurface_t *fa, int clipflags)
 				if (r_pedge->cachededgeoffset & FULLY_CLIPPED_CACHED)
 				{
 					if ((r_pedge->cachededgeoffset & FRAMECOUNT_MASK) ==
-						r_framecount)
+						(unsigned)r_framecount)
 					{
 						r_lastvertvalid = false;
 						continue;

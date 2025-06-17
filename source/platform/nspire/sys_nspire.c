@@ -558,7 +558,7 @@ void main_s( int argc, char **argv )
 	}
 	parms.basedir = argv[ 0 ];
 
-	for( i = 0; i < parms.memsize; i++ )
+	for( i = 0; i < (unsigned)parms.memsize; i++ )
 	{
 		( ( unsigned char * )parms.membase )[ i ] = 0;
 	}

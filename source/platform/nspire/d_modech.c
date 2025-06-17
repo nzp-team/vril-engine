@@ -93,7 +93,7 @@ void D_ViewChanged (void)
 			r_refdef.vrectbottom - (d_pix_max << d_y_aspect_shift);
 
 	{
-		int		i;
+		unsigned		i;
 
 		for (i=0 ; i<vid.height; i++)
 		{

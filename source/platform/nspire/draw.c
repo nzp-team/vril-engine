@@ -342,7 +342,7 @@ int getTextWidth(char *str, float scale)
 {
 	int width = 0;
 
-    for (int i = 0; i < strlen(str); i++) {
+    for (size_t i = 0; i < strlen(str); i++) {
         // Hooray for variable-spacing!
 		if (str[i] == ' ')
 			width += 4 * (int)scale;
@@ -1384,7 +1384,7 @@ Draw_FadeScreen
 */
 void Draw_FadeScreen (void)
 {
-	int			x,y;
+	unsigned			x,y,t;
 	byte		*pbuf;
 
 	VID_UnlockBuffer ();
@@ -1393,7 +1393,6 @@ void Draw_FadeScreen (void)
 
 	for (y=0 ; y<vid.height ; y++)
 	{
-		int	t;
 
 		pbuf = (byte *)(vid.buffer + vid.rowbytes*y);
 		t = (y & 1) << 1;
