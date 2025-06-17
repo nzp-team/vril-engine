@@ -247,8 +247,11 @@ void HUD_Init (void)
 
 #endif // __PSP__, __3DS__, __WII__, __NSPIRE__
 
-
+#ifdef __NSPIRE__
+    fx_blood_lu = Draw_CachePic ("gfx/hud/blood_320x240");
+#else
     fx_blood_lu = Draw_CachePic ("gfx/hud/blood");
+#endif
 
 #ifdef __WII__
 	Cmd_AddCommand ("+showscores", HUD_Scoreboard_Down);
@@ -636,9 +639,7 @@ void HUD_Blood (void)
 		return;
 	float color = 255.0f + modifier;
     
-#ifndef __NSPIRE__
 	Draw_ColoredStretchPic(0, 0, fx_blood_lu, vid.width, vid.height, color, color, color, alpha);
-#endif
 }
 
 /*

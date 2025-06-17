@@ -53,9 +53,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	GAMENAME	"nzp"
 
-#define NSPIRE_SMALL_OPTS 1
-
 #ifdef __NSPIRE__
+#define NSPIRE_SMALL_OPTS 1
 #define atof atof_dummy_syscall
 #include <os.h>
 #include <math.h>
