@@ -31,7 +31,6 @@ extern "C"
 #include <malloc.h>
 #include <pspgu.h>
 
-#include "gu_hlmdl.h"
 #include "gu_fullbright.h"
 #include "gu_images.h"
 
@@ -41,16 +40,11 @@ model_t	*loadmodel;
 char	loadname[32];	// for hunk tags
 
 //void UnloadWads (void);  //wad unload by Crow_bar
-void    VID_InitPaleteH2(unsigned char* palette);
 
 void Mod_LoadSpriteModel  (model_t *mod, void *buffer);
 void Mod_LoadBrushModel   (model_t *mod, void *buffer);
 void Mod_LoadAliasModel   (model_t *mod, void *buffer);
-void Mod_LoadH2AliasModel (model_t *mod, void *buffer);
-void Mod_LoadQ2AliasModel (model_t *mod, void *buffer);
 qboolean Mod_LoadQ2SpriteModel (model_t *mod, void *buffer);
-//void Mod_LoadQ2BrushModel (model_t *mod, void *buffer);
-void Mod_LoadQ3AliasModel      (model_t *mod, void *buffer);
 model_t *Mod_LoadModel    (model_t *mod, qboolean crash);
 
 byte	mod_novis[MAX_MAP_LEAFS/8];
@@ -200,13 +194,13 @@ void Mod_ClearAll (void)
 	for (i=0 , mod=mod_known ; i<mod_numknown ; i++, mod++)
 	{
 
-		if (mod->type != mod_alias && mod->type != mod_md3 && mod->type != mod_halflife)
+		if (mod->type != mod_alias)
 		{
 			mod->needload = qtrue;
         }
 
 		//Models & Sprite Unloading code By Crow_bar
-		if (mod->type == mod_alias || mod->type == mod_md3 || mod->type == mod_halflife)
+		if (mod->type == mod_alias)
 		{
 			if (Cache_Check (&mod->cache))
 				Cache_Free (&mod->cache);
@@ -290,7 +284,7 @@ void Mod_TouchModel (char *name)
 
 	mod = Mod_FindName (name);
 
-	if (!mod->needload && (mod->type == mod_alias || mod->type == mod_md3 || mod->type == mod_halflife))
+	if (!mod->needload && (mod->type == mod_alias))
 		Cache_Check (&mod->cache);
 
 }
@@ -312,7 +306,7 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 
 	if (!mod->needload)
 	{
-		if (mod->type == mod_alias || mod->type == mod_md3 || mod->type == mod_halflife)
+		if (mod->type == mod_alias)
 		{
 			d = Cache_Check (&mod->cache);
 			if (d)
@@ -389,29 +383,12 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 	case IDPOLYHEADER:     //Quake .mdl support
 		Mod_LoadAliasModel (mod, buf);
 		break;
-	case RAPOLYHEADER:     //Hexen II   .mdl support
-		Mod_LoadH2AliasModel (mod, buf);
-		break;
-	case MD2IDALIASHEADER: //Quake II   .md2 support
-		Mod_LoadQ2AliasModel (mod, buf);
-		break;
-	case MD3IDHEADER:      //Quake III  .md3 support
-		Mod_LoadQ3AliasModel (mod, buf);
-		break;
-	case HLPOLYHEADER:      //Half-Life .mdl support
-		Mod_LoadHLModel (mod, buf);
-		break;
 	case IDSPRITEHEADER:    //Quake      .spr .spr32 and HL sprite support
 		Mod_LoadSpriteModel (mod, buf);
 		break;
 	case IDSPRITE2HEADER:   //Quake II  .sp2 support
 		Mod_LoadQ2SpriteModel (mod, buf);
 		break;
-/*
-	case IDBSPHEADER:     //q2 bsp support
-	   Mod_LoadQ2BrushModel (mod, buf);
-       break;
-*/
 	default:               //.bsp ver 29,30 support
 		Mod_LoadBrushModel (mod, buf);
 		break;
@@ -1760,7 +1737,6 @@ aliashdr_t	*pheader;
 
 stvert_t	stverts[MAXALIASVERTS];
 mtriangle_t	triangles[MAXALIASTRIS];
-mh2triangle_t h2triangles[MAXALIASTRIS];
 
 // a pose is a single set of vertexes.  a frame may be
 // an animating sequence of poses
@@ -1967,6 +1943,14 @@ qboolean model_is_gun(char name[MAX_QPATH])
 	return qfalse;
 }
 
+qboolean model_is_viewmodel(char * name)
+{
+	if (strstr(name, "/v_") != NULL) {
+		return qtrue;
+	}
+	return qfalse;
+}
+
 qboolean model_is_zombie(char name[MAX_QPATH])
 {
 	if (strcmp(name, "models/ai/zb%.mdl") == 0 ||
@@ -1989,7 +1973,6 @@ qboolean model_is_zombie(char name[MAX_QPATH])
 Mod_LoadAllSkins
 ===============
 */
-static qboolean mod_h2;
 extern int has_pap;
 extern int has_perk_revive;
 extern int has_perk_juggernog;
@@ -2078,7 +2061,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_0", 0, 0, qtrue, GU_LINEAR);
+					pheader->gl_texturenum[i][3] = loadpcxas4bpp("models/machines/v_perk.mdl_0", GU_LINEAR);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 				} else if (!has_perk_revive && i == 0) {
 					pheader->gl_texturenum[i][0] =
@@ -2091,7 +2074,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_1", 0, 0, qtrue, GU_LINEAR);
+					pheader->gl_texturenum[i][3] = loadpcxas4bpp("models/machines/v_perk.mdl_1", GU_LINEAR);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 				} else if (!has_perk_juggernog && i == 1) {
 					pheader->gl_texturenum[i][0] =
@@ -2104,7 +2087,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_2", 0, 0, qtrue, GU_LINEAR);
+					pheader->gl_texturenum[i][3] = loadpcxas4bpp("models/machines/v_perk.mdl_2", GU_LINEAR);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 				} else if (!has_perk_speedcola && i == 2) {
 					pheader->gl_texturenum[i][0] =
@@ -2117,7 +2100,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_3", 0, 0, qtrue, GU_LINEAR);
+					pheader->gl_texturenum[i][3] = loadpcxas4bpp("models/machines/v_perk.mdl_3", GU_LINEAR);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 				} else if (!has_perk_doubletap && i == 3) {
 					pheader->gl_texturenum[i][0] =
@@ -2130,7 +2113,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_4", 0, 0, qtrue, GU_LINEAR);
+					pheader->gl_texturenum[i][3] = loadpcxas4bpp("models/machines/v_perk.mdl_4", GU_LINEAR);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 				} else if (!has_perk_staminup && i == 4) {
 					pheader->gl_texturenum[i][0] =
@@ -2143,7 +2126,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_5", 0, 0, qtrue, GU_LINEAR);
+					pheader->gl_texturenum[i][3] = loadpcxas4bpp("models/machines/v_perk.mdl_5", GU_LINEAR);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 				} else if (!has_perk_flopper && i == 5) {
 					pheader->gl_texturenum[i][0] =
@@ -2156,7 +2139,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_6", 0, 0, qtrue, GU_LINEAR);
+					pheader->gl_texturenum[i][3] = loadpcxas4bpp("models/machines/v_perk.mdl_6", GU_LINEAR);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 				} else if (!has_perk_deadshot && i == 6) {
 					pheader->gl_texturenum[i][0] =
@@ -2169,7 +2152,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][0] =
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = loadtextureimage("models/machines/v_perk.mdl_7", 0, 0, qtrue, GU_LINEAR);
+					pheader->gl_texturenum[i][3] = loadpcxas4bpp("models/machines/v_perk.mdl_7", GU_LINEAR);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 				} else if (!has_perk_mulekick && i == 7) {
 					pheader->gl_texturenum[i][0] =
@@ -2184,9 +2167,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 		}
 	}
 
+	qboolean is_gun = model_is_gun(loadmodel->name);
+	qboolean is_viewmodel = model_is_viewmodel(loadmodel->name);
+
 	for (i=0 ; i<numskins ; i++)
 	{
-		if (!has_pap && model_is_gun(loadmodel->name) && i >= 1) {
+		if (!has_pap && is_gun && i >= 1) {
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
 			pheader->gl_texturenum[i][2] = 
@@ -2194,7 +2180,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 			return (void *)pskintype;
 		}
-		else if (has_pap && model_is_gun(loadmodel->name) && i >= 1 && psp_system_model == PSP_MODEL_PHAT) {
+		else if (has_pap && is_gun && i >= 1 && psp_system_model == PSP_MODEL_PHAT) {
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
 			pheader->gl_texturenum[i][2] = 
@@ -2208,11 +2194,10 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			COM_StripExtension(loadmodel->name, model);
 			// HACK HACK HACK
 			sprintf (model2, "%s.mdl_%i", model, i);
-
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
 			pheader->gl_texturenum[i][2] = 
-			pheader->gl_texturenum[i][3] = loadtextureimage (model2, 0, 0, qtrue, GU_LINEAR);
+			pheader->gl_texturenum[i][3] = is_viewmodel ? loadtextureimage(model2, 0, 0, qtrue, GU_LINEAR) : loadpcxas4bpp(model2, GU_LINEAR);
 
 			if (pheader->gl_texturenum[i][0] == 0)// did not find a matching TGA...
 			{
@@ -2221,7 +2206,9 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 				pheader->gl_texturenum[i][0] =
 				pheader->gl_texturenum[i][1] =
 				pheader->gl_texturenum[i][2] =
-				pheader->gl_texturenum[i][3] = loadrgbafrompal(name, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1));
+				pheader->gl_texturenum[i][3] = is_viewmodel
+					? GL_LoadTexture (name, pheader->skinwidth,pheader->skinheight, (byte *)(pskintype), qtrue, GU_LINEAR, 0)
+					: GL_LoadTexture8to4(name, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1), (byte*)d_8to24table, GU_LINEAR, 4, NULL);
 			}
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 		}
@@ -2240,22 +2227,14 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 				Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
 				COM_StripExtension(loadmodel->name, model);
 				snprintf(model2, 128, "%s_%i_%i", model, i, j);
-				pheader->gl_texturenum[i][j&3] =
-				loadtextureimage (model2, 0, 0, qfalse, GU_LINEAR);
+				pheader->gl_texturenum[i][j&3] = is_viewmodel ? loadtextureimage(model2, 0, 0, qfalse, GU_LINEAR) : loadpcxas4bpp(model2, GU_LINEAR);
 				
 				if (pheader->gl_texturenum[i][j&3] == 0)// did not find a matching TGA...
 				{
 					snprintf (name, 128, "%s_%i_%i", loadmodel->name, i, j);
-					if(mod_h2)
-					{
-						pheader->gl_texturenum[i][j&3] =
-						GL_LoadPalTex (name, pheader->skinwidth,pheader->skinheight, (byte *)(pskintype), qtrue, GU_LINEAR, 0, NULL, PAL_H2);
-					}
-					else
-					{
-						pheader->gl_texturenum[i][j&3] =
-						GL_LoadTexture (name, pheader->skinwidth,pheader->skinheight, (byte *)(pskintype), qtrue, GU_LINEAR, 0);
-					}
+					pheader->gl_texturenum[i][j&3] = is_viewmodel
+						? GL_LoadTexture (name, pheader->skinwidth,pheader->skinheight, (byte *)(pskintype), qtrue, GU_LINEAR, 0)
+						: GL_LoadTexture8to4(name, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1), (byte*)d_8to24table, GU_LINEAR, 4, NULL);
 				}
 				pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
 			}
@@ -2453,1015 +2432,10 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	Hunk_FreeToLowMark (start);
 }
 
-/*
-=================
-Mod_LoadAliasH2Model
-reads extra field for num ST verts, and extra index list of them
-Hexen II model format
-=================
-*/
-void GL_MakeAliasModelDisplayListsH2 (model_t *m, aliashdr_t *hdr);
-void Mod_LoadH2AliasModel (model_t *mod, void *buffer)
-{
-	int					i, j;
-	newmdl_t			*pinmodel;
-	stvert_t			*pinstverts;
-	dnewtriangle_t		*pintriangles;
-	int					version, numframes;//, numskins;
-	int					size;
-	daliasframetype_t	*pframetype;
-	daliasskintype_t	*pskintype;
-	int					start, end, total;
 
-	start = Hunk_LowMark ();
-
-	pinmodel = (newmdl_t *)buffer;
-
-	version = LittleLong (pinmodel->version);
-
-	if (version != ALIAS_NEWVERSION)
-		Sys_Error ("%s has wrong version number (%i should be %i)",
-				 mod->name, version, ALIAS_NEWVERSION);
-
-
-//
-// allocate space for a working header, plus all the data except the frames,
-// skin and group info
-//
-	size = 	sizeof (aliashdr_t)
-			+ (LittleLong (pinmodel->numframes) - 1) *
-			sizeof (pheader->frames[0]);
-	pheader = static_cast<aliashdr_t*>(Hunk_AllocName (size, loadname));
-
-	mod->flags = LittleLong (pinmodel->flags);
-
-//
-// endian-adjust and copy the data, starting with the alias model header
-//
-	pheader->boundingradius = LittleFloat (pinmodel->boundingradius);
-	pheader->numskins = LittleLong (pinmodel->numskins);
-	pheader->skinwidth = LittleLong (pinmodel->skinwidth);
-	pheader->skinheight = LittleLong (pinmodel->skinheight);
-
-	//if (pheader->skinheight > MAX_LBM_HEIGHT)
-	//	Sys_Error ("model %s has a skin taller than %d", mod->name,
-	//			   MAX_LBM_HEIGHT);
-
-	pheader->numverts = LittleLong (pinmodel->numverts);
-	pheader->version = LittleLong (pinmodel->num_st_verts);	//hide num_st in version
-
-	if (pheader->numverts <= 0)
-		Sys_Error ("model %s has no vertices", mod->name);
-
-	if (pheader->numverts > MAXALIASVERTS)
-		Sys_Error ("model %s has too many vertices", mod->name);
-
-	pheader->numtris = LittleLong (pinmodel->numtris);
-
-	if (pheader->numtris <= 0)
-		Sys_Error ("model %s has no triangles", mod->name);
-
-	pheader->numframes = LittleLong (pinmodel->numframes);
-	numframes = pheader->numframes;
-	if (numframes < 1)
-		Sys_Error ("Mod_LoadAliasModel: Invalid # of frames: %d\n", numframes);
-
-	pheader->size = LittleFloat (pinmodel->size) * ALIAS_BASE_SIZE_RATIO;
-	mod->synctype = static_cast<synctype_t>(LittleLong (pinmodel->synctype));
-	mod->numframes = pheader->numframes;
-
-	for (i=0 ; i<3 ; i++)
-	{
-		pheader->scale[i] = LittleFloat (pinmodel->scale[i]);
-		pheader->scale_origin[i] = LittleFloat (pinmodel->scale_origin[i]);
-		pheader->eyeposition[i] = LittleFloat (pinmodel->eyeposition[i]);
-	}
-/*
-//
-// load the skins
-//
-	pskintype = (daliasskintype_t *)&pinmodel[1];
-	pskintype = static_cast<daliasskintype_t*>(Mod_LoadAllSkins (pheader->numskins, pskintype, mod->flags));
-*/
-    mod_h2 = qtrue;
-	pskintype = (daliasskintype_t *)&pinmodel[1];
-	pskintype = static_cast<daliasskintype_t*>(Mod_LoadAllSkins (pheader->numskins, pskintype));
-    mod_h2 = qfalse;
-//
-// load base s and t vertices
-//
-	pinstverts = (stvert_t *)pskintype;
-
-	for (i=0 ; i<pheader->version ; i++)	//version holds num_st_verts
-	{
-		stverts[i].onseam = LittleLong (pinstverts[i].onseam);
-		stverts[i].s = LittleLong (pinstverts[i].s);
-		stverts[i].t = LittleLong (pinstverts[i].t);
-	}
-
-//
-// load triangle lists
-//
-	pintriangles = (dnewtriangle_t *)&pinstverts[pheader->version];
-
-	for (i=0 ; i<pheader->numtris ; i++)
-	{
-		triangles[i].facesfront = LittleLong (pintriangles[i].facesfront);
-
-		for (j=0 ; j<3 ; j++)
-		{
-			h2triangles[i].vertindex[j] = LittleShort (pintriangles[i].vertindex[j]);
-			h2triangles[i].stindex[j]	  = LittleShort (pintriangles[i].stindex[j]);
-		}
-	}
-
-//
-// load the frames
-//
-	posenum = 0;
-	pframetype = (daliasframetype_t *)&pintriangles[pheader->numtris];
-
-	for (i=0 ; i<numframes ; i++)
-	{
-		aliasframetype_t	frametype;
-
-		frametype = static_cast<aliasframetype_t>(LittleLong (pframetype->type));
-
-		if (frametype == ALIAS_SINGLE)
-		{
-			pframetype = (daliasframetype_t *)
-					Mod_LoadAliasFrame (pframetype + 1, &pheader->frames[i]);
-		}
-		else
-		{
-			pframetype = (daliasframetype_t *)
-					Mod_LoadAliasGroup (pframetype + 1, &pheader->frames[i]);
-		}
-	}
-
-	pheader->numposes = posenum;
-
-	mod->type = mod_alias;
-
-	// FIXME: do this right
-	mod->mins[0] = mod->mins[1] = mod->mins[2] = -16;
-	mod->maxs[0] = mod->maxs[1] = mod->maxs[2] = 16;
-
-	//
-	// build the draw lists
-	//
-	GL_MakeAliasModelDisplayListsH2 (mod, pheader);
-//
-// move the complete, relocatable alias model to the cache
-//
-	end = Hunk_LowMark ();
-	total = end - start;
-
-	Cache_Alloc (&mod->cache, total, loadname);
-	if (!mod->cache.data)
-		return;
-	memcpy_vfpu(mod->cache.data, pheader, total);
-
-	Hunk_FreeToLowMark (start);
-}
-
-/*
-=================
-Mod_LoadQ2AliasModel
-=================
-*/
 int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
 
-void Mod_LoadQ2AliasModel (model_t *mod, void *buffer)
-{
-	//int                 numskins;
-	int					i, j, version, numframes,  size, *pinglcmd, *poutglcmd, start, end, total;
-	md2_t				*pinmodel, *pheader;
-	md2triangle_t		*pintriangles, *pouttriangles;
-	md2frame_t			*pinframe, *poutframe;
-	char				*pinskins;
-	//char                 skinname[256], *skinnamebase;
-
-	start = Hunk_LowMark ();
-
-	pinmodel = (md2_t *)buffer;
-
-	version = LittleLong (pinmodel->version);
-	if (version != MD2ALIAS_VERSION)
-		Sys_Error ("%s has wrong version number (%i should be %i)",
-				 mod->name, version, MD2ALIAS_VERSION);
-
-	mod->type = mod_alias;
-	mod->aliastype = ALIASTYPE_MD2;
-
-// LordHavoc: see pheader ofs adjustment code below for why this is bigger
-	size = LittleLong(pinmodel->ofs_end) + sizeof(md2_t);
-
-	if (size <= 0 || size >= MD2MAX_SIZE)
-		Sys_Error ("%s is not a valid model", mod->name);
-	pheader = static_cast<md2_t*>(Hunk_AllocName (size, loadname));
-
-	mod->flags = 0; // there are no MD2 flags
-
-// endian-adjust and copy the data, starting with the alias model header
-	for (i = 0;i < 17;i++) // LordHavoc: err... FIXME or something...
-		((int*)pheader)[i] = LittleLong(((int *)pinmodel)[i]);
-	mod->numframes = numframes = pheader->num_frames;
-
-	mod->synctype = ST_RAND;
-
-	if (pheader->ofs_skins <= 0 || pheader->ofs_skins >= pheader->ofs_end)
-		Sys_Error ("%s is not a valid model", mod->name);
-	if (pheader->ofs_st <= 0 || pheader->ofs_st >= pheader->ofs_end)
-		Sys_Error ("%s is not a valid model", mod->name);
-	if (pheader->ofs_tris <= 0 || pheader->ofs_tris >= pheader->ofs_end)
-		Sys_Error ("%s is not a valid model", mod->name);
-	if (pheader->ofs_frames <= 0 || pheader->ofs_frames >= pheader->ofs_end)
-		Sys_Error ("%s is not a valid model", mod->name);
-	if (pheader->ofs_glcmds <= 0 || pheader->ofs_glcmds >= pheader->ofs_end)
-		Sys_Error ("%s is not a valid model", mod->name);
-
-	if (pheader->num_tris < 1 || pheader->num_tris > MD2MAX_TRIANGLES)
-		Sys_Error ("%s has invalid number of triangles: %i", mod->name, pheader->num_tris);
-	if (pheader->num_xyz < 1 || pheader->num_xyz > MD2MAX_VERTS)
-		Sys_Error ("%s has invalid number of vertices: %i", mod->name, pheader->num_xyz);
-	if (pheader->num_frames < 1 || pheader->num_frames > 256) //MD2MAX_FRAMES)
-		Sys_Error ("%s has invalid number of frames: %i", mod->name, pheader->num_frames);
-	if (pheader->num_skins < 0 || pheader->num_skins > MD2MAX_SKINS)
-		Sys_Error ("%s has invalid number of skins: %i", mod->name, pheader->num_skins);
-
-// LordHavoc: adjust offsets in new model to give us some room for the bigger header
-// cheap offsetting trick, just offset it all by the pheader size...mildly wasteful
-    for (i = 0;i < 7;i++)
-        ((int*)&pheader->ofs_skins)[i] += sizeof(pheader);
-
-// load the skins
-	if (pheader->num_skins)
-	{
-		pinskins = static_cast<char*>((void*)((int) pinmodel + LittleLong(pinmodel->ofs_skins)));
-		for (i = 0;i < pheader->num_skins;i++)
-		{
-			pheader->gl_texturenum[i] = loadtextureimage (pinskins, 0, 0, qtrue, GU_LINEAR);
-			pinskins += MD2MAX_SKINNAME;
-		}
-	}
-
-// load triangles
-	pintriangles = static_cast<md2triangle_t*>((void*)((int) pinmodel + LittleLong(pinmodel->ofs_tris)));
-	pouttriangles = static_cast<md2triangle_t*>((void*)((int) pheader + pheader->ofs_tris));
-	// swap the triangle list
-	for (i=0 ; i < pheader->num_tris ; i++)
-	{
-		for (j=0 ; j<3 ; j++)
-		{
-			pouttriangles->index_xyz[j] = LittleShort (pintriangles->index_xyz[j]);
-			pouttriangles->index_st[j] = LittleShort (pintriangles->index_st[j]);
-			if (pouttriangles->index_xyz[j] >= pheader->num_xyz)
-				Sys_Error ("%s has invalid vertex indices", mod->name);
-			if (pouttriangles->index_st[j] >= pheader->num_st)
-				Sys_Error ("%s has invalid vertex indices", mod->name);
-		}
-		pintriangles++;
-		pouttriangles++;
-	}
-
-//
-// load the frames
-//
-	pinframe = static_cast<md2frame_t*>((void*) ((int) pinmodel + LittleLong(pinmodel->ofs_frames)));
-	poutframe = static_cast<md2frame_t*>((void*) ((int) pheader + pheader->ofs_frames));
-	for (i=0 ; i < numframes ; i++)
-	{
-		for (j = 0;j < 3;j++)
-		{
-			poutframe->scale[j] = LittleFloat(pinframe->scale[j]);
-			poutframe->translate[j] = LittleFloat(pinframe->translate[j]);
-		}
-
-		for (j = 0;j < 16;j++)
-			poutframe->name[j] = pinframe->name[j];
-
-		for (j = 0;j < pheader->num_xyz;j++)
-		{
-			poutframe->verts[j].v[0] = pinframe->verts[j].v[0];
-			poutframe->verts[j].v[1] = pinframe->verts[j].v[1];
-			poutframe->verts[j].v[2] = pinframe->verts[j].v[2];
-			poutframe->verts[j].lightnormalindex = pinframe->verts[j].lightnormalindex;
-		}
-
-
-		pinframe = static_cast<md2frame_t*>((void*) &pinframe->verts[j].v[0]);
-		poutframe = static_cast<md2frame_t*>((void*) &poutframe->verts[j].v[0]);
-	}
-
-	// LordHavoc: I may fix this at some point
-	mod->mins[0] = mod->mins[1] = mod->mins[2] = -64;
-	mod->maxs[0] = mod->maxs[1] = mod->maxs[2] = 64;
-
-	// load the draw list
-	pinglcmd = static_cast<int*>((void*) ((int) pinmodel + LittleLong(pinmodel->ofs_glcmds)));
-	poutglcmd = static_cast<int*>((void*) ((int) pheader + pheader->ofs_glcmds));
-	for (i = 0;i < pheader->num_glcmds;i++)
-		*poutglcmd++ = LittleLong(*pinglcmd++);
-
-// move the complete, relocatable alias model to the cache
-	end = Hunk_LowMark ();
-	total = end - start;
-
-	Cache_Alloc (&mod->cache, total, loadname);
-	if (!mod->cache.data)
-		return;
-	memcpy_vfpu(mod->cache.data, pheader, total);
-
-	Hunk_FreeToLowMark (start);
-}
-
-
-//=============================================================================
-//========================Q3 Models============================================
-//=============================================================================
-//additional skin loading
-char **skinfilelist;
-int skinfilecount;
-
-static qboolean Mod_TryAddSkin(char *skinname, ...)
-{
-	va_list		argptr;
-	char		string[MAX_QPATH];
-
-	//make sure we don't add it twice
-	int i;
-
-
-	va_start (argptr, skinname);
-	vsnprintf (string,sizeof(string)-1, skinname,argptr);
-	va_end (argptr);
-	string[MAX_QPATH-1] = '\0';
-
-	for (i = 0; i < skinfilecount; i++)
-	{
-		if (!strcmp(skinfilelist[i], string))
-			return qtrue;	//already added
-	}
-
-	//if (!COM_FCheckExists(string))
-	//	return false;
-
-	if (!Sys_FileTime(string))
-		return qfalse;
-
-	skinfilelist = static_cast<char**>(realloc(skinfilelist, sizeof(*skinfilelist)*(skinfilecount+1)));
-	skinfilelist[skinfilecount] = static_cast<char*>(malloc(strlen(string)+1));
-	strcpy(skinfilelist[skinfilecount], string);
-	skinfilecount++;
-
-	return qtrue;
-}
-
-int Mod_BuildSkinFileList(char *modelname)
-{
-	int i;
-	char skinfilename[MAX_QPATH];
-
-	//flush the old list
-	for (i = 0; i < skinfilecount; i++)
-	{
-		Z_Free(skinfilelist[i]);
-		skinfilelist[i] = NULL;
-	}
-	skinfilecount=0;
-
-	COM_StripExtension(modelname, skinfilename);
-
-	//try and add numbered skins, and then try fixed names.
-	for (i = 0; ; i++)
-	{
-		if (!Mod_TryAddSkin("%s_%i.skin", modelname, i))
-		{
-			if (i == 0)
-			{
-				if (!Mod_TryAddSkin("%s_default.skin", skinfilename, i))
-					break;
-			}
-			else if (i == 1)
-			{
-				if (!Mod_TryAddSkin("%s_blue.skin", skinfilename, i))
-					break;
-			}
-			else if (i == 2)
-			{
-				if (!Mod_TryAddSkin("%s_red.skin", skinfilename, i))
-					break;
-			}
-			else if (i == 3)
-			{
-				if (!Mod_TryAddSkin("%s_green.skin", skinfilename, i))
-					break;
-			}
-			else if (i == 4)
-			{
-				if (!Mod_TryAddSkin("%s_yellow.skin", skinfilename, i))
-					break;
-			}
-			else
-				break;
-		}
-	}
-	return skinfilecount;
-}
-
-animdata_t anims[NUM_ANIMTYPES];
-vec3_t		md3bboxmins, md3bboxmaxs;
-void Mod_GetQ3AnimData (char *buf, char *animtype, animdata_t *adata)
-{
-	int	i, j, data[4];
-	char	*token, num[4];
-
-	if ((token = strstr(buf, animtype)))
-	{
-		while (*token != '\n')
-			token--;
-		token++;	// so we jump back to the first char
-		for (i=0 ; i<4 ; i++)
-		{
-			memset (num, 0, sizeof(num));
-			for (j = 0 ; *token != '\t' ; j++)
-				num[j] = *token++;
-			data[i] = Q_atoi(num);
-			token++;
-		}
-		adata->offset = data[0];
-		adata->num_frames = data[1];
-		adata->loop_frames = data[2];
-		adata->interval = 1.0 / (float)data[3];
-	}
-}
-
-void Mod_LoadQ3Animation (void)
-{
-	int		ofs_legs;
-	char		*animdata;
-	animdata_t	tmp1, tmp2;
-
-    tmp1.offset = 0;
-    tmp2.offset = 0;
-	if (!(animdata = (char *)COM_LoadFile("progs/player/animation.cfg", 0)))
-	{
-		Con_Printf ("ERROR: Couldn't open animation file\n");
-		return;
-	}
-
-	memset (anims, 0, sizeof(anims));
-
-	Mod_GetQ3AnimData (animdata, "BOTH_DEATH1", &anims[both_death1]);
-	Mod_GetQ3AnimData (animdata, "BOTH_DEATH2", &anims[both_death2]);
-	Mod_GetQ3AnimData (animdata, "BOTH_DEATH3", &anims[both_death3]);
-	Mod_GetQ3AnimData (animdata, "BOTH_DEAD1", &anims[both_dead1]);
-	Mod_GetQ3AnimData (animdata, "BOTH_DEAD2", &anims[both_dead2]);
-	Mod_GetQ3AnimData (animdata, "BOTH_DEAD3", &anims[both_dead3]);
-
-	Mod_GetQ3AnimData (animdata, "TORSO_ATTACK", &anims[torso_attack]);
-	Mod_GetQ3AnimData (animdata, "TORSO_ATTACK2", &anims[torso_attack2]);
-	Mod_GetQ3AnimData (animdata, "TORSO_STAND", &anims[torso_stand]);
-	Mod_GetQ3AnimData (animdata, "TORSO_STAND2", &anims[torso_stand2]);
-
-	Mod_GetQ3AnimData (animdata, "TORSO_GESTURE", &tmp1);
-	Mod_GetQ3AnimData (animdata, "LEGS_WALKCR", &tmp2);
-// we need to subtract the torso-only frames to get the correct indices
-	ofs_legs = tmp2.offset - tmp1.offset;
-
-	Mod_GetQ3AnimData (animdata, "LEGS_WALK", &anims[legs_walk]);//R00k
-	Mod_GetQ3AnimData (animdata, "LEGS_RUN", &anims[legs_run]);
-	Mod_GetQ3AnimData (animdata, "LEGS_IDLE", &anims[legs_idle]);
-	anims[legs_walk].offset -= ofs_legs;
-	anims[legs_run].offset -= ofs_legs;
-	anims[legs_idle].offset -= ofs_legs;
-
-	Z_Free (animdata);
-}
-
-/*
-=================
-Mod_LoadQ3ModelTexture
-=================
-*/
-void Mod_LoadQ3ModelTexture (char *identifier, int flags, int *gl_texnum)
-{
-	char	loadpath[64];
-
-	Q_snprintfz (loadpath, sizeof(loadpath), "textures/q3models/%s", identifier);
-	*gl_texnum = loadtextureimage (loadpath, 0, 0, qtrue, GU_LINEAR);
-
-	if (!*gl_texnum)
-	{
-		Q_snprintfz (loadpath, sizeof(loadpath), "textures/%s", identifier);
-		*gl_texnum = loadtextureimage (loadpath, 0, 0, qtrue, GU_LINEAR);
-	}
-	if (!*gl_texnum)
-	{
-		Q_snprintfz (loadpath, sizeof(loadpath), "progs/%s", identifier);
-		*gl_texnum = loadtextureimage (loadpath, 0, 0, qtrue, GU_LINEAR);
-	}
-	if (!*gl_texnum)
-	{
-		Q_snprintfz (loadpath, sizeof(loadpath), "maps/%s", identifier);
-		*gl_texnum = loadtextureimage (loadpath, 0, 0, qtrue, GU_LINEAR);
-	}
-}
-
-//==============================================================================
-#define CLASSIC_MAX_QPATH 64
-
-typedef struct
-{
-	char    name[CLASSIC_MAX_QPATH];
-	int             filepos, filelen;
-} packfile_t;
-
-typedef struct pack_s
-{
-	char    filename[MAX_OSPATH];
-	int             handle;
-	int             numfiles;
-	packfile_t      *files;
-} pack_t;
-
-
-typedef struct searchpath_s
-{
-	char    filename[MAX_OSPATH];
-	pack_t  *pack;          // only one of filename / pack will be used
-	struct searchpath_s *next;
-} searchpath_t;
-
 extern char	loadname[32];	// for hunk tags
-
-
-typedef struct searchpath_s searchpath_t;
-extern searchpath_t* com_searchpaths;
-//==============================================================================
-
-/*
-=================
-Mod_LoadAllQ3Skins
-
-supporting only the default skin yet
-=================
-*/
-void Mod_LoadAllQ3Skins (char *modelname, md3header_t *header)
-{
-#if 0
-	int		i, j, defaultskin, numskinsfound;
-	char		skinname[MAX_QPATH], **skinsfound;
-	md3surface_t	*surf;
-	md3shader_t	*shader;
-	searchpath_t	*search;
-
-	i = strrchr (modelname, '/') - modelname;
-	Q_strncpyz (skinname, modelname, i+1);
-
-/*
-	//EraseDirEntries ();
-	for (search = com_searchpaths ; search ; search = search->next)
-	{
-		if (!search->pack)
-		{
-			RDFlags |= RD_NOERASE;
-			ReadDir (va("%s/%s", search->filename, skinname), va("%s*.skin", loadname));
-		}
-	}
-
-	numskinsfound = num_files;
-	skinsfound = (char **)malloc (numskinsfound * sizeof(char *));
-	for (i=0 ; i<numskinsfound ; i++)
-	{
-		skinsfound[i] = static_cast<char*>(malloc (MAX_QPATH));
-		Q_snprintfz (skinsfound[i], MAX_QPATH, "%s/%s", skinname, i);
-	}
-*/
-    SceUID dir = sceIoDopen(va("%s/models/%s", com_gamedir, skinname));
-	if(dir < 0)
-	{
-		return;
-	}
-
-	SceIoDirent dirent;
-
-    memset(&dirent, 0, sizeof(SceIoDirent));
-
-	while(sceIoDread(dir, &dirent) > 0)
-	{
-		  if(dirent.d_name[0] == '.')
-		  {
-			  continue;
-		  }
-
-		  if(!strcmp(COM_FileExtension(dirent.d_name),".skin")||
-			 !strcmp(COM_FileExtension(dirent.d_name),".SKIN"))
-		  {
-
-		  }
-	}
-	// It only works this lame way coz if I snprintf to skinname from skinname
-	// then linux's vsnprintf clears out skinname first and it's gonna lost
-
-	Q_strncpyz (skinname, va("%s/%s", skinname, loadname), MAX_QPATH);
-
-	defaultskin = -1;
-
-	for (i=0 ; i<numskinsfound ; i++)
-	{
-     	if (!strcmp(skinsfound[i], va("%s_default.skin", skinname)))
-		{
-			defaultskin = i;
-			break;
-		}
-	}
-
-	Con_Printf("Load skindata: %s\n", skinname);
-    Con_Printf("Load to: %s\n", defaultskin);
-
-	// load default skin if exists
-	if (defaultskin != -1)
-	{
-
-		int	pos;
-		char	*token, *skindata;
-
-		skindata = (char *)COM_LoadFile (skinname, 0);
-
-		pos = 0;
-		while (pos < com_filesize)
-		{
-			token = &skindata[pos];
-			while (skindata[pos] != ',' && skindata[pos])
-				pos++;
-			skindata[pos++] = '\0';
-
-			surf = (md3surface_t *)((byte *)header + header->ofssurfs);
-			for (j = 0 ; j < header->numsurfs && strcmp(surf->name, token) ; j++)
-				surf = (md3surface_t *)((byte *)surf + surf->ofsend);
-
-			token = &skindata[pos];
-			while (skindata[pos] != '\n' && skindata[pos])
-				pos++;
-			skindata[pos++-1] = '\0';	// becoz of \r\n
-
-			if (token[0] && j < header->numsurfs)
-			{
-				shader = (md3shader_t *)((byte *)surf + surf->ofsshaders);
-				for (j = 0 ; j < surf->numshaders ; j++, shader++)
-					Q_strncpyz (shader->name, token, MAX_QPATH);
-			}
-		}
-
-		Z_Free (skindata);
-	}
-
-	for (i=0 ; i<numskinsfound ; i++)
-		free (skinsfound[i]);
-	free (skinsfound);
-#endif
-}
-
-/*
-=================
-Mod_LoadQ3Model
-=================
-*/
-void Mod_LoadQ3AliasModel (model_t *mod, void *buffer)
-{
-	int				i, j, size, base, texture_flag, version, gl_texnum;
-	char			basename[MAX_QPATH];
-	float			radiusmax;
-	md3header_t		*header;
-	md3frame_t		*frame;
-	md3tag_t		*tag;
-	md3surface_t	*surf;
-	md3shader_t		*shader;
-	md3triangle_t	*tris;
-	md3tc_t			*tc;
-	md3vert_t		*vert;
-	char			md3name[128];
-
-	COM_StripExtension(mod->name, &md3name[0]);
-
-	if (!strcmp (md3name, "progs/g_shot") ||
-		!strcmp (md3name, "progs/g_nail") ||
-		!strcmp (md3name, "progs/g_nail2") ||
-		!strcmp (md3name, "progs/g_rock") ||
-		!strcmp (md3name, "progs/g_rock2") ||
-		!strcmp (md3name, "progs/g_light") ||
-		!strcmp (md3name, "progs/armor") ||
-		!strcmp (md3name, "progs/backpack") ||
-		!strcmp (md3name, "progs/w_g_key") ||
-		!strcmp (md3name, "progs/w_s_key") ||
-		!strcmp (md3name, "progs/m_g_key") ||
-		!strcmp (md3name, "progs/m_s_key") ||
-		!strcmp (md3name, "progs/b_g_key") ||
-		!strcmp (md3name, "progs/b_s_key") ||
-		!strcmp (md3name, "progs/quaddama") ||
-		!strcmp (md3name, "progs/invisibl") ||
-		!strcmp (md3name, "progs/invulner") ||
-		!strcmp (md3name, "progs/jetpack") ||
-		!strcmp (md3name, "progs/cube") ||
-		!strcmp (md3name, "progs/suit") ||
-		!strcmp (md3name, "progs/boots") ||
-		!strcmp (md3name, "progs/end1") ||
-		!strcmp (md3name, "progs/end2") ||
-		!strcmp (md3name, "progs/end3") ||
-		!strcmp (md3name, "progs/end4")) {
-		mod->flags |= EF_ROTATE;
-	}
-	else if (!strcmp (md3name, "progs/missile"))
-	{
-		mod->flags |= EF_ROCKET;
-	}
-	else if (!strcmp (md3name, "progs/gib1") || //EF_GIB
-		!strcmp (md3name, "progs/gib2") ||
-		!strcmp (md3name, "progs/gib3") ||
-		!strcmp (md3name, "progs/h_player") ||
-		!strcmp (md3name, "progs/h_dog") ||
-		!strcmp (md3name, "progs/h_mega") ||
-		!strcmp (md3name, "progs/h_guard") ||
-		!strcmp (md3name, "progs/h_wizard") ||
-		!strcmp (md3name, "progs/h_knight") ||
-		!strcmp (md3name, "progs/h_hellkn") ||
-		!strcmp (md3name, "progs/h_zombie") ||
-		!strcmp (md3name, "progs/h_shams") ||
-		!strcmp (md3name, "progs/h_shal") ||
-		!strcmp (md3name, "progs/h_ogre") ||
-		!strcmp (md3name, "progs/armor") ||
-		!strcmp (md3name, "progs/h_demon")) {
-		mod->flags |= EF_GIB;
-	}
-	else if (!strcmp (md3name, "progs/grenade"))
-	{
-		mod->flags |= EF_GRENADE;
-	}
-	else if (!strcmp (md3name, "progs/w_spike"))
-	{
-		mod->flags |= EF_TRACER;
-	}
-	else if (!strcmp (md3name, "progs/k_spike"))
-	{
-		mod->flags |= EF_TRACER2;
-	}
-	else if (!strcmp (md3name, "progs/v_spike"))
-	{
-		mod->flags |= EF_TRACER3;
-	}
-	else if (!strcmp (md3name, "progs/zom_gib"))
-	{
-		mod->flags |= EF_ZOMGIB;
-	}
-	else if (!strcmp(md3name, "progs/VModel/v_colt")	||
-		!strcmp(md3name, "progs/VModel/v_kar")	||
-		!strcmp(md3name, "progs/VModel/v_thomp"))
-		{
-			mod->modhint = MOD_WEAPON;
-		}
-
-	else if (!strcmp (md3name, "progs/lavaball"))
-	{
-		mod->modhint = MOD_LAVABALL;
-	}
-
-	header = (md3header_t *)buffer;
-
-	version = LittleLong (header->version);
-	if (version != MD3_VERSION)
-		Sys_Error ("%s has wrong version number (%i should be %i)", md3name, version, MD3_VERSION);
-
-// endian-adjust all data
-	header->numframes = LittleLong (header->numframes);
-
-	if (header->numframes < 1)
-		Sys_Error ("model %s has no frames", md3name);
-	else if (header->numframes > MAXMD3FRAMES)
-		Sys_Error ("model %s has too many frames", md3name);
-
-	header->numtags = LittleLong (header->numtags);
-	if (header->numtags > MAXMD3TAGS)
-		Sys_Error ("model %s has too many tags", md3name);
-
-	header->numsurfs = LittleLong (header->numsurfs);
-	if (header->numsurfs < 1)
-		Sys_Error ("model %s has no surfaces", md3name);
-	else if (header->numsurfs > MAXMD3SURFS)
-		Sys_Error ("model %s has too many surfaces", md3name);
-
-	header->numskins = LittleLong (header->numskins);
-	header->ofsframes = LittleLong (header->ofsframes);
-	header->ofstags = LittleLong (header->ofstags);
-	header->ofssurfs = LittleLong (header->ofssurfs);
-	header->ofsend = LittleLong (header->ofsend);
-
-	// swap all the frames
-	frame = (md3frame_t *)((byte *)header + header->ofsframes);
-	for (i=0 ; i<header->numframes ; i++)
-	{
-		frame[i].radius = LittleFloat (frame->radius);
-		for (j=0 ; j<3 ; j++)
-		{
-			frame[i].mins[j] = LittleFloat (frame[i].mins[j]);
-			frame[i].maxs[j] = LittleFloat (frame[i].maxs[j]);
-			frame[i].pos[j] = LittleFloat (frame[i].pos[j]);
-		}
-	}
-
-	// swap all the tags
-	tag = (md3tag_t *)((byte *)header + header->ofstags);
-	for (i=0 ; i<header->numtags ; i++)
-	{
-		for (j=0 ; j<3 ; j++)
-		{
-			tag[i].pos[j] = LittleFloat (tag[i].pos[j]);
-			tag[i].rot[0][j] = LittleFloat (tag[i].rot[0][j]);
-			tag[i].rot[1][j] = LittleFloat (tag[i].rot[1][j]);
-			tag[i].rot[2][j] = LittleFloat (tag[i].rot[2][j]);
-		}
-	}
-
-	// swap all the surfaces
-	surf = (md3surface_t *)((byte *)header + header->ofssurfs);
-	for (i=0 ; i<header->numsurfs ; i++)
-	{
-		surf->ident = LittleLong (surf->ident);
-		surf->flags = LittleLong (surf->flags);
-		surf->numframes = LittleLong (surf->numframes);
-		if (surf->numframes != header->numframes)
-			Sys_Error ("number of frames don't match in %s", md3name);
-
-		surf->numshaders = LittleLong (surf->numshaders);
-		if (surf->numshaders <= 0)
-			Sys_Error ("model %s has no shaders", md3name);
-		else if (surf->numshaders > MAXMD3SHADERS)
-			Sys_Error ("model %s has too many shaders", md3name);
-
-		surf->numverts = LittleLong (surf->numverts);
-		if (surf->numverts <= 0)
-			Sys_Error ("model %s has no vertices", md3name);
-		else if (surf->numverts > MAXMD3VERTS)
-			Sys_Error ("model %s has too many vertices", md3name);
-
-		surf->numtris = LittleLong (surf->numtris);
-		if (surf->numtris <= 0)
-			Sys_Error ("model %s has no triangles", md3name);
-		else if (surf->numtris > MAXMD3TRIS)
-			Sys_Error ("model %s has too many triangles", md3name);
-
-		surf->ofstris = LittleLong (surf->ofstris);
-		surf->ofsshaders = LittleLong (surf->ofsshaders);
-		surf->ofstc = LittleLong (surf->ofstc);
-		surf->ofsverts = LittleLong (surf->ofsverts);
-		surf->ofsend = LittleLong (surf->ofsend);
-
-		// swap all the shaders
-		shader = (md3shader_t *)((byte *)surf + surf->ofsshaders);
-		for (j=0 ; j<surf->numshaders ; j++)
-			shader[j].index = LittleLong (shader[j].index);
-
-		// swap all the triangles
-		tris = (md3triangle_t *)((byte *)surf + surf->ofstris);
-		for (j=0 ; j<surf->numtris ; j++)
-		{
-			tris[j].indexes[0] = LittleLong (tris[j].indexes[0]);
-			tris[j].indexes[1] = LittleLong (tris[j].indexes[1]);
-			tris[j].indexes[2] = LittleLong (tris[j].indexes[2]);
-		}
-
-		// swap all the texture coords
-		tc = (md3tc_t *)((byte *)surf + surf->ofstc);
-		for (j=0 ; j<surf->numverts ; j++)
-		{
-			tc[j].s = LittleFloat (tc[j].s);
-			tc[j].t = LittleFloat (tc[j].t);
-		}
-
-		// swap all the vertices
-		vert = (md3vert_t *)((byte *)surf + surf->ofsverts);
-		for (j=0 ; j < surf->numverts * surf->numframes ; j++)
-		{
-			vert[j].vec[0] = LittleShort (vert[j].vec[0]);
-			vert[j].vec[1] = LittleShort (vert[j].vec[1]);
-			vert[j].vec[2] = LittleShort (vert[j].vec[2]);
-			vert[j].normal = LittleShort (vert[j].normal);
-		}
-
-		// find the next surface
-		surf = (md3surface_t *)((byte *)surf + surf->ofsend);
-	}
-
-// allocate extra size for structures different in memory
-	surf = (md3surface_t *)((byte *)header + header->ofssurfs);
-	for (size = 0, i = 0 ; i < header->numsurfs ; i++)
-	{
-		size += surf->numshaders * sizeof(md3shader_mem_t);		  // shader containing texnum
-		size += surf->numverts * surf->numframes * sizeof(md3vert_mem_t); // floating point vertices
-		surf = (md3surface_t *)((byte *)surf + surf->ofsend);
-	}
-
-	header = static_cast<md3header_t*>(Cache_Alloc (&mod->cache, com_filesize + size, loadname));
-	if (!mod->cache.data)
-		return;
-
-	memcpy_vfpu(header, buffer, com_filesize);
-	base = com_filesize;
-
-	mod->type = mod_md3;
-	mod->numframes = header->numframes;
-
-	md3bboxmins[0] = md3bboxmins[1] = md3bboxmins[2] = 99999;
-	md3bboxmaxs[0] = md3bboxmaxs[1] = md3bboxmaxs[2] = -99999;
-	radiusmax = 0;
-
-	frame = (md3frame_t *)((byte *)header + header->ofsframes);
-	for (i=0 ; i<header->numframes ; i++)
-	{
-		for (j=0 ; j<3 ; j++)
-		{
-			md3bboxmins[j] = std::min(md3bboxmins[j], frame[i].mins[j]);
-			md3bboxmaxs[j] = std::max(md3bboxmaxs[j], frame[i].maxs[j]);
-		}
-		radiusmax = std::max(radiusmax, frame[i].radius);
-	}
-	VectorCopy (md3bboxmins, mod->mins);
-	VectorCopy (md3bboxmaxs, mod->maxs);
-	mod->radius = radiusmax;
-
-// load the skins
-	Mod_LoadAllQ3Skins (mod->name, header);
-
-// load the animation frames if loading the player model
-	if (!strcmp(mod->name, "progs/player/lower.md3"))
-		Mod_LoadQ3Animation ();
-
-	surf = (md3surface_t *)((byte *)header + header->ofssurfs);
-
-	for (i=0 ; i<header->numsurfs; i++)
-	{
-		shader = (md3shader_t *)((byte *)surf + surf->ofsshaders);
-		surf->ofsshaders = base;
-		size = surf->numshaders;
-		for (j=0 ; j<size ; j++)
-		{
-			md3shader_mem_t	*memshader = (md3shader_mem_t *)((byte *)header + surf->ofsshaders);
-
-			Q_strncpyz (memshader[j].name, shader->name, sizeof(memshader[j].name));
-			memshader[j].index = shader->index;
-
-			COM_StripExtension (COM_SkipPath(shader->name), basename);
-
-			gl_texnum = 0;
-            texture_flag = 0;
-			Mod_LoadQ3ModelTexture (basename, texture_flag, &gl_texnum);
-
-			memshader[j].gl_texnum = gl_texnum;
-
-			shader++;
-		}
-		base += size * sizeof(md3shader_mem_t);
-
-		vert = (md3vert_t *)((byte *)surf + surf->ofsverts);
-		surf->ofsverts = base;
-		size = surf->numverts * surf->numframes;
-		for (j=0 ; j<size ; j++)
-		{
-			float		lat, lng;
-			vec3_t		ang;
-			md3vert_mem_t	*vertexes = (md3vert_mem_t *)((byte *)header + surf->ofsverts);
-
-			vertexes[j].oldnormal = vert->normal;
-
-			vertexes[j].vec[0] = (float)vert->vec[0] * MD3_XYZ_SCALE;
-			vertexes[j].vec[1] = (float)vert->vec[1] * MD3_XYZ_SCALE;
-			vertexes[j].vec[2] = (float)vert->vec[2] * MD3_XYZ_SCALE;
-
-			lat = ((vert->normal >> 8) & 0xff) * M_PI / 128.0f;
-			lng = (vert->normal & 0xff) * M_PI / 128.0f;
-			#ifdef PSP_VFPU
-			vertexes[j].normal[0] = vfpu_cosf(lat) * vfpu_sinf(lng);
-			vertexes[j].normal[1] = vfpu_sinf(lat) * vfpu_sinf(lng);
-			vertexes[j].normal[2] = vfpu_cosf(lng);
-			#else
-			vertexes[j].normal[0] = cos(lat) * sin(lng);
-			vertexes[j].normal[1] = sin(lat) * sin(lng);
-			vertexes[j].normal[2] = cos(lng);
-			#endif
-
-			vectoangles (vertexes[j].normal, ang);
-			vertexes[j].anorm_pitch = ang[0] * 256 / 360;
-			vertexes[j].anorm_yaw = ang[1] * 256 / 360;
-
-			vert++;
-		}
-		base += size * sizeof(md3vert_mem_t);
-
-		surf = (md3surface_t *)((byte *)surf + surf->ofsend);
-	}
-}
-//==============================================================================
 
 /*
 =================
