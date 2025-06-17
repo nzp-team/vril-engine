@@ -137,6 +137,9 @@ ASFLAGS = $(CFLAGS) -c
 
 include $(PSPSDK)/lib/build.mak
 
+%.o: %.c
+	$(CC) -std=gnu99 $(CFLAGS) -c $< -o $@
+
 _build_info.h:
 	rm -rf source/_build_info.h
 	echo "#define GIT_HASH \"$(shell git rev-parse --short HEAD)$(shell git diff --quiet || echo -dirty)\"" > source/_build_info.h

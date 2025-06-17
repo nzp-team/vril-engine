@@ -3376,7 +3376,7 @@ void R_RenderScene (void)
 		gly + (glheight >> 1) - y2 - (h >> 1), //xaa - try to skip some divides (/2) here
 		w,
 		h);
-	sceGuScissor(x, glheight - y2 - h, x + w, glheight - y2);
+	sceGuScissor(x, glheight - y2 - h, w, h);
 
     screenaspect = (float)renderrect->width/renderrect->height;
 
