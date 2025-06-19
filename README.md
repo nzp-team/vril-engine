@@ -35,3 +35,12 @@ make -f Makefile.ctr
 ```
 
 We also provide prebuilt .3dsx files on the [Releases](https://github.com/nzp-team/vril-engine/releases/tag/bleeding-edge) page.
+
+## Building for TI NSPIRE
+Building requires a full install of [ndless](https://github.com/ndless-nspire/Ndless), though it can also be built with an unofficial [docker image](https://hub.docker.com/r/bensuperpc/ndless).
+
+With ndless installed, you can begin building the `.tns`.
+
+```bash
+make -f Makefile.nspire
+```
