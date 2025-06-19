@@ -44,3 +44,4 @@ With ndless installed, you can begin building the `.tns`.
 ```bash
 make -f Makefile.nspire
 ```
+We also provide a prebuilt .tns on the [Releases](https://github.com/nzp-team/vril-engine/releases/tag/bleeding-edge) page.

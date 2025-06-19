@@ -3071,6 +3071,11 @@ void PF_GetSoundLen (void)
 
 	name = G_STRING(OFS_PARM0);
 
+#ifdef NO_SOUND_PROCESSING
+	G_FLOAT(OFS_RETURN) = 0.0;
+	return;
+#endif
+
     char	namebuffer[256];
 	byte	*data;
 	wavinfo_t	info;
@@ -3089,9 +3094,7 @@ void PF_GetSoundLen (void)
 		G_FLOAT(OFS_RETURN) = -1;
 		return;
 	}
-#ifdef __NSPIRE__
-	G_FLOAT(OFS_RETURN) = 0.0;
-#else
+
 	info = GetWavinfo (name, data, com_filesize);
 	if (info.channels != 1)
 	{
@@ -3101,7 +3104,6 @@ void PF_GetSoundLen (void)
 	}
 
 	G_FLOAT(OFS_RETURN) = (float)info.samples/(float)info.rate;
-#endif
 }
 
 /*

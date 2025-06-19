@@ -65,6 +65,8 @@ edge_t	edge_sentinel;
 
 float	fv;
 
+int	r_bmodelactive;
+
 void R_GenerateSpans (void);
 void R_GenerateSpansBackward (void);
 
