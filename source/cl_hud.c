@@ -247,11 +247,7 @@ void HUD_Init (void)
 
 #endif // __PSP__, __3DS__, __WII__, __NSPIRE__
 
-#ifdef __NSPIRE__
-    fx_blood_lu = Draw_CachePic ("gfx/hud/blood_320x240");
-#else
-    fx_blood_lu = Draw_CachePic ("gfx/hud/blood");
-#endif
+fx_blood_lu = Draw_CachePic ("gfx/hud/blood");
 
 #ifdef __WII__
 	Cmd_AddCommand ("+showscores", HUD_Scoreboard_Down);
