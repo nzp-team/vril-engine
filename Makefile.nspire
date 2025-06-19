@@ -20,7 +20,7 @@ endif
 
 GCCFLAGS += -Wno-missing-field-initializers
 
-GCCFLAGS += -O2 -DOLD_SCREEN_API -fomit-frame-pointer -D__NSPIRE__ -DPLATFORM_DIRECTORY="nspire" -DPLATFORM_RENDERER="cpu" 
+GCCFLAGS += -DNO_SOUND_PROCESSING -O2 -DOLD_SCREEN_API -fomit-frame-pointer -D__NSPIRE__ -DPLATFORM_DIRECTORY="nspire" -DPLATFORM_RENDERER="cpu" 
 
 COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/chase.c \
@@ -79,9 +79,8 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/platform/nspire/r_sky.c \
 		source/platform/nspire/r_sprite.c \
 		source/platform/nspire/r_surf.c \
-		source/platform/nspire/r_vars.c \
 		source/platform/nspire/screen.c \
-		source/platform/nspire/snd_nspire.c \
+		source/snd_dma.c \
 		source/sv_main.c \
 		source/sv_move.c \
 		source/sv_phys.c \
