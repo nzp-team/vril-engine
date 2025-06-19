@@ -632,7 +632,7 @@ void Host_ServerFrame (void)
 // send all messages to the clients
 	SV_SendClientMessages ();
 
-	if (sv.time >= 5.0f) {
+	if (sv.time >= 5.0) {
 		TestHandler_MapBoot();
 	}
 }

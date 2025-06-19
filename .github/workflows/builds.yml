@@ -62,8 +62,8 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nspire-tns
-          path: ./build/nspire/bin/nZP.tns
+          name: nspire-nzp-tns
+          path: ./build/nspire/bin/nzportable.tns
   Pull-Request-Test-PSP1000:
     if: github.event_name == 'pull_request'
     name: PSP-1000 Pull Request Tests
@@ -71,7 +71,7 @@ jobs:
     container:
       image: ubuntu:24.10
       options: --shm-size=8192m
-    needs: [Compile-EBOOT, Compile-3DSX]
+    needs: [Compile-EBOOT, Compile-3DSX, Compile-TNS]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -93,7 +93,7 @@ jobs:
     container:
       image: ubuntu:24.10
       options: --shm-size=8192m
-    needs: [Compile-EBOOT, Compile-3DSX]
+    needs: [Compile-EBOOT, Compile-3DSX, Compile-TNS]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -111,7 +111,7 @@ jobs:
   Unify-and-Release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: [Compile-EBOOT, Compile-3DSX]
+    needs: [Compile-EBOOT, Compile-3DSX, Compile-TNS]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -126,6 +126,7 @@ jobs:
         run: |
           zip -r -j psp-nzp-eboot.zip psp-nzp-eboot/*
           zip -r -j ctr-nzp-3dsx.zip ctr-nzp-3dsx/*
+          zip -r -j nspire-nzp-tns.zip nspire-nzp-tns/*
       - name: Generate Build Date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d-%H-%M-%S')"
@@ -145,12 +146,13 @@ jobs:
           tag_name: bleeding-edge
           release_name: Automated Release ${{ steps.date.outputs.date }}
           body: |
-            This is a **bleeding edge** NZ:P NX/VITA release, stability is not guarenteed.
+            This is a **bleeding edge** NZ:P PSP/3DS/NSPIRE release, stability is not guarenteed.
 
             To install:
             - Grab the .ZIP archive for your platform
             - PSP: Extract the `EBOOT.PBP` to `/PSP/GAME/nzportable/`
             - 3DS: Extract `nzportable.3dsx` to `/3ds/nzportable/`.
+            - NSPIRE: Sync `nzportable.tns` to `/`.
           draft: true
           prerelease: false
       - name: Upload PSP Archive
@@ -170,6 +172,15 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./ctr-nzp-3dsx.zip
           asset_name: ctr-nzp-3dsx.zip
+          asset_content_type: application/zip
+      - name: Upload NSPIRE Archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./nspire-nzp-tns.zip
+          asset_name: nspire-nzp-tns.zip
           asset_content_type: application/zip
       - name: Publish Release
         uses: StuYarrow/publish-release@v1

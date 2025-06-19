@@ -99,7 +99,7 @@ OBJS = $(patsubst %.c, %.o, $(COMMON_OBJS))
 
 OBJS += $(patsubst %.S, %.o, $(shell find ./source/platform/nspire -name \*.S))
 
-EXE = nZP
+EXE = nzportable
 DISTDIR = build/nspire/bin
 vpath %.tns $(DISTDIR)
 vpath %.elf $(DISTDIR)
