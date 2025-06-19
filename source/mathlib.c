@@ -759,6 +759,8 @@ void FloorDivMod (float numer, float denom, int *quotient,
 	*rem = r;
 }
 
+#ifdef __NSPIRE__
+
 void FloorDivModFixed( int numer, int denom, int *quotient, int *rem )
 {
 	int		q, r, x;
@@ -784,6 +786,8 @@ void FloorDivModFixed( int numer, int denom, int *quotient, int *rem )
 	*quotient = q;
 	*rem = r;
 }
+
+#endif
 
 /*
 ===================
