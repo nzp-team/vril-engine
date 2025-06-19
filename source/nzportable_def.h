@@ -53,18 +53,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	GAMENAME	"nzp"
 
-#ifdef __NSPIRE__
-#define NSPIRE_SMALL_OPTS 1
-#define atof atof_dummy_syscall
-#include <os.h>
-#include <math.h>
-#include <stdarg.h>
-#include <setjmp.h>
-#include "platform/nspire/nspire_math.h"
-#include <ctype.h>
-#undef atof
-double atof( const char *str );
-#else
 #include <math.h>
 #include <string.h>
 #include <stdarg.h>
@@ -73,6 +61,14 @@ double atof( const char *str );
 #include <setjmp.h>
 #include <stdbool.h>
 #include <ctype.h>
+
+#ifdef __NSPIRE__
+#define NSPIRE_SMALL_OPTS 1
+#define atof atof_dummy_syscall
+#include <os.h>
+#include "platform/nspire/nspire_math.h"
+#undef atof
+double atof( const char *str );
 #endif // __NSPIRE__
 
 #define	VID_LockBuffer()
