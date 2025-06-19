@@ -256,51 +256,6 @@ byte* LoadPCX(FILE* f, int matchwidth, int matchheight) {
 }
 
 /*
-================
-LoadWal
-================
-*/
-
-typedef struct miptexq2_s
-{
-	char		name[32];
-	unsigned	width, height;
-	unsigned	offsets[4];		// four mip maps stored
-	char		animname[32];			// next frame in animation chain
-	int			flags;
-	int			contents;
-	int			value;
-} miptexq2_t;
-
-byte *LoadWAL (char *name)
-{
-	miptexq2_t	*mt;
-	int			width, height, ofs, size;
-	byte        *data;
-
-	mt = (miptexq2_t*)COM_LoadFile (name, 0);
-	if (!mt)
-	{
-	      return NULL;
-	}
-
-	width = LittleLong (mt->width);
-	height = LittleLong (mt->height);
-	ofs = LittleLong (mt->offsets[0]);
-
-	size = width * height;
-
-	data = static_cast<byte*>(Q_malloc(size));
-	memcpy_vfpu(data, (byte *)mt + ofs, size);
-
-	image_palette_type = PAL_Q2;
-
-	Z_Free(mt);
-
-	return data;
-}
-
-/*
 =========================================================
 
 			Targa
@@ -1024,7 +979,7 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 	COM_FOpenFile(name, &f);
 	if (f)
 		return LoadPCX (f, matchwidth, matchheight);
-	
+
 	sprintf (name, "%s.jpg", basename);
 	COM_FOpenFile(name, &f);
 	if (f)
@@ -1137,4 +1092,106 @@ int loadrgbafrompal (char* name, int width, int height, byte* data)
 
 	free(rgbadata);
 	return ret;
+}
+
+/*
+=============
+loadpcxas4bpp
+=============
+converts an indexed pcx to a 16 color one, if there's a palhint file, use that palette
+*/
+
+int loadpcxas4bpp (char* filename, int filter) {
+	FILE* f;
+	char name[128];
+	sprintf(name, "%s.pcx", filename);
+	COM_FOpenFile(name, &f);
+	if (!f) {
+		Con_DPrintf("Could not load PCX file %s\n", name);
+		return 0;
+	}
+
+	pcx_t pcxbuf;
+    fread(&pcxbuf, 1, sizeof(pcxbuf), f);
+
+    pcx_t* pcx = &pcxbuf;
+
+    if (pcx->manufacturer != 0x0a || pcx->version != 5 || pcx->encoding != 1 ||
+        pcx->bits_per_pixel != 8 || pcx->xmax >= 320 || pcx->ymax >= 256) {
+        Con_Printf("Bad pcx file %s\n", name);
+        return 0;
+    }
+
+	unsigned int width = pcx->xmax + 1;
+	unsigned int height = pcx->ymax + 1;
+
+	fseek(f, -768, SEEK_END);
+    byte palette[768];
+    fread(palette, 1, 768, f);
+	fseek(f, sizeof(pcxbuf) - 4, SEEK_SET);
+	size_t size = width * height;
+	byte* data = static_cast<byte*>(Q_malloc(4 * size));
+	int data_index = 0;
+	for (int y = 0; y <= pcx->ymax; y++) {
+        for (int x = 0; x <= pcx->xmax;) {
+            int dataByte = fgetc(f);
+
+            int runLength = 1;
+            if ((dataByte & 0xC0) == 0xC0) {
+                runLength = dataByte & 0x3F;
+                dataByte = fgetc(f);
+            }
+
+            while (runLength-- > 0) {
+                data[data_index] = dataByte;
+                data_index += 1;
+                x++;
+            }
+        }
+    }
+
+	fclose(f);
+
+	int texture = 0;
+	sprintf(name, "%s.palhint", filename);
+	FILE* f2;
+	COM_FOpenFile(name, &f2);
+
+	if (!f2) {
+		texture = GL_LoadTexture8to4(filename, width, height, data, palette, filter, 3, NULL);
+	} else {
+		// contain padding for extra whitespace etc 
+		size_t size = 16 * 4 * 2 * 2;
+		char filecontent[size];
+		int bytes = fread(&filecontent, 1, size, f2);
+		fclose(f2);
+
+		int index = 0;
+		unsigned int palhint[16];
+		memset(palhint, 0xff, 16 * 4);
+		int colors_read = 0;
+		char color[7];
+		while (index < (bytes - 1)) {
+			if (filecontent[index] == '#') {
+				index++;
+				memcpy(color, &(filecontent[index]), 6);
+				color[6] = '\0';
+				int parsed = strtol(color, NULL, 16);
+				byte r, g, b;
+				r = parsed >> 16;
+				g = parsed >> 8;
+				b = parsed;
+				palhint[colors_read] = 0xff000000 + (b << 16) + (g << 8) + r;
+				colors_read++;
+				index += 6;
+			} else {
+				index++;
+			}
+		}
+		texture = GL_LoadTexture8to4(filename, width, height, data, palette, filter, 3, (byte*)palhint);
+	}
+
+	free(data);
+
+	return texture;
 }

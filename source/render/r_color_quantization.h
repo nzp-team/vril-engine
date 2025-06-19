@@ -21,6 +21,9 @@
 #define _COLOR_QUANTIZER_H_
 
 void
-convert_8bpp_to_4bpp(const byte * indata, const byte * inpal, int width, int height, byte * outdata, byte * outpal);
+convert_8bpp_to_4bpp(const byte * indata, const byte * inpal, int inpal_bpp, int width, int height, byte * outdata, byte * outpal);
+
+void
+convert_8bpp_to_4bpp_with_hint(const byte * indata, const byte * inpal, int inpal_bpp, int width, int height, byte * outdata, const byte * palhint);
 
 #endif // _COLOR_QUANTIZER_H_

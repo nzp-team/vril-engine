@@ -27,7 +27,6 @@ float TraceLine (vec3_t start, vec3_t end, vec3_t impact, vec3_t normal);
 }
 
 //includes
-#include "gu_hlmdl.h"
 #include <pspgu.h>
 #include <pspgum.h>
 
@@ -201,109 +200,6 @@ bool modelIsBody (char *m_name)
 
     return false;
 
-}
-/*
-================
-ConvertMatrix
-By Crow_bar for MD3
-================
-*/
-void ConvertMatrix(float *a, float *b)
-{
-	for (int i = 0; i < 16; i++)
-	     a[i] = b[i];
-}
-
-/*
-=============
-R_RotateForTagEntity
-=============
-*/
-void R_RotateForTagEntity (tagentity_t *tagent, md3tag_t *tag, float *m)
-{
-	int	i;
-	float	lerpfrac, timepassed;
-
-	// positional interpolation
-	timepassed = cl.time - tagent->tag_translate_start_time;
-
-	if (tagent->tag_translate_start_time == 0 || timepassed > 1)
-	{
-		tagent->tag_translate_start_time = cl.time;
-		VectorCopy (tag->pos, tagent->tag_pos1);
-		VectorCopy (tag->pos, tagent->tag_pos2);
-	}
-
-	if (!VectorCompare(tag->pos, tagent->tag_pos2))
-	{
-		tagent->tag_translate_start_time = cl.time;
-		VectorCopy (tagent->tag_pos2, tagent->tag_pos1);
-		VectorCopy (tag->pos, tagent->tag_pos2);
-		lerpfrac = 0;
-	}
-	else
-	{
-		lerpfrac = timepassed / 0.1;
-		if (cl.paused || lerpfrac > 1)
-			lerpfrac = 1;
-	}
-
-	VectorInterpolate (tagent->tag_pos1, lerpfrac, tagent->tag_pos2, m + 12);
-	m[15] = 1;
-
-	for (i=0 ; i<3 ; i++)
-	{
-		// orientation interpolation (Euler angles, yuck!)
-		timepassed = cl.time - tagent->tag_rotate_start_time[i];
-
-		if (tagent->tag_rotate_start_time[i] == 0 || timepassed > 1)
-		{
-			tagent->tag_rotate_start_time[i] = cl.time;
-			VectorCopy (tag->rot[i], tagent->tag_rot1[i]);
-			VectorCopy (tag->rot[i], tagent->tag_rot2[i]);
-		}
-
-		if (!VectorCompare(tag->rot[i], tagent->tag_rot2[i]))
-		{
-			tagent->tag_rotate_start_time[i] = cl.time;
-			VectorCopy (tagent->tag_rot2[i], tagent->tag_rot1[i]);
-			VectorCopy (tag->rot[i], tagent->tag_rot2[i]);
-			lerpfrac = 0;
-		}
-		else
-		{
-			lerpfrac = timepassed / 0.1;
-			if (cl.paused || lerpfrac > 1)
-				lerpfrac = 1;
-		}
-
-		VectorInterpolate (tagent->tag_rot1[i], lerpfrac, tagent->tag_rot2[i], m + i*4);
-		m[i*4+3] = 0;
-	}
-}
-
-/*
-=============
-R_RotateForViewEntity
-=============
-*/
-void R_RotateForViewEntity (entity_t *ent)
-{
-	// Translate.
-	const ScePspFVector3 translation =
-	{
-		ent->origin[0], ent->origin[1], ent->origin[2]
-	};
-	sceGumTranslate(&translation);
-
-	// Rotate.
-	const ScePspFVector3 rotation =
-	{
-		ent->angles[ROLL] * piconst,
-		-ent->angles[PITCH] * piconst,
-		ent->angles[YAW] * piconst
-	};
-	sceGumRotateZYX(&rotation);
 }
 
 /*
@@ -888,12 +784,6 @@ void R_DrawSpriteModel (entity_t *e)
 
 #define NUMVERTEXNORMALS	162
 
-#define INTERP_WEAP_MAXNUM		24
-#define INTERP_WEAP_MINDIST		5000
-#define INTERP_WEAP_MAXDIST		95000
-#define	INTERP_MINDIST			70
-#define	INTERP_MAXDIST			300
-
 extern "C" float	r_avertexnormals[NUMVERTEXNORMALS][3];
 float r_avertexnormals[NUMVERTEXNORMALS][3] = {
 #include "../../../anorms.h"
@@ -1273,206 +1163,6 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 	}
 }
 
-/*
-=============
-GL_DrawQ2AliasFrame
-=============
-*/
-void GL_DrawQ2AliasFrame (entity_t *e, md2_t *pheader, int lastpose, int pose, float lerp)
-{
-	float	ilerp, l;
-	int		*order, count;
-	md2trivertx_t	*verts1, *verts2;
-	vec3_t	scale1, translate1, scale2, translate2;
-	md2frame_t *frame1, *frame2;
-
-	sceGuShadeModel(GU_SMOOTH);
-
-	ilerp = 1.0f - lerp;
-
-	//new version by muff - fixes bug, easier to read, faster (well slightly)
-	frame1 = (md2frame_t *)((int) pheader + pheader->ofs_frames + (pheader->framesize * lastpose));
-	frame2 = (md2frame_t *)((int) pheader + pheader->ofs_frames + (pheader->framesize * pose));
-
-	VectorCopy(frame1->scale, scale1);
-	VectorCopy(frame1->translate, translate1);
-	VectorCopy(frame2->scale, scale2);
-	VectorCopy(frame2->translate, translate2);
-	verts1 = &frame1->verts[0];
-	verts2 = &frame2->verts[0];
-	order = (int *)((int)pheader + pheader->ofs_glcmds);
-
-	while (1)
-	{
-		// get the vertex count and primitive type
-		count = *order++;
-		if (!count)
-			break;		// done
-		int prim;
-		if (count < 0)
-		{
-			count = -count;
-		    prim = GU_TRIANGLE_FAN;
-		}
-		else
-		{
-			prim = GU_TRIANGLE_STRIP;
-		}
-
-		// Allocate the vertices.
-		struct vertex
-		{
-			float u, v;
-            unsigned int color;
-			float x, y, z;
-       	};
-
-		vertex* const out = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * count));
-
-		for (int vertex_index = 0; vertex_index < count; ++vertex_index)
-		{
-			// texture coordinates come from the draw list
-			out[vertex_index].u = ((float *)order)[0];
-			out[vertex_index].v = ((float *)order)[1];
-            l = shadedots[verts1->lightnormalindex];
-            //l = shadedots[verts2->lightnormalindex] - shadedots[verts1->lightnormalindex];
-
-			float       r,g,b;
-
-			r = l * lightcolor[0];
-            g = l * lightcolor[1];
-            b = l * lightcolor[2];
-
-            if(r > 1)
-			   r = 1;
-			if(g > 1)
-			   g = 1;
-			if(b > 1)
-			   b = 1;
-
-			out[vertex_index].x =
-		(verts1[order[2]].v[0]*scale1[0]+translate1[0])*ilerp+
-		(verts2[order[2]].v[0]*scale2[0]+translate2[0])*lerp;
-
-
-			out[vertex_index].y =
-		(verts1[order[2]].v[1]*scale1[1]+translate1[1])*ilerp+
-        (verts2[order[2]].v[1]*scale2[1]+translate2[1])*lerp;
-
-			out[vertex_index].z =
-		(verts1[order[2]].v[2]*scale1[2]+translate1[2])*ilerp+
-		(verts2[order[2]].v[2]*scale2[2]+translate2[2])*lerp;
-
-			out[vertex_index].color =
-		GU_COLOR(r, g, b, 1.0f);
-
-		   order+=3;
-		}
-
-		if(r_showtris.value)
-		{
-		   sceGuDisable(GU_TEXTURE_2D);
-		}
-		sceGuDrawArray(r_showtris.value ? GU_LINE_STRIP : prim, GU_TEXTURE_32BITF | GU_VERTEX_32BITF  | GU_COLOR_8888, count, 0, out);
-        if(r_showtris.value)
-		{
-		   sceGuEnable(GU_TEXTURE_2D);
-		}
-	}
-	sceGuColor(0xffffffff);
-}
-
-/*
-=============
-GL_DrawQ2AliasShadow
-=============
-*/
-extern	vec3_t	lightspot;
-void GL_DrawQ2AliasShadow (entity_t *e, md2_t *pheader, int lastpose, int pose, float lerp)
-{
-
-}
-
-/*
-=================
-R_SetupQ2AliasFrame
-
-=================
-*/
-void R_SetupQ2AliasFrame (entity_t *e, md2_t *pheader)
-{
-	int				frame;
-	float			lerp;
-
-	frame = e->frame;
-
-    sceGumPushMatrix ();
-	R_RotateForEntity (e, 0, e->scale);
-
-	if ((frame >= pheader->num_frames) || (frame < 0))
-	{
-		Con_DPrintf ("R_SetupQ2AliasFrame: no such frame %d\n", frame);
-		frame = 0;
-	}
-
-	if (e->draw_lastmodel == e->model)
-	{
-		if (frame != e->draw_pose)
-		{
-			e->draw_lastpose = e->draw_pose;
-			e->draw_pose = frame;
-			e->draw_lerpstart = cl.time;
-			lerp = 0;
-		}
-		else
-			lerp = (cl.time - e->draw_lerpstart) * 10.0;
-	}
-	else // uninitialized
-	{
-		e->draw_lastmodel = e->model;
-		e->draw_lastpose = e->draw_pose = frame;
-		e->draw_lerpstart = cl.time;
-		lerp = 0;
-	}
-	if (lerp > 1) lerp = 1;
-
-	GL_DrawQ2AliasFrame (e, pheader, e->draw_lastpose, frame, lerp);
-
-	if (r_shadows.value)
-	{
-        trace_t		downtrace;
-		vec3_t		downmove;
-		VectorCopy (e->origin, downmove);
-
-		downmove[2] = downmove[2] - 4096;
-		memset (&downtrace, 0, sizeof(downtrace));
-		SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, e->origin, downmove, &downtrace);
-
-		sceGuDisable (GU_TEXTURE_2D);
-		sceGuEnable (GU_BLEND);
-		sceGuDepthMask(GU_TRUE); // disable zbuffer updates
-		sceGuColor(GU_COLOR(0,0,0,(1 - ((e->origin[2] + e->model->mins[2]-downtrace.endpos[2])/60))));
-
-		//stencil shadows
-		sceGuEnable(GU_STENCIL_TEST);
-        sceGuStencilFunc(GU_EQUAL,1,2);
-        sceGuStencilOp(GU_KEEP,GU_KEEP,GU_INCR);
-
-		GL_DrawQ2AliasShadow (e, pheader, e->draw_lastpose, frame, lerp);
-
-		sceGuDisable(GU_STENCIL_TEST);
-
-		sceGuDepthMask(GU_FALSE); // enable zbuffer updates
-		sceGuEnable (GU_TEXTURE_2D);
-		sceGuDisable (GU_BLEND);
-		sceGuColor(0xffffffff);
-	}
-
-	sceGumPopMatrix();
-	sceGumUpdateMatrix();
-}
-
-
 void IgnoreInterpolatioFrame (entity_t *e, aliashdr_t *paliashdr)
 {
 	if (strcmp(e->old_model, e->model->name) && e->model != NULL)
@@ -1493,9 +1183,6 @@ R_DrawZombieLimb
 
 =====================
 */
-//Blubs Z hacks: need this declaration.
-model_t *Mod_FindName (char *name);
-
 
 void R_DrawZombieLimb (entity_t *e,int which)
 {
@@ -1580,7 +1267,6 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	model_t		*clmodel;
 	vec3_t		mins, maxs;
 	aliashdr_t	*paliashdr;
-	float		an;
 	int			anim;
 
         clmodel = e->model;
@@ -1601,16 +1287,11 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	R_LightPoint(e->origin); // LordHavoc: lightcolor is all that matters from this
 	// LordHavoc: .lit support end
 	lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
-	shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
 	// LordHavoc: .lit support begin
 	//shadelight = shadelight / 200.0; // LordHavoc: original code
 	VectorScale(lightcolor, 1.0f / 200.0f, lightcolor);
 	// LordHavoc: .lit support end
-   	an = e->angles[1]/180*M_PI;
-	shadevector[0] = cosf(-an);
-	shadevector[1] = sinf(-an);
-	shadevector[2] = 1;
-	VectorNormalize (shadevector);
+
 	// locate the proper data//
 	paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
 	c_alias_polys += paliashdr->numtris;
@@ -1682,7 +1363,9 @@ R_DrawAliasModel
 =================
 */
 
-int doZHack;
+int partial_zombies_drawn;
+aliashdr_t * zcfull_mdl;
+aliashdr_t * zfull_mdl;
 
 void R_DrawAliasModel (entity_t *e)
 {
@@ -1690,11 +1373,10 @@ void R_DrawAliasModel (entity_t *e)
 	model_t		*clmodel;
 	vec3_t		mins, maxs;
 	aliashdr_t	*paliashdr;
-	float		an;
 	int			anim;
 	bool 		force_fullbright;
 
-        clmodel = e->model;
+    clmodel = e->model;
 
 	VectorAdd (e->origin, clmodel->mins, mins);
 	VectorAdd (e->origin, clmodel->maxs, maxs);
@@ -1734,16 +1416,6 @@ void R_DrawAliasModel (entity_t *e)
 	VectorCopy (e->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 
-	//
-	// get lighting information
-	//
-
-	// LordHavoc: .lit support begin
-	//ambientlight = shadelight = R_LightPoint (e->origin); // LordHavoc: original code, removed shadelight and ambientlight
-	R_LightPoint(e->origin); // LordHavoc: lightcolor is all that matters from this
-
-	// LordHavoc: .lit support end
-
 	//blubswillrule: disabled dynamic lights
 	/*for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
 	{
@@ -1762,23 +1434,6 @@ void R_DrawAliasModel (entity_t *e)
 		}
 	}*/
 
-	//Shpuld
-	if(r_model_brightness.value)
-	{
-		lightcolor[0] += 32;
-		lightcolor[1] += 32;
-		lightcolor[2] += 32;
-	}
-
-
-	for(int g = 0; g < 3; g++)
-	{
-		if(lightcolor[g] < 8)
-			lightcolor[g] = 8;
-		if(lightcolor[g] > 125)
-			lightcolor[g] = 125;
-	}
-	
 	specChar = clmodel->name[strlen(clmodel->name) - 5];
 	if(specChar == '!' || e->effects & EF_FULLBRIGHT)
 	{
@@ -1795,29 +1450,59 @@ void R_DrawAliasModel (entity_t *e)
 		force_fullbright = true;
 		alphafunc = true;
 	}
+
+	//
+	// get lighting information
+	//
+
+	if (!force_fullbright)
+	{
+		// LordHavoc: .lit support begin
+		//ambientlight = shadelight = R_LightPoint (e->origin); // LordHavoc: original code, removed shadelight and ambientlight
+		R_LightPoint(e->origin); // LordHavoc: lightcolor is all that matters from this
+		// LordHavoc: .lit support end
+		
+		//Shpuld
+		if(r_model_brightness.value)
+		{
+			lightcolor[0] += 32;
+			lightcolor[1] += 32;
+			lightcolor[2] += 32;
+		}
+
+		for(int g = 0; g < 3; g++)
+		{
+			if(lightcolor[g] < 8)
+			lightcolor[g] = 8;
+			if(lightcolor[g] > 125)
+			lightcolor[g] = 125;
+		}
+	}
+	
 	//t3 += Sys_FloatTime();
-	shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
+	// shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
 
 	// LordHavoc: .lit support begin
 	//shadelight = shadelight / 200.0; // LordHavoc: original code
 	VectorScale(lightcolor, 1.0f / 200.0f, lightcolor);
 	// LordHavoc: .lit support end
 
-   	an = e->angles[1]/180*M_PI;
-	shadevector[0] = cosf(-an);
-	shadevector[1] = sinf(-an);
-	shadevector[2] = 1;
-	VectorNormalize (shadevector);
-
 	//
 	// locate the proper data
 	//
-	if(doZHack && specChar == '%')
-	{
-		if(clmodel->name[12] == 'c')
-			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zcfull.mdl"));
-		else
-			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zfull.mdl"));
+	bool draw_partial_zombie = false;
+	if (specChar == '%') {
+		bool limbs_in_tact = (e->z_head != 0) && (e->z_larm != 0) && (e->z_rarm != 0);
+		if (partial_zombies_drawn > 5 || limbs_in_tact) {
+			if(clmodel->name[12] == 'c')
+				paliashdr = zcfull_mdl;
+			else
+				paliashdr = zfull_mdl;
+		} else {
+			partial_zombies_drawn += 1;
+			draw_partial_zombie = true;
+			paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
+		}
 	}
 	else
 		paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
@@ -1915,7 +1600,7 @@ void R_DrawAliasModel (entity_t *e)
 	sceGumPopMatrix();
 	sceGumUpdateMatrix();
 	
-	if (doZHack == 0 && specChar == '%')//if we're drawing zombie, also draw its limbs in one call
+	if (draw_partial_zombie && specChar == '%')//if we're drawing zombie, also draw its limbs in one call
 	{
 		if(e->z_head)
 			R_DrawZombieLimb(e,1);
@@ -1957,778 +1642,7 @@ void R_DrawAliasModel (entity_t *e)
 	sceGuDisable(GU_BLEND);
 }
 
-void R_DrawMD2Model (entity_t *e)
-{
-	int			i;
-	int			lnum;
-	vec3_t		dist;
-	float		add;
-	model_t		*clmodel;
-	vec3_t		mins, maxs;
-	float		an;
-	bool 		force_fullbright;
-
-	md2_t		*pheader; // LH / muff
-
-  if(ISADDITIVE(e))
-  {
-	float deg = e->renderamt;
-	float alpha_val  = deg;
-    float alpha_val2 = 1 - deg;
-
-	if(deg <= 0.7)
-	 sceGuDepthMask(GU_TRUE);
-
-	sceGuEnable (GU_BLEND);
-	sceGuBlendFunc(GU_ADD, GU_FIX, GU_FIX,
-	GU_COLOR(alpha_val,alpha_val,alpha_val,alpha_val),
-	GU_COLOR(alpha_val2,alpha_val2,alpha_val2,alpha_val2));
-  }
-  else if(ISGLOW(e))
-  {
-	sceGuDepthMask(GU_TRUE);
-	sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_FIX, 0, 0xFFFFFFFF);
-	sceGuTexFunc(GU_TFX_MODULATE , GU_TCC_RGBA);
-  }
-  else if (ISSOLID(e))
-  {
-	sceGuEnable(GU_ALPHA_TEST);
-	float c = (e->renderamt) * 255.0f;
-	sceGuAlphaFunc(GU_GREATER, 0x88, c);
-  }
-
-	force_fullbright = false;
-	clmodel = e->model;
-
-	VectorAdd (e->origin, clmodel->mins, mins);
-	VectorAdd (e->origin, clmodel->maxs, maxs);
-
-	//if (e->angles[0] || e->angles[1] || e->angles[2])
-	//{
-	//	if (R_CullSphere(e->origin, clmodel->radius))
-	//		return;
-	//}
-	//else
-	//{
-		if (R_CullBox(mins, maxs) == 2)
-			return;
-	//}
-
-
-	VectorCopy (e->origin, r_entorigin);
-	VectorSubtract (r_origin, r_entorigin, modelorg);
-
-	//
-	// get lighting information
-	//
-
-	// LordHavoc: .lit support begin
-	//ambientlight = shadelight = R_LightPoint (e->origin); // LordHavoc: original code, removed shadelight and ambientlight
-	R_LightPoint(e->origin); // LordHavoc: lightcolor is all that matters from this
-	// LordHavoc: .lit support end
-
-	// always give the gun some light
-	// LordHavoc: .lit support begin
-	//if (e == &cl.viewent && ambientlight < 24) // LordHavoc: original code
-	//	ambientlight = shadelight = 24; // LordHavoc: original code
-/*
-	if (e == &cl.viewent)
-	{
-		if (lightcolor[0] < 24)
-			lightcolor[0] = 24;
-		if (lightcolor[1] < 24)
-			lightcolor[1] = 24;
-		if (lightcolor[2] < 24)
-			lightcolor[2] = 24;
-	}
-*/
-	// LordHavoc: .lit support end
-
-	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
-	{
-		if (cl_dlights[lnum].die >= cl.time)
-		{
-			VectorSubtract (e->origin,
-							cl_dlights[lnum].origin,
-							dist);
-			add = cl_dlights[lnum].radius - Length(dist);
-
-			// LordHavoc: .lit support begin
-			/* LordHavoc: original code
-			if (add > 0) {
-				ambientlight += add;
-				//ZOID models should be affected by dlights as well
-				shadelight += add;
-			}
-			*/
-			if (add > 0)
-			{
-				lightcolor[0] += add * cl_dlights[lnum].color[0];
-				lightcolor[1] += add * cl_dlights[lnum].color[1];
-				lightcolor[2] += add * cl_dlights[lnum].color[2];
-			}
-			// LordHavoc: .lit support end
-		}
-	}
-
-	// clamp lighting so it doesn't overbright as much
-/*
-	if (shadelight > 65)
-		shadelight = 65;
-	if (ambientlight > 196)
-    {
-		ambientlight = 196;
-		force_fullbright = true;
-    }
-    else
-        force_fullbright = false;
-*/
-
-	// ZOID: never allow players to go totally black
-	//	i = e - cl_entities;
-	//	if (i >= 1 && i<=cl.maxclients /*&& !strcmp (e->model->name, "models/player.mdl") */)
-	// LordHavoc: .lit support begin
-	//	if (ambientlight < 8) // LordHavoc: original code
-	//		ambientlight = shadelight = 8; // LordHavoc: original code
-	
-	//Shpuld
-	if(r_model_brightness.value)
-	{
-		lightcolor[0] += 32;
-		lightcolor[1] += 32;
-		lightcolor[2] += 32;
-	}
-
-	
-	for(int g = 0; g < 3; g++)
-	{
-		if(lightcolor[g] < 8)
-			lightcolor[g] = 8;
-		
-		if(lightcolor[g] > 125)
-			lightcolor[g] = 125;
-	}
-	// HACK HACK HACK -- no fullbright colors, so make torches and projectiles full light
-	if (!strcmp (clmodel->name, "progs/flame2.mdl") ||
-	    !strcmp (clmodel->name, "progs/flame.mdl") ||
-	    !strcmp (clmodel->name, "progs/lavaball.mdl") ||
-	    !strcmp (clmodel->name, "progs/bolt.mdl") ||
-	    !strcmp (clmodel->name, "models/misc/bolt2.mdl") ||
-	    !strcmp (clmodel->name, "progs/bolt3.mdl") ||
-	    !strcmp (clmodel->name, "progs/eyes.mdl") ||
-	    !strcmp (clmodel->name, "progs/k_spike.mdl") ||
-	    !strcmp (clmodel->name, "progs/s_spike.mdl") ||
-	    !strcmp (clmodel->name, "progs/spike.mdl") ||
-	    !strcmp (clmodel->name, "progs/Misc/chalk.mdl") ||
-	    !strcmp (clmodel->name, "progs/Misc/x2.mdl") ||
-	    !strcmp (clmodel->name, "progs/Misc/nuke.mdl") ||
-	    !strcmp (clmodel->name, "progs/Misc/instakill.mdl") ||
-	    !strcmp (clmodel->name, "progs/Misc/perkbottle.mdl") ||
-	    !strcmp (clmodel->name, "progs/Misc/carpenter.mdl") ||
-	    !strcmp (clmodel->name, "progs/Misc/maxammo.mdl") ||
-	    !strcmp (clmodel->name, "progs/Misc/lamp_ndu.mdl") ||
-	    !strcmp (clmodel->name, "progs/laser.mdl"))
-	{
-		lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
-		force_fullbright = true;
-	}
-
-	if (e->effects & EF_FULLBRIGHT)
-	{
-		lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
-		force_fullbright = true;
-	}
-
-	if (!strcmp (clmodel->name, "progs/v_rpg.mdl") ||
-	 !strcmp (clmodel->name, "progs/stalker.mdl") ||
-	 !strcmp (clmodel->name, "progs/VModels/scope.mdl"))
-	{
-		alphafunc = true;
-	}
-	shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
-
-	// LordHavoc: .lit support begin
-	//shadelight = shadelight / 200.0; // LordHavoc: original code
-	VectorScale(lightcolor, 1.0f / 200.0f, lightcolor);
-	// LordHavoc: .lit support end
-
-   	an = e->angles[1]/180*M_PI;
-	shadevector[0] = cosf(-an);
-	shadevector[1] = sinf(-an);
-	shadevector[2] = 1;
-	VectorNormalize (shadevector);
-
-	//
-	// locate the proper data
-	//
-	pheader = (md2_t *)Mod_Extradata (e->model);
-	c_alias_polys += pheader->num_tris;
-
-	//
-	// draw all the triangles
-	//
-        GL_Bind(pheader->gl_texturenum[e->skinnum]);
-
-	// we can't dynamically colormap textures, so they are cached
-	// seperately for the players.  Heads are just uncolored.
-	if (e->colormap != vid.colormap && 0 /* && !gl_nocolors.value*/)
-	{
-		i = e - cl_entities;
-		if (i >= 1 && i<=cl.maxclients /*&& !strcmp (e->model->name, "models/player.mdl")*/)
-		{
-		    GL_Bind(playertextures - 1 + i);
-		}
-	}
-	//for models(pink transparency)
-	if (alphafunc)
-	{
-		sceGuEnable(GU_ALPHA_TEST);
-		sceGuAlphaFunc(GU_GREATER, 0, 0xff);
-		sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
-	}
-//st1x:now quake transparency is working
-	if (force_fullbright)
-		sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
- else
-		sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
-	//for models (blue transparency)
-	 if (alphafunc2)
-    {
-        sceGuEnable(GU_ALPHA_TEST);
-        sceGuAlphaFunc(GU_GREATER, 0xaa, 0xff);
-        sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
-    }
-
-	sceGuShadeModel(GU_SMOOTH);
-
-
-
-	R_SetupQ2AliasFrame (e, pheader);
-
-	//st1x:now quake transparency is working
-	sceGuAlphaFunc(GU_GREATER, 0, 0xff);
-	sceGuDisable(GU_ALPHA_TEST);
-	sceGuTexFunc(GU_TFX_REPLACE , GU_TCC_RGBA);
-	sceGuShadeModel(GU_FLAT);
-
-
-   if (ISADDITIVE(e))
-   {
-        float deg = e->renderamt;
-
-		if(deg <= 0.7)
-		   sceGuDepthMask(GU_FALSE);
-
-		//sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
-        //sceGuDisable (GU_BLEND);
-   }
-   else if(ISSOLID(e))
-   {
-	    sceGuAlphaFunc(GU_GREATER, 0, 0xff);
-	    sceGuDisable(GU_ALPHA_TEST);
-   }
-   else if(ISGLOW(e))
-    {
-        sceGuDepthMask(GU_FALSE);
-	//sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
-        //sceGuDisable (GU_BLEND);
-    }
-
-   sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
-   sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
-   sceGuDisable(GU_BLEND);
-}
-
-//==================================================================================
-//=================================Q3 Models========================================
-//==================================================================================
-
-int		bodyframe = 0, legsframe = 0;
-animtype_t	bodyanim, legsanim;
-
-//ScePspFMatrix4	matrix;
-
-void R_ReplaceQ3Frame (int frame)
-{
-	animdata_t		*currbodyanim, *currlegsanim;
-	static	animtype_t	oldbodyanim, oldlegsanim;
-	static	float		bodyanimtime, legsanimtime;
-	static	qboolean	deathanim = qfalse;
-
-	if (deathanim)
-	{
-		bodyanim = oldbodyanim;
-		legsanim = oldlegsanim;
-	}
-
-	if (frame < 41 || frame > 102)
-		deathanim = qfalse;
-
-	if (frame >= 0 && frame <= 5)		// axrun
-	{
-		bodyanim = torso_stand2;
-		legsanim = legs_run;
-	}
-	else if (frame >= 6 && frame <= 11)	// rockrun
-	{
-		bodyanim = torso_stand;
-		legsanim = legs_run;
-	}
-	else if ((frame >= 12 && frame <= 16) || (frame >= 35 && frame <= 40))	// stand, pain
-	{
-		bodyanim = torso_stand;
-		legsanim = legs_idle;
-	}
-	else if ((frame >= 17 && frame <= 28) || (frame >= 29 && frame <= 34))	// axstand, axpain
-	{
-		bodyanim = torso_stand2;
-		legsanim = legs_idle;
-	}
-	else if (frame >= 41 && frame <= 102 && !deathanim)	// axdeath, deatha, b, c, d, e
-	{
-		bodyanim = legsanim = both_death1;
-		deathanim = qtrue;
-	}
-	else if (frame > 103 && frame <= 118)	// gun attacks
-	{
-		bodyanim = torso_attack;
-	}
-	else if (frame >= 119)			// axe attacks
-	{
-		bodyanim = torso_attack2;
-	}
-
-	currbodyanim = &anims[bodyanim];
-	currlegsanim = &anims[legsanim];
-
-	if (bodyanim == oldbodyanim)
-	{
-		if (cl.time >= bodyanimtime + currbodyanim->interval)
-		{
-			if (currbodyanim->loop_frames && bodyframe + 1 >= currbodyanim->offset + currbodyanim->loop_frames)
-				bodyframe = currbodyanim->offset;
-			else if (bodyframe + 1 < currbodyanim->offset + currbodyanim->num_frames)
-				bodyframe++;
-			bodyanimtime = cl.time;
-		}
-	}
-	else
-	{
-		bodyframe = currbodyanim->offset;
-		bodyanimtime = cl.time;
-	}
-
-	if (legsanim == oldlegsanim)
-	{
-		if (cl.time >= legsanimtime + currlegsanim->interval)
-		{
-			if (currlegsanim->loop_frames && legsframe + 1 >= currlegsanim->offset + currlegsanim->loop_frames)
-				legsframe = currlegsanim->offset;
-			else if (legsframe + 1 < currlegsanim->offset + currlegsanim->num_frames)
-				legsframe++;
-			legsanimtime = cl.time;
-		}
-	}
-	else
-	{
-		legsframe = currlegsanim->offset;
-		legsanimtime = cl.time;
-	}
-
-	oldbodyanim = bodyanim;
-	oldlegsanim = legsanim;
-}
-
-int		multimodel_level;
-bool	surface_transparent;
-
-/*
-=================
-R_DrawQ3Frame
-=================
-*/
-void R_DrawQ3Frame (int frame, md3header_t *pmd3hdr, md3surface_t *pmd3surf, entity_t *ent, int distance)
-{
-
-}
-
-/*
-=================
-R_DrawQ3Shadow
-=================
-*/
-void R_DrawQ3Shadow (entity_t *ent, float lheight, float s1, float c1, trace_t downtrace)
-{
-
-}
-
-/*
-=================
-R_SetupQ3Frame
-=================
-*/
-void R_SetupQ3Frame (entity_t *ent)
-{
-	int		i, j, frame, shadernum, texture;
-	float		m[16];
- md3header_t	*pmd3hdr;
-	md3surface_t	*pmd3surf;
-	md3tag_t	*tag;
-	model_t		*clmodel = ent->model;
-	tagentity_t	*tagent;
-
-	if (!strcmp(clmodel->name, "models/player/lower.md3"))
-		frame = legsframe;
-	else if (!strcmp(clmodel->name, "models/player/upper.md3"))
-		frame = bodyframe;
-	else
-		frame = ent->frame;
-
-	// locate the proper data
-	pmd3hdr = (md3header_t *)Mod_Extradata (clmodel);
-
-	// draw all the triangles
-
-	// draw non-transparent surfaces first, then the transparent ones
-	for (i=0 ; i<2 ; i++)
-	{
-		pmd3surf = (md3surface_t *)((byte *)pmd3hdr + pmd3hdr->ofssurfs);
-		for (j=0 ; j<pmd3hdr->numsurfs ; j++)
-		{
-			md3shader_mem_t	*shader;
-
- surface_transparent =  (strstr(pmd3surf->name, "energy") ||
-						strstr(pmd3surf->name, "f_") ||
-						strstr(pmd3surf->name, "flare") ||
-						strstr(pmd3surf->name, "flash") ||
-						strstr(pmd3surf->name, "Sphere") ||
-						strstr(pmd3surf->name, "telep"));
-
-			if ((!i && surface_transparent) || (i && !surface_transparent))
-			{
-				pmd3surf = (md3surface_t *)((byte *)pmd3surf + pmd3surf->ofsend);
-				continue;
-			}
-
-			c_md3_polys += pmd3surf->numtris;
-
-			shadernum = ent->skinnum;
-			if ((shadernum >= pmd3surf->numshaders) || (shadernum < 0))
-			{
-				Con_DPrintf ("R_SetupQ3Frame: no such skin # %d\n", shadernum);
-				shadernum = 0;
-			}
-
-			shader = (md3shader_mem_t *)((byte *)pmd3hdr + pmd3surf->ofsshaders);
-
-			texture = shader[shadernum].gl_texnum;
-
-			//glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-			GL_Bind (texture);
-
-			R_DrawQ3Frame (frame, pmd3hdr, pmd3surf, ent, INTERP_MAXDIST);
-
-			pmd3surf = (md3surface_t *)((byte *)pmd3surf + pmd3surf->ofsend);
-		}
-	}
-
-	if (!pmd3hdr->numtags)	// single model, done
-		return;
-
-	tag = (md3tag_t *)((byte *)pmd3hdr + pmd3hdr->ofstags);
-	tag += frame * pmd3hdr->numtags;
-	for (i=0 ; i<pmd3hdr->numtags ; i++, tag++)
-	{
-		if (multimodel_level == 0 && !strcmp(tag->name, "tag_torso"))
-		{
-			tagent = &q3player_body;
-			ent = &q3player_body.ent;
-			multimodel_level++;
-		}
-		else if (multimodel_level == 1 && !strcmp(tag->name, "tag_head"))
-		{
-			tagent = &q3player_head;
-			ent = &q3player_head.ent;
-			multimodel_level++;
-		}
-		else
-		{
-			continue;
-		}
-
-		sceGumPushMatrix ();
-        R_RotateForTagEntity (tagent, tag, m);
-        ConvertMatrix((float*)&md3mult, m);
-		sceGumMultMatrix(&md3mult);
-        sceGumUpdateMatrix ();
-		R_SetupQ3Frame (ent);
-		sceGumPopMatrix ();
-	}
-}
-
 extern cvar_t	scr_fov;
-
-/*
-=================
-R_DrawQ3Model
-=================
-*/
-void R_DrawQ3Model (entity_t *ent)
-{
-	vec3_t		mins, maxs, md3_scale_origin = {0, 0, 0};
-	model_t		*clmodel = ent->model;
-	float scale;
-    int			lnum;
-	vec3_t		dist;
-	float		add, an;
-
-	VectorAdd (ent->origin, clmodel->mins, mins);
-	VectorAdd (ent->origin, clmodel->maxs, maxs);
-    if(ISADDITIVE(ent))
-    {
-	  float deg = ent->renderamt;
-	  float alpha_val  = deg;
-      float alpha_val2 = 1 - deg;
-	  if(deg <= 0.7)
-	    sceGuDepthMask(GU_TRUE);
-
-	  sceGuEnable (GU_BLEND);
-	  sceGuBlendFunc(GU_ADD, GU_FIX, GU_FIX,
-	  GU_COLOR(alpha_val,alpha_val,alpha_val,alpha_val),
-	  GU_COLOR(alpha_val2,alpha_val2,alpha_val2,alpha_val2));
-    }
-    else if(ISGLOW(ent))
-    {
-	  sceGuDepthMask(GU_TRUE);
-	  sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_FIX, 0, 0xFFFFFFFF);
-	  sceGuTexFunc(GU_TFX_MODULATE , GU_TCC_RGB);
-    }
-    else if (ISSOLID(ent))
-    {
-	  sceGuEnable(GU_ALPHA_TEST);
-	  float c = (ent->renderamt) * 255.0f;
-	  sceGuAlphaFunc(GU_GREATER, 0x88, c);
-    }
-	if (ent->angles[0] || ent->angles[1] || ent->angles[2])
-	{
-		if (R_CullSphere(ent->origin, clmodel->radius))
-			return;
-	}
-	else
-	{
-		if (R_CullBox(mins, maxs) == 2)
-			return;
-	}
-
-	//==========================================================================
-
-	VectorCopy (ent->origin, r_entorigin);
-	VectorSubtract (r_origin, r_entorigin, modelorg);
-
-	//
-	// get lighting information
-	//
-	R_LightPoint(currententity->origin); // LordHavoc: lightcolor is all that matters from this
-
-	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
-	{
-		if (cl_dlights[lnum].die >= cl.time)
-		{
-			VectorSubtract (currententity->origin,
-							cl_dlights[lnum].origin,
-							dist);
-			add = cl_dlights[lnum].radius - Length(dist);
-			if (add > 0)
-			{
-				lightcolor[0] += add * cl_dlights[lnum].color[0];
-				lightcolor[1] += add * cl_dlights[lnum].color[1];
-				lightcolor[2] += add * cl_dlights[lnum].color[2];
-			}
-		}
-	}
-
-	// clamp lighting so it doesn't overbright as much
-    //ColorClamp(lightcolor[0], lightcolor[1], lightcolor[2], 0, 125, 8);
-
-    for(int g = 0; g < 3; g++)
-	{
-      if(lightcolor[g] < 8)
-         lightcolor[g] = 8;
-
-	  if(lightcolor[g] > 125)
-         lightcolor[g] = 125;
-	}
-
-	shadedots = r_avertexnormal_dots[((int)(ent->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
-
-	VectorScale(lightcolor, 1.0f / 200.0f, lightcolor);
-
-
-   	an = ent->angles[1]/180*M_PI;
-	shadevector[0] = cosf(-an);
-	shadevector[1] = sinf(-an);
-	shadevector[2] = 1;
-	VectorNormalize (shadevector);
-
-
-	//==========================================================================
-
-	sceGumPushMatrix ();
-
-
-	if (ent == &cl.viewent)
-		R_RotateForViewEntity (ent);
-	else
-		R_RotateForEntity(ent, 0, ent->scale);
-
-    if ((ent == &cl.viewent) && (scr_fov.value != 0))
-	{
-		if (scr_fov.value <= 90)
-			scale = 1.0f;
-		else
-			#ifdef PSP_VFPU
-			scale = 1.0f / vfpu_tanf( DEG2RAD(scr_fov.value/2));
-			#else
-			scale = 1.0f / tan( DEG2RAD(scr_fov.value/2));
-			#endif
-
-         const ScePspFVector3 translation =
-	     {
-		  md3_scale_origin[0]*scale, md3_scale_origin[1], md3_scale_origin[2]
-	     };
-	     sceGumTranslate(&translation);
-
-         const ScePspFVector3 GUscale =
-	     {
-	      scale, 1, 1
-	     };
-	     sceGumScale(&GUscale);
-	}
-	else
-	{
-	     const ScePspFVector3 translation =
-	     {
-		  md3_scale_origin[0], md3_scale_origin[1], md3_scale_origin[2]
-	     };
-	     sceGumTranslate(&translation);
-	}
-
-
-	sceGuShadeModel (GU_SMOOTH);
-
-	sceGumUpdateMatrix ();
-
-    sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
-
-   //==========================================================================
-
-	if ((!strcmp(ent->model->name, "models/player/lower.md3"))||(!strcmp(ent->model->name, "models/player/upper.md3")))
-	{
-		//q3player_body.ent.renderamt = q3player_head.ent.renderamt = cl_entities[cl.viewentity].renderamt;
-		R_ReplaceQ3Frame (ent->frame);
-		ent->noshadow = qtrue;
-	}
-
-	multimodel_level = 0;
-	R_SetupQ3Frame (ent);
-
-	sceGuShadeModel (GU_FLAT);
-
-	sceGuTexFunc(GU_TFX_REPLACE , GU_TCC_RGBA);
-
-	sceGumPopMatrix ();
-    sceGumUpdateMatrix ();
-
-	if (r_shadows.value && !ent->noshadow)
-	{
-		int		farclip;
-		float		theta, lheight, s1, c1;
-		vec3_t		downmove;
-		trace_t		downtrace;
-		static	float	shadescale = 0;
-
-		farclip = fmax((int)r_farclip.value, 4096);
-
-		if (!shadescale)
-			shadescale = 1 / sqrt(2);
-		theta = -ent->angles[1] / 180 * M_PI;
-
-		#ifdef PSP_VFPU
-		VectorSet (shadevector, cos(theta) * shadescale, vfpu_sinf(theta) * shadescale, shadescale);
-		#else
-		VectorSet (shadevector, cos(theta) * shadescale, sin(theta) * shadescale, shadescale);
-		#endif
-
-		sceGumPushMatrix ();
-
-		R_RotateForEntity (ent, 0, ent->scale);
-
-		VectorCopy (ent->origin, downmove);
-		downmove[2] -= farclip;
-		memset (&downtrace, 0, sizeof(downtrace));
-		SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, ent->origin, downmove, &downtrace);
-
-		lheight = ent->origin[2] - lightspot[2];
-
-		#ifdef PSP_VFPU
-		s1 = vfpu_sinf(ent->angles[1] / 180 * M_PI);
-		c1 = vfpu_cosf(ent->angles[1] / 180 * M_PI);
-		#else
-		s1 = sin(ent->angles[1] / 180 * M_PI);
-		c1 = cos(ent->angles[1] / 180 * M_PI);
-		#endif
-
-		sceGuDepthMask (GU_TRUE);
-		sceGuDisable (GU_TEXTURE_2D);
-		sceGuEnable (GU_BLEND);
-
-		sceGuColor(GU_RGBA(
-	       static_cast<unsigned int>(0.0f * 255.0f),
-	       static_cast<unsigned int>(0.0f * 255.0f),
-	       static_cast<unsigned int>(0.0f * 255.0f),
-	       static_cast<unsigned int>(((ambientlight - (mins[2] - downtrace.endpos[2]))*r_shadows.value)*0.0066 * 255.0f)));
-
-		multimodel_level = 0;
-
-		sceGuEnable(GU_STENCIL_TEST);
-		sceGuStencilFunc(GU_EQUAL,1,2);
-		sceGuStencilOp(GU_KEEP,GU_KEEP,GU_INCR);
-
-		R_DrawQ3Shadow (ent, lheight, s1, c1, downtrace);
-
-		sceGuDisable(GU_STENCIL_TEST);
-
-		sceGuDepthMask (GU_FALSE);
-		sceGuEnable    (GU_TEXTURE_2D);
-		sceGuDisable   (GU_BLEND);
-        sceGuColor(GU_RGBA(0xff,0xff,0xff,0xff)); //return to normal color
-
-		sceGumPopMatrix ();
-        sceGumUpdateMatrix ();
-	}
-   if (ISADDITIVE(ent))
-   {
-        float deg = ent->renderamt;
-
-		if(deg <= 0.7)
-		   sceGuDepthMask(GU_FALSE);
-
-		sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
-        sceGuDisable (GU_BLEND);
-   }
-   else if(ISSOLID(ent))
-   {
-	    sceGuAlphaFunc(GU_GREATER, 0, 0xff);
-	    sceGuDisable(GU_ALPHA_TEST);
-   }
-   else if(ISGLOW(ent))
-   {
-        sceGuDepthMask(GU_FALSE);
-		sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
-        sceGuDisable (GU_BLEND);
-   }
-}
 
 /*
 =============
@@ -2826,118 +1740,48 @@ void R_DrawLine(vec3_t start,vec3_t end, vec3_t rgb)
 
 }
 
-//==================================================================================
-int SetFlameModelState (void)
-{
-	if (!r_part_flames.value && !strcmp(currententity->model->name, "progs/flame0.mdl"))
-	{
-		currententity->model = cl.model_precache[cl_modelindex[mi_flame1]];
-	}
-	else if (r_part_flames.value)
-	{
-		vec3_t	liteorg;
-
-		VectorCopy (currententity->origin, liteorg);
-		if (currententity->baseline.modelindex == cl_modelindex[mi_flame0])
-		{
-			if (r_part_flames.value == 2)
-			{
-				liteorg[2] += 14;
-				QMB_Q3TorchFlame (liteorg, 15);
-			}
-			else
-			{
-				liteorg[2] += 5.5;
-
-				if(r_flametype.value == 2)
-				  QMB_FlameGt (liteorg, 7, 0.8);
-				else
-				  QMB_TorchFlame(liteorg);
-			}
-		}
-		else if (currententity->baseline.modelindex == cl_modelindex[mi_flame1])
-		{
-			if (r_part_flames.value == 2)
-			{
-				liteorg[2] += 14;
-				QMB_Q3TorchFlame (liteorg, 15);
-			}
-			else
-			{
-				liteorg[2] += 5.5;
-
-				if(r_flametype.value > 1)
-				  QMB_FlameGt (liteorg, 7, 0.8);
-				else
-			      QMB_TorchFlame(liteorg);
-
-			}
-			currententity->model = cl.model_precache[cl_modelindex[mi_flame0]];
-		}
-		else if (currententity->baseline.modelindex == cl_modelindex[mi_flame2])
-		{
-			if (r_part_flames.value == 2)
-            {
-				liteorg[2] += 14;
-				QMB_Q3TorchFlame (liteorg, 32);
-            }
-			else
-			{
-                liteorg[2] -= 1;
-
-				if(r_flametype.value > 1)
-				  QMB_FlameGt (liteorg, 12, 1);
-				else
-			      QMB_BigTorchFlame(liteorg);
-			}
-			return -1;	//continue;
-		}
-        else if (!strcmp(currententity->model->name, "progs/wyvflame.mdl"))
-		{
-			liteorg[2] -= 1;
-
-			if(r_flametype.value > 1)
-			  QMB_FlameGt (liteorg, 12, 1);
-			else
-			  QMB_BigTorchFlame(liteorg);
-
-			return -1;	//continue;
-		}
-	}
-
-	return 0;
-}
 
 /*
 =============
 R_DrawEntitiesOnList
 =============
 */
+extern int numgltextures;
+// The values in these are indices in current frame cl_visedicts, pointing to first entity of linked list
+short entity_batches[MAX_GLTEXTURES];
+short trans_entity_batches[MAX_GLTEXTURES];
+// are human rights btw
+
 void R_DrawEntitiesOnList (void)
 {
-	int		i;
-
 	if (!r_drawentities.value)
 		return;
+	// Because 0 is a valid index for a visedict, we use short to get access to -1...
+	// Setting min size out of paranoia
+	int batches_max_size = MAX(256, sizeof(short) * numgltextures);
+	memset(entity_batches, -1, batches_max_size);
+	memset(trans_entity_batches, -1, batches_max_size);
 
-	//t1 = 0;
-	//t2 = 0;
-	//t3 = 0;
-	//t1 -= Sys_FloatTime();
+	// acceleration so we dont have to iterate all the textures,
+	// when we encounter a new texture, add it to this list.
+	// trans ents added from end and opaque ents added from front.
+	short textures_used[MAX_VISEDICTS];
+	int num_batches = 0;
+	int num_trans_batches = 0;
 	
-	int zHackCount = 0;
-	doZHack = 0;
+	partial_zombies_drawn = 0;
 	char specChar;
 
-   	// draw sprites seperately, because of alpha blending
-	for (i=0 ; i<cl_numvisedicts ; i++)
+	int anim = (int)(cl.time*10) & 3;
+
+   	// Batch alias and spr entities by their texture index
+	for (int i = 0; i < cl_numvisedicts; i++)
 	{
 		currententity = cl_visedicts[i];
 
 		if (currententity == &cl_entities[cl.viewentity])
 			currententity->angles[0] *= 0.3;
 
-		//currentmodel = currententity->model;
 		if(!(currententity->model))
 		{
 			R_DrawNullModel();
@@ -2947,48 +1791,54 @@ void R_DrawEntitiesOnList (void)
 		
 		specChar = currententity->model->name[strlen(currententity->model->name)-5];
 		
-		if(specChar == '(' || specChar == '^')//skip heads and arms: it's faster to do this than a strcmp...
-		{
+		// zombie limb special characters, draw them with the body together
+		if(specChar == '(' || specChar == '^')
 			continue;
-		}
-		doZHack = 0;
-		if(specChar == '%')
-		{
-			if(zHackCount > 5 || ((currententity->z_head != 0) && (currententity->z_larm != 0) && (currententity->z_rarm != 0)))
-			{
-				doZHack = 1;
-			}
-			else
-			{
-				zHackCount ++;//drawing zombie piece by piece.
-			}
-		}
+
+		short textureindex = 0;
+		short prev_visedict = 0;
+		
+		currententity->next_visedict = -1;
 
 		switch (currententity->model->type)
 		{
 		case mod_alias:
-
-			if (qmb_initialized && SetFlameModelState() == -1)
-				continue;
-			
-			if (currententity->model->aliastype == ALIASTYPE_MD2)
-				R_DrawMD2Model (currententity);
-			else
 			{
-				if(specChar == '$')//This is for smooth alpha, draw in the following loop, not this one
-				{
-					continue;
+				aliashdr_t * paliashdr = (aliashdr_t *)Mod_Extradata (currententity->model);
+				textureindex = paliashdr->gl_texturenum[currententity->skinnum][anim];
+				if(specChar == '$') { // alpha blended
+					prev_visedict = trans_entity_batches[textureindex];
+					if (prev_visedict < 0) {
+						textures_used[MAX_VISEDICTS - 1 - num_trans_batches] = textureindex;
+						num_trans_batches += 1;
+					} 
+					currententity->next_visedict = prev_visedict;
+					trans_entity_batches[textureindex] = i;
+					break;
+				} else { // opaque
+					prev_visedict = entity_batches[textureindex];
+					if (prev_visedict < 0) {
+						textures_used[num_batches] = textureindex;
+						num_batches += 1;
+					} 
+					currententity->next_visedict = prev_visedict;
+					entity_batches[textureindex] = i;
 				}
-				R_DrawAliasModel (currententity);
 			}
-			
 			break;
-		case mod_md3:
-			R_DrawQ3Model (currententity);
-			break;
-
-		case mod_halflife:
-			R_DrawHLModel (currententity);
+		
+		case mod_sprite:
+			{
+				mspriteframe_t* spriteframe = R_GetSpriteFrame(currententity);
+				textureindex = spriteframe->gl_texturenum;
+				prev_visedict = trans_entity_batches[textureindex];
+				if (prev_visedict < 0) {
+					textures_used[MAX_VISEDICTS - 1 - num_trans_batches] = textureindex;
+					num_trans_batches += 1;
+				} 
+				currententity->next_visedict = prev_visedict;
+				trans_entity_batches[textureindex] = i;
+			}
 			break;
 
 		case mod_brush:
@@ -2998,37 +1848,32 @@ void R_DrawEntitiesOnList (void)
 		default:
 			break;
 		}
-		doZHack = 0;
 	}
 
-	for (i=0 ; i<cl_numvisedicts ; i++)
-	{
-		currententity = cl_visedicts[i];
-		
-		if(!(currententity->model))
-		{
-			continue;
+	// iterate and render opaque mdls
+	// TODO: go through model drawing to see if there's things we can move to here to reduce repetition
+	for (int i = 0; i < num_batches; i++) {
+		short textureindex = textures_used[i];
+		short index = entity_batches[textureindex];
+		while (index >= 0) {
+			currententity = cl_visedicts[index];
+			R_DrawAliasModel(currententity);
+			index = currententity->next_visedict;
 		}
-		
-		specChar = currententity->model->name[strlen(currententity->model->name)-5];
+	}
 
-		switch (currententity->model->type)
-		{
-		case mod_sprite:
-		{
-			R_DrawSpriteModel (currententity);
-			break;
-		}
-		case mod_alias:
-			if (currententity->model->aliastype != ALIASTYPE_MD2)
-			{
-				if(specChar == '$')//mdl model with blended alpha
-				{
-					R_DrawTransparentAliasModel(currententity);
-				}
+	// iterate and render transparent mdls and all sprites
+	for (int i = 0; i < num_trans_batches; i++) {
+		short textureindex = textures_used[MAX_VISEDICTS - 1 - i];
+		short index = trans_entity_batches[textureindex];
+		while (index >= 0) {
+			currententity = cl_visedicts[index];
+			if (currententity->model->type == mod_alias) {
+				R_DrawTransparentAliasModel(currententity);
 			}
-			break;
-		default: break;
+			else
+				R_DrawSpriteModel(currententity);
+			index = currententity->next_visedict;
 		}
 	}
 }
@@ -3129,17 +1974,8 @@ void R_DrawViewModel (void)
 			// fenix@io.com: model transform interpolation
 		old_i_model_transform = r_i_model_transform.value;
 		r_i_model_transform.value = false;
-		if (currententity->model->aliastype == ALIASTYPE_MD2)
-			R_DrawMD2Model (currententity);
-		else
-			R_DrawAliasModel (currententity);
+		R_DrawAliasModel (currententity);
 		r_i_model_transform.value = old_i_model_transform;
-			break;
-		case mod_md3:
-			R_DrawQ3Model (currententity);
-			break;
-		case mod_halflife:
-			R_DrawHLModel (currententity);
 			break;
 		default:
 			Con_Printf("Not drawing view model of type %i\n", currententity->model->type);
@@ -3201,17 +2037,8 @@ void R_DrawView2Model (void)
 		// fenix@io.com: model transform interpolation
         old_i_model_transform = r_i_model_transform.value;
         r_i_model_transform.value = false;
-        if (currententity->model->aliastype == ALIASTYPE_MD2)
-            R_DrawMD2Model (currententity);
-        else
-            R_DrawAliasModel (currententity);
+        R_DrawAliasModel (currententity);
         r_i_model_transform.value = old_i_model_transform;
-		break;
-    case mod_md3:
-		R_DrawQ3Model (currententity);
-		break;
-    case mod_halflife:
-		R_DrawHLModel (currententity);
 		break;
 	default:
 		Con_Printf("Not drawing view model of type %i\n", currententity->model->type);
@@ -3376,7 +2203,7 @@ void R_RenderScene (void)
 		gly + (glheight >> 1) - y2 - (h >> 1), //xaa - try to skip some divides (/2) here
 		w,
 		h);
-	sceGuScissor(x, glheight - y2 - h, x + w, glheight - y2);
+	sceGuScissor(x, glheight - y2 - h, w, h);
 
     screenaspect = (float)renderrect->width/renderrect->height;
 
@@ -3590,7 +2417,6 @@ void R_RenderView (void)
 {
 	c_brush_polys = 0;
 	c_alias_polys = 0;
-    c_md3_polys = 0;
 
 	mirror = qfalse;
 

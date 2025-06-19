@@ -285,7 +285,7 @@ int WAD3_LoadTextureClut4(miptex_t *mt)
    byte* wadData = ((byte*)mt) + mt->offsets[0];
 	const byte* palette = ((byte*)mt) + mt->offsets[3] + (mt->width>>3)*(mt->height>>3) + 2;
 
-	return GL_LoadTexture8to4(mt->name, mt->width, mt->height, wadData, palette, 0);
+	return GL_LoadTexture8to4(mt->name, mt->width, mt->height, wadData, palette, 0, 3, NULL);
 }
 
 #endif // __PSP__
