@@ -305,7 +305,7 @@ void M_Main_Draw (void)
 	char *main_menu_items[] = {
 		"NDU",
 		"BOXXER",
-		"LOOP",
+		"4ALL",
 		"WAREHOUSE",
 		"WEAPON_TEST",
 		"Options",
@@ -373,7 +373,7 @@ void M_Main_Key (int key)
 			if (sv.active)
 				Cbuf_AddText ("disconnect\n");
 			Cbuf_AddText ("maxplayers 1\n");
-			Cbuf_AddText ("map loop\n");
+			Cbuf_AddText ("map 4all\n");
 			break;
 		case 3:
 			key_dest = key_game;

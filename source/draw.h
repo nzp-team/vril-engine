@@ -72,7 +72,7 @@ qpic_t *Draw_LMP (char *path);
 #ifdef __NSPIRE__
 void Draw_BlackBackground (void);
 // naievil -- texture conversion start 
-#define MAX_SINGLE_PLANE_PIXEL_SIZE 		512*512*1 		// naievil -- 512 x 512 single plane (paletted) texture
+#define MAX_SINGLE_PLANE_PIXEL_SIZE 		1048576		// naievil -- 1024 x 1024 single plane (paletted) texture
 extern byte converted_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE]; 
 extern byte temp_pixel_storage_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE*4]; // naievil -- rgba storage for max pic size 
 // naievil -- texture conversion end

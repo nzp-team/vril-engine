@@ -399,6 +399,14 @@ void Mod_LoadTextures (lump_t *l)
 		if ( (mt->width & 15) || (mt->height & 15) )
 			Sys_Error ("Texture %s is not 16 aligned", mt->name);
 		pixels = mt->width*mt->height/64*85;
+
+		if (pixels > MAX_SINGLE_PLANE_PIXEL_SIZE) 
+		{
+			Con_Printf ("Texture %s is too large (%d bytes)\n", mt->name, pixels);
+			loadmodel->textures[i] = NULL;
+			continue;
+		}
+
 		tx = Hunk_AllocName (sizeof(texture_t) +pixels, loadname );
 		loadmodel->textures[i] = tx;
 
