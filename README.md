@@ -1,7 +1,7 @@
 # Nazi Zombies: Portable Vril Engine
 
 ## About
-This repository contains the PlayStation Portable and Nintendo 3DS engine for NZ:P, based on dQuakePlus and ctrQuake, lovingly titled "Vril". It contains optimizations from the NZ:P Team, adQuake, and Xash3D-PSP, as well as NZ:P-specific feature implementation. It has also been modified to build on the latest versions of the [PSPSDK](https://github.com/pspdev/pspsdk).
+This repository contains the PlayStation Portable, Nintendo 3DS and TI NSPIRE engine for NZ:P, based on dQuakePlus, ctrQuake, and nQuake lovingly titled "Vril". It contains optimizations from the NZ:P Team, adQuake, and Xash3D-PSP, as well as NZ:P-specific feature implementation. It has also been modified to build on the latest versions of the [PSPSDK](https://github.com/pspdev/pspsdk).
 
 ## Building for PlayStation Portable
 Building requires a full install of [psptoolchain](https://github.com/pspdev/psptoolchain/). You can either follow the instructions on the GitHub repository or use a Docker container (we recommend [the official one](https://hub.docker.com/r/pspdev/pspdev))!
