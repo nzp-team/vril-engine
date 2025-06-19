@@ -228,13 +228,11 @@ void Con_Init (void)
 	// rbaldwin2 -- FIXME: remove force console debug
 	#ifdef __NSPIRE__
 	char	*t2 = "/condebug.log.tns";
-
-	con_debuglog = 1;
 	#else
 	char	*t2 = "/condebug.log";
+	#endif
 
 	con_debuglog = COM_CheckParm("-condebug");
-	#endif
 
 	if (con_debuglog)
 	{
