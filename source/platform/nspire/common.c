@@ -1404,7 +1404,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 				if ( strchr (filename, '/') || strchr (filename,'\\'))
 					continue;
 			}
-			sprintf (netpath, "%s/%s.tns",search->filename, filename);			
+			sprintf (netpath, "%s/%s%s%s",search->filename, FILE_SPECIAL_PREFIX, filename, FILE_SPECIAL_SUFFIX);			
 			findtime = Sys_FileTime (netpath);
 			if (findtime == -1)
 				continue;
@@ -1713,7 +1713,7 @@ void COM_AddGameDirectory (char *dir)
 //
 	/*printf("G+++AA\n");*/
 
-	sprintf (pakfile, "%s/nzp.pak.tns", dir);
+	sprintf (pakfile, "%s/%snzp.pak%s", dir, FILE_SPECIAL_PREFIX, FILE_SPECIAL_SUFFIX);
 	printf("G+++AAA %s\n", pakfile );
 
 	pak = COM_LoadPackFile (pakfile);

@@ -760,7 +760,8 @@ void FloorDivMod (float numer, float denom, int *quotient,
 }
 
 #ifdef __NSPIRE__
-
+// from naievil as to this gating:
+// udiv_64_32 is an assembly function specific to NSPIRE in d_scan_S
 void FloorDivModFixed( int numer, int denom, int *quotient, int *rem )
 {
 	int		q, r, x;
@@ -786,7 +787,6 @@ void FloorDivModFixed( int numer, int denom, int *quotient, int *rem )
 	*quotient = q;
 	*rem = r;
 }
-
 #endif
 
 /*
