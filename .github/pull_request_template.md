@@ -2,6 +2,7 @@
 * `PSP`: PlayStation Portable
 * `CTR`: Nintendo 3DS
 * `RVL`: Nintendo Wii
+* `TNS`: TI-Nspire
 
 If commits generally are common, use the `GLOBAL` prefix.
 

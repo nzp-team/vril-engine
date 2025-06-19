@@ -38,7 +38,7 @@ void Draw_TransPic (int x, int y, qpic_t *pic);
 void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation);
 void Draw_ConsoleBackground (int lines);
 void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha);
-#if defined(__PSP__) || defined(__NSPIRE__)
+#ifndef __3DS__
 void Draw_Fill (int x, int y, int w, int h, int c);
 #endif
 void Draw_LoadingFill(void);

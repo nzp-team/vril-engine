@@ -28,6 +28,7 @@ char	localmodels[MAX_MODELS][5];			// inline model names for precache
 
 //============================================================================
 cvar_t	r_hlbsponly = {"r_hlbsponly","0",true};
+cvar_t 	sv_maxai = {"sv_maxai", "0", true};
 
 /*
 ===============
@@ -58,6 +59,14 @@ void SV_Init (void)
 	Cvar_RegisterVariable (&sv_idealpitchscale);
 	Cvar_RegisterVariable (&sv_aim);
 	Cvar_RegisterVariable (&sv_nostep);
+	Cvar_RegisterVariable (&sv_maxai);
+
+	Cvar_SetValue("sv_maxai", MAX_AI_COUNT);
+
+#ifdef __3DS__
+	if (!new3ds_flag)
+		Cvar_SetValue("sv_maxai", 12);
+#endif // __3DS
 
 	for (i=0 ; i<MAX_MODELS ; i++)
 		sprintf (localmodels[i], "*%i", i);

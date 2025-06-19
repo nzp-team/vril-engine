@@ -58,6 +58,7 @@ jobs:
       - name: Build with Ndless SDK
         working-directory: ./
         run: |
+          apt update && apt install -y git
           make -f Makefile.nspire WERROR=1
       - name: Upload Artifact
         uses: actions/upload-artifact@v4

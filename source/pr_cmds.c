@@ -20,16 +20,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "nzportable_def.h"
 
-#ifdef __3DS__
-extern bool new3ds_flag;
-#elif __WII__
+#ifdef __WII__
 #include <ogc/lwp_watchdog.h>
 #include <wiiuse/wpad.h>
 #include <ctype.h>
-#endif // __3DS__, __WII__
+#endif // __WII__
 
 #define PR_MAX_TEMPSTRING 2048	// 2001-10-25 Enhanced temp string handling by Maddes
 #define	RETURN_EDICT(e) (((int *)pr_globals)[OFS_RETURN] = EDICT_TO_PROG(e))
+
+extern cvar_t sv_maxai;
 
 /*
 ===============================================================================
@@ -1476,17 +1476,6 @@ This is where the magic happens
 =================
 */
 
-#ifdef __PSP__
-#define MaxZombies 12
-#elif __3DS__
-#define MaxZombies 18
-#elif __WII__
-#define MaxZombies 24
-#elif __NSPIRE__
-#define MaxZombies 5
-#endif //__PSP__, __3DS__, __WII__
-
-
 #define WAYPOINT_SET_NONE 	0
 #define WAYPOINT_SET_OPEN 	1
 #define WAYPOINT_SET_CLOSED	2
@@ -1495,7 +1484,7 @@ This is where the magic happens
 char waypoint_set[MAX_WAYPOINTS]; // waypoint_set[i] contains the set identifier for the i-th waypoint
 unsigned short openset_waypoints[MAX_WAYPOINTS]; // List of waypoints currently in the open set sorted by heuristic cost (index 0 contains lowest cost waypoint)
 unsigned short openset_length; // Current length of the open set
-zombie_ai zombie_list[MaxZombies];
+zombie_ai zombie_list[MAX_AI_COUNT];
 
 
 //
@@ -2003,7 +1992,7 @@ void Do_Pathfind (void) {
 		int zombie_slot = -1;
 		int free_slot = -1;
 
-		for(i = 0; i < MaxZombies; i++) {
+		for(i = 0; i < MAX_AI_COUNT; i++) {
 			// If we see any free slots, keep track of it, we might need it
 			if(free_slot == -1 && !zombie_list[i].zombienum) {
 				free_slot = i;
@@ -2129,7 +2118,7 @@ void Get_Next_Waypoint (void) {
 	}
 
 	int zombie_idx = -1;
-	for (int i = 0; i < MaxZombies; i++) {
+	for (int i = 0; i < MAX_AI_COUNT; i++) {
 		if(entnum == zombie_list[i].zombienum) {
 			zombie_idx = i;
 			break;
@@ -3595,14 +3584,8 @@ nzp_maxai()
 */
 void PF_MaxZombies(void)
 {
-#ifdef __3DS__
-	if (new3ds_flag)
-		G_FLOAT(OFS_RETURN) = MaxZombies;
-	else
-		G_FLOAT(OFS_RETURN) = 12;
-#else
-	G_FLOAT(OFS_RETURN) = MaxZombies;
-#endif
+	int max_ai = CLAMP(1, sv_maxai.value, MAX_AI_COUNT);
+	G_FLOAT(OFS_RETURN) = (float)max_ai;
 }
 
 /*

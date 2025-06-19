@@ -193,7 +193,6 @@ void R_Envmap_f (void)
 R_Init
 ===============
 */
-extern bool new3ds_flag;
 void R_Init (void)
 {	
 	extern cvar_t gl_finish;

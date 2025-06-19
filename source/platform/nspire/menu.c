@@ -486,24 +486,8 @@ void M_ScanSaves (void)
 
 	for (i=0 ; i<MAX_SAVEGAMES ; i++)
 	{
-		strcpy (m_filenames[i], "--- UNUSED SLOT ---");
+		strcpy (m_filenames[i], "--- UNSUPPORTED ---");
 		loadable[i] = false;
-		sprintf (name, "%s/s%i.sav.tns", com_gamedir, i);
-		f = fopen (name, "rb");
-		if (!f)
-			continue;
-		fgets( gstr, sizeof( gstr ), f );
-		sscanf (gstr, "%i\n", &version);
-		fgets( gstr, sizeof( gstr ), f );
-		sscanf (gstr, "%79s\n", name);
-		strncpy (m_filenames[i], name, sizeof(m_filenames[i])-1);
-
-	// change _ back to space
-		for (j=0 ; j<SAVEGAME_COMMENT_LENGTH ; j++)
-			if (m_filenames[i][j] == '_')
-				m_filenames[i][j] = ' ';
-		loadable[i] = true;
-		fclose (f);
 	}
 }
 
