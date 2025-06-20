@@ -265,7 +265,6 @@ extern	int	screenwidth;
 extern	edge_t	edge_head;
 extern	edge_t	edge_tail;
 extern	edge_t	edge_aftertail;
-extern int		r_bmodelactive;
 extern vrect_t	*pconupdate;
 
 extern float		aliasxscale, aliasyscale, aliasxcenter, aliasycenter;

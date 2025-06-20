@@ -351,7 +351,7 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 	    if (!buf && crash)
 		{
 			// Reload with another .mdl
-			buf = (unsigned *)COM_LoadStackFile("progs/missing_model.mdl", stackbuf, sizeof(stackbuf));
+			buf = (unsigned *)COM_LoadStackFile("models/missing_model.mdl", stackbuf, sizeof(stackbuf));
 			if (buf)
 			{
 				Con_Printf ("Missing model %s substituted\n", mod->name);

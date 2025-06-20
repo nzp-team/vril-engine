@@ -63,7 +63,10 @@ qpic_t 		*b_plus;
 qpic_t 		*b_one;
 qpic_t 		*b_two;
 qpic_t 		*b_home;
-#endif // __PSP__, __3DS__, __WII__
+#elif __NSPIRE__
+// naievil -- FIXME: this is temp obviously
+qpic_t 		*b_abutton;
+#endif // __PSP__, __3DS__, __WII__, __NSPIRE__
 
 qpic_t 		*b_left;
 qpic_t 		*b_right;
@@ -238,9 +241,13 @@ void HUD_Init (void)
 	b_home = Draw_CachePic ("gfx/butticons/homebutton");
 	b_one = Draw_CachePic ("gfx/butticons/1button");
 	b_two = Draw_CachePic ("gfx/butticons/2button");
-#endif // __PSP__, __3DS__, __WII__
+#elif __NSPIRE__
 
-    fx_blood_lu = Draw_CachePic ("gfx/hud/blood");
+	b_abutton = Draw_CachePic ("gfx/butticons/facebt_a");
+
+#endif // __PSP__, __3DS__, __WII__, __NSPIRE__
+
+fx_blood_lu = Draw_CachePic ("gfx/hud/blood");
 
 #ifdef __WII__
 	Cmd_AddCommand ("+showscores", HUD_Scoreboard_Down);

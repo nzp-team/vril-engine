@@ -25,7 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern int bind_grab;
 
-extern bool new3ds_flag;
 extern bool croshhairmoving;
 extern float crosshair_opacity;
 

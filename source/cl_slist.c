@@ -45,7 +45,7 @@ char *CreateSpaces(int amount)
 	static char spaces[1024];
 	int size;
 
-	size = bound(1, amount, sizeof(spaces) - 1);
+	size = bound(1, amount, (int)sizeof(spaces) - 1);
 	memset(spaces, ' ', size);
 	spaces[size] = 0;
 
@@ -180,7 +180,7 @@ void SList_Load (void)
 		}
 		else
 		{
-			if (len + 1 < sizeof(line))
+			if (len + 1 < (int)sizeof(line))
 				line[len++] = c;
 		}
 	}

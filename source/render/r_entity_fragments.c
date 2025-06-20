@@ -24,7 +24,7 @@
 
 #include "../nzportable_def.h"
 
-static mnode_t * r_pefragtopnode;
+mnode_t * r_pefragtopnode;
 
 #define MAX_ENTITY_FRAGMENTS 640
 
@@ -47,7 +47,7 @@ static mnode_t * r_pefragtopnode;
  * ===============================================================================
  */
 
-static vec3_t r_emins, r_emaxs;
+vec3_t r_emins, r_emaxs;
 
 static entity_t * r_addent;
 

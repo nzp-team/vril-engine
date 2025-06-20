@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "nzportable_def.h"
 #include "_build_info.h"
 
+void Sys_SystemError(char *error);
+
 void Sys_PrintError(const char *function_name, const char *source_file, int line_number, char *message, ...)
 {
     // Clear the sound buffer.

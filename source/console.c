@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <unistd.h>
 #endif
 #include <fcntl.h>
+
 #include "nzportable_def.h"
 
 int 		con_linewidth;
@@ -224,7 +225,7 @@ Con_Init
 */
 void Con_Init (void)
 {
-	char	*t2 = "/condebug.log";
+	char 	*t2 = "/" FILE_SPECIAL_PREFIX "condebug.log" FILE_SPECIAL_SUFFIX;
 
 	con_debuglog = COM_CheckParm("-condebug");
 

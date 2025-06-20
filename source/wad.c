@@ -88,7 +88,7 @@ void W_LoadWadFile (char *filename)
 	infotableofs = LittleLong(header->infotableofs);
 	wad_lumps = (lumpinfo_t *)(wad_base + infotableofs);
 	
-	for (i=0, lump_p = wad_lumps ; i<wad_numlumps ; i++,lump_p++)
+	for (i=0, lump_p = wad_lumps ; i < (unsigned)wad_numlumps ; i++,lump_p++)
 	{
 		lump_p->filepos = LittleLong(lump_p->filepos);
 		lump_p->size = LittleLong(lump_p->size);
@@ -315,7 +315,7 @@ byte *WAD3_LoadTexture(miptex_t *mt) {
       }
       lowmark = Hunk_LowMark();
       tex = Hunk_Alloc(texwadlump[i].size);
-      if (fread(tex, 1, texwadlump[i].size, file) < texwadlump[i].size) {
+      if (fread(tex, 1, texwadlump[i].size, file) < (unsigned) texwadlump[i].size) {
          Con_Printf("WAD3_LoadTexture: corrupt WAD3 file");
          Hunk_FreeToLowMark(lowmark);
          return NULL;

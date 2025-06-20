@@ -274,7 +274,7 @@ void Host_WriteConfiguration (void)
 // config.cfg cvars
 	if (host_initialized && !isDedicated)
 	{
-		f = fopen (va("%s/config.cfg",com_gamedir), "w");
+		f = fopen(va("%s/%sconfig.cfg%s", com_gamedir, FILE_SPECIAL_PREFIX, FILE_SPECIAL_SUFFIX), "w");
 		if (!f)
 		{
 			Con_Printf ("Couldn't write config.cfg.\n");
@@ -578,6 +578,7 @@ qboolean Host_FilterTime (float time)
 }
 
 
+
 /*
 ===================
 Host_GetConsoleCommands
@@ -869,10 +870,6 @@ Host_Init
 */
 #include "cl_slist.h"
 
-#ifdef __3DS__
-extern bool new3ds_flag;
-#endif // __3DS__
-
 void M_Start_Menu_f (void);
 void Host_Init (quakeparms_t *parms)
 {
@@ -906,6 +903,7 @@ void Host_Init (quakeparms_t *parms)
 	NET_Init ();
 	SV_Init ();
 	TestHandler_Init ();
+
 
 	Sys_PrintSystemInfo();
 	Con_Printf ("%4.1f megabyte Quake hunk \n", parms->memsize / (1024*1024.0));
