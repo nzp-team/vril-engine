@@ -1,0 +1,132 @@
+DEBUG = FALSE
+
+GCC = nspire-gcc
+AS  = nspire-as
+GXX = nspire-g++
+LD  = nspire-ld
+GENZEHN = genzehn --240x320-support true
+
+GCCFLAGS = -W -marm
+LDFLAGS =
+ZEHNFLAGS = --name "nZP"
+
+ifeq ($(WERROR),1)
+GCCFLAGS += -Werror
+endif
+
+ifeq ($(FANALYZER),1)
+GCCFLAGS+= -fanalyzer
+endif
+
+GCCFLAGS += -Wno-missing-field-initializers
+
+VRILFLAGS := -DNO_SOUND_PROCESSING -DSOFTWARE_RENDERER -DFILE_SPECIAL_SUFFIX="\".tns\"" -DPLATFORM_DIRECTORY="nspire" -DPLATFORM_RENDERER="cpu" -DMAX_AI_COUNT=5
+GCCFLAGS += $(VRILFLAGS) -O2 -DOLD_SCREEN_API -fomit-frame-pointer -D__NSPIRE__
+
+COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
+		source/chase.c \
+		source/cl_demo.c \
+		source/cl_hud.c \
+		source/cl_input.c \
+		source/cl_main.c \
+		source/cl_parse.c \
+		source/cl_slist.c \
+		source/cl_tent.c \
+		source/cmd.c \
+		source/platform/nspire/common.c \
+		source/console.c \
+		source/crc.c \
+		source/cvar.c \
+		source/platform/nspire/d_edge.c \
+		source/platform/nspire/d_fill.c \
+		source/platform/nspire/d_init.c \
+		source/platform/nspire/d_modech.c \
+		source/platform/nspire/d_part.c \
+		source/platform/nspire/d_polyse.c \
+		source/platform/nspire/draw.c \
+		source/platform/nspire/d_scan.c \
+		source/platform/nspire/d_scan_nspirec.c \
+		source/platform/nspire/d_sky.c \
+		source/platform/nspire/d_sprite.c \
+		source/platform/nspire/d_surf.c \
+		source/platform/nspire/d_vars.c \
+		source/platform/nspire/d_zpoint.c \
+		source/host.c \
+		source/host_cmd.c \
+		source/platform/nspire/in_nspire.c \
+		source/platform/nspire/keys.c \
+		source/mathlib.c \
+		source/matrixlib.c \
+		source/platform/nspire/menu.c \
+		source/platform/nspire/cpu/cpu_main.c \
+		source/platform/nspire/cpu/cpu_model.c \
+		source/net_loop.c \
+		source/platform/nspire/net_main.c \
+		source/platform/nspire/net_nspire.c \
+		source/net_vcr.c \
+		source/pr_cmds.c \
+		source/pr_edict.c \
+		source/pr_exec.c \
+		source/platform/nspire/r_aclip.c \
+		source/platform/nspire/r_alias.c \
+		source/platform/nspire/r_bsp.c \
+		source/platform/nspire/r_draw.c \
+		source/platform/nspire/r_edge.c \
+		source/render/r_entity_fragments.c \
+		source/platform/nspire/r_light.c \
+		source/platform/nspire/r_main.c \
+		source/platform/nspire/r_misc.c \
+		source/platform/nspire/r_part.c \
+		source/platform/nspire/r_sky.c \
+		source/platform/nspire/r_sprite.c \
+		source/platform/nspire/r_surf.c \
+		source/platform/nspire/screen.c \
+		source/snd_dma.c \
+		source/sv_main.c \
+		source/sv_move.c \
+		source/sv_phys.c \
+		source/sv_user.c \
+		source/system.c \
+		source/platform/nspire/sys_nspire.c \
+		source/test_handler.c \
+		source/platform/nspire/vid_nspire.c \
+		source/view.c \
+		source/wad.c \
+		source/world.c \
+		source/zone.c
+
+OBJS = $(patsubst %.c, %.o, $(COMMON_OBJS))
+
+OBJS += $(patsubst %.S, %.o, $(shell find ./source/platform/nspire -name \*.S))
+
+EXE = nzportable
+DISTDIR = build/nspire/bin
+vpath %.tns $(DISTDIR)
+vpath %.elf $(DISTDIR)
+
+all: _build_info.h $(EXE).tns
+
+_build_info.h:
+	rm -rf $(CURDIR)/source/_build_info.h
+	echo "#define GIT_HASH \"$(shell git rev-parse --short HEAD)$(shell git diff --quiet || echo -dirty)\"" > $(CURDIR)/source/_build_info.h
+	echo "#define GIT_BRANCH \"$(shell git rev-parse --abbrev-ref HEAD)\"" >> $(CURDIR)/source/_build_info.h
+	echo "#define BUILD_DATE \"$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")\"" >> $(CURDIR)/source/_build_info.h
+
+%.o: %.c
+	$(GCC) $(GCCFLAGS) -c $< -o $@
+	
+%.o: %.S
+	$(AS) -c $< -o $@
+
+$(EXE).elf: $(OBJS)
+	mkdir -p $(DISTDIR)
+	$(LD) $^ -o $@ $(LDFLAGS)
+
+$(EXE).tns: $(EXE).elf
+	$(GENZEHN) --input $^ --output $@.zehn $(ZEHNFLAGS)
+	make-prg $@.zehn $@
+	rm $@.zehn
+	mv $(EXE).tns $(DISTDIR)
+
+clean:
+	rm -f $(OBJS) $(DISTDIR)/$(EXE).tns $(DISTDIR)/$(EXE).elf $(DISTDIR)/$(EXE).zehn

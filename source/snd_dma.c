@@ -95,12 +95,18 @@ int fakedma_updates = 15;
 
 void S_AmbientOff (void)
 {
+#ifdef NO_SOUND_PROCESSING
+	return;
+#endif
 	snd_ambient = false;
 }
 
 
 void S_AmbientOn (void)
 {
+#ifdef NO_SOUND_PROCESSING
+	return;
+#endif
 	snd_ambient = true;
 }
 
@@ -132,6 +138,10 @@ S_Startup
 
 void S_Startup (void)
 {
+#ifdef NO_SOUND_PROCESSING
+	return;
+#endif
+
 	int		rc;
 
 	if (!snd_initialized)
@@ -159,6 +169,10 @@ S_Init
 void CDAudioSetVolume (void);
 void S_Init (void)
 {
+#ifdef NO_SOUND_PROCESSING
+	return;
+#endif
+
 	if (COM_CheckParm("-nosound"))
 		return;
 
@@ -237,6 +251,10 @@ void S_Init (void)
 
 void S_Shutdown(void)
 {
+#ifdef NO_SOUND_PROCESSING
+	return;
+#endif
+
 	if (!sound_started)
 		return;
 
@@ -297,6 +315,10 @@ S_TouchSound
 */
 void S_TouchSound (char *name)
 {
+#ifdef NO_SOUND_PROCESSING
+	return;
+#endif
+
 	sfx_t	*sfx;
 
 	if (!sound_started)
@@ -314,6 +336,10 @@ S_PrecacheSound
 */
 sfx_t *S_PrecacheSound (char *name)
 {
+#ifdef NO_SOUND_PROCESSING
+	return NULL;
+#endif
+
 	sfx_t	*sfx;
 
 	if (!sound_started || nosound.value)
@@ -500,6 +526,10 @@ void SND_Spatialize(channel_t *ch)
 
 void S_StartSound(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol, float attenuation)
 {
+#ifdef NO_SOUND_PROCESSING
+	return;
+#endif
+
 	channel_t *target_chan, *check;
 	sfxcache_t	*sc;
 	int		vol;
@@ -566,6 +596,10 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float f
 
 void S_StopSound(int entnum, int entchannel)
 {
+#ifdef NO_SOUND_PROCESSING
+	return;
+#endif
+
 	int i;
 
 	for (i=0 ; i<MAX_DYNAMIC_CHANNELS ; i++)
@@ -581,6 +615,10 @@ void S_StopSound(int entnum, int entchannel)
 
 void S_StopAllSounds(qboolean clear)
 {
+#ifdef NO_SOUND_PROCESSING
+	return;
+#endif
+
 	int		i;
 
 	if (!sound_started)
@@ -605,6 +643,10 @@ void S_StopAllSoundsC_f (void)
 
 void S_ClearBuffer (void)
 {
+#ifdef NO_SOUND_PROCESSING
+	return;
+#endif
+
 	int		clear;
 
 	if (!sound_started || !shm || !shm->buffer)
@@ -628,6 +670,10 @@ S_StaticSound
 */
 void S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 {
+#ifdef NO_SOUND_PROCESSING
+	return;
+#endif
+
 	channel_t	*ss;
 	sfxcache_t		*sc;
 
@@ -728,6 +774,10 @@ Called once each time through the main loop
 */
 void S_Update(vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 {
+#ifdef NO_SOUND_PROCESSING
+	return;
+#endif
+
 	int			i, j;
 	int			total;
 	channel_t	*ch;
@@ -813,6 +863,9 @@ void S_Update(vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 
 void GetSoundtime(void)
 {
+#ifdef NO_SOUND_PROCESSING
+	return;
+#endif
 	int		samplepos;
 	static	int		buffers;
 	static	int		oldsamplepos;
@@ -843,6 +896,10 @@ void GetSoundtime(void)
 
 void S_ExtraUpdate (void)
 {
+#ifdef NO_SOUND_PROCESSING
+	return;
+#endif
+
 	if (snd_noextraupdate.value)
 		return;		// don't pollute timings
 
@@ -851,6 +908,10 @@ void S_ExtraUpdate (void)
 
 void S_Update_(void)
 {
+#ifdef NO_SOUND_PROCESSING
+	return;
+#endif
+
 	unsigned        endtime;
 	int				samps;
 
@@ -872,7 +933,7 @@ void S_Update_(void)
 // mix ahead of current position
 	endtime = soundtime + _snd_mixahead.value * shm->speed;
 	samps = shm->samples >> (shm->channels-1);
-	if (endtime - soundtime > samps)
+	if (endtime - soundtime > (unsigned)samps)
 		endtime = soundtime + samps;
 
 	S_PaintChannels (endtime);
@@ -987,6 +1048,10 @@ void S_VolumeUp_f (void)
 
 void S_LocalSound (char *sound)
 {
+#ifdef NO_SOUND_PROCESSING
+	return;
+#endif
+
 	sfx_t	*sfx;
 
 	if (nosound.value)

@@ -37,11 +37,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define PLATFORM_FILE(file) CONCAT(platform/,PLATFORM_DIRECTORY,/,file)
 #define RENDERER_FILE(file) CONCAT8(platform/,PLATFORM_DIRECTORY,/,PLATFORM_RENDERER,/,PLATFORM_RENDERER,_,file)
 
-#ifndef __PSP__
-#define qtrue 1
-#define qfalse 0
-#endif // __PSP__
-
 #define	QUAKE_GAME			// as opposed to utilities
 
 #define	VERSION				2.0
@@ -53,14 +48,35 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	GAMENAME	"nzp"
 
+// Platforms such as Nspire have filesystem restrictions where
+// files on-flash must meet certain requirements. They can set
+// these in their Makefiles to respect them for use in read/write
+// of specific files. Defaults (blanks) are defined here if unset
+// for visibility.
+#ifndef FILE_SPECIAL_PREFIX
+#define FILE_SPECIAL_PREFIX 	""
+#endif // FILE_SPECIAL_PREFIX
+#ifndef FILE_SPECIAL_SUFFIX
+#define FILE_SPECIAL_SUFFIX		""
+#endif // FILE_SPECIAL_SUFFIX
+
+// This is the size of the AI pathfinding array and the upper bounds
+// for maximum AI the server is allowed to let exist at once
+#ifndef MAX_AI_COUNT
+#pragma message "Platform does not set MAX_AI_COUNT, defaulting to 24.."
+#define MAX_AI_COUNT 24
+#endif // MAX_AI_COUNT
+
+#include PLATFORM_FILE(platform_def.h)
+
 #include <math.h>
-#include <string.h>
 #include <stdarg.h>
+#include <setjmp.h>
+#include <ctype.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <setjmp.h>
 #include <stdbool.h>
-#include <ctype.h>
 
 #define	VID_LockBuffer()
 #define	VID_UnlockBuffer()
@@ -259,6 +275,10 @@ typedef struct
 #include "server.h"
 
 #include RENDERER_FILE(model.h)
+
+#ifdef SOFTWARE_RENDERER
+#include PLATFORM_FILE(d_iface.h)
+#endif // SOFTWARE_RENDERER
 
 #include "input.h"
 #include "world.h"

@@ -13,3 +13,4 @@ EBOOT2000.PBP
 .DS_Store
 *.unc*
 source/_build_info.h
+*.tns

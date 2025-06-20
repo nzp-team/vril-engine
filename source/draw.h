@@ -41,10 +41,13 @@ void Draw_LoadingFill(void);
 void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a);
 void Draw_FadeScreen (void);
 void Draw_String (int x, int y, char *str);
+void Draw_TileClear (int x, int y, int w, int h);
 int getTextWidth(char *str, float scale);
 #ifdef __PSP__
 int GL_FindTexture (const char *identifier);
 #endif
+
+byte findclosestpalmatch(byte r, byte g, byte b, byte a);
 
 //other
 void Clear_LoadingFill (void);
@@ -57,3 +60,19 @@ extern int loading_step;
 extern char loading_name[32];
 extern float loading_num_step;
 extern int font_kerningamount[96];
+
+qpic_t *Draw_CachePic (char *path);
+#ifdef __PSP__
+qpic_t *Draw_CacheImg (char *path);
+#elif __WII__
+qpic_t *Draw_LMP (char *path);
+#endif
+
+#ifdef __NSPIRE__
+void Draw_BlackBackground (void);
+// naievil -- texture conversion start 
+#define MAX_SINGLE_PLANE_PIXEL_SIZE 		1048576		// naievil -- 1024 x 1024 single plane (paletted) texture
+extern byte converted_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE]; 
+extern byte temp_pixel_storage_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE*4]; // naievil -- rgba storage for max pic size 
+// naievil -- texture conversion end
+#endif

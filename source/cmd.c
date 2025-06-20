@@ -296,7 +296,7 @@ void Cmd_Exec_f (void)
 	}
 
 	mark = Hunk_LowMark ();
-	f = (char *)COM_LoadHunkFile (Cmd_Argv(1));
+	f = (char *)COM_LoadHunkFile (va("%s%s%s", FILE_SPECIAL_PREFIX, Cmd_Argv(1), FILE_SPECIAL_SUFFIX));
 	if (!f)
 	{
 		Con_Printf ("couldn't exec %s\n",Cmd_Argv(1));
@@ -584,7 +584,7 @@ Cmd_Argv
 */
 char	*Cmd_Argv (int arg)
 {
-	if ( (unsigned)arg >= cmd_argc )
+	if ( (unsigned)arg >= (unsigned)cmd_argc )
 		return cmd_null_string;
 	return cmd_argv[arg];	
 }
