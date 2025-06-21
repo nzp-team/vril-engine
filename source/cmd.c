@@ -297,6 +297,15 @@ void Cmd_Exec_f (void)
 
 	mark = Hunk_LowMark ();
 	f = (char *)COM_LoadHunkFile (va("%s%s%s", FILE_SPECIAL_PREFIX, Cmd_Argv(1), FILE_SPECIAL_SUFFIX));
+
+	if (!f)
+	{
+		// Try again without the special prefix and suffix. This is needed for stuff like 
+		// nzp.rc and config.cfg inside of a PAK file. But we for sure should prefer the stuff
+		// outside of a PAK file first. 
+		f = (char *)COM_LoadHunkFile (Cmd_Argv(1));
+	}
+
 	if (!f)
 	{
 		Con_Printf ("couldn't exec %s\n",Cmd_Argv(1));
