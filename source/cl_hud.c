@@ -90,6 +90,7 @@ int     fx_blood_rd;
 qboolean	sb_showscores;
 qboolean 	has_chaptertitle;
 qboolean 	doubletap_has_damage_buff;
+int	current_gamemode;
 
 int  x_value, y_value;
 
@@ -634,12 +635,56 @@ void HUD_Blood (void)
 HUD_GetWorldText
 ===============
 */
+#define GAMEMODE_CLASSIC        0
+#define GAMEMODE_GRIEF          1
+#define GAMEMODE_GUNGAME        2
+#define GAMEMODE_HARDCORE       3
+#define GAMEMODE_WILDWEST       4
+#define GAMEMODE_STICKSNSTONES  5
+
+void HUD_GameModeText(int alpha)
+{
+	char* mode_title;
+	char* subtitle;
+
+	switch(current_gamemode) {
+		case GAMEMODE_HARDCORE:
+			mode_title = "HARDCORE";
+			subtitle = "";
+			break;
+		case GAMEMODE_GUNGAME:
+			mode_title = "GUN GAME";
+			subtitle = "Cycle all Weapons to WIN!";
+			break;
+		case GAMEMODE_STICKSNSTONES:
+			mode_title = "STICKS & STONES";
+			subtitle = "Ballistic Knife FTW!";
+			break;
+		case GAMEMODE_WILDWEST:
+			mode_title = "WILD WEST";
+			subtitle = "It's a stand-off!";
+			break;
+		default:
+			mode_title = "";
+			subtitle = "";
+			break;
+	}
+
+	has_chaptertitle = true;
+	Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (10 * hud_scale_factor), mode_title, 255, 255, 255, alpha, hud_scale_factor);	
+	Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (20 * hud_scale_factor), subtitle, 255, 255, 255, alpha, hud_scale_factor);
+}
 
 // modified from scatter's worldspawn parser
 // FIXME - unoptimized, could probably save a bit of
 // memory here in the future.
 void HUD_WorldText(int alpha)
 {
+	if (current_gamemode != 0) {
+		HUD_GameModeText(alpha);
+		return;
+	}
+
 	// for parser
 	char key[128], value[4096];
 	char *data;
