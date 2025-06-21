@@ -441,7 +441,6 @@ void CL_ParseServerInfo (void)
 		CL_KeepaliveMessage ();
 		loading_cur_step++;
 		//Con_Printf("%i,",i);
-		strcpy(loading_name, sound_precache[i]);
 		SCR_UpdateScreen ();
 	}
 	S_EndPrecaching ();
