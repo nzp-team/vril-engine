@@ -1118,6 +1118,7 @@ CL_ParseServerMessage
 */
 extern double bettyprompt_time;
 extern qboolean doubletap_has_damage_buff;
+extern int current_gamemode;
 extern int lock_viewmodel;
 void CL_ParseServerMessage (void)
 {
@@ -1214,7 +1215,9 @@ void CL_ParseServerMessage (void)
 		case svc_doubletap:
 			doubletap_has_damage_buff = MSG_ReadByte();
 			break;
-
+		case svc_gamemode:
+			current_gamemode = MSG_ReadByte();
+			break;
 		case svc_lockviewmodel:
 			lock_viewmodel = MSG_ReadByte();
 			break;

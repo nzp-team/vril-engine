@@ -3420,6 +3420,16 @@ void PF_SetDoubleTapVersion(void)
 	MSG_WriteByte (&client->message, state);
 }
 
+void PF_SetClientMode(void)
+{
+	// int 		state;
+
+	// state = G_FLOAT(OFS_PARM1);
+
+	// MSG_WriteByte(&sv.reliable_datagram, svc_gamemode);
+	// MSG_WriteByte(&sv.reliable_datagram, state);
+}
+
 /*
 =================
 PF_ScreenFlash
@@ -3932,7 +3942,8 @@ ebfs_builtin_t pr_ebfs_builtins[] =
   { 506, "nzp_setdoubletapver", PF_SetDoubleTapVersion },
   { 507, "nzp_screenflash", PF_ScreenFlash },
   { 508, "nzp_lockviewmodel", PF_LockViewmodel },
-  { 509, "nzp_rumble", PF_Rumble }
+  { 509, "nzp_rumble", PF_Rumble },
+  { 510, "nzp_setclientmode", PF_SetClientMode }
 
 // 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  end
 

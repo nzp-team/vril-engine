@@ -161,6 +161,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define svc_screenflash		50		// [byte] color [byte] duration [byte] type
 #define svc_lockviewmodel	51
 #define svc_rumble			52 		// [short] low frequency [short] high frequency [short] duration (ms)
+#define svc_gamemode		53		// [byte] game mode for client
 
 //
 // client to server
