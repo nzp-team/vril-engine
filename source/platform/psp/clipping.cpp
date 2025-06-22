@@ -247,10 +247,10 @@ namespace quake
 				"vzero.q	C600\n"					// C600 = [0.0f, 0.0f, 0.0f. 0.0f]
 				"vzero.s	S613\n"					// S613 = 0.0f, otherwise it's unset
 				// Set 700 for clipping frustum
-				"ulv.q		C700, %4\n"				// Load plane into register
-				"ulv.q		C710, %5\n"				// Load plane into register
-				"ulv.q		C720, %6\n"				// Load plane into register
-				"ulv.q		C730, %7\n"				// Load plane into register
+				"lv.q		C700, %4\n"				// Load plane into register
+				"lv.q		C710, %5\n"				// Load plane into register
+				"lv.q		C720, %6\n"				// Load plane into register
+				"lv.q		C730, %7\n"				// Load plane into register
 				"sv.q		C700, %0\n"				// Store plane from register
 				"sv.q		C710, %1\n"				// Store plane from register
 				"sv.q		C720, %2\n"				// Store plane from register
@@ -267,10 +267,10 @@ namespace quake
 
 			__asm__ volatile (
 				// Set 500 for wide frustum
-				"ulv.q		C500, %4\n"				// Load plane into register
-				"ulv.q		C510, %5\n"				// Load plane into register
-				"ulv.q		C520, %6\n"				// Load plane into register
-				"ulv.q		C530, %7\n"				// Load plane into register
+				"lv.q		C500, %4\n"				// Load plane into register
+				"lv.q		C510, %5\n"				// Load plane into register
+				"lv.q		C520, %6\n"				// Load plane into register
+				"lv.q		C530, %7\n"				// Load plane into register
 				"sv.q		C500, %0\n"				// Store plane from register
 				"sv.q		C510, %1\n"				// Store plane from register
 				"sv.q		C520, %2\n"				// Store plane from register
@@ -300,10 +300,10 @@ namespace quake
 			calculate_frustum(projection_view_model_matrix, &clipping_frustum);
 			
 			__asm__ volatile (
-				"ulv.q	C700, %0\n"	// Load plane into register
-				"ulv.q	C710, %1\n"	// Load plane into register
-				"ulv.q	C720, %2\n"	// Load plane into register
-				"ulv.q	C730, %3\n"	// Load plane into register
+				"lv.q	C700, %0\n"	// Load plane into register
+				"lv.q	C710, %1\n"	// Load plane into register
+				"lv.q	C720, %2\n"	// Load plane into register
+				"lv.q	C730, %3\n"	// Load plane into register
 				:: "m"(clipping_frustum[plane_index_bottom]),
 					"m"(clipping_frustum[plane_index_left]),
 					"m"(clipping_frustum[plane_index_right]), 
@@ -318,10 +318,10 @@ namespace quake
 			calculate_frustum(wide_projection_view_model_matrix, &wide_clipping_frustum);
 
 			__asm__ volatile (
-				"ulv.q	C500, %0\n"	// Load plane into register
-				"ulv.q	C510, %1\n"	// Load plane into register
-				"ulv.q	C520, %2\n"	// Load plane into register
-				"ulv.q	C530, %3\n"	// Load plane into register
+				"lv.q	C500, %0\n"	// Load plane into register
+				"lv.q	C510, %1\n"	// Load plane into register
+				"lv.q	C520, %2\n"	// Load plane into register
+				"lv.q	C530, %3\n"	// Load plane into register
 				:: "m"(wide_clipping_frustum[plane_index_bottom]),
 					"m"(wide_clipping_frustum[plane_index_left]),
 					"m"(wide_clipping_frustum[plane_index_right]), 
@@ -333,10 +333,10 @@ namespace quake
 		{
 			// Restore the clipping frustum.
 			__asm__ volatile (
-				"ulv.q		C700, %4\n"				// Load plane into register
-				"ulv.q		C710, %5\n"				// Load plane into register
-				"ulv.q		C720, %6\n"				// Load plane into register
-				"ulv.q		C730, %7\n"				// Load plane into register
+				"lv.q		C700, %4\n"				// Load plane into register
+				"lv.q		C710, %5\n"				// Load plane into register
+				"lv.q		C720, %6\n"				// Load plane into register
+				"lv.q		C730, %7\n"				// Load plane into register
 				"sv.q		C700, %0\n"				// Store plane from register
 				"sv.q		C710, %1\n"				// Store plane from register
 				"sv.q		C720, %2\n"				// Store plane from register
@@ -352,10 +352,10 @@ namespace quake
 			);
 
 			__asm__ volatile (
-				"ulv.q		C500, %4\n"				// Load plane into register
-				"ulv.q		C510, %5\n"				// Load plane into register
-				"ulv.q		C520, %6\n"				// Load plane into register
-				"ulv.q		C530, %7\n"				// Load plane into register
+				"lv.q		C500, %4\n"				// Load plane into register
+				"lv.q		C510, %5\n"				// Load plane into register
+				"lv.q		C520, %6\n"				// Load plane into register
+				"lv.q		C530, %7\n"				// Load plane into register
 				"sv.q		C500, %0\n"				// Store plane from register
 				"sv.q		C510, %1\n"				// Store plane from register
 				"sv.q		C520, %2\n"				// Store plane from register
