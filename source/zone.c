@@ -218,7 +218,8 @@ void* memcpy_vfpu( void* dst, void* src, unsigned int size )
 					".set	pop\n"					// restore assembler option
 					:"+r"(udst8),"+r"(src8),"+r"(dst64a),"+r"(size)
 					:
-					: "memory", "f0", "f1", "f2", "f3" // clobber fpu registers due to ulv corruption bug
+					: "memory",
+					"f0", "f1", "f2", "f3" // clobber fpu registers due to ulv corruption bug, we use 000, 010, 020, 030, if we used 100, it would be f4, 110 -> f5, etc
 					);
 			}
 			if (size>16)
@@ -242,7 +243,8 @@ void* memcpy_vfpu( void* dst, void* src, unsigned int size )
 					".set	pop\n"					// restore assembler option
 					:"+r"(udst8),"+r"(src8),"+r"(size)
 					:
-					:"memory", "f0" // clobber fpu register due to ulv corruption bug
+					:"memory",
+					"f0" // clobber fpu register due to ulv corruption bug
 					);
 			}
 			asm(".set	push\n"					// save assembler option
