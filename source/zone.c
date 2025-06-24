@@ -218,7 +218,7 @@ void* memcpy_vfpu( void* dst, void* src, unsigned int size )
 					".set	pop\n"					// restore assembler option
 					:"+r"(udst8),"+r"(src8),"+r"(dst64a),"+r"(size)
 					:
-					:"memory"
+					: "memory", "f0", "f1", "f2", "f3" // clobber fpu registers due to ulv corruption bug
 					);
 			}
 			if (size>16)
@@ -242,7 +242,7 @@ void* memcpy_vfpu( void* dst, void* src, unsigned int size )
 					".set	pop\n"					// restore assembler option
 					:"+r"(udst8),"+r"(src8),"+r"(size)
 					:
-					:"memory"
+					:"memory", "f0" // clobber fpu register due to ulv corruption bug
 					);
 			}
 			asm(".set	push\n"					// save assembler option
