@@ -423,17 +423,23 @@ namespace quake
 				"addu		$11,  $11,  $8\n"		// $11 = $11 + $8
 				"move		$12,  %3\n"				// $12 = &cv[0]
 				"move		%0,   $0\n"				// cvc = 0
-				"ulv.q		C100, %4\n"				// Load plane into register
+				"lv.q		C100, %4\n"				// Load plane into register
 				"vzero.s	S110\n"					// Set zero for cmp
+				"vzero.q	C000\n"					// Set C00 -> 03 all to zero, to cover up registers not filled
+				"vzero.q	C010\n"					// by 2 element UVs or 3 element positions from verts
+				"vzero.q	C020\n"
+				"vzero.q	C030\n"
 			"0:\n"									// loop
-				"ulv.q		C000,  0($8)\n"			// Load vertex S TEX(8b) into register
-				"vzero.p	C002\n"					// Set the 3th and 4th entry C000 to zero
-				"ulv.q		C010,  8($8)\n"			// Load vertex S XYZ(12b) into register
-				"vzero.s	S013\n"					// Set the 4th entry C010 to zero
-				"ulv.q		C020,  0($9)\n"			// Load vertex P TEX(8b) into register
-				"vzero.p	C022\n"					// Set the 3th and 4th entry C020 to zero
-				"ulv.q		C030,  8($9)\n"			// Load vertex P XYZ(12b) into register
-				"vzero.s	S033\n"					// Set the 4th entry C030 to zero
+				"lv.s		S000,  0($8)\n"			// S000 = $8.uv[0] ($8 is S)
+				"lv.s		S001,  4($8)\n"			// S001 = $8.uv[1]
+				"lv.s		S010,  8($8)\n"			// S010 = $8.xyz[0]
+				"lv.s		S011,  12($8)\n"		// S011 = $8.xyz[1]
+				"lv.s		S012,  16($8)\n"		// S012 = $8.xyz[2]
+				"lv.s		S020,  0($9)\n"			// S020 = $9.uv[0] ($9 is P)
+				"lv.s		S021,  4($9)\n"			// S021 = $9.uv[1]
+				"lv.s		S030,  8($9)\n"			// S030 = $9.xyz[0]
+				"lv.s		S031,  12($9)\n"		// S031 = $9.xyz[1]
+				"lv.s		S032,  16($9)\n"		// S032 = $9.xyz[2]
 				"vdot.q		S111, C100, C010\n"		// S111 = plane * S
 				"vdot.q		S112, C100, C030\n"		// S112 = plane * P
 				"vadd.s		S111, S111, S103\n"		// S111 = S111 + plane->w is S dist
