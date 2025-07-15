@@ -199,18 +199,30 @@ GLuint fs[9];
 GLuint vs[4];
 GLuint programs[9];
 
-void* GL_LoadShader(const char* filename, GLuint idx, GLboolean fragment) {
+void GL_LoadShader(const char* filename, GLuint idx, GLboolean fragment) {
 	FILE* f = fopen(filename, "rb");
 	fseek(f, 0, SEEK_END);
 	long int size = ftell(f);
 	fseek(f, 0, SEEK_SET);
-	void* res = malloc(size);
+	char* res = (char *)malloc(size+1);
 	fread(res, 1, size, f);
 	fclose(f);
+	res[size] = '\0';
+	const char* src = res;
 	if (fragment)
-		glShaderBinary(1, &fs[idx], 0, res, size);
+	{
+		//glShaderBinary(1, &fs[idx], 0, res, size);
+		fs[idx] = glCreateShader(GL_FRAGMENT_SHADER);
+		glShaderSource(fs[idx], 1, &src, NULL);
+		glCompileShader(fs[idx]);
+	}
 	else
-		glShaderBinary(1, &vs[idx], 0, res, size);
+	{
+		//glShaderBinary(1, &vs[idx], 0, res, size);
+		vs[idx] = glCreateShader(GL_VERTEX_SHADER);
+		glShaderSource(vs[idx], 1, &src, NULL);
+		glCompileShader(vs[idx]);	
+	}
 	free(res);
 }
 
@@ -354,30 +366,30 @@ void GL_ResetShaders() {
 	}
 	
 	if (gl_fog.value) {
-		GL_LoadShader("app0:shaders/modulate_fog_f.gxp", MODULATE, GL_TRUE);
-		GL_LoadShader("app0:shaders/modulate_rgba_fog_f.gxp", MODULATE_WITH_COLOR, GL_TRUE);
-		GL_LoadShader("app0:shaders/replace_fog_f.gxp", REPLACE, GL_TRUE);
-		GL_LoadShader("app0:shaders/modulate_alpha_fog_f.gxp", MODULATE_A, GL_TRUE);
-		GL_LoadShader("app0:shaders/modulate_rgba_alpha_fog_f.gxp", MODULATE_COLOR_A, GL_TRUE);
-		GL_LoadShader("app0:shaders/replace_alpha_fog_f.gxp", REPLACE_A, GL_TRUE);
-		GL_LoadShader("app0:shaders/texture2d_fog_v.gxp", TEXTURE2D, GL_FALSE);
-		GL_LoadShader("app0:shaders/texture2d_rgba_fog_v.gxp", TEXTURE2D_WITH_COLOR, GL_FALSE);
+		GL_LoadShader("app0:shaders/modulate_fog_f.cg", MODULATE, GL_TRUE);
+		GL_LoadShader("app0:shaders/modulate_rgba_fog_f.cg", MODULATE_WITH_COLOR, GL_TRUE);
+		GL_LoadShader("app0:shaders/replace_fog_f.cg", REPLACE, GL_TRUE);
+		GL_LoadShader("app0:shaders/modulate_alpha_fog_f.cg", MODULATE_A, GL_TRUE);
+		GL_LoadShader("app0:shaders/modulate_rgba_alpha_fog_f.cg", MODULATE_COLOR_A, GL_TRUE);
+		GL_LoadShader("app0:shaders/replace_alpha_fog_f.cg", REPLACE_A, GL_TRUE);
+		GL_LoadShader("app0:shaders/texture2d_fog_v.cg", TEXTURE2D, GL_FALSE);
+		GL_LoadShader("app0:shaders/texture2d_rgba_fog_v.cg", TEXTURE2D_WITH_COLOR, GL_FALSE);
 	} else {
-		GL_LoadShader("app0:shaders/modulate_f.gxp", MODULATE, GL_TRUE);
-		GL_LoadShader("app0:shaders/modulate_rgba_f.gxp", MODULATE_WITH_COLOR, GL_TRUE);
-		GL_LoadShader("app0:shaders/replace_f.gxp", REPLACE, GL_TRUE);
-		GL_LoadShader("app0:shaders/modulate_alpha_f.gxp", MODULATE_A, GL_TRUE);
-		GL_LoadShader("app0:shaders/modulate_rgba_alpha_f.gxp", MODULATE_COLOR_A, GL_TRUE);
-		GL_LoadShader("app0:shaders/replace_alpha_f.gxp", REPLACE_A, GL_TRUE);
-		GL_LoadShader("app0:shaders/texture2d_v.gxp", TEXTURE2D, GL_FALSE);
-		GL_LoadShader("app0:shaders/texture2d_rgba_v.gxp", TEXTURE2D_WITH_COLOR, GL_FALSE);
+		GL_LoadShader("app0:shaders/modulate_f.cg", MODULATE, GL_TRUE);
+		GL_LoadShader("app0:shaders/modulate_rgba_f.cg", MODULATE_WITH_COLOR, GL_TRUE);
+		GL_LoadShader("app0:shaders/replace_f.cg", REPLACE, GL_TRUE);
+		GL_LoadShader("app0:shaders/modulate_alpha_f.cg", MODULATE_A, GL_TRUE);
+		GL_LoadShader("app0:shaders/modulate_rgba_alpha_f.cg", MODULATE_COLOR_A, GL_TRUE);
+		GL_LoadShader("app0:shaders/replace_alpha_f.cg", REPLACE_A, GL_TRUE);
+		GL_LoadShader("app0:shaders/texture2d_v.cg", TEXTURE2D, GL_FALSE);
+		GL_LoadShader("app0:shaders/texture2d_rgba_v.cg", TEXTURE2D_WITH_COLOR, GL_FALSE);
 	}
 	
-	GL_LoadShader("app0:shaders/rgba_f.gxp", RGBA_COLOR, GL_TRUE);
-	GL_LoadShader("app0:shaders/vertex_f.gxp", MONO_COLOR, GL_TRUE);
-	GL_LoadShader("app0:shaders/rgba_alpha_f.gxp", RGBA_A, GL_TRUE);
-	GL_LoadShader("app0:shaders/rgba_v.gxp", COLOR, GL_FALSE);
-	GL_LoadShader("app0:shaders/vertex_v.gxp", VERTEX_ONLY, GL_FALSE);
+	GL_LoadShader("app0:shaders/rgba_f.cg", RGBA_COLOR, GL_TRUE);
+	GL_LoadShader("app0:shaders/vertex_f.cg", MONO_COLOR, GL_TRUE);
+	GL_LoadShader("app0:shaders/rgba_alpha_f.cg", RGBA_A, GL_TRUE);
+	GL_LoadShader("app0:shaders/rgba_v.cg", COLOR, GL_FALSE);
+	GL_LoadShader("app0:shaders/vertex_v.cg", VERTEX_ONLY, GL_FALSE);
 	
 	// Setting up programs
 	for (int i = 0;i < NUM_FRAG_SHADERS; i++) {
