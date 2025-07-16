@@ -1042,7 +1042,7 @@ int loadtextureimage (const char* filename, int matchwidth, int matchheight, boo
 		Con_DPrintf("Cannot load image %s\n", filename);
 		return 0;
 	}
-	texnum = GL_LoadTexture (filename, image_width, image_height, data, mipmap, true);
+	texnum = GL_LoadTexture32 (filename, image_width, image_height, data, mipmap, true, false);
 	free(data);
 	return texnum;
 }
