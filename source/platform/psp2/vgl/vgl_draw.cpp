@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // draw.c -- this is the only file outside the refresh that touches the
 // vid buffer
-
+extern "C"{}
 extern "C"{
 #include <vitasdk.h>
 #include "../../../nzportable_def.h"

@@ -376,7 +376,7 @@ void M_SinglePlayer_Key (int key)
 			break;
 
 		case 1:
-			Cbuf_AddText ("map warehouse\n");
+			Cbuf_AddText ("map nzp_warehouse\n");
 			key_dest = key_game;
 			break;
 

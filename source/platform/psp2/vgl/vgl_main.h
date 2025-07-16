@@ -42,7 +42,7 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);
 void GL_EnableState(GLenum state);
 void GL_DisableState(GLenum state);
-int loadtextureimage (const char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
+int loadtextureimage (const char* filename, int matchwidth, int matchheight, bool complain, bool mipmap);
 
 #ifdef _WIN32
 // Function prototypes for the Texture Object Extension routines
