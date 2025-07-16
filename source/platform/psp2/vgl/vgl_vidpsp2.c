@@ -72,7 +72,7 @@ float   mouse_x, mouse_y;
 float	old_mouse_x, old_mouse_y;
 int		mx, my;
 
-int scr_width = 1280, scr_height = 720;
+int scr_width = 960, scr_height = 544;
 
 /*-----------------------------------------------------------------------*/
 
@@ -539,8 +539,8 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 	*height = scr_height;
 	if (gl_ssaa > 1) {
 		if (fb_tex == -1) {
-			void *buffer = malloc(vid.width * vid.height * 4);
-			memset(buffer, 0xFF, vid.width * vid.height * 4);
+			void *buffer = malloc(scr_width * scr_height * 4);
+			memset(buffer, 0xFF, scr_width * scr_height * 4);
 			fb_tex = GL_LoadTexture32 ("***framebuffer***", scr_width, scr_height, buffer, false, false, false);
 			glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, scr_width, scr_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 			free(buffer);
