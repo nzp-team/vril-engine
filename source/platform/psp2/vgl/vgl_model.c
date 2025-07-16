@@ -1535,7 +1535,8 @@ ALIAS MODELS
 
 ==============================================================================
 */
-
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 aliashdr_t	*pheader;
 
 stvert_t	stverts[MAXALIASVERTS];
@@ -2137,7 +2138,7 @@ void Mod_LoadSpriteModel (model_t *mod, void *buffer)
 
 	mod->type = mod_sprite;
 }
-
+#pragma GCC pop_options
 //=============================================================================
 
 /*
