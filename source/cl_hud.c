@@ -43,7 +43,7 @@ qpic_t 		*mulepic;
 qpic_t		*fragpic;
 qpic_t		*bettypic;
 
-#ifdef __PSP__
+#if defined(__PSP__) || defined(__PSP2__)
 qpic_t 		*b_circle;
 qpic_t 		*b_square;
 qpic_t 		*b_cross;
@@ -66,7 +66,7 @@ qpic_t 		*b_home;
 #elif __NSPIRE__
 // naievil -- FIXME: this is temp obviously
 qpic_t 		*b_abutton;
-#endif // __PSP__, __3DS__, __WII__, __NSPIRE__
+#endif // __PSP__, __PSP2__, __3DS__, __WII__, __NSPIRE__
 
 qpic_t 		*b_left;
 qpic_t 		*b_right;
@@ -75,12 +75,12 @@ qpic_t 		*b_down;
 qpic_t 		*b_lt;
 qpic_t 		*b_rt;
 
-#ifdef __PSP__
+#if defined(__PSP__) || defined(__PSP2__)
 qpic_t 		*b_home;
 #elif __3DS__
 qpic_t 		*b_zlt;
 qpic_t 		*b_zrt;
-#endif // __PSP__, __3DS__
+#endif // __PSP__, __PSP2__, __3DS__
 
 qpic_t 		*b_start;
 qpic_t 		*b_select;
@@ -213,6 +213,19 @@ void HUD_Init (void)
 	b_start = Draw_CachePic ("gfx/butticons/start");
 	b_select = Draw_CachePic ("gfx/butticons/select");
 	b_home = Draw_CachePic ("gfx/butticons/home");
+#elif __PSP2__
+	b_circle = Draw_CachePic ("gfx/butticons/fbtncircle");
+	b_square = Draw_CachePic ("gfx/butticons/fbtnsquare");
+	b_cross = Draw_CachePic ("gfx/butticons/fbtncross");
+	b_triangle = Draw_CachePic ("gfx/butticons/fbtntriangle");
+	b_left = Draw_CachePic ("gfx/butticons/dpadleft");
+	b_right = Draw_CachePic ("gfx/butticons/dpadright");
+	b_up = Draw_CachePic ("gfx/butticons/dpadup");
+	b_down = Draw_CachePic ("gfx/butticons/dpaddown");
+	b_lt = Draw_CachePic ("gfx/butticons/backl1");
+	b_rt = Draw_CachePic ("gfx/butticons/backr1");
+	b_start = Draw_CachePic ("gfx/butticons/funcstart");
+	b_select = Draw_CachePic ("gfx/butticons/funcselect");
 #elif __3DS__
 	b_abutton = Draw_CachePic ("gfx/butticons/facebt_a");
 	b_bbutton = Draw_CachePic ("gfx/butticons/facebt_b");

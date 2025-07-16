@@ -96,7 +96,7 @@ void Log(const char *format, ...) {
 	FILE* f = NULL;
 	if (is_uma0) f = fopen("uma0:/data/nzp/log.txt", "a+");
 	else f = fopen("ux0:/data/nzp/log.txt", "a+");
-	if (log != NULL) {
+	if (f != NULL) {
 		fwrite(msg, 1, strlen(msg), f);
 		fclose(f);
 	}
@@ -788,6 +788,7 @@ int quake_main (unsigned int argc, void* argv){
 
 int main(int argc, char **argv) {
 	// We need a bigger stack to run Quake, so we create a new thread with a proper stack size
+	sceSysmoduleLoadModule(SCE_SYSMODULE_RAZOR_CAPTURE);
 	SceUID main_thread = sceKernelCreateThread("Quake", quake_main, 0x40, 0x800000, 0, 0, NULL);
 	if (main_thread >= 0){
 		sceKernelStartThread(main_thread, 0, NULL);
