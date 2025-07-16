@@ -790,9 +790,6 @@ NET_Init
 
 void NET_Init (void)
 {
-	// TODO: skip on vita3k
-	return;
-	
 	int			i;
 	int			controlSocket;
 	qsocket_t	*s;

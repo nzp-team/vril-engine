@@ -493,8 +493,10 @@ void GL_Init (void)
 
 	gl_version = glGetString (GL_VERSION);
 	Con_Printf ("GL_VERSION: %s\n", gl_version);
+	#if 0 // This breaks the log on Vita3K, i don't know why
 	gl_extensions = glGetString (GL_EXTENSIONS);
 	Con_Printf ("GL_EXTENSIONS: %s\n", gl_extensions);
+	#endif
 
 	glClearColor (1,0,0,0);
 	glCullFace(GL_FRONT);

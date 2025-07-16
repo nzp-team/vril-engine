@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "net_dgrm.h"
 #include <vitasdk.h>
 
+#define DEBUG
+
 #define BIGSTACK_SIZE 20 * 1024 * 1024
 byte sys_bigstack[BIGSTACK_SIZE];
 int sys_bigstack_cursize;
@@ -95,8 +97,8 @@ void Log(const char *format, ...) {
 	if (is_uma0) f = fopen("uma0:/data/nzp/log.txt", "a+");
 	else f = fopen("ux0:/data/nzp/log.txt", "a+");
 	if (log != NULL) {
-		fwrite(msg, 1, strlen(msg), log);
-		fclose(log);
+		fwrite(msg, 1, strlen(msg), f);
+		fclose(f);
 	}
 #endif
 }

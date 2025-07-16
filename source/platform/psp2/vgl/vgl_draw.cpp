@@ -2048,8 +2048,9 @@ int GL_LoadTexture32 (const char *identifier, int width, int height, byte *data,
 		{
 			if (!strcmp (identifier, glt->identifier))
 			{
-				if (width != glt->width || height != glt->height)
-					Sys_Error ("GL_LoadTexture32: cache mismatch for %s, expected: %ld, got %d", identifier, width, glt->width);
+				// FIXME: Caching is broken with external textures
+				//if (width != glt->width || height != glt->height)
+				//	Sys_Error ("GL_LoadTexture32: cache mismatch for %s, expected: %ld, got %d", identifier, width, glt->width);
 				return gltextures[i].texnum;
 			}
 		}
