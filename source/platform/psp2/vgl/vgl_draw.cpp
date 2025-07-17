@@ -1736,14 +1736,22 @@ Setup as if the screen was 320*200
 */
 void GL_Set2D (void)
 {
-	currentcanvas = -1;
+	glViewport (glx, gly, glwidth, glheight);
+
+	glMatrixMode(GL_PROJECTION);
+    glLoadIdentity ();
+	glOrtho  (0, vid.width, vid.height, 0, -99999, 99999);
+
+	glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity ();
 
 	glDisable (GL_DEPTH_TEST);
 	glDisable (GL_CULL_FACE);
 	glDisable (GL_BLEND);
-	GL_EnableState(GL_ALPHA_TEST);
+	//GL_EnableState(GL_ALPHA_TEST);
 
-	Platform_Graphics_Color(1,1,1,1);
+
+	Platform_Graphics_Color (1,1,1,1);
 }
 
 //====================================================================
