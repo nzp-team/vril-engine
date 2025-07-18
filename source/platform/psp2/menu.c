@@ -262,7 +262,7 @@ void M_Main_Draw (void)
 	MAIN_MENU_ITEMS[4] = "E";
 
 	for (int i = 0; i < MAIN_ITEMS; i++) {
-		Draw_String(100, 80 * i, MAIN_MENU_ITEMS[i]);
+		Draw_ColoredString(100, 80 * i, MAIN_MENU_ITEMS[i], 255, 255, 255, 255, 2);
 	}
 
 	//Draw_FillByColor(vid.width/4, vid.height/4 - 3 + (16 * m_main_cursor), strlen(MAIN_MENU_ITEMS[m_main_cursor])*8, 1, 255, 255, 255, 255);
@@ -339,7 +339,7 @@ void M_SinglePlayer_Draw (void)
 	SINGLE_MENU_ITEMS[3] = "Custom Maps";
 
 	for (int i = 0; i < SINGLEPLAYER_ITEMS; i++) {
-		Draw_String(vid.width/4, vid.height/4 + (16 * i), SINGLE_MENU_ITEMS[i]);
+		Draw_ColoredString(vid.width/4, vid.height/4 + (16 * i), SINGLE_MENU_ITEMS[i], 255, 255, 255, 255, 2);
 	}
 
 	Draw_FillByColor(vid.width/4, vid.height/4 - 3 + (16 * m_singleplayer_cursor), strlen(SINGLE_MENU_ITEMS[m_singleplayer_cursor])*8, 1, 255, 255, 255, 255);

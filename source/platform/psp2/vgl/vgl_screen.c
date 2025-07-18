@@ -99,6 +99,7 @@ cvar_t showturtle = {"showturtle", "0", true};
 cvar_t showpause = {"showpause", "1", true};
 cvar_t scr_printspeed = {"scr_printspeed", "8", true};
 cvar_t gl_triplebuffer = {"gl_triplebuffer", "0", true};
+cvar_t cl_crosshair_debug = {"cl_crosshair_debug", "0", true};
 
 extern	cvar_t	crosshair;
 
@@ -120,6 +121,7 @@ bool	scr_drawloading;
 float		scr_disabled_time;
 
 bool	block_drawing;
+qpic_t      *hitmark;
 
 void SCR_ScreenShot_f (void);
 
@@ -364,6 +366,7 @@ void SCR_Init (void)
 	Cvar_RegisterVariable (&showpause);
 	Cvar_RegisterVariable (&scr_centertime);
 	Cvar_RegisterVariable (&scr_printspeed);
+	Cvar_RegisterVariable (&cl_crosshair_debug);
 	Cvar_RegisterVariable (&gl_triplebuffer);
 
 //
@@ -372,6 +375,8 @@ void SCR_Init (void)
 	Cmd_AddCommand ("screenshot",SCR_ScreenShot_f);
 	Cmd_AddCommand ("sizeup",SCR_SizeUp_f);
 	Cmd_AddCommand ("sizedown",SCR_SizeDown_f);
+
+	hitmark = Draw_CachePic("gfx/hud/hit_marker");
 
 	scr_initialized = true;
 }
@@ -445,7 +450,7 @@ void SCR_DrawConsole (void)
 	if (scr_con_current)
 	{
 		scr_copyeverything = 1;
-		Con_DrawConsole (scr_con_current, true, 1);
+		Con_DrawConsole (scr_con_current, true, 2);
 		clearconsole = 0;
 	}
 	else
@@ -671,9 +676,298 @@ void SCR_BringDownConsole (void)
 	VID_SetPalette (host_basepal);
 }
 
-void Draw_Crosshair(void)
+extern cvar_t crosshair;
+extern qboolean croshhairmoving;
+//extern cvar_t cl_zoom;
+double Hitmark_Time, crosshair_spread_time;
+float cur_spread;
+float crosshair_offset_step;
+
+int CrossHairWeapon (void)
 {
-	Draw_Character(-4, -4, '+');
+    int i;
+	switch(cl.stats[STAT_ACTIVEWEAPON])
+	{
+		case W_COLT:
+		case W_BIATCH:
+		case W_357:
+		case W_KILLU:
+			i = 22;
+			break;
+		case W_PTRS:
+		case W_PENETRATOR:
+		case W_KAR_SCOPE:
+		case W_HEADCRACKER:
+		case W_KAR:
+		case W_ARMAGEDDON:
+		case W_SPRING:
+		case W_PULVERIZER:
+			i = 65;
+			break;
+		case W_MP40:
+		case W_AFTERBURNER:
+		case W_STG:
+		case W_SPATZ:
+		case W_THOMPSON:
+		case W_GIBS:
+		case W_BAR:
+		case W_WIDOW:
+		case W_PPSH:
+		case W_REAPER:
+		case W_RAY:
+		case W_PORTER:
+		case W_TYPE:
+		case W_SAMURAI:
+		case W_FG:
+		case W_IMPELLER:
+		case W_MP5:
+		case W_KOLLIDER:
+			i = 10;
+			break;
+		case W_BROWNING:
+		case W_ACCELERATOR:
+		case W_MG:
+		case W_BARRACUDA:
+			i = 30;
+			break;
+		case W_SAWNOFF:
+		case W_SNUFF:
+			i = 50;
+			break;
+		case W_TRENCH:
+		case W_GUT:
+		case W_DB:
+		case W_BORE:
+			i = 35;
+			break;
+		case W_GEWEHR:
+		case W_COMPRESSOR:
+		case W_M1:
+		case W_M1000:
+		case W_M1A1:
+		case W_WIDDER:
+			i = 5;
+			break;
+		case W_PANZER:
+		case W_LONGINUS:
+		case W_TESLA:
+			i = 0;
+			break;
+		default:
+			i = 0;
+			break;
+	}
+
+	i *= 0.68;
+	i += 6;
+
+    if (cl.perks & 64)
+        i *= 0.75;
+
+    return i;
+}
+int CrossHairMaxSpread (void)
+{
+	int i;
+	switch(cl.stats[STAT_ACTIVEWEAPON])
+	{
+		case W_COLT:
+		case W_BIATCH:
+		case W_STG:
+		case W_SPATZ:
+		case W_MP40:
+		case W_AFTERBURNER:
+		case W_THOMPSON:
+		case W_GIBS:
+		case W_BAR:
+		case W_WIDOW:
+		case W_357:
+		case W_KILLU:
+		case W_BROWNING:
+		case W_ACCELERATOR:
+		case W_FG:
+		case W_IMPELLER:
+		case W_MP5:
+		case W_KOLLIDER:
+		case W_MG:
+		case W_BARRACUDA:
+		case W_PPSH:
+		case W_REAPER:
+		case W_RAY:
+		case W_PORTER:
+		case W_TYPE:
+		case W_SAMURAI:
+			i = 48;
+			break;
+		case W_PTRS:
+		case W_PENETRATOR:
+		case W_KAR_SCOPE:
+		case W_HEADCRACKER:
+		case W_KAR:
+		case W_ARMAGEDDON:
+		case W_SPRING:
+		case W_PULVERIZER:
+			i = 75;
+			break;
+		case W_SAWNOFF:
+		case W_SNUFF:
+			i = 50;
+			break;
+		case W_DB:
+		case W_BORE:
+		case W_TRENCH:
+		case W_GUT:
+		case W_GEWEHR:
+		case W_COMPRESSOR:
+		case W_M1:
+		case W_M1000:
+		case W_M1A1:
+		case W_WIDDER:
+			i = 35;
+			break;
+		case W_PANZER:
+		case W_LONGINUS:
+		case W_TESLA:
+			i = 0;
+			break;
+		default:
+			i = 0;
+			break;
+	}
+
+	i *= 0.68;
+	i += 6;
+
+    if (cl.perks & 64)
+        i *= 0.75;
+
+    return i;
+}
+
+extern qpic_t		*sniper_scope;
+extern float crosshair_opacity;
+extern cvar_t cl_crosshair_debug;
+extern qboolean crosshair_pulse_grenade;
+void Draw_Crosshair (void)
+{	
+	if (cl_crosshair_debug.value) {
+		Draw_FillByColor(vid.width/2, 0, 1, 240, 255, 0, 0, 255);
+		Draw_FillByColor(0, vid.height/2, 400, 1, 0, 255, 0, 255);
+	}
+
+	if (cl.stats[STAT_HEALTH] <= 20)
+		return;
+
+	if (cl.stats[STAT_ZOOM] == 2)
+		Draw_Pic (-39, -15, sniper_scope);
+   	if (Hitmark_Time > sv.time)
+        Draw_Pic ((vid.width - hitmark->width)/2,(vid.height - hitmark->height)/2, hitmark);
+
+	// Make sure to do this after hitmark drawing.
+	if (cl.stats[STAT_ZOOM] == 2 || cl.stats[STAT_ZOOM] == 1)
+		return;
+
+	if (!crosshair_opacity)
+		crosshair_opacity = 255;
+
+	float col;
+
+	if (sv_player->v.facingenemy == 1) {
+		col = 0;
+	} else {
+		col = 255;
+	}
+
+	// crosshair moving
+	if (crosshair_spread_time > sv.time && crosshair_spread_time)
+    {
+        cur_spread = cur_spread + 10;
+		crosshair_opacity = 128;
+
+		if (cur_spread >= CrossHairMaxSpread())
+			cur_spread = CrossHairMaxSpread();
+    }
+	// crosshair not moving
+	else if (crosshair_spread_time < sv.time && crosshair_spread_time)
+    {
+        cur_spread = cur_spread - 4;
+		crosshair_opacity = 255;
+
+		if (cur_spread <= 0) {
+			cur_spread = 0;
+			crosshair_spread_time = 0;
+		}
+    }
+
+	int x_value, y_value;
+    int crosshair_offset;
+
+	// Standard crosshair (+)
+	if (crosshair.value == 1) {
+		crosshair_offset = CrossHairWeapon() + cur_spread;
+		if (CrossHairMaxSpread() < crosshair_offset || croshhairmoving)
+			crosshair_offset = CrossHairMaxSpread();
+
+		if (sv_player->v.view_ofs[2] == 8) {
+			crosshair_offset *= 0.80f;
+		} else if (sv_player->v.view_ofs[2] == -10) {
+			crosshair_offset *= 0.65f;
+		}
+
+		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5f;
+
+		x_value = (vid.width - 3)/2.0f - crosshair_offset_step;
+		y_value = (vid.height - 1)/2.0f;
+		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
+
+		x_value = (vid.width - 3)/2.0f + crosshair_offset_step;
+		y_value = (vid.height - 1)/2.0f;
+		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
+
+		x_value = (vid.width - 1)/2.0f;
+		y_value = (vid.height - 3)/2.0f - crosshair_offset_step;
+		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
+
+		x_value = (vid.width - 1)/2.0f;
+		y_value = (vid.height - 3)/2.0f + crosshair_offset_step;
+		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
+	}
+	// Area of Effect (o)
+	else if (crosshair.value == 2) {
+		Draw_CharacterRGBA((vid.width)/2-4, (vid.height)/2, 'O', 255, (int)col, (int)col, (int)crosshair_opacity, 2);
+	}
+	// Dot crosshair (.)
+	else if (crosshair.value == 3) {
+		Draw_CharacterRGBA((vid.width - 8)/2, (vid.height - 8)/2, '.', 255, (int)col, (int)col, (int)crosshair_opacity, 2);
+	}
+	// Grenade crosshair
+	else if (crosshair.value == 4) {
+		if (crosshair_pulse_grenade) {
+			crosshair_offset_step = 0;
+			cur_spread = 2;
+		}
+
+		crosshair_pulse_grenade = false;
+
+		crosshair_offset = 12 + cur_spread;
+		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5f;
+
+		x_value = (vid.width - 3)/2.0f - crosshair_offset_step;
+		y_value = (vid.height - 1)/2.0f;
+		Draw_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
+
+		x_value = (vid.width - 3)/2.0f + crosshair_offset_step;
+		y_value = (vid.height - 1)/2.0f;
+		Draw_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
+
+		x_value = (vid.width - 1)/2.0f;
+		y_value = (vid.height - 3)/2.0f - crosshair_offset_step;
+		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
+
+		x_value = (vid.width - 1)/2.0f;
+		y_value = (vid.height - 3)/2.0f + crosshair_offset_step;
+		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
+	}
 }
 
 char		scr_usestring[64];

@@ -386,6 +386,7 @@ void R_DrawSpriteModel (entity_t *e)
 	Platform_Graphics_Color(1,1,1,1);
 
     GL_Bind(frame->gl_texturenum);
+	Fog_DisableGFog ();
 	GL_EnableState(GL_ALPHA_TEST);
 
 	float* pPoint = gVertexBuffer;
@@ -419,6 +420,7 @@ void R_DrawSpriteModel (entity_t *e)
 
 	GL_DisableState(GL_ALPHA_TEST);
 
+	Fog_EnableGFog ();
 }
 
 /*
@@ -1827,26 +1829,32 @@ void R_RenderView (void)
 	if (st_separation.value != 0) {
 		stereoCameraSelect = 1;
 		glColorMask( GL_TRUE, GL_FALSE, GL_FALSE ,GL_TRUE );
-		R_Clear ();			
+		R_Clear ();
+		Fog_EnableGFog (); //johnfitz
 		R_RenderScene ();
 		R_DrawViewModel ();
 		R_DrawWaterSurfaces ();
 		R_Mirror ();
+		Fog_DisableGFog (); //johnfitz
 		
 		stereoCameraSelect = -1;
 		glColorMask( GL_FALSE, GL_TRUE, GL_TRUE ,GL_TRUE );
 		R_Clear ();
+		Fog_EnableGFog (); //johnfitz
 		R_RenderScene ();		
 		R_DrawViewModel ();
 		R_DrawWaterSurfaces ();
 		R_Mirror ();
+		Fog_DisableGFog (); //johnfitz
 		glColorMask( GL_TRUE, GL_TRUE, GL_TRUE ,GL_TRUE );
 	} else {
 		R_Clear ();
+		Fog_EnableGFog (); //johnfitz
 		R_RenderScene ();
 		R_DrawViewModel ();
 		R_DrawWaterSurfaces ();
 		R_Mirror ();
+		Fog_DisableGFog (); //johnfitz
 	}
 	
 	R_PolyBlend ();

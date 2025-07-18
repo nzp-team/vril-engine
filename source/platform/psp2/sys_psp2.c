@@ -478,20 +478,21 @@ int quake_main (unsigned int argc, void* argv){
 	cfg_height = scr_height;
 	
 	// Initializing vitaGL
+	vglUseTripleBuffering(GL_FALSE);
 	GLboolean invalid_res = GL_FALSE;
 	switch (antialiasing) {
 	case 1:
 	case 5:
 	case 6:
-		invalid_res = vglInitExtended(0x1400000, scr_width, scr_height, 0x1000000, SCE_GXM_MULTISAMPLE_2X);
+		invalid_res = vglInitExtended(0, scr_width, scr_height, 0x1000000, SCE_GXM_MULTISAMPLE_2X);
 		break;
 	case 2:
 	case 7:
 	case 8:
-		invalid_res = vglInitExtended(0x1400000, scr_width, scr_height, 0x1000000, SCE_GXM_MULTISAMPLE_4X);
+		invalid_res = vglInitExtended(0, scr_width, scr_height, 0x1000000, SCE_GXM_MULTISAMPLE_4X);
 		break;
 	default:
-		invalid_res = vglInitExtended(0x1400000, scr_width, scr_height, 0x1000000, SCE_GXM_MULTISAMPLE_NONE);
+		invalid_res = vglInitExtended(0, scr_width, scr_height, 0x1000000, SCE_GXM_MULTISAMPLE_NONE);
 		break;
 	}
 	if (invalid_res) {
@@ -515,6 +516,7 @@ int quake_main (unsigned int argc, void* argv){
 		gl_ssaa = 1;
 		break;
 	}
+	vglUseVram(GL_TRUE);
 	
 	// Official mission packs support
 	SceAppUtilAppEventParam eventParam;
@@ -788,7 +790,9 @@ int quake_main (unsigned int argc, void* argv){
 
 int main(int argc, char **argv) {
 	// We need a bigger stack to run Quake, so we create a new thread with a proper stack size
+#ifdef ENABLE_RAZOR_CAPTURE
 	sceSysmoduleLoadModule(SCE_SYSMODULE_RAZOR_CAPTURE);
+#endif
 	SceUID main_thread = sceKernelCreateThread("Quake", quake_main, 0x40, 0x800000, 0, 0, NULL);
 	if (main_thread >= 0){
 		sceKernelStartThread(main_thread, 0, NULL);

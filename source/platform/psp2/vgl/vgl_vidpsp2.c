@@ -31,9 +31,10 @@ int fb_tex = -1;
 float *gVertexBuffer;
 float *gColorBuffer;
 float *gTexCoordBuffer;
-float *gVertexBufferPtr;
-float *gColorBufferPtr;
-float *gTexCoordBufferPtr;
+float *gVertexBufferPtr[2];
+float *gColorBufferPtr[2];
+float *gTexCoordBufferPtr[2];
+int currPool = 0;
 
 extern uint8_t netcheck_dialog_running;
 extern cvar_t vid_vsync;
@@ -523,9 +524,11 @@ void GL_Init (void)
 	for (int i = 0; i < MAX_INDICES; i++) {
 		indices[i] = i;
 	}
-	gVertexBufferPtr = (float*)malloc(0x400000);
-	gColorBufferPtr = (float*)malloc(0x200000);
-	gTexCoordBufferPtr = (float*)malloc(0x200000);
+	for(int i = 0; i < 2; i++) {
+		gVertexBufferPtr[i] = (float*)malloc(0x400000);
+		gColorBufferPtr[i] = (float*)malloc(0x200000);
+		gTexCoordBufferPtr[i] = (float*)malloc(0x200000);
+	}
 }
 
 /*
@@ -555,9 +558,10 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 			glBindFramebuffer(GL_FRAMEBUFFER, fb);
 	}
 	vglIndexPointerMapped(indices);
-	gVertexBuffer = gVertexBufferPtr;
-	gColorBuffer = gColorBufferPtr;
-	gTexCoordBuffer = gTexCoordBufferPtr;
+	currPool ^= 1;
+	gVertexBuffer = gVertexBufferPtr[currPool];
+	gColorBuffer = gColorBufferPtr[currPool];
+	gTexCoordBuffer = gTexCoordBufferPtr[currPool];
 }
 
 void GL_EndRendering (void)

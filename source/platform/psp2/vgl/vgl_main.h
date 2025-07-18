@@ -406,3 +406,8 @@ void GL_DrawFPS(void);
 void GL_DrawBenchmark(void);
 void GL_SelectTexture (GLenum target);
 void Q_strncpyz (char *dest, char *src, size_t size);
+
+void Sky_Init (void);
+void Sky_NewMap (void);
+void R_DrawSkyBox (void);
+void R_ClearSkyBox (void);

@@ -169,6 +169,9 @@ void R_Init (void)
 	R_InitParticles ();
 	R_InitParticleTexture ();
 
+	Sky_Init (); //johnfitz
+	Fog_Init (); //johnfitz
+
 	playertextures = texture_extension_number;
 	texture_extension_number += 16;
 }
@@ -320,6 +323,9 @@ void R_NewMap (void)
 	R_ClearParticles ();
 
 	GL_BuildLightmaps ();
+
+	Sky_NewMap (); //johnfitz -- skybox in worldspawn
+    Fog_ParseWorldspawn ();
 
 	// identify sky texture
 	skytexturenum = -1;

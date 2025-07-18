@@ -63,6 +63,9 @@ byte		lightmaps[4*MAX_LIGHTMAPS*BLOCK_WIDTH*BLOCK_HEIGHT];
 msurface_t  *skychain = NULL;
 msurface_t  *waterchain = NULL;
 
+extern char	skybox_name[32];
+
+
 /*
 ===============
 R_AddDynamicLights
@@ -552,8 +555,9 @@ void R_RenderBrushPoly (msurface_t *fa)
 	c_brush_polys++;
 
 	if (fa->flags & SURF_DRAWSKY)
-	{	// warp texture, no lightmaps
-		EmitBothSkyLayers (fa);
+	{	
+		if (strcmp(skybox_name, "") == 0)
+			EmitBothSkyLayers (fa);
 		return;
 	}
 		
@@ -563,6 +567,13 @@ void R_RenderBrushPoly (msurface_t *fa)
 	if (fa->flags & SURF_DRAWTURB)
 	{	// warp texture, no lightmaps
 		EmitWaterPolys (fa);
+		return;
+	}
+
+	if (fa->flags & TEXFLAG_NODRAW)
+		return;
+	else if (fa->flags & TEXFLAG_LIGHT) {
+		DrawGLPoly(fa->polys);
 		return;
 	}
 
@@ -715,8 +726,8 @@ void DrawTextureChains (void)
 		s = t->texturechain;
 		if (!s)
 			continue;
-		if (i == skytexturenum)
-			R_DrawSkyChain (s);
+		//if (i == skytexturenum)
+			//R_DrawSkyChain (s);
 		else if (i == mirrortexturenum && r_mirroralpha.value != 1.0 && st_separation.value == 0)
 		{
 			R_MirrorChain (s);
@@ -1040,11 +1051,9 @@ void R_DrawWorld (void)
 	Platform_Graphics_Color(1,1,1,1);
 	memset (lightmap_polys, 0, sizeof(lightmap_polys));
 
-#if 0 // No skybox on vita yet
 	R_ClearSkyBox ();
 	if (strcmp(skybox_name, "") != 0)
 		R_DrawSkyBox();
-#endif
 
 	R_RecursiveWorldNode (cl.worldmodel->nodes);
 

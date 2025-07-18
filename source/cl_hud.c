@@ -75,12 +75,12 @@ qpic_t 		*b_down;
 qpic_t 		*b_lt;
 qpic_t 		*b_rt;
 
-#if defined(__PSP__) || defined(__PSP2__)
+#if defined(__PSP__)
 qpic_t 		*b_home;
 #elif __3DS__
 qpic_t 		*b_zlt;
 qpic_t 		*b_zrt;
-#endif // __PSP__, __PSP2__, __3DS__
+#endif // __PSP__, __3DS__
 
 qpic_t 		*b_start;
 qpic_t 		*b_select;
@@ -155,6 +155,8 @@ void HUD_DictateScaleFactor(void)
 	hud_scale_factor = 1.5f;
 #elif __PSP__
 	hud_scale_factor = 1.0f;
+elif __PSP2__
+	hud_scale_factor = 2.0f;
 #elif __3DS__
 	hud_scale_factor = 1.0f;
 #else

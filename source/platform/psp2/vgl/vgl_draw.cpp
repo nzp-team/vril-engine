@@ -68,6 +68,7 @@ qpic_t		*draw_backtile;
 
 int			translate_texture;
 int			char_texture;
+qpic_t		*sniper_scope;
 int 		currentcanvas = -1;
 
 typedef struct
@@ -83,8 +84,8 @@ int		gl_lightmap_format = GL_RGBA;
 int		gl_solid_format = 3;
 int		gl_alpha_format = 4;
 
-int		gl_filter_min = GL_LINEAR;
-int		gl_filter_max = GL_LINEAR;
+int		gl_filter_min = GL_NEAREST;
+int		gl_filter_max = GL_NEAREST;
 
 
 int		texels;
@@ -1189,6 +1190,40 @@ static void Callback_Bilinear_f(cvar_t *var)
 		Cbuf_AddText("gl_texturemode GL_NEAREST\n");
 }
 
+// ! " # $ % & ' ( ) * _ , - . / 0
+// 1 2 3 4 5 6 7 8 9 : ; < = > ? @
+// A B C D E F G H I J K L M N O P
+// Q R S T U V W X Y Z [ \ ] ^ _ `
+// a b c d e f g h i j k l m n o p
+// q r s t u v w x y z { | } ~
+int font_kerningamount[96];
+
+void InitKerningMap(void)
+{
+	// Initialize the kerning amount as 8px for each
+	// char in the event we cant load the file.
+	for(int i = 0; i < 96; i++) {
+		font_kerningamount[i] = 8;
+	}
+
+    FILE *kerning_map = fopen(va("%s/gfx/kerning_map.txt", com_gamedir), "r");
+    if (kerning_map == NULL) {
+        return;
+    }
+
+    char buffer[1024];
+    if (fgets(buffer, sizeof(buffer), kerning_map) != NULL) {
+        char *token = strtok(buffer, ",");
+        int i = 0;
+        while (token != NULL && i < 96) {
+            font_kerningamount[i++] = atoi(token);
+            token = strtok(NULL, ",");
+        }
+    }
+
+    fclose(kerning_map);
+}
+
 /*
 ===============
 Draw_Init
@@ -1236,6 +1271,8 @@ void Draw_Init (void)
 	// save slots for scraps
 	scrap_texnum = texture_extension_number;
 	texture_extension_number += MAX_SCRAPS;
+	sniper_scope = Draw_CachePic ("gfx/hud/scope");
+	InitKerningMap();
 }
 
 void DrawQuad_NoTex(float x, float y, float w, float h, float r, float g, float b, float a)
@@ -1318,8 +1355,38 @@ This is the same as Draw_Character, but with RGBA color codes.
 ================
 */
 extern cvar_t scr_coloredtext;
-// TODO
-void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float a, float scale) { Draw_Character(x,y,num); }
+void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float a, float scale)
+{
+	int				row, col;
+	float			frow, fcol, size;
+
+	if (num == 32)
+		return;		// space
+
+	num &= 255;
+	
+	if (y <= -8)
+		return;			// totally off screen
+
+	row = num>>4;
+	col = num&15;
+
+	frow = row*0.0625f;
+	fcol = col*0.0625f;
+	size = 0.0625f;
+
+	GL_Bind (char_texture);
+
+	glEnable(GL_BLEND);
+	Platform_Graphics_Color(r/255, g/255, b/255, a/255);
+	glDisable (GL_ALPHA_TEST);
+	GL_EnableState(GL_MODULATE);
+	DrawQuad(x, y, 8*scale, 8*scale, fcol, frow, size, size);
+	Platform_Graphics_Color(1,1,1,1);
+	GL_EnableState(GL_REPLACE);
+	glEnable(GL_ALPHA_TEST);
+	glDisable (GL_BLEND);
+}
 
 /*
 ================
@@ -1328,61 +1395,50 @@ Draw_String
 */
 void Draw_String (int x, int y, char *str)
 {
-	GL_Bind (char_texture);
-	int delta = 0;
-	float *str_vbuffer = gVertexBuffer;
-	float *str_tbuffer = gTexCoordBuffer;
-	int num_vertices = 0;
-	int scale = 1;
-	
+	Draw_ColoredString(x, x, str, 255, 255, 255, 255, 2); 
+}
+
+void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, float a, float scale) 
+{
 	while (*str)
 	{
-		int num = (*str) + delta;
-		int	row, col;
-		float frow, fcol, size;
+		Draw_CharacterRGBA (x, y, *str, r, g, b, a, scale);
 
-		if (num != 0x20) {
-			num &= 255;
-			if (y > -8) {
-				row = num>>4;
-				col = num&15;
-
-				frow = row * 0.0625;
-				fcol = col * 0.0625;
-				size = 0.0625 * scale;
-				
-				gVertexBuffer[0] = gVertexBuffer[3] = gVertexBuffer[9] = x;
-				gVertexBuffer[1] = gVertexBuffer[10] = gVertexBuffer[13] = y;
-				gVertexBuffer[4] = gVertexBuffer[7] = gVertexBuffer[16] = y + (8 * scale);
-				gVertexBuffer[6] = gVertexBuffer[12] = gVertexBuffer[15] = x + (8 * scale);
-				gVertexBuffer[2] = gVertexBuffer[5] = gVertexBuffer[8] = gVertexBuffer[11] = gVertexBuffer[14] = gVertexBuffer[17] = 0.5f;
-				
-				gTexCoordBuffer[0] = gTexCoordBuffer[2] = gTexCoordBuffer[6] = fcol;
-				gTexCoordBuffer[1] = gTexCoordBuffer[7] = gTexCoordBuffer[9] = frow;
-				gTexCoordBuffer[3] = gTexCoordBuffer[5] = gTexCoordBuffer[11] = frow + (size / scale);
-				gTexCoordBuffer[4] = gTexCoordBuffer[8] = gTexCoordBuffer[10] = fcol + (size / scale);
+		// Hooray for variable-spacing!
+		if (*str == ' ')
+			x += 4 * (int)scale;
+		else if ((int)*str < 33 || (int)*str > 126)
+            x += 8 * (int)scale;
+		else
+            x += (font_kerningamount[(int)(*str - 33)] + 1) * scale;
 		
-				gVertexBuffer += 18;
-				gTexCoordBuffer += 12;
-				num_vertices += 6;
-			}
-		}
-
 		str++;
-		x += 8;
-	}
-	
-	if (num_vertices > 0) {
-		vglVertexAttribPointerMapped(0, str_vbuffer);
-		vglVertexAttribPointerMapped(1, str_tbuffer);
-		GL_DrawPolygon(GL_TRIANGLES, num_vertices);
 	}
 }
 
-void Draw_ColoredString (int x, int y, char *text, float r, float g, float b, float a, float scale) { Draw_String(x, y, text); };
-void Draw_ColoredStringCentered(int y, char *text, float r, float g, float b, float a, float scale) { Draw_String(20, y, text); };
+int getTextWidth(char *str, float scale)
+{
+	int width = 0;
 
-int getTextWidth(char *str, float scale) { return 20; };
+    for (size_t i = 0; i < strlen(str); i++) {
+        // Hooray for variable-spacing!
+		if (str[i] == ' ')
+			width += 4 * (int)scale;
+        else if ((int)str[i] < 33 || (int)str[i] > 126)
+            width += 8 * (int)scale;
+        else
+            width += (font_kerningamount[(int)(str[i] - 33)] + 1) * (int)scale;
+    }
+
+	return width;
+}
+
+
+void Draw_ColoredStringCentered(int y, char *str, float r, float g, float b, float a, float scale)
+{
+	Draw_ColoredString((vid.width - getTextWidth(str, scale))/2, y, str, r, g, b, a, scale);
+}
+
 
 /*
 ================
@@ -1736,6 +1792,7 @@ Setup as if the screen was 320*200
 */
 void GL_Set2D (void)
 {
+	currentcanvas = -1;
 	glViewport (glx, gly, glwidth, glheight);
 
 	glMatrixMode(GL_PROJECTION);
@@ -2144,6 +2201,3 @@ void Clear_LoadingFill (void)
 	memset(loading_name, 0, sizeof(loading_name));
 }
 
-double Hitmark_Time, crosshair_spread_time;
-float cur_spread;
-float crosshair_offset_step;
