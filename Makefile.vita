@@ -100,7 +100,7 @@ PREFIX  = arm-vita-eabi
 CC      = $(PREFIX)-gcc
 CXX      = $(PREFIX)-g++
 CFLAGS  = -fsigned-char -Wl,-q -O3 -g -fno-optimize-sibling-calls \
-	-ffast-math -mtune=cortex-a9 -mfpu=neon -Wno-discarded-qualifiers \
+	-ffast-math -mtune=cortex-a9 -mfpu=neon  \
 	-Werror -D__PSP2__ -DGLQUAKE -DHAVE_OGGVORBIS -DHAVE_MPG123 -DHAVE_LIBSPEEXDSP \
 	-DUSE_AUDIO_RESAMPLER -DHAVE_STRLCAT -DGIT_VERSION=\"$(GIT_VERSION)\" \
 	-DPLATFORM_DIRECTORY="psp2" -DPLATFORM_RENDERER="vgl" -DMAX_AI_COUNT=24
