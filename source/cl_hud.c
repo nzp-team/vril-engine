@@ -155,7 +155,7 @@ void HUD_DictateScaleFactor(void)
 	hud_scale_factor = 1.5f;
 #elif __PSP__
 	hud_scale_factor = 1.0f;
-elif __PSP2__
+#elif __PSP2__
 	hud_scale_factor = 2.0f;
 #elif __3DS__
 	hud_scale_factor = 1.0f;
