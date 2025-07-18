@@ -76,8 +76,8 @@ void IN_ResetInputs(void)
 	Cbuf_AddText("bind DOWNARROW +back\n"); // Down
 	Cbuf_AddText("bind LEFTARROW +moveleft\n"); // Left
 	Cbuf_AddText("bind RIGHTARROW +moveright\n"); // Right
-	Cbuf_AddText("bind TOUCH +showscores\n"); // Touchscreen
-	Cbuf_AddText("bind SELECT +showscores\n"); // Touchscreen
+	//Cbuf_AddText("bind TOUCH +showscores\n"); // Touchscreen
+	//Cbuf_AddText("bind SELECT +showscores\n"); // Touchscreen
 	Cbuf_AddText("sensitivity 3.5\n"); // Right Analog Sensitivity
 }
 
