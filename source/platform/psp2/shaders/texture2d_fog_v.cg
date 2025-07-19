@@ -3,7 +3,6 @@
 	float2 texcoord,
 	uniform float4x4 gl_ModelViewProjectionMatrix,
 	float4 out vPosition : POSITION,
-	float out vFog : FOG,
 	float2 out vTexcoord : TEXCOORD0)
 {
 	vPosition = mul(gl_ModelViewProjectionMatrix, float4(position, 1.f));

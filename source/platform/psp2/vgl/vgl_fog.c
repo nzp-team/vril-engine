@@ -30,8 +30,8 @@ extern GLint fogdensityuniformlocs[5];
 void
 Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, float green, float blue, float alpha)
 {
-    //float color[4] = {red, green, blue, alpha};
-    float color[4] = {red/255, green/255, blue/255, alpha};
+    float color[4] = {red, green, blue, alpha};
+    //float color[4] = {red/255, green/255, blue/255, alpha};
     //float color[4] = {red*0.1f, green*0.1f, blue*0.1f, alpha};
     for(int i = 0; i < 5; i++)
     {

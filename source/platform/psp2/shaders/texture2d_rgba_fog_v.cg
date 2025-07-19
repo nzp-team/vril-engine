@@ -4,7 +4,6 @@ void main(
 	float4 color,
 	uniform float4x4 gl_ModelViewProjectionMatrix,
 	float4 out vPosition : POSITION,
-	float out vFog : FOG,
 	float2 out vTexcoord : TEXCOORD0,
 	float4 out vColor : COLOR)
 {

@@ -1,13 +1,20 @@
 ﻿float4 main(
 	float2 vTexcoord : TEXCOORD0,
-	float vFog : FOG,
 	uniform float4 vColor,
-	uniform sampler2D tex
+	float4 coords : WPOS,
+	uniform sampler2D tex,
+	uniform float4 fogColor,
+	uniform float fog_density
 	)
 {	
 	float4 c = tex2D(tex, vTexcoord) * vColor;
 	
-	c.rgb = c.rgb * vFog;
+	float fog_dist = coords.z;
+	const float LOG2E = 1.442695f;
+
+	float vFog = exp(-fog_density * fog_density * fog_dist * fog_dist * LOG2E);
+	vFog = clamp(vFog, 0.0f, 1.0f);
+	c.rgb = lerp(fogColor.rgb, c.rgb, vFog);
 	
 	return c;
 }

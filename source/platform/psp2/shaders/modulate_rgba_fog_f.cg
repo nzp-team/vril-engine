@@ -13,7 +13,7 @@
 	const float LOG2E = 1.442695f;
 
 	float vFog = exp(-fog_density * fog_density * fog_dist * fog_dist * LOG2E);
-	float vFog = clamp(vFog, 0.0f, 1.0f);
+	vFog = clamp(vFog, 0.0f, 1.0f);
 	c.rgb = lerp(fogColor.rgb, c.rgb, vFog);
 	
 	return c;
