@@ -1729,9 +1729,8 @@ Mod_LoadAllSkins
 void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 {
 	int		i, j, k;
-	char	name[32];
-	int		s, texnum;
-	byte	*copy;
+	char	name[MAX_OSPATH], model[64], model2[128];
+	int		s;
 	byte	*skin;
 	byte	*texels;
 	daliasskingroup_t		*pinskingroup;
@@ -1741,28 +1740,58 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 	skin = (byte *)(pskintype + 1);
 
 	if (numskins < 1 || numskins > MAX_SKINS)
-		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d\n", numskins);
+		Sys_Error ("Invalid # of skins: %d\n", numskins);
 
 	s = pheader->skinwidth * pheader->skinheight;
+
+	//
+	// General texture override stuff.
+	//
+
+	// Mustang & Sally // v_biatch
+	if (strcmp(loadmodel->name, "models/weapons/m1911/v_biatch_left.mdl") == 0 ||
+	strcmp(loadmodel->name, "models/weapons/m1911/v_biatch_right.mdl") == 0) {
+		pheader->gl_texturenum[0][0] = 
+		pheader->gl_texturenum[0][1] = 
+		pheader->gl_texturenum[0][2] = 
+		pheader->gl_texturenum[0][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, true, false);
+		
+		pheader->gl_texturenum[1][0] = 
+		pheader->gl_texturenum[1][1] = 
+		pheader->gl_texturenum[1][2] = 
+		pheader->gl_texturenum[1][3] = loadtextureimage("models/weapons/m1911/v_biatch.mdl_0", 0, 0, true, false);
+
+		pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+		return (void *)pskintype;
+	}
 
 	for (i=0 ; i<numskins ; i++)
 	{
 		if (pskintype->type == ALIAS_SKIN_SINGLE) {
 			Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
+			COM_StripExtension(loadmodel->name, model);
 
-			// save 8 bit texels for the player model to remap
-			if (!strcmp(loadmodel->name,"progs/player.mdl")) {
-				texels = Hunk_AllocName(s, loadname);
-				pheader->texels[i] = texels - (byte *)pheader;
-				memcpy (texels, (byte *)(pskintype + 1), s);
-			}
-			sprintf (name, "%s_%i", loadmodel->name, i);
-			
-			texnum = Mod_LoadExternalSkin(name);
+			texels = Hunk_AllocName(s, loadname);
+			pheader->texels[i] = texels - (byte *)pheader;
+			memcpy (texels, (byte *)(pskintype + 1), s);
+
+			// HACK HACK HACK
+			snprintf(model2, 128, "%s.mdl_%i", model, i);
 			pheader->gl_texturenum[i][0] =
 			pheader->gl_texturenum[i][1] =
 			pheader->gl_texturenum[i][2] =
-			pheader->gl_texturenum[i][3] = texnum != -1 ? texnum : GL_LoadTexture (name, pheader->skinwidth, pheader->skinheight, (byte *)(pskintype + 1), true, false);
+			pheader->gl_texturenum[i][3] = loadtextureimage(model2, 0, 0, true, false);
+
+			if (pheader->gl_texturenum[i][0] == 0) // did not find a matching TGA...
+			{
+				sprintf(name, "%s_%i", loadmodel->name, i);
+				pheader->gl_texturenum[i][0] =
+				pheader->gl_texturenum[i][1] =
+				pheader->gl_texturenum[i][2] =
+				pheader->gl_texturenum[i][3] = GL_LoadTexture (name, pheader->skinwidth, 
+					pheader->skinheight, (byte *)(pskintype + 1), true, false);
+			}
+			
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 		} else {
 			// animating skin group.  yuck.
@@ -1781,9 +1810,10 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 						pheader->texels[i] = texels - (byte *)pheader;
 						memcpy (texels, (byte *)(pskintype), s);
 					}
-					sprintf (name, "%s_%i_%i", loadmodel->name, i,j);
-					texnum = Mod_LoadExternalSkin(name);
-					pheader->gl_texturenum[i][j&3] = texnum != -1 ? texnum : GL_LoadTexture (name, pheader->skinwidth, pheader->skinheight, (byte *)(pskintype), true, false);
+					snprintf (name, MAX_OSPATH, "%s_%i_%i", loadmodel->name, i,j);
+					pheader->gl_texturenum[i][j&3] = 
+						GL_LoadTexture (name, pheader->skinwidth, 
+						pheader->skinheight, (byte *)(pskintype), true, false);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
 			}
 			k = j;
