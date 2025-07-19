@@ -2007,10 +2007,8 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 {
 	dspriteframe_t		*pinframe;
 	mspriteframe_t		*pspriteframe;
-	int					i, width, height, size, origin[2];
-	unsigned short		*ppixout;
-	byte				*ppixin;
-	char				name[64];
+	int					width, height, size, origin[2];
+	char				name[128], sprite[64], sprite2[128];
 
 	pinframe = (dspriteframe_t *)pin;
 
@@ -2020,7 +2018,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 
 	pspriteframe = Hunk_AllocName (sizeof (mspriteframe_t),loadname);
 
-	memset (pspriteframe, 0, sizeof (mspriteframe_t));
+	Q_memset (pspriteframe, 0, sizeof (mspriteframe_t));
 
 	*ppframe = pspriteframe;
 
@@ -2034,8 +2032,17 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	pspriteframe->left = origin[0];
 	pspriteframe->right = width + origin[0];
 
-	sprintf (name, "%s_%i", loadmodel->name, framenum);
-	pspriteframe->gl_texturenum = GL_LoadTexture (name, width, height, (byte *)(pinframe + 1), true, true);
+	// HACK HACK HACK
+	snprintf(name, 128, "%s.spr_%i", loadmodel->name, framenum);
+
+	COM_StripExtension(loadmodel->name, sprite);
+	snprintf(sprite2, 128, "%s.spr_%i", sprite, framenum);
+	pspriteframe->gl_texturenum = loadtextureimage(sprite2, 0, 0, true, false);
+
+	if (pspriteframe->gl_texturenum == 0) // did not find a matching TGA...
+	{
+		pspriteframe->gl_texturenum = GL_LoadTexture (name, width, height, (byte *)(pinframe + 1), true, true);
+	}
 
 	return (void *)((byte *)pinframe + sizeof (dspriteframe_t) + size);
 }
@@ -2075,8 +2082,8 @@ void * Mod_LoadSpriteGroup (void * pin, mspriteframe_t **ppframe, int framenum)
 	for (i=0 ; i<numframes ; i++)
 	{
 		*poutintervals = LittleFloat (pin_intervals->interval);
-		if (*poutintervals <= 0.0)
-			Sys_Error ("Mod_LoadSpriteGroup: interval<=0");
+		if (*poutintervals <= 0.0f)
+			Sys_Error ("interval<=0");
 
 		poutintervals++;
 		pin_intervals++;
@@ -2130,16 +2137,16 @@ void Mod_LoadSpriteModel (model_t *mod, void *buffer)
 	mod->synctype = LittleLong (pin->synctype);
 	psprite->numframes = numframes;
 
-	mod->mins[0] = mod->mins[1] = -psprite->maxwidth/2;
-	mod->maxs[0] = mod->maxs[1] = psprite->maxwidth/2;
-	mod->mins[2] = -psprite->maxheight/2;
-	mod->maxs[2] = psprite->maxheight/2;
+	mod->mins[0] = mod->mins[1] = -psprite->maxwidth/2.0f;
+	mod->maxs[0] = mod->maxs[1] = psprite->maxwidth/2.0f;
+	mod->mins[2] = -psprite->maxheight/2.0f;
+	mod->maxs[2] = psprite->maxheight/2.0f;
 	
 //
 // load the frames
 //
 	if (numframes < 1)
-		Sys_Error ("Mod_LoadSpriteModel: Invalid # of frames: %d\n", numframes);
+		Sys_Error ("Invalid # of frames: %d\n", numframes);
 
 	mod->numframes = numframes;
 
