@@ -10,9 +10,6 @@ void main(
 {
 	vPosition = mul(gl_ModelViewProjectionMatrix, float4(position, 1.f));
 	
-	float dist = distance(vPosition,float4(0.0,0.0,0.0,1.0));
-	vFog = ((512.0 - dist) / (512.0));
-	
 	vTexcoord = texcoord;
 	vColor = color;
 }

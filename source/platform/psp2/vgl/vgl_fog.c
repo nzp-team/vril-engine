@@ -20,14 +20,24 @@
 // gl_fog.c -- CTR picaGL Fog Rendering
 
 #include "../../../nzportable_def.h"
+#include <vitasdk.h>
 
 /**
  * @brief Sets fogging mode. (Platform-specific, see `Fog_SetupFrame()`)
  */
+extern GLint fogcoloruniformlocs[5];
+extern GLint fogdensityuniformlocs[5];
 void
 Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, float green, float blue, float alpha)
 {
-
+    //float color[4] = {red, green, blue, alpha};
+    float color[4] = {red/255, green/255, blue/255, alpha};
+    //float color[4] = {red*0.1f, green*0.1f, blue*0.1f, alpha};
+    for(int i = 0; i < 5; i++)
+    {
+        glUniform4fv(fogcoloruniformlocs[i], 1, color);
+        glUniform1f(fogdensityuniformlocs[i], ((start / end)/3.5f));
+    }
 }
 
 /**
