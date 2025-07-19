@@ -9,7 +9,7 @@
 {	
 	float4 c = tex2D(tex, vTexcoord) * vColor;
 	
-	float fog_dist = coords.z;
+	float fog_dist = coords.z / coords.w;
 	const float LOG2E = 1.442695f;
 
 	float vFog = exp(-fog_density * fog_density * fog_dist * fog_dist * LOG2E);
