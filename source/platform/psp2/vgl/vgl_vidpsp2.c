@@ -231,8 +231,8 @@ static int state_mask = 0;
 GLint monocolor;
 GLint modulcolor[2];
 GLint fogcoloruniformlocs[5];
-GLint fogdfaruniformlocs[5];
-GLint fogdrangeuniformlocs[5];
+GLint fogfaruniformlocs[5];
+GLint fograngeuniformlocs[5];
 
 void GL_SetProgram() {
 	switch (state_mask) {
@@ -406,8 +406,8 @@ void GL_ResetShaders() {
 				vglBindAttribLocation(programs[i], 1, "texcoord", 2, GL_FLOAT);
 				glLinkProgram(programs[i]);
 				fogcoloruniformlocs[0] = glGetUniformLocation(programs[i], "fogColor");
-				fogdfaruniformlocs[0] = glGetUniformLocation(programs[i], "fog_far");
-				fogdrangeuniformlocs[0] = glGetUniformLocation(programs[i], "fog_range");
+				fogfaruniformlocs[0] = glGetUniformLocation(programs[i], "fog_far");
+				fograngeuniformlocs[0] = glGetUniformLocation(programs[i], "fog_range");
 				break;
 			case TEX2D_MODUL:
 				glAttachShader(programs[i], fs[MODULATE]);
@@ -417,8 +417,8 @@ void GL_ResetShaders() {
 				glLinkProgram(programs[i]);
 				modulcolor[0] = glGetUniformLocation(programs[i], "vColor");
 				fogcoloruniformlocs[1] = glGetUniformLocation(programs[i], "fogColor");
-				fogdfaruniformlocs[1] = glGetUniformLocation(programs[i], "fog_far");
-				fogdrangeuniformlocs[1] = glGetUniformLocation(programs[i], "fog_range");
+				fogfaruniformlocs[1] = glGetUniformLocation(programs[i], "fog_far");
+				fograngeuniformlocs[1] = glGetUniformLocation(programs[i], "fog_range");
 				break;
 			case TEX2D_MODUL_CLR:
 				glAttachShader(programs[i], fs[MODULATE_WITH_COLOR]);
@@ -428,8 +428,8 @@ void GL_ResetShaders() {
 				vglBindAttribLocation(programs[i], 2, "color", 4, GL_FLOAT);
 				glLinkProgram(programs[i]);
 				fogcoloruniformlocs[2] = glGetUniformLocation(programs[i], "fogColor");
-				fogdfaruniformlocs[2] = glGetUniformLocation(programs[i], "fog_far");
-				fogdrangeuniformlocs[2] = glGetUniformLocation(programs[i], "fog_range");
+				fogfaruniformlocs[2] = glGetUniformLocation(programs[i], "fog_far");
+				fograngeuniformlocs[2] = glGetUniformLocation(programs[i], "fog_range");
 				break;
 			case RGBA_COLOR:
 				glAttachShader(programs[i], fs[RGBA_COLOR]);
@@ -460,8 +460,8 @@ void GL_ResetShaders() {
 				glLinkProgram(programs[i]);
 				modulcolor[1] = glGetUniformLocation(programs[i], "vColor");
 				fogcoloruniformlocs[3] = glGetUniformLocation(programs[i], "fogColor");
-				fogdfaruniformlocs[3] = glGetUniformLocation(programs[i], "fog_far");
-				fogdrangeuniformlocs[3] = glGetUniformLocation(programs[i], "fog_range");
+				fogfaruniformlocs[3] = glGetUniformLocation(programs[i], "fog_far");
+				fograngeuniformlocs[3] = glGetUniformLocation(programs[i], "fog_range");
 				break;
 			case FULL_A:
 				glAttachShader(programs[i], fs[MODULATE_COLOR_A]);
@@ -471,8 +471,8 @@ void GL_ResetShaders() {
 				vglBindAttribLocation(programs[i], 2, "color", 4, GL_FLOAT);
 				glLinkProgram(programs[i]);
 				fogcoloruniformlocs[4] = glGetUniformLocation(programs[i], "fogColor");
-				fogdfaruniformlocs[4] = glGetUniformLocation(programs[i], "fog_far");
-				fogdrangeuniformlocs[4] = glGetUniformLocation(programs[i], "fog_range");
+				fogfaruniformlocs[4] = glGetUniformLocation(programs[i], "fog_far");
+				fograngeuniformlocs[4] = glGetUniformLocation(programs[i], "fog_range");
 				break;
 			case RGBA_CLR_A:
 				glAttachShader(programs[i], fs[RGBA_A]);

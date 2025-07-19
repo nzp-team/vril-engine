@@ -26,19 +26,19 @@
  * @brief Sets fogging mode. (Platform-specific, see `Fog_SetupFrame()`)
  */
 extern GLint fogcoloruniformlocs[5];
-extern GLint fogdfaruniformlocs[5];
-extern GLint fogdrangeuniformlocs[5];
+extern GLint fogfaruniformlocs[5];
+extern GLint fograngeuniformlocs[5];
 void
 Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, float green, float blue, float alpha)
 {
-    float color[4] = {red, green, blue, alpha};
+    //float color[4] = {red, green, blue, alpha};
     //float color[4] = {red/255, green/255, blue/255, alpha};
-    //float color[4] = {red*0.1f, green*0.1f, blue*0.1f, alpha};
+    float color[4] = {red*0.1f, green*0.1f, blue*0.1f, alpha};
     for(int i = 0; i < 5; i++)
     {
         glUniform4fv(fogcoloruniformlocs[i], 1, color);
-        glUniform1f(fogdfaruniformlocs[i], end);
-        glUniform1f(fogdrangeuniformlocs[i], end - start);
+        glUniform1f(fogfaruniformlocs[i], end);
+        glUniform1f(fograngeuniformlocs[i], end - start);
     }
 }
 
