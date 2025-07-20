@@ -71,6 +71,7 @@ qboolean	scr_skipupdate;
 qboolean	block_drawing;
 
 void SCR_ScreenShot_f (void);
+void M_FindKeysForCommand (char *command, int *twokeys);
 
 /*
 ===============================================================================
@@ -214,20 +215,6 @@ char		scr_usestring[64];
 char 		scr_usestring2[64];
 float		scr_usetime_off = 0.0f;
 int			button_pic_x;
-extern qpic_t 		*b_abutton;
-extern qpic_t 		*b_bbutton;
-extern qpic_t 		*b_ybutton;
-extern qpic_t 		*b_xbutton;
-extern qpic_t 		*b_left;
-extern qpic_t 		*b_right;
-extern qpic_t 		*b_up;
-extern qpic_t 		*b_down;
-extern qpic_t 		*b_lt;
-extern qpic_t 		*b_rt;
-extern qpic_t 		*b_start;
-extern qpic_t 		*b_select;
-extern qpic_t		*b_zlt;
-extern qpic_t 		*b_zrt;
 
 /*
 ==============
@@ -236,64 +223,6 @@ SCR_UsePrint
 Similiar to above, but will also print the current button for the action.
 ==============
 */
-
-qpic_t *GetButtonIcon (char *buttonname)
-{
-	// naievil -- TOOD: implement me
-	return b_abutton;
-}
-
-char *GetUseButtonL ()
-{
-	int		j;
-	int		l;
-	char	*b;
-	l = strlen("+use");
-
-	for (j=0 ; j<256 ; j++)
-	{
-		b = keybindings[j];
-		if (!b)
-			continue;
-		if (!strncmp (b, "+use", l) )
-		{
-			if (!strcmp(Key_KeynumToString(j), "SELECT") ||
-				!strcmp(Key_KeynumToString(j), "LTRIGGER") ||
-				!strcmp(Key_KeynumToString(j), "RTRIGGER") ||
-				!strcmp(Key_KeynumToString(j), "HOME"))
-				return "  ";
-			else
-				return " ";
-		}
-	}
-	return " ";
-}
-
-char *GetGrenadeButtonL ()
-{
-	int		j;
-	int		l;
-	char	*b;
-	l = strlen("+grenade");
-
-	for (j=0 ; j<256 ; j++)
-	{
-		b = keybindings[j];
-		if (!b)
-			continue;
-		if (!strncmp (b, "+grenade", l) )
-		{
-			if (!strcmp(Key_KeynumToString(j), "SELECT") ||
-				!strcmp(Key_KeynumToString(j), "LTRIGGER") ||
-				!strcmp(Key_KeynumToString(j), "RTRIGGER") ||
-				!strcmp(Key_KeynumToString(j), "HOME"))
-				return "  ";
-			else
-				return " ";
-		}
-	}
-	return " ";
-}
 
 char *GetPerkName (int perk)
 {
@@ -333,37 +262,37 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			strcpy(c, "");
 			break;
 		case 1://door
-			strcpy(s, va("Hold  %s  to open Door\n", GetUseButtonL()));
+			strcpy(s, va("Hold     to open Door\n"));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 2://debris
-			strcpy(s, va("Hold  %s  to remove Debris\n", GetUseButtonL()));
+			strcpy(s, va("Hold     to remove Debris\n"));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 3://ammo
-			strcpy(s, va("Hold  %s  to buy Ammo for %s\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch));
+			strcpy(s, va("Hold     to buy Ammo for %s\n", pr_strings+sv_player->v.Weapon_Name_Touch));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 4://weapon
-			strcpy(s, va("Hold  %s  to buy %s\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch));
+			strcpy(s, va("Hold     to buy %s\n", pr_strings+sv_player->v.Weapon_Name_Touch));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 5://window
-			strcpy(s, va("Hold  %s  to Rebuild Barrier\n", GetUseButtonL()));
+			strcpy(s, va("Hold     to Rebuild Barrier\n"));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 6://box
-			strcpy(s, va("Hold  %s  to for Mystery Box\n", GetUseButtonL()));
+			strcpy(s, va("Hold     to for Mystery Box\n"));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 7://box take
-			strcpy(s, va("Hold  %s  for %s\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch));
+			strcpy(s, va("Hold     for %s\n", pr_strings+sv_player->v.Weapon_Name_Touch));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
@@ -373,37 +302,37 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			button_pic_x = 100;
 			break;
 		case 9://perk
-			strcpy(s, va("Hold  %s  to buy %s\n", GetUseButtonL(), GetPerkName(weapon)));
+			strcpy(s, va("Hold     to buy %s\n", GetPerkName(weapon)));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 10://turn on power
-			strcpy(s, va("Hold  %s  to Turn On the Power\n", GetUseButtonL()));
+			strcpy(s, va("Hold     to Turn On the Power\n"));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 11://turn on trap
-			strcpy(s, va("Hold  %s  to Activate the Trap\n", GetUseButtonL()));
+			strcpy(s, va("Hold     to Activate the Trap\n"));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 12://PAP
-			strcpy(s, va("Hold  %s  to Pack-a-Punch\n", GetUseButtonL()));
+			strcpy(s, va("Hold     to Pack-a-Punch\n"));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 13://revive
-			strcpy(s, va("Hold  %s  to Fix your Code.. :)\n", GetUseButtonL()));
+			strcpy(s, va("Hold     to Fix your Code.. :)\n"));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 14://use teleporter (free)
-			strcpy(s, va("Hold  %s  to use Teleporter\n", GetUseButtonL()));
+			strcpy(s, va("Hold     to use Teleporter\n"));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 15://use teleporter (cost)
-			strcpy(s, va("Hold  %s  to use Teleporter\n", GetUseButtonL()));
+			strcpy(s, va("Hold     to use Teleporter\n"));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
@@ -413,7 +342,7 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			button_pic_x = 100;
 			break;
 		case 17://link
-			strcpy(s, va("Hold  %s  to initiate link to pad\n", GetUseButtonL()));
+			strcpy(s, va("Hold     to initiate link to pad\n"));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
@@ -423,12 +352,12 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			button_pic_x = 100;
 			break;
 		case 19://finish link
-			strcpy(s, va("Hold  %s  to link pad with core\n", GetUseButtonL()));
+			strcpy(s, va("Hold     to link pad with core\n"));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 20://buyable ending
-			strcpy(s, va("Hold  %s  to End the Game\n", GetUseButtonL()));
+			strcpy(s, va("Hold     to End the Game\n"));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
@@ -459,7 +388,14 @@ void SCR_DrawUseString (void)
 	Draw_ColoredStringCentered(y + 10, scr_usestring2, 255, 255, 255, 255, 1);
 
 	if (button_pic_x != 100)
-		Draw_TransPic (x + button_pic_x, y - 4, GetButtonIcon("+use"));
+	{
+		int keys[2];
+		M_FindKeysForCommand ("+use", keys);
+		if (keys[0] != -1)
+		{
+			Draw_CharacterRGBA (x + button_pic_x + 4, y, *Key_KeynumToString(keys[0]), 255, 255, 0, 255, 1);
+		}	
+	}		
 }
 
 void SCR_CheckDrawUseString (void)
