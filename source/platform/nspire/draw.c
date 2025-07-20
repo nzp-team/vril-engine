@@ -33,6 +33,12 @@ byte converted_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE];
 byte temp_pixel_storage_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE*4]; // naievil -- rgba storage for max pic size 
 // naievil -- texture conversion end
 
+// Temporary picture color mod, gets reset after Draw_TransPic is finished
+#define PAL_STANDARD		0
+#define PAL_WHITETORED		1
+#define PAL_WHITETOYELLOW	2
+void Draw_AdvancedPic (int x, int y, qpic_t *pic, unsigned char alpha, unsigned char palette_hack);
+
 double Hitmark_Time, crosshair_spread_time;
 
 typedef struct {
@@ -125,6 +131,82 @@ qpic_t	*Draw_CachePic (char *path)
 	SwapPic (dat);
 
 	return dat;
+}
+
+// you've never seen a hack this bad!
+// this is basically a duplicate of Draw_CachePic
+// but i was super lazy and didnt wanna go editing
+// all references to it to add this extra parm.
+// basically it switches over color_hack to decide
+// whether or not to manipulate the color values
+inline byte convert_white_to_red(byte color_index)
+{
+	// keep transparency
+	if (color_index == 255)
+		return color_index;
+
+	// we have significantly less
+	// reds than we do whites so
+	// we have to lose some precision :(
+	switch(color_index) {
+		case 254: return 251;
+		case 15: return 251;
+		case 14: return 250;
+		case 13: return 249;
+		case 12: return 248;
+		case 11: return 247;
+		// precision loss begin
+		case 10: return 228;
+		case 9: return 228;
+		case 8: return 227;
+		case 7: return 227;
+		case 6: return 226;
+		case 5: return 226;
+		case 4: return 225;
+		case 3: return 225;
+		// this is technically gray/black but oh well!
+		case 2: return 224;
+		case 1: return 224;
+		case 0: return 224;
+		// nzp's text shadow also likes to use 185 so..
+		case 185: return 224;
+	}
+
+	return color_index;
+}
+
+inline byte convert_white_to_yellow(byte color_index)
+{
+	// keep transparency
+	if (color_index == 255)
+		return color_index;
+
+	// quake has a nice full selection of yellows!
+	// we could probably compute this, but a hashmao seems
+	// faster.
+	switch(color_index) {
+		case 254: return 253;
+		case 15: return 192;
+		case 14: return 193;
+		case 13: return 194;
+		case 12: return 195;
+		case 11: return 196;
+		case 10: return 197;
+		case 9: return 198;
+		case 8: return 199;
+		case 7: return 200;
+		case 6: return 201;
+		case 5: return 202;
+		case 4: return 203;
+		case 3: return 204;
+		case 2: return 205;
+		case 1: return 206;
+		case 0: return 207;
+		// nzp's text shadow also likes to use 185 so..
+		case 185: return 204;
+	}
+
+	return color_index;
 }
 
 // ! " # $ % & ' ( ) * _ , - . / 0
@@ -289,19 +371,214 @@ This is the same as Draw_Character, but with RGBA color codes.
 - Cypress
 ================
 */
+
+/*
+================
+Draw_Character
+
+Draws one 8*8 graphics character with 0 being transparent.
+It can be clipped to the top of the screen to allow the console to be
+smoothly scrolled off.
+================
+*/
+
+void Draw_AdvancedCharacter(int x, int y, int num, int alpha, unsigned short color_hack) {
+	byte			*dest;
+	byte			*source;
+	unsigned short	*pusdest;
+	int				drawline;	
+	int				row, col;
+	int 			dither_factor;
+	int 			pixel_tracker;
+
+	if (alpha < 16)
+		return;
+	if (alpha < 32)
+		dither_factor = 9;
+	else if (alpha < 64)
+		dither_factor = 6;
+	else if (alpha < 128)
+		dither_factor = 3;
+	else
+		dither_factor = 0;
+
+	pixel_tracker = 0;
+
+	num &= 255;
+	
+	if (y <= -8)
+		return;			// totally off screen
+
+#ifdef PARANOID
+	if (y > vid.height - 8 || x < 0 || x > vid.width - 8)
+		Sys_Error ("Con_DrawCharacter: (%i, %i)", x, y);
+	if (num < 0 || num > 255)
+		Sys_Error ("Con_DrawCharacter: char %i", num);
+#endif
+
+	row = num>>4;
+	col = num&15;
+	source = draw_chars + (row<<10) + (col<<3);
+
+	if (y < 0)
+	{	// clipped
+		drawline = 8 + y;
+		source -= 128*y;
+		y = 0;
+	}
+	else
+		drawline = 8;
+
+
+	if (r_pixbytes == 1)
+	{
+		dest = vid.conbuffer + y*vid.conrowbytes + x;
+	
+		while (drawline--)
+		{
+			pixel_tracker++;
+
+			// guard it to avoid spamming moduli
+			if (dither_factor != 0) {
+				// motolegacy -- this actually doesnt work as originally intended but it looks fucking awesome so im keeping it
+				if (pixel_tracker % dither_factor != 0)
+					continue;
+			}
+
+			// "Modern" (not 1996) GCC makes this almost as-fast
+			for(int i = 0; i < 8; i++) {
+				if (source[i]) {
+					switch(color_hack) {
+						case PAL_WHITETORED:
+							dest[i] = convert_white_to_red(source[i]); 
+							break;
+						case PAL_WHITETOYELLOW:
+							dest[i] = convert_white_to_yellow(source[i]); 
+							break;
+						default: 
+							dest[i] = source[i]; 
+							break;
+					}
+				}
+					
+			}
+
+			source += 128;
+			dest += vid.conrowbytes;
+		}
+	}
+	else
+	{
+	// FIXME: pre-expand to native format?
+		pusdest = (unsigned short *)
+				((byte *)vid.conbuffer + y*vid.conrowbytes + (x<<1));
+
+		while (drawline--)
+		{
+			pixel_tracker++;
+
+			// guard it to avoid spamming moduli
+			if (dither_factor != 0) {
+				// motolegacy -- this actually doesnt work as originally intended but it looks fucking awesome so im keeping it
+				if (pixel_tracker % dither_factor != 0)
+					continue;
+			}
+
+			// "Modern" (not 1996) GCC makes this almost as-fast
+			for(int i = 0; i < 8; i++) {
+				if (source[i]) {
+					switch(color_hack) {
+						case PAL_WHITETORED:
+							pusdest[i] = d_8to16table[convert_white_to_red(source[i])];
+							break;
+						case PAL_WHITETOYELLOW:
+							pusdest[i] = d_8to16table[convert_white_to_yellow(source[i])];
+							break;
+						default: 
+							pusdest[i] = d_8to16table[source[i]]; 
+							break;
+					}
+				}		
+			}
+
+			source += 128;
+			pusdest += (vid.conrowbytes >> 1);
+		}
+	}
+}
+
+unsigned char find_color_hack_from_rgb(byte r, byte g, byte b)
+{
+	// Check which color the caller wants the text to be
+	// and if it is a certain range just set the color_hack to whatever
+	// is close enough to that color
+	unsigned char color_hack = PAL_STANDARD;
+	int closest_color = findclosestpalmatch(r, g, b, 255);
+
+	switch(closest_color) {
+		case 64:
+		case 65:
+		case 66:
+		case 67:
+		case 68:
+		case 69:
+		case 70:
+		case 71:
+		case 72:
+		case 73:
+		case 74:
+		case 75:
+		case 76:
+		case 77:
+		case 78:
+		case 79:
+		case 224:
+		case 225:
+		case 226:
+		case 227:
+		case 228:
+		case 229:
+		case 230:
+		case 231:
+		case 232:
+		case 247:
+		case 248:
+		case 249:
+		case 250:
+		case 251:
+		    color_hack = PAL_WHITETORED;
+			break;
+		case 192:
+		case 193:
+		case 194:
+		case 111:
+		    color_hack = PAL_WHITETOYELLOW;
+			break;
+		case 254:
+		case 15:
+		default: 
+			color_hack = PAL_STANDARD;
+			break;
+	}
+
+	return color_hack;
+}
+
 extern cvar_t scr_coloredtext;
 void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float a, float scale)
 {
-	// TODO: Implement this.
+	unsigned char palette_hack = find_color_hack_from_rgb((byte) r, (byte) g, (byte) b);
 
-	Draw_Character(x, y, num);
+	Draw_AdvancedCharacter(x, y, num, 255, palette_hack);
 }
 
 void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, float a, float scale) 
 {
+	unsigned char palette_hack = find_color_hack_from_rgb((byte) r, (byte) g, (byte) b);
+
 	while (*str)
 	{
-		Draw_CharacterRGBA (x, y, *str, r, g, b, a, (int)scale);
+		Draw_AdvancedCharacter (x, y, *str, 255, palette_hack);
 
 		// Hooray for variable-spacing!
 		if (*str == ' ')
@@ -403,64 +680,13 @@ void Draw_DebugChar (char num)
 	}
 }
 
-#if 0
-/*
-=============
-Draw_Pic
-=============
-*/
-void Draw_Pic (int x, int y, qpic_t *pic)
-{
-	byte			*dest, *source;
-	unsigned short	*pusdest;
-	int				v, u;
 
-	if ((x < 0) ||
-		(x + pic->width > vid.width) ||
-		(y < 0) ||
-		(y + pic->height > vid.height))
-	{
-		Sys_Error ("Draw_Pic: bad coordinates: %d, %d (vid: %d %d)", x, y, vid.width, vid.height);
-	}
-
-	source = pic->data;
-
-	if (r_pixbytes == 1)
-	{
-		dest = vid.buffer + y * vid.rowbytes + x;
-
-		for (v=0 ; v<pic->height ; v++)
-		{
-			Q_memcpy (dest, source, pic->width);
-			dest += vid.rowbytes;
-			source += pic->width;
-		}
-	}
-	else
-	{
-	// FIXME: pretranslate at load time?
-		pusdest = (unsigned short *)vid.buffer + y * (vid.rowbytes >> 1) + x;
-
-		for (v=0 ; v<pic->height ; v++)
-		{
-			for (u=0 ; u<pic->width ; u++)
-			{
-				pusdest[u] = d_8to16table[source[u]];
-			}
-
-			pusdest += vid.rowbytes >> 1;
-			source += pic->width;
-		}
-	}
-}
-#else 
 // naievil -- So we never seem to want to do this on NSPIRE because we 
 // typically need transparency ALWAYS
 void Draw_Pic (int x, int y, qpic_t *pic)
 {
 	Draw_TransPic(x, y, pic);
 }
-#endif
 
 /*
 =============
@@ -469,7 +695,7 @@ Draw_StretchPic
 */
 void Draw_StretchPic (int x, int y, qpic_t *pic, int x_value, int y_value)
 {
-	// naievil -- TODO: implement this
+	// naievil -- TODO: implement stretching?
 	Draw_Pic(x, y, pic);
 }
 
@@ -480,8 +706,10 @@ Draw_ColoredStretchPic
 */
 void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value, int r, int g, int b, int a)
 {
-	// naievil -- TODO: implement this
-	Draw_Pic(x, y, pic);
+	unsigned char palette_hack = find_color_hack_from_rgb((byte) r, (byte) g, (byte) b);
+
+	// naievil -- TODO: implement stretching?
+	Draw_AdvancedPic(x, y, pic, a, palette_hack);
 }
 
 /*
@@ -501,8 +729,9 @@ Draw_ColorPic
 */
 void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float a)
 {
-	// naievil -- TODO: implement this
-	Draw_Pic(x, y, pic);
+	unsigned char palette_hack = find_color_hack_from_rgb((byte) r, (byte) g, (byte) b);
+
+	Draw_AdvancedPic(x, y, pic, 255, palette_hack);
 }
 
 /*
@@ -533,8 +762,10 @@ void Draw_TransPic (int x, int y, qpic_t *pic)
 			for (v=0 ; v<pic->height ; v++)
 			{
 				for (u=0 ; u<pic->width ; u++)
-					if ( (tbyte=source[u]) != TRANSPARENT_COLOR)
+					if ( (tbyte=source[u]) != TRANSPARENT_COLOR) 
+					{
 						dest[u] = tbyte;
+					}
 	
 				dest += vid.rowbytes;
 				source += pic->width;
@@ -546,22 +777,13 @@ void Draw_TransPic (int x, int y, qpic_t *pic)
 			{
 				for (u=0 ; u<pic->width ; u+=8)
 				{
-					if ( (tbyte=source[u]) != TRANSPARENT_COLOR)
-						dest[u] = tbyte;
-					if ( (tbyte=source[u+1]) != TRANSPARENT_COLOR)
-						dest[u+1] = tbyte;
-					if ( (tbyte=source[u+2]) != TRANSPARENT_COLOR)
-						dest[u+2] = tbyte;
-					if ( (tbyte=source[u+3]) != TRANSPARENT_COLOR)
-						dest[u+3] = tbyte;
-					if ( (tbyte=source[u+4]) != TRANSPARENT_COLOR)
-						dest[u+4] = tbyte;
-					if ( (tbyte=source[u+5]) != TRANSPARENT_COLOR)
-						dest[u+5] = tbyte;
-					if ( (tbyte=source[u+6]) != TRANSPARENT_COLOR)
-						dest[u+6] = tbyte;
-					if ( (tbyte=source[u+7]) != TRANSPARENT_COLOR)
-						dest[u+7] = tbyte;
+					for (int i = 0; i < 8; i++)
+					{
+						if ( (tbyte=source[u+i]) != TRANSPARENT_COLOR)
+						{
+							dest[u+i] = tbyte;
+						}
+					}
 				}
 				dest += vid.rowbytes;
 				source += pic->width;
@@ -591,6 +813,159 @@ void Draw_TransPic (int x, int y, qpic_t *pic)
 	}
 }
 
+/*
+=============
+Draw_AdvancedPic
+=============
+*/
+void Draw_AdvancedPic (int x, int y, qpic_t *pic, unsigned char alpha, unsigned char palette_hack)
+{
+	byte	*dest, *source, tbyte;
+	unsigned short	*pusdest;
+	int				v, u;
+	int 			dither_factor;
+	int 			pixel_tracker;
+
+	if (x < 0 || (unsigned)(x + pic->width) > vid.width || y < 0 ||
+		 (unsigned)(y + pic->height) > vid.height)
+	{
+		Sys_Error ("Draw_AdvancedPic: bad coordinates");
+	}
+
+	if (alpha < 16)
+		return;
+	if (alpha < 32)
+		dither_factor = 9;
+	else if (alpha < 64)
+		dither_factor = 6;
+	else if (alpha < 128)
+		dither_factor = 3;
+	else
+		dither_factor = 0;
+
+	pixel_tracker = 0;
+		
+	source = pic->data;
+
+	if (r_pixbytes == 1)
+	{
+		dest = vid.buffer + y * vid.rowbytes + x;
+
+		if (pic->width & 7)
+		{	// general
+			for (v=0 ; v<pic->height ; v++)
+			{
+				for (u=0 ; u<pic->width ; u++)
+				{
+					pixel_tracker++;
+
+					// guard it to avoid spamming moduli
+					if (dither_factor != 0) {
+						// motolegacy -- this actually doesnt work as originally intended but it looks fucking awesome so im keeping it
+						if (pixel_tracker % dither_factor != 0)
+							continue;
+					}
+
+					if ( (tbyte=source[u]) != TRANSPARENT_COLOR) {
+						switch(palette_hack) {
+							case PAL_WHITETORED:
+								dest[u] = convert_white_to_red(tbyte); 
+								break;
+							case PAL_WHITETOYELLOW:
+								dest[u] = convert_white_to_yellow(tbyte); 
+								break;
+							default: 
+								dest[u] = tbyte;
+								break;
+						}
+					}
+				}
+	
+				dest += vid.rowbytes;
+				source += pic->width;
+			}
+		}
+		else
+		{	// unwound
+			for (v=0 ; v<pic->height ; v++)
+			{
+				for (u=0 ; u<pic->width ; u+=8)
+				{
+
+					pixel_tracker++;
+
+					// guard it to avoid spamming moduli
+					if (dither_factor != 0) {
+						// motolegacy -- this actually doesnt work as originally intended but it looks fucking awesome so im keeping it
+						if (pixel_tracker % dither_factor != 0)
+							continue;
+					}
+
+					for (int i = 0; i < 8; i++)
+					{
+						if ( (tbyte=source[u+i]) != TRANSPARENT_COLOR)
+						{
+							switch(palette_hack) {
+								case PAL_WHITETORED:
+									dest[u+i] = convert_white_to_red(tbyte); 
+									break;
+								case PAL_WHITETOYELLOW:
+									dest[u+i] = convert_white_to_yellow(tbyte); 
+									break;
+								default: 
+									dest[u+i] = tbyte;
+									break;
+							}
+						}
+					}
+				}
+				dest += vid.rowbytes;
+				source += pic->width;
+			}
+		}
+	}
+	else
+	{
+	// FIXME: pretranslate at load time?
+		pusdest = (unsigned short *)vid.buffer + y * (vid.rowbytes >> 1) + x;
+
+		for (v=0 ; v<pic->height ; v++)
+		{
+			for (u=0 ; u<pic->width ; u++)
+			{
+
+				pixel_tracker++;
+
+				// guard it to avoid spamming moduli
+				if (dither_factor != 0) {
+					// motolegacy -- this actually doesnt work as originally intended but it looks fucking awesome so im keeping it
+					if (pixel_tracker % dither_factor != 0)
+						continue;
+				}
+
+				tbyte = source[u];
+
+				if (tbyte != TRANSPARENT_COLOR)
+				{
+					switch(palette_hack) {
+						case PAL_WHITETORED:
+							pusdest[u] = d_8to16table[convert_white_to_red(tbyte)]; 
+							break;
+						case PAL_WHITETOYELLOW:
+							pusdest[u] = d_8to16table[convert_white_to_yellow(tbyte)]; 
+							break;
+						default: 
+							pusdest[u] = d_8to16table[tbyte];
+							break;
+					}
+				}
+			}
+
+			pusdest += vid.rowbytes >> 1;
+			source += pic->width;
+		}
+	}
+}
 
 /*
 =============
