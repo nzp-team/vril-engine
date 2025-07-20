@@ -34,7 +34,7 @@ function install_dependencies
 {
     print_info "Installing dependancies.."
     apt update -y
-    apt install build-essential qtquickcontrols2-5-dev qtmultimedia5-dev qtdeclarative5-dev qtcreator qtchooser qt5-default qt3d5-dev qt3d5-dev-tools qt3d-defaultgeometryloader-plugin -y
+    apt install build-essential qtquickcontrols2-5-dev qtmultimedia5-dev qtdeclarative5-dev qtcreator qtchooser qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools qt3d5-dev qt3d5-dev-tools qt3d-defaultgeometryloader-plugin -y
 }
 
 function clone_firebird
@@ -48,13 +48,12 @@ function clone_firebird
 
 function build_firebird
 {
-    set -o xtrace
     cd ${workspace_path}
     print_info "Building firebird.."
-    command="mkdir -p firebird/build && cd firebird/build && qmake ../firebird.pro && make -j$(nproc)"
+    command="mkdir -p firebird/build && cd firebird/build && qmake .. && make"
     echo "[${command}]"
     cd ${workspace_path}/firebird
-    ${command}
+    eval ${command}
     print_info "Moving build binaries to working directory.."
     mv ${workspace_path}/firebird/build/${EMULATOR_BIN}* ${workspace_path}
 }
