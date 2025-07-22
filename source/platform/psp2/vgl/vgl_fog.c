@@ -37,8 +37,8 @@ Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, floa
     for(int i = 0; i < 5; i++)
     {
         glUniform4fv(fogcoloruniformlocs[i], 1, color);
-        glUniform1f(fogfaruniformlocs[i], end/64.0f);
-        glUniform1f(fograngeuniformlocs[i], end/64.0f - start/64.0f);
+        glUniform1f(fogfaruniformlocs[i], end/2);
+        glUniform1f(fograngeuniformlocs[i], end/2 - start/2);
     }
 }
 
