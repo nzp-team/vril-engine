@@ -14,7 +14,7 @@
 
 	float vFog = (fog_far - fog_dist) / fog_range;
 	vFog = clamp(vFog, 0.0f, 1.0f);
-	c.rgb = lerp(fogColor.rgb, c.rgb, vFog);
+	c.rgb = lerp(c.rgb, fogColor.rgb, vFog);
 	
 	if (c.a > 0.666) return c;
 	else discard;
