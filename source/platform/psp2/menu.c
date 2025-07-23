@@ -335,8 +335,9 @@ void M_SinglePlayer_Draw (void)
 	char *SINGLE_MENU_ITEMS[SINGLEPLAYER_ITEMS];
 	SINGLE_MENU_ITEMS[0] = "Nacht Der Untoten";
 	SINGLE_MENU_ITEMS[1] = "Warehouse";
-	SINGLE_MENU_ITEMS[2] = "Christmas Special";
-	SINGLE_MENU_ITEMS[3] = "Custom Maps";
+	SINGLE_MENU_ITEMS[2] = "Warehouse (Classic)";
+	SINGLE_MENU_ITEMS[3] = "Christmas Special";
+	SINGLE_MENU_ITEMS[4] = "Custom Maps";
 
 	for (int i = 0; i < SINGLEPLAYER_ITEMS; i++) {
 		Draw_ColoredString(vid.width/4, vid.height/4 + (16 * i), SINGLE_MENU_ITEMS[i], 255, 255, 255, 255, 2);
@@ -376,16 +377,21 @@ void M_SinglePlayer_Key (int key)
 			break;
 
 		case 1:
-			Cbuf_AddText ("map nzp_warehouse\n");
+			Cbuf_AddText ("map nzp_warehouse2\n");
 			key_dest = key_game;
 			break;
 
 		case 2:
-			Cbuf_AddText ("map christmas_special\n");
+			Cbuf_AddText ("map nzp_warehouse\n");
 			key_dest = key_game;
 			break;
 
 		case 3:
+			Cbuf_AddText ("map christmas_special\n");
+			key_dest = key_game;
+			break;
+
+		case 4:
 			M_Menu_CustomMaps_f ();
 			break;
 		}
