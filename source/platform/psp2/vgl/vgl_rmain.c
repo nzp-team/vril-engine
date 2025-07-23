@@ -1293,7 +1293,7 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	glDisable (GL_ALPHA_TEST);
 	glDepthMask(GL_FALSE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	GL_EnableState(GL_MODULATE);
 
 	//if (gl_affinemodels.value)
 	//	glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
@@ -1301,7 +1301,7 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	IgnoreInterpolatioFrame(e, paliashdr);
 	R_SetupAliasBlendedFrame (currententity->frame, paliashdr, e);
 
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	GL_EnableState(GL_REPLACE);
 	glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);
 
@@ -1315,13 +1315,13 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	{
 		glPushMatrix ();
 		R_RotateForEntity (e, e->scale);
-		glDisable (GL_TEXTURE_2D);
+		GL_DisableState(GL_TEXTURE_COORD_ARRAY);
 		glEnable (GL_BLEND);
-		glColor4f (0,0,0,0.5);
+		Platform_Graphics_Color (0,0,0,0.5);
 		GL_DrawAliasShadow (paliashdr, lastposenum);
-		glEnable (GL_TEXTURE_2D);
+		GL_EnableState(GL_TEXTURE_COORD_ARRAY);
 		glDisable (GL_BLEND);
-		glColor4f (1,1,1,1);
+		Platform_Graphics_Color (1,1,1,1);
 		glPopMatrix ();
 	}
 }
