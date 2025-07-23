@@ -822,7 +822,7 @@ void R_DrawBrushModel (entity_t *e)
 
     glPushMatrix ();
 	e->angles[0] = -e->angles[0];	// stupid quake bug
-	R_RotateForEntity (e);
+	R_RotateForEntity (e, e->scale);
 	e->angles[0] = -e->angles[0];	// stupid quake bug
 
 	//

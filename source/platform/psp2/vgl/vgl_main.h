@@ -399,7 +399,7 @@ void EmitBothSkyLayers (msurface_t *fa);
 void R_DrawSkyChain (msurface_t *s);
 bool R_CullBox (vec3_t mins, vec3_t maxs);
 void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
-void R_RotateForEntity (entity_t *e);
+void R_RotateForEntity (entity_t *e, unsigned char scale);
 void R_StoreEfrags (efrag_t **ppefrag);
 void GL_Set2D (void);
 void GL_DrawFPS(void);

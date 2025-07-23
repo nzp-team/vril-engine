@@ -977,47 +977,49 @@ Mod_LoadFaces
 */
 void Mod_LoadFaces (lump_t *l)
 {
-	dface_t	*ins;
+	dface_t		*in;
 	msurface_t 	*out;
-	int			i, count, surfnum, lofs;
-	int			planenum, side, texinfon;
-	
-	ins = (dface_t *)(mod_base + l->fileofs);
-	if (l->filelen % sizeof(*ins))
-		Sys_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
-	count = l->filelen / sizeof(*ins);
-	out = (msurface_t *)Hunk_AllocName ( count*sizeof(*out), loadname);
+	int			i, count, surfnum;
+	int			planenum, side;
+
+	in = (dface_t *)(mod_base + l->fileofs);
+	if (l->filelen % sizeof(*in))
+		Sys_Error ("funny lump size in %s",loadmodel->name);
+	count = l->filelen / sizeof(*in);
+	out = (msurface_t*)Hunk_AllocName ( count*sizeof(*out), loadname);	
 
 	loadmodel->surfaces = out;
 	loadmodel->numsurfaces = count;
 
-	for ( surfnum=0 ; surfnum<count ; surfnum++, out++)
+	for ( surfnum=0 ; surfnum<count ; surfnum++, in++, out++)
 	{
-		out->firstedge = LittleLong(ins->firstedge);
-		out->numedges = LittleShort(ins->numedges);
-		planenum = LittleShort(ins->planenum);
-		side = LittleShort(ins->side);
-		texinfon = LittleShort (ins->texinfo);
-		for (i=0 ; i<MAXLIGHTMAPS ; i++)
-			out->styles[i] = ins->styles[i];
-		lofs = LittleLong(ins->lightofs);
-		ins++;
+		out->firstedge = LittleLong(in->firstedge);
+		out->numedges = LittleShort(in->numedges);		
 		out->flags = 0;
 
+		planenum = LittleShort(in->planenum);
+		side = LittleShort(in->side);
 		if (side)
 			out->flags |= SURF_PLANEBACK;			
 
 		out->plane = loadmodel->planes + planenum;
 
-		out->texinfo = loadmodel->texinfo + texinfon;
+		out->texinfo = loadmodel->texinfo + LittleShort (in->texinfo);
 
 		CalcSurfaceExtents (out);
 				
 	// lighting info
-		if (lofs == -1)
+
+		for (i=0 ; i<MAXLIGHTMAPS ; i++)
+			out->styles[i] = in->styles[i];
+		if (loadmodel->bspversion == HL_BSPVERSION)		//Diabolickal HLBSP
+			i = LittleLong(in->lightofs/3);
+		else
+			i = LittleLong(in->lightofs);
+		if (i == -1)
 			out->samples = NULL;
 		else
-			out->samples = loadmodel->lightdata + (loadmodel->bspversion == HL_BSPVERSION ? lofs : lofs * 3); // LordHavoc
+			out->samples = loadmodel->lightdata + (i * 3); // LordHavoc
 		
 	// set the drawing flags flag
 		
@@ -1027,6 +1029,16 @@ void Mod_LoadFaces (lump_t *l)
 #ifndef QUAKE2
 			GL_SubdivideSurface (out);	// cut up polygon for warps
 #endif
+			continue;
+		}
+
+		if (!strncmp(out->texinfo->texture->name,"nodraw",6) || !strncmp(out->texinfo->texture->name,"NODRAW",6)) {
+			out->flags |= TEXFLAG_NODRAW;
+			continue;
+		}
+
+		if (strstr(out->texinfo->texture->name,"light")) {
+			out->flags |= TEXFLAG_LIGHT;
 			continue;
 		}
 		

@@ -168,6 +168,9 @@ cvar_t gl_reporttjunctions = {"gl_reporttjunctions", "0", true};
 cvar_t gl_doubleeyes = {"gl_doubleeyes", "1", true};
 cvar_t gl_overbright = {"gl_overbright", "0", true};
 
+//Shpuld
+cvar_t  r_model_brightness  = { "r_model_brightness", "1", true};   // Toggle high brightness model lighting
+
 // Torch flares. KH
 cvar_t gl_torchflares = {"gl_torchflares", "1", true};
 
@@ -197,98 +200,140 @@ bool R_CullBox (vec3_t mins, vec3_t maxs)
 }
 
 
-void R_RotateForEntity (entity_t *e)
+void R_RotateForEntity (entity_t *e, unsigned char scale)
 {
     glTranslatef (e->origin[0],  e->origin[1],  e->origin[2]);
 
     glRotatef (e->angles[1],  0, 0, 1);
     glRotatef (-e->angles[0],  0, 1, 0);
     glRotatef (e->angles[2],  1, 0, 0);
+
+	if (scale != ENTSCALE_DEFAULT && scale != 0) {
+		float scalefactor = ENTSCALE_DECODE(scale);
+		glScalef(scalefactor, scalefactor, scalefactor);
+	}
 }
 
+void IgnoreInterpolatioFrame (entity_t *e, aliashdr_t *paliashdr)
+{
+	if (strcmp(e->old_model, e->model->name) && e->model != NULL)
+	{
+		strcpy(e->old_model, e->model->name);
+        // fenix@io.com: model transform interpolation
+        e->frame_start_time     = 0;
+        e->translate_start_time = 0;
+        e->rotate_start_time    = 0;
+        e->pose1    = 0;
+        e->pose2    = paliashdr->frames[e->frame].firstpose;
+	}
+}
 
 /*
 =============
-R_BlendedRotateForEntity
+R_InterpolateEntity
 
+was R_BlendedRotateForEntity
 fenix@io.com: model transform interpolation
+
+modified by blubswillrule
+//fixme (come back and fix this once we can test on psp and view the true issue with interpolation)
 =============
 */
-void R_BlendedRotateForEntity (entity_t *e)
+
+void R_InterpolateEntity(entity_t *e, int shadow)	// Tomaz - New Shadow
 {
 	float timepassed;
 	float blend;
-	vec3_t d;
+	vec3_t deltaVec;
 	int i;
-
+	
 	// positional interpolation
-
-	timepassed = realtime - e->translate_start_time; 
-
+	
+	timepassed = (float)realtime - e->translate_start_time;
+	
+	//notes to self (blubs)
+	//-Added this method, and commented out the check for r_i_model_transforms.value
+	//tried the snapping interpolation, though it worked, it was still a bit jittery...
+	//problem with linear interpolation is we don't know the exact time it should take to move from origin1 to origin2...
+	//looks like the rotation interpolation doesn't work all that great either, rotation could benefit from the snapping interpolation that I use
+	//if I get this method to work well, make sure we go back and check for r_i_model_transforms again, (because vmodel and other models that don't use interpolation)
+	//probably go back and edit animations too as I redo the last 2 textures..
+	
 	if (e->translate_start_time == 0 || timepassed > 1)
 	{
 		e->translate_start_time = realtime;
 		VectorCopy (e->origin, e->origin1);
 		VectorCopy (e->origin, e->origin2);
 	}
-
+	
+	//our origin has been updated
 	if (!VectorCompare (e->origin, e->origin2))
 	{
 		e->translate_start_time = realtime;
 		VectorCopy (e->origin2, e->origin1);
 		VectorCopy (e->origin,  e->origin2);
 		blend = 0;
-	}else{
-		blend =  timepassed / 0.1;
-
-		if (cl.paused || blend > 1) blend = 1;
 	}
-
-	VectorSubtract (e->origin2, e->origin1, d);
+	else
+	{
+		blend =  timepassed / 0.4f;//0.1 not sure what this value should be...
+		//technically this value should be the total amount of time that we take from 1 position to the next, it's practically how long it should take us to go from one location to the next...
+		if (cl.paused || blend > 1)
+			blend = 0;
+	}
+	
+	VectorSubtract (e->origin2, e->origin1, deltaVec);
 
 	glTranslatef (
-		e->origin1[0] + (blend * d[0]),
-		e->origin1[1] + (blend * d[1]),
-		e->origin1[2] + (blend * d[2]));
+		e->origin[0] + (blend * deltaVec[0]),
+		e->origin[1] + (blend * deltaVec[1]),
+		e->origin[2] + (blend * deltaVec[2]));
 
 	// orientation interpolation (Euler angles, yuck!)
-
-	timepassed = realtime - e->rotate_start_time; 
-
+	timepassed = (float)realtime - e->rotate_start_time;
+	
 	if (e->rotate_start_time == 0 || timepassed > 1)
 	{
 		e->rotate_start_time = realtime;
 		VectorCopy (e->angles, e->angles1);
 		VectorCopy (e->angles, e->angles2);
 	}
-
+	
 	if (!VectorCompare (e->angles, e->angles2))
 	{
 		e->rotate_start_time = realtime;
 		VectorCopy (e->angles2, e->angles1);
 		VectorCopy (e->angles,  e->angles2);
 		blend = 0;
-	}else{
-		blend = timepassed / 0.1;
- 
-		if (cl.paused || blend > 1) blend = 1;
 	}
-
-	VectorSubtract (e->angles2, e->angles1, d);
-
-	// always interpolate along the shortest path
-	for (i = 0; i < 3; i++) 
+	else
 	{
-		if (d[i] > 180){
-			d[i] -= 360;
-		}else if (d[i] < -180){
-			d[i] += 360;
+		blend = timepassed / 0.1f;
+		if (cl.paused || blend > 1)
+			blend = 1;
+	}
+	
+	VectorSubtract (e->angles2, e->angles1, deltaVec);
+	
+	// always interpolate along the shortest path
+	for (i = 0; i < 3; i++)
+	{
+		if (deltaVec[i] > 180)
+		{
+			deltaVec[i] -= 360;
+		}
+		else if (deltaVec[i] < -180)
+		{
+		    deltaVec[i] += 360;
 		}
 	}
 
-	glRotatef ( e->angles1[1] + ( blend * d[1]),  0, 0, 1);
-	glRotatef (-e->angles1[0] + (-blend * d[0]),  0, 1, 0);
-	glRotatef ( e->angles1[2] + ( blend * d[2]),  1, 0, 0);
+	glRotatef ((e->angles1[YAW] + ( blend * deltaVec[YAW])) /*->* ((float)M_PI / 180.0f)*/,  0, 0, 1);
+	if (shadow == 0)
+	{
+		glRotatef ((-e->angles1[PITCH] + (-blend * deltaVec[PITCH])) /*->* ((float)M_PI / 180.0f)*/,  0, 1, 0);
+    	glRotatef ((e->angles1[ROLL] + ( blend * deltaVec[ROLL])) /*->* ((float)M_PI / 180.0f)*/,  1, 0, 0);
+	}
 }
 
 /*
@@ -1007,10 +1052,12 @@ R_SetupAliasBlendedFrame
 fenix@io.com: model animation interpolation
 =================
 */
+//double t1, t2, t3;
+
 void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 {
-	int	pose;
-	int	numposes;
+	int   pose;
+	int   numposes;
 	float blend;
 
 	if ((frame >= paliashdr->numframes) || (frame < 0))
@@ -1019,37 +1066,264 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 		frame = 0;
 	}
 
-	pose = paliashdr->frames[frame].firstpose;
-	numposes = paliashdr->frames[frame].numposes;
+	// HACK: if we're a certain distance away, don't bother blending
+	// cypress -- Lets not care about Z (up).. chances are they're out of the frustum anyway
+	int dist_x = (cl.viewent.origin[0] - e->origin[0]);
+	int dist_y = (cl.viewent.origin[1] - e->origin[1]);
+	int distance_from_client = (int)((dist_x) * (dist_x) + (dist_y) * (dist_y)); // no use sqrting, just slows us down.
 
-	if (numposes > 1)
-	{
-		e->frame_interval = paliashdr->frames[frame].interval;
-		pose += (int)(cl.time / e->frame_interval) % numposes;
-	}else {
-		/* One tenth of a second is a good for most Quake animations.
-		If the nextthink is longer then the animation is usually meant to pause
-		(e.g. check out the shambler magic animation in shambler.qc).  If its
-		shorter then things will still be smoothed partly, and the jumps will be
-		less noticable because of the shorter time.  So, this is probably a good
-		assumption. */
+	// They're too far away from us to care about blending their frames.
+	if (distance_from_client >= 160000) { // 400 * 400
+		// Fix them from jumping from last lerp
+		e->pose1 = e->pose2 = paliashdr->frames[frame].firstpose;
 		e->frame_interval = 0.1;
+
+		GL_DrawAliasFrame (paliashdr, paliashdr->frames[frame].firstpose);
+	} else {
+		pose = paliashdr->frames[frame].firstpose;
+		numposes = paliashdr->frames[frame].numposes;
+
+		if (numposes > 1)
+		{
+			e->frame_interval = paliashdr->frames[frame].interval;
+			pose += (int)((float)cl.time / e->frame_interval) % numposes;
+		}
+		else
+		{
+			/* One tenth of a second is a good for most Quake animations.
+			If the nextthink is longer then the animation is usually meant to pause
+			(e.g. check out the shambler magic animation in shambler.qc).  If its
+			shorter then things will still be smoothed partly, and the jumps will be
+			less noticable because of the shorter time.  So, this is probably a good
+			assumption. */
+			e->frame_interval = 0.1;
+		}
+
+		if (e->pose2 != pose)
+		{
+			e->frame_start_time = realtime;
+			e->pose1 = e->pose2;
+			e->pose2 = pose;
+			blend = 0;
+		}
+		else
+			blend = ((float)realtime - e->frame_start_time) / e->frame_interval;
+		// wierd things start happening if blend passes 1
+		if (cl.paused || blend > 1) blend = 1;
+
+		if (blend == 1)
+			GL_DrawAliasFrame (paliashdr, pose);
+		else
+			GL_DrawAliasBlendedFrame (paliashdr, e->pose1, e->pose2, blend);
+	}
+}
+
+/*
+=================
+R_DrawZombieLimb
+
+=================
+*/
+//Blubs Z hacks: need this declaration.
+model_t *Mod_FindName (char *name);
+
+void R_DrawZombieLimb (entity_t *e, int which)
+{
+	model_t		*clmodel;
+	aliashdr_t	*paliashdr;
+	entity_t 	*limb_ent;
+
+	switch(which) {
+		case 1:
+			limb_ent = &cl_entities[e->z_head];
+			break;
+		case 2:
+			limb_ent = &cl_entities[e->z_larm];
+			break;
+		case 3:
+			limb_ent = &cl_entities[e->z_rarm];
+			break;
+		default:
+			return;
 	}
 
-	if (e->pose2 != pose)
+	clmodel = limb_ent->model;
+
+	if (clmodel == NULL)
+		return;
+
+	VectorCopy(e->origin, r_entorigin);
+	VectorSubtract(r_origin, r_entorigin, modelorg);
+
+	// locate the proper data
+	paliashdr = (aliashdr_t *)Mod_Extradata(clmodel);//e->model
+	c_alias_polys += paliashdr->numtris;
+
+	//GL_DisableMultitexture();
+
+	//Shpuld
+	if(r_model_brightness.value)
 	{
-		e->frame_start_time = realtime;
-		e->pose1 = e->pose2;
-		e->pose2 = pose;
-		blend = 0;
-	}else{
-		blend = (realtime - e->frame_start_time) / e->frame_interval;
+		lightcolor[0] += 48;
+		lightcolor[1] += 48;
+		lightcolor[2] += 48;
 	}
-		
-	// wierd things start happening if blend passes 1
-	if (cl.paused || blend > 1) blend = 1;
+
+	glPushMatrix ();
+	R_RotateForEntity (e, e->scale);
+
+	glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+	glScalef (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
+
+	//if (gl_smoothmodels.value)
+	//	glShadeModel (GL_SMOOTH);
+	GL_EnableState(GL_MODULATE);
+
+	//if (gl_affinemodels.value)
+	//	glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+
+	IgnoreInterpolatioFrame(e, paliashdr);
+	R_SetupAliasBlendedFrame (currententity->frame, paliashdr, e);
+
+	GL_EnableState(GL_REPLACE);
+
+	//glShadeModel (GL_FLAT);
+	//if (gl_affinemodels.value)
+	//	glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
+	glPopMatrix ();
+}
+
+/*
+=================
+R_DrawTransparentAliasModel
+
+=================
+*/
+void R_DrawTransparentAliasModel (entity_t *e)
+{
+	model_t		*clmodel;
+	vec3_t		mins, maxs;
+	aliashdr_t	*paliashdr;
+	int			anim;
+
+	clmodel = currententity->model;
+
+	VectorAdd (currententity->origin, clmodel->mins, mins);
+	VectorAdd (currententity->origin, clmodel->maxs, maxs);
+
+// naievil -- fixme: on psp this is == 2 ? 
+	if (R_CullBox (mins, maxs))
+		return;
+
+	VectorCopy (currententity->origin, r_entorigin);
+	VectorSubtract (r_origin, r_entorigin, modelorg);
+
+	// for(int g = 0; g < 3; g++)
+	// {
+	// 	if(lightcolor[g] < 8)
+	// 		lightcolor[g] = 8;
+	// 	if(lightcolor[g] > 125)
+	// 		lightcolor[g] = 125;
+	// }
+
+	// //
+	// // get lighting information
+	// //
+
+	// ambientlight = shadelight = R_LightPoint (currententity->origin);
+	// for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
+	// {
+	// 	if (cl_dlights[lnum].die >= cl.time)
+	// 	{
+	// 		VectorSubtract (currententity->origin,
+	// 						cl_dlights[lnum].origin,
+	// 						dist);
+	// 		add = cl_dlights[lnum].radius - Length(dist);
+
+	// 		if (add > 0) {
+	// 			ambientlight += add;
+	// 			//ZOID models should be affected by dlights as well
+	// 			shadelight += add;
+	// 		}
+	// 	}
+	// }
+
+	// // clamp lighting so it doesn't overbright as much
+	// if (ambientlight > 128)
+	// 	ambientlight = 128;
+	// if (ambientlight + shadelight > 192)
+	// 	shadelight = 192 - ambientlight;
+
+	// shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
+	// shadelight = shadelight / 200.0;
 	
-	GL_DrawAliasBlendedFrame (paliashdr, e->pose1, e->pose2, blend);
+	// an = e->angles[1]/180*M_PI;
+	// shadevector[0] = cos(-an);
+	// shadevector[1] = sin(-an);
+	// shadevector[2] = 1;
+	// VectorNormalize (shadevector);
+
+	//
+	// locate the proper data
+	//
+	paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
+	c_alias_polys += paliashdr->numtris;
+
+	//
+	// draw all the triangles
+	//
+
+	//GL_DisableMultitexture();
+	lightcolor[0] = lightcolor[1] = lightcolor[2] = 256.0f;
+
+    glPushMatrix ();
+	R_RotateForEntity (e, e->scale);
+
+	glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+	glScalef (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
+
+	anim = (int)(cl.time*10) & 3;
+	GL_Bind(paliashdr->gl_texturenum[e->skinnum][anim]);
+
+	//if (gl_smoothmodels.value)
+	//	glShadeModel (GL_SMOOTH);
+
+	glEnable(GL_BLEND);
+	glDisable (GL_ALPHA_TEST);
+	glDepthMask(GL_FALSE);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	//if (gl_affinemodels.value)
+	//	glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+
+	IgnoreInterpolatioFrame(e, paliashdr);
+	R_SetupAliasBlendedFrame (currententity->frame, paliashdr, e);
+
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
+
+	//glShadeModel (GL_FLAT);
+	//if (gl_affinemodels.value)
+	//	glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
+	glPopMatrix ();
+
+	if (r_shadows.value)
+	{
+		glPushMatrix ();
+		R_RotateForEntity (e, e->scale);
+		glDisable (GL_TEXTURE_2D);
+		glEnable (GL_BLEND);
+		glColor4f (0,0,0,0.5);
+		GL_DrawAliasShadow (paliashdr, lastposenum);
+		glEnable (GL_TEXTURE_2D);
+		glDisable (GL_BLEND);
+		glColor4f (1,1,1,1);
+		glPopMatrix ();
+	}
 }
 
 /*
@@ -1058,8 +1332,11 @@ R_DrawAliasModel
 
 =================
 */
+int doZHack;
+extern int zombie_skins[4];
 void R_DrawAliasModel (entity_t *e)
 {
+	char		specChar;
 	int			i, j;
 	int			lnum;
 	vec3_t		dist;
@@ -1082,6 +1359,7 @@ void R_DrawAliasModel (entity_t *e)
 	if (R_CullBox (mins, maxs))
 		return;
 
+	specChar = clmodel->name[strlen(clmodel->name) - 5];
 
 	VectorCopy (currententity->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
@@ -1149,9 +1427,6 @@ void R_DrawAliasModel (entity_t *e)
 	}
 	
 	shadedots = (float*)r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
-	// LordHavoc: .lit support begin
-	VectorScale(lightcolor, 1.0f / 200.0f, lightcolor);
-	// LordHavoc: .lit support end
 	
 	float cs[2];
 	an = e->angles[1]/180*M_PI;
@@ -1164,7 +1439,15 @@ void R_DrawAliasModel (entity_t *e)
 	//
 	// locate the proper data
 	//
-	paliashdr = (aliashdr_t *)Mod_Extradata (currententity->model);
+	if(doZHack && specChar == '%')
+	{
+		if(clmodel->name[12] == 'c')
+			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zcfull.mdl"));
+		else
+			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zfull.mdl"));
+	}
+	else
+		paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
 
 	c_alias_polys += paliashdr->numtris;
 
@@ -1172,13 +1455,37 @@ void R_DrawAliasModel (entity_t *e)
 	// draw all the triangles
 	//
 
+	//Shpuld
+	if(r_model_brightness.value)
+	{
+		lightcolor[0] += 60;
+		lightcolor[1] += 60;
+		lightcolor[2] += 60;
+	}
+
+	if(specChar == '!' || (e->effects & EF_FULLBRIGHT))
+	{
+		lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
+	}
+
+	add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
+	if (add > 0.0f)
+	{
+		lightcolor[0] += add / 3.0f;
+		lightcolor[1] += add / 3.0f;
+		lightcolor[2] += add / 3.0f;
+	}
+	// LordHavoc: .lit support begin
+	VectorScale(lightcolor, 1.0f / 200.0f, lightcolor);
+	// LordHavoc: .lit support end
+
     glPushMatrix ();
 	
 	// fenix@io.com: model transform interpolation
 	if (r_interpolate_model_transform.value){
-		R_BlendedRotateForEntity (e);
+		R_InterpolateEntity (e, e->scale);
 	}else{
-		R_RotateForEntity (e);
+		R_RotateForEntity (e, e->scale);
 	}
 
 	if (!strcmp (clmodel->name, "progs/eyes.mdl") && gl_doubleeyes.value) {
@@ -1190,8 +1497,33 @@ void R_DrawAliasModel (entity_t *e)
 		glScalef (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
 	}
 
-	anim = (int)(cl.time*10) & 3;
-    GL_Bind(paliashdr->gl_texturenum[currententity->skinnum][anim]);
+	if (specChar == '%')//Zombie body
+	{
+		switch(e->skinnum)
+		{
+			case 0:
+				GL_Bind(zombie_skins[0]);
+				break;
+			case 1:
+				GL_Bind(zombie_skins[1]);
+				break;
+			case 2:
+				GL_Bind(zombie_skins[2]);
+				break;
+			case 3:
+				GL_Bind(zombie_skins[3]);
+				break;
+			default: //out of bounds? assuming 0
+				Con_Printf("Zombie tex out of bounds: Tex[%i]\n",e->skinnum);
+				GL_Bind(zombie_skins[0]);
+				break;
+		}
+	}
+	else
+	{
+		anim = (int)(cl.time*10) & 3;
+		GL_Bind(paliashdr->gl_texturenum[e->skinnum][anim]);
+	}
 
 	// we can't dynamically colormap textures, so they are cached
 	// seperately for the players.  Heads are just uncolored.
@@ -1225,6 +1557,16 @@ void R_DrawAliasModel (entity_t *e)
 
 	glPopMatrix ();
 	
+	if (doZHack == 0 && specChar == '%')//if we're drawing zombie, also draw its limbs in one call
+	{
+		if(e->z_head)
+			R_DrawZombieLimb(e,1);
+		if(e->z_larm)
+			R_DrawZombieLimb(e,2);
+		if(e->z_rarm)
+			R_DrawZombieLimb(e,3);
+	}
+
 	if (torch && gl_torchflares.value) {
 		// Draw torch flares. KH
 		// NOTE: It would be better if we batched these up.
@@ -1339,9 +1681,9 @@ void R_DrawAliasModel (entity_t *e)
 		
 		// fenix@io.com: model transform interpolation
 		if (r_interpolate_model_transform.value){
-			R_BlendedRotateForEntity (e);
+			R_InterpolateEntity (e, e->scale);
 		}else{
-			R_RotateForEntity (e);
+			R_RotateForEntity (e, e->scale);
 		}
 			
 		GL_DisableState(GL_TEXTURE_COORD_ARRAY);
@@ -1375,41 +1717,80 @@ void R_DrawEntitiesOnList (void)
 
 	if (!r_drawentities.value)
 		return;
+
+	int zHackCount = 0;
+	doZHack = 0;
+	char specChar;
 	
 	// draw sprites seperately, because of alpha blending
 	for (i=0 ; i<cl_numvisedicts ; i++)
 	{
 		currententity = cl_visedicts[i];
-		if (currententity == &cl_entities[cl.viewentity]) currententity->angles[0] *= 0.3;
+
+		specChar = currententity->model->name[strlen(currententity->model->name)-5];
+
+		if(specChar == '(' || specChar == '^')//skip heads and arms: it's faster to do this than a strcmp...
+		{
+			continue;
+		}
+		doZHack = 0;
+		if(specChar == '%')
+		{
+			if(zHackCount > 5 || ((currententity->z_head != 0) && (currententity->z_larm != 0) && (currententity->z_rarm != 0)))
+			{
+				doZHack = 1;
+			}
+			else
+			{
+				zHackCount ++;//drawing zombie piece by piece.
+			}
+		}
+
 		switch (currententity->model->type)
 		{
 		case mod_alias:
+			if(specChar == '$')//This is for smooth alpha, draw in the following loop, not this one
+			{
+				continue;
+			}
 			R_DrawAliasModel (currententity);
 			break;
+
 		case mod_brush:
-			glEnable(GL_POLYGON_OFFSET_FILL);
 			R_DrawBrushModel (currententity);
-			glDisable(GL_POLYGON_OFFSET_FILL);
 			break;
+
 		default:
 			break;
 		}
+		doZHack = 0;
 	}
 	
 	for (i=0 ; i<cl_numvisedicts ; i++)
 	{
 		currententity = cl_visedicts[i];
+
+		if(!(currententity->model))
+		{
+			continue;
+		}
+
+		specChar = currententity->model->name[strlen(currententity->model->name)-5];
 
 		switch (currententity->model->type)
 		{
 		case mod_sprite:
 			R_DrawSpriteModel (currententity);
 			break;
+		case mod_alias:
+			if(specChar == '$')//mdl model with blended alpha
+			{
+					R_DrawTransparentAliasModel(currententity);
+			}
+			break;
+		default: break;
 		}
 	}
-
-	//glEnable (GL_DEPTH_TEST);
-
 }
 /*
 =============
