@@ -319,7 +319,7 @@ void M_Main_Key (int key)
 /* SINGLE PLAYER MENU */
 
 int	m_singleplayer_cursor;
-#define	SINGLEPLAYER_ITEMS	4
+#define	SINGLEPLAYER_ITEMS	5
 
 
 void M_Menu_SinglePlayer_f (void)
@@ -343,8 +343,8 @@ void M_SinglePlayer_Draw (void)
 		Draw_ColoredString(vid.width/4, vid.height/4 + (16 * i), SINGLE_MENU_ITEMS[i], 255, 255, 255, 255, 2);
 	}
 
-	Draw_FillByColor(vid.width/4, vid.height/4 - 3 + (16 * m_singleplayer_cursor), strlen(SINGLE_MENU_ITEMS[m_singleplayer_cursor])*8, 1, 255, 255, 255, 255);
-	Draw_FillByColor(vid.width/4, vid.height/4 + 2 + 8 + (16 * m_singleplayer_cursor), strlen(SINGLE_MENU_ITEMS[m_singleplayer_cursor])*8, 1, 255, 255, 255, 255);
+	Draw_FillByColor(vid.width/4, vid.height/4 - 3 + (16 * m_singleplayer_cursor), strlen(SINGLE_MENU_ITEMS[m_singleplayer_cursor])*8, 2, 255, 255, 255, 255);
+	Draw_FillByColor(vid.width/4, vid.height/4 + 2 + 8 + (16 * m_singleplayer_cursor), strlen(SINGLE_MENU_ITEMS[m_singleplayer_cursor])*8, 2, 255, 255, 255, 255);
 }
 
 
@@ -409,26 +409,44 @@ void M_SinglePlayer_Key (int key)
 /* SINGLE PLAYER MENU */
 
 int	m_maps_cursor;
-int m_maps_items;
+#define	MAP_ITEMS	18
 void M_Menu_CustomMaps_f (void)
 {
 	key_dest = key_menu;
 	m_state = m_custommaps;
 	m_entersound = true;
-	m_maps_items = 1;
 }
 
 
 void M_Menu_CustomMaps_Draw (void)
 {
-/*
-	for (int i = 0; i < SINGLEPLAYER_ITEMS; i++) {
-		Draw_String(vid.width/4, vid.height/4 + (16 * i), SINGLE_MENU_ITEMS[i]);
+	char *MAPS_MENU_ITEMS[MAP_ITEMS];
+	MAPS_MENU_ITEMS[0] = "4all";
+	MAPS_MENU_ITEMS[1] = "B1ooDv3";
+	MAPS_MENU_ITEMS[2] = "B1ooDv4";
+	MAPS_MENU_ITEMS[3] = "boxxer";
+	MAPS_MENU_ITEMS[4] = "Bunker-Defense";
+	MAPS_MENU_ITEMS[5] = "christmas_special";
+	MAPS_MENU_ITEMS[6] = "Dung3on";
+	MAPS_MENU_ITEMS[7] = "Fegefeuer";
+	MAPS_MENU_ITEMS[8] = "Hangar";
+	MAPS_MENU_ITEMS[9] = "lexi_house";
+	MAPS_MENU_ITEMS[10] = "lexi_overlook";
+	MAPS_MENU_ITEMS[11] = "lexi_temple";
+	MAPS_MENU_ITEMS[12] = "Loop";
+	MAPS_MENU_ITEMS[13] = "ndu";
+	MAPS_MENU_ITEMS[14] = "nzp_warehouse2";
+	MAPS_MENU_ITEMS[15] = "nzp_warehouse";
+	MAPS_MENU_ITEMS[16] = "wahnsinn";
+	MAPS_MENU_ITEMS[17] = "weapon_test";
+
+	for (int i = 0; i < MAP_ITEMS; i++) {
+		Draw_ColoredString(vid.width/4, vid.height/4 + (16 * i), MAPS_MENU_ITEMS[i], 255, 255, 255, 255, 2);
 	}
 
-	Draw_FillByColor(vid.width/4, vid.height/4 - 3 + (16 * m_singleplayer_cursor), strlen(SINGLE_MENU_ITEMS[m_singleplayer_cursor])*8, 1, 255, 255, 255);
-	Draw_FillByColor(vid.width/4, vid.height/4 + 2 + 8 + (16 * m_singleplayer_cursor), strlen(SINGLE_MENU_ITEMS[m_singleplayer_cursor])*8, 1, 255, 255, 255);
-*/
+	Draw_FillByColor(vid.width/4, vid.height/4 - 3 + (16 * m_maps_cursor), strlen(MAPS_MENU_ITEMS[m_maps_cursor])*8, 2, 255, 255, 255, 255);
+	Draw_FillByColor(vid.width/4, vid.height/4 + 2 + 8 + (16 * m_maps_cursor), strlen(MAPS_MENU_ITEMS[m_maps_cursor])*8, 2, 255, 255, 255, 255);
+
 }
 
 
@@ -439,19 +457,113 @@ void M_Menu_CustomMaps_Key (int key)
 
 	case K_DOWNARROW:
 		S_LocalSound ("sounds/menu/navigate.wav");
-		if (++m_maps_cursor >= m_maps_items)
+		if (++m_maps_cursor >= MAP_ITEMS)
 			m_maps_cursor = 0;
 		break;
 
 	case K_UPARROW:
 		S_LocalSound ("sounds/menu/navigate.wav");
 		if (--m_maps_cursor < 0)
-			m_maps_cursor = m_maps_items - 1;
+			m_maps_cursor = MAP_ITEMS - 1;
 		break;
 
 	case K_ENTER:
 	case K_CROSS:
 		m_entersound = true;
+
+		switch (m_maps_cursor)
+		{
+		case 0:
+			Cbuf_AddText ("map 4all\n");
+			key_dest = key_game;
+			break;
+
+		case 1:
+			Cbuf_AddText ("map B1ooDv3\n");
+			key_dest = key_game;
+			break;
+
+		case 2:
+			Cbuf_AddText ("map B1ooDv4\n");
+			key_dest = key_game;
+			break;
+
+		case 3:
+			Cbuf_AddText ("map boxxer\n");
+			key_dest = key_game;
+			break;
+
+		case 4:
+			Cbuf_AddText ("map Bunker-Defense\n");
+			key_dest = key_game;
+			break;
+
+		case 5:
+			Cbuf_AddText ("map christmas_special\n");
+			key_dest = key_game;
+			break;
+
+		case 6:
+			Cbuf_AddText ("map Dung3on\n");
+			key_dest = key_game;
+			break;
+
+		case 7:
+			Cbuf_AddText ("map Fegefeuer\n");
+			key_dest = key_game;
+			break;
+
+		case 8:
+			Cbuf_AddText ("map Hangar\n");
+			key_dest = key_game;
+			break;
+
+		case 9:
+			Cbuf_AddText ("map lexi_house\n");
+			key_dest = key_game;
+			break;
+
+		case 10:
+			Cbuf_AddText ("map lexi_overlook\n");
+			key_dest = key_game;
+			break;
+
+		case 11:
+			Cbuf_AddText ("map lexi_temple\n");
+			key_dest = key_game;
+			break;
+
+		case 12:
+			Cbuf_AddText ("map Loop\n");
+			key_dest = key_game;
+			break;
+
+		case 13:
+			Cbuf_AddText ("map ndu\n");
+			key_dest = key_game;
+			break;
+
+		case 14:
+			Cbuf_AddText ("map nzp_warehouse2\n");
+			key_dest = key_game;
+			break;
+
+		case 15:
+			Cbuf_AddText ("map nzp_warehouse\n");
+			key_dest = key_game;
+			break;
+
+		case 16:
+			Cbuf_AddText ("map wahnsinn\n");
+			key_dest = key_game;
+			break;
+
+		case 17:
+			Cbuf_AddText ("map weapon_test\n");
+			key_dest = key_game;
+			break;
+
+		}
 		break;
 
 	// b button
