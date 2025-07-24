@@ -410,6 +410,8 @@ void R_DrawSpriteModel (entity_t *e)
 	float		*up, *right;
 	vec3_t		v_forward, v_right, v_up;
 	msprite_t		*psprite;
+	float 			scale = ENTSCALE_DECODE(e->scale);
+	if (scale == 0) scale = 1.0f;
 
 	// don't even bother culling, because it's just a single
 	// polygon without a surface cache
@@ -432,8 +434,10 @@ void R_DrawSpriteModel (entity_t *e)
 
     GL_Bind(frame->gl_texturenum);
 	Fog_DisableGFog ();
-	GL_EnableState(GL_ALPHA_TEST);
-
+	GL_DisableState(GL_ALPHA_TEST);
+	glEnable (GL_BLEND);
+	glDepthMask(GL_FALSE);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	float* pPoint = gVertexBuffer;
 	
 	if (sprite_model_tcoords == NULL) {
@@ -442,20 +446,20 @@ void R_DrawSpriteModel (entity_t *e)
 		sprite_model_tcoords[1] = sprite_model_tcoords[4] = sprite_model_tcoords[6] = sprite_model_tcoords[7] = 1;
 	}
 	
-	VectorMA (e->origin, frame->down, up, point);
-	VectorMA (point, frame->left, right, gVertexBuffer);
+	VectorMA (e->origin, frame->down * scale, up, point);
+	VectorMA (point, frame->left * scale, right, gVertexBuffer);
 	gVertexBuffer += 3;
 
-	VectorMA (e->origin, frame->up, up, point);
-	VectorMA (point, frame->left, right, gVertexBuffer);
+	VectorMA (e->origin, frame->up * scale, up, point);
+	VectorMA (point, frame->left * scale, right, gVertexBuffer);
 	gVertexBuffer += 3;
 
-	VectorMA (e->origin, frame->up, up, point);
-	VectorMA (point, frame->right, right, gVertexBuffer);
+	VectorMA (e->origin, frame->up * scale, up, point);
+	VectorMA (point, frame->right * scale, right, gVertexBuffer);
 	gVertexBuffer += 3;
 
-	VectorMA (e->origin, frame->down, up, point);
-	VectorMA (point, frame->right, right, gVertexBuffer);
+	VectorMA (e->origin, frame->down * scale, up, point);
+	VectorMA (point, frame->right * scale, right, gVertexBuffer);
 	gVertexBuffer += 3;
 	
 	vglVertexAttribPointerMapped(0, pPoint);
@@ -463,7 +467,8 @@ void R_DrawSpriteModel (entity_t *e)
 	GL_DrawPolygon(GL_TRIANGLE_FAN, 4);
 	
 
-	GL_DisableState(GL_ALPHA_TEST);
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
 
 	Fog_EnableGFog ();
 }
