@@ -419,7 +419,8 @@ void Mod_LoadTextures (lump_t *l)
 				//com_netpath[0] = 0;      
 				//alpha_flag = ISALPHATEX(tx->name) ? TEX_ALPHA : 0;
 				texture_mode = GL_LINEAR;
-				tx->gl_texturenum = GL_LoadTexture32 (mt->name, tx->width, tx->height, data, true, false, false);
+				bool choosealpha = mt->name[0] == '{' ? true : false; // naievil -- need to choose alpha mode for certain textures
+				tx->gl_texturenum = GL_LoadTexture32 (mt->name, tx->width, tx->height, data, true, choosealpha, false);
 				tx->fullbright = -1;
 				free(data);
 				continue;

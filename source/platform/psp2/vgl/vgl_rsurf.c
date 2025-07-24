@@ -489,21 +489,19 @@ R_BlendLightmaps
 ================
 */
 
-void R_BlendLightmaps (void)
+void R_BlendLightmaps ()
 {
-	int			i, j;
+	int			i;
 	glpoly_t	*p;
-	float		*v;
 	glRect_t	*theRect;
 
 	if (r_fullbright.value)
 		return;
 
-	GL_EnableState(GL_MODULATE);
-	Platform_Graphics_Color(1,1,1,1);
-	glDepthMask(GL_FALSE);		// don't bother writing Z
-	glBlendFunc (GL_ZERO, GL_SRC_COLOR);
-	glEnable (GL_BLEND);
+	glDepthMask(GL_FALSE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
+	glDepthFunc(GL_EQUAL);
 	
 	for (i=0 ; i<MAX_LIGHTMAPS ; i++)
 	{
@@ -533,10 +531,11 @@ void R_BlendLightmaps (void)
 			}
 		}
 	}
-
-	GL_EnableState(GL_REPLACE);
-	glDisable (GL_BLEND);
-	glDepthMask (GL_TRUE);		// back to normal Z buffering
+	glDisable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask (GL_TRUE);
+	glEnable(GL_DEPTH_TEST); // dr_mabuse1981: fix
+	glDepthFunc(GL_LEQUAL);
 }
 
 /*
@@ -569,6 +568,16 @@ void R_RenderBrushPoly (msurface_t *fa)
 		EmitWaterPolys (fa);
 		return;
 	}
+
+	bool choosealpha = t->name[0] == '{' ? true : false; // naievil -- need to choose alpha mode for certain textures
+	if(choosealpha)
+	{
+		GL_EnableState(GL_ALPHA_TEST);
+		glAlphaFunc(GL_GREATER, 0xaa);
+		GL_EnableState(GL_MODULATE);
+		Platform_Graphics_Color(1, 1, 1, 1);
+	}
+	
 
 	if (fa->flags & TEXFLAG_NODRAW)
 		return;
@@ -629,6 +638,12 @@ dynamic:
 			base += fa->light_t * BLOCK_WIDTH * lightmap_bytes + fa->light_s * lightmap_bytes;
 			R_BuildLightMap (fa, base, BLOCK_WIDTH*lightmap_bytes);
 		}
+	}
+
+	if(choosealpha)
+	{
+		GL_DisableState(GL_ALPHA_TEST);
+		GL_DisableState(GL_MODULATE);
 	}
 }
 
