@@ -570,7 +570,7 @@ void R_DrawSkyBox (void)
 	//Fog_SetColorForSkyS();
 
 	glDisable(GL_BLEND);
-	glDisable(GL_ALPHA_TEST);
+	GL_DisableState(GL_ALPHA_TEST);
 	GL_EnableState(GL_MODULATE);
 	glDepthMask(GL_FALSE);
 	glDisable(GL_DEPTH_TEST);
