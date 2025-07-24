@@ -101,10 +101,19 @@ CC      = $(PREFIX)-gcc
 CXX      = $(PREFIX)-g++
 CFLAGS  = -fsigned-char -Wl,-q -O3 -g -fno-optimize-sibling-calls \
 	-ffast-math -mtune=cortex-a9 -mfpu=neon \
-	-Werror -D__PSP2__ -DGLQUAKE -DHAVE_OGGVORBIS -DHAVE_MPG123 -DHAVE_LIBSPEEXDSP \
+	-D__PSP2__ -DGLQUAKE -DHAVE_OGGVORBIS -DHAVE_MPG123 -DHAVE_LIBSPEEXDSP \
 	-DUSE_AUDIO_RESAMPLER -DHAVE_STRLCAT -DGIT_VERSION=\"$(GIT_VERSION)\" \
 	-DPLATFORM_DIRECTORY="psp2" -DPLATFORM_RENDERER="vgl" -DMAX_AI_COUNT=24
-CXXFLAGS  = $(CFLAGS) -Werror -fno-exceptions -std=gnu++11 \
+
+ifeq ($(WERROR),1)
+CFLAGS 		+= -Werror
+endif
+
+ifeq ($(FANALYZER),1)
+CFLAGS		+= -fanalyzer
+endif
+
+CXXFLAGS  = $(CFLAGS) -fno-exceptions -std=gnu++11 \
 			-Wno-write-strings -Wno-sign-compare -Wno-strict-aliasing
 ASFLAGS = $(CFLAGS)
 
@@ -140,7 +149,7 @@ shaders: $(CGSHADERS)
 	vita-elf-create $< $@
 
 $(TARGET).elf: $(OBJS)
-	$(CXX) $(CXXFLAGS) $^ $(LIBS) -o $@
+	$(CXX) $(GCCFLAGS) $(CXXFLAGS) $^ $(LIBS) -o $@
 
 clean:
 	@rm -rf $(TARGET).velf $(TARGET).elf $(OBJS) $(TARGET).elf.unstripped.elf $(TARGET).vpk build/eboot.bin build/sce_sys/param.sfo ./param.sfo
