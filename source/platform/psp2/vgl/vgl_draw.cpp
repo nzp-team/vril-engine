@@ -352,9 +352,9 @@ private:
         }
     }
 
-    static const size_t TEXTURE_STORE_SIZE = 16 * 1024 * 1024;
-    static const size_t LIVE_TEXTURE_LIMIT = 1 * 1024 * 1024;
-    static const size_t TEXTURE_STORE_NUM_TEXTURES = 512;
+    static const size_t TEXTURE_STORE_SIZE = 16 * 1024 * 1024 * 2;
+    static const size_t LIVE_TEXTURE_LIMIT = 1 * 1024 * 1024 * 2;
+    static const size_t TEXTURE_STORE_NUM_TEXTURES = 1024;
 
     byte* mBase;
     size_t mLength;
