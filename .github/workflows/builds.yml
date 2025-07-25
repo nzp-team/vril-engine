@@ -24,10 +24,19 @@ jobs:
   Compile-3DSX:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
+    outputs:
+      o3ds_link: ${{ steps.zip.outputs.zip }}
     container:
       image: devkitpro/devkitarm
     steps:
       - uses: actions/checkout@v2
+      - name: Install Packages and update picaGL
+        run: |
+          git clone https://github.com/masterfeizz/picaGL.git
+          cd picaGL
+          git checkout revamp
+          mkdir clean
+          make install
       - name: Build
         working-directory: ./
         run: |
@@ -36,7 +45,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ctr-nzp-3dsx
-          path: ./build/eboot.bin
+          path: ./build/3ds/bin/nzportable.3dsx
   Compile-TNS:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
