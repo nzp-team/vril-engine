@@ -77,6 +77,8 @@ jobs:
       - name: Install Packages and update VitaSDK
         run: |
           apk add bash build-base zip git curl
+          git clone --depth=1 https://github.com/vitasdk/vita-headers
+          cp -rf vita-headers/include $VITASDK/arm-vita-eabi/
       - name: Build
         working-directory: ./
         run: |

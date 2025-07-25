@@ -164,21 +164,21 @@ int AdHoc_Connect (int socket, struct qsockaddr *addr)
 
 //=============================================================================
 
-static struct SceNetAdhocPdpStatgPdpStat;
-struct SceNetAdhocPdpStat*findPdpStat(int socket, struct SceNetAdhocPdpStat*pdpStat)
+static SceNetAdhocPdpStat gPdpStat;
+SceNetAdhocPdpStat*findPdpStat(int socket, SceNetAdhocPdpStat*pdpStat)
 {
 	if(socket == pdpStat->id) {
 		memcpy(&gPdpStat, pdpStat, sizeof(SceNetAdhocPdpStat));
 		return &gPdpStat;
 	}
 		if(pdpStat->next) return findPdpStat(socket, pdpStat->next);
-		return (struct SceNetAdhocPdpStat*)-1;
+		return (SceNetAdhocPdpStat*)-1;
 }
 
 int AdHoc_CheckNewConnections (void)
 {
 	Log("AdHoc_CheckNewConnections");
-	struct SceNetAdhocPdpStatpdpStat[20];
+	SceNetAdhocPdpStatpdpStat[20];
 	int len = sizeof(SceNetAdhocPdpStat) * 20;
 	
 	if (net_acceptsocket == -1) return -1;
@@ -186,7 +186,7 @@ int AdHoc_CheckNewConnections (void)
 	int err = sceNetAdhocGetPdpStat(&len, pdpStat);
 	if(err < 0) return -1;
 	
-	struct SceNetAdhocPdpStat*tempPdp = findPdpStat(net_acceptsocket, pdpStat);
+	SceNetAdhocPdpStat*tempPdp = findPdpStat(net_acceptsocket, pdpStat);
 	if (tempPdp < 0) return -1;
 	else if (tempPdp->rcv_sb_cc > 0) return net_acceptsocket;
 
@@ -298,13 +298,13 @@ int AdHoc_StringToAddr (char *string, struct qsockaddr *addr)
 int AdHoc_GetSocketAddr (int socket, struct qsockaddr *addr)
 {
 	Log("AdHoc_GetSocketAddr");
-	struct SceNetAdhocPdpStatpdpStat[20];
+	SceNetAdhocPdpStatpdpStat[20];
 	int len = sizeof(SceNetAdhocPdpStat) * 20;
 
 	int err = sceNetAdhocGetPdpStat(&len, pdpStat);
 	if(err<0) return -1;
 
-	struct SceNetAdhocPdpStat*tempPdp = findPdpStat(socket, pdpStat);
+	SceNetAdhocPdpStat*tempPdp = findPdpStat(socket, pdpStat);
 	if(tempPdp < 0) return -1;
 
 	memcpy(((struct sockaddr_adhoc *)addr)->mac, &tempPdp->laddr, 6);
