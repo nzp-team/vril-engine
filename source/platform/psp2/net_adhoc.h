@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int  AdHoc_Init (void);
 void AdHoc_Shutdown (void);
-void AdHoc_Listen (bool state);
+void AdHoc_Listen (qboolean state);
 int  AdHoc_OpenSocket (int port);
 int  AdHoc_CloseSocket (int socket);
 int  AdHoc_Connect (int socket, struct qsockaddr *addr);
