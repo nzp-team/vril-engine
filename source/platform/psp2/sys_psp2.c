@@ -429,6 +429,9 @@ bool CheckForMod(char* dir)
 
 void IN_ResetInputs(void);
 void IN_StopRumble (void);
+#ifndef sceKernelChangeThreadVfpException
+int sceKernelChangeThreadVfpException(SceUInt32 clear, SceUInt32 set);
+#endif
 int quake_main (unsigned int argc, void* argv){
 	// cl_entities = malloc(sizeof(entity_t) * MAX_EDICTS);
 	// cl_temp_entities = malloc(sizeof(entity_t) * MAX_TEMP_ENTITIES);
