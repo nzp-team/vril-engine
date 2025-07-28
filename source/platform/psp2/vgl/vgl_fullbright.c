@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2025 NZ:P Team
+ * Copyright (C) 2025 rsn8887
+ * Copyright (C) 2025 Rinnegatamante
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
