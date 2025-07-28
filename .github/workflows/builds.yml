@@ -203,6 +203,7 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./nspire-nzp-tns.zip
           asset_name: nspire-nzp-tns.zip
+          asset_content_type: application/zip
       - name: Upload PSVITA Archive
         uses: actions/upload-release-asset@v1
         env:
