@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2025 rsn8887
- * Copyright (C) 2025 Rinnegatamante
+ * Copyright (C) 2018 rsn8887
+ * Copyright (C) 2019 Rinnegatamante
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
