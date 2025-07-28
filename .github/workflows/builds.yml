@@ -129,7 +129,7 @@ jobs:
           cd ./testing
           ./run_tests.sh --platform psp --test all --content "$(pwd)/validate" --mode slim
   Unify-and-Release:
-    if: github.ref == 'refs/heads/main'
+    # if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: [Compile-EBOOT, Compile-3DSX, Compile-TNS, Compile-VPK]
     steps:
