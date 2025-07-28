@@ -78,7 +78,7 @@ jobs:
       - name: Build
         working-directory: ./
         run: |
-          make -f Makefile.psp2 WERROR=1
+          make -f Makefile.psp2 WERROR=1 -j$(nproc)
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
