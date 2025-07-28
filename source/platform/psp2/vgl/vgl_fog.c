@@ -46,6 +46,7 @@ Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, floa
 void
 Platform_Fog_Enable(void) // Stubbed on vitaGL backend due to the lack of a good way to enable fog when using shaders
 {
+    return;
 }
 
 /**
@@ -54,6 +55,7 @@ Platform_Fog_Enable(void) // Stubbed on vitaGL backend due to the lack of a good
 void
 Platform_Fog_Disable(void) // Stubbed on vitaGL backend due to the lack of a good way to disable fog when using shaders
 {
+    return;
 }
 
 /**
@@ -62,4 +64,5 @@ Platform_Fog_Disable(void) // Stubbed on vitaGL backend due to the lack of a goo
 void
 Platform_Fog_Init(void) // Uneeded on Vita
 {
+    return;
 }
