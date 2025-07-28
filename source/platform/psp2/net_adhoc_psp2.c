@@ -164,6 +164,10 @@ int AdHoc_Connect (int socket, struct qsockaddr *addr)
 
 //=============================================================================
 
+// TODO: 
+// Replace all instances of "struct SceNetAdhocPdpStat" 
+// to "SceNetAdhocPdpStat" when the Vita Headers are updated 
+// in the docker container -Fancy2209
 static struct SceNetAdhocPdpStat gPdpStat;
 struct SceNetAdhocPdpStat *findPdpStat(int socket, struct SceNetAdhocPdpStat *pdpStat)
 {

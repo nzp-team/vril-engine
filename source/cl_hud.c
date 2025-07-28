@@ -43,7 +43,7 @@ qpic_t 		*mulepic;
 qpic_t		*fragpic;
 qpic_t		*bettypic;
 
-#if defined(__PSP__) || defined(__PSP2__)
+#if defined(__PSP__) || defined(__vita__)
 qpic_t 		*b_circle;
 qpic_t 		*b_square;
 qpic_t 		*b_cross;
@@ -63,7 +63,7 @@ qpic_t 		*b_plus;
 qpic_t 		*b_one;
 qpic_t 		*b_two;
 qpic_t 		*b_home;
-#endif // __PSP__, __3DS__, __WII__
+#endif // __PSP__, __vita__, __3DS__, __WII__
 
 qpic_t 		*b_left;
 qpic_t 		*b_right;
@@ -72,7 +72,7 @@ qpic_t 		*b_down;
 qpic_t 		*b_lt;
 qpic_t 		*b_rt;
 
-#if defined(__PSP__)
+#ifdef __PSP__
 qpic_t 		*b_home;
 #elif __3DS__
 qpic_t 		*b_zlt;
@@ -152,13 +152,13 @@ void HUD_DictateScaleFactor(void)
 	hud_scale_factor = 1.5f;
 #elif __PSP__
 	hud_scale_factor = 1.0f;
-#elif __PSP2__
+#elif __vita__
 	hud_scale_factor = 2.0f;
 #elif __3DS__
 	hud_scale_factor = 1.0f;
 #else
 	hud_scale_factor = 1.0f;
-#endif // __WII__, __PSP__, __3DS__
+#endif // __WII__, __PSP__, __vita__, __3DS__
 }
 
 /*
@@ -212,7 +212,7 @@ void HUD_Init (void)
 	b_start = Draw_CachePic ("gfx/butticons/start");
 	b_select = Draw_CachePic ("gfx/butticons/select");
 	b_home = Draw_CachePic ("gfx/butticons/home");
-#elif __PSP2__
+#elif __vita__
 	b_circle = Draw_CachePic ("gfx/butticons/fbtncircle");
 	b_square = Draw_CachePic ("gfx/butticons/fbtnsquare");
 	b_cross = Draw_CachePic ("gfx/butticons/fbtncross");

@@ -101,7 +101,7 @@ CC      = $(PREFIX)-gcc
 CXX      = $(PREFIX)-g++
 CFLAGS  = -fsigned-char -Wl,-q -O3 -g -fno-optimize-sibling-calls \
 	-ffast-math -mtune=cortex-a9 -mfpu=neon \
-	-D__PSP2__ -DGLQUAKE -DHAVE_OGGVORBIS -DHAVE_MPG123 -DHAVE_LIBSPEEXDSP \
+	-DGLQUAKE -DHAVE_OGGVORBIS -DHAVE_MPG123 -DHAVE_LIBSPEEXDSP \
 	-DUSE_AUDIO_RESAMPLER -DHAVE_STRLCAT -DGIT_VERSION=\"$(GIT_VERSION)\" \
 	-DPLATFORM_DIRECTORY="psp2" -DPLATFORM_RENDERER="vgl" -DMAX_AI_COUNT=24
 
@@ -132,7 +132,7 @@ $(TARGET).vpk: $(TARGET).velf
 	vita-mksfoex -s TITLE_ID=$(TITLE) -d ATTRIBUTE2=12 "$(TARGET)" param.sfo
 	cp -f param.sfo build/sce_sys/param.sfo
 	vita-pack-vpk -s param.sfo -b build/eboot.bin "$(TARGET).vpk" \
-		-a source/platform/psp2/shaders=shaders \
+		-a source/platform/psp2/vgl/shaders=shaders \
 		-a build/sce_sys=sce_sys
 
 %_f.h:

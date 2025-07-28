@@ -35,6 +35,10 @@ extern GLint modulcolor[2];
 extern float costablef[17];
 extern float sintablef[17];
 
+extern float *gVertexBuffer;
+extern float *gColorBuffer;
+extern float *gTexCoordBuffer;
+
 void GL_DrawFPS(void);
 void GL_Set2D (void);
 void GL_DrawPolygon(GLenum prim, int num);

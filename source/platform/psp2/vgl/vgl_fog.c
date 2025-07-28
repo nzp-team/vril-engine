@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
  */
-// gl_fog.c -- CTR picaGL Fog Rendering
+// vgl_fog.c -- PSP2 vitaGL Fog Rendering
 
 #include "../../../nzportable_def.h"
 #include <vitasdk.h>
@@ -44,7 +44,7 @@ Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, floa
  * @brief Enables fogging mode. (Platform-specific, see `Fog_EnableGFog()`)
  */
 void
-Platform_Fog_Enable(void)
+Platform_Fog_Enable(void) // Stubbed on vitaGL backend due to the lack of a good way to enable fog when using shaders
 {
 }
 
@@ -52,7 +52,7 @@ Platform_Fog_Enable(void)
  * @brief Disables fogging mode. (Platform-specific, see `Fog_DisableGFog()`)
  */
 void
-Platform_Fog_Disable(void)
+Platform_Fog_Disable(void) // Stubbed on vitaGL backend due to the lack of a good way to disable fog when using shaders
 {
 }
 
@@ -60,6 +60,6 @@ Platform_Fog_Disable(void)
  * @brief Called at startup, inits graphics functions. (Platform-specific, see `Fog_Init()`)
  */
 void
-Platform_Fog_Init(void)
+Platform_Fog_Init(void) // Uneeded on Vita
 {
 }

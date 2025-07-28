@@ -68,8 +68,6 @@ jobs:
   Compile-VPK:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
-    outputs:
-      o3ds_link: ${{ steps.zip.outputs.zip }}
     container:
       image: vitasdk/vitasdk:latest
     steps:
@@ -80,7 +78,7 @@ jobs:
       - name: Build
         working-directory: ./
         run: |
-          make -f Makefile.vita WERROR=1
+          make -f Makefile.psp2 WERROR=1
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -174,7 +172,7 @@ jobs:
             To install:
             - Grab the .ZIP archive for your platform
             - PSP: Extract the `EBOOT.PBP` to `/PSP/GAME/nzportable/`
-            - PSVITA: Install nzportable.vpk
+            - PS VITA: Install `nzportable.vpk` using VitaShell.
             - 3DS: Extract `nzportable.3dsx` to `/3ds/nzportable/`.
             - NSPIRE: Sync `nzportable.tns` to `/`.
           draft: true
