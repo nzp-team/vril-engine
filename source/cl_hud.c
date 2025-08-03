@@ -43,7 +43,7 @@ int 	mulepic;
 int		fragpic;
 int		bettypic;
 
-#ifdef __PSP__
+#if defined(__PSP__) || defined(__vita__)
 int 	b_circle;
 int 	b_square;
 int 	b_cross;
@@ -150,11 +150,13 @@ void HUD_DictateScaleFactor(void)
 	hud_scale_factor = 1.5f;
 #elif __PSP__
 	hud_scale_factor = 1.0f;
+#elif __vita__
+	hud_scale_factor = 2.0f;
 #elif __3DS__
 	hud_scale_factor = 1.0f;
 #else
 	hud_scale_factor = 1.0f;
-#endif // __WII__, __PSP__, __3DS__
+#endif // __WII__, __PSP__, __vita__, __3DS__
 }
 
 /*
