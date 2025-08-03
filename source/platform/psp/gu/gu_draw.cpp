@@ -1125,7 +1125,7 @@ Draw_FillByColor
 Fills a box of pixels with a single color
 =============
 */
-void Draw_FillByColor (int *x, int *y, int *w, int *h, int r, int g, int b, int a)
+void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a)
 {
 	unsigned int c = GU_RGBA(r, g, b, a);
 
@@ -1134,7 +1134,7 @@ void Draw_FillByColor (int *x, int *y, int *w, int *h, int r, int g, int b, int 
 		short x, y, z;
 	};
 
-	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 8));
+	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
 
 	vertices[0].x = x;
 	vertices[0].y = y;
