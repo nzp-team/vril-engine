@@ -377,7 +377,7 @@ void IN_Move (usercmd_t *cmd)
 	} 
 
 	// crosshair stuff
-	if (cmd->forwardmove == 0.0 && cmd->sidemove == 0.0) {
+	if (cmd->forwardmove == 0.0 && cmd->sidemove == 0.0 && (int)sv_player->v.flags & FL_ONGROUND) {
 		croshhairmoving = false;
 
 		crosshair_opacity += 22;
