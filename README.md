@@ -46,12 +46,13 @@ make -f Makefile.nspire
 ```
 We also provide a prebuilt .tns on the [Releases](https://github.com/nzp-team/vril-engine/releases/tag/bleeding-edge) page.
 
-## Building for PlayStation VITA
-Building requires the [Vita SDK](https://vitasdk.org/). We recommend (we recommend [the official one](https://hub.docker.com/r/vitasdk/vitasdk))!
+# Building for PlayStation VITA
+Building requires a full install of [Vita SDK](https://vitasdk.org/). You can either follow the instructions on the GitHub repository or use a Docker container (we recommend [the official one](https://hub.docker.com/r/vitasdk/vitasdk))!
 
-You can build the `.vpk` like so:
+With Vita SDK installed, you can navigate to the root of the repository and build a `VPK`.
+
 ```bash
 make -f Makefile.psp2
 ```
 
-We also provide binaries on the [Releases](https://github.com/nzp-team/vril-engine/releases/tag/bleeding-edge) page.
+We also provide a prebuilt VPK on the [Releases](https://github.com/nzp-team/vril-engine/releases/tag/bleeding-edge) page.
