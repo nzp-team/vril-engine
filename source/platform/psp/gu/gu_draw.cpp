@@ -1151,6 +1151,41 @@ void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a)
 	sceGuEnable(GU_TEXTURE_2D);
 }
 
+/*
+=============
+Draw_FillByColorBatched
+
+Fills multiple boxes of pixels with a single color
+=============
+*/
+void Draw_FillByColorBatched (int *x, int *y, int *w, int *h, int r, int g, int b, int a, int num)
+{
+	unsigned int c = GU_RGBA(r, g, b, a);
+
+	struct vertex
+	{
+		short x, y, z;
+	};
+
+	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * (2 * num)));
+
+	for (int i = 0; i < num; i++) {
+		vertices[i * 2].x = x[i];
+		vertices[i * 2].y = y[i];
+		vertices[i * 2].z = 0;
+
+		vertices[i * 2 + 1].x = x[i] + w[i];
+		vertices[i * 2 + 1].y = y[i] + h[i];
+		vertices[i * 2 + 1].z = 0;
+	}
+
+	sceGuDisable(GU_TEXTURE_2D);
+	sceGuColor(c);
+	sceGuDrawArray(GU_SPRITES, GU_VERTEX_16BIT | GU_TRANSFORM_2D, 2 * num, 0, vertices);
+	sceGuColor(0xffffffff);
+	sceGuEnable(GU_TEXTURE_2D);
+}
+
 void Draw_Fill (int x, int y, int w, int h, int c)
 {
 	struct vertex
@@ -1396,10 +1431,12 @@ void Draw_Crosshair (void)
 		Draw_Pic (112, 7, sniper_scope);
 
 		// And its borders
-		Draw_FillByColor(0, 0, 480, 7, 0, 0, 0, 255); // Top
-		Draw_FillByColor(0, 263, 480, 9, 0, 0, 0, 255); // Bottom
-		Draw_FillByColor(0, 7, 112, 256, 0, 0, 0, 255); // Left
-		Draw_FillByColor(368, 7, 112, 256, 0, 0, 0, 255); // Right
+		int x[4], y[4], w[4], h[4];
+		x[0] =   0; y[0] =   0; w[0] = 480; y[0] =   7; // Top
+		x[1] =   0; y[1] = 263; w[1] = 480; y[1] =   9; // Bottom
+		x[2] =   0; y[2] =   7; w[2] = 112; y[2] = 256; // Left
+		x[3] = 368; y[3] =   7; w[3] = 112; y[3] = 256; // Right
+		Draw_FillByColorBatched(x, y, w, h, 0, 0, 0, 255, 4);
 	}
 		
    	if (Hitmark_Time > sv.time)
@@ -1441,7 +1478,6 @@ void Draw_Crosshair (void)
 		}
     }
 
-	int x_value, y_value;
 	int x_center, y_center;
 	int crosshair_offset;
 
@@ -1461,26 +1497,29 @@ void Draw_Crosshair (void)
 		}
 
 		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5;
-
+		
+		int x[4], y[4], w[4], h[4];
 		// Left
-		x_value = x_center - crosshair_offset_step;
-		y_value = y_center;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
+		x[0] = x_center - crosshair_offset_step;
+		y[0] = y_center;
+		w[0] = 3; h[0] = 1;
 
 		// Right
-		x_value = x_center + crosshair_offset_step - 3;
-		y_value = y_center;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
+		x[1] = x_center + crosshair_offset_step - 3;
+		y[1] = y_center;
+		w[1] = 3; h[1] = 1;
 
 		// Top
-		x_value = x_center;
-		y_value = y_center - crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
+		x[2] = x_center;
+		y[2] = y_center - crosshair_offset_step;
+		w[2] = 1; h[2] = 3;
 
 		// Bottom
-		x_value = x_center;
-		y_value = y_center + crosshair_offset_step - 3;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
+		x[3] = x_center;
+		y[3] = y_center + crosshair_offset_step - 3;
+		w[3] = 1; h[3] = 3;
+		
+		Draw_FillByColorBatched(x, y, w, h, 255, (int)col, (int)col, (int)crosshair_opacity, 4);
 	}
 	// Area of Effect (o)
 	else if (crosshair.value == 2) {
@@ -1505,25 +1544,28 @@ void Draw_Crosshair (void)
         crosshair_offset = 12 + cur_spread;
 		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5;
 
+		int x[4], y[4], w[4], h[4];
 		// Left
-		x_value = x_center - crosshair_offset_step;
-		y_value = y_center;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
+		x[0] = x_center - crosshair_offset_step;
+		y[0] = y_center;
+		w[0] = 3; h[0] = 1;
 
 		// Right
-		x_value = x_center + crosshair_offset_step - 2;
-		y_value = y_center;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
+		x[1] = x_center + crosshair_offset_step - 2;
+		y[1] = y_center;
+		w[1] = 3; h[1] = 1;
 
 		// Top
-		x_value = x_center;
-		y_value = y_center - crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
+		x[2] = x_center;
+		y[2] = y_center - crosshair_offset_step;
+		w[2] = 1; h[2] = 3;
 
 		// Bottom
-		x_value = x_center;
-		y_value = y_center + crosshair_offset_step - 3;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
+		x[3] = x_center;
+		y[3] = y_center + crosshair_offset_step - 3;
+		w[3] = 1; h[3] = 3;
+		
+		Draw_FillByColorBatched(x, y, w, h, 255, 255, 255, 255, 4);
 	}
 }
 

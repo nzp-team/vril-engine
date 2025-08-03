@@ -882,6 +882,42 @@ void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a)
 }
 //=============================================================================
 
+/*
+=============
+Batch_FillByColor
+
+Fills a box of pixels with a single color (batched variant)
+=============
+*/
+static qboolean is_batching_fill = qfalse;
+void Batch_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a)
+{
+	if (!is_batching_fill) {
+		is_batching_fill = qtrue;
+		glDisable (GL_TEXTURE_2D);
+		glEnable (GL_BLEND); //johnfitz -- for alpha
+		glDisable (GL_ALPHA_TEST); //johnfitz -- for alpha
+		glColor4f ((float)(r/255.0f), (float)(g/255.0f), (float)(b/255.0f), (float)(a/255.0f));
+		glBegin (GL_QUADS);
+	}
+
+	glVertex2f (x,y);
+	glVertex2f (x+w, y);
+	glVertex2f (x+w, y+h);
+	glVertex2f (x, y+h);
+}
+
+void Draw_BatchedFill() {
+	if (is_batching_fill) {
+		glEnd ();
+		glColor4f (1,1,1,1);
+		glDisable (GL_BLEND); //johnfitz -- for alpha
+		glEnable(GL_ALPHA_TEST); //johnfitz -- for alpha
+		glEnable (GL_TEXTURE_2D);
+		is_batching_fill = qfalse;
+	}
+}
+
 byte *StringToRGB (char *s)
 {
 	byte		*col;
@@ -1154,19 +1190,21 @@ void Draw_Crosshair (void)
 
 		x_value = (vid.width - 3)/2.0f - crosshair_offset_step;
 		y_value = (vid.height - 1)/2.0f;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
+		Batch_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		x_value = (vid.width - 3)/2.0f + crosshair_offset_step;
 		y_value = (vid.height - 1)/2.0f;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
+		Batch_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		x_value = (vid.width - 1)/2.0f;
 		y_value = (vid.height - 3)/2.0f - crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
+		Batch_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		x_value = (vid.width - 1)/2.0f;
 		y_value = (vid.height - 3)/2.0f + crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
+		Batch_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
+		
+		Draw_BatchedFill();
 	}
 	// Area of Effect (o)
 	else if (crosshair.value == 2) {
@@ -1190,19 +1228,21 @@ void Draw_Crosshair (void)
 
 		x_value = (vid.width - 3)/2.0f - crosshair_offset_step;
 		y_value = (vid.height - 1)/2.0f;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
+		Batch_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
 
 		x_value = (vid.width - 3)/2.0f + crosshair_offset_step;
 		y_value = (vid.height - 1)/2.0f;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
+		Batch_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
 
 		x_value = (vid.width - 1)/2.0f;
 		y_value = (vid.height - 3)/2.0f - crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
+		Batch_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
 
 		x_value = (vid.width - 1)/2.0f;
 		y_value = (vid.height - 3)/2.0f + crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
+		Batch_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
+		
+		Draw_BatchedFill();
 	}
 }
 
