@@ -45,3 +45,14 @@ With ndless installed, you can begin building the `.tns`.
 make -f Makefile.nspire
 ```
 We also provide a prebuilt .tns on the [Releases](https://github.com/nzp-team/vril-engine/releases/tag/bleeding-edge) page.
+
+# Building for PlayStation VITA
+Building requires a full install of [Vita SDK](https://vitasdk.org/). You can either follow the instructions on the GitHub repository or use a Docker container (we recommend [the official one](https://hub.docker.com/r/vitasdk/vitasdk))!
+
+With Vita SDK installed, you can navigate to the root of the repository and build a `VPK`.
+
+```bash
+make -f Makefile.psp2
+```
+
+We also provide a prebuilt VPK on the [Releases](https://github.com/nzp-team/vril-engine/releases/tag/bleeding-edge) page.
