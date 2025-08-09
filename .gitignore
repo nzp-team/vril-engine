@@ -14,3 +14,6 @@ EBOOT2000.PBP
 *.unc*
 source/_build_info.h
 *.tns
+*.vpk
+*.velf
+*.sfo

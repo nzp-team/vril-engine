@@ -1444,6 +1444,7 @@ void Draw_Crosshair (void)
 	int x_value, y_value;
 	int x_center, y_center;
 	int crosshair_offset;
+	int length, thick, center_adjust, offset;
 
 	// Standard crosshair (+)
 	if (crosshair.value == 1) {
@@ -1462,25 +1463,30 @@ void Draw_Crosshair (void)
 
 		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5;
 
+		length = 3; // crosshair arm length
+		thick = 1; // crosshair arm thickness
+		center_adjust = (thick - 1) / 2; // center adjustment
+		offset = (int)(crosshair_offset_step + 0.5f); // round crosshair spread step to nearest pixel
+		
 		// Left
-		x_value = x_center - crosshair_offset_step;
-		y_value = y_center;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
+		x_value = x_center - center_adjust - length - offset;
+		y_value = y_center - center_adjust;
+		Draw_FillByColor(x_value, y_value, length, thick, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		// Right
-		x_value = x_center + crosshair_offset_step - 3;
-		y_value = y_center;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
+		x_value = x_center - center_adjust + thick + offset;
+		y_value = y_center - center_adjust;
+		Draw_FillByColor(x_value, y_value, length, thick, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		// Top
-		x_value = x_center;
-		y_value = y_center - crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
+		x_value = x_center - center_adjust;
+		y_value = y_center - center_adjust - length - offset;
+		Draw_FillByColor(x_value, y_value, thick, length, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		// Bottom
-		x_value = x_center;
-		y_value = y_center + crosshair_offset_step - 3;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
+		x_value = x_center - center_adjust;
+		y_value = y_center - center_adjust + thick + offset;
+		Draw_FillByColor(x_value, y_value, thick, length, 255, (int)col, (int)col, (int)crosshair_opacity);
 	}
 	// Area of Effect (o)
 	else if (crosshair.value == 2) {
@@ -1505,25 +1511,30 @@ void Draw_Crosshair (void)
         crosshair_offset = 12 + cur_spread;
 		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5;
 
+		length = 3; // crosshair arm length
+		thick = 1; // crosshair arm thickness
+		center_adjust = (thick - 1) / 2; // center adjustment
+		offset = (int)(crosshair_offset_step + 0.5f); // round crosshair spread step to nearest pixel
+		
 		// Left
-		x_value = x_center - crosshair_offset_step;
-		y_value = y_center;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
+		x_value = x_center - center_adjust - length - offset;
+		y_value = y_center - center_adjust;
+		Draw_FillByColor(x_value, y_value, length, thick, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		// Right
-		x_value = x_center + crosshair_offset_step - 2;
-		y_value = y_center;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
+		x_value = x_center - center_adjust + thick + offset;
+		y_value = y_center - center_adjust;
+		Draw_FillByColor(x_value, y_value, length, thick, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		// Top
-		x_value = x_center;
-		y_value = y_center - crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
+		x_value = x_center - center_adjust;
+		y_value = y_center - center_adjust - length - offset;
+		Draw_FillByColor(x_value, y_value, thick, length, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		// Bottom
-		x_value = x_center;
-		y_value = y_center + crosshair_offset_step - 3;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
+		x_value = x_center - center_adjust;
+		y_value = y_center - center_adjust + thick + offset;
+		Draw_FillByColor(x_value, y_value, thick, length, 255, (int)col, (int)col, (int)crosshair_opacity);
 	}
 }
 

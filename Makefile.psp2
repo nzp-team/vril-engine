@@ -1,0 +1,155 @@
+TARGET		:= nzportable
+TITLE		:= NZPORTABL
+GIT_VERSION := $(shell git describe --abbrev=6 --dirty --always --tags)
+SHADERS     := shaders
+
+LIBS = -lvitaGL -lvitashark -lSceShaccCgExt -ltaihen_stub -lvorbisfile -lvorbis -logg \
+	-lspeexdsp -lmpg123 -lScePspnetAdhoc_stub -lSceShaccCg_stub -lSceKernelDmacMgr_stub \
+	-lc -lSceCommonDialog_stub -lSceAudio_stub -lSceLibKernel_stub -lmathneon \
+	-lSceNet_stub -lSceNetCtl_stub -lpng -lSceDisplay_stub -lSceGxm_stub \
+	-Wl,--whole-archive -lSceSysmodule_stub -Wl,--no-whole-archive \
+	-lSceCtrl_stub -lSceTouch_stub -lSceMotion_stub -lm -lSceAppMgr_stub \
+	-lSceAppUtil_stub -lScePgf_stub -ljpeg -lSceRtc_stub -lScePower_stub -lcurl -lssl -lcrypto -lz
+
+COMMON_OBJS =	\
+	source/system.o \
+	source/test_handler.o \
+	source/chase.o \
+	source/cl_demo.o \
+	source/cl_input.o \
+	source/cl_main.o \
+	source/cl_parse.o \
+	source/cl_tent.o \
+	source/cl_slist.o \
+    source/cmd.o \
+	source/platform/psp2/common.o \
+	source/console.o \
+	source/crc.o \
+	source/cvar.o \
+	source/host.o \
+	source/host_cmd.o \
+	source/platform/psp2/image.o \
+	source/platform/psp2/keys.o \
+	source/mathlib.o \
+	source/matrixlib.o \
+	source/platform/psp2/menu.o \
+	source/platform/psp2/net_dgrm.o \
+	source/net_loop.o \
+	source/platform/psp2/net_main.o \
+	source/net_vcr.o \
+	source/pr_cmds.o \
+	source/pr_edict.o \
+	source/pr_exec.o \
+	source/snd_dma.o \
+	source/snd_mem.o \
+	source/snd_mix.o \
+	source/cl_hud.o \
+	source/sv_main.o \
+	source/sv_move.o \
+	source/sv_phys.o \
+	source/sv_user.o \
+	source/view.o \
+	source/wad.o \
+	source/world.o \
+	source/zone.o \
+	source/crypter.o \
+	source/render/r_fog.o \
+	source/render/r_entity_fragments.o \
+	source/render/r_color_quantization.o \
+	source/render/r_light.o \
+	source/platform/psp2/sys_psp2.o \
+	source/platform/psp2/vgl/vgl_fog.o \
+	source/platform/psp2/vgl/vgl_qmb.o \
+	source/platform/psp2/vgl/vgl_draw.o \
+	source/platform/psp2/vgl/vgl_mesh.o \
+	source/platform/psp2/vgl/vgl_model.o \
+	source/platform/psp2/vgl/vgl_rmain.o \
+	source/platform/psp2/vgl/vgl_rmisc.o \
+	source/platform/psp2/vgl/vgl_rsurf.o \
+	source/platform/psp2/vgl/vgl_screen.o \
+	source/platform/psp2/vgl/vgl_warp.o \
+	source/platform/psp2/vgl/vgl_fullbright.o \
+	source/platform/psp2/r_part.o \
+	source/platform/psp2/audiodec/cd_psp2.o \
+	source/platform/psp2/audiodec/audio_decoder.o \
+	source/platform/psp2/audiodec/audio_resampler.o \
+	source/platform/psp2/audiodec/decoder_mpg123.o \
+	source/platform/psp2/audiodec/decoder_oggvorbis.o \
+	source/snd_dma.o \
+	source/snd_mix.o \
+	source/snd_mem.o \
+	source/platform/psp2/snd_psp2.o \
+	source/platform/psp2/net_psp2.o \
+	source/platform/psp2/net_adhoc_psp2.o \
+	source/platform/psp2/net_udp_psp2.o \
+	source/platform/psp2/in_psp2.o \
+	source/platform/psp2/vgl/vgl_vidpsp2.o \
+	source/platform/psp2/neon_mathfun.o \
+	source/platform/psp2/webdownload.o \
+	source/crypter.o
+	
+CPPSOURCES	:= source/audiodec
+
+CFILES	:= $(COMMON_OBJS)
+CPPFILES   := $(foreach dir,$(CPPSOURCES), $(wildcard $(dir)/*.cpp))
+CGFILES  := $(foreach dir,$(SHADERS), $(wildcard $(dir)/*.cg))
+CGSHADERS  := $(CGFILES:.cg=.h)
+OBJS     := $(CFILES:.c=.o) $(CPPFILES:.cpp=.o)
+
+PREFIX  = arm-vita-eabi
+CC      = $(PREFIX)-gcc
+CXX      = $(PREFIX)-g++
+CFLAGS  = -fsigned-char -Wl,-q -O3 -g -fno-optimize-sibling-calls \
+	-ffast-math -mtune=cortex-a9 -mfpu=neon \
+	-DGLQUAKE -DHAVE_OGGVORBIS -DHAVE_MPG123 -DHAVE_LIBSPEEXDSP \
+	-DUSE_AUDIO_RESAMPLER -DHAVE_STRLCAT -DGIT_VERSION=\"$(GIT_VERSION)\" \
+	-DPLATFORM_DIRECTORY="psp2" -DPLATFORM_RENDERER="vgl" -DMAX_AI_COUNT=24
+
+ifeq ($(WERROR),1)
+CFLAGS 		+= -Werror
+endif
+
+ifeq ($(FANALYZER),1)
+CFLAGS		+= -fanalyzer
+endif
+
+CXXFLAGS  = $(CFLAGS) -fno-exceptions -std=gnu++11 \
+			-Wno-write-strings -Wno-sign-compare -Wno-strict-aliasing
+ASFLAGS = $(CFLAGS)
+
+all: _build_info.h $(TARGET).vpk
+
+_build_info.h:
+	rm -rf $(CURDIR)/source/_build_info.h
+	echo "#define GIT_HASH \"$(shell git rev-parse --short HEAD)$(shell git diff --quiet || echo -dirty)\"" > $(CURDIR)/source/_build_info.h
+	echo "#define GIT_BRANCH \"$(shell git rev-parse --abbrev-ref HEAD)\"" >> $(CURDIR)/source/_build_info.h
+	echo "#define BUILD_DATE \"$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")\"" >> $(CURDIR)/source/_build_info.h
+
+
+$(TARGET).vpk: $(TARGET).velf
+	mkdir -p build/sce_sys
+	vita-make-fself -c -s $< build/eboot.bin
+	vita-mksfoex -s TITLE_ID=$(TITLE) -d ATTRIBUTE2=12 "$(TARGET)" param.sfo
+	cp -f param.sfo build/sce_sys/param.sfo
+	vita-pack-vpk -s param.sfo -b build/eboot.bin "$(TARGET).vpk" \
+		-a source/platform/psp2/vgl/shaders=shaders \
+		-a build/sce_sys=sce_sys
+
+%_f.h:
+	psp2cgc -profile sce_fp_psp2 $(@:_f.h=_f.cg) -Wperf -fastprecision -O3 -o build/$(@:_f.h=_f.gxp)
+	
+%_v.h:
+	psp2cgc -profile sce_vp_psp2 $(@:_v.h=_v.cg) -Wperf -fastprecision -O3 -o build/$(@:_v.h=_v.gxp)
+	
+shaders: $(CGSHADERS)
+	
+%.velf: %.elf
+	cp $< $<.unstripped.elf
+	$(PREFIX)-strip -g $<
+	vita-elf-create $< $@
+
+$(TARGET).elf: $(OBJS)
+	$(CXX) $(GCCFLAGS) $(CXXFLAGS) $^ $(LIBS) -o $@
+
+clean:
+	@rm -rf $(TARGET).velf $(TARGET).elf $(OBJS) $(TARGET).elf.unstripped.elf $(TARGET).vpk build/eboot.bin build/sce_sys/param.sfo ./param.sfo
