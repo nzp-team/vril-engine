@@ -377,7 +377,7 @@ void IN_Move (usercmd_t *cmd)
 	} 
 
 	// crosshair stuff
-	if (input_x < 50 && input_x > -50 && input_y < 50 && input_y > -50) {
+	if (cmd->forwardmove == 0.0 && cmd->sidemove == 0.0 && cl.onground) {
 		croshhairmoving = false;
 
 		crosshair_opacity += 22;
