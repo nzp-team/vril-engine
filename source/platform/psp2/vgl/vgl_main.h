@@ -46,7 +46,6 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);
 void GL_EnableState(GLenum state);
 void GL_DisableState(GLenum state);
-int loadtextureimage (const char* filename, int matchwidth, int matchheight, bool complain, bool mipmap);
 
 #ifdef _WIN32
 // Function prototypes for the Texture Object Extension routines
@@ -69,6 +68,8 @@ extern	int texture_extension_number;
 extern	int		texture_mode;
 
 extern	float	gldepthmin, gldepthmax;
+
+int GL_FindTexture (const char *identifier);
 
 void GL_Upload32 (unsigned *data, int width, int height,  bool mipmap, bool alpha);
 void GL_Upload8 (byte *data, int width, int height,  bool mipmap, bool alpha);

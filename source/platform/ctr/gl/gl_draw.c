@@ -1007,7 +1007,7 @@ void GL_Set2D (void)
 GL_FindTexture
 ================
 */
-int GL_FindTexture (char *identifier)
+int GL_FindTexture (const char *identifier)
 {
 	int		i;
 	gltexture_t	*glt;

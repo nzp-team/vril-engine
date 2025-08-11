@@ -121,7 +121,7 @@ bool	scr_drawloading;
 float		scr_disabled_time;
 
 bool	block_drawing;
-qpic_t      *hitmark;
+int     hitmark;
 
 void SCR_ScreenShot_f (void);
 
@@ -376,7 +376,7 @@ void SCR_Init (void)
 	Cmd_AddCommand ("sizeup",SCR_SizeUp_f);
 	Cmd_AddCommand ("sizedown",SCR_SizeDown_f);
 
-	hitmark = Draw_CachePic("gfx/hud/hit_marker");
+	hitmark = Image_LoadImage("gfx/hud/hit_marker", IMAGE_TGA, 0, true, false);
 
 	scr_initialized = true;
 }
@@ -844,7 +844,7 @@ int CrossHairMaxSpread (void)
     return i;
 }
 
-extern qpic_t		*sniper_scope;
+extern int	sniper_scope;
 extern float crosshair_opacity;
 extern cvar_t cl_crosshair_debug;
 extern qboolean crosshair_pulse_grenade;
@@ -861,7 +861,7 @@ void Draw_Crosshair (void)
 	if (cl.stats[STAT_ZOOM] == 2)
 		Draw_Pic (-39, -15, sniper_scope);
    	if (Hitmark_Time > sv.time)
-        Draw_Pic ((vid.width - hitmark->width)/2,(vid.height - hitmark->height)/2, hitmark);
+	   Draw_ColoredStretchPic ((vid.width - 16)/2, (vid.height - 16)/2, hitmark, 16, 16, 255, 255, 255, 225);
 
 	// Make sure to do this after hitmark drawing.
 	if (cl.stats[STAT_ZOOM] == 2 || cl.stats[STAT_ZOOM] == 1)
@@ -974,18 +974,18 @@ char		scr_usestring[64];
 char 		scr_usestring2[64];
 float		scr_usetime_off = 0.0f;
 int			button_pic_x;
-extern qpic_t 		*b_circle;
-extern qpic_t 		*b_square;
-extern qpic_t 		*b_cross;
-extern qpic_t 		*b_triangle;
-extern qpic_t 		*b_left;
-extern qpic_t 		*b_right;
-extern qpic_t 		*b_up;
-extern qpic_t 		*b_down;
-extern qpic_t 		*b_lt;
-extern qpic_t 		*b_rt;
-extern qpic_t 		*b_start;
-extern qpic_t 		*b_select;
+extern int 	b_circle;
+extern int 	b_square;
+extern int 	b_cross;
+extern int 	b_triangle;
+extern int 	b_left;
+extern int 	b_right;
+extern int 	b_up;
+extern int 	b_down;
+extern int 	b_lt;
+extern int 	b_rt;
+extern int 	b_start;
+extern int 	b_select;
 
 /*
 ==============
@@ -995,7 +995,7 @@ Similiar to above, but will also print the current button for the action.
 ==============
 */
 
-qpic_t *GetButtonIcon (char *buttonname)
+int GetButtonIcon (char *buttonname)
 {
 	int		j;
 	int		l;

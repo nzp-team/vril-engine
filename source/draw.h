@@ -45,9 +45,8 @@ void Draw_TileClear (int x, int y, int w, int h);
 int getTextWidth(char *str, float scale);
 
 byte findclosestpalmatch(byte r, byte g, byte b, byte a);
-#ifdef __PSP__
+
 int GL_FindTexture (const char *identifier);
-#endif
 
 //other
 void Clear_LoadingFill (void);

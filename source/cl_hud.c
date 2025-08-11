@@ -44,10 +44,10 @@ int		fragpic;
 int		bettypic;
 
 #if defined(__PSP__) || defined(__vita__)
-qpic_t 		*b_circle;
-qpic_t 		*b_square;
-qpic_t 		*b_cross;
-qpic_t 		*b_triangle;
+int 		b_circle;
+int 		b_square;
+int 		b_cross;
+int 		b_triangle;
 #elif __3DS__
 int 	b_abutton;
 int 	b_bbutton;
