@@ -419,7 +419,7 @@ void Mod_LoadTextures (lump_t *l)
 
 			  	if (data != NULL) {
 					bool choosealpha = mt->name[0] == '{' ? true : false; // naievil -- need to choose alpha mode for certain textures
-					tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)data, true, choosealpha, 4, false);
+					tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)data, false, choosealpha, 4, false);
 					texture_mode = GL_LINEAR;
 					free(data);
 			  	} else {
@@ -430,7 +430,7 @@ void Mod_LoadTextures (lump_t *l)
 				}
 			} else {
 				texture_mode = GL_LINEAR_MIPMAP_NEAREST; //_LINEAR;
-				tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(tx+1), true, false, 1, false);
+				tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(tx+1), false, false, 1, false);
 				texture_mode = GL_LINEAR;
 			}
 		}
