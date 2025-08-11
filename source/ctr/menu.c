@@ -223,7 +223,7 @@ void M_Load_Menu_Pics ()
 	menu_wh2 	= Image_LoadImage("gfx/menu/nzp_warehouse2", IMAGE_PNG, 0, false, false);
 	//menu_wn 	= Draw_CachePic("gfx/menu/wahnsinn");
 	menu_ch 	= Image_LoadImage("gfx/menu/christmas_special", IMAGE_PNG, 0, false, false);
-	menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_TGA | IMAGE_PNG, 0, false, false);
+	menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_PNG, 0, false, false);
 }
 
 void M_Start_Menu_f ()

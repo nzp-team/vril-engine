@@ -1014,7 +1014,6 @@ int GL_FindTexture (char *identifier)
 	for (i=0, glt=gltextures ; i<numgltextures ; i++, glt++) {
 		if (glt->used) {
 			if (!strcmp (identifier, glt->identifier)) {
-				//Con_DPrintf ("already loaded!!! %s\n\n", identifier);
 				return glt->texnum;
 			}
 		}
@@ -1080,6 +1079,9 @@ void GL_MipMap (byte *in, int width, int height)
 	}
 }
 
+static	unsigned	scaled[1024*512];	// [512*256];
+static	unsigned	trans[1024*512];	// FIXME, temporary.. err... was it?
+
 /*
 ===============
 GL_Upload32
@@ -1088,7 +1090,6 @@ GL_Upload32
 void GL_Upload32 (unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha)
 {
 	int			samples;
-	static	unsigned	scaled[1024*512];	// [512*256];
 	int			scaled_width, scaled_height;
 
 	for (scaled_width = 1 ; scaled_width < width ; scaled_width<<=1)
@@ -1123,7 +1124,7 @@ void GL_Upload32 (unsigned *data, int width, int height,  qboolean mipmap, qbool
 
 	glTexImage2D (GL_TEXTURE_2D, 0, samples, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
 	
-	/*
+	
 	if (mipmap)
 	{
 		int		miplevel;
@@ -1142,7 +1143,7 @@ void GL_Upload32 (unsigned *data, int width, int height,  qboolean mipmap, qbool
 			glTexImage2D (GL_TEXTURE_2D, miplevel, samples, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
 		}
 	}
-		*/
+		
 done: ;
 
 	if (mipmap) {
@@ -1161,7 +1162,6 @@ GL_Upload8
 */
 void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha)
 {
-static	unsigned	trans[640*480];		// FIXME, temporary
 	int			i, s;
 	qboolean	noalpha;
 	int			p;
@@ -1202,7 +1202,7 @@ static	unsigned	trans[640*480];		// FIXME, temporary
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel, qboolean keep)
 {
 	int texture_index = GL_FindTexture(identifier);
-	if (texture_index > 0) {
+	if (texture_index >= 0) {
 		return texture_index;
 	}
 
@@ -1235,9 +1235,9 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 	glt->keep = keep;
 	glt->used = true;
 
-	GL_Bind(texture_index);
+	GL_Bind(glt->texnum);
 
-	Con_DPrintf("tex num %i tex name %s size %im\n", texture_index, identifier, (width*height*bytesperpixel)/1024);
+	//Con_DPrintf("tex num %i tex name %s size %im\n", texture_index, identifier, (width*height*bytesperpixel)/1024);
 	if (bytesperpixel == 1) {
 		GL_Upload8 (data, width, height, mipmap, alpha);
 	}
@@ -1293,16 +1293,16 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		GL_Bind(texture_index);
+		GL_Bind(glt->texnum);
 		GL_Upload32 ((unsigned*)data, width, height, false, false);
-	} else {
+	} else if (update == true) {
 		glt = gltextures;
 		glt += texture_index;
 
 		if (width == glt->original_width && height == glt->original_height) {
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			GL_Bind(texture_index);
+			GL_Bind(glt->texnum);
 			GL_Upload32 ((unsigned*)data, width, height, false, false);
 		}
 	}
