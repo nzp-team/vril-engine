@@ -71,35 +71,37 @@ void GL_Bind (int texnum)
 	currenttexture = texnum;
 	glBindTexture(GL_TEXTURE_2D, texnum);
 }
-/*
-void GL_FreeTexture (int texnum)
+
+void GL_FreeTextures (int texnum)
 {
 	if (texnum <= 0) return;
+	if (!gltextures[texnum].used) return;
+	if (gltextures[texnum].keep) return;
+
+	Con_DPrintf("DELETE name %s texnum %i\n", gltextures[texnum].identifier, gltextures[texnum].texnum);
+	printf("DELETE name %s texnum %i\n", gltextures[texnum].identifier, gltextures[texnum].texnum);
+
+	gltextures[texnum].keep = false;
+	gltextures[texnum].texnum = -1;
+	strcpy(gltextures[texnum].identifier, "");
+	gltextures[texnum].width = 0;
+	gltextures[texnum].height = 0;
+	gltextures[texnum].original_width = 0;
+	gltextures[texnum].original_height = 0;
+	gltextures[texnum].bpp = 0;
 
 	glDeleteTextures(1, (const unsigned int *)texnum);
+
+	gltextures[texnum].used = false;
+	numgltextures--;
 }
 
 void GL_UnloadTextures (void)
 {
-	for (int i = 0; i < (numgltextures+1); i++) {
-		if (gltextures[i].used) {
-			if(gltextures[i].keep == false) {
-				Con_DPrintf("DELETE name %s texnum %i\n", gltextures[i].identifier, gltextures[i].texnum);
-				GL_FreeTexture(gltextures[i].texnum);
-				gltextures[i].used = false;
-				gltextures[i].texnum = -1;
-				gltextures[i].width = 0;
-				gltextures[i].height = 0;
-				gltextures[i].original_width = 0;
-				gltextures[i].original_height = 0;
-				gltextures[i].bpp = 0;
-				strcpy(gltextures[i].identifier, "");
-				//numgltextures--;
-			}
-		}
+	for (int i = 0; i < (MAX_GLTEXTURES); i++) {
+		GL_FreeTextures(i);
 	}
 }
-*/
 
 //=============================================================================
 /* Support Routines */
