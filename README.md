@@ -25,7 +25,7 @@ With the psptoolchain installed, you now need to install the latest `picaGL`, wh
 ```bash
 git clone https://github.com/masterfeizz/picaGL.git -b revamp
 cd picaGL
-mkdir clean
+make clean
 make install
 ```
 Now you can navigate to the root of the repository and build the `.3dsx`.
