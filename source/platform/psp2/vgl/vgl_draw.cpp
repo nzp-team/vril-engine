@@ -953,23 +953,14 @@ void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, in
 {
 	glEnable(GL_BLEND);
 	glDisable(GL_ALPHA_TEST);
-	glColor4f(r/255.0,g/255.0,b/255.0,a/255.0);
+	Platform_Graphics_Color(r/255.0,g/255.0,b/255.0,a/255.0);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	GL_EnableState(GL_MODULATE);
 
 	GL_Bind (pic);
-	glBegin (GL_QUADS);
-	glTexCoord2f (0, 0);
-	glVertex2f (x, y);
-	glTexCoord2f (1, 0);
-	glVertex2f (x+x_value, y);
-	glTexCoord2f (1, 1);
-	glVertex2f (x+x_value, y+y_value);
-	glTexCoord2f (0, 1);
-	glVertex2f (x, y+y_value);
-	glEnd ();
+	DrawQuad(x, y, x_value, y_value, 0, 0, 1, 1);
 
-	glColor4f(1,1,1,1);
+	Platform_Graphics_Color(1,1,1,1);
 }
 
 /*
@@ -980,21 +971,12 @@ Draw_StretchPic
 void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
 {
 	glEnable(GL_ALPHA_TEST);
-	glColor4f(1,1,1,1);
+	Platform_Graphics_Color(1,1,1,1);
 
 	GL_Bind (pic);
-	glBegin (GL_QUADS);
-	glTexCoord2f (0, 0);
-	glVertex2f (x, y);
-	glTexCoord2f (1, 0);
-	glVertex2f (x+x_value, y);
-	glTexCoord2f (1, 1);
-	glVertex2f (x+x_value, y+y_value);
-	glTexCoord2f (0, 1);
-	glVertex2f (x, y+y_value);
-	glEnd ();
+	DrawQuad(x, y, x_value, y_value, 0, 0, 1, 1);
 
-	glColor4f(1,1,1,1);
+	Platform_Graphics_Color(1,1,1,1);
 }
 
 /*
@@ -1006,25 +988,16 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 {
 	glDisable(GL_ALPHA_TEST);
 	glEnable(GL_BLEND);
-	glColor4f(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
+	Platform_Graphics_Color(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	GL_EnableState(GL_MODULATE);
 	GL_Bind (pic);
 
-	glBegin (GL_QUADS);
-	glTexCoord2f (0, 0);
-	glVertex2f (x, y);
-	glTexCoord2f (1, 0);
-	glVertex2f (x+gltextures[pic].width, y);
-	glTexCoord2f (1, 1);
-	glVertex2f (x+gltextures[pic].width, y+gltextures[pic].height);
-	glTexCoord2f (0, 1);
-	glVertex2f (x, y+gltextures[pic].height);
-	glEnd ();
+	DrawQuad(x, y, gltextures[pic].width, gltextures[pic].height, 0, 0, 1, 1);
 
 	glDisable(GL_BLEND);
 	//glDisable(GL_ALPHA_TEST);
-	glColor4f(1,1,1,1);
+	Platform_Graphics_Color(1,1,1,1);
 }
 
 /*

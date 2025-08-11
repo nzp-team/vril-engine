@@ -210,6 +210,19 @@ void HUD_Init (void)
 	b_start = Image_LoadImage ("gfx/butticons/start", IMAGE_PNG, 0, true, false);
 	b_select = Image_LoadImage ("gfx/butticons/select", IMAGE_PNG, 0, true, false);
 	b_home = Image_LoadImage ("gfx/butticons/home", IMAGE_PNG, 0, true, false);
+#elif __vita__
+	b_circle = Image_LoadImage ("gfx/butticons/fbtncircle", IMAGE_TGA, 0, true, false);
+	b_square = Image_LoadImage ("gfx/butticons/fbtnsquare", IMAGE_TGA, 0, true, false);
+	b_cross = Image_LoadImage ("gfx/butticons/fbtncross", IMAGE_TGA, 0, true, false);
+	b_triangle = Image_LoadImage ("gfx/butticons/fbtntriangle", IMAGE_TGA, 0, true, false);
+	b_left = Image_LoadImage ("gfx/butticons/dpadleft", IMAGE_TGA, 0, true, false);
+	b_right = Image_LoadImage ("gfx/butticons/dpadright", IMAGE_TGA, 0, true, false);
+	b_up = Image_LoadImage ("gfx/butticons/dpadup", IMAGE_TGA, 0, true, false);
+	b_down = Image_LoadImage ("gfx/butticons/dpaddown", IMAGE_TGA, 0, true, false);
+	b_lt = Image_LoadImage ("gfx/butticons/backl1", IMAGE_TGA, 0, true, false);
+	b_rt = Image_LoadImage ("gfx/butticons/backr1", IMAGE_TGA, 0, true, false);
+	b_start = Image_LoadImage ("gfx/butticons/funcstart", IMAGE_TGA, 0, true, false);
+	b_select = Image_LoadImage ("gfx/butticons/funcselect", IMAGE_TGA, 0, true, false);
 #elif __3DS__
 	b_abutton = Image_LoadImage ("gfx/butticons/facebt_a", IMAGE_TGA, 0, true, false);
 	b_bbutton = Image_LoadImage ("gfx/butticons/facebt_b", IMAGE_TGA, 0, true, false);
@@ -239,7 +252,7 @@ void HUD_Init (void)
 	b_home = Image_LoadImage ("gfx/butticons/homebutton", IMAGE_TGA, 0, true, false);
 	b_one = Image_LoadImage ("gfx/butticons/1button", IMAGE_TGA, 0, true, false);
 	b_two = Image_LoadImage ("gfx/butticons/2button", IMAGE_TGA, 0, true, false);
-#endif // __PSP__, __3DS__, __WII__
+#endif // __PSP__, __vita__, __3DS__, __WII__
 
     fx_blood_lu = Image_LoadImage ("gfx/hud/blood", IMAGE_TGA, 0, true, false);
 
