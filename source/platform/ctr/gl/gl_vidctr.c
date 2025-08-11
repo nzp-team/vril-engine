@@ -22,10 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../../../nzportable_def.h"
 
 unsigned	d_8to24table[256];
+unsigned char d_15to8table[65536];
 
 int		texture_mode = GL_LINEAR;
 
-float	gldepthmin, gldepthmax;
+double	gldepthmin, gldepthmax;
 
 cvar_t	gl_ztrick = {"gl_ztrick","0"};
 
@@ -108,6 +109,31 @@ void	VID_SetPalette (unsigned char *palette)
 		*table++ = v;
 	}
 	d_8to24table[255] &= 0xffffff;	// 255 is transparent
+
+	// JACK: 3D distance calcs - k is last closest, l is the distance.
+	for (i=0; i < (1<<15); i++) {
+		/* Maps
+		000000000000000
+		000000000011111 = Red  = 0x1F
+		000001111100000 = Blue = 0x03E0
+		111110000000000 = Grn  = 0x7C00
+		*/
+		r = ((i & 0x1F) << 3)+4;
+		g = ((i & 0x03E0) >> 2)+4;
+		b = ((i & 0x7C00) >> 7)+4;
+		pal = (unsigned char *)d_8to24table;
+		for (v=0,k=0,bestdist=10000*10000; v<256; v++,pal+=4) {
+			r1 = (int)r - (int)pal[0];
+			g1 = (int)g - (int)pal[1];
+			b1 = (int)b - (int)pal[2];
+			dist = (r1*r1)+(g1*g1)+(b1*b1);
+			if (dist < bestdist) {
+				k=v;
+				bestdist = dist;
+			}
+		}
+		d_15to8table[i]=k;
+	}
 }
 
 void	VID_ShiftPalette (unsigned char *palette)
@@ -128,8 +154,8 @@ static void Check_Gamma (unsigned char *pal)
 
 	for (i=0 ; i<768 ; i++)
 	{
-		f = pow ( (pal[i]+1)/256.0 , vid_gamma );
-		inf = f*255 + 0.5;
+		f = powf ( (pal[i]+1)/256.0 , vid_gamma );
+		inf = f*255 + 0.5f;
 		if (inf < 0)
 			inf = 0;
 		if (inf > 255)
@@ -178,7 +204,7 @@ void	VID_Init (unsigned char *palette)
 	vid.height = 240;
 
 	vid.aspect = ((float)vid.height / (float)vid.width) *
-				(320.0 / 240.0);
+				(320.0f / 240.0f);
 	vid.numpages = 2;
 
 	GL_Init();

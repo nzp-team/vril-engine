@@ -1102,9 +1102,6 @@ void SCR_SetUpToDrawConsole (void)
 {
 	Con_CheckResize ();
 
-	if (scr_drawloading)
-		return;		// never a console with loading plaque
-
 // decide on the height of the console
 	if (!cl.worldmodel || cls.signon != SIGNONS)//blubs here, undid it actually
 	{
@@ -1431,7 +1428,7 @@ void SCR_UpdateScreen (void)
 	scr_copyeverything = 0;
 
 	//screen is disabled for loading, and we don't have any loading steps...?
-	if (scr_disabled_for_loading && !loading_num_step)
+	if (scr_disabled_for_loading)
 	{
 		if (realtime - scr_disabled_time > 60)
 		{

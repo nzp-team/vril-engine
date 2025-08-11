@@ -64,20 +64,6 @@ float 	loading_cur_step_bk;
 
 #define CLUT4
 
-typedef struct 
-{
-#ifdef CLUT4
-	unsigned char *palette;
-	ScePspRGBA8888 *palette_2;
-#else
-    ScePspRGBA8888 *palette;
-#endif
-
-	// Buffers.
-	texel*	ram;
-	texel*	vram;
-} plattexture_t;
-
 typedef struct
 {
 	// Source.
@@ -95,10 +81,20 @@ typedef struct
 	int     bpp;
 	int     swizzle;
 
-	plattexture_t platform_specific;
+#ifdef CLUT4
+	unsigned char *palette;
+	ScePspRGBA8888 *palette_2;
+#else
+    ScePspRGBA8888 *palette;
+#endif
+
 
     qboolean	palette_active;
 	qboolean	keep;
+
+	// Buffers.
+	texel*	ram;
+	texel*	vram;
 } gltexture_t;
 
 void VID_SetPalette4(unsigned char* clut4pal);
@@ -190,6 +186,17 @@ void GL_Copy(int texture_index, int dx, int dy, int sx, int sy, int w, int h)
 	 sceGuTexSync();
 }
 
+/*
+For marking textures as something that should never be cleaned up, like fonts, zombie, etc.
+There should never be need to change anything back from permanent.
+*/
+void GL_MarkTextureAsPermanent(int texture_index) {
+	if (gltextures_used[texture_index] == false) {
+		Sys_Error("Tried to mark an empty texture as permanent!\n");
+	}
+
+	gltextures_is_permanent[texture_index] = true;
+}
 
 void VID_SetPaletteTX();
 extern qboolean last_palette_wasnt_tx;
@@ -557,60 +564,6 @@ void Draw_String (int x, int y, char *str)
 
 /*
 =============
-Draw_AlphaPic
-=============
-*/
-void Draw_AlphaPic (int x, int y, int pic, float alpha)
-{
-	if (alpha != 1.0f)
-	{
-		sceGuTexFunc(GU_TFX_DECAL, GU_TCC_RGBA);
-	}
-
-	if (!pic)
-        GL_Bind (nonetexture);
-	else
-        GL_Bind (pic);
-
-	struct vertex
-	{
-		short			u, v;
-		short			x, y, z;
-	};
-
-	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
-
-   	vertices[0].u		= 0;
-	vertices[0].v		= 0;
-	vertices[0].x		= x;
-	vertices[0].y		= y;
-	vertices[0].z		= 0;
-
-	const gltexture_t& glt = gltextures[pic];
-	vertices[1].u 	= glt.width;
-	vertices[1].v 	= glt.height;
-
-	vertices[1].x		= x + gltextures[pic].width;
-	vertices[1].y		= y + gltextures[pic].height;
-	vertices[1].z		= 0;
-
-	sceGuColor(GU_RGBA(0xff, 0xff, 0xff, static_cast<unsigned int>(alpha * 255.0f)));
-
-	sceGuDrawArray(
-		GU_SPRITES,
-		GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D,
-		2, 0, vertices);
-
-    sceGuColor(0xffffffff);
-
-	if (alpha != 1.0f)
-	{
-		sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
-	}
-}
-
-/*
-=============
 Draw_ColorPic
 =============
 */
@@ -659,6 +612,16 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 
     sceGuColor(0xffffffff);
 	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
+}
+
+/*
+=============
+Draw_AlphaPic
+=============
+*/
+void Draw_AlphaPic (int x, int y, int pic, float alpha)
+{
+	Draw_ColorPic(x, y, pic, 255, 255, 255, alpha);
 }
 
 /*
@@ -2475,18 +2438,6 @@ void GL_UnloadAllTextures() {
 	for (int i = 0; i < MAX_GLTEXTURES; i++) {
 		GL_UnloadTexture(i);
 	}
-}
-
-/*
-For marking textures as something that should never be cleaned up, like fonts, zombie, etc.
-There should never be need to change anything back from permanent.
-*/
-void GL_MarkTextureAsPermanent(int texture_index) {
-	if (gltextures_used[texture_index] == false) {
-		Sys_Error("Tried to mark an empty texture as permanent!\n");
-	}
-
-	gltextures_is_permanent[texture_index] = true;
 }
 
 int GL_FindTexture(const char *identifier) {

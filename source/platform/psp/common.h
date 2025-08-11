@@ -24,7 +24,7 @@ typedef unsigned char 		byte;
 #define BYTE_DEFINED 1
 #endif
 
-typedef bool qboolean;
+typedef unsigned int qboolean;
 
 #ifndef fmin
 #define fmin(a, b) ((a) < (b) ? (a) : (b))
