@@ -24,7 +24,7 @@ extern "C"{}
 extern "C"{
 #include <vitasdk.h>
 #include "../../../nzportable_def.h"
-#include "../image.h"
+#include "../../../images.h"
 extern unsigned short CRC_Block(const unsigned char *data, size_t size);
 }
 
@@ -110,22 +110,6 @@ typedef struct
 #define	MAX_GLTEXTURES	1024
 gltexture_t	gltextures[MAX_GLTEXTURES];
 int numgltextures = 0;
-
-static int LoadExternalPic(char *identifier)
-{
-	char fname[512];
-	COM_StripExtension (identifier, fname);
-	int w, h;
-	byte *data = Image_LoadImage (fname, &w, &h);
-	if (data) {
-		int r = GL_LoadTexture32 ("", w, h, data, false, true, false);
-		free(data);
-		return r;
-	}
-	return -1;
-}
-
-// FIXME: It seems the texture manager fails with Half Life BSPs
 
 /*
  * Texture Manager - derived from glesquake
