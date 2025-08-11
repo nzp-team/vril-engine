@@ -42,7 +42,6 @@ int			currenttexture = -1;		// to avoid unnecessary texture sets
 int			cnttextures[2] = {-1, -1};     // cached
 
 int			particletexture;	// little dot for particles
-int			playertextures;		// up to 16 color translated skins
 
 int			mirrortexturenum;	// quake texturenum, not gltexturenum
 qboolean	mirror;
@@ -1146,15 +1145,6 @@ void R_DrawAliasModel (entity_t *e)
 	{
 		anim = (int)(cl.time*10) & 3;
 		GL_Bind(paliashdr->gl_texturenum[e->skinnum][anim]);
-	}
-
-	// we can't dynamically colormap textures, so they are cached
-	// seperately for the players.  Heads are just uncolored.
-	if (currententity->colormap != vid.colormap && !gl_nocolors.value)
-	{
-		i = currententity - cl_entities;
-		if (i >= 1 && i<=cl.maxclients /* && !strcmp (currententity->model->name, "models/player.mdl") */)
-		    GL_Bind(playertextures - 1 + i);
 	}
 
 	if (gl_smoothmodels.value)

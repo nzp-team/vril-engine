@@ -194,19 +194,19 @@ void HUD_Init (void)
 	bettypic = Image_LoadImage ("gfx/hud/betty", IMAGE_TGA, 0, true, false);
 
 #ifdef __PSP__
-	b_circle = Image_LoadImage ("gfx/butticons/circle", IMAGE_TGA, 0, true, false);
-	b_square = Image_LoadImage ("gfx/butticons/square", IMAGE_TGA, 0, true, false);
-	b_cross = Image_LoadImage ("gfx/butticons/cross", IMAGE_TGA, 0, true, false);
-	b_triangle = Image_LoadImage ("gfx/butticons/triangle", IMAGE_TGA, 0, true, false);
-	b_left = Image_LoadImage ("gfx/butticons/left", IMAGE_TGA, 0, true, false);
-	b_right = Image_LoadImage ("gfx/butticons/right", IMAGE_TGA, 0, true, false);
-	b_up = Image_LoadImage ("gfx/butticons/up", IMAGE_TGA, 0, true, false);
-	b_down = Image_LoadImage ("gfx/butticons/down", IMAGE_TGA, 0, true, false);
-	b_lt = Image_LoadImage ("gfx/butticons/lt", IMAGE_TGA, 0, true, false);
-	b_rt = Image_LoadImage ("gfx/butticons/rt", IMAGE_TGA, 0, true, false);
-	b_start = Image_LoadImage ("gfx/butticons/start", IMAGE_TGA, 0, true, false);
-	b_select = Image_LoadImage ("gfx/butticons/select", IMAGE_TGA, 0, true, false);
-	b_home = Image_LoadImage ("gfx/butticons/home", IMAGE_TGA, 0, true, false);
+	b_circle = Image_LoadImage ("gfx/butticons/circle", IMAGE_PNG, 0, true, false);
+	b_square = Image_LoadImage ("gfx/butticons/square", IMAGE_PNG, 0, true, false);
+	b_cross = Image_LoadImage ("gfx/butticons/cross", IMAGE_PNG, 0, true, false);
+	b_triangle = Image_LoadImage ("gfx/butticons/triangle", IMAGE_PNG, 0, true, false);
+	b_left = Image_LoadImage ("gfx/butticons/left", IMAGE_PNG, 0, true, false);
+	b_right = Image_LoadImage ("gfx/butticons/right", IMAGE_PNG, 0, true, false);
+	b_up = Image_LoadImage ("gfx/butticons/up", IMAGE_PNG, 0, true, false);
+	b_down = Image_LoadImage ("gfx/butticons/down", IMAGE_PNG, 0, true, false);
+	b_lt = Image_LoadImage ("gfx/butticons/lt", IMAGE_PNG, 0, true, false);
+	b_rt = Image_LoadImage ("gfx/butticons/rt", IMAGE_PNG, 0, true, false);
+	b_start = Image_LoadImage ("gfx/butticons/start", IMAGE_PNG, 0, true, false);
+	b_select = Image_LoadImage ("gfx/butticons/select", IMAGE_PNG, 0, true, false);
+	b_home = Image_LoadImage ("gfx/butticons/home", IMAGE_PNG, 0, true, false);
 #elif __3DS__
 	b_abutton = Image_LoadImage ("gfx/butticons/facebt_a", IMAGE_TGA, 0, true, false);
 	b_bbutton = Image_LoadImage ("gfx/butticons/facebt_b", IMAGE_TGA, 0, true, false);

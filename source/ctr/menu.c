@@ -50,7 +50,8 @@ int menu_wh2;
 int menu_ch;
 //qpic_t *menu_wn;
 int menu_custom;
-int menu_cuthum;
+#define MAX_CUSTOMMAPS 64
+int menu_cuthum[MAX_CUSTOMMAPS];
 
 achievement_list_t achievement_list[MAX_ACHIEVEMENTS];
 
@@ -416,11 +417,8 @@ int	m_main_cursor;
 
 void M_Menu_Main_f (void)
 {
-	if (key_dest != key_menu)
-	{
-		m_save_demonum = cls.demonum;
-		cls.demonum = -1;
-	}
+	M_Load_Menu_Pics();
+	
 	key_dest = key_menu;
 	m_state = m_main;
 	m_entersound = true;
@@ -1111,9 +1109,9 @@ void M_Menu_CustomMaps_Draw (void)
 		if (m_map_cursor == i) {
 
 			if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
-				menu_cuthum = Image_LoadImage(custom_maps[i + multiplier].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
-				if (menu_cuthum != 0) {
-					Draw_StretchPic(185, 40, menu_cuthum, 175, 100);
+				menu_cuthum[i] = Image_LoadImage(custom_maps[i + multiplier].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+				if (menu_cuthum[i] > 0) {
+					Draw_StretchPic(185, 40, menu_cuthum[i], 175, 100);
 				}
 			}
 			

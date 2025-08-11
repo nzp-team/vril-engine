@@ -48,9 +48,6 @@ void VramSetSize(int kb);
 #include "system.hpp"
 #include "module.h"
 
-// Running a dedicated server?
-qboolean isDedicated = false;
-
 qboolean depthfl = false;
 
 extern	int  com_argc;

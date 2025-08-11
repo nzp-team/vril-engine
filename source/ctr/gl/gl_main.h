@@ -46,16 +46,27 @@ extern	DELTEXFUNCPTR delTexFunc;
 extern	TEXSUBIMAGEPTR TexSubImage2DFunc;
 #endif
 
-extern	int texture_extension_number;
 extern	int		texture_mode;
 
 extern	float	gldepthmin, gldepthmax;
 
+typedef struct
+{
+	int				texnum;
+	char			identifier[64];
+	int				width, height, original_width, original_height;
+	int				bpp;
+	qboolean		mipmap;
+	qboolean		used;
+	qboolean		keep;
+} gltexture_t;
+
 void GL_Upload32 (unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha);
 void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
-void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
-int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel);
+int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel, qboolean keep);
+int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qboolean update);
 int GL_FindTexture (char *identifier);
+void GL_UnloadTextures ();
 
 typedef struct
 {
@@ -220,7 +231,6 @@ extern	qboolean	envmap;
 extern	int	currenttexture;
 extern	int	cnttextures[2];
 extern	int	particletexture;
-extern	int	playertextures;
 
 extern	int	skytexturenum;		// index in cl.loadmodel, not gl texture object
 
@@ -297,7 +307,10 @@ extern	const char *gl_renderer;
 extern	const char *gl_version;
 extern	const char *gl_extensions;
 
-void R_TranslatePlayerSkin (int playernum);
+#define	MAX_LIGHTMAPS	128
+extern  int	skyimage[5]; // Where sky images are stored
+extern  int	lightmap_index[MAX_LIGHTMAPS]; // Where lightmaps are stored
+
 void GL_Bind (int texnum);
 
 // Multitexture
@@ -362,8 +375,6 @@ void Fog_SetupState (void);
 
 void Sky_Init (void);
 void Sky_NewMap (void);
-
-qboolean VID_Is8bit(void);
 
 void Sky_LoadSkyBox(char* name);
 

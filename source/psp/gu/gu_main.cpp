@@ -131,7 +131,7 @@ cvar_t	r_dynamic             = {"r_dynamic",                 "0"};
 cvar_t	r_novis               = {"r_novis",                   "0"};
 cvar_t	r_tex_scale_down      = {"r_tex_scale_down",          "1",true};
 cvar_t	r_particles_simple    = {"r_particles_simple",        "0",true};
-cvar_t	gl_keeptjunctions     = {"gl_keeptjunctions",         "0"};
+cvar_t	gl_keeptjunctions     = {"gl_keeptjunctions",         "1"};
 cvar_t	r_waterripple         = {"r_waterripple",             "2",true};
 cvar_t	r_waterwarp           = {"r_waterwarp",               "1",true};
 cvar_t	r_fastsky             = {"r_fastsky",                 "1",true};
@@ -140,7 +140,7 @@ cvar_t  r_showbboxes          = {"r_showbboxes",              "0"};
 cvar_t  r_showbboxes_full     = {"r_showbboxes_full",         "0",true};
 cvar_t	r_showtris            = {"r_showtris",                "0"};
 cvar_t	r_showtris_full       = {"r_showtris_full",           "0",true};
-cvar_t	r_polyblend	          = {"r_polyblend",               "1",true};
+cvar_t	r_polyblend	          = {"r_polyblend",               "0",true};
 cvar_t r_skyfogblend = {"r_skyfogblend", "0.6", true}; 
 
 //QMB

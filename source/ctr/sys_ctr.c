@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define TICKS_PER_SEC 268123480.0
 
 #define QUAKE_HUNK_MB			24 		// cypress -- usable quake hunk size in mB
-#define QUAKE_HUNK_MB_NEW3DS	72		// ^^ ditto, but n3ds
+#define QUAKE_HUNK_MB_NEW3DS	64		// ^^ ditto, but n3ds
 
 #define LINEAR_HEAP_SIZE_MB		16		// cypress -- we lower this as much as possible while still remaining
 										// bootable so we can up the quake hunk and actually viable memory.
@@ -41,8 +41,6 @@ bool new3ds_flag;
 
 extern void Touch_Init();
 extern void Touch_Update();
-
-qboolean isDedicated;
 
 /*
 ===============================================================================
@@ -314,7 +312,7 @@ int main (int argc, char **argv)
 	cfguExit();
 	
 	if(model != CFG_MODEL_2DS && new3ds_flag == true)
-		gfxSetWide(true);
+		gfxSetWide(false);
 	
 	chdir("sdmc:/3ds/nzportable");
 
