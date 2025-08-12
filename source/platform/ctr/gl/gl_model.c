@@ -185,7 +185,7 @@ void Mod_ClearAll (void)
 		}
 	}
 
-	//GL_UnloadTextures ();
+	GL_UnloadTextures ();
 
 	//purge old sky textures
 	for (i=0; i<5; i++)

@@ -67,6 +67,8 @@ int			m_return_state;
 qboolean	m_return_onerror;
 char		m_return_reason [32];
 
+extern qboolean loadscreeninit;
+
 /*
 ================
 M_DrawCharacter
@@ -259,6 +261,7 @@ void M_Menu_SinglePlayer_f (void)
 {
 	key_dest = key_menu;
 	m_state = m_singleplayer;
+	loadscreeninit = false;
 	m_entersound = true;
 }
 

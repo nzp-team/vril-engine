@@ -221,8 +221,8 @@ int Image_LoadImage(char* filename, int image_format, int filter, qboolean keep,
 
 	tex_filebase (filename, texname);
 
-	Con_DPrintf("filename %s\n", filename);
-	Con_DPrintf("tex name %s\n", texname);
+	//Con_DPrintf("filename %s\n", filename);
+	//Con_DPrintf("tex name %s\n", texname);
 	// already loaded?
 	texture_index = GL_FindTexture(texname);
 	if (texture_index > 0) {
@@ -236,6 +236,8 @@ int Image_LoadImage(char* filename, int image_format, int filter, qboolean keep,
 	
 #ifdef __PSP__
 	texture_index = GL_LoadImages (texname, image_width, image_height, data, true, filter, 0, 4, keep);
+#elif __vita__
+	texture_index = GL_LoadTexture32 (texname, image_width, image_height, data, false, true, false);
 #elif __3DS__
     texture_index = GL_LoadTexture (texname, image_width, image_height, data, mipmap, true, 4, keep);
 #elif __WII__

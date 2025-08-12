@@ -25,6 +25,7 @@ extern "C"{
 #include <vitasdk.h>
 #include "../../../nzportable_def.h"
 #include "../../../images.h"
+
 extern unsigned short CRC_Block(const unsigned char *data, size_t size);
 }
 
@@ -87,26 +88,12 @@ int		gl_alpha_format = 4;
 int		gl_filter_min = GL_NEAREST;
 int		gl_filter_max = GL_NEAREST;
 
-
-int		texels;
-
 //Loading Fill by Crow_bar
 float 	loading_cur_step;
 char	loading_name[32];
 float 	loading_num_step;
 int 	loading_step;
 float 	loading_cur_step_bk;
-
-typedef struct
-{
-	int		texnum;
-	char 	identifier[64];
-	int				width, height, original_width, original_height;
-	int				bpp;
-	qboolean		mipmap;
-	qboolean		used;
-	qboolean		keep;
-} gltexture_t;
 
 #define	MAX_GLTEXTURES	1024
 gltexture_t	gltextures[MAX_GLTEXTURES];
@@ -646,6 +633,9 @@ void Draw_Init (void)
 	scrap_texnum = texture_extension_number;
 	texture_extension_number += MAX_SCRAPS;
 	sniper_scope = Image_LoadImage ("gfx/hud/scope", IMAGE_TGA, 0, true, false);
+
+	Clear_LoadingFill ();
+
 	InitKerningMap();
 }
 
@@ -953,23 +943,14 @@ void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, in
 {
 	glEnable(GL_BLEND);
 	glDisable(GL_ALPHA_TEST);
-	glColor4f(r/255.0,g/255.0,b/255.0,a/255.0);
+	Platform_Graphics_Color(r/255.0,g/255.0,b/255.0,a/255.0);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	GL_EnableState(GL_MODULATE);
 
 	GL_Bind (pic);
-	glBegin (GL_QUADS);
-	glTexCoord2f (0, 0);
-	glVertex2f (x, y);
-	glTexCoord2f (1, 0);
-	glVertex2f (x+x_value, y);
-	glTexCoord2f (1, 1);
-	glVertex2f (x+x_value, y+y_value);
-	glTexCoord2f (0, 1);
-	glVertex2f (x, y+y_value);
-	glEnd ();
+	DrawQuad(x, y, x_value, y_value, 0, 0, 1, 1);
 
-	glColor4f(1,1,1,1);
+	Platform_Graphics_Color(1,1,1,1);
 }
 
 /*
@@ -980,21 +961,12 @@ Draw_StretchPic
 void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
 {
 	glEnable(GL_ALPHA_TEST);
-	glColor4f(1,1,1,1);
+	Platform_Graphics_Color(1,1,1,1);
 
 	GL_Bind (pic);
-	glBegin (GL_QUADS);
-	glTexCoord2f (0, 0);
-	glVertex2f (x, y);
-	glTexCoord2f (1, 0);
-	glVertex2f (x+x_value, y);
-	glTexCoord2f (1, 1);
-	glVertex2f (x+x_value, y+y_value);
-	glTexCoord2f (0, 1);
-	glVertex2f (x, y+y_value);
-	glEnd ();
+	DrawQuad(x, y, x_value, y_value, 0, 0, 1, 1);
 
-	glColor4f(1,1,1,1);
+	Platform_Graphics_Color(1,1,1,1);
 }
 
 /*
@@ -1006,25 +978,16 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 {
 	glDisable(GL_ALPHA_TEST);
 	glEnable(GL_BLEND);
-	glColor4f(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
+	Platform_Graphics_Color(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	GL_Bind (pic);
+	GL_EnableState(GL_MODULATE);
 
-	glBegin (GL_QUADS);
-	glTexCoord2f (0, 0);
-	glVertex2f (x, y);
-	glTexCoord2f (1, 0);
-	glVertex2f (x+gltextures[pic].width, y);
-	glTexCoord2f (1, 1);
-	glVertex2f (x+gltextures[pic].width, y+gltextures[pic].height);
-	glTexCoord2f (0, 1);
-	glVertex2f (x, y+gltextures[pic].height);
-	glEnd ();
+	GL_Bind (pic);
+	DrawQuad(x, y, gltextures[pic].width, gltextures[pic].height, 0, 0, 1, 1);
 
 	glDisable(GL_BLEND);
 	//glDisable(GL_ALPHA_TEST);
-	glColor4f(1,1,1,1);
+	Platform_Graphics_Color(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
 }
 
 /*
@@ -1122,6 +1085,60 @@ void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a)
 	Platform_Graphics_Color(1,1,1,1);
 }
 //=============================================================================
+
+/*
+================
+Draw_LoadingFill
+By Crow_bar
+================
+*/
+void Draw_LoadingFill(void)
+{
+    if(!loading_num_step)
+		return;
+
+	int size       	= 16;
+	int max_step   	= 350;
+    int x          	= (vid.width  / 2) - (max_step / 2);
+    int y          	= vid.height - (size/ 2) - 25;
+	char* text;
+
+
+	if(loading_cur_step > loading_num_step)
+	      loading_cur_step = loading_num_step;
+
+	if (loading_cur_step < loading_cur_step_bk)
+		loading_cur_step = loading_cur_step_bk;
+
+	if (loading_cur_step == loading_num_step && loading_cur_step_bk != loading_num_step)
+		loading_cur_step = loading_cur_step_bk;
+
+    float loadsize = loading_cur_step * (max_step / loading_num_step);
+	Draw_FillByColor (x - 2, y - 2, max_step + 8, size + 8, 69, 69, 69, 255);
+	Draw_FillByColor (x, y, (int)loadsize, size, 0, 0, 0, 200);
+
+	switch(loading_step) {
+		case 1: text = "Loading Models.."; break;
+		case 2: text = "Loading World.."; break;
+		case 3: text = "Running Test Frame.."; break;
+		case 4: text = "Loading Sounds.."; break;
+		default: text = "Initializing.."; break;
+	}
+	
+	Draw_ColoredStringCentered(y, text, 255, 255, 255, 255, 1);
+
+	loading_cur_step_bk = loading_cur_step;
+}
+
+void Clear_LoadingFill (void)
+{
+    //it is end loading
+	loading_cur_step = 0;
+	loading_cur_step_bk = 0;
+	loading_num_step = 0;
+	loading_step = -1;
+	memset(loading_name, 0, sizeof(loading_name));
+}
 
 /*
 ================
@@ -1325,8 +1342,6 @@ void GL_Upload32 (unsigned *data, int width, int height,  bool mipmap, bool alph
 		mipmap = false; // Compressed textures do not support mipmaps yet in vitaGL
 	} else samples = alpha ? gl_alpha_format : gl_solid_format;
 
-	texels += scaled_width * scaled_height;
-
 	if (scaled_width == width && scaled_height == height)
 	{
 		if (!mipmap)
@@ -1459,28 +1474,28 @@ GL_LoadTexture32
 */
 int GL_LoadTexture32 (const char *identifier, int width, int height, byte *data, bool mipmap, bool alpha, bool fullbright)
 {
-	bool	noalpha;
-	int			i, p, s;
+	int texture_index = GL_FindTexture(identifier);
+	if (texture_index >= 0) {
+		return texture_index;
+	}
+
+	int			i;
 	gltexture_t	*glt;
 
-	// see if the texture is already present
-	if (identifier[0])
-	{
-		for (i=0, glt=gltextures ; i<numgltextures ; i++, glt++)
-		{
-			if (!strcmp (identifier, glt->identifier))
-			{
-				// FIXME: Caching is broken with external textures
-				//if (width != glt->width || height != glt->height)
-				//	Sys_Error ("GL_LoadTexture32: cache mismatch for %s, expected: %ld, got %d", identifier, width, glt->width);
-				return gltextures[i].texnum;
-			}
+	numgltextures++;
+	// Out of textures?
+	if (numgltextures == MAX_GLTEXTURES)
+		Sys_Error ("GL_GetTextureIndex: Out of GL textures\n");
+
+	for (i=0, glt=gltextures; i <=numgltextures; i++, glt++) {
+		if (glt->used == false) {
+			texture_index = i;
+			break;
 		}
 	}
-	//else {                                    // 13/02/2000 removed: M.Tretene
-		glt = &gltextures[numgltextures];
-		numgltextures++;
-	//}
+
+	if (texture_index < 0)
+		Sys_Error("Could not find a free GL texture! %i %s\n", numgltextures, identifier);
 	
 	// Make black pixels transparent for *_luma textures
 	if (fullbright) {
@@ -1499,7 +1514,7 @@ int GL_LoadTexture32 (const char *identifier, int width, int height, byte *data,
 	glt->original_height = height;
 	glt->mipmap = mipmap;
 	
-	GL_Bind(texture_extension_number );
+	GL_Bind(texture_extension_number);
 	
 	if (tex_cache)
 		textureStore::get()->create(width, height, data, mipmap, alpha, true);
@@ -1546,15 +1561,5 @@ void GL_DrawFPS(void){
 	x = 329 - strlen(st) * 8 - 16;
 
 	Draw_String(x, 2, st);
-}
-
-void Clear_LoadingFill (void)
-{
-    //it is end loading
-	loading_cur_step = 0;
-	loading_cur_step_bk = 0;
-	loading_num_step = 0;
-	loading_step = -1;
-	memset(loading_name, 0, sizeof(loading_name));
 }
 

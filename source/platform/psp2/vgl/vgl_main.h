@@ -76,6 +76,20 @@ void GL_Upload8 (byte *data, int width, int height,  bool mipmap, bool alpha);
 int GL_LoadTexture (const char *identifier, int width, int height, byte *data, bool mipmap, bool alpha);
 int GL_LoadTexture32 (const char *identifier, int width, int height, byte *data, bool mipmap, bool alpha, bool fullbright);
 
+typedef struct
+{
+	int		texnum;
+	char 	identifier[64];
+	int				width, height, original_width, original_height;
+	int				bpp;
+	qboolean		mipmap;
+	qboolean		used;
+	qboolean		keep;
+} gltexture_t;
+
+#define	MAX_GLTEXTURES	1024
+extern gltexture_t gltextures[MAX_GLTEXTURES];
+
 extern	qboolean	qmb_initialized;
 
 typedef struct
