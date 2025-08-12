@@ -68,6 +68,9 @@ qboolean	m_return_onerror;
 char		m_return_reason [32];
 
 extern qboolean loadscreeninit;
+extern int loadingScreen;
+extern char* loadname2;
+extern char* loadnamespec;
 
 /*
 ================
@@ -185,6 +188,8 @@ void M_Menu_Main_f (void)
 	key_dest = key_menu;
 	m_state = m_main;
 	m_entersound = true;
+
+	loadscreeninit = false;
 }
 
 void M_Main_Draw (void)
@@ -261,7 +266,7 @@ void M_Menu_SinglePlayer_f (void)
 {
 	key_dest = key_menu;
 	m_state = m_singleplayer;
-	loadscreeninit = false;
+	loadingScreen = 0;
 	m_entersound = true;
 }
 
@@ -282,7 +287,6 @@ void M_SinglePlayer_Draw (void)
 	Draw_FillByColor(vid.width/4, vid.height/4 - 3 + (16 * m_singleplayer_cursor), strlen(SINGLE_MENU_ITEMS[m_singleplayer_cursor])*8, 2, 255, 255, 255, 255);
 	Draw_FillByColor(vid.width/4, vid.height/4 + 2 + 8 + (16 * m_singleplayer_cursor), strlen(SINGLE_MENU_ITEMS[m_singleplayer_cursor])*8, 2, 255, 255, 255, 255);
 }
-
 
 void M_SinglePlayer_Key (int key)
 {
@@ -310,21 +314,33 @@ void M_SinglePlayer_Key (int key)
 		case 0:
 			Cbuf_AddText ("map ndu\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "ndu";
+			loadnamespec = "Nacht der Untoten";
 			break;
 
 		case 1:
 			Cbuf_AddText ("map nzp_warehouse2\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "nzp_warehouse2";
+			loadnamespec = "Warehouse";
 			break;
 
 		case 2:
 			Cbuf_AddText ("map nzp_warehouse\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "nzp_warehouse";
+			loadnamespec = "Warehouse (Classic)";
 			break;
 
 		case 3:
 			Cbuf_AddText ("map christmas_special\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+			loadnamespec = "Christmas Special";
 			break;
 
 		case 4:
@@ -412,91 +428,145 @@ void M_Menu_CustomMaps_Key (int key)
 		case 0:
 			Cbuf_AddText ("map 4all\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 1:
 			Cbuf_AddText ("map B1ooDv3\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 2:
 			Cbuf_AddText ("map B1ooDv4\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 3:
 			Cbuf_AddText ("map boxxer\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 4:
 			Cbuf_AddText ("map Bunker-Defense\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 5:
 			Cbuf_AddText ("map christmas_special\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 6:
 			Cbuf_AddText ("map Dung3on\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 7:
 			Cbuf_AddText ("map Fegefeuer\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 8:
 			Cbuf_AddText ("map Hangar\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 9:
 			Cbuf_AddText ("map lexi_house\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 10:
 			Cbuf_AddText ("map lexi_overlook\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 11:
 			Cbuf_AddText ("map lexi_temple\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 12:
 			Cbuf_AddText ("map Loop\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 13:
 			Cbuf_AddText ("map ndu\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 14:
 			Cbuf_AddText ("map nzp_warehouse2\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 15:
 			Cbuf_AddText ("map nzp_warehouse\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 16:
 			Cbuf_AddText ("map wahnsinn\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 17:
 			Cbuf_AddText ("map weapon_test\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		}

@@ -727,8 +727,6 @@ void SCR_DrawLoadScreen (void)
 	    return;
 	}
 
-	loadscreeninit = false;
-
 	if (loadingScreen) {
 		Draw_FillByColor(0, 0, vid.width, 240, 0, 0, 0, 255);
 		if (!loadscreeninit) {
@@ -741,7 +739,7 @@ void SCR_DrawLoadScreen (void)
 			loadscreeninit = true;
 		}
 
-		Draw_StretchPic(0, 0, lscreen, vid.width, vid.height);
+		Draw_StretchPic(0, 0, lscreen, 960, 544);
 
 		Draw_FillByColor(0, 0, vid.width, 24, 0, 0, 0, 175);
 		Draw_FillByColor(0, 216, vid.width, 24, 0, 0, 0, 175);
