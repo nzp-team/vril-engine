@@ -395,8 +395,6 @@ void R_DrawSpriteModel (entity_t *e)
 
 	glColor3f (1,1,1);
 
-	GL_DisableMultitexture();
-
   GL_Bind(frame->gl_texturenum);
 
 	Fog_DisableGFog ();
@@ -790,8 +788,6 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	paliashdr = (aliashdr_t *)Mod_Extradata(clmodel);//e->model
 	c_alias_polys += paliashdr->numtris;
 
-	GL_DisableMultitexture();
-
 	//Shpuld
 	if(r_model_brightness.value)
 	{
@@ -905,7 +901,6 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	// draw all the triangles
 	//
 
-	GL_DisableMultitexture();
 	lightcolor[0] = lightcolor[1] = lightcolor[2] = 256.0f;
 
     glPushMatrix ();
@@ -1071,8 +1066,6 @@ void R_DrawAliasModel (entity_t *e)
 	//
 	// draw all the triangles
 	//
-
-	GL_DisableMultitexture();
 
 	//Shpuld
 	if(r_model_brightness.value)
@@ -1430,8 +1423,6 @@ void R_PolyBlend (void)
 	if (!v_blend[3])
 		return;
 
-	GL_DisableMultitexture();
-
 	glDisable (GL_ALPHA_TEST);
 	glEnable (GL_BLEND);
 	glDisable (GL_DEPTH_TEST);
@@ -1665,8 +1656,6 @@ void R_RenderScene (void)
 	S_ExtraUpdate ();	// don't let sound get messed up if going slow
 
 	R_DrawEntitiesOnList ();
-
-	GL_DisableMultitexture();
 
 	R_DrawParticles ();
 }

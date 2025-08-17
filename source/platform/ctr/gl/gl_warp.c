@@ -276,8 +276,6 @@ will have them chained together.
 */
 void EmitBothSkyLayers (msurface_t *fa)
 {
-	GL_DisableMultitexture();
-
 	GL_Bind (solidskytexture);
 	speedscale = realtime*8;
 	speedscale -= (int)speedscale & ~127 ;
@@ -303,8 +301,6 @@ R_DrawSkyChain
 void R_DrawSkyChain (msurface_t *s)
 {
 	msurface_t	*fa;
-
-	GL_DisableMultitexture();
 
 	// used when gl_texsort is on
 	GL_Bind(solidskytexture);

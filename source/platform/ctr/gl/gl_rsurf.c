@@ -288,31 +288,6 @@ extern	float	speedscale;		// for top sky and bottom sky
 void DrawGLWaterPoly (glpoly_t *p);
 void DrawGLWaterPolyLightmap (glpoly_t *p);
 
-lpMTexFUNC qglMTexCoord2fSGIS = NULL;
-lpSelTexFUNC qglSelectTextureSGIS = NULL;
-
-qboolean mtexenabled = false;
-
-void GL_SelectTexture (GLenum target);
-
-void GL_DisableMultitexture(void) 
-{
-	if (mtexenabled) {
-		glDisable(GL_TEXTURE_2D);
-		GL_SelectTexture(TEXTURE0_SGIS);
-		mtexenabled = false;
-	}
-}
-
-void GL_EnableMultitexture(void) 
-{
-	if (gl_mtexable) {
-		GL_SelectTexture(TEXTURE1_SGIS);
-		glEnable(GL_TEXTURE_2D);
-		mtexenabled = true;
-	}
-}
-
 /*
 ================
 DrawGLWaterPoly
@@ -325,8 +300,6 @@ void DrawGLWaterPoly (glpoly_t *p)
 	int		i;
 	float	*v;
 	vec3_t	nv;
-
-	GL_DisableMultitexture();
 
 	glBegin (GL_TRIANGLE_FAN);
 	v = p->verts[0];
@@ -348,8 +321,6 @@ void DrawGLWaterPolyLightmap (glpoly_t *p)
 	int		i;
 	float	*v;
 	vec3_t	nv;
-
-	GL_DisableMultitexture();
 
 	glBegin (GL_TRIANGLE_FAN);
 	v = p->verts[0];
@@ -392,8 +363,6 @@ void DrawGLPolyLightmap (glpoly_t *p)
 	int		i;
 	float	*v;
 	vec3_t	nv;
-
-	GL_DisableMultitexture();
 
 	glBegin (GL_TRIANGLE_FAN);
 	v = p->verts[0];
@@ -715,8 +684,6 @@ void DrawTextureChains (void)
 	texture_t	*t;
 
 	if (!gl_texsort.value) {
-		GL_DisableMultitexture();
-
 		if (skychain) {
 			//R_DrawSkyChain(skychain);
 			skychain = NULL;
@@ -766,7 +733,6 @@ void R_DrawBrushModel (entity_t *e)
 	qboolean	rotated;
 
 	currententity = e;
-	currenttexture = -1;
 
 	clmodel = e->model;
 
@@ -789,7 +755,7 @@ void R_DrawBrushModel (entity_t *e)
 	if (R_CullBox (mins, maxs))
 		return;
 
-	//glColor4f(1,1,1,1);
+	Platform_Graphics_Color(1,1,1,1);
 	memset (lightmap_polys, 0, sizeof(lightmap_polys));
 
 	VectorSubtract (r_refdef.vieworg, e->origin, modelorg);
@@ -1098,9 +1064,8 @@ void R_DrawWorld (void)
 	VectorCopy (r_refdef.vieworg, modelorg);
 
 	currententity = &ent;
-	currenttexture = -1;
 
-	//glColor3f (1,1,1);
+	Platform_Graphics_Color(1,1,1,1);
 	memset (lightmap_polys, 0, sizeof(lightmap_polys));
 
 	R_ClearSkyBox ();
@@ -1111,6 +1076,7 @@ void R_DrawWorld (void)
 
 	R_AddStaticBrushModelsToChains (); // shpuld
 
+	Fog_SetupFrame (true);
 	DrawTextureChains ();
 	Fog_SetupFrame (false); //johnfitz
 
@@ -1178,19 +1144,13 @@ void R_MarkLeaves (void)
 AllocBlock -- returns a texture number and the position inside it
 ========================
 */
-int last_lightmap_allocated; // ericw -- optimization: remember the index of the last lightmap AllocBlock stored a surf in
 int AllocBlock (int w, int h, int *x, int *y)
 {
 	int		i, j;
 	int		best, best2;
 	int		texnum;
 
-	// ericw -- rather than searching starting at lightmap 0 every time,
-	// start at the last lightmap we allocated a surface in.
-	// This makes AllocBlock much faster on large levels (can shave off 3+ seconds
-	// of load time on a level with 180 lightmaps), at a cost of not quite packing
-	// lightmaps as tightly vs. not doing this (uses ~5% more lightmaps)
-	for (texnum=last_lightmap_allocated ; texnum<MAX_LIGHTMAPS ; texnum++, last_lightmap_allocated++)
+	for (texnum=0 ; texnum<MAX_LIGHTMAPS ; texnum++)
 	{
 		best = BLOCK_HEIGHT;
 
@@ -1222,7 +1182,7 @@ int AllocBlock (int w, int h, int *x, int *y)
 	}
 
 	Sys_Error ("full");
-	return 0; //johnfitz -- shut up compiler
+	return -1; //johnfitz -- shut up compiler
 }
 
 
@@ -1378,42 +1338,13 @@ void GL_BuildLightmaps (void)
 {
 	int		i, j;
 	model_t	*m;
-	extern qboolean isPermedia;
 
 	memset (allocated, 0, sizeof(allocated));
 
 	r_framecount = 1;		// no dlightcache
 
-	gl_lightmap_format = GL_LUMINANCE;
-	// default differently on the Permedia
-	if (isPermedia)
-		gl_lightmap_format = GL_RGBA;
-
-	if (COM_CheckParm ("-lm_1"))
-		gl_lightmap_format = GL_LUMINANCE;
-	if (COM_CheckParm ("-lm_a"))
-		gl_lightmap_format = GL_ALPHA;
-	if (COM_CheckParm ("-lm_i"))
-		gl_lightmap_format = GL_INTENSITY;
-	if (COM_CheckParm ("-lm_2"))
-		gl_lightmap_format = GL_RGBA4;
-	if (COM_CheckParm ("-lm_4"))
-		gl_lightmap_format = GL_RGBA;
-
-	switch (gl_lightmap_format)
-	{
-	case GL_RGBA:
-		lightmap_bytes = 4;
-		break;
-	case GL_RGBA4:
-		lightmap_bytes = 2;
-		break;
-	case GL_LUMINANCE:
-	case GL_INTENSITY:
-	case GL_ALPHA:
-		lightmap_bytes = 1;
-		break;
-	}
+	gl_lightmap_format = GL_RGBA;
+	lightmap_bytes = 4;
 
 	for (j=1 ; j<MAX_MODELS ; j++)
 	{
@@ -1437,13 +1368,9 @@ void GL_BuildLightmaps (void)
 		}
 	}
 
- 	if (!gl_texsort.value)
- 		GL_SelectTexture(TEXTURE1_SGIS);
-
 	//
 	// upload all lightmaps that were filled
 	//
-	char lm_name[16];
 	for (i=0 ; i<MAX_LIGHTMAPS ; i++)
 	{
 		if (!allocated[i][0])
@@ -1454,12 +1381,10 @@ void GL_BuildLightmaps (void)
 		lightmap_rectchange[i].w = 0;
 		lightmap_rectchange[i].h = 0;
 
+		char lm_name[16];
+
 		sprintf(lm_name,"lightmap%d",i);
 		lightmap_index[i] = GL_LoadLMTexture (lm_name, BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+(i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes), false);
 	}
-
- 	if (!gl_texsort.value)
- 		GL_SelectTexture(TEXTURE0_SGIS);
-
 }
 

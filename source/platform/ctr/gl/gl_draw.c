@@ -58,16 +58,11 @@ float 	loading_cur_step_bk;
 
 #define	MAX_GLTEXTURES	1024
 #define MAX_VRAM_TEX	256*256*4
-gltexture_t	gltextures[MAX_GLTEXTURES];
-int			numgltextures;
-
+static gltexture_t	gltextures[MAX_GLTEXTURES];
+static int			numgltextures;
 
 void GL_Bind (int texnum)
 {
-	if (currenttexture == texnum)
-		return;
-	currenttexture = texnum;
-
 	gltexture_t *glt = &gltextures[texnum];
     if (!glt->used) {
         Sys_Error("GL_Bind: unused texture index %i\n", texnum);
@@ -84,12 +79,9 @@ void GL_FreeTextures (int texnum)
 	if (glt->used == false) return;
 	if (glt->keep) return;
 
-	Con_Printf("DEL name %s gltexs %i\n", glt->identifier, numgltextures);
-
 	glDeleteTextures(1, &glt->gl_id);
-
 	glt->keep = false;
-	glt->texnum = -1;
+	glt->texnum = texnum;
 	glt->gl_id = 0;
 	strcpy(glt->identifier, "");
 	glt->width = 0;
@@ -98,6 +90,7 @@ void GL_FreeTextures (int texnum)
 	glt->original_height = 0;
 	glt->bpp = 0;
 	glt->used = false;
+	memset(glt, 0, sizeof(*glt));   // clear slot
 	numgltextures--;
 }
 
@@ -252,53 +245,6 @@ void Draw_Init (void)
 	InitKerningMap();
 }
 
-
-
-/*
-================
-Draw_Character
-
-Draws one 8*8 graphics character with 0 being transparent.
-It can be clipped to the top of the screen to allow the console to be
-smoothly scrolled off.
-================
-*/
-void Draw_Character (int x, int y, int num)
-{
-	int				row, col;
-	float			frow, fcol, size;
-
-	if (num == 32)
-		return;		// space
-
-	num &= 255;
-	
-	if (y <= -8)
-		return;			// totally off screen
-
-	row = num>>4;
-	col = num&15;
-
-	frow = row*0.0625;
-	fcol = col*0.0625;
-	size = 0.0625;
-
-	GL_Bind (char_texture);
-
-	glEnable(GL_ALPHA_TEST);
-	glBegin (GL_QUADS);
-	glTexCoord2f (fcol, frow);
-	glVertex2f (x, y);
-	glTexCoord2f (fcol + size, frow);
-	glVertex2f (x+8, y);
-	glTexCoord2f (fcol + size, frow + size);
-	glVertex2f (x+8, y+8);
-	glTexCoord2f (fcol, frow + size);
-	glVertex2f (x, y+8);
-	glEnd ();
-	glDisable(GL_ALPHA_TEST);
-}
-
 /*
 ================
 Draw_CharacterRGBA
@@ -348,6 +294,20 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	glEnable(GL_ALPHA_TEST);
 	glDisable (GL_BLEND);
+}
+
+/*
+================
+Draw_Character
+
+Draws one 8*8 graphics character with 0 being transparent.
+It can be clipped to the top of the screen to allow the console to be
+smoothly scrolled off.
+================
+*/
+void Draw_Character (int x, int y, int num)
+{
+	Draw_CharacterRGBA (x, y, num, 255, 255, 255, 1, 1);
 }
 
 /*
@@ -1097,7 +1057,7 @@ static	unsigned	trans[1024*512];	// FIXME, temporary.. err... was it?
 GL_Upload32
 ===============
 */
-void GL_Upload32 (unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha)
+void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha)
 {
 	int			samples;
 	int			scaled_width, scaled_height;
@@ -1119,6 +1079,9 @@ void GL_Upload32 (unsigned *data, int width, int height,  qboolean mipmap, qbool
 		Sys_Error ("too big");
 
 	samples = alpha ? gl_alpha_format : gl_solid_format;
+
+	// bind the texture to make sure we're uploading to the right one
+    glBindTexture(GL_TEXTURE_2D, gl_id);
 
 	if (scaled_width == width && scaled_height == height)
 	{
@@ -1170,7 +1133,7 @@ done: ;
 GL_Upload8
 ===============
 */
-void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha)
+void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipmap, qboolean alpha)
 {
 	int			i, s;
 	qboolean	noalpha;
@@ -1206,7 +1169,7 @@ void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean a
 		}
 	}
 
-	GL_Upload32 (trans, width, height, mipmap, alpha);
+	GL_Upload32 (gl_id, trans, width, height, mipmap, alpha);
 }
 
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel, qboolean keep)
@@ -1250,14 +1213,12 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 	glt->keep = keep;
 	glt->used = true;
 
-	GL_Bind(glt->texnum);
-
 	//Con_DPrintf("tex num %i tex name %s size %im\n", texture_index, identifier, (width*height*bytesperpixel)/1024);
 	if (bytesperpixel == 1) {
-		GL_Upload8 (data, width, height, mipmap, alpha);
+		GL_Upload8 (glt->gl_id, data, width, height, mipmap, alpha);
 	}
 	else if (bytesperpixel == 4) {
-		GL_Upload32 ((unsigned*)data, width, height, mipmap, alpha);
+		GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, mipmap, alpha);
 	}
 	else {
 		Sys_Error("GL_LoadTexture: unknown bytesperpixel\n");
@@ -1273,11 +1234,8 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 	gltexture_t	*glt;
 
 	int texture_index = GL_FindTexture(identifier);
-	if (texture_index > 0 && update == false) {
-		return texture_index;
-	}
 
-	if (update == false || texture_index == -1) {
+	if (update == false) {
 		numgltextures++;
 		// Out of textures?
 		if (numgltextures == MAX_GLTEXTURES)
@@ -1312,17 +1270,16 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		GL_Bind(glt->texnum);
-		GL_Upload32 ((unsigned*)data, width, height, false, false);
+
+		GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, false, false);
 	} else if (update == true) {
-		glt = gltextures;
-		glt += texture_index;
+		glt = &gltextures[texture_index];
 
 		if (width == glt->original_width && height == glt->original_height) {
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			GL_Bind(glt->texnum);
-			GL_Upload32 ((unsigned*)data, width, height, false, false);
+
+			GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, false, false);
 		}
 	}
 
@@ -1332,21 +1289,6 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 }
 
 /****************************************/
-
-static GLenum oldtarget = 0;
-
 float gVertexBuffer[VERTEXARRAYSIZE];
 float gColorBuffer[VERTEXARRAYSIZE];
 float gTexCoordBuffer[VERTEXARRAYSIZE];
-
-void GL_SelectTexture (GLenum target) 
-{
-	if (!gl_mtexable)
-		return;
-	qglSelectTextureSGIS(target);
-	if (target == oldtarget) 
-		return;
-	cnttextures[oldtarget-TEXTURE0_SGIS] = currenttexture;
-	currenttexture = cnttextures[target-TEXTURE0_SGIS];
-	oldtarget = target;
-}

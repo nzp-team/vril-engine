@@ -62,8 +62,8 @@ typedef struct
 	qboolean		keep;
 } gltexture_t;
 
-void GL_Upload32 (unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha);
-void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
+void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha);
+void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel, qboolean keep);
 int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qboolean update);
 int GL_FindTexture (const char *identifier);
@@ -342,8 +342,6 @@ void R_DrawSkyBox (void);
 
 void V_CalcBlend (void);
 
-void GL_DisableMultitexture(void);
-void GL_EnableMultitexture(void);
 void GL_SubdivideSurface (msurface_t *fa);
 void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr);
 void GL_BuildLightmaps (void);

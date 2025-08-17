@@ -1301,6 +1301,8 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
     VectorScale (vup, 1.5, up);
     VectorScale (vright, 1.5, right);
 
+	GL_Bind (ptex->texnum);
+
     glEnable (GL_BLEND);
     glDepthMask (GL_FALSE);
     glBegin (GL_QUADS);
