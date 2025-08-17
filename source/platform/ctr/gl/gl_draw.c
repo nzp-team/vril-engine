@@ -49,8 +49,6 @@ int		gl_alpha_format = 4;
 int		gl_filter_min = GL_LINEAR_MIPMAP_NEAREST;
 int		gl_filter_max = GL_LINEAR;
 
-int GL_LoadPicTexture (qpic_t *pic);
-
 //Loading Fill by Crow_bar
 float 	loading_cur_step;
 char	loading_name[32];
@@ -69,30 +67,37 @@ void GL_Bind (int texnum)
 	if (currenttexture == texnum)
 		return;
 	currenttexture = texnum;
-	glBindTexture(GL_TEXTURE_2D, texnum);
+
+	gltexture_t *glt = &gltextures[texnum];
+    if (!glt->used) {
+        Sys_Error("GL_Bind: unused texture index %i\n", texnum);
+	}
+
+	glBindTexture(GL_TEXTURE_2D, glt->gl_id);
 }
 
 void GL_FreeTextures (int texnum)
 {
+	gltexture_t *glt = &gltextures[texnum];
+
 	if (texnum <= 0) return;
-	if (!gltextures[texnum].used) return;
-	if (gltextures[texnum].keep) return;
+	if (glt->used == false) return;
+	if (glt->keep) return;
 
-	Con_DPrintf("DELETE name %s texnum %i\n", gltextures[texnum].identifier, gltextures[texnum].texnum);
-	printf("DELETE name %s texnum %i\n", gltextures[texnum].identifier, gltextures[texnum].texnum);
+	Con_Printf("DEL name %s gltexs %i\n", glt->identifier, numgltextures);
 
-	gltextures[texnum].keep = false;
-	gltextures[texnum].texnum = -1;
-	strcpy(gltextures[texnum].identifier, "");
-	gltextures[texnum].width = 0;
-	gltextures[texnum].height = 0;
-	gltextures[texnum].original_width = 0;
-	gltextures[texnum].original_height = 0;
-	gltextures[texnum].bpp = 0;
+	glDeleteTextures(1, &glt->gl_id);
 
-	glDeleteTextures(1, (const unsigned int *)texnum);
-
-	gltextures[texnum].used = false;
+	glt->keep = false;
+	glt->texnum = -1;
+	glt->gl_id = 0;
+	strcpy(glt->identifier, "");
+	glt->width = 0;
+	glt->height = 0;
+	glt->original_width = 0;
+	glt->original_height = 0;
+	glt->bpp = 0;
+	glt->used = false;
 	numgltextures--;
 }
 
@@ -494,17 +499,19 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 	glColor4f(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	gltexture_t *glt = &gltextures[pic];
 	GL_Bind (pic);
 
 	glBegin (GL_QUADS);
 	glTexCoord2f (0, 0);
 	glVertex2f (x, y);
 	glTexCoord2f (1, 0);
-	glVertex2f (x+gltextures[pic].width, y);
+	glVertex2f (x+glt->width, y);
 	glTexCoord2f (1, 1);
-	glVertex2f (x+gltextures[pic].width, y+gltextures[pic].height);
+	glVertex2f (x+glt->width, y+glt->height);
 	glTexCoord2f (0, 1);
-	glVertex2f (x, y+gltextures[pic].height);
+	glVertex2f (x, y+glt->height);
 	glEnd ();
 
 	glDisable(GL_BLEND);
@@ -519,8 +526,10 @@ Draw_TransPic
 */
 void Draw_TransPic (int x, int y, int pic)
 {
-	if (x < 0 || (unsigned)(x + gltextures[pic].width) > vid.width || y < 0 ||
-		 (unsigned)(y + gltextures[pic].height) > vid.height)
+	gltexture_t *glt = &gltextures[pic];
+
+	if (x < 0 || (unsigned)(x + glt->width) > vid.width || y < 0 ||
+		 (unsigned)(y + glt->height) > vid.height)
 	{
 		Sys_Error ("bad coordinates");
 	}
@@ -1222,10 +1231,15 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 		}
 	}
 
-	if (texture_index < 0)
-		Sys_Error("Could not find a free GL texture! %i %s\n", numgltextures, identifier);
+	if (texture_index < 0) {
+		Sys_Error("Could not find a free GL texture!\n");
+	}
+
+	GLuint texID;
+	glGenTextures(1, &texID);     // Ask GL for a real texture object
 
 	strcpy(glt->identifier, identifier);
+	glt->gl_id = texID;
 	glt->texnum = texture_index;
 	glt->width = width;
 	glt->height = height;
@@ -1277,11 +1291,15 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 		}
 
 		if (texture_index < 0)
-			Sys_Error("Could not find a free GL texture! %i %s\n", numgltextures, identifier);
+			Sys_Error("Could not find a free GL texture!\n");
+
+		GLuint texID;
+		glGenTextures(1, &texID);
 
 		//Con_DPrintf("lm num %i lm name %s\n", texture_index, identifier);
 
 		strcpy(glt->identifier, identifier);
+		glt->gl_id = texID;
 		glt->texnum = texture_index;
 		glt->width = width;
 		glt->height = height;
@@ -1311,16 +1329,6 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	return texture_index;
-}
-
-/*
-================
-GL_LoadPicTexture
-================
-*/
-int GL_LoadPicTexture (qpic_t *pic)
-{
-	return GL_LoadTexture ("", pic->width, pic->height, pic->data, false, true, 1, false);
 }
 
 /****************************************/

@@ -52,6 +52,7 @@ extern	double	gldepthmin, gldepthmax;
 
 typedef struct
 {
+	GLuint 			gl_id; // real GL texture object
 	int				texnum;
 	char			identifier[64];
 	int				width, height, original_width, original_height;
