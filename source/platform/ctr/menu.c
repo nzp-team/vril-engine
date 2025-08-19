@@ -146,6 +146,14 @@ typedef struct
 
 usermap_t custom_maps[50];
 
+int	m_map_cursor;
+int	MAP_ITEMS;
+int user_maps_num = 0;
+int current_custom_map_page;
+int custom_map_pages;
+int multiplier;
+char  user_levels[256][MAX_QPATH];
+
 /*
 ================
 M_DrawCharacter
@@ -222,6 +230,16 @@ void M_Load_Menu_Pics ()
 	//menu_wn 	= Draw_CachePic("gfx/menu/wahnsinn");
 	menu_ch 	= Image_LoadImage("gfx/menu/christmas_special", IMAGE_PNG, 0, false, false);
 	menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_PNG, 0, false, false);
+
+	// Precache all menu pics 
+	for (int i = 0; i < 15; i++) {
+		if (custom_maps[i + multiplier].occupied == false)
+			continue;
+		
+		if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
+				menu_cuthum[i] = Image_LoadImage(custom_maps[i + multiplier].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+			}
+	}
 }
 
 void M_Start_Menu_f ()
@@ -936,14 +954,6 @@ void M_SinglePlayer_Key (int key)
 //=============================================================================
 /* SINGLE PLAYER MENU */
 
-int	m_map_cursor;
-int	MAP_ITEMS;
-int user_maps_num = 0;
-int current_custom_map_page;
-int custom_map_pages;
-int multiplier;
-char  user_levels[256][MAX_QPATH];
-
 // UGHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 // fuck windows
 char* remove_windows_newlines(const char* line)
@@ -1099,16 +1109,6 @@ void M_Menu_CustomMaps_Draw (void)
 		multiplier = (current_custom_map_page - 1) * 15;
 	else
 		multiplier = 0;
-
-	// Precache all menu pics 
-	for (int i = 0; i < 15; i++) {
-		if (custom_maps[i + multiplier].occupied == false)
-			continue;
-		
-		if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
-				menu_cuthum[i] = Image_LoadImage(custom_maps[i + multiplier].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
-			}
-	}
 
 	for (int i = 0; i < 15; i++) {
 		if (custom_maps[i + multiplier].occupied == false)
