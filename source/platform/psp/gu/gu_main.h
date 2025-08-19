@@ -30,7 +30,7 @@ void GL_Upload16(int texture_index, byte *data, int width, int height);
 int  GL_LoadTexture(const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level);
 // CLUT4
 int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, byte *data, int filter, qboolean swizzled);
-int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int height, byte *data, const byte *pal, int filter);
+int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int height, byte *data, const byte *pal, int filter, int inpal_bpp, const byte *palhint);
 
 int GL_LoadTextureLM (const char *identifier, int width, int height, byte *data, int bpp, int filter, qboolean update, int forcopy);
 int GL_LoadImages (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp, qboolean keep);
@@ -335,7 +335,6 @@ qboolean R_CullSphere (vec3_t centre, float radius);
 void R_RotateForEntity (entity_t *e, int shadow, unsigned char scale);
 void R_BlendedRotateForEntity (entity_t *e, int shadow, unsigned char scale);
 void R_RotateForViewEntity (entity_t *ent); //clone (R_RotateForEntity)
-void R_RotateForTagEntity (tagentity_t *tagent, md3tag_t *tag, float *m); //for q3 models
 void R_StoreEfrags (efrag_t **ppefrag);
 void D_StartParticles (void);
 // void D_DrawParticle (particle_t *pparticle);
@@ -405,6 +404,10 @@ psp_particle* D_CreateBuffer (int size);
 void 	  	  D_DeleteBuffer (psp_particle* vertices);
 int 	      D_DrawParticleBuffered (psp_particle* vertices, particle2_t *pparticle, vec3_t up, vec3_t right, float scale);
 
+extern aliashdr_t*	zfull_mdl;
+extern aliashdr_t*	zcfull_mdl;
+extern int			zombie_skins[2][2];
+extern int			sniper_scope;
 
 extern int			zombie_skins[2][2];
 extern int			sniper_scope;
