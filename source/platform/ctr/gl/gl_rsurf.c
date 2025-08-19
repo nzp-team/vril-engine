@@ -1075,8 +1075,8 @@ void R_DrawWorld (void)
 	R_RecursiveWorldNode (cl.worldmodel->nodes);
 
 	R_AddStaticBrushModelsToChains (); // shpuld
-
-	Fog_SetupFrame (true);
+	
+	Fog_SetupFrame(true);
 	DrawTextureChains ();
 	Fog_SetupFrame (false); //johnfitz
 

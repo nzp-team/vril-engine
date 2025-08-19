@@ -20,10 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "nzportable_def.h"
 
-#ifdef __PSP__
-#include <pspgu.h>
-#endif // __PSP__
-
 int		    image_width;
 int		    image_height;
 
@@ -225,14 +221,15 @@ int Image_LoadImage(char* filename, int image_format, int filter, qboolean keep,
 	//Con_DPrintf("tex name %s\n", texname);
 	// already loaded?
 	texture_index = GL_FindTexture(texname);
-	if (texture_index > 0) {
+	if (texture_index >= 0) {
 		return texture_index;
 	}
 
 	data = Image_LoadPixels (filename, image_format);
 
-	if(data == NULL)
+	if(data == NULL) {
 		return 0;
+	}
 	
 #ifdef __PSP__
 	texture_index = GL_LoadImages (texname, image_width, image_height, data, true, filter, 0, 4, keep);
@@ -245,7 +242,7 @@ int Image_LoadImage(char* filename, int image_format, int filter, qboolean keep,
 #endif
 
 	if(texture_index < 0)
-		Sys_Error("Image_LoadImage: failed to load texture %s\n", texname);
+		Sys_Error("Image_LoadImage: failed to upload texture %s\n", texname);
 
 	free(data);
 

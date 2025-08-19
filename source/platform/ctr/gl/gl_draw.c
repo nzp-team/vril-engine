@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 cvar_t		gl_max_size = {"gl_max_size", "1024"};
 cvar_t		gl_picmip = {"gl_picmip", "0"};
 
-byte		*draw_chars;				// 8*8 graphic characters
 int			sniper_scope;
 
 int			char_texture;
@@ -63,32 +62,35 @@ static int			numgltextures;
 
 void GL_Bind (int texnum)
 {
+	if (currenttexture == texnum)
+		return;
+	currenttexture = texnum;
+
 	gltexture_t *glt = &gltextures[texnum];
-    if (!glt->used) {
-        Sys_Error("GL_Bind: unused texture index %i\n", texnum);
-	}
+	if (glt->used == false) return;
+	if (glt->texnum < 0) return;
 
 	glBindTexture(GL_TEXTURE_2D, glt->gl_id);
 }
 
 void GL_FreeTextures (int texnum)
 {
-	gltexture_t *glt = &gltextures[texnum];
-
 	if (texnum <= 0) return;
+
+	gltexture_t *glt = &gltextures[texnum];
 	if (glt->used == false) return;
 	if (glt->keep) return;
 
 	glDeleteTextures(1, &glt->gl_id);
-	glt->keep = false;
-	glt->texnum = texnum;
 	glt->gl_id = 0;
+	glt->texnum = texnum;
 	strcpy(glt->identifier, "");
 	glt->width = 0;
 	glt->height = 0;
 	glt->original_width = 0;
 	glt->original_height = 0;
 	glt->bpp = 0;
+	glt->keep = false;
 	glt->used = false;
 	memset(glt, 0, sizeof(*glt));   // clear slot
 	numgltextures--;
@@ -253,7 +255,6 @@ This is the same as Draw_Character, but with RGBA color codes.
 - Cypress
 ================
 */
-extern cvar_t scr_coloredtext;
 void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float a, float scale)
 {
 	int				row, col;
@@ -280,6 +281,7 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 	glColor4f(r/255, g/255, b/255, a/255);
 	glDisable (GL_ALPHA_TEST);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
 	glBegin (GL_QUADS);
 	glTexCoord2f (fcol, frow);
 	glVertex2f (x, y);
@@ -290,10 +292,11 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 	glTexCoord2f (fcol, frow + (float)(size/(float)scale));
 	glVertex2f (x, y+(8*(scale)));
 	glEnd ();
+
 	glColor4f(1,1,1,1);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	glEnable(GL_ALPHA_TEST);
-	glDisable (GL_BLEND);
+	glDisable(GL_BLEND);
 }
 
 /*
@@ -307,7 +310,38 @@ smoothly scrolled off.
 */
 void Draw_Character (int x, int y, int num)
 {
-	Draw_CharacterRGBA (x, y, num, 255, 255, 255, 1, 1);
+	int				row, col;
+	float			frow, fcol, size;
+
+	if (num == 32)
+		return;		// space
+
+	num &= 255;
+	
+	if (y <= -8)
+		return;			// totally off screen
+
+	row = num>>4;
+	col = num&15;
+
+	frow = row*0.0625;
+	fcol = col*0.0625;
+	size = 0.0625;
+
+	GL_Bind (char_texture);
+
+	glEnable(GL_ALPHA_TEST);
+	glBegin (GL_QUADS);
+	glTexCoord2f (fcol, frow);
+	glVertex2f (x, y);
+	glTexCoord2f (fcol + size, frow);
+	glVertex2f (x+8, y);
+	glTexCoord2f (fcol + size, frow + size);
+	glVertex2f (x+8, y+8);
+	glTexCoord2f (fcol, frow + size);
+	glVertex2f (x, y+8);
+	glEnd ();
+	glDisable(GL_ALPHA_TEST);
 }
 
 /*
@@ -1087,7 +1121,7 @@ void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean
 	{
 		if (!mipmap)
 		{
-			glTexImage2D (GL_TEXTURE_2D, 0, samples, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+			glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 			goto done;
 		}
 		memcpy (scaled, data, width*height*4);
@@ -1095,7 +1129,7 @@ void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean
 		GL_ResampleTexture (data, width, height, scaled, scaled_width, scaled_height);
 	}
 
-	glTexImage2D (GL_TEXTURE_2D, 0, samples, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
+	glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
 	
 	
 	if (mipmap)
@@ -1182,17 +1216,26 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 	int i;
 	gltexture_t	*glt;
 
-	numgltextures++;
 	// Out of textures?
 	if (numgltextures == MAX_GLTEXTURES)
 		Sys_Error ("GL_GetTextureIndex: Out of GL textures\n");
 
-	for (i=0, glt=gltextures; i <=numgltextures; i++, glt++) {
+	texture_index = -1;
+	for (i=0, glt=gltextures; i < numgltextures; i++, glt++) {
 		if (glt->used == false) {
 			texture_index = i;
 			break;
 		}
 	}
+
+	// If no free slot, append a new one
+    if (texture_index == -1) {
+        if (numgltextures == MAX_GLTEXTURES) {
+            Sys_Error("GL_LoadTexture: Out of GL textures\n");
+        }
+        texture_index = numgltextures++;
+        glt = &gltextures[texture_index];
+    }
 
 	if (texture_index < 0) {
 		Sys_Error("Could not find a free GL texture!\n");
@@ -1233,10 +1276,9 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 	int i;
 	gltexture_t	*glt;
 
-	int texture_index = GL_FindTexture(identifier);
+	int texture_index = -1;
 
 	if (update == false) {
-		numgltextures++;
 		// Out of textures?
 		if (numgltextures == MAX_GLTEXTURES)
 			Sys_Error ("GL_GetTextureIndex: Out of GL textures\n");
@@ -1246,6 +1288,15 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 				texture_index = i;
 				break;
 			}
+		}
+
+		// If no free slot, append a new one
+		if (texture_index == -1) {
+			if (numgltextures == MAX_GLTEXTURES) {
+				Sys_Error("GL_LoadTexture: Out of GL textures\n");
+			}
+			texture_index = numgltextures++;
+			glt = &gltextures[texture_index];
 		}
 
 		if (texture_index < 0)
@@ -1273,6 +1324,10 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 
 		GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, false, false);
 	} else if (update == true) {
+		texture_index = GL_FindTexture(identifier);
+
+		if (texture_index < 0) Sys_Error("tried to upload inactive lightmap\n");
+
 		glt = &gltextures[texture_index];
 
 		if (width == glt->original_width && height == glt->original_height) {
