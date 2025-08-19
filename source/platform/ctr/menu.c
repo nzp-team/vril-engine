@@ -1100,6 +1100,16 @@ void M_Menu_CustomMaps_Draw (void)
 	else
 		multiplier = 0;
 
+	// Precache all menu pics 
+	for (int i = 0; i < 15; i++) {
+		if (custom_maps[i + multiplier].occupied == false)
+			continue;
+		
+		if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
+				menu_cuthum[i] = Image_LoadImage(custom_maps[i + multiplier].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+			}
+	}
+
 	for (int i = 0; i < 15; i++) {
 		if (custom_maps[i + multiplier].occupied == false)
 			continue;
@@ -1107,7 +1117,7 @@ void M_Menu_CustomMaps_Draw (void)
 		if (m_map_cursor == i) {
 
 			if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
-				menu_cuthum[i] = Image_LoadImage(custom_maps[i + multiplier].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+				//menu_cuthum[i] = Image_LoadImage(custom_maps[i + multiplier].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
 				if (menu_cuthum[i] > 0) {
 					Draw_StretchPic(185, 40, menu_cuthum[i], 175, 100);
 				}
