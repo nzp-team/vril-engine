@@ -595,8 +595,8 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 	vertices[1].u 		= glt.width;
 	vertices[1].v 		= glt.height;
 
-	vertices[1].x		= x + gltextures[pic].width;
-	vertices[1].y		= y + gltextures[pic].height;
+	vertices[1].x		= x + glt.width;
+	vertices[1].y		= y + glt.height;
 	vertices[1].z		= 0;
 
 	sceGuColor(GU_RGBA(
@@ -727,9 +727,10 @@ Draw_TransPic
 */
 void Draw_TransPic (int x, int y, int pic)
 {
+	gltexture_t &texture = gltextures[texture_index];
 
-	if (x < 0 || (unsigned)(x + gltextures[pic].width) > vid.width || y < 0 ||
-		 (unsigned)(y + gltextures[pic].height) > vid.height)
+	if (x < 0 || (unsigned)(x + texture.width) > vid.width || y < 0 ||
+		 (unsigned)(y + texture.height) > vid.height)
 	{
 		Sys_Error ("bad coordinates");
 	}
@@ -752,6 +753,8 @@ void Draw_TransPicTranslate (int x, int y, int pic, byte *translation)
 
 	c = gltextures[pic].width * gltextures[pic].height;
 
+	gltexture_t &texture = gltextures[texture_index];
+
 	for(v = 0; v < c ; v++)
 	{
        	p = menuplyr_pixels[v];
@@ -760,7 +763,7 @@ void Draw_TransPicTranslate (int x, int y, int pic, byte *translation)
 		else
 			trans[v] = translation[p];
 	}
-    int translate_texture = GL_LoadTexture ("Player_Trl", gltextures[pic].width, gltextures[pic].height, (byte*)trans, true, GU_LINEAR, 0);
+    int translate_texture = GL_LoadTexture ("Player_Trl", texture.width, texture.height, (byte*)trans, true, GU_LINEAR, 0);
 
 	GL_Bind (translate_texture);
 
@@ -780,8 +783,8 @@ void Draw_TransPicTranslate (int x, int y, int pic, byte *translation)
 
 	vertices[1].u = 64;
 	vertices[1].v = 64;
-	vertices[1].x = x + gltextures[pic].width;
-	vertices[1].y = y + gltextures[pic].height;
+	vertices[1].x = x + texture.width;
+	vertices[1].y = y + texture.height;
 	vertices[1].z = 0;
 
 	sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D, 2, 0, vertices);
