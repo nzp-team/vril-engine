@@ -99,8 +99,8 @@ extern	cvar_t	crosshair;
 
 qboolean	scr_initialized;		// ready to draw
 
-qpic_t      *hitmark;
-qpic_t 		*lscreen;
+int      	hitmark;
+int 		lscreen;
 
 int			scr_fullupdate;
 
@@ -253,20 +253,20 @@ char		scr_usestring[64];
 char 		scr_usestring2[64];
 float		scr_usetime_off = 0.0f;
 int			button_pic_x;
-extern qpic_t 		*b_abutton;
-extern qpic_t 		*b_bbutton;
-extern qpic_t 		*b_ybutton;
-extern qpic_t 		*b_xbutton;
-extern qpic_t 		*b_left;
-extern qpic_t 		*b_right;
-extern qpic_t 		*b_up;
-extern qpic_t 		*b_down;
-extern qpic_t 		*b_lt;
-extern qpic_t 		*b_rt;
-extern qpic_t 		*b_start;
-extern qpic_t 		*b_select;
-extern qpic_t		*b_zlt;
-extern qpic_t 		*b_zrt;
+extern int 		b_abutton;
+extern int 		b_bbutton;
+extern int 		b_ybutton;
+extern int 		b_xbutton;
+extern int 		b_left;
+extern int 		b_right;
+extern int 		b_up;
+extern int 		b_down;
+extern int 		b_lt;
+extern int 		b_rt;
+extern int 		b_start;
+extern int 		b_select;
+extern int		b_zlt;
+extern int 		b_zrt;
 
 /*
 ==============
@@ -276,7 +276,7 @@ Similiar to above, but will also print the current button for the action.
 ==============
 */
 
-qpic_t *GetButtonIcon (char *buttonname)
+int GetButtonIcon (char *buttonname)
 {
 	int		j;
 	int		l;
@@ -722,8 +722,7 @@ void SCR_Init (void)
 	Cmd_AddCommand ("sizeup",SCR_SizeUp_f);
 	Cmd_AddCommand ("sizedown",SCR_SizeDown_f);
 
-	hitmark = Draw_CachePic("gfx/hud/hit_marker");
-
+	hitmark = Image_LoadImage("gfx/hud/hit_marker", IMAGE_TGA, 0, true, false);
 
 	scr_initialized = true;
 }
@@ -770,23 +769,6 @@ void SCR_DrawFPS (void)
 
 
 //=============================================================================
-
-/*
-==============
-SCR_DrawLoading
-==============
-*/
-void SCR_DrawLoading (void)
-{
-	qpic_t	*pic;
-
-	if (!scr_drawloading)
-		return;
-
-	pic = Draw_CachePic ("gfx/loading.lmp");
-	Draw_Pic ( (vid.width - pic->width)/2,
-		(vid.height - 48 - pic->height)/2, pic);
-}
 
 int Random_Int (int max_int)
 {
@@ -1083,13 +1065,13 @@ void SCR_DrawLoadScreen (void)
 	if (loadingScreen) {
 		Draw_FillByColor(0, 0, 400, 240, 0, 0, 0, 255);
 		if (!loadscreeninit) {
-			lscreen = Draw_CachePic(va("gfx/lscreen/%s", loadname2));
+			lscreen = Image_LoadImage(va("gfx/lscreen/%s", loadname2), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
 
-			if (lscreen == NULL || lscreen == 0) {
-				lscreen = Draw_CachePic("gfx/lscreen/lscreen");
+			if (lscreen == 0 || lscreen == 0) {
+				lscreen = Image_LoadImage("gfx/lscreen/lscreen", IMAGE_PNG, 0, false, false);
 			}
 
-			loadscreeninit = qtrue;
+			loadscreeninit = true;
 		}
 
 		Draw_StretchPic(scr_vrect.x, scr_vrect.y, lscreen, 400, 240);
@@ -1127,11 +1109,11 @@ void SCR_SetUpToDrawConsole (void)
 // decide on the height of the console
 	if (!cl.worldmodel || cls.signon != SIGNONS)//blubs here, undid it actually
 	{
-		con_forcedup = qtrue;
+		con_forcedup = true;
 	}
 	else
 	{
-		con_forcedup = qfalse;
+		con_forcedup = false;
 	}
 
 	if (con_forcedup)
@@ -1582,13 +1564,13 @@ void SCR_UpdateScreen (void)
 	if (oldfov != scr_fov.value)
 	{
 		oldfov = scr_fov.value;
-		vid.recalc_refdef = qtrue;
+		vid.recalc_refdef = true;
 	}
 
 	if (oldscreensize != scr_viewsize.value)
 	{
 		oldscreensize = scr_viewsize.value;
-		vid.recalc_refdef = qtrue;
+		vid.recalc_refdef = true;
 	}
 
 	if (vid.recalc_refdef)

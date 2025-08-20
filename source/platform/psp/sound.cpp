@@ -137,8 +137,8 @@ qboolean SNDDMA_Init(void)
 	shm->channels			= channelCount;
 	shm->samplebits			= 16;
 	shm->speed				= inputFrequency;
-	shm->soundalive			= qtrue;
-	shm->splitbuffer		= qfalse;
+	shm->soundalive			= true;
+	shm->splitbuffer		= false;
 	shm->samples			= inputBufferSize * channelCount;
 	shm->samplepos			= 0;
 	shm->submission_chunk	= 1;
@@ -152,7 +152,7 @@ qboolean SNDDMA_Init(void)
 	// Sound effects use channel 0, CD audio uses channel 1.
 	pspAudioSetChannelCallback(0, fillOutputBuffer, 0);
 
-	return qtrue;
+	return true;
 }
 
 void SNDDMA_Shutdown(void)

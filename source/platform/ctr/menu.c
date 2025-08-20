@@ -38,17 +38,18 @@ extern qboolean loadscreeninit;
 char* game_build_date;
 
 // Backgrounds
-qpic_t *menu_bk;
+int menu_bk;
 
 // Map screens
-qpic_t *menu_ndu;
-qpic_t *menu_wh;
-qpic_t *menu_wh2;
+int menu_ndu;
+int menu_wh;
+int menu_wh2;
 //qpic_t *menu_kn;
-qpic_t *menu_ch;
+int menu_ch;
 //qpic_t *menu_wn;
-qpic_t *menu_custom;
-qpic_t *menu_cuthum;
+int menu_custom;
+#define MAX_CUSTOMMAPS 64
+int menu_cuthum[MAX_CUSTOMMAPS];
 
 achievement_list_t achievement_list[MAX_ACHIEVEMENTS];
 
@@ -145,6 +146,14 @@ typedef struct
 
 usermap_t custom_maps[50];
 
+int	m_map_cursor;
+int	MAP_ITEMS;
+int user_maps_num = 0;
+int current_custom_map_page;
+int custom_map_pages;
+int multiplier;
+char  user_levels[256][MAX_QPATH];
+
 /*
 ================
 M_DrawCharacter
@@ -177,16 +186,6 @@ void M_PrintWhite (int cx, int cy, char *str)
 	}
 }
 
-void M_DrawTransPic (int x, int y, qpic_t *pic)
-{
-	Draw_TransPic (x + ((vid.width - 320)>>1), y, pic);
-}
-
-void M_DrawPic (int x, int y, qpic_t *pic)
-{
-	Draw_Pic (x + ((vid.width - 320)>>1), y, pic);
-}
-
 byte identityTable[256];
 byte translationTable[256];
 
@@ -214,13 +213,6 @@ void M_BuildTranslationTable(int top, int bottom)
 			dest[BOTTOM_RANGE+j] = source[bottom+15-j];
 }
 
-
-void M_DrawTransPicTranslate (int x, int y, qpic_t *pic)
-{
-	Draw_TransPicTranslate (x + ((vid.width - 320)>>1), y, pic, translationTable);
-}
-
-
 void M_DrawTextBox (int x, int y, int width, int lines)
 {
 
@@ -230,14 +222,24 @@ void M_DrawTextBox (int x, int y, int width, int lines)
 
 void M_Load_Menu_Pics ()
 {
-	menu_bk 	= Draw_CachePic("gfx/menu/menu_background");
-	menu_ndu 	= Draw_CachePic("gfx/menu/nacht_der_untoten");
+	menu_bk 	= Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
+	menu_ndu 	= Image_LoadImage("gfx/menu/nacht_der_untoten", IMAGE_PNG, 0, false, false);
 	//menu_kn 	= Draw_CachePic("gfx/menu/kino_der_toten");
-	menu_wh 	= Draw_CachePic("gfx/menu/nzp_warehouse");
-	menu_wh2 	= Draw_CachePic("gfx/menu/nzp_warehouse2");
+	menu_wh 	= Image_LoadImage("gfx/menu/nzp_warehouse", IMAGE_PNG, 0, false, false);
+	menu_wh2 	= Image_LoadImage("gfx/menu/nzp_warehouse2", IMAGE_PNG, 0, false, false);
 	//menu_wn 	= Draw_CachePic("gfx/menu/wahnsinn");
-	menu_ch 	= Draw_CachePic("gfx/menu/christmas_special");
-	menu_custom = Draw_CachePic("gfx/menu/custom");
+	menu_ch 	= Image_LoadImage("gfx/menu/christmas_special", IMAGE_PNG, 0, false, false);
+	menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_PNG, 0, false, false);
+
+	// Precache all menu pics 
+	for (int i = 0; i < 15; i++) {
+		if (custom_maps[i].occupied == false)
+			continue;
+		
+		if (custom_maps[i].map_use_thumbnail == 1) {
+				menu_cuthum[i] = Image_LoadImage(custom_maps[i + multiplier].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+			}
+	}
 }
 
 void M_Start_Menu_f ()
@@ -253,7 +255,7 @@ void M_Start_Menu_f ()
 static void M_Start_Menu_Draw ()
 {
 	// Background
-	menu_bk = Draw_CachePic("gfx/menu/menu_background");
+	//menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
 	Draw_StretchPic(0, 0, menu_bk, 400, 240);
 
 	// Fill black to make everything easier to see
@@ -431,11 +433,8 @@ int	m_main_cursor;
 
 void M_Menu_Main_f (void)
 {
-	if (key_dest != key_menu)
-	{
-		m_save_demonum = cls.demonum;
-		cls.demonum = -1;
-	}
+	M_Load_Menu_Pics();
+	
 	key_dest = key_menu;
 	m_state = m_main;
 	m_entersound = true;
@@ -444,7 +443,7 @@ void M_Menu_Main_f (void)
 void M_Main_Draw (void)
 {
 	// Background
-	menu_bk = Draw_CachePic("gfx/menu/menu_background");
+	//menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
 	Draw_StretchPic(0, 0, menu_bk, 400, 240);
 
 	// Fill black to make everything easier to see
@@ -566,7 +565,7 @@ void M_Menu_Credits_f (void)
 void M_Credits_Draw (void)
 {
    	// Background
-	menu_bk = Draw_CachePic("gfx/menu/menu_background");
+	//menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
 	Draw_StretchPic(0, 0, menu_bk, 400, 240);
 
 	// Fill black to make everything easier to see
@@ -768,7 +767,7 @@ void M_Menu_SinglePlayer_f (void)
 void M_SinglePlayer_Draw (void)
 {
 	// Background
-	menu_bk = Draw_CachePic("gfx/menu/menu_background");
+	//menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
 	Draw_StretchPic(0, 0, menu_bk, 400, 240);
 
 	// Fill black to make everything easier to see
@@ -822,7 +821,7 @@ void M_SinglePlayer_Draw (void)
 	// Map description & pic
 	switch(m_singleplayer_cursor) {
 		case 0:
-			menu_ndu = Draw_CachePic("gfx/menu/nacht_der_untoten");
+			menu_ndu = Image_LoadImage("gfx/menu/nacht_der_untoten", IMAGE_PNG, 0, false, false);
 			Draw_StretchPic(185, 40, menu_ndu, 175, 100);
 			Draw_ColoredString(180, 148, "Desolate bunker located on a Ge-", 255, 255, 255, 255, 1);
 			Draw_ColoredString(180, 158, "rman airfield, stranded after a", 255, 255, 255, 255, 1);
@@ -834,7 +833,7 @@ void M_SinglePlayer_Draw (void)
 			Draw_ColoredString(180, 218, "to the overwhelming onslaught?", 255, 255, 255, 255, 1);
 			break;
 		case 1:
-			menu_wh2 = Draw_CachePic("gfx/menu/nzp_warehouse2");
+			menu_wh2 = Image_LoadImage("gfx/menu/nzp_warehouse2", IMAGE_PNG, 0, false, false);
 			Draw_StretchPic(185, 40, menu_wh2, 175, 100);
 			Draw_ColoredString(180, 148, "Four nameless marines find them-", 255, 255, 255, 255, 1);
 			Draw_ColoredString(180, 158, "selves at a forsaken warehouse,", 255, 255, 255, 255, 1);
@@ -844,21 +843,21 @@ void M_SinglePlayer_Draw (void)
 			Draw_ColoredString(180, 198, "what you find..", 255, 255, 255, 255, 1);
 			break;
 		case 2:
-			menu_wh = Draw_CachePic("gfx/menu/nzp_warehouse");
+			menu_wh = Image_LoadImage("gfx/menu/nzp_warehouse", IMAGE_PNG, 0, false, false);
 			Draw_StretchPic(185, 40, menu_wh, 175, 100);
 			Draw_ColoredString(180, 148, "Old Warehouse full of Zombies!", 255, 255, 255, 255, 1);
 			Draw_ColoredString(180, 158, "Fight your way to the Power", 255, 255, 255, 255, 1);
 			Draw_ColoredString(180, 168, "Switch through the Hordes!", 255, 255, 255, 255, 1);
 			break;
 		case 3:
-			menu_ch = Draw_CachePic("gfx/menu/christmas_special");
+			menu_ch = Image_LoadImage("gfx/menu/christmas_special", IMAGE_PNG, 0, false, false);
 			Draw_StretchPic(185, 40, menu_ch, 175, 100);
 			Draw_ColoredString(180, 148, "No Santa this year. Though we're", 255, 255, 255, 255, 1);
 			Draw_ColoredString(180, 158, "sure you will get presents from", 255, 255, 255, 255, 1);
 			Draw_ColoredString(180, 168, "the undead! Will you accept them?", 255, 255, 255, 255, 1);
 			break;
 		case 4:
-			menu_custom = Draw_CachePic("gfx/menu/custom");
+			menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_PNG, 0, false, false);
 			Draw_StretchPic(185, 40, menu_custom, 175, 100);
 			Draw_ColoredString(180, 148, "Custom Maps made by Community", 255, 255, 255, 255, 1);
 			Draw_ColoredString(180, 158, "Members on GitHub and on the", 255, 255, 255, 255, 1);
@@ -954,14 +953,6 @@ void M_SinglePlayer_Key (int key)
 
 //=============================================================================
 /* SINGLE PLAYER MENU */
-
-int	m_map_cursor;
-int	MAP_ITEMS;
-int user_maps_num = 0;
-int current_custom_map_page;
-int custom_map_pages;
-int multiplier;
-char  user_levels[256][MAX_QPATH];
 
 // UGHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 // fuck windows
@@ -1101,7 +1092,7 @@ void M_Menu_CustomMaps_f (void)
 void M_Menu_CustomMaps_Draw (void)
 {
 	// Background
-	menu_bk = Draw_CachePic("gfx/menu/menu_background");
+	//menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
 	Draw_StretchPic(0, 0, menu_bk, 400, 240);
 
 	// Fill black to make everything easier to see
@@ -1126,9 +1117,9 @@ void M_Menu_CustomMaps_Draw (void)
 		if (m_map_cursor == i) {
 
 			if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
-				menu_cuthum = Draw_CachePic(custom_maps[i + multiplier].map_thumbnail_path);
-				if (menu_cuthum != NULL) {
-					Draw_StretchPic(185, 40, menu_cuthum, 175, 100);
+				menu_cuthum[i] = Image_LoadImage(custom_maps[i + multiplier].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+				if (menu_cuthum[i] > 0) {
+					Draw_StretchPic(185, 40, menu_cuthum[i], 175, 100);
 				}
 			}
 			

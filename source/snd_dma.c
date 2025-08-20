@@ -619,10 +619,10 @@ void S_StopAllSounds(qboolean clear)
 	return;
 #endif
 
-	int		i;
-
 	if (!sound_started)
 		return;
+
+	int		i;
 
 	total_channels = MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS;	// no statics
 
