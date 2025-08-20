@@ -50,10 +50,9 @@ bool system_has_right_stick;
 #include "system.hpp"
 #include "module.h"
 
-// Running a dedicated server?
-qboolean isDedicated = qfalse;
+qboolean depthfl = false;
 
-qboolean depthfl = qfalse;
+qboolean isDedicated = false;
 
 extern	int  com_argc;
 extern	char **com_argv;
@@ -549,7 +548,7 @@ int user_main(SceSize argc, void* argp)
 	}
 
 	if (CheckParm(args, f_argc,"-32depth"))
-		depthfl = qtrue;
+		depthfl = true;
 
 	if (CheckParm(args, f_argc, "-gamedir")) 
 	{

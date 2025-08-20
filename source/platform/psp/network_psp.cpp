@@ -56,7 +56,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ECONNREFUSED	11
 
 int totalAccessPoints = 0;
-cvar_t accesspoint = {"accesspoint", "1", qtrue};
+cvar_t accesspoint = {"accesspoint", "1", true};
 int accessPointNumber[100];
 
 
@@ -199,7 +199,7 @@ namespace quake
 					*colon = 0;
 
 				Con_Printf("UDP Initialized\n");
-				tcpipAvailable = qtrue;
+				tcpipAvailable = true;
 
 				return control_socket;
 			}
@@ -208,7 +208,7 @@ namespace quake
 
 			void shut_down (void)
 			{
-				listen(qfalse);
+				listen(false);
 				close_socket(control_socket);
 
 				pspSdkInetTerm();
@@ -675,11 +675,11 @@ namespace quake
 				colon = Q_strrchr(my_tcpip_address, ':');
 				if (colon) *colon = 0;
 
-				listen(qtrue);
+				listen(true);
 
 				Con_Printf("AdHoc Initialized\n");
-				tcpipAvailable = qtrue;
-				tcpipAdhoc = qtrue;
+				tcpipAvailable = true;
+				tcpipAdhoc = true;
 				return control_socket;
 			}
 
@@ -687,7 +687,7 @@ namespace quake
 
 			void shut_down (void)
 			{
-				listen(qfalse);
+				listen(false);
 				close_socket(control_socket);
 				pspSdkAdhocTerm();
 

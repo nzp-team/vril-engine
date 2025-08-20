@@ -31,7 +31,7 @@ net_driver_t net_drivers[MAX_NET_DRIVERS] =
 {
 	{
 		"Loopback",
-			qfalse,
+			false,
 			Loop_Init,
 			Loop_Listen,
 			Loop_SearchForHosts,
@@ -48,7 +48,7 @@ net_driver_t net_drivers[MAX_NET_DRIVERS] =
 	,
 	{
 		"Datagram",
-			qfalse,
+			false,
 			Datagram_Init,
 			Datagram_Listen,
 			Datagram_SearchForHosts,
@@ -73,7 +73,7 @@ net_landriver_t	net_landrivers[MAX_NET_DRIVERS] =
 {
 	{
 		"Infrastructure",
-		qfalse,
+		false,
 		0,
 		infrastructure::init,
 		infrastructure::shut_down,
@@ -96,7 +96,7 @@ net_landriver_t	net_landrivers[MAX_NET_DRIVERS] =
 	},
 	{
 		"Adhoc",
-		qfalse,
+		false,
 		0,
 		adhoc::init,
 		adhoc::shut_down,

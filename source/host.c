@@ -509,10 +509,6 @@ extern float crosshair_offset_step;
 void Host_ClearMemory (void)
 {
 	Con_DPrintf ("Clearing memory\n");
-	
-#ifdef __WII__
-	GL_ClearTextureCache();
-#endif
 
 	Mod_ClearAll ();
 
@@ -841,6 +837,10 @@ void Host_InitVCR (quakeparms_t *parms)
 
 void Preload (void)
 {
+
+	// why is this neccesary? 
+
+	/*
 	Mod_ForName ("models/player.mdl", true);
 
 	// Body
@@ -862,6 +862,7 @@ void Preload (void)
 	// Right Arm
 	Mod_ForName ("models/ai/zar(.mdl",true);
 	Mod_ForName ("models/ai/zarc(.mdl",true);
+	*/
 }
 /*
 ====================
