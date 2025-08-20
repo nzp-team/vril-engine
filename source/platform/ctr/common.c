@@ -1284,7 +1284,6 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 	searchpath_t    *search;
     char            netpath[128];
 	char            cachepath[MAX_OSPATH * 2];
-	pack_t          *pak;
 	int                     i;
 	int                     findtime, cachetime;
 
@@ -1304,69 +1303,41 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 	}
 
 	for ( ; search ; search = search->next)
-	{
-	// is the element a pak file?
-		if (search->pack)
-		{
-		// look through all the pak file elements
-			pak = search->pack;
-			for (i=0 ; i<pak->numfiles ; i++)
-				if (!strcmp (pak->files[i].name, filename))
-				{       // found it!
-					Sys_Printf ("PackFile: %s : %s\n",pak->filename, filename);
-					if (handle)
-					{
-						*handle = pak->handle;
-						Sys_FileSeek (pak->handle, pak->files[i].filepos);
-					}
-					else
-					{       // open a new file on the pakfile
-						*file = fopen (pak->filename, "rb");
-						if (*file)
-							fseek (*file, pak->files[i].filepos, SEEK_SET);
-					}
-					com_filesize = pak->files[i].filelen;
-					return com_filesize;
-				}
-		}
-		else
-		{               
-			// check a file in the directory tree
-			snprintf (netpath, MAX_OSPATH * 2, "%s/%s", search->filename, filename);
-			
-			findtime = Sys_FileTime (netpath);
-			if (findtime == -1)
-				continue;
-				
-		// see if the file needs to be updated in the cache
-			if (!com_cachedir[0])
-				strcpy (cachepath, netpath);
-			else
-			{	
-				snprintf(cachepath, MAX_OSPATH * 2, "%s%s", com_cachedir, netpath);
-
-				cachetime = Sys_FileTime (cachepath);
-			
-				if (cachetime < findtime)
-					COM_CopyFile (netpath, cachepath);
-				strcpy (netpath, cachepath);
-			}	
-
-			Sys_Printf ("FindFile: %s\n",netpath);
-			com_filesize = Sys_FileOpenRead (netpath, &i);
-			if (handle)
-				*handle = i;
-			else
-			{
-				Sys_FileClose (i);
-				*file = fopen (netpath, "rb");
-			}
-			return com_filesize;
-		}
+	{             
+		// check a file in the directory tree
+		snprintf (netpath, MAX_OSPATH * 2, "%s/%s", search->filename, filename);
 		
+		findtime = Sys_FileTime (netpath);
+		if (findtime == -1)
+			continue;
+			
+	// see if the file needs to be updated in the cache
+		if (!com_cachedir[0])
+			strcpy (cachepath, netpath);
+		else
+		{	
+			snprintf(cachepath, MAX_OSPATH * 2, "%s%s", com_cachedir, netpath);
+
+			cachetime = Sys_FileTime (cachepath);
+		
+			if (cachetime < findtime)
+				COM_CopyFile (netpath, cachepath);
+			strcpy (netpath, cachepath);
+		}	
+
+		//Sys_Printf ("FindFile: %s\n",netpath);
+		com_filesize = Sys_FileOpenRead (netpath, &i);
+		if (handle)
+			*handle = i;
+		else
+		{
+			Sys_FileClose (i);
+			*file = fopen (netpath, "rb");
+		}
+		return com_filesize;
 	}
 	
-	Sys_Printf ("FindFile: can't find %s\n", filename);
+	//Sys_Printf ("FindFile: can't find %s\n", filename);
 	
 	if (handle)
 		*handle = -1;

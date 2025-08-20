@@ -256,6 +256,7 @@ typedef struct
 
 #include "wad.h"
 #include "draw.h"
+#include "images.h"
 #include "cvar.h"
 
 #include PLATFORM_FILE(screen.h)
@@ -272,8 +273,8 @@ typedef struct
 #include "sound.h"
 
 #include "progs.h"
+#include "server.h"
 
-#include PLATFORM_FILE(server.h)
 #include RENDERER_FILE(model.h)
 
 #ifdef SOFTWARE_RENDERER
@@ -395,7 +396,7 @@ typedef struct
 	int target [8]; //Each waypoint can have up to 8 targets
 	float dist [8]; // Distance to the next waypoints
 	int came_from; // Used for pathfinding store where we got here to this
-	qboolean used; // Set to `qtrue` if this waypoint contains valid data (not an empty slot in a list)
+	qboolean used; // Set to `true` if this waypoint contains valid data (not an empty slot in a list)
 } waypoint_ai;
 
 extern waypoint_ai waypoints[MAX_WAYPOINTS];

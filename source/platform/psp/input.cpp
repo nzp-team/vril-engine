@@ -154,7 +154,7 @@ void IN_Commands (void)
 					if (key)
 					{
 						// Send a release event.
-						Key_Event(key, qfalse);
+						Key_Event(key, false);
 					}
 				}
 			}
@@ -176,7 +176,7 @@ void IN_Commands (void)
 					if (key)
 					{
 						// Send a release event.
-						Key_Event(key, qfalse);
+						Key_Event(key, false);
 					}
 				}
 			}
@@ -244,7 +244,7 @@ void IN_Commands (void)
 			if (key)
 			{
 				// Send an event.
-				const qboolean	state	= (pad.Buttons & buttonMask) ? qtrue : qfalse;
+				const qboolean	state	= (pad.Buttons & buttonMask) ? true : false;
 				Key_Event(key, state);
 			}
 		}

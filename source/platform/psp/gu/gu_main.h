@@ -25,7 +25,6 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);
 u32 GL_GetDrawBuffer(void);
 
-#define	MAX_GLTEXTURES	1024
 void GL_Upload8(int texture_index, byte *data, int width, int height);
 void GL_Upload16(int texture_index, byte *data, int width, int height);
 int  GL_LoadTexture(const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level);
@@ -34,12 +33,10 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int height, byte *data, const byte *pal, int filter, int inpal_bpp, const byte *palhint);
 
 int GL_LoadTextureLM (const char *identifier, int width, int height, byte *data, int bpp, int filter, qboolean update, int forcopy);
-int GL_LoadImages (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp);
+int GL_LoadImages (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp, qboolean keep);
 int GL_LoadTexturePixels (byte *data, char *identifier, int width, int height, int mode);
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
-int loadskyboxsideimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
-int loadpcxas4bpp (char* filename, int filter);
 int GL_LoadPaletteTexture (const char *identifier, int width, int height, const byte *data, byte *palette, int paltype, qboolean stretch_to_power_of_two, int filter, int mipmap_level);
+void GL_MarkTextureAsPermanent(int texture_index);
 
 //Crow_bar
 void GL_GetPixelsBGR (byte *buffer, int width, int height, int i);
@@ -58,7 +55,6 @@ int GL_LoadPalletedTexture (byte *in, char *identifier, int width, int height, i
 
 void GL_UnloadTexture (const int texture_index);
 void GL_UnloadAllTextures ();
-void GL_MarkTextureAsPermanent (const int texture_index);
 
 extern	int glx, gly, glwidth, glheight;
 
@@ -405,6 +401,42 @@ int 	      D_DrawParticleBuffered (psp_particle* vertices, particle2_t *pparticl
 extern aliashdr_t*	zfull_mdl;
 extern aliashdr_t*	zcfull_mdl;
 extern int			zombie_skins[2][2];
-extern qpic_t*		sniper_scope;
+extern int			sniper_scope;
+
+extern int			zombie_skins[2][2];
+extern int			sniper_scope;
+
+typedef byte texel;
+
+typedef struct
+{
+	// Source.
+	char		identifier[64];
+	int			original_width;
+	int			original_height;
+	bool		stretch_to_power_of_two;
+
+	// Texture description.
+	int			format;
+	int			filter;
+	int			width;
+	int			height;
+	int 		mipmaps;
+	int     	bpp;
+	int     	swizzle;
+	qboolean	keep;
+
+	unsigned char *palette;
+
+	// Buffers.
+	texel*		ram;
+	texel*		vram;
+} gltexture_t;
+
+#define		MAX_GLTEXTURES	1024
+extern gltexture_t	gltextures[MAX_GLTEXTURES];
+extern bool 		gltextures_used[MAX_GLTEXTURES];
+extern bool 		gltextures_is_permanent[MAX_GLTEXTURES];
+extern int			numgltextures;
 
 extern int faces_rejected, faces_checked, faces_clipped;

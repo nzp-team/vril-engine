@@ -337,6 +337,10 @@ char *PR_ValueString (etype_t type, eval_t *val)
 		break;
 	case ev_field:
 		def = ED_FieldAtOfs ( val->_int );
+		if (!def) {
+			sprintf (line, "bad field ofs");
+			break;
+		}
 		sprintf (line, ".%s", pr_strings + def->s_name);
 		break;
 	case ev_void:

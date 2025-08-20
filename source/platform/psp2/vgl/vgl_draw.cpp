@@ -24,7 +24,8 @@ extern "C"{}
 extern "C"{
 #include <vitasdk.h>
 #include "../../../nzportable_def.h"
-#include "../image.h"
+#include "../../../images.h"
+
 extern unsigned short CRC_Block(const unsigned char *data, size_t size);
 }
 
@@ -68,7 +69,7 @@ qpic_t		*draw_backtile;
 
 int			translate_texture;
 int			char_texture;
-qpic_t		*sniper_scope;
+int			sniper_scope;
 int 		currentcanvas = -1;
 
 typedef struct
@@ -87,9 +88,6 @@ int		gl_alpha_format = 4;
 int		gl_filter_min = GL_NEAREST;
 int		gl_filter_max = GL_NEAREST;
 
-
-int		texels;
-
 //Loading Fill by Crow_bar
 float 	loading_cur_step;
 char	loading_name[32];
@@ -97,35 +95,9 @@ float 	loading_num_step;
 int 	loading_step;
 float 	loading_cur_step_bk;
 
-typedef struct
-{
-	int		texnum;
-	char identifier[64];
-	int		original_width;
-	int		original_height;
-	int		width, height;
-	bool	mipmap;
-} gltexture_t;
-
 #define	MAX_GLTEXTURES	1024
 gltexture_t	gltextures[MAX_GLTEXTURES];
 int numgltextures = 0;
-
-static int LoadExternalPic(char *identifier)
-{
-	char fname[512];
-	COM_StripExtension (identifier, fname);
-	int w, h;
-	byte *data = Image_LoadImage (fname, &w, &h);
-	if (data) {
-		int r = GL_LoadTexture32 ("", w, h, data, false, true, false);
-		free(data);
-		return r;
-	}
-	return -1;
-}
-
-// FIXME: It seems the texture manager fails with Half Life BSPs
 
 /*
  * Texture Manager - derived from glesquake
@@ -470,22 +442,6 @@ void Scrap_Upload (void)
 //=============================================================================
 /* Support Routines */
 
-typedef struct cachepic_s
-{
-	char		name[MAX_QPATH];
-	qpic_t		pic;
-	byte		padding[32];	// for appended glpic
-} cachepic_t;
-
-#define	MAX_CACHED_PICS		128
-cachepic_t	menu_cachepics[MAX_CACHED_PICS];
-int			menu_numcachepics;
-
-byte		menuplyr_pixels[4096];
-
-int		pic_texels;
-int		pic_count;
-
 /*
 ================
 GL_LoadPicTexture
@@ -496,620 +452,25 @@ int GL_LoadPicTexture (qpic_t *pic)
   return GL_LoadTexture ("", pic->width, pic->height, pic->data, false, true);
 }
 
-
-//Diabolickal TGA Begin
-int		image_width;
-int		image_height;
-#define	IMAGE_MAX_DIMENSIONS	512
-
-/*
-=================================================================
-  PCX Loading
-=================================================================
-*/
-
-typedef struct
-{
-    char	manufacturer;
-    char	version;
-    char	encoding;
-    char	bits_per_pixel;
-    unsigned short	xmin,ymin,xmax,ymax;
-    unsigned short	hres,vres;
-    unsigned char	palette[48];
-    char	reserved;
-    char	color_planes;
-    unsigned short	bytes_per_line;
-    unsigned short	palette_type;
-    char	filler[58];
-    unsigned 	data;			// unbounded
-} pcx_t;
-
-/*
-============
-LoadPCX
-============
-*/
-byte* LoadPCX (FILE *f, int matchwidth, int matchheight)
-{
-	pcx_t	*pcx, pcxbuf;
-	byte	palette[768];
-	byte	*pix, *image_rgba;
-	int		x, y;
-	int		dataByte, runLength;
-	int		count;
-
-//
-// parse the PCX file
-//
-	fread (&pcxbuf, 1, sizeof(pcxbuf), f);
-	pcx = &pcxbuf;
-
-	if (pcx->manufacturer != 0x0a
-		|| pcx->version != 5
-		|| pcx->encoding != 1
-		|| pcx->bits_per_pixel != 8
-		|| pcx->xmax >= 514
-		|| pcx->ymax >= 514)
-	{
-		Con_Printf ("Bad pcx file\n");
-		return NULL;
-	}
-	if (matchwidth && (pcx->xmax+1) != matchwidth)
-		return NULL;
-	if (matchheight && (pcx->ymax+1) != matchheight)
-		return NULL;
-	// seek to palette
-	fseek (f, -768, SEEK_END);
-	fread (palette, 1, 768, f);
-	fseek (f, sizeof(pcxbuf) - 4, SEEK_SET);
-	count = (pcx->xmax+1) * (pcx->ymax+1);
-	image_rgba = (byte*)malloc( count * 4);
-
-	for (y=0 ; y<=pcx->ymax ; y++)
-	{
-		pix = image_rgba + 4*y*(pcx->xmax+1);
-		for (x=0 ; x<=pcx->xmax ; ) // muff - fixed - was referencing ymax
-		{
-			dataByte = fgetc(f);
-			if((dataByte & 0xC0) == 0xC0)
-			{
-				runLength = dataByte & 0x3F;
-				dataByte = fgetc(f);
-			}
-			else
-				runLength = 1;
-
-			while(runLength-- > 0)
-			{
-				pix[0] = palette[dataByte*3];
-				pix[1] = palette[dataByte*3+1];
-				pix[2] = palette[dataByte*3+2];
-				pix[3] = 255;
-				pix += 4;
-				x++;
-			}
-		}
-	}
-	image_width = pcx->xmax+1;
-	image_height = pcx->ymax+1;
-
-	fclose(f);
-	return image_rgba;
-}
-
-
-/*
-=========================================================
-
-			Targa
-
-=========================================================
-*/
-
-#define TGA_MAXCOLORS 16384
-
-/* Definitions for image types. */
-#define TGA_Null	0	/* no image data */
-#define TGA_Map		1	/* Uncompressed, color-mapped images. */
-#define TGA_RGB		2	/* Uncompressed, RGB images. */
-#define TGA_Mono	3	/* Uncompressed, black and white images. */
-#define TGA_RLEMap	9	/* Runlength encoded color-mapped images. */
-#define TGA_RLERGB	10	/* Runlength encoded RGB images. */
-#define TGA_RLEMono	11	/* Compressed, black and white images. */
-#define TGA_CompMap	32	/* Compressed color-mapped data, using Huffman, Delta, and runlength encoding. */
-#define TGA_CompMap4	33	/* Compressed color-mapped data, using Huffman, Delta, and runlength encoding. 4-pass quadtree-type process. */
-
-/* Definitions for interleave flag. */
-#define TGA_IL_None	0	/* non-interleaved. */
-#define TGA_IL_Two	1	/* two-way (even/odd) interleaving */
-#define TGA_IL_Four	2	/* four way interleaving */
-#define TGA_IL_Reserved	3	/* reserved */
-
-/* Definitions for origin flag */
-#define TGA_O_UPPER	0	/* Origin in lower left-hand corner. */
-#define TGA_O_LOWER	1	/* Origin in upper left-hand corner. */
-
-typedef struct _TargaHeader
-{
-	unsigned char 	id_length, colormap_type, image_type;
-	unsigned short	colormap_index, colormap_length;
-	unsigned char	colormap_size;
-	unsigned short	x_origin, y_origin, width, height;
-	unsigned char	pixel_size, attributes;
-} TargaHeader;
-
-int fgetLittleShort (FILE *f)
-{
-	byte	b1, b2;
-
-	b1 = fgetc(f);
-	b2 = fgetc(f);
-
-	return (short)(b1 + b2*256);
-}
-
-int fgetLittleLong (FILE *f)
-{
-	byte	b1, b2, b3, b4;
-
-	b1 = fgetc(f);
-	b2 = fgetc(f);
-	b3 = fgetc(f);
-	b4 = fgetc(f);
-
-	return b1 + (b2<<8) + (b3<<16) + (b4<<24);
-}
-
-/*
-=============
-LoadTGA
-=============
-*/
-byte *LoadTGA (FILE *fin, int matchwidth, int matchheight)
-{
-	int		w, h, x, y, realrow, truerow, baserow, i, temp1, temp2, pixel_size, map_idx;
-	int		RLE_count, RLE_flag, size, interleave, origin;
-	bool	mapped, rlencoded;
-	byte		*data, *dst, r, g, b, a, j, k, l, *ColorMap;
-	TargaHeader	header;
-
-	header.id_length = fgetc (fin);
-	header.colormap_type = fgetc (fin);
-	header.image_type = fgetc (fin);
-	header.colormap_index = fgetLittleShort (fin);
-	header.colormap_length = fgetLittleShort (fin);
-	header.colormap_size = fgetc (fin);
-	header.x_origin = fgetLittleShort (fin);
-	header.y_origin = fgetLittleShort (fin);
-	header.width = fgetLittleShort (fin);
-	header.height = fgetLittleShort (fin);
-	header.pixel_size = fgetc (fin);
-	header.attributes = fgetc (fin);
-
-	if (header.width > IMAGE_MAX_DIMENSIONS || header.height > IMAGE_MAX_DIMENSIONS)
-	{
-		Con_DPrintf ("TGA image %s exceeds maximum supported dimensions\n", fin);
-		fclose (fin);
-		return NULL;
-	}
-
-	if ((matchwidth && header.width != matchwidth) || (matchheight && header.height != matchheight))
-	{
-		fclose (fin);
-		return NULL;
-	}
-
-	if (header.id_length != 0)
-		fseek (fin, header.id_length, SEEK_CUR);
-
-	/* validate TGA type */
-	switch (header.image_type)
-	{
-	case TGA_Map:
-	case TGA_RGB:
-	case TGA_Mono:
-	case TGA_RLEMap:
-	case TGA_RLERGB:
-	case TGA_RLEMono:
-		break;
-
-	default:
-		Con_DPrintf ("Unsupported TGA image %s: Only type 1 (map), 2 (RGB), 3 (mono), 9 (RLEmap), 10 (RLERGB), 11 (RLEmono) TGA images supported\n");
-		fclose (fin);
-		return NULL;
-	}
-
-	/* validate color depth */
-	switch (header.pixel_size)
-	{
-	case 8:
-	case 15:
-	case 16:
-	case 24:
-	case 32:
-		break;
-
-	default:
-		Con_DPrintf ("Unsupported TGA image %s: Only 8, 15, 16, 24 or 32 bit images (with colormaps) supported\n");
-		fclose (fin);
-		return NULL;
-	}
-
-	r = g = b = a = l = 0;
-
-	/* if required, read the color map information. */
-	ColorMap = NULL;
-	mapped = (header.image_type == TGA_Map || header.image_type == TGA_RLEMap) && header.colormap_type == 1;
-	if (mapped)
-	{
-		/* validate colormap size */
-		switch (header.colormap_size)
-		{
-		case 8:
-		case 15:
-		case 16:
-		case 32:
-		case 24:
-			break;
-
-		default:
-			Con_DPrintf ("Unsupported TGA image %s: Only 8, 15, 16, 24 or 32 bit colormaps supported\n");
-			fclose (fin);
-			return NULL;
-		}
-
-		temp1 = header.colormap_index;
-		temp2 = header.colormap_length;
-		if ((temp1 + temp2 + 1) >= TGA_MAXCOLORS)
-		{
-			fclose (fin);
-			return NULL;
-		}
-		ColorMap = (byte*)(malloc (TGA_MAXCOLORS * 4));
-		map_idx = 0;
-		for (i = temp1 ; i < temp1 + temp2 ; ++i, map_idx += 4)
-		{
-			/* read appropriate number of bytes, break into rgb & put in map. */
-			switch (header.colormap_size)
-			{
-			case 8:	/* grey scale, read and triplicate. */
-				r = g = b = getc (fin);
-				a = 255;
-				break;
-
-			case 15:	/* 5 bits each of red green and blue. */
-						/* watch byte order. */
-				j = getc (fin);
-				k = getc (fin);
-				l = ((unsigned int)k << 8) + j;
-				r = (byte)(((k & 0x7C) >> 2) << 3);
-				g = (byte)((((k & 0x03) << 3) + ((j & 0xE0) >> 5)) << 3);
-				b = (byte)((j & 0x1F) << 3);
-				a = 255;
-				break;
-
-			case 16:	/* 5 bits each of red green and blue, 1 alpha bit. */
-						/* watch byte order. */
-				j = getc (fin);
-				k = getc (fin);
-				l = ((unsigned int)k << 8) + j;
-				r = (byte)(((k & 0x7C) >> 2) << 3);
-				g = (byte)((((k & 0x03) << 3) + ((j & 0xE0) >> 5)) << 3);
-				b = (byte)((j & 0x1F) << 3);
-				a = (k & 0x80) ? 255 : 0;
-				break;
-
-			case 24:	/* 8 bits each of blue, green and red. */
-				b = getc (fin);
-				g = getc (fin);
-				r = getc (fin);
-				a = 255;
-				l = 0;
-				break;
-
-			case 32:	/* 8 bits each of blue, green, red and alpha. */
-				b = getc (fin);
-				g = getc (fin);
-				r = getc (fin);
-				a = getc (fin);
-				l = 0;
-				break;
-			}
-			ColorMap[map_idx+0] = r;
-			ColorMap[map_idx+1] = g;
-			ColorMap[map_idx+2] = b;
-			ColorMap[map_idx+3] = a;
-		}
-	}
-
-	/* check run-length encoding. */
-	rlencoded = (header.image_type == TGA_RLEMap || header.image_type == TGA_RLERGB || header.image_type == TGA_RLEMono);
-	RLE_count = RLE_flag = 0;
-
-	image_width = w = header.width;
-	image_height = h = header.height;
-
-	size = w * h * 4;
-	data = (byte*)(malloc (size));
-
-	/* read the Targa file body and convert to portable format. */
-	pixel_size = header.pixel_size;
-	origin = (header.attributes & 0x20) >> 5;
-	interleave = (header.attributes & 0xC0) >> 6;
-	truerow = baserow = 0;
-	for (y=0 ; y<h ; y++)
-	{
-		realrow = truerow;
-		if (origin == TGA_O_UPPER)
-			realrow = h - realrow - 1;
-
-		dst = data + realrow * w * 4;
-
-		for (x=0 ; x<w ; x++)
-		{
-			/* check if run length encoded. */
-			if (rlencoded)
-			{
-				if (!RLE_count)
-				{
-					/* have to restart run. */
-					i = getc (fin);
-					RLE_flag = (i & 0x80);
-					if (!RLE_flag)	// stream of unencoded pixels
-						RLE_count = i + 1;
-					else		// single pixel replicated
-						RLE_count = i - 127;
-					/* decrement count & get pixel. */
-					--RLE_count;
-				}
-				else
-				{
-					/* have already read count & (at least) first pixel. */
-					--RLE_count;
-					if (RLE_flag)
-						/* replicated pixels. */
-						goto PixEncode;
-				}
-			}
-
-			/* read appropriate number of bytes, break into RGB. */
-			switch (pixel_size)
-			{
-			case 8:	/* grey scale, read and triplicate. */
-				r = g = b = l = getc (fin);
-				a = 255;
-				break;
-
-			case 15:	/* 5 bits each of red green and blue. */
-						/* watch byte order. */
-				j = getc (fin);
-				k = getc (fin);
-				l = ((unsigned int)k << 8) + j;
-				r = (byte)(((k & 0x7C) >> 2) << 3);
-				g = (byte)((((k & 0x03) << 3) + ((j & 0xE0) >> 5)) << 3);
-				b = (byte)((j & 0x1F) << 3);
-				a = 255;
-				break;
-
-			case 16:	/* 5 bits each of red green and blue, 1 alpha bit. */
-						/* watch byte order. */
-				j = getc (fin);
-				k = getc (fin);
-				l = ((unsigned int)k << 8) + j;
-				r = (byte)(((k & 0x7C) >> 2) << 3);
-				g = (byte)((((k & 0x03) << 3) + ((j & 0xE0) >> 5)) << 3);
-				b = (byte)((j & 0x1F) << 3);
-				a = (k & 0x80) ? 255 : 0;
-				break;
-
-			case 24:	/* 8 bits each of blue, green and red. */
-				b = getc (fin);
-				g = getc (fin);
-				r = getc (fin);
-				a = 255;
-				l = 0;
-				break;
-
-			case 32:	/* 8 bits each of blue, green, red and alpha. */
-				b = getc (fin);
-				g = getc (fin);
-				r = getc (fin);
-				a = getc (fin);
-				l = 0;
-				break;
-
-			default:
-				Con_DPrintf ("Malformed TGA image: Illegal pixel_size '%d'\n", pixel_size);
-				fclose (fin);
-				free (data);
-				if (mapped)
-					free (ColorMap);
-				return NULL;
-			}
-
-PixEncode:
-			if (mapped)
-			{
-				map_idx = l * 4;
-				*dst++ = ColorMap[map_idx+0];
-				*dst++ = ColorMap[map_idx+1];
-				*dst++ = ColorMap[map_idx+2];
-				*dst++ = ColorMap[map_idx+3];
-			}
-			else
-			{
-				*dst++ = r;
-				*dst++ = g;
-				*dst++ = b;
-				*dst++ = a;
-			}
-		}
-
-		if (interleave == TGA_IL_Four)
-			truerow += 4;
-		else if (interleave == TGA_IL_Two)
-			truerow += 2;
-		else
-			truerow++;
-		if (truerow >= h)
-			truerow = ++baserow;
-	}
-
-	if (mapped)
-		free (ColorMap);
-
-	fclose (fin);
-
-	return data;
-}
-
-/*small function to read files with stb_image - single-file image loader library.
-** downloaded from: https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
-** only use jpeg+png formats, because tbh there's not much need for the others.
-** */
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_JPEG
-#define STBI_ONLY_PNG
-#include "../../../stb_image.h"
-byte* LoadSTBI(FILE *f, int width, int height)
-{
-	int bpp;
-	int inwidth, inheight;
-	byte* image = stbi_load_from_file(f, &inwidth, &inheight, &bpp, 4);
-	// wtf?
-	image_width = inwidth;
-	image_height = inheight;
-	fclose(f);
-	return image;
-}
-
-byte* loadimagepixels (const char* filename, bool complain, int matchwidth, int matchheight)
-
-{
-	FILE	*f;
-	char	basename[128], name[132];
-	byte	*c;
-
-	if (complain == qfalse)
-		COM_StripExtension((char*)filename, basename); // strip the extension to allow TGA
-	else
-		strcpy(basename, filename);
-
-	c = (byte*)basename;
-	while (*c)
-	{
-		if (*c == '*')
-			*c = '+';
-		c++;
-	}
-
-	//Try PCX
-	sprintf (name, "%s.pcx", basename);
-	COM_FOpenFile (name, &f);
-	if (f)
-		return LoadPCX (f, matchwidth, matchheight);
-	//Try TGA
-	sprintf (name, "%s.tga", basename);
-	COM_FOpenFile (name, &f);
-	if (f)
-		return LoadTGA (f, matchwidth, matchheight);
-	//Try PNG
-	sprintf (name, "%s.png", basename);
-	COM_FOpenFile (name, &f);
-	if (f)
-		return LoadSTBI (f, matchwidth, matchheight);
-	//Try JPEG
-	sprintf (name, "%s.jpeg", basename);
-	COM_FOpenFile (name, &f);
-	if (f)
-		return LoadSTBI (f, matchwidth, matchheight);
-	sprintf (name, "%s.jpg", basename);
-	COM_FOpenFile (name, &f);
-	if (f)
-		return LoadSTBI (f, matchwidth, matchheight);
-	
-	//if (complain)
-	//	Con_Printf ("Couldn't load %s.tga or %s.pcx \n", filename);
-	
-	return NULL;
-}
-
-int loadtextureimage (const char* filename, int matchwidth, int matchheight, bool complain, bool mipmap)
-{
-	int texnum;
-	byte *data;
-	if (!(data = loadimagepixels (filename, complain, matchwidth, matchheight))) { 
-		Con_DPrintf("Cannot load image %s\n", filename);
-		return 0;
-	}
-	texnum = GL_LoadTexture32 (filename, image_width, image_height, data, mipmap, true, false);
-	free(data);
-	return texnum;
-}
-// Tomaz || TGA End
-
-
 /*
 ================
-Draw_CachePic
+GL_FindTexture
 ================
 */
-qpic_t	*Draw_CachePic (char *path)
+int GL_FindTexture (const char *identifier)
 {
-	cachepic_t	*pic;
-	int			i;
-	qpic_t		*dat;
-	glpic_t		*gl;
-	char		str[128];
+	int		i;
+	gltexture_t	*glt;
 
-	strcpy (str, path);
-	for (pic=menu_cachepics, i=0 ; i<menu_numcachepics ; pic++, i++)
-		if (!strcmp (str, pic->name))
-			return &pic->pic;
-
-	if (menu_numcachepics == MAX_CACHED_PICS)
-		Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
-	menu_numcachepics++;
-	strcpy (pic->name, str);
-
-//
-// load the pic from disk
-//
-
-	int index = loadtextureimage (str, 0, 0, false, false);
-	if(index)
-	{
-		pic->pic.width  = gltextures[index].original_width;
-		pic->pic.height = gltextures[index].original_height;
-
-		gl = (glpic_t *)pic->pic.data;
-		gl->texnum = index;
-
-		return &pic->pic;
-	}
-
-	dat = (qpic_t *)COM_LoadTempFile (str);
-	if (!dat)
-	{
-		strcat (str, ".lmp");
-		dat = (qpic_t *)COM_LoadTempFile (str);
-		if (!dat)
-		{
-			Con_Printf ("Draw_CachePic: failed to load file %s\n", str);
-			return NULL;
+	for (i=0, glt=gltextures ; i<numgltextures ; i++, glt++) {
+		if (glt->used) {
+			if (!strcmp (identifier, glt->identifier)) {
+				return glt->texnum;
+			}
 		}
 	}
-	SwapPic (dat);
 
-
-	pic->pic.width = dat->width;
-	pic->pic.height = dat->height;
-
-	gl = (glpic_t *)pic->pic.data;
-	gl->texnum = GL_LoadPicTexture (dat);
-
-	return &pic->pic;
+	return -1;
 }
 
 typedef struct
@@ -1261,8 +622,8 @@ void Draw_Init (void)
 	Cmd_AddCommand ("gl_texturemode", &Draw_TextureMode_f);
 
 	// now turn them into textures
-	char_texture = loadtextureimage ("gfx/charset", 0, 0, false, false);
-	if (char_texture == 0)// did not find a matching TGA...
+	char_texture = Image_LoadImage ("gfx/charset", IMAGE_TGA, 0, true, false);
+	if (char_texture < 0)// did not find a matching TGA...
 		Sys_Error ("Could not load charset, make sure you have every folder and file installed properly\nDouble check that all of your files are in their correct places\nAnd that you have installed the game properly.\n");
 
 	// save a texture slot for translated picture
@@ -1271,7 +632,10 @@ void Draw_Init (void)
 	// save slots for scraps
 	scrap_texnum = texture_extension_number;
 	texture_extension_number += MAX_SCRAPS;
-	sniper_scope = Draw_CachePic ("gfx/hud/scope");
+	sniper_scope = Image_LoadImage ("gfx/hud/scope", IMAGE_TGA, 0, true, false);
+
+	Clear_LoadingFill ();
+
 	InitKerningMap();
 }
 
@@ -1572,30 +936,58 @@ void Draw_DebugChar (signed char num)
 
 /*
 =============
-Draw_AlphaPic
+Draw_ColoredStretchPic
 =============
 */
-void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha)
+void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, int r, int g, int b, int a)
 {
-	byte			*dest, *source;
-	unsigned short	*pusdest;
-	int				v, u;
-	glpic_t			*gl;
-
-	if (alpha == 0.0f) return;
-	if (scrap_dirty)
-		Scrap_Upload ();
-	gl = (glpic_t *)pic->data;
-	GL_DisableState(GL_ALPHA_TEST);
+	glEnable(GL_BLEND);
+	glDisable(GL_ALPHA_TEST);
+	Platform_Graphics_Color(r/255.0,g/255.0,b/255.0,a/255.0);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	GL_EnableState(GL_MODULATE);
-	glEnable (GL_BLEND);
-	Platform_Graphics_Color(1,1,1,alpha);
-	GL_Bind (gl->texnum);
-	DrawQuad(x, y, pic->width, pic->height, gl->sl, gl->tl, gl->sh - gl->sl, gl->th - gl->tl);
+
+	GL_Bind (pic);
+	DrawQuad(x, y, x_value, y_value, 0, 0, 1, 1);
+
 	Platform_Graphics_Color(1,1,1,1);
-	GL_EnableState(GL_ALPHA_TEST);
-	glDisable (GL_BLEND);
-	glDepthMask(GL_TRUE);
+}
+
+/*
+=============
+Draw_StretchPic
+=============
+*/
+void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
+{
+	glEnable(GL_ALPHA_TEST);
+	Platform_Graphics_Color(1,1,1,1);
+
+	GL_Bind (pic);
+	DrawQuad(x, y, x_value, y_value, 0, 0, 1, 1);
+
+	Platform_Graphics_Color(1,1,1,1);
+}
+
+/*
+=============
+Draw_ColorPic
+=============
+*/
+void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
+{
+	glDisable(GL_ALPHA_TEST);
+	glEnable(GL_BLEND);
+	Platform_Graphics_Color(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	GL_EnableState(GL_MODULATE);
+
+	GL_Bind (pic);
+	DrawQuad(x, y, gltextures[pic].width, gltextures[pic].height, 0, 0, 1, 1);
+
+	glDisable(GL_BLEND);
+	//glDisable(GL_ALPHA_TEST);
+	Platform_Graphics_Color(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
 }
 
 /*
@@ -1603,49 +995,19 @@ void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha)
 Draw_Pic
 =============
 */
-void Draw_Pic (int x, int y, qpic_t *pic)
+void Draw_Pic (int x, int y, int pic)
 {
-	byte			*dest, *source;
-	unsigned short	*pusdest;
-	int				v, u;
-	glpic_t			*gl;
-
-	if (scrap_dirty)
-		Scrap_Upload ();
-	glpic_t temp;
-	memcpy(&temp, pic->data, sizeof(temp));
-	gl = &temp;
-	Platform_Graphics_Color(1, 1, 1, 1);
-	GL_Bind (gl->texnum);
-
-	DrawQuad(x, y, pic->width, pic->height, gl->sl, gl->tl, gl->sh - gl->sl, gl->th - gl->tl);
+	Draw_ColorPic(x, y, pic, 255, 255, 255, 255);
 }
-
-void Draw_StretchPic (int x, int y, qpic_t *pic, int x_value, int y_value) { Draw_Pic(x, y, pic); };
-void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float a) { Draw_Pic(x, y, pic); };
-void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value, int r, int g, int b, int a) { Draw_Pic(x, y, pic); };
 
 /*
 =============
 Draw_AlphaPic
 =============
 */
-void Draw_AlphaPic (int x, int y, qpic_t *pic)
+void Draw_AlphaPic (int x, int y, int pic, float alpha)
 {
-	byte			*dest, *source;
-	unsigned short	*pusdest;
-	int				v, u;
-	glpic_t			*gl;
-
-	if (scrap_dirty)
-		Scrap_Upload ();
-	glpic_t temp;
-	memcpy(&temp, pic->data, sizeof(temp));
-	gl = &temp;
-	Platform_Graphics_Color(1, 1, 1, 1);
-	GL_Bind (gl->texnum);
-
-	DrawQuad(x, y, pic->width, pic->height, gl->sl, gl->tl, gl->sh - gl->sl, gl->th - gl->tl);
+	Draw_ColorPic(x, y, pic, 255, 255, 255, alpha);
 }
 
 /*
@@ -1653,61 +1015,19 @@ void Draw_AlphaPic (int x, int y, qpic_t *pic)
 Draw_TransPic
 =============
 */
-void Draw_TransPic (int x, int y, qpic_t *pic)
+void Draw_TransPic (int x, int y, int pic)
 {
 	byte	*dest, *source, tbyte;
 	unsigned short	*pusdest;
 	int				v, u;
 
-	if (x < 0 || (unsigned)(x + pic->width) > vid.width || y < 0 ||
-		 (unsigned)(y + pic->height) > vid.height)
+	if (x < 0 || (unsigned)(x + gltextures[pic].width) > vid.width || y < 0 ||
+		 (unsigned)(y + gltextures[pic].height) > vid.height)
 	{
 		Sys_Error ("Draw_TransPic: bad coordinates");
 	}
 	
 	Draw_Pic (x, y, pic);
-}
-
-
-/*
-=============
-Draw_TransPicTranslate
-
-Only used for the player color selection menu
-=============
-*/
-void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation)
-{
-	int				v, u, c;
-	unsigned		trans[64*64], *dest;
-	byte			*src;
-	int				p;
-
-	GL_Bind (translate_texture);
-
-	c = pic->width * pic->height;
-
-	dest = trans;
-	for (v=0 ; v<64 ; v++, dest += 64)
-	{
-		src = &menuplyr_pixels[ ((v*pic->height)>>6) *pic->width];
-		for (u=0 ; u<64 ; u++)
-		{
-			p = src[(u*pic->width)>>6];
-			if (p == 255)
-				dest[u] = p;
-			else
-				dest[u] =  d_8to24table[translation[p]];
-		}
-	}
-	
-	glTexImage2D (GL_TEXTURE_2D, 0, gl_compress.value ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : gl_alpha_format, 64, 64, 0, GL_RGBA, GL_UNSIGNED_BYTE, trans);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	Platform_Graphics_Color(1,1,1,1);
-	DrawQuad(x, y, pic->width, pic->height, 0, 0, 1, 1);
 }
 
 
@@ -1765,6 +1085,60 @@ void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a)
 	Platform_Graphics_Color(1,1,1,1);
 }
 //=============================================================================
+
+/*
+================
+Draw_LoadingFill
+By Crow_bar
+================
+*/
+void Draw_LoadingFill(void)
+{
+    if(!loading_num_step)
+		return;
+
+	int size       	= 16;
+	int max_step   	= 350;
+    int x          	= (vid.width  / 2) - (max_step / 2);
+    int y          	= vid.height - (size/ 2) - 25;
+	char* text;
+
+
+	if(loading_cur_step > loading_num_step)
+	      loading_cur_step = loading_num_step;
+
+	if (loading_cur_step < loading_cur_step_bk)
+		loading_cur_step = loading_cur_step_bk;
+
+	if (loading_cur_step == loading_num_step && loading_cur_step_bk != loading_num_step)
+		loading_cur_step = loading_cur_step_bk;
+
+    float loadsize = loading_cur_step * (max_step / loading_num_step);
+	Draw_FillByColor (x - 2, y - 2, max_step + 8, size + 8, 69, 69, 69, 255);
+	Draw_FillByColor (x, y, (int)loadsize, size, 0, 0, 0, 200);
+
+	switch(loading_step) {
+		case 1: text = "Loading Models.."; break;
+		case 2: text = "Loading World.."; break;
+		case 3: text = "Running Test Frame.."; break;
+		case 4: text = "Loading Sounds.."; break;
+		default: text = "Initializing.."; break;
+	}
+	
+	Draw_ColoredStringCentered(y, text, 255, 255, 255, 255, 1);
+
+	loading_cur_step_bk = loading_cur_step;
+}
+
+void Clear_LoadingFill (void)
+{
+    //it is end loading
+	loading_cur_step = 0;
+	loading_cur_step_bk = 0;
+	loading_num_step = 0;
+	loading_step = -1;
+	memset(loading_name, 0, sizeof(loading_name));
+}
 
 /*
 ================
@@ -1968,8 +1342,6 @@ void GL_Upload32 (unsigned *data, int width, int height,  bool mipmap, bool alph
 		mipmap = false; // Compressed textures do not support mipmaps yet in vitaGL
 	} else samples = alpha ? gl_alpha_format : gl_solid_format;
 
-	texels += scaled_width * scaled_height;
-
 	if (scaled_width == width && scaled_height == height)
 	{
 		if (!mipmap)
@@ -2102,28 +1474,28 @@ GL_LoadTexture32
 */
 int GL_LoadTexture32 (const char *identifier, int width, int height, byte *data, bool mipmap, bool alpha, bool fullbright)
 {
-	bool	noalpha;
-	int			i, p, s;
+	int texture_index = GL_FindTexture(identifier);
+	if (texture_index >= 0) {
+		return texture_index;
+	}
+
+	int			i;
 	gltexture_t	*glt;
 
-	// see if the texture is already present
-	if (identifier[0])
-	{
-		for (i=0, glt=gltextures ; i<numgltextures ; i++, glt++)
-		{
-			if (!strcmp (identifier, glt->identifier))
-			{
-				// FIXME: Caching is broken with external textures
-				//if (width != glt->width || height != glt->height)
-				//	Sys_Error ("GL_LoadTexture32: cache mismatch for %s, expected: %ld, got %d", identifier, width, glt->width);
-				return gltextures[i].texnum;
-			}
+	numgltextures++;
+	// Out of textures?
+	if (numgltextures == MAX_GLTEXTURES)
+		Sys_Error ("GL_GetTextureIndex: Out of GL textures\n");
+
+	for (i=0, glt=gltextures; i <=numgltextures; i++, glt++) {
+		if (glt->used == false) {
+			texture_index = i;
+			break;
 		}
 	}
-	//else {                                    // 13/02/2000 removed: M.Tretene
-		glt = &gltextures[numgltextures];
-		numgltextures++;
-	//}
+
+	if (texture_index < 0)
+		Sys_Error("Could not find a free GL texture! %i %s\n", numgltextures, identifier);
 	
 	// Make black pixels transparent for *_luma textures
 	if (fullbright) {
@@ -2142,7 +1514,7 @@ int GL_LoadTexture32 (const char *identifier, int width, int height, byte *data,
 	glt->original_height = height;
 	glt->mipmap = mipmap;
 	
-	GL_Bind(texture_extension_number );
+	GL_Bind(texture_extension_number);
 	
 	if (tex_cache)
 		textureStore::get()->create(width, height, data, mipmap, alpha, true);
@@ -2189,15 +1561,5 @@ void GL_DrawFPS(void){
 	x = 329 - strlen(st) * 8 - 16;
 
 	Draw_String(x, 2, st);
-}
-
-void Clear_LoadingFill (void)
-{
-    //it is end loading
-	loading_cur_step = 0;
-	loading_cur_step_bk = 0;
-	loading_num_step = 0;
-	loading_step = -1;
-	memset(loading_name, 0, sizeof(loading_name));
 }
 

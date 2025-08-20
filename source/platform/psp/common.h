@@ -24,14 +24,7 @@ typedef unsigned char 		byte;
 #define BYTE_DEFINED 1
 #endif
 
-#undef true
-#undef false
-
-#ifdef __cplusplus
-typedef enum {qfalse, qtrue}	qboolean;
-#else
-typedef enum {false, true}	qboolean;
-#endif
+typedef unsigned int qboolean;
 
 #ifndef fmin
 #define fmin(a, b) ((a) < (b) ? (a) : (b))

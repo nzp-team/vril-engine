@@ -127,6 +127,8 @@ void *W_GetLumpName (char *name)
 	lumpinfo_t	*lump;
 	
 	lump = W_GetLumpinfo (name);
+   if (!lump)
+      return NULL;
 	
 	return (void *)(wad_base + lump->filepos);
 }
@@ -252,8 +254,11 @@ static byte *ConvertWad3ToRGBA(miptex_t *tex) {
       Sys_Error("tex->offsets[0] == 0");
 
    image_size = tex->width * tex->height;
+
    in = (byte *) ((byte *) tex + tex->offsets[0]);
    data = malloc(image_size * 4); // Baker
+   if(!data)
+      return NULL;
 
    pal = in + ((image_size * 85) >> 6) + 2;
    for (i = 0; i < image_size; i++) {
