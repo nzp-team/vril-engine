@@ -213,7 +213,7 @@ byte* Image_LoadPixels(char* filename, int image_format)
 	return NULL;					
 }
 
-int Image_LoadImage(char* filename, int image_format, int filter, qboolean keep, qboolean mipmap)
+int Image_LoadImage(char* filename, int image_format, int filter, bool keep, bool mipmap)
 {
 	int texture_index;
 	byte *data;
@@ -276,6 +276,37 @@ int loadrgbafrompal (char* name, int width, int height, byte* data)
 
 	free(rgbadata);
 	return ret;
+}
+
+// Hacky thing to only load a top half of an image for skybox sides, hard to imagine other use for this
+int loadskyboxsideimage (char* filename, int image_format, bool keep, int filter)
+{
+	int texture_index;
+	byte *data;
+	char texname[32];
+
+	// create a unique identifier
+	tex_filebase (filename, texname);
+
+	// does the texture already exist?
+	texture_index = GL_FindTexture(texname);
+	if (texture_index >= 0) {
+		return texture_index;
+	}
+
+	data = Image_LoadPixels (filename, image_format);
+
+	if(data == NULL) {
+		return 0;
+	}
+
+	int newheight = image_height * 0.5;
+	
+	texture_index = GL_LoadImages (filename, image_width, newheight, data, true, filter, 0, 4, keep);
+
+	free(data);
+
+	return texture_index;
 }
 
 /*
