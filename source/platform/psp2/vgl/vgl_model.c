@@ -173,9 +173,26 @@ void Mod_ClearAll (void)
 	int		i;
 	model_t	*mod;
 	
-	for (i=0 , mod=mod_known ; i<mod_numknown ; i++, mod++)
-		if (mod->type != mod_alias)
+	for (i=0 , mod=mod_known ; i<mod_numknown ; i++, mod++) {
+		if (mod->type != mod_alias) {
 			mod->needload = true;
+        }
+
+		//Models & Sprite Unloading code By Crow_bar
+		if (mod->type == mod_alias) {
+			if (Cache_Check (&mod->cache))
+				Cache_Free (&mod->cache);
+		}
+		else if (mod->type == mod_sprite) {
+		   mod->cache.data = NULL;
+		}
+	}
+
+	GL_UnloadTextures ();
+
+	//purge old sky textures
+	for (i=0; i<5; i++)
+		skyimage[i] = 0;
 		
 	ent_file = NULL;
 }
@@ -420,7 +437,7 @@ void Mod_LoadTextures (lump_t *l)
 				//alpha_flag = ISALPHATEX(tx->name) ? TEX_ALPHA : 0;
 				texture_mode = GL_LINEAR;
 				bool choosealpha = mt->name[0] == '{' ? true : false; // naievil -- need to choose alpha mode for certain textures
-				tx->gl_texturenum = GL_LoadTexture32 (mt->name, tx->width, tx->height, data, true, choosealpha, false);
+				tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, data, true, choosealpha, 4, false);
 				tx->fullbright = -1;
 				free(data);
 				continue;
@@ -465,7 +482,7 @@ void Mod_LoadTextures (lump_t *l)
 		
 		// Fallback to original textures
 		if (tx->gl_texturenum == -1) {
-			tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(mt+1), true, false);
+			tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(mt+1), true, true, 1, false);
 		
 			if (FindFullbrightTexture ((byte *)(mt+1), pixels)) {
 				// convert any non fullbright pixel to fully transparent
@@ -473,7 +490,7 @@ void Mod_LoadTextures (lump_t *l)
 				// get a new name for the fullbright mask to avoid cache mismatches
 				sprintf (fbr_mask_name, "fullbright_mask_%s", mt->name);
 				// load the fullbright pixels version of the texture
-				tx->fullbright = GL_LoadTexture (fbr_mask_name, tx->width, tx->height, (byte *)(mt + 1), true, true);
+				tx->fullbright = GL_LoadTexture (fbr_mask_name, tx->width, tx->height, (byte *)(mt + 1), true, true, 1, false);
 			}
 		}
 	}
@@ -1742,7 +1759,7 @@ Mod_LoadAllSkins
 void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 {
 	int		i, j, k;
-	char	name[MAX_OSPATH], model[64], model2[128];
+	char	name[MAX_OSPATH], model[64], model2[128], texname[32];
 	int		s;
 	byte	*skin;
 	byte	*texels;
@@ -1798,11 +1815,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			if (pheader->gl_texturenum[i][0] == 0) // did not find a matching TGA...
 			{
 				sprintf(name, "%s_%i", loadmodel->name, i);
+				tex_filebase (name, texname);
 				pheader->gl_texturenum[i][0] =
 				pheader->gl_texturenum[i][1] =
 				pheader->gl_texturenum[i][2] =
-				pheader->gl_texturenum[i][3] = GL_LoadTexture (name, pheader->skinwidth, 
-					pheader->skinheight, (byte *)(pskintype + 1), true, false);
+				pheader->gl_texturenum[i][3] = GL_LoadTexture (texname, pheader->skinwidth, 
+					pheader->skinheight, (byte *)(pskintype + 1), false, false, 1, false);
 			}
 			
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
@@ -1824,9 +1842,10 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 						memcpy (texels, (byte *)(pskintype), s);
 					}
 					snprintf (name, MAX_OSPATH, "%s_%i_%i", loadmodel->name, i,j);
+					tex_filebase (name, texname);
 					pheader->gl_texturenum[i][j&3] = 
-						GL_LoadTexture (name, pheader->skinwidth, 
-						pheader->skinheight, (byte *)(pskintype), true, false);
+						GL_LoadTexture (texname, pheader->skinwidth, 
+						pheader->skinheight, (byte *)(pskintype), false, false, 1, false);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
 			}
 			k = j;
@@ -2055,7 +2074,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	if (pspriteframe->gl_texturenum == 0) // did not find a matching TGA...
 	{
 		tex_filebase(sprite2, texname);
-		pspriteframe->gl_texturenum = GL_LoadTexture (texname, width, height, (byte *)(pinframe + 1), false, true);
+		pspriteframe->gl_texturenum = GL_LoadTexture (texname, width, height, (byte *)(pinframe + 1), false, false, 1, false);
 	}
 
 	return (void *)((byte *)pinframe + sizeof (dspriteframe_t) + size);
