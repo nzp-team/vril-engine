@@ -1348,19 +1348,19 @@ void Draw_Crosshair (void)
 char	scr_usestring[64];
 char 	scr_usestring2[64];
 float	scr_usetime_off = 0.0f;
-int		button_pic_x;
-int 	b_circle;
-int 	b_square;
-int 	b_cross;
-int 	b_triangle;
-int 	b_left;
-int 	b_right;
-int 	b_up;
-int 	b_down;
-int 	b_lt;
-int 	b_rt;
-int 	b_start;
-int 	b_select;
+int	button_pic_x;
+extern int 	b_circle;
+extern int 	b_square;
+extern int 	b_cross;
+extern int 	b_triangle;
+extern int 	b_left;
+extern int 	b_right;
+extern int 	b_up;
+extern int 	b_down;
+extern int 	b_lt;
+extern int 	b_rt;
+extern int 	b_start;
+extern int 	b_select;
 
 /*
 ==============

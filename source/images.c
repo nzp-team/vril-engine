@@ -180,32 +180,32 @@ byte* LoadSTBI_Image(FILE *f)
 byte* Image_LoadPixels(char* filename, int image_format)
 {
 	FILE	*f;
-	char name[133];
+	char name[132];
 
 	if (image_format & IMAGE_PCX) {
-		snprintf (name, 132, "%s.pcx", filename);
+		snprintf (name, sizeof(name), "%s.pcx", filename);
 		if (COM_FOpenFile(name, &f) != -1)
 			return LoadPCX (f, 0, 0);
 	}
 
 	if (image_format & IMAGE_TGA) {
-		snprintf (name, 132, "%s.tga", filename);
+		snprintf (name, sizeof(name), "%s.tga", filename);
 		if (COM_FOpenFile(name, &f) != -1)
 			return LoadSTBI_Image (f);
 	}
 
 	if (image_format & IMAGE_PNG) {
-		snprintf (name, 132, "%s.png", filename);
+		snprintf (name, sizeof(name), "%s.png", filename);
 		if (COM_FOpenFile(name, &f) != -1)
 			return LoadSTBI_Image (f);
 	}
 
 	if (image_format & IMAGE_JPG) {
-		snprintf (name, 132, "%s.jpg", filename);
+		snprintf (name, sizeof(name), "%s.jpg", filename);
 		if (COM_FOpenFile(name, &f) != -1)
 			return LoadSTBI_Image (f);
 
-		snprintf (name, 133, "%s.jpeg", filename);
+		snprintf (name, sizeof(name+1), "%s.jpeg", filename);
 		if (COM_FOpenFile(name, &f) != -1)
 			return LoadSTBI_Image (f);
 	}
@@ -237,7 +237,7 @@ int Image_LoadImage(char* filename, int image_format, int filter, bool keep, boo
 #ifdef __PSP__
 	texture_index = GL_LoadImages (texname, image_width, image_height, data, true, filter, 0, 4, keep);
 #elif __vita__
-	texture_index = GL_LoadTexture32 (texname, image_width, image_height, data, false, true, false);
+	texture_index = GL_LoadTexture (texname, image_width, image_height, data, mipmap, true, 4, keep);
 #elif __3DS__
 	texture_index = GL_LoadTexture (texname, image_width, image_height, data, mipmap, true, 4, keep);
 #elif __WII__
@@ -333,7 +333,7 @@ int loadpcxas4bpp (char* filename, int filter)
 
     if (pcx->manufacturer != 0x0a || pcx->version != 5 || pcx->encoding != 1 ||
         pcx->bits_per_pixel != 8 || pcx->xmax >= 320 || pcx->ymax >= 256) {
-        Con_Printf("Bad pcx file %s\n", name);
+        Con_DPrintf("Bad pcx file %s\n", name);
         return 0;
     }
 
