@@ -104,7 +104,7 @@ void R_InitParticleTexture (void)
 	//
 	// particle texture
 	//
-	particletexture = texture_extension_number++;
+	particletexture = GL_LoadTexture("particletex", 8, 8, (byte *)data, false, true, 1, true);
     GL_Bind(particletexture);
 
 	for (x=0 ; x<8 ; x++)
@@ -117,7 +117,6 @@ void R_InitParticleTexture (void)
 			data[y][x][3] = dottexture[x][y]*255;
 		}
 	}
-	glTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 8, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
 	GL_EnableState(GL_MODULATE);
 
@@ -202,133 +201,7 @@ void R_Init (void)
 
 	Sky_Init (); //johnfitz
 	Fog_Init (); //johnfitz
-
-	playertextures = texture_extension_number;
-	texture_extension_number += 16;
 }
-
-/*
-===============
-R_TranslatePlayerSkin
-
-Translates a skin texture by the per-player color lookup
-===============
-*/
-void R_TranslatePlayerSkin (int playernum)
-{
-	int		top, bottom;
-	byte	*translate = malloc(256*sizeof(byte));
-	unsigned	*translate32 = malloc(256*sizeof(unsigned));
-	int		i, j, s;
-	model_t	*model;
-	aliashdr_t *paliashdr;
-	byte	*original;
-	unsigned *pixels, *out;
-	unsigned	scaled_width, scaled_height;
-	int			inwidth, inheight;
-	byte		*inrow;
-	unsigned	frac, fracstep;
-	extern	byte		**player_8bit_texels_tbl;
-
-	top = 0xf0;
-	bottom = (15)<<4;
-
-	for (i=0 ; i<256 ; i++)
-		translate[i] = i;
-
-	for (i=0 ; i<16 ; i++)
-	{
-		if (top < 128)	// the artists made some backwards ranges.  sigh.
-			translate[TOP_RANGE+i] = top+i;
-		else
-			translate[TOP_RANGE+i] = top+15-i;
-				
-		if (bottom < 128)
-			translate[BOTTOM_RANGE+i] = bottom+i;
-		else
-			translate[BOTTOM_RANGE+i] = bottom+15-i;
-	}
-
-	//
-	// locate the original skin pixels
-	//
-	currententity = &cl_entities[1+playernum];
-	model = currententity->model;
-	if (!model){
-		free(translate);
-		free(translate32);
-		return;		// player doesn't have a model yet
-	}
-	if (model->type != mod_alias){
-		free(translate);
-		free(translate32);
-		return; // only translate skins on alias models
-	}
-	paliashdr = (aliashdr_t *)Mod_Extradata (model);
-	s = paliashdr->skinwidth * paliashdr->skinheight;
-	if (currententity->skinnum < 0 || currententity->skinnum >= paliashdr->numskins) {
-		Con_Printf("(%d): Invalid player skin #%d\n", playernum, currententity->skinnum);
-		original = (byte *)paliashdr + paliashdr->texels[0];
-	} else
-		original = (byte *)paliashdr + paliashdr->texels[currententity->skinnum];
-	if (s & 3)
-		Sys_Error ("R_TranslateSkin: s&3");
-
-	inwidth = paliashdr->skinwidth;
-	inheight = paliashdr->skinheight;
-
-	// because this happens during gameplay, do it fast
-	// instead of sending it through gl_upload 8
-    GL_Bind(playertextures + playernum);
-
-	scaled_width = gl_max_size.value < 512 ? gl_max_size.value : 512;
-	scaled_height = gl_max_size.value < 256 ? gl_max_size.value : 256;
-
-	// allow users to crunch sizes down even more if they want
-	scaled_width >>= (int)gl_playermip.value;
-	scaled_height >>= (int)gl_playermip.value;
-
-	#define PIXEL_COUNT (512*256)
-	#define PIXELS_SIZE (PIXEL_COUNT * sizeof(unsigned))
-	pixels = (unsigned*) malloc(PIXELS_SIZE);
-	if(!pixels)
-	{
-		free(translate);
-		free(translate32);
-		Sys_Error("Out of memory.");
-	}
-
-	for (i=0 ; i<256 ; i++)
-		translate32[i] = d_8to24table[translate[i]];
-
-	out = pixels;
-	fracstep = inwidth*0x10000/scaled_width;
-	for (i=0 ; i<scaled_height ; i++, out += scaled_width)
-	{
-		inrow = original + inwidth*(i*inheight/scaled_height);
-		frac = fracstep >> 1;
-		for (j=0 ; j<scaled_width ; j+=4)
-		{
-			out[j] = translate32[inrow[frac>>16]];
-			frac += fracstep;
-			out[j+1] = translate32[inrow[frac>>16]];
-			frac += fracstep;
-			out[j+2] = translate32[inrow[frac>>16]];
-			frac += fracstep;
-			out[j+3] = translate32[inrow[frac>>16]];
-			frac += fracstep;
-		}
-	}
-	glTexImage2D (GL_TEXTURE_2D, 0, gl_compress.value ? GL_COMPRESSED_RGBA_S3TC_DXT1_EXT : gl_solid_format, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-
-	GL_EnableState(GL_MODULATE);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	free(pixels);
-	free(translate);
-	free(translate32);
-}
-
 
 /*
 ===============

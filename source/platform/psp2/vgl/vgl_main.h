@@ -64,22 +64,25 @@ extern	DELTEXFUNCPTR delTexFunc;
 extern	TEXSUBIMAGEPTR TexSubImage2DFunc;
 #endif
 
-extern	int texture_extension_number;
 extern	int		texture_mode;
 
 extern	float	gldepthmin, gldepthmax;
 
 int GL_FindTexture (const char *identifier);
+void GL_UnloadTextures (void);
 
-void GL_Upload32 (unsigned *data, int width, int height,  bool mipmap, bool alpha);
-void GL_Upload8 (byte *data, int width, int height,  bool mipmap, bool alpha);
-int GL_LoadTexture (const char *identifier, int width, int height, byte *data, bool mipmap, bool alpha);
-int GL_LoadTexture32 (const char *identifier, int width, int height, byte *data, bool mipmap, bool alpha, bool fullbright);
+void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha);
+void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
+int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel, qboolean keep);
+int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qboolean update);
+
+extern  int	skyimage[5]; // Where sky images are stored
 
 typedef struct
 {
-	int		texnum;
-	char 	identifier[64];
+	GLuint 			gl_id; // real GL texture object
+	int				texnum;
+	char			identifier[64];
 	int				width, height, original_width, original_height;
 	int				bpp;
 	qboolean		mipmap;

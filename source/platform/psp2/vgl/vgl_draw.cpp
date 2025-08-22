@@ -95,361 +95,50 @@ float 	loading_num_step;
 int 	loading_step;
 float 	loading_cur_step_bk;
 
-#define	MAX_GLTEXTURES	1024
 gltexture_t	gltextures[MAX_GLTEXTURES];
 int numgltextures = 0;
-
-/*
- * Texture Manager - derived from glesquake
- */
-class textureStore {
-
-private:
-    static const GLuint UNUSED = (GLuint) -2;
-    static const GLuint PAGED_OUT = (GLuint) -1;
-
-    struct entry
-    {
-        entry* next;
-        entry* prev;
-        GLuint real_texnum;    // UNUSED, PAGED_OUT
-		bool is32;
-        byte* pData; // 0 ==> not created by us.
-        size_t size;
-        bool alpha;
-        int width;
-        int height;
-        bool mipmap;
-
-        entry() {
-            next = 0;
-            prev = 0;
-            real_texnum = UNUSED;
-            pData = 0;
-        }
-
-
-        void unlink() {
-            if (next) {
-                next->prev = prev;
-            }
-            if (prev) {
-                prev->next = next;
-            }
-            next = 0;
-            prev = 0;
-        }
-
-        void insertBefore(entry* e){
-            if (e) {
-                prev = e->prev;
-                if ( prev ) {
-                    prev->next = this;
-                }
-                next = e;
-                e->prev = this;
-            }
-            else {
-                prev = 0;
-                next = 0;
-            }
-        }
-    };
-
-public:
-
-    static textureStore* get() {
-        if (g_pTextureCache == 0) {
-            g_pTextureCache = new textureStore();
-        }
-        return g_pTextureCache;
-    }
-
-    // Equivalent of glBindTexture, but uses the virtual texture table
-
-    void bind(int virtTexNum) {
-        if ( (unsigned int) virtTexNum >= TEXTURE_STORE_NUM_TEXTURES) {
-            Sys_Error("not in the range we're managing");
-        }
-        mBoundTextureID = virtTexNum;
-        entry* e = &mTextures[virtTexNum];
-
-        if ( e->real_texnum == UNUSED) {
-            glGenTextures( 1, &e->real_texnum);
-        }
-
-        if ( e->pData == 0) {
-            glBindTexture(GL_TEXTURE_2D, e->real_texnum);
-            return;
-        }
-
-        update(e);
-    }
-
-    void update(entry* e)
-    {
-        // Update the "LRU" part of the cache
-        unlink(e);
-        e->insertBefore(mFirst);
-        mFirst = e;
-        if (! mLast) {
-            mLast = e;
-        }
-
-        if (e->real_texnum == PAGED_OUT ) {
-            // Create a real texture
-            // Make sure there is enough room for this texture
-            ensure(e->size);
-
-            glGenTextures( 1, &e->real_texnum);
-			
-            glBindTexture(GL_TEXTURE_2D, e->real_texnum);
-			if (e->is32)
-				GL_Upload32 ((unsigned*)e->pData, e->width, e->height, e->mipmap,
-                    e->alpha);
-			else
-				GL_Upload8 (e->pData, e->width, e->height, e->mipmap,
-                    e->alpha);
-        }
-        else {
-            glBindTexture(GL_TEXTURE_2D, e->real_texnum);
-        }
-    }
-
-    // Create a texture, and remember the data so we can create
-    // it again later.
-
-    void create(int width, int height, byte* data, bool mipmap,
-            bool alpha, bool is32) {
-        int size = width * height;
-		if (is32) size *= 4;
-        if (size + mLength > mCapacity) {
-            Sys_Error("Ran out of virtual texture space. %d", size);
-        };
-        entry* e = &mTextures[mBoundTextureID];
-
-        // Call evict in case the currently bound texture id is already
-        // in use. (Shouldn't happen in Quake.)
-        // To Do: reclaim the old texture memory from the virtual memory.
-
-        evict(e);
-
-        e->alpha = alpha;
-        e->pData = mBase + mLength;
-        memcpy(e->pData, data, size);
-        e->size = size;
-        e->width = width;
-        e->height = height;
-        e->mipmap = mipmap;
-		e->is32 = is32;
-        e->real_texnum = PAGED_OUT;
-        mLength += size;
-
-        update(e);
-    }
-
-    // Re-upload the current textures because we've been reset.
-    void rebindAll() {
-        grabMagicTextureIds();
-        for (entry* e = mFirst; e; e = e->next ) {
-            if (! (e->real_texnum == UNUSED || e->real_texnum == PAGED_OUT)) {
-                glBindTexture(GL_TEXTURE_2D, e->real_texnum);
-                if (e->pData) {
-					if (e->is32)
-						GL_Upload32 ((unsigned*)e->pData, e->width, e->height, e->mipmap,
-							e->alpha);
-					else
-						GL_Upload8 (e->pData, e->width, e->height, e->mipmap,
-							e->alpha);
-                }
-            }
-        }
-    }
-
-private:
-
-    textureStore() {
-        grabMagicTextureIds();
-        mFirst = 0;
-        mLast = 0;
-        mTextureCount = 0;
-
-        mBase = (byte*)malloc(TEXTURE_STORE_SIZE);
-		mBase[TEXTURE_STORE_SIZE-1] = 0;
-		
-        mLength = 0;
-        mCapacity = TEXTURE_STORE_SIZE;
-        mRamUsed = 0;
-        mRamSize = LIVE_TEXTURE_LIMIT;
-    }
-
-    ~textureStore() {
-        free(mBase);
-    }
-
-    void grabMagicTextureIds() {
-        // reserve these two texture ids.
-        glBindTexture(GL_TEXTURE_2D, UNUSED);
-        glBindTexture(GL_TEXTURE_2D, PAGED_OUT);
-    }
-
-    void unlink(entry* e) {
-        if (e == mFirst) {
-            mFirst = e->next;
-        }
-        if (e == mLast) {
-            mLast = e->prev;
-        }
-        e->unlink();
-    }
-
-    void ensure(int size) {
-        while ( mRamSize - mRamUsed < (unsigned int) size) {
-            entry* e = mLast;
-            if(! e) {
-                Sys_Error("Ran out of entries");
-                return;
-            }
-            evict(e);
-        }
-        mRamUsed += size;
-    }
-
-    void evict(entry* e) {
-        unlink(e);
-        if ( e->pData ) {
-            glDeleteTextures(1, &e->real_texnum);
-            e->real_texnum = PAGED_OUT;
-            mRamUsed -= e->size;
-        }
-    }
-
-    static const size_t TEXTURE_STORE_SIZE = 16 * 1024 * 1024 * 2;
-    static const size_t LIVE_TEXTURE_LIMIT = 1 * 1024 * 1024 * 2;
-    static const size_t TEXTURE_STORE_NUM_TEXTURES = 1024;
-
-    byte* mBase;
-    size_t mLength;
-    size_t mCapacity;
-
-    // Keep track of texture RAM.
-    size_t mRamUsed;
-    size_t mRamSize;
-
-    // The virtual textures
-    entry mTextures[MAX_GLTEXTURES];
-    entry* mFirst; // LRU queue
-    entry* mLast;
-    size_t mTextureCount; // How many virtual textures have been allocated
-
-    static textureStore* g_pTextureCache;
-
-    int mBoundTextureID;
-};
-
-textureStore* textureStore::g_pTextureCache;
 
 void GL_Bind (int texnum)
 {
 	if (currenttexture == texnum)
 		return;
 	currenttexture = texnum;
-	
-	if (tex_cache)
-		textureStore::get()->bind(texnum);
-	else
-		glBindTexture(GL_TEXTURE_2D, texnum);
+
+	gltexture_t *glt = &gltextures[texnum];
+	if (glt->used == false) return;
+	if (glt->texnum < 0) return;
+
+	glBindTexture(GL_TEXTURE_2D, glt->gl_id);
 }
 
-/*
-=============================================================================
-
-  scrap allocation
-
-  Allocate all the little status bar obejcts into a single texture
-  to crutch up stupid hardware / drivers
-
-=============================================================================
-*/
-
-#define	MAX_SCRAPS		2
-#define	BLOCK_WIDTH		256
-#define	BLOCK_HEIGHT	256
-
-int			scrap_allocated[MAX_SCRAPS][BLOCK_WIDTH];
-byte		scrap_texels[MAX_SCRAPS][BLOCK_WIDTH*BLOCK_HEIGHT*4];
-bool	scrap_dirty;
-int			scrap_texnum;
-
-// returns a texture number and the position inside it
-int Scrap_AllocBlock (int w, int h, int *x, int *y)
+void GL_FreeTextures (int texnum)
 {
-	int		i, j;
-	int		best, best2;
-	int		bestx;
-	int		texnum;
+	if (texnum <= 0) return;
 
-	for (texnum=0 ; texnum<MAX_SCRAPS ; texnum++)
-	{
-		best = BLOCK_HEIGHT;
+	gltexture_t *glt = &gltextures[texnum];
+	if (glt->used == false) return;
+	if (glt->keep) return;
 
-		for (i=0 ; i<BLOCK_WIDTH-w ; i++)
-		{
-			best2 = 0;
+	glDeleteTextures(1, &glt->gl_id);
+	glt->gl_id = 0;
+	glt->texnum = texnum;
+	strcpy(glt->identifier, "");
+	glt->width = 0;
+	glt->height = 0;
+	glt->original_width = 0;
+	glt->original_height = 0;
+	glt->bpp = 0;
+	glt->keep = false;
+	glt->used = false;
+	memset(glt, 0, sizeof(*glt));   // clear slot
+	numgltextures--;
+}
 
-			for (j=0 ; j<w ; j++)
-			{
-				if (scrap_allocated[texnum][i+j] >= best)
-					break;
-				if (scrap_allocated[texnum][i+j] > best2)
-					best2 = scrap_allocated[texnum][i+j];
-			}
-			if (j == w)
-			{	// this is a valid spot
-				*x = i;
-				*y = best = best2;
-			}
-		}
-
-		if (best + h > BLOCK_HEIGHT)
-			continue;
-
-		for (i=0 ; i<w ; i++)
-			scrap_allocated[texnum][*x + i] = best + h;
-
-		return texnum;
+void GL_UnloadTextures (void)
+{
+	for (int i = 0; i < (MAX_GLTEXTURES); i++) {
+		GL_FreeTextures(i);
 	}
-
-	Sys_Error ("Scrap_AllocBlock: full");
-	return 0;
-}
-
-int	scrap_uploads;
-
-void Scrap_Upload (void)
-{
-	int		texnum;
-
-	scrap_uploads++;
-
-	for (texnum=0 ; texnum<MAX_SCRAPS ; texnum++) {
-		GL_Bind(scrap_texnum + texnum);
-		GL_Upload8 (scrap_texels[texnum], BLOCK_WIDTH, BLOCK_HEIGHT, false, true);
-	}
-	scrap_dirty = false;
-}
-
-//=============================================================================
-/* Support Routines */
-
-/*
-================
-GL_LoadPicTexture
-================
-*/
-int GL_LoadPicTexture (qpic_t *pic)
-{
-  return GL_LoadTexture ("", pic->width, pic->height, pic->data, false, true);
 }
 
 /*
@@ -626,12 +315,6 @@ void Draw_Init (void)
 	if (char_texture < 0)// did not find a matching TGA...
 		Sys_Error ("Could not load charset, make sure you have every folder and file installed properly\nDouble check that all of your files are in their correct places\nAnd that you have installed the game properly.\n");
 
-	// save a texture slot for translated picture
-	translate_texture = texture_extension_number++;
-
-	// save slots for scraps
-	scrap_texnum = texture_extension_number;
-	texture_extension_number += MAX_SCRAPS;
 	sniper_scope = Image_LoadImage ("gfx/hud/scope", IMAGE_TGA, 0, true, false);
 
 	Clear_LoadingFill ();
@@ -1219,37 +902,6 @@ void GL_ResampleTexture (unsigned *in, int inwidth, int inheight, unsigned *out,
 
 /*
 ================
-GL_Resample8BitTexture -- JACK
-================
-*/
-void GL_Resample8BitTexture (unsigned char *in, int inwidth, int inheight, unsigned char *out,  int outwidth, int outheight)
-{
-	int		i, j;
-	unsigned	char *inrow;
-	unsigned	frac, fracstep;
-
-	fracstep = inwidth*0x10000/outwidth;
-	for (i=0 ; i<outheight ; i++, out += outwidth)
-	{
-		inrow = in + inwidth*(i*inheight/outheight);
-		frac = fracstep >> 1;
-		for (j=0 ; j<outwidth ; j+=4)
-		{
-			out[j] = inrow[frac>>16];
-			frac += fracstep;
-			out[j+1] = inrow[frac>>16];
-			frac += fracstep;
-			out[j+2] = inrow[frac>>16];
-			frac += fracstep;
-			out[j+3] = inrow[frac>>16];
-			frac += fracstep;
-		}
-	}
-}
-
-
-/*
-================
 GL_MipMap
 
 Operates in place, quartering the size of the texture
@@ -1275,57 +927,24 @@ void GL_MipMap (byte *in, int width, int height)
 	}
 }
 
-/*
-================
-GL_MipMap8Bit
-
-Mipping for 8 bit textures
-================
-*/
-void GL_MipMap8Bit (byte *in, int width, int height)
-{
-	int		i, j;
-	unsigned short     r,g,b;
-	byte	*out, *at1, *at2, *at3, *at4;
-
-//	width <<=2;
-	height >>= 1;
-	out = in;
-	for (i=0 ; i<height ; i++, in+=width)
-	{
-		for (j=0 ; j<width ; j+=2, out+=1, in+=2)
-		{
-			at1 = (byte *) (d_8to24table + in[0]);
-			at2 = (byte *) (d_8to24table + in[1]);
-			at3 = (byte *) (d_8to24table + in[width+0]);
-			at4 = (byte *) (d_8to24table + in[width+1]);
-
- 			r = (at1[0]+at2[0]+at3[0]+at4[0]); r>>=5;
- 			g = (at1[1]+at2[1]+at3[1]+at4[1]); g>>=5;
- 			b = (at1[2]+at2[2]+at3[2]+at4[2]); b>>=5;
-
-			out[0] = d_15to8table[(r<<0) + (g<<5) + (b<<10)];
-		}
-	}
-}
+static	unsigned	scaled[1024*512];	// [512*256];
+static	unsigned	trans[1024*512];	// FIXME, temporary.. err... was it?
 
 /*
 ===============
 GL_Upload32
 ===============
 */
-void GL_Upload32 (unsigned *data, int width, int height,  bool mipmap, bool alpha)
+void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha)
 {
-	if (!gl_mipmap.value) mipmap = false;
 	int			samples;
-	static unsigned int scaled[2048*2048];	// [512*256];
 	int			scaled_width, scaled_height;
 
 	for (scaled_width = 1 ; scaled_width < width ; scaled_width<<=1)
 		;
 	for (scaled_height = 1 ; scaled_height < height ; scaled_height<<=1)
 		;
-	
+
 	scaled_width >>= (int)gl_picmip.value;
 	scaled_height >>= (int)gl_picmip.value;
 
@@ -1335,41 +954,56 @@ void GL_Upload32 (unsigned *data, int width, int height,  bool mipmap, bool alph
 		scaled_height = gl_max_size.value;
 
 	if (scaled_width * scaled_height > sizeof(scaled)/4)
-		Sys_Error ("GL_LoadTexture: too big");
+		Sys_Error ("too big");
 
-	if (gl_compress.value) {
-		samples = alpha ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-		mipmap = false; // Compressed textures do not support mipmaps yet in vitaGL
-	} else samples = alpha ? gl_alpha_format : gl_solid_format;
+	samples = alpha ? gl_alpha_format : gl_solid_format;
+
+	// bind the texture to make sure we're uploading to the right one
+    glBindTexture(GL_TEXTURE_2D, gl_id);
 
 	if (scaled_width == width && scaled_height == height)
 	{
 		if (!mipmap)
 		{
-			glTexImage2D (GL_TEXTURE_2D, 0, samples, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+			glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 			goto done;
 		}
 		memcpy (scaled, data, width*height*4);
-	}
-	else
+	} else {
 		GL_ResampleTexture (data, width, height, scaled, scaled_width, scaled_height);
+	}
+
+	glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
 	
-	glTexImage2D (GL_TEXTURE_2D, 0, samples, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
-	if (mipmap) glGenerateMipmap(GL_TEXTURE_2D);
-	
-done: ;
 	
 	if (mipmap)
 	{
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+		int		miplevel;
+
+		miplevel = 0;
+		while (scaled_width > 1 || scaled_height > 1)
+		{
+			GL_MipMap ((byte *)scaled, scaled_width, scaled_height);
+			scaled_width >>= 1;
+			scaled_height >>= 1;
+			if (scaled_width < 1)
+				scaled_width = 1;
+			if (scaled_height < 1)
+				scaled_height = 1;
+			miplevel++;
+			glTexImage2D (GL_TEXTURE_2D, miplevel, samples, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
+		}
 	}
-	else
-	{
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_max);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+		
+done: ;
+
+	if (mipmap) {
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+	} else {
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_max);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 	}
-	
 }
 
 /*
@@ -1377,11 +1011,10 @@ done: ;
 GL_Upload8
 ===============
 */
-void GL_Upload8 (byte *data, int width, int height,  bool mipmap, bool alpha)
+void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipmap, qboolean alpha)
 {
-static	unsigned	trans[640*480];		// FIXME, temporary
 	int			i, s;
-	bool	noalpha;
+	qboolean	noalpha;
 	int			p;
 
 	s = width*height;
@@ -1404,7 +1037,7 @@ static	unsigned	trans[640*480];		// FIXME, temporary
 	else
 	{
 		if (s&3)
-			Sys_Error ("GL_Upload8: s&3");
+			Sys_Error ("s&3");
 		for (i=0 ; i<s ; i+=4)
 		{
 			trans[i] = d_8to24table[data[i]];
@@ -1414,116 +1047,144 @@ static	unsigned	trans[640*480];		// FIXME, temporary
 		}
 	}
 
-	GL_Upload32 (trans, width, height, mipmap, alpha);
+	GL_Upload32 (gl_id, trans, width, height, mipmap, alpha);
 }
 
-/*
-================
-GL_LoadTexture
-================
-*/
-int GL_LoadTexture (const char *identifier, int width, int height, byte *data, bool mipmap, bool alpha)
-{
-	bool	noalpha;
-	int			i, p, s;
-	gltexture_t	*glt;
-
-	// see if the texture is already present
-	if (identifier[0])
-	{
-		for (i=0, glt=gltextures ; i<numgltextures ; i++, glt++)
-		{
-			if (!strcmp (identifier, glt->identifier))
-			{
-				// FIXME: Caching is broken with external textures
-				//if (width != glt->width || height != glt->height)
-				//	Sys_Error ("GL_LoadTexture32: cache mismatch for %s, expected: %ld, got %d", identifier, width, glt->width);
-				return gltextures[i].texnum;
-			}
-		}
-	}
-	//else {                                    // 13/02/2000 removed: M.Tretene
-		glt = &gltextures[numgltextures];
-		numgltextures++;
-	//}
-
-	strcpy (glt->identifier, identifier);
-	glt->texnum = texture_extension_number;
-	glt->width = width;
-	glt->height = height;
-	glt->original_width	= width;
-	glt->original_height = height;
-	glt->mipmap = mipmap;
-
-	GL_Bind(texture_extension_number );
-	
-	if (tex_cache)
-		textureStore::get()->create(width, height, data, mipmap, alpha, false);
-	else
-		GL_Upload8 (data, width, height, mipmap, alpha);
-
-	texture_extension_number++;
-
-	return texture_extension_number-1;
-}
-
-/*
-================
-GL_LoadTexture32
-================
-*/
-int GL_LoadTexture32 (const char *identifier, int width, int height, byte *data, bool mipmap, bool alpha, bool fullbright)
+int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel, qboolean keep)
 {
 	int texture_index = GL_FindTexture(identifier);
 	if (texture_index >= 0) {
 		return texture_index;
 	}
 
-	int			i;
+	int i;
 	gltexture_t	*glt;
 
-	numgltextures++;
 	// Out of textures?
 	if (numgltextures == MAX_GLTEXTURES)
 		Sys_Error ("GL_GetTextureIndex: Out of GL textures\n");
 
-	for (i=0, glt=gltextures; i <=numgltextures; i++, glt++) {
+	texture_index = -1;
+	for (i=0, glt=gltextures; i < numgltextures; i++, glt++) {
 		if (glt->used == false) {
 			texture_index = i;
 			break;
 		}
 	}
 
-	if (texture_index < 0)
-		Sys_Error("Could not find a free GL texture! %i %s\n", numgltextures, identifier);
-	
-	// Make black pixels transparent for *_luma textures
-	if (fullbright) {
-		int cnt = width * height * 4;
-		for (i=0; i<cnt; i+=4) {
-			if (data[i] < 1 && data[i+1] < 1 && data[i+2] < 1)
-				data[i+3] = 0;
-		}
+	// If no free slot, append a new one
+    if (texture_index == -1) {
+        if (numgltextures == MAX_GLTEXTURES) {
+            Sys_Error("GL_LoadTexture: Out of GL textures\n");
+        }
+        texture_index = numgltextures++;
+        glt = &gltextures[texture_index];
+    }
+
+	if (texture_index < 0) {
+		Sys_Error("Could not find a free GL texture!\n");
 	}
-	
-	strcpy (glt->identifier, identifier);
-	glt->texnum = texture_extension_number;
+
+	GLuint texID;
+	glGenTextures(1, &texID);     // Ask GL for a real texture object
+
+	strcpy(glt->identifier, identifier);
+	glt->gl_id = texID;
+	glt->texnum = texture_index;
 	glt->width = width;
 	glt->height = height;
-	glt->original_width	= width;
+	glt->original_width = width;
 	glt->original_height = height;
+	glt->bpp = bytesperpixel;
 	glt->mipmap = mipmap;
-	
-	GL_Bind(texture_extension_number);
-	
-	if (tex_cache)
-		textureStore::get()->create(width, height, data, mipmap, alpha, true);
-	else
-		GL_Upload32 ((unsigned*)data, width, height, mipmap, alpha);
-	
-	texture_extension_number++;
+	glt->keep = keep;
+	glt->used = true;
 
-	return texture_extension_number-1;
+	//Con_DPrintf("tex num %i tex name %s size %im\n", texture_index, identifier, (width*height*bytesperpixel)/1024);
+	if (bytesperpixel == 1) {
+		GL_Upload8 (glt->gl_id, data, width, height, mipmap, alpha);
+	}
+	else if (bytesperpixel == 4) {
+		GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, mipmap, alpha);
+	}
+	else {
+		Sys_Error("GL_LoadTexture: unknown bytesperpixel\n");
+	}
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	return texture_index;
+}
+
+int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qboolean update)
+{
+	int i;
+	gltexture_t	*glt;
+
+	int texture_index = -1;
+
+	if (update == false) {
+		// Out of textures?
+		if (numgltextures == MAX_GLTEXTURES)
+			Sys_Error ("GL_GetTextureIndex: Out of GL textures\n");
+
+		for (i=0, glt=gltextures; i < numgltextures; i++, glt++) {
+			if (glt->used == false) {
+				texture_index = i;
+				break;
+			}
+		}
+
+		// If no free slot, append a new one
+		if (texture_index == -1) {
+			if (numgltextures == MAX_GLTEXTURES) {
+				Sys_Error("GL_LoadTexture: Out of GL textures\n");
+			}
+			texture_index = numgltextures++;
+			glt = &gltextures[texture_index];
+		}
+
+		if (texture_index < 0)
+			Sys_Error("Could not find a free GL texture!\n");
+
+		GLuint texID;
+		glGenTextures(1, &texID);
+
+		//Con_DPrintf("lm num %i lm name %s\n", texture_index, identifier);
+
+		strcpy(glt->identifier, identifier);
+		glt->gl_id = texID;
+		glt->texnum = texture_index;
+		glt->width = width;
+		glt->height = height;
+		glt->original_width = width;
+		glt->original_height = height;
+		glt->bpp = 4;
+		glt->mipmap = false;
+		glt->keep = false;
+		glt->used = true;
+
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, false, false);
+	} else if (update == true) {
+		texture_index = GL_FindTexture(identifier);
+
+		if (texture_index < 0) Sys_Error("tried to upload inactive lightmap\n");
+
+		glt = &gltextures[texture_index];
+
+		if (width == glt->original_width && height == glt->original_height) {
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+			GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, false, false);
+		}
+	}
+
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	return texture_index;
 }
 
 /****************************************/
