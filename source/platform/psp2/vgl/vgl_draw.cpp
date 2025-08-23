@@ -937,7 +937,6 @@ GL_Upload32
 */
 void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha)
 {
-	int			samples;
 	int			scaled_width, scaled_height;
 
 	for (scaled_width = 1 ; scaled_width < width ; scaled_width<<=1)
@@ -954,9 +953,7 @@ void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean
 		scaled_height = gl_max_size.value;
 
 	if (scaled_width * scaled_height > sizeof(scaled)/4)
-		Sys_Error ("too big");
-
-	samples = alpha ? gl_alpha_format : gl_solid_format;
+		Sys_Error ("GL_Upload32: too big");
 
 	// bind the texture to make sure we're uploading to the right one
     glBindTexture(GL_TEXTURE_2D, gl_id);
@@ -975,34 +972,18 @@ void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean
 
 	glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
 	
-	
-	if (mipmap)
-	{
-		int		miplevel;
-
-		miplevel = 0;
-		while (scaled_width > 1 || scaled_height > 1)
-		{
-			GL_MipMap ((byte *)scaled, scaled_width, scaled_height);
-			scaled_width >>= 1;
-			scaled_height >>= 1;
-			if (scaled_width < 1)
-				scaled_width = 1;
-			if (scaled_height < 1)
-				scaled_height = 1;
-			miplevel++;
-			glTexImage2D (GL_TEXTURE_2D, miplevel, samples, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
-		}
+	if (mipmap) {
+		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 		
 done: ;
 
 	if (mipmap) {
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 	} else {
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_max);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_max);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 	}
 }
 
@@ -1110,7 +1091,8 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 	else {
 		Sys_Error("GL_LoadTexture: unknown bytesperpixel\n");
 	}
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	GL_EnableState(GL_MODULATE);
 
 	return texture_index;
 }
@@ -1163,8 +1145,8 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 		glt->keep = false;
 		glt->used = true;
 
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, false, false);
 	} else if (update == true) {
@@ -1175,14 +1157,14 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 		glt = &gltextures[texture_index];
 
 		if (width == glt->original_width && height == glt->original_height) {
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 			GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, false, false);
 		}
 	}
 
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	GL_EnableState(GL_MODULATE);
 
 	return texture_index;
 }
