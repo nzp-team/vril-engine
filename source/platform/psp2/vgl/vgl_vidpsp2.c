@@ -578,7 +578,7 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 		if (fb_tex == -1) {
 			void *buffer = malloc(scr_width * scr_height * 4);
 			memset(buffer, 0xFF, scr_width * scr_height * 4);
-			fb_tex = GL_LoadTexture ("***framebuffer***", scr_width, scr_height, buffer, false, false, 1, true);
+			fb_tex = GL_LoadTexture ("***framebuffer***", scr_width, scr_height, buffer, false, false, 4, true);
 			glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, scr_width, scr_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 			free(buffer);
 			glBindTexture(GL_TEXTURE_2D, fb_tex);
