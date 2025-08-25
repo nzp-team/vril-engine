@@ -205,7 +205,7 @@ byte* Image_LoadPixels(char* filename, int image_format)
 		if (COM_FOpenFile(name, &f) != -1)
 			return LoadSTBI_Image (f);
 
-		snprintf (name, sizeof(name+1), "%s.jpeg", filename);
+		snprintf (name, sizeof(name)+1, "%s.jpeg", filename);
 		if (COM_FOpenFile(name, &f) != -1)
 			return LoadSTBI_Image (f);
 	}
@@ -263,6 +263,9 @@ int loadrgbafrompal (char* name, int width, int height, byte* data)
 {
 	int pixels = width * height;
 	byte* rgbadata = (byte*)Q_malloc(pixels * 4);
+	char texname[32];
+
+	tex_filebase (name, texname);
 
 	for(int i = 0; i < pixels; i++) {
 		byte palette_index = data[i];
@@ -272,7 +275,7 @@ int loadrgbafrompal (char* name, int width, int height, byte* data)
         rgbadata[i * 4 + 3] = 255; // Set alpha to opaque
 	}
 
-	int ret = GL_LoadImages(name, width, height, rgbadata, true, GU_LINEAR, 0, 4, true);
+	int ret = GL_LoadImages(texname, width, height, rgbadata, true, GU_LINEAR, 0, 4, true);
 
 	free(rgbadata);
 	return ret;
@@ -302,7 +305,7 @@ int loadskyboxsideimage (char* filename, int image_format, bool keep, int filter
 
 	int newheight = image_height * 0.5;
 	
-	texture_index = GL_LoadImages (filename, image_width, newheight, data, true, filter, 0, 4, keep);
+	texture_index = GL_LoadImages (texname, image_width, newheight, data, true, filter, 0, 4, keep);
 
 	free(data);
 
@@ -319,7 +322,10 @@ int loadpcxas4bpp (char* filename, int filter)
 {
 	FILE* f;
 	char name[128];
+	char texname[32];
+
 	sprintf(name, "%s.pcx", filename);
+	tex_filebase (name, texname);
 	COM_FOpenFile(name, &f);
 	if (!f) {
 		Con_DPrintf("Could not load PCX file %s\n", name);
@@ -373,7 +379,7 @@ int loadpcxas4bpp (char* filename, int filter)
 	COM_FOpenFile(name, &f2);
 
 	if (!f2) {
-		texture = GL_LoadTexture8to4(filename, width, height, data, palette, filter, 3, NULL);
+		texture = GL_LoadTexture8to4(texname, width, height, data, palette, filter, 3, NULL);
 	} else {
 		// contain padding for extra whitespace etc 
 		size_t size = 16 * 4 * 2 * 2;
@@ -403,7 +409,7 @@ int loadpcxas4bpp (char* filename, int filter)
 				index++;
 			}
 		}
-		texture = GL_LoadTexture8to4(filename, width, height, data, palette, filter, 3, (byte*)palhint);
+		texture = GL_LoadTexture8to4(texname, width, height, data, palette, filter, 3, (byte*)palhint);
 	}
 
 	free(data);
