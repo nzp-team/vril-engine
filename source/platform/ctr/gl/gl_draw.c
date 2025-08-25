@@ -1103,7 +1103,6 @@ GL_Upload32
 */
 void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha)
 {
-	int			samples;
 	int			scaled_width, scaled_height;
 
 	for (scaled_width = 1 ; scaled_width < width ; scaled_width<<=1)
@@ -1120,9 +1119,7 @@ void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean
 		scaled_height = gl_max_size.value;
 
 	if (scaled_width * scaled_height > sizeof(scaled)/4)
-		Sys_Error ("too big");
-
-	samples = alpha ? gl_alpha_format : gl_solid_format;
+		Sys_Error ("GL_Upload32: too big");
 
 	// bind the texture to make sure we're uploading to the right one
     glBindTexture(GL_TEXTURE_2D, gl_id);
@@ -1141,9 +1138,7 @@ void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean
 
 	glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
 	
-	
-	if (mipmap)
-	{
+	if (mipmap) {
 		int		miplevel;
 
 		miplevel = 0;
@@ -1157,7 +1152,7 @@ void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean
 			if (scaled_height < 1)
 				scaled_height = 1;
 			miplevel++;
-			glTexImage2D (GL_TEXTURE_2D, miplevel, samples, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
+			glTexImage2D (GL_TEXTURE_2D, miplevel, GL_RGBA, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
 		}
 	}
 		
