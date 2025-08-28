@@ -1927,22 +1927,6 @@ void Mod_FloodFillSkin( byte *skin, int skinwidth, int skinheight )
 	}
 }
 
-qboolean model_is_gun(char name[MAX_QPATH])
-{
-	char wep_path[15];
-
-	for (int i = 0; i < 15; i++) {
-		wep_path[i] = name[i];
-	}
-	wep_path[14] = '\0';
-
-	if (strcmp(wep_path, "models/weapons") == 0) {
-		return qtrue;
-	}
-
-	return qfalse;
-}
-
 qboolean model_is_viewmodel(char * name)
 {
 	if (strstr(name, "/v_") != NULL) {
@@ -2046,7 +2030,6 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 		}
 	}
 
-	qboolean is_gun = model_is_gun(loadmodel->name);
 	qboolean is_viewmodel = model_is_viewmodel(loadmodel->name);
 
 	for (i=0 ; i<numskins ; i++)
