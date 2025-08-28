@@ -1952,6 +1952,22 @@ qboolean model_is_zombie(char name[MAX_QPATH])
 	return qfalse;
 }
 
+qboolean model_is_gun(char name[MAX_QPATH])
+{
+	char wep_path[15];
+
+	for (int i = 0; i < 15; i++) {
+		wep_path[i] = name[i];
+	}
+	wep_path[14] = '\0';
+
+	if (strcmp(wep_path, "models/weapons") == 0) {
+		return qtrue;
+	}
+
+	return qfalse;
+}
+
 /*
 ===============
 Mod_LoadAllSkins
@@ -2031,10 +2047,19 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 	}
 
 	qboolean is_viewmodel = model_is_viewmodel(loadmodel->name);
+	qboolean is_gun = model_is_gun(loadmodel->name);
 
 	for (i=0 ; i<numskins ; i++)
 	{
-		if (pskintype->type == ALIAS_SKIN_SINGLE)
+		if (is_gun && i >= 1 && psp_system_model == PSP_MODEL_PHAT) {
+			pheader->gl_texturenum[i][0] = 
+			pheader->gl_texturenum[i][1] = 
+			pheader->gl_texturenum[i][2] = 
+			pheader->gl_texturenum[i][3] = loadtextureimage("models/weapons/v_papskin", 0, 0, qtrue, GU_LINEAR);
+			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
+			return (void *)pskintype;
+		}
+		else if (pskintype->type == ALIAS_SKIN_SINGLE)
 		{
 			Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
 			COM_StripExtension(loadmodel->name, model);
