@@ -530,10 +530,8 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 {
 	sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 
-	if (!pic)
-        GL_Bind (nonetexture);
-	else
-        GL_Bind (pic);
+	const gltexture_t &glt = gltextures[pic];
+	GL_Bind (glt.texnum);
 
 	struct vertex
 	{
@@ -550,19 +548,18 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 	vertices[0].y		= y;
 	vertices[0].z		= 0;
 
-	const gltexture_t &glt = gltextures[pic];
 	vertices[1].u 		= glt.width;
 	vertices[1].v 		= glt.height;
 
 	vertices[1].x		= x + glt.original_width;
-	vertices[1].y		= y + glt.original_width;
+	vertices[1].y		= y + glt.original_height;
 	vertices[1].z		= 0;
 
 	sceGuColor(GU_RGBA(
-	static_cast<unsigned int>(r),
-	static_cast<unsigned int>(g),
-	static_cast<unsigned int>(b),
-	static_cast<unsigned int>(a)));
+		static_cast<unsigned int>(r),
+		static_cast<unsigned int>(g),
+		static_cast<unsigned int>(b),
+		static_cast<unsigned int>(a)));
 
 	sceGuDrawArray(
 		GU_SPRITES,
@@ -590,7 +587,7 @@ Draw_Pic
 */
 void Draw_Pic (int x, int y, int pic)
 {
-	Draw_AlphaPic(x, y, pic, 1.0f);
+	Draw_AlphaPic(x, y, pic, 255);
 }
 
 /*
@@ -600,10 +597,8 @@ Draw_StretchPic
 */
 void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
 {
-	if (!pic)
-        GL_Bind (nonetexture);
-	else
-        GL_Bind (pic);
+	const gltexture_t &glt = gltextures[pic];
+	GL_Bind (glt.texnum);
 
 	struct vertex
 	{
@@ -613,7 +608,6 @@ void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
 
 
 	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
-	const gltexture_t& glt = gltextures[pic];
 	vertices[0].u = 0;
 	vertices[0].v = 0;
 	vertices[0].x = x;
@@ -640,10 +634,8 @@ void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, in
 {
 	sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 
-	if (!pic)
-        GL_Bind (nonetexture);
-	else
-        GL_Bind (pic);
+	const gltexture_t &glt = gltextures[pic];
+	GL_Bind (glt.texnum);
 
 	struct vertex
 	{
@@ -653,7 +645,6 @@ void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, in
 
 
 	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
-	const gltexture_t& glt = gltextures[pic];
 	vertices[0].u = 0;
 	vertices[0].v = 0;
 	vertices[0].x = x;
@@ -667,11 +658,11 @@ void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, in
 	vertices[1].y = y + y_value;
 	vertices[1].z = 0;
 
-		sceGuColor(GU_RGBA(
-	static_cast<unsigned int>(r),
-	static_cast<unsigned int>(g),
-	static_cast<unsigned int>(b),
-	static_cast<unsigned int>(a)));
+	sceGuColor(GU_RGBA(
+		static_cast<unsigned int>(r),
+		static_cast<unsigned int>(g),
+		static_cast<unsigned int>(b),
+		static_cast<unsigned int>(a)));
 
 	sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D, 2, 0, vertices);
 
@@ -696,60 +687,6 @@ void Draw_TransPic (int x, int y, int pic)
 
 	Draw_Pic (x, y, pic);
 }
-
-/*
-=============
-Draw_TransPicTranslate
-
-Only used for the player color selection menu
-=============
-*/
-void Draw_TransPicTranslate (int x, int y, int pic, byte *translation)
-{
-	int				v, c;
-	unsigned	    trans[64*64];
-	int				p;
-
-	gltexture_t &texture = gltextures[pic];
-	c = texture.width * texture.height;
-
-	for(v = 0; v < c ; v++)
-	{
-       	p = menuplyr_pixels[v];
-		if (p == 255)
-			trans[v] = p;
-		else
-			trans[v] = translation[p];
-	}
-    int translate_texture = GL_LoadTexture ("Player_Trl", texture.width, texture.height, (byte*)trans, true, GU_LINEAR, 0);
-
-	GL_Bind (translate_texture);
-
-	struct vertex
-	{
-		short u, v;
-		short x, y, z;
-	};
-
-	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
-
-	vertices[0].u = 0;
-	vertices[0].v = 0;
-	vertices[0].x = x;
-	vertices[0].y = y;
-	vertices[0].z = 0;
-
-	vertices[1].u = 64;
-	vertices[1].v = 64;
-	vertices[1].x = x + texture.width;
-	vertices[1].y = y + texture.height;
-	vertices[1].z = 0;
-
-	sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D, 2, 0, vertices);
-
-    GL_UnloadTexture(translate_texture);
-}
-
 
 /*
 ================
@@ -2355,6 +2292,7 @@ void GL_UnloadTexture(int texture_index)
 	texture.height  = 0;
 	texture.mipmaps = 0;
 	texture.swizzle = 0;
+	texture.texnum 	= -1;
 
 	if (texture.palette != NULL)
 	{
@@ -2445,7 +2383,7 @@ int GL_LoadTexture (const char *identifier, int width, int height, byte *data, q
 	
 	texture_index = GL_GetTextureIndex();
 
-	gltexture_t& texture = gltextures[texture_index];
+	gltexture_t &texture = gltextures[texture_index];
 
 	// Fill in the source data.
 	strcpy(texture.identifier, identifier);
@@ -2459,6 +2397,7 @@ int GL_LoadTexture (const char *identifier, int width, int height, byte *data, q
 	texture.mipmaps			= mipmap_level;
 	texture.swizzle         = GU_TRUE;
 	texture.bpp             = 1;
+	texture.texnum			= texture_index;
 
 	if (tex_scale_down == true && texture.stretch_to_power_of_two == true)
 	{
@@ -2553,7 +2492,7 @@ int GL_LoadTextureLM (const char *identifier, int width, int height, byte *data,
 	if (update == false || texture_index == -1)
 	{
 		texture_index = GL_GetTextureIndex();
-		gltexture_t& texture = gltextures[texture_index];
+		gltexture_t &texture = gltextures[texture_index];
 		gltextures_used[texture_index] = true;
 
 		// Fill in the source data.
@@ -2584,6 +2523,7 @@ int GL_LoadTextureLM (const char *identifier, int width, int height, byte *data,
 
 		texture.filter			= filter;
 		texture.mipmaps			= 0;
+		texture.texnum			= texture_index;
 
 		if(forcopy)
 		{
@@ -2666,7 +2606,7 @@ int GL_LoadTextureLM (const char *identifier, int width, int height, byte *data,
 	}
 	else
 	{
-		gltexture_t& texture = gltextures[texture_index];
+		gltexture_t &texture = gltextures[texture_index];
 
 		if ((width == texture.original_width) && (height == texture.original_height))
 		{
@@ -2746,6 +2686,7 @@ int GL_LoadImages (const char *identifier, int width, int height, byte *data, qb
 	texture.stretch_to_power_of_two	= stretch_to_power_of_two != false;
 	texture.bpp                     = bpp;
 	texture.keep					= keep;
+	texture.texnum					= texture_index;
 
 	// Fill in the texture description.
 	switch(texture.bpp)
@@ -2980,7 +2921,7 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 	if (texture_index >= 0) return texture_index;
 
 	texture_index = GL_GetTextureIndex();
-	gltexture_t& texture = gltextures[texture_index];
+	gltexture_t &texture = gltextures[texture_index];
 
 	// Fill in the source data.
 	strcpy(texture.identifier, identifier);
@@ -2993,6 +2934,7 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 	texture.format = GU_PSM_T4;
 	texture.filter = filter;
 	texture.mipmaps = 0; // mipmap_level;
+	texture.texnum	= texture_index;
 
 
 	Con_DPrintf("Loading: %s [%dx%d](%0.2f KB)\n", texture.identifier, texture.width, texture.height, (float)(texture.width*texture.height) / 1024);

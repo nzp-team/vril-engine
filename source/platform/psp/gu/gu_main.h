@@ -422,6 +422,7 @@ typedef struct
 	int     	bpp;
 	int     	swizzle;
 	qboolean	keep;
+	int			texnum;
 
 	unsigned char *palette;
 
