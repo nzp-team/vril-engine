@@ -550,12 +550,12 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 	vertices[0].y		= y;
 	vertices[0].z		= 0;
 
-	const gltexture_t& glt = gltextures[pic];
+	const gltexture_t &glt = gltextures[pic];
 	vertices[1].u 		= glt.width;
 	vertices[1].v 		= glt.height;
 
-	vertices[1].x		= x + glt.width;
-	vertices[1].y		= y + glt.height;
+	vertices[1].x		= x + glt.original_width;
+	vertices[1].y		= y + glt.original_width;
 	vertices[1].z		= 0;
 
 	sceGuColor(GU_RGBA(
@@ -2912,7 +2912,7 @@ int GL_LoadTexture8Pal32 (char *identifier, int width, int height, byte *data, b
 		trans[i*4+3] = gammatable[pal[data[i]*4+3]];
 	}
 
-    int index = GL_LoadImages (identifier, width, height, trans, true, GU_LINEAR, 0, 4, false);
+    int index = GL_LoadImages (identifier, width, height, trans, true, GU_LINEAR, 0, 4, true);
 	free(trans);
 	return index;
 }
@@ -2934,7 +2934,7 @@ int GL_LoadTexture8Pal24 (char *identifier, int width, int height, byte *data, b
 		trans[i*4+3] = 255;
 	}
 
-    int index = GL_LoadImages (identifier, width, height, trans, true, GU_LINEAR, 0, 4, false);
+    int index = GL_LoadImages (identifier, width, height, trans, true, GU_LINEAR, 0, 4, true);
 	free(trans);
 	return index;
 }
