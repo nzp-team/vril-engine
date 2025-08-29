@@ -1503,9 +1503,9 @@ void R_DrawAliasModel (entity_t *e)
 			draw_partial_zombie = true;
 			paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
 		}
-	}
-	else
+	} else {
 		paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
+	}
 
 	c_alias_polys += paliashdr->numtris;
 
@@ -1618,6 +1618,7 @@ void R_DrawAliasModel (entity_t *e)
 	//Blubswillrule: disabled the next two calls, they look like duplicates
 	//sceGuShadeModel(GU_FLAT);
 	//sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
+	
 	if (ISADDITIVE(e))
 	{
 		float deg = e->renderamt;
@@ -1637,6 +1638,7 @@ void R_DrawAliasModel (entity_t *e)
 		//sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
 		//sceGuDisable (GU_BLEND);
 	}
+	
 	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 	sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
 	sceGuDisable(GU_BLEND);
@@ -1746,8 +1748,8 @@ void R_DrawLine(vec3_t start,vec3_t end, vec3_t rgb)
 R_DrawEntitiesOnList
 =============
 */
-extern int numgltextures;
 // The values in these are indices in current frame cl_visedicts, pointing to first entity of linked list
+extern int numgltextures;
 short entity_batches[MAX_GLTEXTURES];
 short trans_entity_batches[MAX_GLTEXTURES];
 // are human rights btw
@@ -1758,9 +1760,8 @@ void R_DrawEntitiesOnList (void)
 		return;
 	// Because 0 is a valid index for a visedict, we use short to get access to -1...
 	// Setting min size out of paranoia
-	int batches_max_size = MAX(256, sizeof(short) * numgltextures);
-	memset(entity_batches, -1, batches_max_size);
-	memset(trans_entity_batches, -1, batches_max_size);
+	memset(entity_batches, -1, sizeof(entity_batches));
+	memset(trans_entity_batches, -1, sizeof(trans_entity_batches));
 
 	// acceleration so we dont have to iterate all the textures,
 	// when we encounter a new texture, add it to this list.
@@ -2203,7 +2204,7 @@ void R_RenderScene (void)
 		gly + (glheight >> 1) - y2 - (h >> 1), //xaa - try to skip some divides (/2) here
 		w,
 		h);
-	sceGuScissor(x, glheight - y2 - h, w, h);
+	sceGuScissor(x, glheight - y2 - h, x + w, glheight - y2);
 
     screenaspect = (float)renderrect->width/renderrect->height;
 

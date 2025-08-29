@@ -403,9 +403,6 @@ extern aliashdr_t*	zcfull_mdl;
 extern int			zombie_skins[2][2];
 extern int			sniper_scope;
 
-extern int			zombie_skins[2][2];
-extern int			sniper_scope;
-
 typedef byte texel;
 
 typedef struct
@@ -437,6 +434,5 @@ typedef struct
 extern gltexture_t	gltextures[MAX_GLTEXTURES];
 extern bool 		gltextures_used[MAX_GLTEXTURES];
 extern bool 		gltextures_is_permanent[MAX_GLTEXTURES];
-extern int			numgltextures;
 
 extern int faces_rejected, faces_checked, faces_clipped;

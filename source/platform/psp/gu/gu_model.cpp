@@ -510,70 +510,43 @@ void Mod_LoadTextures (lump_t *l)
 	else
 	{
 		if (loadmodel->bspversion == HL_BSPVERSION)
-		{		
-			char filename[128];		// Filename to check r4w file
-			byte *data;
-			snprintf(filename, 128, "textures/maps/%s/%s.r4w", sv.name, mt->name);		// search in textures/maps/MAPNAME/TEXNAME
-			
-			data = static_cast<byte*>(COM_LoadHunkFile(filename));
-			
-			if (data == NULL) {
-				sprintf(filename, "textures/%s.r4w", mt->name);					// search in textures/TEXNAME
-				data = static_cast<byte*>(COM_LoadHunkFile(filename));
-			}
-			
-			if (data == NULL) {
-				Con_Printf("Loading texture %s as WAD3, %dx%d\n", mt->name, mt->width, mt->height);		// didn't find the texture in the folder
-					
-				int index = WAD3_LoadTextureClut4(mt);
+		{	
+			// Load WAD3 textures first, since they're most likely the ones we want
+			int index = WAD3_LoadTextureClut4(mt);
+			byte *data = NULL;
 
-				if (index != 0) {
-					tx->gl_texturenum = index;
-					tx->fullbright = -1;
-					tx->dt_texturenum = 0;
+			if (index != 0) {
+				tx->gl_texturenum = index;
+				tx->fullbright = -1;
+				tx->dt_texturenum = 0;
+			} else {
+				// if we can't load it in the wad, look in external folders
+				char filename[128];
+				snprintf(filename, 128, "textures/maps/%s/%s", sv.name, mt->name);		// search in textures/maps/MAPNAME/TEXNAME
+				
+				data = static_cast<byte*>(COM_LoadHunkFile(filename));
+				
+				if (data == NULL) {
+					sprintf(filename, "textures/%s", mt->name);					// search in textures/TEXNAME
+					data = static_cast<byte*>(COM_LoadHunkFile(filename));
+				}
+
+				if (data != NULL) {
+					int w, h;
+				
+					unsigned int magic = *((unsigned int*)(data));
+					if (magic == 0x65663463)								// what the fuck? 
+					{
+						w = *((int*)(data + 4));
+						h = *((int*)(data + 8));
+
+						tx->gl_texturenum = GL_LoadTexture4(mt->name, w, h, (byte*)(data + 16), GU_LINEAR, false);
+					}
 				} else {
 					// Fall back to missing texture.
 					Con_Printf("Texture %s not found\n", mt->name);
 					tx->gl_texturenum = nonetexture;
 				}
-	// 			// naievil -- try to push wad3 loading 
-	// 			int index = WAD3_LoadTexture(mt);
-	// 			if(index)
-	// 			{
-	// 				com_netpath[0] = 0;
-	// 				tx->gl_texturenum = index;
-	// 				tx->fullbright = -1;
-	// 				tx->dt_texturenum = 0;
-
-	// //				if(tx_pixels = WAD3_LoadTexture(mt))
-	// //				{
-	// //					com_netpath[0] = 0;
-	// //					tx->gl_texturenum = GL_LoadPalletedTexture (tx_pixels, tx->name, tx->width, tx->height, 0);
-	// //					tx->fullbright = -1;
-	// //					mapTextureNameList.push_back(tx->gl_texturenum);
-	// //					tx->dt_texturenum = 0;
-
-	// 			}
-	// 			else
-	// 			{
-	// 				Con_Printf("Texture %s not found\n", mt->name);		// didn't find the texture in the folder
-	// 				com_netpath[0] = 0;
-	// 				tx->gl_texturenum = nonetexture;
-	// 			}
-			
-			} else {
-				
-				int w, h;
-				
-				unsigned int magic = *((unsigned int*)(data));
-				if (magic == 0x65663463)								// what the fuck? 
-				{
-					w = *((int*)(data + 4));
-					h = *((int*)(data + 8));
-
-					tx->gl_texturenum = GL_LoadTexture4(mt->name, w, h, (byte*)(data + 16), GU_LINEAR, false);
-				}
-	
 			}
 		}
 		else
@@ -1993,7 +1966,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 {
 	int 	i = 0;
 	int		j, k;
-	char	name[128], model[64], model2[128];
+	char	name[128], model[64], model2[128], texname[32];
 	int		s;
 	//byte	*copy;
 	byte	*skin;
@@ -2055,7 +2028,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
 			pheader->gl_texturenum[i][2] = 
-			pheader->gl_texturenum[i][3] = Image_LoadImage("models/weapons/m1911/v_biatch.mdl_0", IMAGE_PCX, GU_LINEAR, true, false);
+			pheader->gl_texturenum[i][3] = Image_LoadImage("models/weapons/m1911/v_biatch.mdl_0", IMAGE_PCX, GU_LINEAR, false, false);
 
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 			return (void *)pskintype;
@@ -2074,8 +2047,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][3] = Image_LoadImage("models/weapons/v_papskin", IMAGE_PCX, GU_LINEAR, true, false);
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 			return (void *)pskintype;
-		}
-		else if (pskintype->type == ALIAS_SKIN_SINGLE)
+		}else if (pskintype->type == ALIAS_SKIN_SINGLE)
 		{
 			Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
 			COM_StripExtension(loadmodel->name, model);
@@ -2085,18 +2057,18 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
 			pheader->gl_texturenum[i][2] =
-			pheader->gl_texturenum[i][3] = is_viewmodel ? Image_LoadImage (model2, IMAGE_PCX, GU_LINEAR, true, false) : loadpcxas4bpp(model2, GU_LINEAR);
+			pheader->gl_texturenum[i][3] = is_viewmodel ? Image_LoadImage (model2, IMAGE_PCX, GU_LINEAR, false, false) : loadpcxas4bpp(model2, GU_LINEAR);
 
 			if (pheader->gl_texturenum[i][0] == 0)// did not find a matching TGA...
 			{
 				sprintf (name, "%s_%i", loadmodel->name, i);
-
+				tex_filebase(name, texname);
 				pheader->gl_texturenum[i][0] =
 				pheader->gl_texturenum[i][1] =
 				pheader->gl_texturenum[i][2] =
 				pheader->gl_texturenum[i][3] = is_viewmodel
-					? GL_LoadTexture (name, pheader->skinwidth,pheader->skinheight, (byte *)(pskintype), true, GU_LINEAR, 0)
-					: GL_LoadTexture8to4(name, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1), (byte*)d_8to24table, GU_LINEAR, 4, NULL);
+					? GL_LoadTexture (texname, pheader->skinwidth,pheader->skinheight, (byte *)(pskintype), true, GU_LINEAR, 0)
+					: GL_LoadTexture8to4(texname, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1), (byte*)d_8to24table, GU_LINEAR, 4, NULL);
 			}
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 		}
@@ -2115,14 +2087,15 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 				Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
 				COM_StripExtension(loadmodel->name, model);
 				snprintf(model2, 128, "%s_%i_%i", model, i, j);
-				pheader->gl_texturenum[i][j&3] = is_viewmodel ? Image_LoadImage (model2, IMAGE_PCX, GU_LINEAR, true, false) : loadpcxas4bpp(model2, GU_LINEAR);
+				pheader->gl_texturenum[i][j&3] = is_viewmodel ? Image_LoadImage (model2, IMAGE_PCX, GU_LINEAR, false, false) : loadpcxas4bpp(model2, GU_LINEAR);
 				
 				if (pheader->gl_texturenum[i][j&3] == 0)// did not find a matching TGA...
 				{
 					snprintf (name, 128, "%s_%i_%i", loadmodel->name, i, j);
+					tex_filebase(name, texname);
 					pheader->gl_texturenum[i][j&3] = is_viewmodel
-						? GL_LoadTexture (name, pheader->skinwidth,pheader->skinheight, (byte *)(pskintype), true, GU_LINEAR, 0)
-						: GL_LoadTexture8to4(name, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1), (byte*)d_8to24table, GU_LINEAR, 4, NULL);
+						? GL_LoadTexture (texname, pheader->skinwidth,pheader->skinheight, (byte *)(pskintype), true, GU_LINEAR, 0)
+						: GL_LoadTexture8to4(texname, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1), (byte*)d_8to24table, GU_LINEAR, 4, NULL);
 				}
 				pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
 			}
@@ -2332,7 +2305,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum, 
 	dspriteframe_t		*pinframe;
 	mspriteframe_t		*pspriteframe;
 	int					width, height, size, origin[2];
-	char				name[128], sprite[64], sprite2[128];
+	char				name[128], sprite[64], sprite2[128], texname[32];
 
 	pinframe = (dspriteframe_t *)pin;
 
@@ -2364,16 +2337,17 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum, 
 		COM_StripExtension(loadmodel->name, sprite);
 		snprintf (sprite2, 128, "%s.spr_%i", sprite, framenum);
 		pspriteframe->gl_texturenum = Image_LoadImage (sprite2, IMAGE_TGA, GU_LINEAR, true, false);
-		
+		tex_filebase(sprite2, texname);
 		if (pspriteframe->gl_texturenum == 0)// did not find a matching TGA...
 		{
-			pspriteframe->gl_texturenum = GL_LoadTexture (name, width, height, (byte *)(pinframe + 1), true, GU_LINEAR, 0);
+			pspriteframe->gl_texturenum = GL_LoadTexture (texname, width, height, (byte *)(pinframe + 1), true, GU_LINEAR, 0);
 		}
 	}
 	else if (version == SPRITE32_VERSION)
 	{
 		size *= 4;
-		pspriteframe->gl_texturenum = GL_LoadImages (name, width, height, (byte *)(pinframe + 1), true, GU_LINEAR, 0, 4, true);
+		tex_filebase(sprite2, texname);
+		pspriteframe->gl_texturenum = GL_LoadImages (texname, width, height, (byte *)(pinframe + 1), true, GU_LINEAR, 0, 4, true);
 	}
 	else
 	{
@@ -2383,7 +2357,6 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum, 
 	return (void *)((byte *)pinframe + sizeof (dspriteframe_t) + size);
 }
 
-extern char	loadname[32];	// for hunk tags
 /*
 =================
 Mod_LoadSpriteGroup
