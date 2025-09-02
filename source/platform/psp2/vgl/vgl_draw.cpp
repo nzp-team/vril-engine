@@ -957,6 +957,7 @@ void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean
 
 	// bind the texture to make sure we're uploading to the right one
     glBindTexture(GL_TEXTURE_2D, gl_id);
+	currenttexture = texnum;
 
 	if (scaled_width == width && scaled_height == height)
 	{
