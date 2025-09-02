@@ -286,9 +286,6 @@ void Draw_Character (int x, int y, int num)
 
 	GL_Bind (char_texture);
 
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
 	glEnable(GL_ALPHA_TEST);
 
 	glBegin (GL_QUADS);
@@ -336,9 +333,6 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 	size = 0.0625f*scale;
 
 	GL_Bind (char_texture);
-
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	glEnable(GL_BLEND);
 	glColor4f(r/255, g/255, b/255, a/255);
