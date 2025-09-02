@@ -29,9 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 cvar_t		gl_max_size = {"gl_max_size", "1024"};
 cvar_t		gl_picmip = {"gl_picmip", "0"};
 
-int			sniper_scope;
+static int	sniper_scope;
 
-int			char_texture;
+static int	char_texture;
 
 typedef struct
 {
@@ -58,19 +58,26 @@ float 	loading_cur_step_bk;
 #define	MAX_GLTEXTURES	1024
 #define MAX_VRAM_TEX	256*256*4
 static gltexture_t	gltextures[MAX_GLTEXTURES];
-static int			numgltextures;
+static int	numgltextures = 0;
+static GLuint current_gl_id = 0;
 
 void GL_Bind (int texnum)
 {
-	if (currenttexture == texnum)
-		return;
-	currenttexture = texnum;
+	if (texnum < 0) {
+        Con_DPrintf("GL_Bind: invalid texnum %d\n", texnum);
+        return;
+    }
+    gltexture_t *glt = &gltextures[texnum];
+    if (!glt->used) {
+        Con_DPrintf("GL_Bind: unused texnum %d\n", texnum);
+        return;
+    }
 
-	gltexture_t *glt = &gltextures[texnum];
-	if (glt->used == false) return;
-	if (glt->texnum < 0) return;
-
-	glBindTexture(GL_TEXTURE_2D, glt->gl_id);
+    if (current_gl_id != glt->gl_id) {
+        glBindTexture(GL_TEXTURE_2D, glt->gl_id);
+        current_gl_id = glt->gl_id;
+    }
+	
 }
 
 void GL_FreeTextures (int texnum)
@@ -92,8 +99,9 @@ void GL_FreeTextures (int texnum)
 	glt->bpp = 0;
 	glt->keep = false;
 	glt->used = false;
-	memset(glt, 0, sizeof(*glt));   // clear slot
+
 	numgltextures--;
+	current_gl_id = 0;
 }
 
 void GL_UnloadTextures (void)
@@ -212,7 +220,7 @@ void Draw_Init (void)
 {
 	int		start;
 
-	numgltextures = 0;
+	numgltextures = 1;
 
 	Cvar_RegisterVariable (&gl_max_size);
 	Cvar_RegisterVariable (&gl_picmip);
@@ -278,9 +286,6 @@ void Draw_Character (int x, int y, int num)
 
 	GL_Bind (char_texture);
 
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
 	glEnable(GL_ALPHA_TEST);
 
 	glBegin (GL_QUADS);
@@ -329,9 +334,6 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 
 	GL_Bind (char_texture);
 
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
 	glEnable(GL_BLEND);
 	glColor4f(r/255, g/255, b/255, a/255);
 	glDisable (GL_ALPHA_TEST);
@@ -340,11 +342,11 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 	glBegin (GL_QUADS);
 	glTexCoord2f (fcol, frow);
 	glVertex2f (x, y);
-	glTexCoord2f (fcol + (float)(size/(float)scale), frow);
+	glTexCoord2f (fcol + (size/scale), frow);
 	glVertex2f (x+(8*(scale)), y);
-	glTexCoord2f (fcol + (float)(size/(float)scale), frow + (float)(size/(float)scale));
+	glTexCoord2f (fcol + (size/scale), frow + (size/scale));
 	glVertex2f (x+(8*(scale)), y+(8*(scale)));
-	glTexCoord2f (fcol, frow + (float)(size/(float)scale));
+	glTexCoord2f (fcol, frow + (size/scale));
 	glVertex2f (x, y+(8*(scale)));
 	glEnd ();
 	
@@ -1020,20 +1022,14 @@ void GL_Set2D (void)
 GL_FindTexture
 ================
 */
-int GL_FindTexture (const char *identifier)
+int GL_FindTexture(const char *identifier)
 {
-	int		i;
-	gltexture_t	*glt;
-
-	for (i=0, glt=gltextures ; i<numgltextures ; i++, glt++) {
-		if (glt->used) {
-			if (!strcmp (identifier, glt->identifier)) {
-				return glt->texnum;
-			}
-		}
-	}
-
-	return -1;
+    for (int i = 0; i < MAX_GLTEXTURES; i++) {
+        if (gltextures[i].used && strcmp(gltextures[i].identifier, identifier) == 0) {
+            return i;  // return array index directly
+        }
+    }
+    return -1;
 }
 
 /*
@@ -1093,78 +1089,58 @@ void GL_MipMap (byte *in, int width, int height)
 	}
 }
 
-static	unsigned	scaled[1024*512];	// [512*256];
-static	unsigned	trans[1024*512];	// FIXME, temporary.. err... was it?
-
 /*
 ===============
 GL_Upload32
 ===============
 */
-void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha)
+void GL_Upload32(GLuint gl_id, unsigned *data, int width, int height, qboolean mipmap, qboolean alpha)
 {
-	int			scaled_width, scaled_height;
+    int scaled_width = 1, scaled_height = 1;
+    while (scaled_width < width) scaled_width <<= 1;
+    while (scaled_height < height) scaled_height <<= 1;
 
-	for (scaled_width = 1 ; scaled_width < width ; scaled_width<<=1)
-		;
-	for (scaled_height = 1 ; scaled_height < height ; scaled_height<<=1)
-		;
+    scaled_width >>= (int)gl_picmip.value;
+    scaled_height >>= (int)gl_picmip.value;
 
-	scaled_width >>= (int)gl_picmip.value;
-	scaled_height >>= (int)gl_picmip.value;
+    if (scaled_width > gl_max_size.value) scaled_width = gl_max_size.value;
+    if (scaled_height > gl_max_size.value) scaled_height = gl_max_size.value;
 
-	if (scaled_width > gl_max_size.value)
-		scaled_width = gl_max_size.value;
-	if (scaled_height > gl_max_size.value)
-		scaled_height = gl_max_size.value;
+    if (scaled_width < 1) scaled_width = 1;
+    if (scaled_height < 1) scaled_height = 1;
 
-	if (scaled_width * scaled_height > sizeof(scaled)/4)
-		Sys_Error ("GL_Upload32: too big");
+    unsigned *scaled = malloc(scaled_width * scaled_height * sizeof(unsigned));
+    if (!scaled) Sys_Error("GL_Upload32: out of memory");
 
-	// bind the texture to make sure we're uploading to the right one
+    // bind the texture
     glBindTexture(GL_TEXTURE_2D, gl_id);
+	current_gl_id = gl_id; //update texture cache
 
-	if (scaled_width == width && scaled_height == height)
-	{
-		if (!mipmap)
-		{
-			glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-			goto done;
-		}
-		memcpy (scaled, data, width*height*4);
-	} else {
-		GL_ResampleTexture (data, width, height, scaled, scaled_width, scaled_height);
-	}
+    if (scaled_width != width || scaled_height != height)
+        GL_ResampleTexture(data, width, height, scaled, scaled_width, scaled_height);
+    else
+        memcpy(scaled, data, width * height * 4);
 
-	glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
+
+    // mipmap generation (if enabled)
 	
-	if (mipmap) {
-		int		miplevel;
+    if (mipmap) {
+        int level = 0;
+        int w = scaled_width, h = scaled_height;
+        while (w > 1 || h > 1) {
+            GL_MipMap((byte*)scaled, w, h);
+            w = w > 1 ? w >> 1 : 1;
+            h = h > 1 ? h >> 1 : 1;
+            level++;
+            glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
+        }
+    }
 
-		miplevel = 0;
-		while (scaled_width > 1 || scaled_height > 1)
-		{
-			GL_MipMap ((byte *)scaled, scaled_width, scaled_height);
-			scaled_width >>= 1;
-			scaled_height >>= 1;
-			if (scaled_width < 1)
-				scaled_width = 1;
-			if (scaled_height < 1)
-				scaled_height = 1;
-			miplevel++;
-			glTexImage2D (GL_TEXTURE_2D, miplevel, GL_RGBA, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
-		}
-	}
-		
-done: ;
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmap ? gl_filter_min : gl_filter_max);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 
-	if (mipmap) {
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
-	} else {
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_max);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
-	}
+    free(scaled);
 }
 
 /*
@@ -1177,15 +1153,14 @@ void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipm
 	int			i, s;
 	qboolean	noalpha;
 	int			p;
+	unsigned *trans = malloc(width*height*sizeof(unsigned));
 
 	s = width*height;
 	// if there are no transparent pixels, make it a 3 component
 	// texture even if it was specified as otherwise
-	if (alpha)
-	{
+	if (alpha) {
 		noalpha = true;
-		for (i=0 ; i<s ; i++)
-		{
+		for (i=0 ; i<s ; i++) {
 			p = data[i];
 			if (p == 255)
 				noalpha = false;
@@ -1194,13 +1169,10 @@ void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipm
 
 		if (alpha && noalpha)
 			alpha = false;
-	}
-	else
-	{
+	} else {
 		if (s&3)
 			Sys_Error ("s&3");
-		for (i=0 ; i<s ; i+=4)
-		{
+		for (i=0 ; i<s ; i+=4) {
 			trans[i] = d_8to24table[data[i]];
 			trans[i+1] = d_8to24table[data[i+1]];
 			trans[i+2] = d_8to24table[data[i+2]];
@@ -1209,6 +1181,8 @@ void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipm
 	}
 
 	GL_Upload32 (gl_id, trans, width, height, mipmap, alpha);
+
+	free(trans);
 }
 
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel, qboolean keep)
@@ -1221,30 +1195,23 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 	int i;
 	gltexture_t	*glt;
 
-	// Out of textures?
-	if (numgltextures == MAX_GLTEXTURES)
-		Sys_Error ("GL_GetTextureIndex: Out of GL textures\n");
-
 	texture_index = -1;
-	for (i=0, glt=gltextures; i < numgltextures; i++, glt++) {
+	for (i=0, glt=gltextures; i<MAX_GLTEXTURES; i++, glt++) {
 		if (glt->used == false) {
 			texture_index = i;
 			break;
 		}
 	}
 
-	// If no free slot, append a new one
-    if (texture_index == -1) {
-        if (numgltextures == MAX_GLTEXTURES) {
-            Sys_Error("GL_LoadTexture: Out of GL textures\n");
-        }
-        texture_index = numgltextures++;
-        glt = &gltextures[texture_index];
-    }
+	if (numgltextures == MAX_GLTEXTURES) {
+		Sys_Error("GL_LoadTexture: Out of GL textures\n");
+	}
 
 	if (texture_index < 0) {
 		Sys_Error("Could not find a free GL texture!\n");
 	}
+
+    glt = &gltextures[texture_index];
 
 	GLuint texID;
 	glGenTextures(1, &texID);     // Ask GL for a real texture object
@@ -1273,6 +1240,8 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 	}
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
+	numgltextures++;
+
 	return texture_index;
 }
 
@@ -1284,28 +1253,23 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 	int texture_index = -1;
 
 	if (update == false) {
-		// Out of textures?
-		if (numgltextures == MAX_GLTEXTURES)
-			Sys_Error ("GL_GetTextureIndex: Out of GL textures\n");
 
-		for (i=0, glt=gltextures; i < numgltextures; i++, glt++) {
+		for (i=0, glt=gltextures; i<MAX_GLTEXTURES; i++, glt++) {
 			if (glt->used == false) {
 				texture_index = i;
 				break;
 			}
 		}
 
-		// If no free slot, append a new one
-		if (texture_index == -1) {
-			if (numgltextures == MAX_GLTEXTURES) {
-				Sys_Error("GL_LoadTexture: Out of GL textures\n");
-			}
-			texture_index = numgltextures++;
-			glt = &gltextures[texture_index];
+		if (numgltextures == MAX_GLTEXTURES) {
+			Sys_Error("GL_LoadTexture: Out of GL textures\n");
 		}
 
-		if (texture_index < 0)
+		if (texture_index < 0) {
 			Sys_Error("Could not find a free GL texture!\n");
+		}
+
+		glt = &gltextures[texture_index];
 
 		GLuint texID;
 		glGenTextures(1, &texID);
@@ -1328,6 +1292,8 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, false, false);
+
+		numgltextures++;
 	} else if (update == true) {
 		texture_index = GL_FindTexture(identifier);
 

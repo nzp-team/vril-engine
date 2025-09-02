@@ -1646,7 +1646,6 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 	char	name[MAX_OSPATH], model[64], model2[128], texname[32];
 	int		s;
 	byte	*skin;
-	byte	*texels;
 	daliasskingroup_t		*pinskingroup;
 	int		groupskins;
 	daliasskininterval_t	*pinskinintervals;
@@ -1685,10 +1684,6 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
 			COM_StripExtension(loadmodel->name, model);
 
-			texels = Hunk_AllocName(s, loadname);
-			pheader->texels[i] = texels - (byte *)pheader;
-			memcpy (texels, (byte *)(pskintype + 1), s);
-
 			// HACK HACK HACK
 			snprintf(model2, 128, "%s.mdl_%i", model, i);
 			pheader->gl_texturenum[i][0] =
@@ -1720,16 +1715,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			for (j=0 ; j<groupskins ; j++)
 			{
 					Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
-					if (j == 0) {
-						texels = Hunk_AllocName(s, loadname);
-						pheader->texels[i] = texels - (byte *)pheader;
-						memcpy (texels, (byte *)(pskintype), s);
-					}
+
 					snprintf (name, MAX_OSPATH, "%s_%i_%i", loadmodel->name, i,j);
 					tex_filebase(name, texname);
-					pheader->gl_texturenum[i][j&3] = 
-						GL_LoadTexture (texname, pheader->skinwidth, 
+					pheader->gl_texturenum[i][j&3] = GL_LoadTexture (texname, pheader->skinwidth, 
 						pheader->skinheight, (byte *)(pskintype), false, false, 1, false);
+
 					pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
 			}
 			k = j;
