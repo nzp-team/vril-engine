@@ -77,7 +77,6 @@ void GL_Bind (int texnum)
         glBindTexture(GL_TEXTURE_2D, glt->gl_id);
         current_gl_id = glt->gl_id;
     }
-	
 }
 
 void GL_FreeTextures (int texnum)
