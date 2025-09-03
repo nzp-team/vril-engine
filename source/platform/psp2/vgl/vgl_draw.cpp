@@ -96,19 +96,25 @@ int 	loading_step;
 float 	loading_cur_step_bk;
 
 gltexture_t	gltextures[MAX_GLTEXTURES];
-int numgltextures = 0;
+static int numgltextures = 0;
+static GLuint current_gl_id = 0;
 
 void GL_Bind (int texnum)
 {
-	if (currenttexture == texnum)
-		return;
-	currenttexture = texnum;
+	if (texnum < 0) {
+        Con_DPrintf("GL_Bind: invalid texnum %d\n", texnum);
+        return;
+    }
+    gltexture_t *glt = &gltextures[texnum];
+    if (!glt->used) {
+        Con_DPrintf("GL_Bind: unused texnum %d\n", texnum);
+        return;
+    }
 
-	gltexture_t *glt = &gltextures[texnum];
-	if (glt->used == false) return;
-	if (glt->texnum < 0) return;
-
-	glBindTexture(GL_TEXTURE_2D, glt->gl_id);
+    if (current_gl_id != glt->gl_id) {
+        glBindTexture(GL_TEXTURE_2D, glt->gl_id);
+        current_gl_id = glt->gl_id;
+    }
 }
 
 void GL_FreeTextures (int texnum)
@@ -927,9 +933,6 @@ void GL_MipMap (byte *in, int width, int height)
 	}
 }
 
-static	unsigned	scaled[1024*512];	// [512*256];
-static	unsigned	trans[1024*512];	// FIXME, temporary.. err... was it?
-
 /*
 ===============
 GL_Upload32
@@ -952,12 +955,12 @@ void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean
 	if (scaled_height > gl_max_size.value)
 		scaled_height = gl_max_size.value;
 
-	if (scaled_width * scaled_height > sizeof(scaled)/4)
-		Sys_Error ("GL_Upload32: too big");
+	unsigned *scaled = (unsigned*)malloc(scaled_width * scaled_height * sizeof(unsigned));
+	if (!scaled) Sys_Error("GL_Upload32: out of memory");
 
 	// bind the texture to make sure we're uploading to the right one
     glBindTexture(GL_TEXTURE_2D, gl_id);
-	currenttexture = texnum;
+	current_gl_id = gl_id;
 
 	if (scaled_width == width && scaled_height == height)
 	{
@@ -986,6 +989,8 @@ done: ;
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_max);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 	}
+
+	free(scaled);
 }
 
 /*
@@ -998,6 +1003,7 @@ void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipm
 	int			i, s;
 	qboolean	noalpha;
 	int			p;
+	unsigned *trans = (unsigned*)malloc(width*height*sizeof(unsigned));
 
 	s = width*height;
 	// if there are no transparent pixels, make it a 3 component
@@ -1030,6 +1036,8 @@ void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipm
 	}
 
 	GL_Upload32 (gl_id, trans, width, height, mipmap, alpha);
+
+	free(trans);
 }
 
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel, qboolean keep)
@@ -1047,21 +1055,14 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 		Sys_Error ("GL_GetTextureIndex: Out of GL textures\n");
 
 	texture_index = -1;
-	for (i=0, glt=gltextures; i < numgltextures; i++, glt++) {
+	for (i=0, glt=gltextures; i < MAX_GLTEXTURES; i++, glt++) {
 		if (glt->used == false) {
 			texture_index = i;
 			break;
 		}
 	}
 
-	// If no free slot, append a new one
-    if (texture_index == -1) {
-        if (numgltextures == MAX_GLTEXTURES) {
-            Sys_Error("GL_LoadTexture: Out of GL textures\n");
-        }
-        texture_index = numgltextures++;
-        glt = &gltextures[texture_index];
-    }
+    glt = &gltextures[texture_index];
 
 	if (texture_index < 0) {
 		Sys_Error("Could not find a free GL texture!\n");
@@ -1110,21 +1111,14 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 		if (numgltextures == MAX_GLTEXTURES)
 			Sys_Error ("GL_GetTextureIndex: Out of GL textures\n");
 
-		for (i=0, glt=gltextures; i < numgltextures; i++, glt++) {
+		for (i=0, glt=gltextures; i < MAX_GLTEXTURES; i++, glt++) {
 			if (glt->used == false) {
 				texture_index = i;
 				break;
 			}
 		}
 
-		// If no free slot, append a new one
-		if (texture_index == -1) {
-			if (numgltextures == MAX_GLTEXTURES) {
-				Sys_Error("GL_LoadTexture: Out of GL textures\n");
-			}
-			texture_index = numgltextures++;
-			glt = &gltextures[texture_index];
-		}
+		glt = &gltextures[texture_index];
 
 		if (texture_index < 0)
 			Sys_Error("Could not find a free GL texture!\n");
