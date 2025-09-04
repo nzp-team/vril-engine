@@ -1054,9 +1054,6 @@ void SCR_BringDownConsole (void)
 extern cvar_t crosshair;
 extern qboolean croshhairmoving;
 //extern cvar_t cl_zoom;
-double Hitmark_Time, crosshair_spread_time;
-float cur_spread;
-float crosshair_offset_step;
 
 int CrossHairWeapon (void)
 {
