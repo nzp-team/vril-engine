@@ -664,10 +664,6 @@ extern cvar_t crosshair;
 extern qboolean croshhairmoving;
 //extern cvar_t cl_zoom;
 extern int hitmark;
-double Hitmark_Time, crosshair_spread_time;
-float cur_spread;
-float crosshair_offset_step;
-
 int CrossHairWeapon (void)
 {
     int i;
@@ -848,10 +844,13 @@ void Draw_Crosshair (void)
 	if (cl.stats[STAT_HEALTH] <= 20)
 		return;
 
-	if (cl.stats[STAT_ZOOM] == 2)
+	if (cl.stats[STAT_ZOOM] == 2) {
 		Draw_Pic (-39, -15, sniper_scope);
-   	if (Hitmark_Time > sv.time)
+	}
+
+   	if (Hitmark_Time > sv.time) {
         Draw_Pic ((vid.width - gltextures[hitmark].width)/2,(vid.height - gltextures[hitmark].height)/2, hitmark);
+	}
 
 	// Make sure to do this after hitmark drawing.
 	if (cl.stats[STAT_ZOOM] == 2 || cl.stats[STAT_ZOOM] == 1)
