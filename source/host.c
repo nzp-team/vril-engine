@@ -501,11 +501,6 @@ This clears all the memory used by both the client and server, but does
 not reinitialize anything.
 ================
 */
-extern int perk_order[8];
-extern int current_perk_order;
-extern double Hitmark_Time, crosshair_spread_time;
-extern float cur_spread;
-extern float crosshair_offset_step;
 void Host_ClearMemory (void)
 {
 	Con_DPrintf ("Clearing memory\n");
@@ -518,21 +513,6 @@ void Host_ClearMemory (void)
 	cls.signon = 0;
 	memset (&sv, 0, sizeof(sv));
 	memset (&cl, 0, sizeof(cl));
-	perk_order[0] = 0;
-	perk_order[1] = 0;
-	perk_order[2] = 0;
-	perk_order[3] = 0;
-	perk_order[4] = 0;
-	perk_order[5] = 0;
-	perk_order[6] = 0;
-	perk_order[7] = 0;
-	cl.perks = 0;
-	current_perk_order = 0;
-	crosshair_spread_time = 0;
-	crosshair_offset_step = 0;
-	cur_spread = 0;
-	Hitmark_Time = 0;
-
 }
 
 

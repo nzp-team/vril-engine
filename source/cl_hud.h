@@ -52,6 +52,12 @@ extern int achievement_locked;
 extern char player_name[16];
 extern double nameprint_time;
 
+extern int perk_order[8];
+extern int current_perk_order;
+extern double Hitmark_Time, crosshair_spread_time;
+extern float cur_spread;
+extern float crosshair_offset_step;
+
 extern int screenflash_color;
 extern double screenflash_duration;
 extern int screenflash_type;

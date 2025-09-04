@@ -39,8 +39,6 @@ byte temp_pixel_storage_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE*4]; // naievil -- rgb
 #define PAL_WHITETOYELLOW	2
 void Draw_AdvancedPic (int x, int y, qpic_t *pic, unsigned char alpha, unsigned char palette_hack);
 
-double Hitmark_Time, crosshair_spread_time;
-
 typedef struct {
 	vrect_t	rect;
 	int		width;
@@ -1455,9 +1453,6 @@ extern cvar_t crosshair;
 extern qboolean croshhairmoving;
 //extern cvar_t cl_zoom;
 extern qpic_t *hitmark;
-double Hitmark_Time, crosshair_spread_time;
-float cur_spread;
-float crosshair_offset_step;
 
 int CrossHairWeapon (void)
 {

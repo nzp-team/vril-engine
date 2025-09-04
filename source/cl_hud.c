@@ -105,6 +105,12 @@ double nameprint_time;
 double hud_maxammo_starttime;
 double hud_maxammo_endtime;
 
+int perk_order[8];
+int current_perk_order;
+double Hitmark_Time, crosshair_spread_time;
+float cur_spread;
+float crosshair_offset_step; 
+
 char player_name[16];
 
 extern cvar_t waypoint_mode;
@@ -299,9 +305,24 @@ void HUD_NewMap (void)
 	
 	bettyprompt_time = 0;
 	nameprint_time = 0;
+	Hitmark_Time = 0;
 	
 	hud_maxammo_starttime = 0;
 	hud_maxammo_endtime = 0;
+
+	perk_order[0] = 0;
+	perk_order[1] = 0;
+	perk_order[2] = 0;
+	perk_order[3] = 0;
+	perk_order[4] = 0;
+	perk_order[5] = 0;
+	perk_order[6] = 0;
+	perk_order[7] = 0;
+	cl.perks = 0;
+	current_perk_order = 0;
+	crosshair_spread_time = 0;
+	crosshair_offset_step = 0;
+	cur_spread = 0;
 }
 
 
@@ -1366,9 +1387,6 @@ HUD_Perks
 #define 	P_STAMIN	32
 #define 	P_DEAD 		64
 #define 	P_MULE 		128
-
-int perk_order[9];
-int current_perk_order;
 
 void HUD_Perks (void)
 {
