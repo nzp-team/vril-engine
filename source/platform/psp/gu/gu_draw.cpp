@@ -717,6 +717,10 @@ void Draw_LoadingFill(void)
     if(!loading_num_step)
 		return;
 
+	if (developer.value) {
+		return;
+	}
+
 	int size       	= 8;
 	int max_step   	= 350;
     int x          	= (vid.width  / 2) - (max_step / 2);
@@ -2289,7 +2293,7 @@ void GL_UnloadTexture(int texture_index)
 	texture.height  = 0;
 	texture.mipmaps = 0;
 	texture.swizzle = 0;
-	texture.texnum 	= -1;
+	texture.texnum 	= 0;
 
 	if (texture.palette != NULL)
 	{

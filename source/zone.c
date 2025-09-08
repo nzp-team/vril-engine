@@ -1027,10 +1027,9 @@ void Cache_Move ( cache_system_t *c)
 	}
 	else
 	{
-		printf ("cache_move failed\n");
-		// impossible to free something which is already NULL.. 
+		//Con_DPrintf ("cache_move failed\n");
+		Cache_Free (c->user); // tough luck...
 		return;
-		//Cache_Free (c->user); // tough luck...
 	}
 }
 
