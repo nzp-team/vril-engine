@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <SDL2/sdl.h>
 
 #include "../../../nzportable_def.h"
-
 #include <switch.h>
 
 #define WARP_WIDTH 320
@@ -30,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int vid_modenum = VID_MODE_NONE;
 
-static cvar_t vid_mode = {"vid_mode"};
+static cvar_t vid_mode = {"vid_mode", "1"};
 
 unsigned short d_8to16table[256];
 unsigned d_8to24table[256];
@@ -57,8 +56,7 @@ void D_EndDirectRect(int x, int y, int width, int height) {}
  *
  * Move stuff around or create abstractions so these hacks aren't needed
  */
-void IN_ProcessEvents(void);
-
+ void IN_ProcessEvents(void);
 void Sys_SendKeyEvents(void) { IN_ProcessEvents(); }
 
 const char *gl_vendor;
@@ -193,23 +191,20 @@ static void DeinitEGL(void) {
 
 static void VID_InitGL(void) {
     Cvar_RegisterVariable(&vid_mode);
+    //var_RegisterVariable(&gl_npot);
     Cvar_RegisterVariable(&gl_ztrick);
 
     // Must be first
-    printf("appletInitialize\n");
     appletInitialize();
-    printf("appletLockExit\n");
     appletLockExit(); // prevent HOME exit race
 
-    printf("nwindowGetDefault\n");
     NWindow *win = nwindowGetDefault();
 
-    printf("setMesaConfig\n");
     setMesaConfig ();
 
     // Now you can safely create EGL surface/context
     if (!InitEGL(win))
-        printf("Failed to initialize EGL!\n");
+        Sys_Error("Failed to initialize EGL!\n");
 
     eglSwapInterval(s_display, 1);
 
@@ -251,10 +246,10 @@ static void VID_InitGL(void) {
 
 }
 
-qboolean VID_SetMode(unsigned char *palette) {
+qboolean VID_SetMode(const qvidmode_t *mode, const byte *palette) {
     vid.numpages = 1;
-    vid.width = vid.conwidth = 1280;
-    vid.height = vid.conheight = 720;
+    vid.width = vid.conwidth = mode->width;
+    vid.height = vid.conheight = mode->height;
     vid.maxwarpwidth = WARP_WIDTH;
     vid.maxwarpheight = WARP_HEIGHT;
     vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0);
@@ -262,40 +257,51 @@ qboolean VID_SetMode(unsigned char *palette) {
     vid.colormap = host_colormap;
     vid.fullbright = 256 - LittleLong(*((int *)vid.colormap + 2048));
 
+    vid_modenum = mode - modelist;
+    Cvar_SetValue("vid_mode", vid_modenum);
     Cvar_SetValue("vid_fullscreen", 1);
-    Cvar_SetValue("vid_width", 1280);
-    Cvar_SetValue("vid_height", 720);
-    Cvar_SetValue("vid_bpp", 32);
-    Cvar_SetValue("vid_refreshrate", 0);
+    Cvar_SetValue("vid_width", mode->width);
+    Cvar_SetValue("vid_height", mode->height);
+    Cvar_SetValue("vid_bpp", mode->bpp);
+    Cvar_SetValue("vid_refreshrate", mode->refresh);
 
     vid.recalc_refdef = 1;
 
     return true;
 }
 
+int nummodes;
 void VID_Init(unsigned char *palette) {
     static qboolean did_init = false;
-    //qvidmode_t *mode;
+    qvidmode_t *mode;
+    const qvidmode_t *setmode;
 
     if (did_init) return;
-/*
+
+    VID_InitModeCvars();
+
+    Cmd_AddCommand("vid_describemodes", VID_DescribeModes_f);
+
+    /* Init the default windowed mode */
     mode = modelist;
+    mode->modenum = 0;
     mode->bpp = 32;
     mode->refresh = 0;
     mode->width = 1280;
     mode->height = 720;
-*/
+    nummodes = 1;
+
+    /* TODO: read config files first to avoid multiple mode sets */
+    setmode = &modelist[0];
 
     printf("VID_InitGL start\n");
 
     VID_InitGL();
-
-    printf("VID_SetMode start\n");
-    VID_SetMode(palette);
-
-    printf("VID_SetPalette start\n");
+    VID_SetMode(setmode, palette);
     VID_SetPalette(palette);
 
+    //vid_menudrawfn = VID_MenuDraw;
+    //vid_menukeyfn = VID_MenuKey;
     did_init = true;
 }
 
@@ -314,7 +320,7 @@ void GL_EndRendering(void) {
     glFlush();
     eglSwapBuffers(s_display, s_surface);
 }
-
+/*
 void VID_SetPalette(unsigned char *palette) {
     unsigned i, r, g, b, pixel;
 
@@ -333,6 +339,60 @@ void VID_SetPalette(unsigned char *palette) {
     default:
         Sys_Error("%s: unsupported texture format (%d)", __func__, gl_solid_format);
     }
+}
+*/
+void	VID_SetPalette (unsigned char *palette)
+{
+	byte	*pal;
+	unsigned r,g,b;
+	unsigned v;
+	int     r1,g1,b1;
+	int		k;
+	unsigned short i;
+	unsigned	*table;
+	int dist, bestdist;
+
+//
+// 8 8 8 encoding
+//
+	pal = palette;
+	table = d_8to24table;
+	for (i=0 ; i<256 ; i++)
+	{
+		r = pal[0];
+		g = pal[1];
+		b = pal[2];
+		pal += 3;
+		
+		v = (255<<24) + (r<<0) + (g<<8) + (b<<16);
+		*table++ = v;
+	}
+	d_8to24table[255] &= 0xffffff;	// 255 is transparent
+
+	// JACK: 3D distance calcs - k is last closest, l is the distance.
+	for (i=0; i < (1<<15); i++) {
+		/* Maps
+		000000000000000
+		000000000011111 = Red  = 0x1F
+		000001111100000 = Blue = 0x03E0
+		111110000000000 = Grn  = 0x7C00
+		*/
+		r = ((i & 0x1F) << 3)+4;
+		g = ((i & 0x03E0) >> 2)+4;
+		b = ((i & 0x7C00) >> 7)+4;
+		pal = (unsigned char *)d_8to24table;
+		for (v=0,k=0,bestdist=10000*10000; v<256; v++,pal+=4) {
+			r1 = (int)r - (int)pal[0];
+			g1 = (int)g - (int)pal[1];
+			b1 = (int)b - (int)pal[2];
+			dist = (r1*r1)+(g1*g1)+(b1*b1);
+			if (dist < bestdist) {
+				k=v;
+				bestdist = dist;
+			}
+		}
+		d_15to8table[i]=k;
+	}
 }
 
 void VID_ShiftPalette(unsigned char *palette) {

@@ -30,10 +30,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define NUM_SAFE_ARGVS 7
 
-static const char *largv[MAX_NUM_ARGVS + NUM_SAFE_ARGVS + 1];
-static const char *argvdummy = " ";
+static char *largv[MAX_NUM_ARGVS + NUM_SAFE_ARGVS + 1];
+static char *argvdummy = " ";
 
-static const char *safeargvs[NUM_SAFE_ARGVS] = {"-stdvid", "-nolan",   "-nosound", "-nocdaudio",
+static char *safeargvs[NUM_SAFE_ARGVS] = {"-stdvid", "-nolan",   "-nosound", "-nocdaudio",
                                                 "-nojoy",  "-nomouse", "-dibonly"};
 
 cvar_t registered = {"registered", "0"};
@@ -60,21 +60,6 @@ qboolean standard_quake = true, rogue, hipnotic;
 #ifdef QW_HACK
 char gamedirfile[MAX_OSPATH];
 #endif
-
-/* FIXME - remove this and checks like it; no need to be registered... */
-// this graphic needs to be in the pak file to use registered features
-static unsigned short pop[] = {
-    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x6600, 0x0000,
-    0x0000, 0x0000, 0x6600, 0x0000, 0x0000, 0x0066, 0x0000, 0x0000, 0x0000, 0x0000, 0x0067, 0x0000,
-    0x0000, 0x6665, 0x0000, 0x0000, 0x0000, 0x0000, 0x0065, 0x6600, 0x0063, 0x6561, 0x0000, 0x0000,
-    0x0000, 0x0000, 0x0061, 0x6563, 0x0064, 0x6561, 0x0000, 0x0000, 0x0000, 0x0000, 0x0061, 0x6564,
-    0x0064, 0x6564, 0x0000, 0x6469, 0x6969, 0x6400, 0x0064, 0x6564, 0x0063, 0x6568, 0x6200, 0x0064,
-    0x6864, 0x0000, 0x6268, 0x6563, 0x0000, 0x6567, 0x6963, 0x0064, 0x6764, 0x0063, 0x6967, 0x6500,
-    0x0000, 0x6266, 0x6769, 0x6a68, 0x6768, 0x6a69, 0x6766, 0x6200, 0x0000, 0x0062, 0x6566, 0x6666,
-    0x6666, 0x6666, 0x6562, 0x0000, 0x0000, 0x0000, 0x0062, 0x6364, 0x6664, 0x6362, 0x0000, 0x0000,
-    0x0000, 0x0000, 0x0000, 0x0062, 0x6662, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0061,
-    0x6661, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x6500, 0x0000, 0x0000, 0x0000,
-    0x0000, 0x0000, 0x0000, 0x0000, 0x6400, 0x0000, 0x0000, 0x0000};
 
 /*
 
@@ -918,8 +903,8 @@ void SZ_Print(sizebuf_t *buf, const char *data) {
 COM_SkipPath
 ============
 */
-const char *COM_SkipPath(const char *pathname) {
-    const char *last;
+char *COM_SkipPath(char *pathname) {
+    char *last;
 
     last = pathname;
     while (*pathname) {
@@ -934,8 +919,8 @@ const char *COM_SkipPath(const char *pathname) {
 COM_StripExtension
 ============
 */
-void COM_StripExtension(const char *filename, char *out) {
-    const char *start, *pos;
+void COM_StripExtension(char *filename, char *out) {
+    char *start, *pos;
     size_t copylen;
 
     start = COM_SkipPath(filename);
@@ -976,7 +961,7 @@ char *COM_FileExtension(char *in) {
 COM_FileBase
 ============
 */
-void COM_FileBase(const char *in, char *out) {
+void COM_FileBase(char *in, char *out) {
     const char *dot;
     int copylen;
 
@@ -1015,7 +1000,7 @@ void COM_DefaultExtension (char *path, char *extension)
 	strcat (path, extension);
 }
 
-int COM_CheckExtension(const char *path, const char *extn) {
+int COM_CheckExtension(char *path, char *extn) {
     char *pos;
     int ret = 0;
 
@@ -1030,10 +1015,10 @@ int COM_CheckExtension(const char *path, const char *extn) {
 
 //============================================================================
 
-static char com_tokenbuf[1024];
-const char *com_token = com_tokenbuf;
+char com_tokenbuf[1024];
+char *com_token = com_tokenbuf;
 unsigned com_argc;
-const char **com_argv;
+char **com_argv;
 
 /*
 ==============
@@ -1042,9 +1027,9 @@ COM_Parse
 Parse a token out of a string
 ==============
 */
-static const char single_chars[] = "{})(':";
+static char single_chars[] = "{})(':";
 
-static const char *COM_Parse_(const char *data, qboolean split_single_chars) {
+static char *COM_Parse_(char *data, qboolean split_single_chars) {
     int c;
     int len;
 
@@ -1104,7 +1089,7 @@ skipwhite:
     return data;
 }
 
-const char *COM_Parse(const char *data) {
+char *COM_Parse(char *data) {
 #ifdef NQ_HACK
     return COM_Parse_(data, true);
 #endif
@@ -1121,7 +1106,7 @@ Returns the position (1 to argc-1) in the program's argument list
 where the given parameter apears, or 0 if not present
 ================
 */
-unsigned COM_CheckParm(const char *parm) {
+unsigned COM_CheckParm(char *parm) {
     unsigned i;
 
     for (i = 1; i < com_argc; i++) {
@@ -1137,7 +1122,7 @@ unsigned COM_CheckParm(const char *parm) {
 COM_InitArgv
 ================
 */
-void COM_InitArgv(int argc, const char **argv) {
+void COM_InitArgv(int argc, char **argv) {
     qboolean safe;
     int i;
 #ifdef NQ_HACK
@@ -1190,17 +1175,6 @@ void COM_InitArgv(int argc, const char **argv) {
     }
 #endif
 }
-
-/*
-================
-COM_AddParm
-
-Adds the given string at the end of the current argument list
-================
-*/
-#ifdef QW_HACK
-void COM_AddParm(const char *parm) { largv[com_argc++] = parm; }
-#endif
 
 /*
 ================
@@ -1334,7 +1308,7 @@ static int COM_filelength(FILE *f) {
     return end;
 }
 
-static int COM_FileOpenRead(const char *path, FILE **hndl) {
+static int COM_FileOpenRead(char *path, FILE **hndl) {
     FILE *f;
 
     f = fopen(path, "rb");
@@ -1375,7 +1349,7 @@ COM_WriteFile
 The filename will be prefixed by the current game directory
 ============
 */
-void COM_WriteFile(const char *filename, const void *data, int len) {
+void COM_WriteFile(char *filename, const void *data, int len) {
     FILE *f;
     char name[MAX_OSPATH];
 
@@ -1396,7 +1370,7 @@ void COM_WriteFile(const char *filename, const void *data, int len) {
 COM_CreatePath
 ============
 */
-void COM_CreatePath(const char *path) {
+void COM_CreatePath(char *path) {
     char part[MAX_OSPATH];
     char *ofs;
 
@@ -1426,7 +1400,7 @@ into the file.
 */
 int file_from_pak;  // global indicating file came from pack file
 
-int COM_FOpenFile(const char *filename, FILE **file) {
+int COM_FOpenFile(char *filename, FILE **file) {
     searchpath_t *search;
     char path[MAX_OSPATH];
     pack_t *pak;
@@ -1489,7 +1463,7 @@ static cache_user_t *loadcache;
 static byte *loadbuf;
 static int loadsize;
 
-static void *COM_LoadFile(const char *path, int usehunk) {
+static void *COM_LoadFile(char *path, int usehunk) {
     FILE *f;
     byte *buf;
     char base[32];
@@ -1530,11 +1504,11 @@ static void *COM_LoadFile(const char *path, int usehunk) {
     return buf;
 }
 
-void *COM_LoadHunkFile(const char *path) { return COM_LoadFile(path, 1); }
+void *COM_LoadHunkFile(char *path) { return COM_LoadFile(path, 1); }
 
-void *COM_LoadTempFile(const char *path) { return COM_LoadFile(path, 2); }
+void *COM_LoadTempFile(char *path) { return COM_LoadFile(path, 2); }
 
-void COM_LoadCacheFile(const char *path, struct cache_user_s *cu) {
+void COM_LoadCacheFile(char *path, struct cache_user_s *cu) {
     loadcache = cu;
     COM_LoadFile(path, 3);
 }
@@ -1561,7 +1535,7 @@ Loads the header and directory, adding the files at the beginning
 of the list so they override previous pack files.
 =================
 */
-static pack_t *COM_LoadPackFile(const char *packfile) {
+static pack_t *COM_LoadPackFile(char *packfile) {
     FILE *packhandle;
     dpackheader_t header;
     dpackfile_t *dfiles;
@@ -1596,8 +1570,6 @@ static pack_t *COM_LoadPackFile(const char *packfile) {
     /* crc the directory to check for modifications */
     crc = CRC_Block((byte *)dfiles, header.dirlen);
     switch (crc) {
-            com_modified = false;
-            break;
         default:
             com_modified = true;
             break;
@@ -1666,7 +1638,7 @@ static void COM_AddGameDirectory(const char *base, const char *dir) {
     // add any pak files in the format pak0.pak pak1.pak, ...
     //
     for (i = 0;; i++) {
-        snprintf(pakfile, sizeof(pakfile), "%s/pak%i.pak", com_gamedir, i);
+        snprintf(pakfile, sizeof(pakfile)*2, "%s/pak%i.pak", com_gamedir, i);
         pak = COM_LoadPackFile(pakfile);
         if (!pak) break;
         search = Hunk_Alloc(sizeof(searchpath_t));

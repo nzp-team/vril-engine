@@ -47,7 +47,6 @@ void Sys_MakeCodeWriteable(void *start_addr, void *end_addr);
 
 void Sys_Printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 void Sys_DebugLog(const char *file, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
-void Sys_Error(const char *error, ...) __attribute__((format(printf, 1, 2), noreturn));
 
 void Sys_PrintSystemInfo(void);
 

@@ -60,7 +60,7 @@ static void JoyToKey(int button, int pressed) {
 void IN_ProcessEvents(void) {
     SDL_Event event;
     SDL_Keycode keycode;
-    int keystate, button, keynum;
+    int keystate, keynum;
 
     while (SDL_PollEvent(&event)) {
         switch (event.type) {

@@ -59,10 +59,6 @@ vec3_t r_origin;
 
 float r_world_matrix[16];
 
-#ifdef NQ_HACK /* Mirrors disabled for now in QW */
-static float r_base_world_matrix[16];
-#endif
-
 //
 // screen size info
 //
@@ -130,7 +126,7 @@ R_CullBox
 Returns true if the box is completely outside the frustum
 =================
 */
-qboolean R_CullBox(const vec3_t mins, const vec3_t maxs) {
+qboolean R_CullBox(vec3_t mins, vec3_t maxs) {
     int i;
 
     for (i = 0; i < 4; i++)
@@ -1413,7 +1409,7 @@ void R_SetupFrame(void) {
     // current viewleaf
     r_oldviewleaf = r_viewleaf;
     if (!r_viewleaf)
-        r_viewleaf = Mod_PointInLeaf(cl.worldmodel, r_origin);
+        r_viewleaf = Mod_PointInLeaf(r_origin, cl.worldmodel);
 
     // color shifting for water, etc.
     V_SetContentsColor(r_viewleaf->contents);

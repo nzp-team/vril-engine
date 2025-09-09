@@ -229,25 +229,22 @@ int q_vsnprintf(char *str, size_t size, const char *format, va_list args);
 
 //============================================================================
 
-extern const char *com_token;
+extern char *com_token;
 extern qboolean com_eof;
 
-const char *COM_Parse(const char *data);
+char *COM_Parse(char *data);
 
 extern unsigned com_argc;
-extern const char **com_argv;
+extern char **com_argv;
 
-unsigned COM_CheckParm(const char *parm);
-#ifdef QW_HACK
-void COM_AddParm(const char *parm);
-#endif
+unsigned COM_CheckParm(char *parm);
 
 void COM_Init(char *path);
-void COM_InitArgv(int argc, const char **argv);
+void COM_InitArgv(int argc, char **argv);
 
-const char *COM_SkipPath(const char *pathname);
-void COM_StripExtension(const char *filename, char *out);
-void COM_FileBase(const char *in, char *out);
+char *COM_SkipPath(char *pathname);
+void COM_StripExtension(char *filename, char *out);
+void COM_FileBase(char *in, char *out);
 void COM_DefaultExtension (char *path, char *extension);
 char *COM_FileExtension(char *in);
 
@@ -264,37 +261,15 @@ struct cache_user_s;
 extern char com_basedir[MAX_OSPATH];
 extern char com_gamedir[MAX_OSPATH];
 
-void COM_WriteFile(const char *filename, const void *data, int len);
-int COM_FOpenFile(const char *filename, FILE **file);
+void COM_WriteFile(char *filename, const void *data, int len);
+int COM_FOpenFile(char *filename, FILE **file);
 byte *COM_LoadStackFile (char *path, void *buffer, int bufsize);
-void *COM_LoadTempFile(const char *path);
-void *COM_LoadHunkFile(const char *path);
-void COM_LoadCacheFile(const char *path, struct cache_user_s *cu);
-#ifdef QW_HACK
-void COM_CreatePath(const char *path);
-void COM_Gamedir(const char *dir);
-#endif
+void *COM_LoadTempFile(char *path);
+void *COM_LoadHunkFile(char *path);
+void COM_LoadCacheFile(char *path, struct cache_user_s *cu);
 
 extern struct cvar_s registered;
 extern qboolean standard_quake, rogue, hipnotic;
-
-#ifdef QW_HACK
-char *Info_ValueForKey(const char *infostring, const char *key);
-void Info_RemoveKey(char *infostring, const char *key);
-void Info_RemovePrefixedKeys(char *infostring, char prefix);
-void Info_SetValueForKey(char *infostring, const char *key, const char *value, int maxsize);
-void Info_SetValueForStarKey(char *infostring, const char *key, const char *value, int maxsize);
-void Info_Print(const char *infostring);
-
-unsigned Com_BlockChecksum(const void *buffer, int length);
-void Com_BlockFullChecksum(const void *buffer, int len, unsigned char outbuf[16]);
-byte COM_BlockSequenceCheckByte(const byte *base, int length, int sequence, unsigned mapchecksum);
-byte COM_BlockSequenceCRCByte(const byte *base, int length, int sequence);
-
-int build_number(void);
-
-extern char gamedirfile[];
-#endif
 
 void Q_strncpyz (char *dest, char *src, size_t size);        //Diabolickal HLBSP
 

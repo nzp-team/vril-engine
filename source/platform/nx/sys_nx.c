@@ -386,7 +386,7 @@ void Sys_MakeCodeWriteable(void *start_addr, void *end_addr) {
 
 extern void Sys_InitSDL (void);
 
-int Q_main(int argc, const char *argv[]);
+int Q_main(int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
     static char *args[16];
@@ -421,7 +421,7 @@ int main(int argc, char *argv[]) {
 
     args[nargs] = NULL;
 
-    return Q_main(nargs, (const char **)args);
+    return Q_main(nargs, (char **)args);
 }
 
 /*
@@ -430,7 +430,7 @@ int main(int argc, char *argv[]) {
  * ===========================================================================
  */
 
-int Q_main(int argc, const char **argv) {
+int Q_main(int argc, char **argv) {
     double time, oldtime, newtime;
     quakeparms_t parms;
 #ifdef SERVERONLY

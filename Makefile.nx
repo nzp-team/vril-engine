@@ -147,6 +147,7 @@ COMMON_OBJS =	system.o \
 				platform/nx/gl/gl_rsurf.c \
 				platform/nx/gl/gl_screen.c \
 				platform/nx/gl/gl_warp.c \
+				platform/nx/gl/vid_mode.c \
 				platform/nx/gl/vid_egl.c \
 				crypter.c
 

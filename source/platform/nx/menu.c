@@ -76,8 +76,6 @@ void M_PrintWhite(int cx, int cy, const char *str) {
 
 /* --------------------------------------------------------------------------*/
 
-static int m_save_demonum;
-
 enum 
 {
 	m_none, 
@@ -1330,7 +1328,6 @@ void M_DrawSlider(int x, int y, float range) {
 void M_DrawCheckbox(int x, int y, qboolean checked) { M_Print(x, y, checked ? "on" : "off"); }
 
 void M_Options_Draw(void) {
-    const qpic_t *pic;
     int height;
     float slider;
 
@@ -1590,16 +1587,15 @@ void M_UnbindCommand (char *command)
 }
 
 void M_Keys_Draw(void) {
-    const qpic_t *pic;
     m_keys_cursor_t line;
 
     /* Draw the key bindings list */
     for (line = 0; line < M_KEYS_CURSOR_LINES; line++) {
         const int height = 48 + 8 * line;
-        int keys[2];
+        //int keys[2];
 
         M_Print(16, height, m_keys_bindnames[line][1]);
-
+/*
         const char *keyname = Key_KeynumToString(keys[0]);
         M_Print(140, height, keyname);
 
@@ -1607,7 +1603,7 @@ void M_Keys_Draw(void) {
         keyname = Key_KeynumToString(keys[1]);
         M_Print(140 + namewidth + 8, height, "or");
         M_Print(140 + namewidth + 32, height, keyname);
-
+*/
     }
 
     /* Draw the header and cursor */

@@ -1140,7 +1140,7 @@ static void SCR_ScreenShot_f(void) {
 #ifdef GLQUAKE
     byte *buffer;
     char tganame[80];
-    char checkname[MAX_OSPATH];
+    char checkname[MAX_OSPATH*2];
     int i, c, temp;
 
     //

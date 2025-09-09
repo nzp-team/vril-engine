@@ -73,15 +73,45 @@ typedef struct {
     byte driverdata[8]; /* Allow drivers to stuff some data */
 } qvidmode_t;
 
+typedef enum {
+    VID_MENU_CURSOR_RESOLUTION,
+    VID_MENU_CURSOR_BPP,
+    VID_MENU_CURSOR_REFRESH,
+    VID_MENU_CURSOR_FULLSCREEN,
+    VID_MENU_CURSOR_TEST,
+    VID_MENU_CURSOR_APPLY,
+    VID_MENU_CURSOR_LINES,
+} vid_menu_cursor_t;
+
+typedef struct {
+    qvidmode_t mode;
+    qboolean fullscreen;
+    vid_menu_cursor_t cursor;
+} vid_menustate_t;
+
 #define VID_MODE_NONE (-1)
 #define VID_MODE_WINDOWED 0
 
 void VID_MenuInitState(const qvidmode_t *mode);
 void VID_MenuKey(int keynum);
-qboolean VID_SetMode(unsigned char *palette);
+qboolean VID_SetMode(const qvidmode_t *mode, const byte *palette);
 qboolean VID_CheckAdequateMem(int width, int height);
 void VID_NumModes_f(void);
 void VID_DescribeCurrentMode_f(void);
+void VID_DescribeModes_f(void);
+void VID_MenuDraw_(const vid_menustate_t *menu);
+void VID_InitModeCvars(void);
+
+/*
+ * TODO ~ Have the vid driver allocate modelist dynamically
+ */
+ #define MAX_MODE_LIST 600
+
+ #define VID_MODE_NONE (-1)
+ #define VID_MODE_WINDOWED 0
+ 
+ extern qvidmode_t modelist[MAX_MODE_LIST];
+ extern int nummodes;
 
 /* ------------------------------------------------------------------------ */
 
