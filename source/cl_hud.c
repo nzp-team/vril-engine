@@ -53,6 +53,13 @@ int 	b_abutton;
 int 	b_bbutton;
 int 	b_xbutton;
 int 	b_ybutton;
+#elif __NX__
+int 	b_abutton;
+int 	b_bbutton;
+int 	b_xbutton;
+int 	b_ybutton;
+int 	b_zlt;
+int 	b_zrt;
 #elif __WII__
 qpic_t 		*b_abutton;
 qpic_t 		*b_bbutton;

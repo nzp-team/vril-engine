@@ -1,0 +1,1745 @@
+/*
+Copyright (C) 1996-1997 Id Software, Inc.
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+*/
+// common.c -- misc functions used in client and server
+
+#include <ctype.h>
+#include <dirent.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+
+#include "../../nzportable_def.h"
+
+#define NUM_SAFE_ARGVS 7
+
+static const char *largv[MAX_NUM_ARGVS + NUM_SAFE_ARGVS + 1];
+static const char *argvdummy = " ";
+
+static const char *safeargvs[NUM_SAFE_ARGVS] = {"-stdvid", "-nolan",   "-nosound", "-nocdaudio",
+                                                "-nojoy",  "-nomouse", "-dibonly"};
+
+cvar_t registered = {"registered", "0"};
+#ifdef NQ_HACK
+static cvar_t cmdline = {"cmdline", "0", false, true};
+#endif
+
+static qboolean com_modified;      // set true if using non-id files
+static int static_registered = 1;  // only for startup check, then set
+
+qboolean msg_suppress_1 = 0;
+
+static void COM_InitFilesystem(void);
+static void COM_Path_f(void);
+static void *SZ_GetSpace(sizebuf_t *buf, int length);
+
+#ifdef NQ_HACK
+#define CMDLINE_LENGTH 256
+static char com_cmdline[CMDLINE_LENGTH];
+#endif
+
+qboolean standard_quake = true, rogue, hipnotic;
+
+#ifdef QW_HACK
+char gamedirfile[MAX_OSPATH];
+#endif
+
+/* FIXME - remove this and checks like it; no need to be registered... */
+// this graphic needs to be in the pak file to use registered features
+static unsigned short pop[] = {
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x6600, 0x0000,
+    0x0000, 0x0000, 0x6600, 0x0000, 0x0000, 0x0066, 0x0000, 0x0000, 0x0000, 0x0000, 0x0067, 0x0000,
+    0x0000, 0x6665, 0x0000, 0x0000, 0x0000, 0x0000, 0x0065, 0x6600, 0x0063, 0x6561, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0061, 0x6563, 0x0064, 0x6561, 0x0000, 0x0000, 0x0000, 0x0000, 0x0061, 0x6564,
+    0x0064, 0x6564, 0x0000, 0x6469, 0x6969, 0x6400, 0x0064, 0x6564, 0x0063, 0x6568, 0x6200, 0x0064,
+    0x6864, 0x0000, 0x6268, 0x6563, 0x0000, 0x6567, 0x6963, 0x0064, 0x6764, 0x0063, 0x6967, 0x6500,
+    0x0000, 0x6266, 0x6769, 0x6a68, 0x6768, 0x6a69, 0x6766, 0x6200, 0x0000, 0x0062, 0x6566, 0x6666,
+    0x6666, 0x6666, 0x6562, 0x0000, 0x0000, 0x0000, 0x0062, 0x6364, 0x6664, 0x6362, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0062, 0x6662, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0061,
+    0x6661, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x6500, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000, 0x6400, 0x0000, 0x0000, 0x0000};
+
+/*
+
+All of Quake's data access is through a hierchal file system, but the contents
+of the file system can be transparently merged from several sources.
+
+The "base directory" is the path to the directory holding the quake.exe and
+all game directories.  The sys_* files pass this to host_init in
+quakeparms_t->basedir.  This can be overridden with the "-basedir" command
+line parm to allow code debugging in a different directory.  The base
+directory is only used during filesystem initialization.
+
+The "game directory" is the first tree on the search path and directory that
+all generated files (savegames, screenshots, demos, config files) will be
+saved to.  This can be overridden with the "-game" command line parameter.
+The game directory can never be changed while quake is executing.  This is a
+precacution against having a malicious server instruct clients to write files
+over areas they shouldn't.
+
+*/
+
+//============================================================================
+
+// ClearLink is used for new headnodes
+void ClearLink(link_t *l) { l->prev = l->next = l; }
+
+void RemoveLink(link_t *l) {
+    l->next->prev = l->prev;
+    l->prev->next = l->next;
+}
+
+void InsertLinkBefore(link_t *l, link_t *before) {
+    l->next = before;
+    l->prev = before->prev;
+    l->prev->next = l;
+    l->next->prev = l;
+}
+
+/* Unused */
+#if 0
+void
+InsertLinkAfter(link_t *l, link_t *after)
+{
+    l->next = after->next;
+    l->prev = after;
+    l->prev->next = l;
+    l->next->prev = l;
+}
+#endif
+
+/*
+============================================================================
+
+					LIBRARY REPLACEMENT FUNCTIONS
+
+============================================================================
+*/
+
+#define	snprintf_func		snprintf
+#define	vsnprintf_func		vsnprintf
+
+//Diabolickal HLBSP
+void Q_strncpyz (char *dest, char *src, size_t size)
+{
+   strncpy (dest, src, size - 1);
+   dest[size-1] = 0;
+}
+//Diabolickal End
+
+int q_vsnprintf(char *str, size_t size, const char *format, va_list args)
+{
+	int		ret;
+
+	ret = vsnprintf_func (str, size, format, args);
+
+	if (ret < 0)
+		ret = (int)size;
+	if (size == 0)	/* no buffer */
+		return ret;
+	if ((size_t)ret >= size)
+		str[size - 1] = '\0';
+
+	return ret;
+}
+
+int q_snprintf (char *str, size_t size, const char *format, ...)
+{
+	int		ret;
+	va_list		argptr;
+
+	va_start (argptr, format);
+	ret = q_vsnprintf (str, size, format, argptr);
+	va_end (argptr);
+
+	return ret;
+}
+
+void Q_memset (void *dest, int fill, int count)
+{
+	int             i;
+	
+	if ( (((long)dest | count) & 3) == 0)
+	{
+		count >>= 2;
+		fill = fill | (fill<<8) | (fill<<16) | (fill<<24);
+		for (i=0 ; i<count ; i++)
+			((int *)dest)[i] = fill;
+	}
+	else
+		for (i=0 ; i<count ; i++)
+			((byte *)dest)[i] = fill;
+}
+
+void Q_memcpy (void *dest, void *src, int count)
+{
+	int             i;
+	
+	if (( ( (long)dest | (long)src | count) & 3) == 0 )
+	{
+		count>>=2;
+		for (i=0 ; i<count ; i++)
+			((int *)dest)[i] = ((int *)src)[i];
+	}
+	else
+		for (i=0 ; i<count ; i++)
+			((byte *)dest)[i] = ((byte *)src)[i];
+}
+
+int Q_memcmp (void *m1, void *m2, int count)
+{
+	while(count)
+	{
+		count--;
+		if (((byte *)m1)[count] != ((byte *)m2)[count])
+			return -1;
+	}
+	return 0;
+}
+
+void Q_strcpy (char *dest, char *src)
+{
+	while (*src)
+	{
+		*dest++ = *src++;
+	}
+	*dest++ = 0;
+}
+
+void Q_strncpy (char *dest, char *src, int count)
+{
+	while (*src && count--)
+	{
+		*dest++ = *src++;
+	}
+	if (count)
+		*dest++ = 0;
+}
+
+int Q_strlen (char *str)
+{
+	int             count;
+	
+	count = 0;
+	while (str[count])
+		count++;
+
+	return count;
+}
+
+char *Q_strrchr(char *s, char c)
+{
+    int len = Q_strlen(s);
+    s += len;
+    while (len--)
+	if (*--s == c) return s;
+    return 0;
+}
+
+void Q_strcat (char *dest, char *src)
+{
+	dest += Q_strlen(dest);
+	Q_strcpy (dest, src);
+}
+
+int Q_strncasecmp (char *s1, char *s2, int n)
+{
+	int             c1, c2;
+	
+	while (1)
+	{
+		c1 = *s1++;
+		c2 = *s2++;
+
+		if (!n--)
+			return 0;               // strings are equal until end point
+		
+		if (c1 != c2)
+		{
+			if (c1 >= 'a' && c1 <= 'z')
+				c1 -= ('a' - 'A');
+			if (c2 >= 'a' && c2 <= 'z')
+				c2 -= ('a' - 'A');
+			if (c1 != c2)
+				return -1;              // strings not equal
+		}
+		if (!c1)
+			return 0;               // strings are equal
+//              s1++;
+//              s2++;
+	}
+	
+	return -1;
+}
+
+int Q_strcasecmp (char *s1, char *s2)
+{
+	return Q_strncasecmp (s1, s2, 99999);
+}
+
+int Q_atoi (char *str)
+{
+	int             val;
+	int             sign;
+	int             c;
+	
+	if (*str == '-')
+	{
+		sign = -1;
+		str++;
+	}
+	else
+		sign = 1;
+		
+	val = 0;
+
+//
+// check for hex
+//
+	if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X') )
+	{
+		str += 2;
+		while (1)
+		{
+			c = *str++;
+			if (c >= '0' && c <= '9')
+				val = (val<<4) + c - '0';
+			else if (c >= 'a' && c <= 'f')
+				val = (val<<4) + c - 'a' + 10;
+			else if (c >= 'A' && c <= 'F')
+				val = (val<<4) + c - 'A' + 10;
+			else
+				return val*sign;
+		}
+	}
+	
+//
+// check for character
+//
+	if (str[0] == '\'')
+	{
+		return sign * str[1];
+	}
+	
+//
+// assume decimal
+//
+	while (1)
+	{
+		c = *str++;
+		if (c <'0' || c > '9')
+			return val*sign;
+		val = val*10 + c - '0';
+	}
+	
+	return 0;
+}
+
+
+float Q_atof (char *str)
+{
+	double			val;
+	int             sign;
+	int             c;
+	int             decimal, total;
+	
+	if (*str == '-')
+	{
+		sign = -1;
+		str++;
+	}
+	else
+		sign = 1;
+		
+	val = 0;
+
+//
+// check for hex
+//
+	if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X') )
+	{
+		str += 2;
+		while (1)
+		{
+			c = *str++;
+			if (c >= '0' && c <= '9')
+				val = (val*16) + c - '0';
+			else if (c >= 'a' && c <= 'f')
+				val = (val*16) + c - 'a' + 10;
+			else if (c >= 'A' && c <= 'F')
+				val = (val*16) + c - 'A' + 10;
+			else
+				return val*sign;
+		}
+	}
+	
+//
+// check for character
+//
+	if (str[0] == '\'')
+	{
+		return sign * str[1];
+	}
+	
+//
+// assume decimal
+//
+	decimal = -1;
+	total = 0;
+	while (1)
+	{
+		c = *str++;
+		if (c == '.')
+		{
+			decimal = total;
+			continue;
+		}
+		if (c <'0' || c > '9')
+			break;
+		val = val*10 + c - '0';
+		total++;
+	}
+
+	if (decimal == -1)
+		return val*sign;
+	while (total > decimal)
+	{
+		val /= 10;
+		total--;
+	}
+	
+	return val*sign;
+}
+
+/*
+============================================================================
+
+                                        BYTE ORDER FUNCTIONS
+
+============================================================================
+*/
+
+qboolean bigendien;
+
+short (*BigShort)(short l);
+short (*LittleShort)(short l);
+int (*BigLong)(int l);
+int (*LittleLong)(int l);
+float (*BigFloat)(float l);
+float (*LittleFloat)(float l);
+
+short ShortSwap(short l) {
+    byte b1, b2;
+
+    b1 = l & 255;
+    b2 = (l >> 8) & 255;
+
+    return (b1 << 8) + b2;
+}
+
+short ShortNoSwap(short l) { return l; }
+
+int LongSwap(int l) {
+    byte b1, b2, b3, b4;
+
+    b1 = l & 255;
+    b2 = (l >> 8) & 255;
+    b3 = (l >> 16) & 255;
+    b4 = (l >> 24) & 255;
+
+    return ((int)b1 << 24) + ((int)b2 << 16) + ((int)b3 << 8) + b4;
+}
+
+int LongNoSwap(int l) { return l; }
+
+float FloatSwap(float f) {
+    union {
+        float f;
+        byte b[4];
+    } dat1, dat2;
+
+    dat1.f = f;
+    dat2.b[0] = dat1.b[3];
+    dat2.b[1] = dat1.b[2];
+    dat2.b[2] = dat1.b[1];
+    dat2.b[3] = dat1.b[0];
+    return dat2.f;
+}
+
+float FloatNoSwap(float f) { return f; }
+
+/*
+==============================================================================
+
+                        MESSAGE IO FUNCTIONS
+
+Handles byte ordering and avoids alignment errors
+==============================================================================
+*/
+
+/*
+ * Use this function to share static string buffers
+ * between different text processing functions.
+ * Try to avoid fixed-size intermediate buffers like this if possible
+ */
+ #define COM_STRBUF_LEN 2048
+ static char *COM_GetStrBuf(void) {
+     static char buffers[4][COM_STRBUF_LEN];
+     static int index;
+     return buffers[3 & ++index];
+ }
+
+#ifdef QW_HACK
+usercmd_t nullcmd;  // guarenteed to be zero
+#endif
+
+//
+// writing functions
+//
+
+void MSG_WriteChar(sizebuf_t *sb, int c) {
+    byte *buf;
+
+#ifdef PARANOID
+    if (c < -128 || c > 127) Sys_Error("%s: range error", __func__);
+#endif
+
+    buf = SZ_GetSpace(sb, 1);
+    buf[0] = c;
+}
+
+void MSG_WriteByte(sizebuf_t *sb, int c) {
+    byte *buf;
+
+#ifdef PARANOID
+    if (c < 0 || c > 255) Sys_Error("%s: range error", __func__);
+#endif
+
+    buf = SZ_GetSpace(sb, 1);
+    buf[0] = c;
+}
+
+void MSG_WriteShort(sizebuf_t *sb, int c) {
+    byte *buf;
+
+#ifdef PARANOID
+    if (c < ((short)0x8000) || c > (short)0x7fff) Sys_Error("%s: range error", __func__);
+#endif
+
+    buf = SZ_GetSpace(sb, 2);
+    buf[0] = c & 0xff;
+    buf[1] = c >> 8;
+}
+
+void MSG_WriteLong(sizebuf_t *sb, int c) {
+    byte *buf;
+
+    buf = SZ_GetSpace(sb, 4);
+    buf[0] = c & 0xff;
+    buf[1] = (c >> 8) & 0xff;
+    buf[2] = (c >> 16) & 0xff;
+    buf[3] = c >> 24;
+}
+
+void MSG_WriteFloat(sizebuf_t *sb, float f) {
+    union {
+        float f;
+        int l;
+    } dat;
+
+    dat.f = f;
+    dat.l = LittleLong(dat.l);
+
+    SZ_Write(sb, &dat.l, 4);
+}
+
+void MSG_WriteString(sizebuf_t *sb, const char *s) {
+    if (!s)
+        SZ_Write(sb, "", 1);
+    else
+        SZ_Write(sb, s, strlen(s) + 1);
+}
+
+void MSG_WriteStringvf(sizebuf_t *sb, const char *fmt, va_list ap) {
+    int maxlen, len;
+
+    /*
+     * FIXME - Kind of ugly to check space first then do getspace
+     * afterwards, but we don't know how much we'll need before
+     * hand. Update the SZ interface?
+     */
+    maxlen = sb->maxsize - sb->cursize;
+    len = vsnprintf((char *)sb->data + sb->cursize, maxlen, fmt, ap);
+
+    /* Use SZ_GetSpace to check for overflow */
+    SZ_GetSpace(sb, len + 1);
+}
+
+void MSG_WriteStringf(sizebuf_t *sb, const char *fmt, ...) {
+    va_list ap;
+
+    va_start(ap, fmt);
+    MSG_WriteStringvf(sb, fmt, ap);
+    va_end(ap);
+}
+
+void MSG_WriteCoord(sizebuf_t *sb, float f) {
+    /*
+     * Co-ords are send as shorts, with the low 3 bits being the fractional
+     * component
+     */
+    MSG_WriteShort(sb, (int)(f * (1 << 3)));
+}
+
+void MSG_WriteAngle(sizebuf_t *sb, float f) {
+    MSG_WriteByte(sb, (int)floorf((f * 256 / 360) + 0.5f) & 255);
+}
+
+void MSG_WriteAngle16(sizebuf_t *sb, float f) {
+    MSG_WriteShort(sb, (int)floorf((f * 65536 / 360) + 0.5f) & 65535);
+}
+
+#ifdef QW_HACK
+void MSG_WriteDeltaUsercmd(sizebuf_t *buf, const usercmd_t *from, const usercmd_t *cmd) {
+    int bits;
+
+    //
+    // send the movement message
+    //
+    bits = 0;
+    if (cmd->angles[0] != from->angles[0]) bits |= CM_ANGLE1;
+    if (cmd->angles[1] != from->angles[1]) bits |= CM_ANGLE2;
+    if (cmd->angles[2] != from->angles[2]) bits |= CM_ANGLE3;
+    if (cmd->forwardmove != from->forwardmove) bits |= CM_FORWARD;
+    if (cmd->sidemove != from->sidemove) bits |= CM_SIDE;
+    if (cmd->upmove != from->upmove) bits |= CM_UP;
+    if (cmd->buttons != from->buttons) bits |= CM_BUTTONS;
+    if (cmd->impulse != from->impulse) bits |= CM_IMPULSE;
+
+    MSG_WriteByte(buf, bits);
+
+    if (bits & CM_ANGLE1) MSG_WriteAngle16(buf, cmd->angles[0]);
+    if (bits & CM_ANGLE2) MSG_WriteAngle16(buf, cmd->angles[1]);
+    if (bits & CM_ANGLE3) MSG_WriteAngle16(buf, cmd->angles[2]);
+
+    if (bits & CM_FORWARD) MSG_WriteShort(buf, cmd->forwardmove);
+    if (bits & CM_SIDE) MSG_WriteShort(buf, cmd->sidemove);
+    if (bits & CM_UP) MSG_WriteShort(buf, cmd->upmove);
+
+    if (bits & CM_BUTTONS) MSG_WriteByte(buf, cmd->buttons);
+    if (bits & CM_IMPULSE) MSG_WriteByte(buf, cmd->impulse);
+    MSG_WriteByte(buf, cmd->msec);
+}
+#endif /* QW_HACK */
+
+#ifdef NQ_HACK
+/*
+ * Write the current message length to the start of the buffer (in big
+ * endian format) with the control flag set.
+ */
+void MSG_WriteControlHeader(sizebuf_t *sb) {
+    int c = NETFLAG_CTL | (sb->cursize & NETFLAG_LENGTH_MASK);
+
+    sb->data[0] = c >> 24;
+    sb->data[1] = (c >> 16) & 0xff;
+    sb->data[2] = (c >> 8) & 0xff;
+    sb->data[3] = c & 0xff;
+}
+#endif
+
+//
+// reading functions
+//
+int msg_readcount;
+qboolean msg_badread;
+
+void MSG_BeginReading(void) {
+    msg_readcount = 0;
+    msg_badread = false;
+}
+
+#ifdef QW_HACK
+int MSG_GetReadCount(void) { return msg_readcount; }
+#endif
+
+// returns -1 and sets msg_badread if no more characters are available
+int MSG_ReadChar(void) {
+    int c;
+
+    if (msg_readcount + 1 > net_message.cursize) {
+        msg_badread = true;
+        return -1;
+    }
+
+    c = (signed char)net_message.data[msg_readcount];
+    msg_readcount++;
+
+    return c;
+}
+
+int MSG_ReadByte(void) {
+    int c;
+
+    if (msg_readcount + 1 > net_message.cursize) {
+        msg_badread = true;
+        return -1;
+    }
+
+    c = (unsigned char)net_message.data[msg_readcount];
+    msg_readcount++;
+
+    return c;
+}
+
+int MSG_ReadShort(void) {
+    int c;
+
+    if (msg_readcount + 2 > net_message.cursize) {
+        msg_badread = true;
+        return -1;
+    }
+
+    c = (short)(net_message.data[msg_readcount] + (net_message.data[msg_readcount + 1] << 8));
+
+    msg_readcount += 2;
+
+    return c;
+}
+
+int MSG_ReadLong(void) {
+    int c;
+
+    if (msg_readcount + 4 > net_message.cursize) {
+        msg_badread = true;
+        return -1;
+    }
+
+    c = net_message.data[msg_readcount] + (net_message.data[msg_readcount + 1] << 8) +
+        (net_message.data[msg_readcount + 2] << 16) + (net_message.data[msg_readcount + 3] << 24);
+
+    msg_readcount += 4;
+
+    return c;
+}
+
+float MSG_ReadFloat(void) {
+    union {
+        byte b[4];
+        float f;
+        int l;
+    } dat;
+
+    dat.b[0] = net_message.data[msg_readcount];
+    dat.b[1] = net_message.data[msg_readcount + 1];
+    dat.b[2] = net_message.data[msg_readcount + 2];
+    dat.b[3] = net_message.data[msg_readcount + 3];
+    msg_readcount += 4;
+
+    dat.l = LittleLong(dat.l);
+
+    return dat.f;
+}
+
+char *MSG_ReadString(void) {
+    char *buf;
+    int len, c;
+
+    buf = COM_GetStrBuf();
+    len = 0;
+    do {
+        c = MSG_ReadChar();
+        if (c == -1 || c == 0) break;
+        buf[len++] = c;
+    } while (len < COM_STRBUF_LEN - 1);
+
+    buf[len] = 0;
+
+    return buf;
+}
+
+#ifdef QW_HACK
+char *MSG_ReadStringLine(void) {
+    char *buf;
+    int len, c;
+
+    buf = COM_GetStrBuf();
+    len = 0;
+    do {
+        c = MSG_ReadChar();
+        if (c == -1 || c == 0 || c == '\n') break;
+        buf[len++] = c;
+    } while (len < COM_STRBUF_LEN - 1);
+
+    buf[len] = 0;
+
+    return buf;
+}
+#endif
+
+float MSG_ReadCoord(void) {
+    /*
+     * Co-ords are send as shorts, with the low 3 bits being the fractional
+     * component
+     */
+    return MSG_ReadShort() * (1.0 / (1 << 3));
+}
+
+float MSG_ReadAngle(void) { return MSG_ReadChar() * (360.0 / 256); }
+
+float MSG_ReadAngle16(void) { return MSG_ReadShort() * (360.0 / 65536); }
+
+#ifdef QW_HACK
+void MSG_ReadDeltaUsercmd(const usercmd_t *from, usercmd_t *move) {
+    int bits;
+
+    memcpy(move, from, sizeof(*move));
+
+    bits = MSG_ReadByte();
+
+    // read current angles
+    if (bits & CM_ANGLE1) move->angles[0] = MSG_ReadAngle16();
+    if (bits & CM_ANGLE2) move->angles[1] = MSG_ReadAngle16();
+    if (bits & CM_ANGLE3) move->angles[2] = MSG_ReadAngle16();
+
+    // read movement
+    if (bits & CM_FORWARD) move->forwardmove = MSG_ReadShort();
+    if (bits & CM_SIDE) move->sidemove = MSG_ReadShort();
+    if (bits & CM_UP) move->upmove = MSG_ReadShort();
+
+    // read buttons
+    if (bits & CM_BUTTONS) move->buttons = MSG_ReadByte();
+
+    if (bits & CM_IMPULSE) move->impulse = MSG_ReadByte();
+
+    // read time to run command
+    move->msec = MSG_ReadByte();
+}
+#endif /* QW_HACK */
+
+#ifdef NQ_HACK
+/*
+ * Read back the message control header
+ * Essentially this is MSG_ReadLong, but big-endian byte order.
+ */
+int MSG_ReadControlHeader(void) {
+    int c;
+
+    if (msg_readcount + 4 > net_message.cursize) {
+        msg_badread = true;
+        return -1;
+    }
+
+    c = (net_message.data[msg_readcount] << 24) + (net_message.data[msg_readcount + 1] << 16) +
+        (net_message.data[msg_readcount + 2] << 8) + net_message.data[msg_readcount + 3];
+
+    msg_readcount += 4;
+
+    return c;
+}
+#endif
+
+//===========================================================================
+
+#ifdef NQ_HACK
+void SZ_Alloc(sizebuf_t *buf, int startsize) {
+    if (startsize < 256) startsize = 256;
+    buf->data = Hunk_AllocName(startsize, "sizebuf");
+    buf->maxsize = startsize;
+    buf->cursize = 0;
+}
+
+void SZ_Free(sizebuf_t *buf) {
+    //      Z_Free (buf->data);
+    //      buf->data = NULL;
+    //      buf->maxsize = 0;
+    buf->cursize = 0;
+}
+#endif
+
+void SZ_Clear(sizebuf_t *buf) {
+    buf->cursize = 0;
+    buf->overflowed = false;
+}
+
+static void *SZ_GetSpace(sizebuf_t *buf, int length) {
+    void *data;
+
+    if (buf->cursize + length > buf->maxsize) {
+        if (!buf->allowoverflow)
+            Sys_Error("%s: overflow without allowoverflow set (%d > %d)", __func__,
+                      buf->cursize + length, buf->maxsize);
+        if (length > buf->maxsize) Sys_Error("%s: %d is > full buffer size", __func__, length);
+        if (developer.value) /* Con_Printf may be redirected */
+            Sys_Printf("%s: overflow\n", __func__);
+        SZ_Clear(buf);
+        buf->overflowed = true;
+    }
+    data = buf->data + buf->cursize;
+    buf->cursize += length;
+
+    return data;
+}
+
+void SZ_Write(sizebuf_t *buf, const void *data, int length) {
+    memcpy(SZ_GetSpace(buf, length), data, length);
+}
+
+void SZ_Print(sizebuf_t *buf, const char *data) {
+    size_t len = strlen(data);
+
+    /* If buf->data has a trailing zero, overwrite it */
+    if (!buf->cursize || buf->data[buf->cursize - 1])
+        memcpy(SZ_GetSpace(buf, len + 1), data, len + 1);
+    else
+        memcpy(SZ_GetSpace(buf, len) - 1, data, len + 1);
+}
+
+//============================================================================
+
+/*
+============
+COM_SkipPath
+============
+*/
+const char *COM_SkipPath(const char *pathname) {
+    const char *last;
+
+    last = pathname;
+    while (*pathname) {
+        if (*pathname == '/') last = pathname + 1;
+        pathname++;
+    }
+    return last;
+}
+
+/*
+============
+COM_StripExtension
+============
+*/
+void COM_StripExtension(const char *filename, char *out) {
+    const char *start, *pos;
+    size_t copylen;
+
+    start = COM_SkipPath(filename);
+    pos = strrchr(start, '.');
+    if (out == filename) {
+        if (pos && *pos) out[pos - filename] = 0;
+        return;
+    }
+
+    copylen = (size_t)(pos - filename);
+    memcpy(out, filename, copylen);
+    out[copylen] = 0;
+}
+
+/*
+============
+COM_FileExtension
+============
+*/
+char *COM_FileExtension(char *in) {
+    static char exten[8];
+    const char *dot;
+    int i;
+
+    in = COM_SkipPath(in);
+    dot = strrchr(in, '.');
+    if (!dot) return "";
+
+    dot++;
+    for (i = 0; i < sizeof(exten) - 1 && *dot; i++, dot++) exten[i] = *dot;
+    exten[i] = 0;
+
+    return exten;
+}
+
+/*
+============
+COM_FileBase
+============
+*/
+void COM_FileBase(const char *in, char *out) {
+    const char *dot;
+    int copylen;
+
+    in = COM_SkipPath(in);
+    dot = strrchr(in, '.');
+    copylen = dot ? dot - in : strlen(in);
+
+    if (copylen < 2) {
+        in = "?model?";
+        copylen = strlen(in);
+    }
+    snprintf(out, sizeof(copylen), "%.*s", copylen, in);
+}
+
+/*
+==================
+COM_DefaultExtension
+==================
+*/
+void COM_DefaultExtension (char *path, char *extension)
+{
+	char    *src;
+//
+// if path doesn't have a .EXT, append extension
+// (extension should include the .)
+//
+	src = path + strlen(path) - 1;
+
+	while (*src != '/' && src != path)
+	{
+		if (*src == '.')
+			return;                 // it has an extension
+		src--;
+	}
+
+	strcat (path, extension);
+}
+
+int COM_CheckExtension(const char *path, const char *extn) {
+    char *pos;
+    int ret = 0;
+
+    pos = strrchr(path, '.');
+    if (pos) {
+        if (extn[0] != '.') pos++;
+        ret = pos && !strcasecmp(pos, extn);
+    }
+
+    return ret;
+}
+
+//============================================================================
+
+static char com_tokenbuf[1024];
+const char *com_token = com_tokenbuf;
+unsigned com_argc;
+const char **com_argv;
+
+/*
+==============
+COM_Parse
+
+Parse a token out of a string
+==============
+*/
+static const char single_chars[] = "{})(':";
+
+static const char *COM_Parse_(const char *data, qboolean split_single_chars) {
+    int c;
+    int len;
+
+    len = 0;
+    com_tokenbuf[0] = 0;
+
+    if (!data) return NULL;
+
+    // skip whitespace
+skipwhite:
+    while ((c = *data) <= ' ') {
+        if (c == 0) return NULL;  // end of file;
+        data++;
+    }
+
+    // skip // comments
+    if (c == '/' && data[1] == '/') {
+        while (*data && *data != '\n') data++;
+        goto skipwhite;
+    }
+    // skip /*..*/ comments
+    if (c == '/' && data[1] == '*') {
+        data += 2;
+        while (*data && !(*data == '*' && data[1] == '/')) data++;
+        if (*data) data += 2;
+        goto skipwhite;
+    }
+    // handle quoted strings specially
+    if (c == '\"') {
+        data++;
+        while (1) {
+            c = *data;
+            if (c) data++;
+            if (c == '\"' || !c) {
+                com_tokenbuf[len] = 0;
+                return data;
+            }
+            if (len < sizeof(com_tokenbuf) - 1) com_tokenbuf[len++] = c;
+        }
+    }
+    // parse single characters
+    if (split_single_chars && strchr(single_chars, c)) {
+        if (len < sizeof(com_tokenbuf) - 1) com_tokenbuf[len++] = c;
+        com_tokenbuf[len] = 0;
+        return data + 1;
+    }
+    // parse a regular word
+    do {
+        if (len < sizeof(com_tokenbuf) - 1) com_tokenbuf[len++] = c;
+        data++;
+        c = *data;
+        if (split_single_chars && strchr(single_chars, c)) break;
+    } while (c > 32);
+
+    com_tokenbuf[len] = 0;
+
+    return data;
+}
+
+const char *COM_Parse(const char *data) {
+#ifdef NQ_HACK
+    return COM_Parse_(data, true);
+#endif
+#ifdef QW_HACK
+    return COM_Parse_(data, false);
+#endif
+}
+
+/*
+================
+COM_CheckParm
+
+Returns the position (1 to argc-1) in the program's argument list
+where the given parameter apears, or 0 if not present
+================
+*/
+unsigned COM_CheckParm(const char *parm) {
+    unsigned i;
+
+    for (i = 1; i < com_argc; i++) {
+        if (!com_argv[i]) continue;  // NEXTSTEP sometimes clears appkit vars.
+        if (!strcmp(parm, com_argv[i])) return i;
+    }
+
+    return 0;
+}
+
+/*
+================
+COM_InitArgv
+================
+*/
+void COM_InitArgv(int argc, const char **argv) {
+    qboolean safe;
+    int i;
+#ifdef NQ_HACK
+    int j, n;
+
+    // reconstitute the command line for the cmdline externally visible cvar
+    n = 0;
+    for (j = 0; (j < MAX_NUM_ARGVS) && (j < argc); j++) {
+        i = 0;
+        while ((n < (CMDLINE_LENGTH - 1)) && argv[j][i]) {
+            com_cmdline[n++] = argv[j][i++];
+        }
+
+        if (n < (CMDLINE_LENGTH - 1))
+            com_cmdline[n++] = ' ';
+        else
+            break;
+    }
+    com_cmdline[n] = 0;
+#endif
+
+    safe = false;
+
+    for (com_argc = 0; (com_argc < MAX_NUM_ARGVS) && (com_argc < argc); com_argc++) {
+        largv[com_argc] = argv[com_argc];
+        if (!strcmp("-safe", argv[com_argc])) safe = true;
+    }
+
+    if (safe) {
+        // force all the safe-mode switches. Note that we reserved extra space in
+        // case we need to add these, so we don't need an overflow check
+        for (i = 0; i < NUM_SAFE_ARGVS; i++) {
+            largv[com_argc] = safeargvs[i];
+            com_argc++;
+        }
+    }
+
+    largv[com_argc] = argvdummy;
+    com_argv = largv;
+
+#ifdef NQ_HACK
+    if (COM_CheckParm("-rogue")) {
+        rogue = true;
+        standard_quake = false;
+    }
+
+    if (COM_CheckParm("-hipnotic") || COM_CheckParm("-quoth")) {
+        hipnotic = true;
+        standard_quake = false;
+    }
+#endif
+}
+
+/*
+================
+COM_AddParm
+
+Adds the given string at the end of the current argument list
+================
+*/
+#ifdef QW_HACK
+void COM_AddParm(const char *parm) { largv[com_argc++] = parm; }
+#endif
+
+/*
+================
+COM_Init
+================
+*/
+void COM_Init (char *basedir)
+{
+	byte    swaptest[2] = {1,0};
+
+// set the byte swapping variables in a portable manner 
+	if ( *(short *)swaptest == 1)
+	{
+		bigendien = false;
+		BigShort = ShortSwap;
+		LittleShort = ShortNoSwap;
+		BigLong = LongSwap;
+		LittleLong = LongNoSwap;
+		BigFloat = FloatSwap;
+		LittleFloat = FloatNoSwap;
+	}
+	else
+	{
+		bigendien = true;
+		BigShort = ShortNoSwap;
+		LittleShort = ShortSwap;
+		BigLong = LongNoSwap;
+		LittleLong = LongSwap;
+		BigFloat = FloatNoSwap;
+		LittleFloat = FloatSwap;
+	}
+
+	Cvar_RegisterVariable (&registered);
+	Cvar_RegisterVariable (&cmdline);
+	Cmd_AddCommand ("path", COM_Path_f);
+
+	COM_InitFilesystem ();
+}
+
+/*
+============
+va
+
+does a varargs printf into a temp buffer, so I don't need to have
+varargs versions of all text functions.
+============
+*/
+char *va(const char *format, ...) {
+    va_list argptr;
+    char *buf;
+    int len;
+
+    buf = COM_GetStrBuf();
+    va_start(argptr, format);
+    len = vsnprintf(buf, COM_STRBUF_LEN, format, argptr);
+    va_end(argptr);
+
+    if (len > COM_STRBUF_LEN - 1) Con_DPrintf("%s: overflow (string truncated)\n", __func__);
+
+    return buf;
+}
+
+/*
+=============================================================================
+
+QUAKE FILESYSTEM
+
+=============================================================================
+*/
+
+int com_filesize;
+
+//
+// in memory
+//
+
+typedef struct {
+    char name[MAX_QPATH];
+    int filepos, filelen;
+} packfile_t;
+
+typedef struct pack_s {
+    char filename[MAX_OSPATH];
+    int numfiles;
+    packfile_t *files;
+} pack_t;
+
+//
+// on disk
+//
+#define MAX_PACKPATH 56
+typedef struct {
+    char name[MAX_PACKPATH];
+    int filepos, filelen;
+} dpackfile_t;
+
+typedef struct {
+    char id[4];
+    int dirofs;
+    int dirlen;
+} dpackheader_t;
+
+char com_gamedir[MAX_OSPATH];
+char com_basedir[MAX_OSPATH];
+
+typedef struct searchpath_s {
+    char filename[MAX_OSPATH];
+    pack_t *pack;  // only one of filename / pack will be used
+    struct searchpath_s *next;
+} searchpath_t;
+
+static searchpath_t *com_searchpaths;
+#ifdef QW_HACK
+static searchpath_t *com_base_searchpaths;  // without gamedirs
+#endif
+
+/*
+================
+COM_filelength
+================
+*/
+static int COM_filelength(FILE *f) {
+    int pos;
+    int end;
+
+    pos = ftell(f);
+    fseek(f, 0, SEEK_END);
+    end = ftell(f);
+    fseek(f, pos, SEEK_SET);
+
+    return end;
+}
+
+static int COM_FileOpenRead(const char *path, FILE **hndl) {
+    FILE *f;
+
+    f = fopen(path, "rb");
+    if (!f) {
+        *hndl = NULL;
+        return -1;
+    }
+    *hndl = f;
+
+    return COM_filelength(f);
+}
+
+/*
+============
+COM_Path_f
+
+============
+*/
+static void COM_Path_f(void) {
+    searchpath_t *s;
+
+    Con_Printf("Current search path:\n");
+    for (s = com_searchpaths; s; s = s->next) {
+#ifdef QW_HACK
+        if (s == com_base_searchpaths) Con_Printf("----------\n");
+#endif
+        if (s->pack)
+            Con_Printf("%s (%i files)\n", s->pack->filename, s->pack->numfiles);
+        else
+            Con_Printf("%s\n", s->filename);
+    }
+}
+
+/*
+============
+COM_WriteFile
+
+The filename will be prefixed by the current game directory
+============
+*/
+void COM_WriteFile(const char *filename, const void *data, int len) {
+    FILE *f;
+    char name[MAX_OSPATH];
+
+    snprintf(name, sizeof(name)+1, "%s/%s", com_gamedir, filename);
+
+    f = fopen(name, "wb");
+    if (!f) {
+        Sys_mkdir(com_gamedir);
+        f = fopen(name, "wb");
+        if (!f) Sys_Error("Error opening %s", filename);
+    }
+    fwrite(data, 1, len, f);
+    fclose(f);
+}
+
+/*
+============
+COM_CreatePath
+============
+*/
+void COM_CreatePath(const char *path) {
+    char part[MAX_OSPATH];
+    char *ofs;
+
+    if (!path || !path[0]) return;
+
+    strncpy(part, path, sizeof(part));
+    part[MAX_OSPATH - 1] = 0;
+
+    for (ofs = part + 1; *ofs; ofs++) {
+        if (*ofs == '/') {  // create the directory
+            *ofs = 0;
+            Sys_mkdir(part);
+            *ofs = '/';
+        }
+    }
+}
+
+/*
+===========
+COM_FOpenFile
+
+Finds the file in the search path.
+Sets com_filesize
+If the requested file is inside a packfile, a new FILE * will be opened
+into the file.
+===========
+*/
+int file_from_pak;  // global indicating file came from pack file
+
+int COM_FOpenFile(const char *filename, FILE **file) {
+    searchpath_t *search;
+    char path[MAX_OSPATH];
+    pack_t *pak;
+    int i;
+    int findtime;
+
+    file_from_pak = 0;
+
+    //
+    // search through the path, one element at a time
+    //
+    for (search = com_searchpaths; search; search = search->next) {
+        // is the element a pak file?
+        if (search->pack) {
+            // look through all the pak file elements
+            pak = search->pack;
+            for (i = 0; i < pak->numfiles; i++)
+                if (!strcmp(pak->files[i].name, filename)) {  // found it!
+                    // open a new file on the pakfile
+                    *file = fopen(pak->filename, "rb");
+                    if (!*file) Sys_Error("Couldn't reopen %s", pak->filename);
+                    fseek(*file, pak->files[i].filepos, SEEK_SET);
+                    com_filesize = pak->files[i].filelen;
+                    file_from_pak = 1;
+                    return com_filesize;
+                }
+        } else {
+            // check a file in the directory tree
+            if (!static_registered) {
+                // if not a registered version, don't ever go beyond base
+                if (strchr(filename, '/') || strchr(filename, '\\')) continue;
+            }
+            snprintf(path, sizeof(path)+1, "%s/%s", search->filename, filename);
+            findtime = Sys_FileTime(path);
+            if (findtime == -1) continue;
+
+            *file = fopen(path, "rb");
+            com_filesize = COM_filelength(*file);
+            return com_filesize;
+        }
+    }
+
+    Sys_Printf("FindFile: can't find %s\n", filename);
+    *file = NULL;
+    com_filesize = -1;
+
+    return -1;
+}
+
+/*
+============
+COM_LoadFile
+
+Filename are reletive to the quake directory.
+Optionally return length; set null if you don't want it.
+Always appends a 0 byte to the loaded data.
+============
+*/
+static cache_user_t *loadcache;
+static byte *loadbuf;
+static int loadsize;
+
+static void *COM_LoadFile(const char *path, int usehunk) {
+    FILE *f;
+    byte *buf;
+    char base[32];
+    int len;
+
+    buf = NULL;  // quiet compiler warning
+
+    // look for it in the filesystem or pack files
+    len = com_filesize = COM_FOpenFile(path, &f);
+    if (!f) return NULL;
+
+    // extract the filename base name for hunk tag
+    COM_FileBase(path, base);
+
+    if (usehunk == 1)
+        buf = Hunk_AllocName(len + 1, base);
+    else if (usehunk == 2)
+        buf = Hunk_TempAlloc(len + 1);
+    else if (usehunk == 0)
+        buf = Z_Malloc(len + 1);
+    else if (usehunk == 3)
+        buf = Cache_Alloc(loadcache, len + 1, base);
+    else if (usehunk == 4) {
+        if (len + 1 > loadsize)
+            buf = Hunk_TempAlloc(len + 1);
+        else
+            buf = loadbuf;
+    } else
+        Sys_Error("%s: bad usehunk", __func__);
+
+    if (!buf) Sys_Error("%s: not enough space for %s", __func__, path);
+
+    buf[len] = 0;
+
+    fread(buf, 1, len, f);
+    fclose(f);
+
+    return buf;
+}
+
+void *COM_LoadHunkFile(const char *path) { return COM_LoadFile(path, 1); }
+
+void *COM_LoadTempFile(const char *path) { return COM_LoadFile(path, 2); }
+
+void COM_LoadCacheFile(const char *path, struct cache_user_s *cu) {
+    loadcache = cu;
+    COM_LoadFile(path, 3);
+}
+
+// uses temp hunk if larger than bufsize
+byte *COM_LoadStackFile (char *path, void *buffer, int bufsize)
+{
+	byte    *buf;
+	
+	loadbuf = (byte *)buffer;
+	loadsize = bufsize;
+	buf = COM_LoadFile (path, 4);
+	
+	return buf;
+}
+
+/*
+=================
+COM_LoadPackFile
+
+Takes an explicit (not game tree related) path to a pak file.
+
+Loads the header and directory, adding the files at the beginning
+of the list so they override previous pack files.
+=================
+*/
+static pack_t *COM_LoadPackFile(const char *packfile) {
+    FILE *packhandle;
+    dpackheader_t header;
+    dpackfile_t *dfiles;
+    packfile_t *mfiles;
+    pack_t *pack;
+    int i, numfiles;
+    unsigned short crc;
+
+    if (COM_FileOpenRead(packfile, &packhandle) == -1) return NULL;
+
+    fread(&header, 1, sizeof(header), packhandle);
+    if (header.id[0] != 'P' || header.id[1] != 'A' || header.id[2] != 'C' || header.id[3] != 'K')
+        Sys_Error("%s is not a packfile", packfile);
+    header.dirofs = LittleLong(header.dirofs);
+    header.dirlen = LittleLong(header.dirlen);
+
+    numfiles = header.dirlen / sizeof(dpackfile_t);
+
+#ifdef NQ_HACK
+    mfiles = Hunk_AllocName(numfiles * sizeof(*mfiles), "packfile");
+    int mark = Hunk_LowMark();
+    dfiles = Hunk_AllocName(numfiles * sizeof(*dfiles), "packfile");
+#endif
+#ifdef QW_HACK
+    mfiles = Z_Malloc(numfiles * sizeof(*mfiles));
+    dfiles = Z_Malloc(numfiles * sizeof(*dfiles));
+#endif
+
+    fseek(packhandle, header.dirofs, SEEK_SET);
+    fread(dfiles, 1, header.dirlen, packhandle);
+
+    /* crc the directory to check for modifications */
+    crc = CRC_Block((byte *)dfiles, header.dirlen);
+    switch (crc) {
+            com_modified = false;
+            break;
+        default:
+            com_modified = true;
+            break;
+    }
+
+    /* parse the directory */
+    for (i = 0; i < numfiles; i++) {
+        snprintf(mfiles[i].name, sizeof(mfiles[i].name), "%s", dfiles[i].name);
+        mfiles[i].filepos = LittleLong(dfiles[i].filepos);
+        mfiles[i].filelen = LittleLong(dfiles[i].filelen);
+    }
+
+#ifdef NQ_HACK
+    Hunk_FreeToLowMark(mark);
+    pack = Hunk_Alloc(sizeof(pack_t));
+#endif
+#ifdef QW_HACK
+    Z_Free(dfiles);
+    pack = Z_Malloc(sizeof(pack_t));
+#endif
+    snprintf(pack->filename, sizeof(pack->filename), "%s", packfile);
+    pack->numfiles = numfiles;
+    pack->files = mfiles;
+
+    Con_Printf("Added packfile %s (%i files)\n", packfile, numfiles);
+
+    fclose(packhandle);
+
+    return pack;
+}
+
+/*
+================
+COM_AddGameDirectory
+
+Sets com_gamedir, adds the directory to the head of the path,
+then loads and adds pak1.pak pak2.pak ...
+================
+*/
+static void COM_AddGameDirectory(const char *base, const char *dir) {
+    int i;
+    searchpath_t *search;
+    pack_t *pak;
+    char pakfile[MAX_OSPATH];
+
+    if (!base) return;
+
+    strcpy(com_gamedir, va("%s/%s", base, dir));
+#ifdef QW_HACK
+    {
+        char *p;
+        p = strrchr(com_gamedir, '/');
+        strcpy(gamedirfile, ++p);
+    }
+#endif
+
+    //
+    // add the directory to the search path
+    //
+    search = Hunk_Alloc(sizeof(searchpath_t));
+    strcpy(search->filename, com_gamedir);
+    search->next = com_searchpaths;
+    com_searchpaths = search;
+
+    //
+    // add any pak files in the format pak0.pak pak1.pak, ...
+    //
+    for (i = 0;; i++) {
+        snprintf(pakfile, sizeof(pakfile), "%s/pak%i.pak", com_gamedir, i);
+        pak = COM_LoadPackFile(pakfile);
+        if (!pak) break;
+        search = Hunk_Alloc(sizeof(searchpath_t));
+        search->pack = pak;
+        search->next = com_searchpaths;
+        com_searchpaths = search;
+    }
+}
+
+/*
+================
+COM_InitFilesystem
+================
+*/
+static void COM_InitFilesystem(void) 
+{
+    int i;
+    char *home;
+#ifdef NQ_HACK
+    searchpath_t *search;
+#endif
+
+    home = getenv("HOME");
+
+    //
+    // -basedir <path>
+    // Overrides the system supplied base directory (under id1)
+    //
+    i = COM_CheckParm("-basedir");
+    if (i && i < com_argc - 1)
+        strcpy(com_basedir, com_argv[i + 1]);
+    else
+        strcpy(com_basedir, host_parms.basedir);
+
+    //
+    // start up with nzp by default
+    //
+    COM_AddGameDirectory(com_basedir, "nzp");
+    COM_AddGameDirectory(home, ".nzportable/nzp");
+
+    /* If home is available, create the game directory */
+    if (home) {
+        COM_CreatePath(com_gamedir);
+        Sys_mkdir(com_gamedir);
+    }
+
+//
+// -path <dir or packfile> [<dir or packfile>] ...
+// Fully specifies the exact search path, overriding the generated one
+//
+#ifdef NQ_HACK
+    i = COM_CheckParm("-path");
+    if (i) {
+        com_modified = true;
+        com_searchpaths = NULL;
+        while (++i < com_argc) {
+            if (!com_argv[i] || com_argv[i][0] == '+' || com_argv[i][0] == '-') break;
+
+            search = Hunk_Alloc(sizeof(searchpath_t));
+            if (!strcmp(COM_FileExtension(com_argv[i]), "pak")) {
+                search->pack = COM_LoadPackFile(com_argv[i]);
+                if (!search->pack) Sys_Error("Couldn't load packfile: %s", com_argv[i]);
+            } else
+                strcpy(search->filename, com_argv[i]);
+            search->next = com_searchpaths;
+            com_searchpaths = search;
+        }
+    }
+#endif
+#ifdef QW_HACK
+    // any set gamedirs will be freed up to here
+    com_base_searchpaths = com_searchpaths;
+#endif
+}
+
+
