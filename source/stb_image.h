@@ -105,6 +105,7 @@ RECENT REVISION HISTORY:
 #define STBI_INCLUDE_STB_IMAGE_H
 
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wdouble-promotion"
 
 // DOCUMENTATION
 //
