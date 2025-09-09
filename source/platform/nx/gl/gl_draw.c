@@ -23,21 +23,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../../../nzportable_def.h"
 
-static cvar_t gl_constretch = {"gl_constretch", "0", true};
+static int	sniper_scope;
+static int	char_texture;
 
-const byte *draw_chars; /* 8*8 graphic characters */
-const qpic_t *draw_disc;
-static const qpic_t *draw_backtile;
-
-GLuint charset_texture;
-static GLuint translate_texture;
-static GLuint crosshair_texture;
-
-static const byte crosshair_data[64] = {0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-                                        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xfe, 0xff,
-                                        0xfe, 0xff, 0xfe, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff,
-                                        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
-                                        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+//Loading Fill by Crow_bar
+float 	loading_cur_step;
+char	loading_name[32];
+float 	loading_num_step;
+int 	loading_step;
+float 	loading_cur_step_bk;
 
 typedef struct {
     int texnum;
@@ -45,289 +39,41 @@ typedef struct {
     qpic_t pic;
 } glpic_t;
 
-static glpic_t *conback;
-
-/*
-=============================================================================
-
-  scrap allocation
-
-  Allocate all the little status bar obejcts into a single texture
-  to crutch up stupid hardware / drivers
-
-=============================================================================
-*/
-
-#define MAX_SCRAPS 2
-#define BLOCK_WIDTH 256
-#define BLOCK_HEIGHT 256
-#define BLOCK_BYTES (BLOCK_WIDTH * BLOCK_HEIGHT * 4)
-
-typedef struct {
-    GLuint glnum;
-    qboolean dirty;
-    int allocated[BLOCK_WIDTH];
-    qpic_t pic;
-    byte texels[BLOCK_BYTES]; /* referenced via pic->pixels */
-} scrap_t;
-
-static scrap_t gl_scraps[MAX_SCRAPS];
-
-static void Scrap_Init(void) {
-    int i;
-    scrap_t *scrap;
-
-    memset(gl_scraps, 0, sizeof(gl_scraps));
-    scrap = gl_scraps;
-    for (i = 0; i < MAX_SCRAPS; i++, scrap++) {
-        scrap->pic.width = scrap->pic.stride = BLOCK_WIDTH;
-        scrap->pic.height = BLOCK_HEIGHT;
-        scrap->pic.pixels = scrap->texels;
-        glGenTextures(1, &scrap->glnum);
-    }
-}
-
-/*
- * Scrap_AllocBlock
- *   Returns a scrap and the position inside it
- */
-static scrap_t *Scrap_AllocBlock(int w, int h, int *x, int *y) {
-    int i, j;
-    int best, best2;
-    int scrapnum;
-    scrap_t *scrap;
-
-    /*
-     * I'm sure that x & y are always set when we return from this function,
-     * but silence the compiler warning anyway. May as well crash with
-     * these silly values if that happens.
-     */
-    *x = *y = 0x818181;
-
-    scrap = gl_scraps;
-    for (scrapnum = 0; scrapnum < MAX_SCRAPS; scrapnum++, scrap++) {
-        best = BLOCK_HEIGHT;
-
-        for (i = 0; i < BLOCK_WIDTH - w; i++) {
-            best2 = 0;
-
-            for (j = 0; j < w; j++) {
-                if (scrap->allocated[i + j] >= best)
-                    break;
-                if (scrap->allocated[i + j] > best2)
-                    best2 = scrap->allocated[i + j];
-            }
-            if (j == w) {
-                /* this is a valid spot */
-                *x = i;
-                *y = best = best2;
-            }
-        }
-
-        if (best + h > BLOCK_HEIGHT)
-            continue;
-
-        for (i = 0; i < w; i++)
-            scrap->allocated[*x + i] = best + h;
-
-        if (*x == 0x818181 || *y == 0x818181)
-            Sys_Error("%s: block allocation problem", __func__);
-
-        scrap->dirty = true;
-
-        return scrap;
-    }
-
-    Sys_Error("%s: full", __func__);
-}
-
-static void Scrap_Flush(GLuint texnum) {
-    int i;
-    scrap_t *scrap;
-
-    scrap = gl_scraps;
-    for (i = 0; i < MAX_SCRAPS; i++, scrap++) {
-        if (scrap->dirty && texnum == scrap->glnum) {
-            GL_Bind(scrap->glnum);
-            GL_Upload8_Alpha(&scrap->pic, false, 255);
-            scrap->dirty = false;
-            return;
-        }
-    }
-}
-
 //=============================================================================
 /* Support Routines */
 
-typedef struct cachepic_s {
-    char name[MAX_QPATH];
-    glpic_t glpic;
-} cachepic_t;
+// ! " # $ % & ' ( ) * _ , - . / 0
+// 1 2 3 4 5 6 7 8 9 : ; < = > ? @
+// A B C D E F G H I J K L M N O P
+// Q R S T U V W X Y Z [ \ ] ^ _ `
+// a b c d e f g h i j k l m n o p
+// q r s t u v w x y z { | } ~
+int font_kerningamount[96];
 
-#define MAX_CACHED_PICS 128
-static cachepic_t menu_cachepics[MAX_CACHED_PICS];
-static int menu_numcachepics;
+void InitKerningMap(void)
+{
+	// Initialize the kerning amount as 8px for each
+	// char in the event we cant load the file.
+	for(int i = 0; i < 96; i++) {
+		font_kerningamount[i] = 8;
+	}
 
-/* FIXME - don't need to keep these pixels around... */
-static byte menuplyr_pixels[48 * 56];
-
-static int GL_LoadPicTexture(const qpic_t *pic) { return GL_LoadTexture_Alpha("", pic, false, 255); }
-
-const qpic_t *Draw_PicFromWad(const char *name) {
-    qpic_t *pic;
-    dpic8_t *dpic;
-    glpic_t *glpic;
-    scrap_t *scrap;
-
-    glpic = Hunk_AllocName(sizeof(*glpic), "qpic_t");
-    dpic = W_GetLumpName(&host_gfx, name);
-
-    /* Set up the embedded pic */
-    pic = &glpic->pic;
-    pic->width = pic->stride = dpic->width;
-    pic->height = dpic->height;
-    pic->pixels = dpic->data;
-
-    /* load little ones into the scrap */
-    if (pic->width < 64 && pic->height < 64) {
-        int x, y;
-        int i, j, src;
-
-        scrap = Scrap_AllocBlock(pic->width, pic->height, &x, &y);
-        src = 0;
-        for (i = 0; i < pic->height; i++) {
-            for (j = 0; j < pic->width; j++, src++) {
-                const int dst = (y + i) * BLOCK_WIDTH + x + j;
-                scrap->texels[dst] = pic->pixels[src];
-            }
-        }
-        glpic->texnum = scrap->glnum;
-        glpic->sl = (x + 0.01) / (float)BLOCK_WIDTH;
-        glpic->sh = (x + pic->width - 0.01) / (float)BLOCK_WIDTH;
-        glpic->tl = (y + 0.01) / (float)BLOCK_WIDTH;
-        glpic->th = (y + pic->height - 0.01) / (float)BLOCK_WIDTH;
-
-        return pic;
+    FILE *kerning_map = fopen(va("%s/gfx/kerning_map.txt", com_gamedir), "r");
+    if (kerning_map == NULL) {
+        return;
     }
 
-    glpic->texnum = GL_LoadPicTexture(pic);
-    glpic->sl = 0;
-    glpic->sh = 1;
-    glpic->tl = 0;
-    glpic->th = 1;
-
-    return pic;
-}
-
-/*
-================
-Draw_CachePic
-================
-*/
-const qpic_t *Draw_CachePic(const char *path) {
-    cachepic_t *cachepic;
-    dpic8_t *dpic;
-    qpic_t *pic;
-    int i, mark;
-
-    cachepic = menu_cachepics;
-    for (i = 0; i < menu_numcachepics; i++, cachepic++)
-        if (!strcmp(path, cachepic->name))
-            return &cachepic->glpic.pic;
-
-    if (menu_numcachepics == MAX_CACHED_PICS)
-        Sys_Error("menu_numcachepics == MAX_CACHED_PICS");
-    menu_numcachepics++;
-
-    mark = Hunk_LowMark();
-
-    /* load the pic from disk */
-    snprintf(cachepic->name, sizeof(cachepic->name), "%s", path);
-    dpic = COM_LoadHunkFile(path);
-    if (!dpic)
-        Sys_Error("%s: failed to load %s", __func__, path);
-    SwapDPic(dpic);
-
-    pic = &cachepic->glpic.pic;
-    pic->width = pic->stride = dpic->width;
-    pic->height = dpic->height;
-    pic->pixels = dpic->data;
-
-    /*
-     * HACK HACK HACK --- we need to keep the bytes for the
-     * translatable player picture just for the multiplayer
-     * configuration dialog
-     */
-    if (!strcmp(path, "gfx/menuplyr.lmp")) {
-        int picsize;
-
-        if (pic->width != 48 || pic->height != 56)
-            Con_DPrintf("WARNING: %s: odd sized %s (%dx%d)\n", __func__, path, pic->width, pic->height);
-        picsize = pic->width * pic->height;
-        picsize = min(picsize, (int)sizeof(menuplyr_pixels));
-        memcpy(menuplyr_pixels, pic->pixels, picsize);
-    }
-
-    cachepic->glpic.texnum = GL_LoadPicTexture(pic);
-    cachepic->glpic.sl = 0;
-    cachepic->glpic.sh = 1;
-    cachepic->glpic.tl = 0;
-    cachepic->glpic.th = 1;
-
-    Hunk_FreeToLowMark(mark);
-
-    return pic;
-}
-
-#define CHAR_WIDTH 8
-#define CHAR_HEIGHT 8
-
-static void Draw_ScaledCharToConback(const qpic_t *conback, int num, byte *dest) {
-    const byte *source, *src;
-    int row, col;
-    int drawlines, drawwidth;
-    int x, y, fstep, f;
-
-    drawlines = conback->height * CHAR_HEIGHT / 200;
-    drawwidth = conback->width * CHAR_WIDTH / 320;
-
-    row = num >> 4;
-    col = num & 15;
-    source = draw_chars + (row << 10) + (col << 3);
-    fstep = 320 * 0x10000 / conback->width;
-
-    for (y = 0; y < drawlines; y++, dest += conback->width) {
-        src = source + (y * CHAR_HEIGHT / drawlines) * 128;
-        f = 0;
-        for (x = 0; x < drawwidth; x++, f += fstep) {
-            if (src[f >> 16] != 255)
-                dest[x] = 0x60 + src[f >> 16];
+    char buffer[1024];
+    if (fgets(buffer, sizeof(buffer), kerning_map) != NULL) {
+        char *token = strtok(buffer, ",");
+        int i = 0;
+        while (token != NULL && i < 96) {
+            font_kerningamount[i++] = atoi(token);
+            token = strtok(NULL, ",");
         }
     }
-}
 
-/*
- * Draw_ConbackString
- *
- * This function draws a string to a very specific location on the console
- * background. The position is such that for a 320x200 background, the text
- * will be 6 pixels from the bottom and 11 pixels from the right. For other
- * sizes, the positioning is scaled so as to make it appear the same size and
- * at the same location.
- */
-static void Draw_ConbackString(const qpic_t *conback, byte *pixels, const char *str) {
-    int len, row, col, i, x;
-    byte *dest;
-
-    len = strlen(str);
-    row = conback->height - ((CHAR_HEIGHT + 6) * conback->height / 200);
-    col = conback->width - ((11 + CHAR_WIDTH * len) * conback->width / 320);
-
-    dest = pixels + conback->width * row + col;
-    for (i = 0; i < len; i++) {
-        x = i * CHAR_WIDTH * conback->width / 320;
-        Draw_ScaledCharToConback(conback, str[i], dest + x);
-    }
+    fclose(kerning_map);
 }
 
 /*
@@ -336,73 +82,26 @@ Draw_Init
 ===============
 */
 void Draw_Init(void) {
-    dpic8_t *dpic;
-    qpic_t *pic;
-    char version[5];
-
+    
     GL_InitTextures();
 
-    Cvar_RegisterVariable(&gl_constretch);
+    char_texture = Image_LoadImage ("gfx/charset", IMAGE_TGA, 0, true, false);
+	if (char_texture < 0)// did not find a matching TGA...
+		Sys_Error ("Could not load charset, make sure you have every folder and file installed properly\nDouble check that all of your files are in their correct places\nAnd that you have installed the game properly.\n");
 
-    /*
-     * Load the console background and the charset by hand, because we
-     * need to write the version string into the background before
-     * turning it into a texture.
-     */
-    draw_chars = W_GetLumpName(&host_gfx, "conchars");
-
-    /* now turn them into textures */
-    const qpic_t charset_pic = {128, 128, 128, draw_chars};
-    charset_texture = GL_LoadTexture_Alpha("charset", &charset_pic, false, 0);
-    const qpic_t crosshair_pic = {8, 8, 8, crosshair_data};
-    crosshair_texture = GL_LoadTexture_Alpha("crosshair", &crosshair_pic, false, 255);
-
-    GL_Bind(charset_texture);
+    GL_Bind(char_texture);
 
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    conback = Hunk_AllocName(sizeof(*conback), "qpic_t");
-    dpic = COM_LoadHunkFile("gfx/conback.lmp");
-    if (!dpic)
-        Sys_Error("Couldn't load gfx/conback.lmp");
-    SwapDPic(dpic);
-
-    pic = &conback->pic;
-    pic->width = pic->stride = dpic->width;
-    pic->height = dpic->height;
-    pic->pixels = dpic->data;
-
-    /* hack the version number directly into the pic */
-    snprintf(version, sizeof(version), "%s", stringify(TYR_VERSION));
-    Draw_ConbackString(pic, dpic->data, version);
-
-    conback->texnum = GL_LoadTexture("conback", pic, false);
-    conback->sl = 0;
-    conback->sh = 1;
-    conback->tl = 0;
-    conback->th = 1;
-
-#ifdef NQ_HACK
-    pic->width = vid.width;
-    pic->height = vid.height;
-#endif
-#ifdef QW_HACK
-    pic->width = vid.conwidth;
-    pic->height = vid.conheight;
-#endif
-
-    // save a texture slot for translated picture
-    glGenTextures(1, &translate_texture);
-
-    // create textures for scraps
-    Scrap_Init();
-
     //
-    // get the other pics we need
-    //
-    draw_disc = Draw_PicFromWad("disc");
-    draw_backtile = Draw_PicFromWad("backtile");
+	// get the other pics we need
+	//
+	sniper_scope = Image_LoadImage ("gfx/hud/scope", IMAGE_TGA, 0, true, false);
+
+	Clear_LoadingFill ();
+
+	InitKerningMap();
 }
 
 /*
@@ -414,36 +113,96 @@ It can be clipped to the top of the screen to allow the console to be
 smoothly scrolled off.
 ================
 */
-void Draw_Character(int x, int y, int num) {
-    int row, col;
-    float frow, fcol, size;
+void Draw_Character (int x, int y, int num)
+{
+	int				row, col;
+	float			frow, fcol, size;
 
-    if (num == 32)
-        return; // space
+	if (num == 32)
+		return;		// space
 
-    num &= 255;
+	num &= 255;
+	
+	if (y <= -8)
+		return;			// totally off screen
 
-    if (y <= -8)
-        return; // totally off screen
+	row = num>>4;
+	col = num&15;
 
-    row = num >> 4;
-    col = num & 15;
+	frow = row*0.0625;
+	fcol = col*0.0625;
+	size = 0.0625;
 
-    frow = row * 0.0625;
-    fcol = col * 0.0625;
-    size = 0.0625;
+	GL_Bind (char_texture);
 
-    GL_Bind(charset_texture);
-    glBegin(GL_QUADS);
-    glTexCoord2f(fcol, frow);
-    glVertex2f(x, y);
-    glTexCoord2f(fcol + size, frow);
-    glVertex2f(x + 8, y);
-    glTexCoord2f(fcol + size, frow + size);
-    glVertex2f(x + 8, y + 8);
-    glTexCoord2f(fcol, frow + size);
-    glVertex2f(x, y + 8);
-    glEnd();
+	glEnable(GL_ALPHA_TEST);
+
+	glBegin (GL_QUADS);
+	glTexCoord2f (fcol, frow);
+	glVertex2f (x, y);
+	glTexCoord2f (fcol + size, frow);
+	glVertex2f (x+8, y);
+	glTexCoord2f (fcol + size, frow + size);
+	glVertex2f (x+8, y+8);
+	glTexCoord2f (fcol, frow + size);
+	glVertex2f (x, y+8);
+	glEnd ();
+
+	glDisable(GL_ALPHA_TEST);
+}
+
+/*
+================
+Draw_CharacterRGBA
+
+Draws one 8*8 graphics character with 0 being transparent.
+It can be clipped to the top of the screen to allow the console to be
+smoothly scrolled off.
+================
+*/
+extern cvar_t scr_coloredtext;
+void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float a, float scale)
+{
+	int				row, col;
+	float			frow, fcol, size;
+
+	if (num == 32)
+		return;		// space
+
+	num &= 255;
+	
+	if (y <= -8)
+		return;			// totally off screen
+
+	row = num>>4;
+	col = num&15;
+
+	frow = row*0.0625f;
+	fcol = col*0.0625f;
+	size = 0.0625f*scale;
+
+	GL_Bind (char_texture);
+
+	glEnable(GL_BLEND);
+	glColor4f(r/255, g/255, b/255, a/255);
+	glDisable (GL_ALPHA_TEST);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	glBegin (GL_QUADS);
+	glTexCoord2f (fcol, frow);
+	glVertex2f (x, y);
+	glTexCoord2f (fcol + (size/scale), frow);
+	glVertex2f (x+(8*(scale)), y);
+	glTexCoord2f (fcol + (size/scale), frow + (size/scale));
+	glVertex2f (x+(8*(scale)), y+(8*(scale)));
+	glTexCoord2f (fcol, frow + (size/scale));
+	glVertex2f (x, y+(8*(scale)));
+	glEnd ();
+	
+	glColor4f(1,1,1,1);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	glEnable(GL_ALPHA_TEST);
+	glDisable (GL_BLEND);
 }
 
 /*
@@ -451,55 +210,61 @@ void Draw_Character(int x, int y, int num) {
 Draw_String
 ================
 */
-void Draw_String(int x, int y, const char *str) {
-    while (*str) {
-        Draw_Character(x, y, *str);
-        str++;
-        x += 8;
-    }
+void Draw_String (int x, int y, char *str)
+{
+	Draw_ColoredString(x, y, str, 255, 255, 255, 255, 1); 
 }
+
+void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, float a, float scale) 
+{
+	while (*str)
+	{
+		Draw_CharacterRGBA (x, y, *str, r, g, b, a, (int)scale);
+
+		// Hooray for variable-spacing!
+		if (*str == ' ')
+			x += 4 * (int)scale;
+		else if ((int)*str < 33 || (int)*str > 126)
+            x += 8 * (int)scale;
+		else
+            x += (font_kerningamount[(int)(*str - 33)] + 1) * (int)scale;
+		
+		str++;
+	}
+}
+
+int getTextWidth(char *str, float scale)
+{
+	int width = 0;
+
+    for (int i = 0; i < strlen(str); i++) {
+        // Hooray for variable-spacing!
+		if (str[i] == ' ')
+			width += 4 * (int)scale;
+		else if ((int)str[i] < 33 || (int)str[i] > 126)
+            width += 8 * (int)scale;
+		else
+            width += (font_kerningamount[(int)(str[i] - 33)] + 1) * (int)scale;
+    }
+
+	return width;
+}
+
+
+void Draw_ColoredStringCentered(int y, char *str, float r, float g, float b, float a, float scale)
+{
+	Draw_ColoredString((vid.width - getTextWidth(str, scale))/2, y, str, r, g, b, a, scale);
+}
+
 
 /*
-================
-Draw_Alt_String
-================
+=============
+Draw_AlphaPic
+=============
 */
-void Draw_Alt_String(int x, int y, const char *str) {
-    while (*str) {
-        Draw_Character(x, y, (*str) | 0x80);
-        str++;
-        x += 8;
-    }
-}
-
-void Draw_Crosshair(void) {
-    int x, y;
-    unsigned char *pColor;
-
-    if (crosshair.value == 2) {
-        x = scr_vrect.x + scr_vrect.width / 2 - 3 + cl_crossx.value;
-        y = scr_vrect.y + scr_vrect.height / 2 - 3 + cl_crossy.value;
-
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-        pColor = (unsigned char *)&d_8to24table[(byte)crosshaircolor.value];
-        glColor4ubv(pColor);
-        GL_Bind(crosshair_texture);
-
-        glBegin(GL_QUADS);
-        glTexCoord2f(0, 0);
-        glVertex2f(x - 4, y - 4);
-        glTexCoord2f(1, 0);
-        glVertex2f(x + 12, y - 4);
-        glTexCoord2f(1, 1);
-        glVertex2f(x + 12, y + 12);
-        glTexCoord2f(0, 1);
-        glVertex2f(x - 4, y + 12);
-        glEnd();
-
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-    } else if (crosshair.value)
-        Draw_Character(scr_vrect.x + scr_vrect.width / 2 - 4 + cl_crossx.value,
-                       scr_vrect.y + scr_vrect.height / 2 - 4 + cl_crossy.value, '+');
+void Draw_AlphaPic (int x, int y, int pic, float alpha)
+{
+	Draw_ColorPic(x, y, pic, 255, 255, 255, alpha);
 }
 
 /*
@@ -507,55 +272,94 @@ void Draw_Crosshair(void) {
 Draw_Pic
 =============
 */
-void Draw_Pic(int x, int y, const qpic_t *pic) {
-    const glpic_t *glpic;
-
-    glpic = const_container_of(pic, glpic_t, pic);
-    Scrap_Flush(glpic->texnum);
-
-    glColor4f(1, 1, 1, 1);
-    GL_Bind(glpic->texnum);
-    glBegin(GL_QUADS);
-    glTexCoord2f(glpic->sl, glpic->tl);
-    glVertex2f(x, y);
-    glTexCoord2f(glpic->sh, glpic->tl);
-    glVertex2f(x + pic->width, y);
-    glTexCoord2f(glpic->sh, glpic->th);
-    glVertex2f(x + pic->width, y + pic->height);
-    glTexCoord2f(glpic->sl, glpic->th);
-    glVertex2f(x, y + pic->height);
-    glEnd();
+void Draw_Pic (int x, int y, int pic)
+{
+	Draw_ColorPic(x, y, pic, 255, 255, 255, 255);
 }
 
-void Draw_SubPic(int x, int y, const qpic_t *pic, int srcx, int srcy, int width, int height) {
-    const glpic_t *glpic;
-    float newsl, newtl, newsh, newth;
-    float oldglwidth, oldglheight;
+/*
+=============
+Draw_ColoredStretchPic
+=============
+*/
+void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, int r, int g, int b, int a)
+{
+	glEnable(GL_BLEND);
+	glDisable(GL_ALPHA_TEST);
+	glColor4f(r/255.0,g/255.0,b/255.0,a/255.0);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-    glpic = const_container_of(pic, glpic_t, pic);
-    Scrap_Flush(glpic->texnum);
+	GL_Bind (pic);
+	glBegin (GL_QUADS);
+	glTexCoord2f (0, 0);
+	glVertex2f (x, y);
+	glTexCoord2f (1, 0);
+	glVertex2f (x+x_value, y);
+	glTexCoord2f (1, 1);
+	glVertex2f (x+x_value, y+y_value);
+	glTexCoord2f (0, 1);
+	glVertex2f (x, y+y_value);
+	glEnd ();
 
-    oldglwidth = glpic->sh - glpic->sl;
-    oldglheight = glpic->th - glpic->tl;
+	glColor4f(1,1,1,1);
+}
 
-    newsl = glpic->sl + (srcx * oldglwidth) / pic->width;
-    newsh = newsl + (width * oldglwidth) / pic->width;
+/*
+=============
+Draw_StretchPic
+=============
+*/
+void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
+{
+	glEnable(GL_ALPHA_TEST);
+	glColor4f(1,1,1,1);
 
-    newtl = glpic->tl + (srcy * oldglheight) / pic->height;
-    newth = newtl + (height * oldglheight) / pic->height;
+	GL_Bind (pic);
+	glBegin (GL_QUADS);
+	glTexCoord2f (0, 0);
+	glVertex2f (x, y);
+	glTexCoord2f (1, 0);
+	glVertex2f (x+x_value, y);
+	glTexCoord2f (1, 1);
+	glVertex2f (x+x_value, y+y_value);
+	glTexCoord2f (0, 1);
+	glVertex2f (x, y+y_value);
+	glEnd ();
 
-    glColor4f(1, 1, 1, 1);
-    GL_Bind(glpic->texnum);
-    glBegin(GL_QUADS);
-    glTexCoord2f(newsl, newtl);
-    glVertex2f(x, y);
-    glTexCoord2f(newsh, newtl);
-    glVertex2f(x + width, y);
-    glTexCoord2f(newsh, newth);
-    glVertex2f(x + width, y + height);
-    glTexCoord2f(newsl, newth);
-    glVertex2f(x, y + height);
-    glEnd();
+	glColor4f(1,1,1,1);
+}
+
+/*
+=============
+Draw_ColorPic
+=============
+*/
+void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
+{
+	glDisable(GL_ALPHA_TEST);
+	glEnable(GL_BLEND);
+	glColor4f(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	gltexture_t *glt = &gltextures[pic];
+	GL_Bind (pic);
+
+	glBegin (GL_QUADS);
+	glTexCoord2f (0, 0);
+	glVertex2f (x, y);
+	glTexCoord2f (1, 0);
+	glVertex2f (x+glt->width, y);
+	glTexCoord2f (1, 1);
+	glVertex2f (x+glt->width, y+glt->height);
+	glTexCoord2f (0, 1);
+	glVertex2f (x, y+glt->height);
+	glEnd ();
+
+	glDisable(GL_BLEND);
+	//glDisable(GL_ALPHA_TEST);
+	glColor4f(1,1,1,1);
 }
 
 /*
@@ -563,61 +367,17 @@ void Draw_SubPic(int x, int y, const qpic_t *pic, int srcx, int srcy, int width,
 Draw_TransPic
 =============
 */
-void Draw_TransPic(int x, int y, const qpic_t *pic) {
-    if (x < 0 || (unsigned)(x + pic->width) > vid.width || y < 0 || (unsigned)(y + pic->height) > vid.height) {
-        Sys_Error("%s: bad coordinates", __func__);
-    }
+void Draw_TransPic (int x, int y, int pic)
+{
+	gltexture_t *glt = &gltextures[pic];
 
-    Draw_Pic(x, y, pic);
-}
-
-/*
-=============
-Draw_TransPicTranslate
-
-Only used for the player color selection menu
-=============
-*/
-void Draw_TransPicTranslate(int x, int y, const qpic_t *pic, byte *translation) {
-    int v, u;
-    unsigned trans[64 * 64], *dest;
-    byte *src;
-    int p;
-
-    /* Don't crash if we have a bad menupic */
-    if (pic->width > 48 || pic->height > 56)
-        return;
-
-    GL_Bind(translate_texture);
-
-    dest = trans;
-    for (v = 0; v < 64; v++, dest += 64) {
-        src = &menuplyr_pixels[((v * pic->height) >> 6) * pic->width];
-        for (u = 0; u < 64; u++) {
-            p = src[(u * pic->width) >> 6];
-            if (p == 255)
-                dest[u] = p;
-            else
-                dest[u] = d_8to24table[translation[p]];
-        }
-    }
-
-    glTexImage2D(GL_TEXTURE_2D, 0, gl_alpha_format, 64, 64, 0, GL_RGBA, GL_UNSIGNED_BYTE, trans);
-
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glColor3f(1, 1, 1);
-    glBegin(GL_QUADS);
-    glTexCoord2f(0, 0);
-    glVertex2f(x, y);
-    glTexCoord2f(1, 0);
-    glVertex2f(x + pic->width, y);
-    glTexCoord2f(1, 1);
-    glVertex2f(x + pic->width, y + pic->height);
-    glTexCoord2f(0, 1);
-    glVertex2f(x, y + pic->height);
-    glEnd();
+	if (x < 0 || (unsigned)(x + glt->width) > vid.width || y < 0 ||
+		 (unsigned)(y + glt->height) > vid.height)
+	{
+		Sys_Error ("bad coordinates");
+	}
+		
+	Draw_Pic (x, y, pic);
 }
 
 /*
@@ -626,91 +386,418 @@ Draw_ConsoleBackground
 
 ================
 */
-static void Draw_ConsolePic(int lines, float offset, const qpic_t *pic, float alpha) {
-    const glpic_t *glpic;
-
-    glpic = const_container_of(pic, glpic_t, pic);
-    Scrap_Flush(glpic->texnum);
-
-    glDisable(GL_ALPHA_TEST);
-    glEnable(GL_BLEND);
-    glCullFace(GL_FRONT);
-    glColor4f(1, 1, 1, alpha);
-    GL_Bind(glpic->texnum);
-
-    glBegin(GL_QUADS);
-    glTexCoord2f(0, offset);
-    glVertex2f(0, 0);
-    glTexCoord2f(1, offset);
-    glVertex2f(vid.conwidth, 0);
-    glTexCoord2f(1, 1);
-    glVertex2f(vid.conwidth, lines);
-    glTexCoord2f(0, 1);
-    glVertex2f(0, lines);
-    glEnd();
-
-    glColor4f(1, 1, 1, 1);
-    glEnable(GL_ALPHA_TEST);
-    glDisable(GL_BLEND);
+void Draw_ConsoleBackground (int lines)
+{
+	Draw_FillByColor(0, 0, vid.width, lines, 0, 0, 0, 255);
 }
 
-void Draw_ConsoleBackground(int lines) {
-    int y;
-    float offset, alpha;
+/*
+================
+Draw_LoadingFill
+By Crow_bar
+================
+*/
+void Draw_LoadingFill(void)
+{
+    if(!loading_num_step)
+		return;
 
-    y = (vid.height * 3) >> 2;
+	int size       	= 8;
+	int max_step   	= 350;
+    int x          	= (vid.width  / 2) - (max_step / 2);
+    int y          	= vid.height - (size/ 2) - 25;
+	char* text;
 
-    if (gl_constretch.value)
-        offset = 0.0f;
-    else
-        offset = (vid.conheight - lines) / (float)vid.conheight;
 
-    if (lines > y)
-        alpha = 1.0f;
-    else
-        alpha = (float)1.1 * lines / y;
+	if(loading_cur_step > loading_num_step)
+	      loading_cur_step = loading_num_step;
 
-    Draw_ConsolePic(lines, offset, &conback->pic, alpha);
+	if (loading_cur_step < loading_cur_step_bk)
+		loading_cur_step = loading_cur_step_bk;
 
-#ifdef QW_HACK
-    {
-        const char *version;
-        int x;
+	if (loading_cur_step == loading_num_step && loading_cur_step_bk != loading_num_step)
+		loading_cur_step = loading_cur_step_bk;
 
-        // hack the version number directly into the pic
-        y = lines - 14;
-        if (!cls.download) {
-            version = va("TyrQuake (%s) QuakeWorld", stringify(TYR_VERSION));
-            x = vid.conwidth - (strlen(version) * 8 + 11) - (vid.conwidth * 8 / conback->pic.width) * 7;
-            Draw_Alt_String(x, y, version);
-        }
-    }
-#endif
+    float loadsize = loading_cur_step * (max_step / loading_num_step);
+	Draw_FillByColor (x - 2, y - 2, max_step + 4, size + 4, 69, 69, 69, 255);
+	Draw_FillByColor (x, y, (int)loadsize, size, 0, 0, 0, 200);
+
+	switch(loading_step) {
+		case 1: text = "Loading Models.."; break;
+		case 2: text = "Loading World.."; break;
+		case 3: text = "Running Test Frame.."; break;
+		case 4: text = "Loading Sounds.."; break;
+		default: text = "Initializing.."; break;
+	}
+	
+	Draw_ColoredStringCentered(y, text, 255, 255, 255, 255, 1);
+
+	loading_cur_step_bk = loading_cur_step;
+}
+
+void Clear_LoadingFill (void)
+{
+    //it is end loading
+	loading_cur_step = 0;
+	loading_cur_step_bk = 0;
+	loading_num_step = 0;
+	loading_step = -1;
+	memset(loading_name, 0, sizeof(loading_name));
 }
 
 /*
 =============
-Draw_TileClear
+Draw_FillByColor
 
-This repeats a 64*64 tile graphic to fill the screen around a sized down
-refresh window.
+Fills a box of pixels with a single color
 =============
 */
-void Draw_TileClear(int x, int y, int w, int h) {
-    const glpic_t *glpic = const_container_of(draw_backtile, glpic_t, pic);
+void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a)
+{
+	glDisable (GL_TEXTURE_2D);
+	glEnable (GL_BLEND); //johnfitz -- for alpha
+	glDisable (GL_ALPHA_TEST); //johnfitz -- for alpha
+	glColor4f ((float)(r/255.0f), (float)(g/255.0f), (float)(b/255.0f), (float)(a/255.0f));
 
-    glColor3f(1, 1, 1);
-    GL_Bind(glpic->texnum);
-    glBegin(GL_QUADS);
-    glTexCoord2f(x / 64.0, y / 64.0);
-    glVertex2f(x, y);
-    glTexCoord2f((x + w) / 64.0, y / 64.0);
-    glVertex2f(x + w, y);
-    glTexCoord2f((x + w) / 64.0, (y + h) / 64.0);
-    glVertex2f(x + w, y + h);
-    glTexCoord2f(x / 64.0, (y + h) / 64.0);
-    glVertex2f(x, y + h);
-    glEnd();
+	glBegin (GL_QUADS);
+
+	glVertex2f (x,y);
+	glVertex2f (x+w, y);
+	glVertex2f (x+w, y+h);
+	glVertex2f (x, y+h);
+
+	glEnd ();
+	glColor4f (1,1,1,1);
+	glDisable (GL_BLEND); //johnfitz -- for alpha
+	glEnable(GL_ALPHA_TEST); //johnfitz -- for alpha
+	glEnable (GL_TEXTURE_2D);
+}
+//=============================================================================
+
+byte *StringToRGB (char *s)
+{
+	byte		*col;
+	static	byte	rgb[4];
+
+	Cmd_TokenizeString (s);
+	if (Cmd_Argc() == 3)
+	{
+		rgb[0] = (byte)Q_atoi(Cmd_Argv(0));
+		rgb[1] = (byte)Q_atoi(Cmd_Argv(1));
+		rgb[2] = (byte)Q_atoi(Cmd_Argv(2));
+	}
+	else
+	{
+		col = (byte *)&d_8to24table[(byte)Q_atoi(s)];
+		rgb[0] = col[0];
+		rgb[1] = col[1];
+		rgb[2] = col[2];
+	}
+	rgb[3] = 255;
+
+	return rgb;
+}
+
+extern cvar_t crosshair;
+extern qboolean croshhairmoving;
+//extern cvar_t cl_zoom;
+extern int hitmark;
+extern double Hitmark_Time, crosshair_spread_time;
+extern float cur_spread;
+extern float crosshair_offset_step; 
+int CrossHairWeapon (void)
+{
+    int i;
+	switch(cl.stats[STAT_ACTIVEWEAPON])
+	{
+		case W_COLT:
+		case W_BIATCH:
+		case W_357:
+		case W_KILLU:
+			i = 22;
+			break;
+		case W_PTRS:
+		case W_PENETRATOR:
+		case W_KAR_SCOPE:
+		case W_HEADCRACKER:
+		case W_KAR:
+		case W_ARMAGEDDON:
+		case W_SPRING:
+		case W_PULVERIZER:
+			i = 65;
+			break;
+		case W_MP40:
+		case W_AFTERBURNER:
+		case W_STG:
+		case W_SPATZ:
+		case W_THOMPSON:
+		case W_GIBS:
+		case W_BAR:
+		case W_WIDOW:
+		case W_PPSH:
+		case W_REAPER:
+		case W_RAY:
+		case W_PORTER:
+		case W_TYPE:
+		case W_SAMURAI:
+		case W_FG:
+		case W_IMPELLER:
+		case W_MP5:
+		case W_KOLLIDER:
+			i = 10;
+			break;
+		case W_BROWNING:
+		case W_ACCELERATOR:
+		case W_MG:
+		case W_BARRACUDA:
+			i = 30;
+			break;
+		case W_SAWNOFF:
+		case W_SNUFF:
+			i = 50;
+			break;
+		case W_TRENCH:
+		case W_GUT:
+		case W_DB:
+		case W_BORE:
+			i = 35;
+			break;
+		case W_GEWEHR:
+		case W_COMPRESSOR:
+		case W_M1:
+		case W_M1000:
+		case W_M1A1:
+		case W_WIDDER:
+			i = 5;
+			break;
+		case W_PANZER:
+		case W_LONGINUS:
+		case W_TESLA:
+			i = 0;
+			break;
+		default:
+			i = 0;
+			break;
+	}
+
+	i *= 0.68;
+	i += 6;
+
+    if (cl.perks & 64)
+        i *= 0.75;
+
+    return i;
+}
+int CrossHairMaxSpread (void)
+{
+	int i;
+	switch(cl.stats[STAT_ACTIVEWEAPON])
+	{
+		case W_COLT:
+		case W_BIATCH:
+		case W_STG:
+		case W_SPATZ:
+		case W_MP40:
+		case W_AFTERBURNER:
+		case W_THOMPSON:
+		case W_GIBS:
+		case W_BAR:
+		case W_WIDOW:
+		case W_357:
+		case W_KILLU:
+		case W_BROWNING:
+		case W_ACCELERATOR:
+		case W_FG:
+		case W_IMPELLER:
+		case W_MP5:
+		case W_KOLLIDER:
+		case W_MG:
+		case W_BARRACUDA:
+		case W_PPSH:
+		case W_REAPER:
+		case W_RAY:
+		case W_PORTER:
+		case W_TYPE:
+		case W_SAMURAI:
+			i = 48;
+			break;
+		case W_PTRS:
+		case W_PENETRATOR:
+		case W_KAR_SCOPE:
+		case W_HEADCRACKER:
+		case W_KAR:
+		case W_ARMAGEDDON:
+		case W_SPRING:
+		case W_PULVERIZER:
+			i = 75;
+			break;
+		case W_SAWNOFF:
+		case W_SNUFF:
+			i = 50;
+			break;
+		case W_DB:
+		case W_BORE:
+		case W_TRENCH:
+		case W_GUT:
+		case W_GEWEHR:
+		case W_COMPRESSOR:
+		case W_M1:
+		case W_M1000:
+		case W_M1A1:
+		case W_WIDDER:
+			i = 35;
+			break;
+		case W_PANZER:
+		case W_LONGINUS:
+		case W_TESLA:
+			i = 0;
+			break;
+		default:
+			i = 0;
+			break;
+	}
+
+	i *= 0.68;
+	i += 6;
+
+    if (cl.perks & 64)
+        i *= 0.75;
+
+    return i;
+}
+
+/*
+================
+Draw_Crosshair
+================
+*/
+
+extern float crosshair_opacity;
+extern cvar_t cl_crosshair_debug;
+extern qboolean crosshair_pulse_grenade;
+void Draw_Crosshair (void)
+{	
+	if (cl_crosshair_debug.value) {
+		Draw_FillByColor(vid.width/2, 0, 1, 240, 255, 0, 0, 255);
+		Draw_FillByColor(0, vid.height/2, 400, 1, 0, 255, 0, 255);
+	}
+
+	if (cl.stats[STAT_HEALTH] <= 20)
+		return;
+
+	if (cl.stats[STAT_ZOOM] == 2) {
+		Draw_Pic (-39, -15, sniper_scope);
+	}
+
+   	if (Hitmark_Time > sv.time) {
+        Draw_Pic ((vid.width - gltextures[hitmark].width)/2,(vid.height - gltextures[hitmark].height)/2, hitmark);
+	}
+
+	// Make sure to do this after hitmark drawing.
+	if (cl.stats[STAT_ZOOM] == 2 || cl.stats[STAT_ZOOM] == 1)
+		return;
+
+	if (!crosshair_opacity)
+		crosshair_opacity = 255;
+
+	float col;
+
+	if (sv_player->v.facingenemy == 1) {
+		col = 0;
+	} else {
+		col = 255;
+	}
+
+	// crosshair moving
+	if (crosshair_spread_time > sv.time && crosshair_spread_time)
+    {
+        cur_spread = cur_spread + 10;
+		crosshair_opacity = 128;
+
+		if (cur_spread >= CrossHairMaxSpread())
+			cur_spread = CrossHairMaxSpread();
+    }
+	// crosshair not moving
+	else if (crosshair_spread_time < sv.time && crosshair_spread_time)
+    {
+        cur_spread = cur_spread - 4;
+		crosshair_opacity = 255;
+
+		if (cur_spread <= 0) {
+			cur_spread = 0;
+			crosshair_spread_time = 0;
+		}
+    }
+
+	int x_value, y_value;
+    int crosshair_offset;
+
+	// Standard crosshair (+)
+	if (crosshair.value == 1) {
+		crosshair_offset = CrossHairWeapon() + cur_spread;
+		if (CrossHairMaxSpread() < crosshair_offset || croshhairmoving)
+			crosshair_offset = CrossHairMaxSpread();
+
+		if (sv_player->v.view_ofs[2] == 8) {
+			crosshair_offset *= 0.80f;
+		} else if (sv_player->v.view_ofs[2] == -10) {
+			crosshair_offset *= 0.65f;
+		}
+
+		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5f;
+
+		x_value = (vid.width - 3)/2.0f - crosshair_offset_step;
+		y_value = (vid.height - 1)/2.0f;
+		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
+
+		x_value = (vid.width - 3)/2.0f + crosshair_offset_step;
+		y_value = (vid.height - 1)/2.0f;
+		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
+
+		x_value = (vid.width - 1)/2.0f;
+		y_value = (vid.height - 3)/2.0f - crosshair_offset_step;
+		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
+
+		x_value = (vid.width - 1)/2.0f;
+		y_value = (vid.height - 3)/2.0f + crosshair_offset_step;
+		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
+	}
+	// Area of Effect (o)
+	else if (crosshair.value == 2) {
+		Draw_CharacterRGBA((vid.width)/2-4, (vid.height)/2, 'O', 255, (int)col, (int)col, (int)crosshair_opacity, 1);
+	}
+	// Dot crosshair (.)
+	else if (crosshair.value == 3) {
+		Draw_CharacterRGBA((vid.width - 8)/2, (vid.height - 8)/2, '.', 255, (int)col, (int)col, (int)crosshair_opacity, 1);
+	}
+	// Grenade crosshair
+	else if (crosshair.value == 4) {
+		if (crosshair_pulse_grenade) {
+			crosshair_offset_step = 0;
+			cur_spread = 2;
+		}
+
+		crosshair_pulse_grenade = false;
+
+		crosshair_offset = 12 + cur_spread;
+		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5f;
+
+		x_value = (vid.width - 3)/2.0f - crosshair_offset_step;
+		y_value = (vid.height - 1)/2.0f;
+		Draw_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
+
+		x_value = (vid.width - 3)/2.0f + crosshair_offset_step;
+		y_value = (vid.height - 1)/2.0f;
+		Draw_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
+
+		x_value = (vid.width - 1)/2.0f;
+		y_value = (vid.height - 3)/2.0f - crosshair_offset_step;
+		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
+
+		x_value = (vid.width - 1)/2.0f;
+		y_value = (vid.height - 3)/2.0f + crosshair_offset_step;
+		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
+	}
 }
 
 /*
@@ -721,19 +808,7 @@ Fills a box of pixels with a single color
 =============
 */
 void Draw_Fill(int x, int y, int w, int h, int c) {
-    glDisable(GL_TEXTURE_2D);
-    glColor3f(host_basepal[c * 3] / 255.0, host_basepal[c * 3 + 1] / 255.0, host_basepal[c * 3 + 2] / 255.0);
-
-    glBegin(GL_QUADS);
-
-    glVertex2f(x, y);
-    glVertex2f(x + w, y);
-    glVertex2f(x + w, y + h);
-    glVertex2f(x, y + h);
-
-    glEnd();
-    glColor3f(1, 1, 1);
-    glEnable(GL_TEXTURE_2D);
+    Draw_FillByColor (x, y, w, h, c, c, c, 255);
 }
 
 //=============================================================================
@@ -759,8 +834,6 @@ void Draw_FadeScreen(void) {
     glColor4f(1, 1, 1, 1);
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_BLEND);
-
-    Sbar_Changed();
 }
 
 //=============================================================================

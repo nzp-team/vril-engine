@@ -26,30 +26,77 @@ cvar_t gl_max_size = {"gl_max_size", "1024"};
 static cvar_t gl_nobind = {"gl_nobind", "0"};
 static cvar_t gl_picmip = {"gl_picmip", "0"};
 
+int	gl_filter_min = GL_LINEAR_MIPMAP_NEAREST;
+int	gl_filter_max = GL_LINEAR;
+
 int gl_lightmap_format = GL_RGBA; // 4
 int gl_solid_format = GL_RGB;     // 3
 int gl_alpha_format = GL_RGBA;    // 4
 
-typedef struct {
-    GLuint texnum;
-    char name[MAX_QPATH];
-    int width, height;
-    qboolean mipmap;
-    unsigned short crc; // CRC for texture cache matching
+typedef struct
+{
+	GLuint 			gl_id; // real GL texture object
+	int				texnum;
+	char			identifier[64];
+	int				width, height, original_width, original_height;
+	int				bpp;
+	qboolean		mipmap;
+	qboolean		used;
+	qboolean		keep;
 } gltexture_t;
 
 #define MAX_GLTEXTURES 4096
 static gltexture_t gltextures[MAX_GLTEXTURES];
-static int numgltextures;
+static int numgltextures = 0;
+static GLuint current_gl_id = 0;
 
-void GL_Bind(int texnum) {
-    if (gl_nobind.value)
-        texnum = charset_texture;
-    if (currenttexture == texnum)
+void GL_Bind (int texnum)
+{
+	if (texnum < 0) {
+        Con_DPrintf("GL_Bind: invalid texnum %d\n", texnum);
         return;
-    currenttexture = texnum;
+    }
+    gltexture_t *glt = &gltextures[texnum];
+    if (!glt->used) {
+        Con_DPrintf("GL_Bind: unused texnum %d\n", texnum);
+        return;
+    }
 
-    glBindTexture(GL_TEXTURE_2D, texnum);
+    if (current_gl_id != glt->gl_id) {
+        glBindTexture(GL_TEXTURE_2D, glt->gl_id);
+        current_gl_id = glt->gl_id;
+    }
+}
+
+void GL_FreeTextures (int texnum)
+{
+	if (texnum <= 0) return;
+
+	gltexture_t *glt = &gltextures[texnum];
+	if (glt->used == false) return;
+	if (glt->keep) return;
+
+	glDeleteTextures(1, &glt->gl_id);
+	glt->gl_id = 0;
+	glt->texnum = texnum;
+	strcpy(glt->identifier, "");
+	glt->width = 0;
+	glt->height = 0;
+	glt->original_width = 0;
+	glt->original_height = 0;
+	glt->bpp = 0;
+	glt->keep = false;
+	glt->used = false;
+
+	numgltextures--;
+	current_gl_id = 0;
+}
+
+void GL_UnloadTextures (void)
+{
+	for (int i = 0; i < (MAX_GLTEXTURES); i++) {
+		GL_FreeTextures(i);
+	}
 }
 
 typedef struct {
@@ -102,98 +149,131 @@ static void GL_TextureMode_f(void) {
     }
 }
 
-static struct stree_root *GL_TextureMode_Arg_f(const char *arg) {
-    int i, arg_len;
-    struct stree_root *root;
-
-    root = Z_Malloc(sizeof(struct stree_root));
-    if (root) {
-        *root = STREE_ROOT;
-        STree_AllocInit();
-        arg_len = arg ? strlen(arg) : 0;
-        for (i = 0; i < ARRAY_SIZE(gl_texturemodes); i++) {
-            if (!arg || !strncasecmp(gl_texturemodes[i].name, arg, arg_len))
-                STree_InsertAlloc(root, gl_texturemodes[i].name, false);
-        }
-    }
-    return root;
-}
-
 /*
 ================
 GL_FindTexture
 ================
 */
-int GL_FindTexture(const char *name) {
-    int i;
-    gltexture_t *glt;
-
-    for (i = 0, glt = gltextures; i < numgltextures; i++, glt++) {
-        if (!strcmp(name, glt->name))
-            return gltextures[i].texnum;
+int GL_FindTexture(const char *identifier)
+{
+    for (int i = 0; i < MAX_GLTEXTURES; i++) {
+        if (gltextures[i].used && strcmp(gltextures[i].identifier, identifier) == 0) {
+            return i;  // return array index directly
+        }
     }
-
     return -1;
 }
+
+/*
+================
+GL_ResampleTexture
+================
+*/
+void GL_ResampleTexture (unsigned *in, int inwidth, int inheight, unsigned *out,  int outwidth, int outheight)
+{
+	int		i, j;
+	unsigned	*inrow;
+	unsigned	frac, fracstep;
+
+	fracstep = inwidth*0x10000/outwidth;
+	for (i=0 ; i<outheight ; i++, out += outwidth)
+	{
+		inrow = in + inwidth*(i*inheight/outheight);
+		frac = fracstep >> 1;
+		for (j=0 ; j<outwidth ; j+=4)
+		{
+			out[j] = inrow[frac>>16];
+			frac += fracstep;
+			out[j+1] = inrow[frac>>16];
+			frac += fracstep;
+			out[j+2] = inrow[frac>>16];
+			frac += fracstep;
+			out[j+3] = inrow[frac>>16];
+			frac += fracstep;
+		}
+	}
+}
+
+/*
+================
+GL_MipMap
+
+Operates in place, quartering the size of the texture
+================
+*/
+void GL_MipMap (byte *in, int width, int height)
+{
+	int		i, j;
+	byte	*out;
+
+	width <<=2;
+	height >>= 1;
+	out = in;
+	for (i=0 ; i<height ; i++, in+=width)
+	{
+		for (j=0 ; j<width ; j+=8, out+=4, in+=8)
+		{
+			out[0] = (in[0] + in[4] + in[width+0] + in[width+4])>>2;
+			out[1] = (in[1] + in[5] + in[width+1] + in[width+5])>>2;
+			out[2] = (in[2] + in[6] + in[width+2] + in[width+6])>>2;
+			out[3] = (in[3] + in[7] + in[width+3] + in[width+7])>>2;
+		}
+	}
+}
+
 
 /*
 ===============
 GL_Upload32
 ===============
 */
-static void GL_Upload32(qpic32_t *pic, qboolean mipmap, qboolean alpha) {
-    const int format = alpha ? gl_alpha_format : gl_solid_format;
-    qpic32_t *scaled;
-    int width, height, mark;
+void GL_Upload32(GLuint gl_id, unsigned *data, int width, int height, qboolean mipmap, qboolean alpha)
+{
+    int scaled_width = 1, scaled_height = 1;
+    while (scaled_width < width) scaled_width <<= 1;
+    while (scaled_height < height) scaled_height <<= 1;
 
-    if (!gl_npotable || !gl_npot.value) {
-        /* find the next power-of-two size up */
-        width = 1;
-        while (width < pic->width)
-            width <<= 1;
-        height = 1;
-        while (height < pic->height)
-            height <<= 1;
-    } else {
-        width = pic->width;
-        height = pic->height;
-    }
+    scaled_width >>= (int)gl_picmip.value;
+    scaled_height >>= (int)gl_picmip.value;
 
-    width >>= (int)gl_picmip.value;
-    width = qclamp(width, 1, (int)gl_max_size.value);
-    height >>= (int)gl_picmip.value;
-    height = qclamp(height, 1, (int)gl_max_size.value);
+    if (scaled_width > gl_max_size.value) scaled_width = gl_max_size.value;
+    if (scaled_height > gl_max_size.value) scaled_height = gl_max_size.value;
 
-    mark = Hunk_LowMark();
+    if (scaled_width < 1) scaled_width = 1;
+    if (scaled_height < 1) scaled_height = 1;
 
-    if (width != pic->width || height != pic->height) {
-        scaled = QPic32_Alloc(width, height);
-        QPic32_Stretch(pic, scaled);
-    } else {
-        scaled = pic;
-    }
+    unsigned *scaled = malloc(scaled_width * scaled_height * sizeof(unsigned));
+    if (!scaled) Sys_Error("GL_Upload32: out of memory");
 
+    // bind the texture
+    glBindTexture(GL_TEXTURE_2D, gl_id);
+	current_gl_id = gl_id; //update texture cache
+
+    if (scaled_width != width || scaled_height != height)
+        GL_ResampleTexture(data, width, height, scaled, scaled_width, scaled_height);
+    else
+        memcpy(scaled, data, width * height * 4);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
+
+    // mipmap generation (if enabled)
+	
     if (mipmap) {
-        int miplevel = 0;
-        while (1) {
-            glTexImage2D(GL_TEXTURE_2D, miplevel, format, scaled->width, scaled->height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                          scaled->pixels);
-            if (scaled->width == 1 && scaled->height == 1)
-                break;
-
-            QPic32_MipMap(scaled);
-            miplevel++;
+        int level = 0;
+        int w = scaled_width, h = scaled_height;
+        while (w > 1 || h > 1) {
+            GL_MipMap((byte*)scaled, w, h);
+            w = w > 1 ? w >> 1 : 1;
+            h = h > 1 ? h >> 1 : 1;
+            level++;
+            glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
         }
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glmode->min_filter);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glmode->mag_filter);
-    } else {
-        glTexImage2D(GL_TEXTURE_2D, 0, format, scaled->width, scaled->height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                      scaled->pixels);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glmode->mag_filter);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glmode->mag_filter);
     }
 
-    Hunk_FreeToLowMark(mark);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmap ? gl_filter_min : gl_filter_max);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+
+    free(scaled);
 }
 
 /*
@@ -201,105 +281,170 @@ static void GL_Upload32(qpic32_t *pic, qboolean mipmap, qboolean alpha) {
 GL_Upload8
 ===============
 */
-void GL_Upload8(const qpic_t *pic, qboolean mipmap) {
-    qpic32_t *pic32;
-    int mark;
+void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipmap, qboolean alpha)
+{
+	int			i, s;
+	qboolean	noalpha;
+	int			p;
+	unsigned *trans = malloc(width*height*sizeof(unsigned));
 
-    mark = Hunk_LowMark();
+	s = width*height;
+	// if there are no transparent pixels, make it a 3 component
+	// texture even if it was specified as otherwise
+	if (alpha) {
+		noalpha = true;
+		for (i=0 ; i<s ; i++) {
+			p = data[i];
+			if (p == 255)
+				noalpha = false;
+			trans[i] = d_8to24table[p];
+		}
 
-    pic32 = QPic32_Alloc(pic->width, pic->height);
-    QPic_8to32(pic, pic32);
-    GL_Upload32(pic32, mipmap, false);
+		if (alpha && noalpha)
+			alpha = false;
+	} else {
+		if (s&3)
+			Sys_Error ("s&3");
+		for (i=0 ; i<s ; i+=4) {
+			trans[i] = d_8to24table[data[i]];
+			trans[i+1] = d_8to24table[data[i+1]];
+			trans[i+2] = d_8to24table[data[i+2]];
+			trans[i+3] = d_8to24table[data[i+3]];
+		}
+	}
 
-    Hunk_FreeToLowMark(mark);
+	GL_Upload32 (gl_id, trans, width, height, mipmap, alpha);
+
+	free(trans);
 }
 
-/*
-===============
-GL_Upload8_Alpha
-===============
-*/
-void GL_Upload8_Alpha(const qpic_t *pic, qboolean mipmap, byte alpha) {
-    qpic32_t *pic32;
-    int mark;
+int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel, qboolean keep)
+{
+	int texture_index = GL_FindTexture(identifier);
+	if (texture_index >= 0) {
+		return texture_index;
+	}
 
-    mark = Hunk_LowMark();
+	int i;
+	gltexture_t	*glt;
 
-    pic32 = QPic32_Alloc(pic->width, pic->height);
-    QPic_8to32_Alpha(pic, pic32, alpha);
-    GL_Upload32(pic32, mipmap, true);
+	texture_index = -1;
+	for (i=0, glt=gltextures; i<MAX_GLTEXTURES; i++, glt++) {
+		if (glt->used == false) {
+			texture_index = i;
+			break;
+		}
+	}
 
-    Hunk_FreeToLowMark(mark);
+	if (numgltextures == MAX_GLTEXTURES) {
+		Sys_Error("GL_LoadTexture: Out of GL textures\n");
+	}
+
+	if (texture_index < 0) {
+		Sys_Error("Could not find a free GL texture!\n");
+	}
+
+    glt = &gltextures[texture_index];
+
+	GLuint texID;
+	glGenTextures(1, &texID);     // Ask GL for a real texture object
+
+	strcpy(glt->identifier, identifier);
+	glt->gl_id = texID;
+	glt->texnum = texture_index;
+	glt->width = width;
+	glt->height = height;
+	glt->original_width = width;
+	glt->original_height = height;
+	glt->bpp = bytesperpixel;
+	glt->mipmap = mipmap;
+	glt->keep = keep;
+	glt->used = true;
+
+	//Con_DPrintf("tex num %i tex name %s size %im\n", texture_index, identifier, (width*height*bytesperpixel)/1024);
+	if (bytesperpixel == 1) {
+		GL_Upload8 (glt->gl_id, data, width, height, mipmap, alpha);
+	}
+	else if (bytesperpixel == 4) {
+		GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, mipmap, alpha);
+	}
+	else {
+		Sys_Error("GL_LoadTexture: unknown bytesperpixel\n");
+	}
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	numgltextures++;
+
+	return texture_index;
 }
 
-/*
-================
-GL_LoadTexture_
-FIXME - ugly multiplexer for alpha...
-================
-*/
-static int GL_LoadTexture_(const char *name, const qpic_t *pic, qboolean mipmap, qboolean alpha, byte alphabyte) {
-    int i;
-    gltexture_t *glt;
-    unsigned short crc;
+int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qboolean update)
+{
+	int i;
+	gltexture_t	*glt;
 
-    crc = CRC_Block(pic->pixels, pic->width * pic->height);
+	int texture_index = -1;
 
-    // see if the texture is already present
-    if (name[0]) {
-        for (i = 0, glt = gltextures; i < numgltextures; i++, glt++) {
-            if (!strcmp(name, glt->name)) {
-                if (crc != glt->crc)
-                    goto GL_LoadTexture_setup;
-                if (pic->width != glt->width || pic->height != glt->height)
-                    goto GL_LoadTexture_setup;
-                return glt->texnum;
-            }
-        }
-    }
+	if (update == false) {
 
-    if (numgltextures == MAX_GLTEXTURES)
-        Sys_Error("numgltextures == MAX_GLTEXTURES");
+		for (i=0, glt=gltextures; i<MAX_GLTEXTURES; i++, glt++) {
+			if (glt->used == false) {
+				texture_index = i;
+				break;
+			}
+		}
 
-    glt = &gltextures[numgltextures];
-    numgltextures++;
+		if (numgltextures == MAX_GLTEXTURES) {
+			Sys_Error("GL_LoadTexture: Out of GL textures\n");
+		}
 
-    strncpy(glt->name, name, sizeof(glt->name) - 1);
-    glt->name[sizeof(glt->name) - 1] = '\0';
+		if (texture_index < 0) {
+			Sys_Error("Could not find a free GL texture!\n");
+		}
 
-    glGenTextures(1, &glt->texnum);
+		glt = &gltextures[texture_index];
 
-GL_LoadTexture_setup:
-    glt->crc = crc;
-    glt->width = pic->width;
-    glt->height = pic->height;
-    glt->mipmap = mipmap;
+		GLuint texID;
+		glGenTextures(1, &texID);
 
-#ifdef NQ_HACK
-    if (!isDedicated) {
-        GL_Bind(glt->texnum);
-        if (alpha)
-            GL_Upload8_Alpha(pic, mipmap, alphabyte);
-        else
-            GL_Upload8(pic, mipmap);
-    }
-#else
-    GL_Bind(glt->texnum);
-    if (alpha)
-        GL_Upload8_Alpha(pic, mipmap, alphabyte);
-    else
-        GL_Upload8(pic, mipmap);
-#endif
+		//Con_DPrintf("lm num %i lm name %s\n", texture_index, identifier);
 
-    return glt->texnum;
-}
+		strcpy(glt->identifier, identifier);
+		glt->gl_id = texID;
+		glt->texnum = texture_index;
+		glt->width = width;
+		glt->height = height;
+		glt->original_width = width;
+		glt->original_height = height;
+		glt->bpp = 4;
+		glt->mipmap = false;
+		glt->keep = false;
+		glt->used = true;
 
-int GL_LoadTexture(const char *name, const qpic_t *pic, qboolean mipmap) {
-    return GL_LoadTexture_(name, pic, mipmap, false, 0);
-}
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-int GL_LoadTexture_Alpha(const char *name, const qpic_t *pic, qboolean mipmap, byte alpha) {
-    return GL_LoadTexture_(name, pic, mipmap, true, alpha);
+		GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, false, false);
+
+		numgltextures++;
+	} else if (update == true) {
+		texture_index = GL_FindTexture(identifier);
+
+		if (texture_index < 0) Sys_Error("tried to upload inactive lightmap\n");
+
+		glt = &gltextures[texture_index];
+
+		if (width == glt->original_width && height == glt->original_height) {
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+			GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, false, false);
+		}
+	}
+
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	return texture_index;
 }
 
 void GL_InitTextures(void) {
@@ -320,5 +465,4 @@ void GL_InitTextures(void) {
     }
 
     Cmd_AddCommand("gl_texturemode", GL_TextureMode_f);
-    Cmd_SetCompletion("gl_texturemode", GL_TextureMode_Arg_f);
 }

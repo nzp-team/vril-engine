@@ -35,11 +35,12 @@ extern unsigned char d_15to8table[65536];
 
 extern float gldepthmin, gldepthmax;
 
-void GL_Upload8(const qpic_t *pic, qboolean mipmap);
-void GL_Upload8_Alpha(const qpic_t *pic, qboolean mipmap, byte alpha);
-int GL_LoadTexture(const char *name, const qpic_t *pic, qboolean mipmap);
-int GL_LoadTexture_Alpha(const char *name, const qpic_t *pic, qboolean mipmap, byte alpha);
-int GL_FindTexture(const char *naem);
+void GL_UnloadTextures (void);
+int GL_FindTexture(const char *identifier);
+void GL_Upload32(GLuint gl_id, unsigned *data, int width, int height, qboolean mipmap, qboolean alpha);
+void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
+int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel, qboolean keep);
+int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qboolean update);
 
 void GL_SelectTexture(GLenum);
 
