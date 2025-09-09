@@ -1941,22 +1941,6 @@ qboolean model_is_zombie(char name[MAX_QPATH])
 	return false;
 }
 
-qboolean model_is_gun(char name[MAX_QPATH])
-{
-	char wep_path[15];
-
-	for (int i = 0; i < 15; i++) {
-		wep_path[i] = name[i];
-	}
-	wep_path[14] = '\0';
-
-	if (strcmp(wep_path, "models/weapons") == 0) {
-		return qtrue;
-	}
-
-	return false;
-}
-
 /*
 ===============
 Mod_LoadAllSkins
