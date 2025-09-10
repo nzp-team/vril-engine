@@ -105,6 +105,7 @@ RECENT REVISION HISTORY:
 #define STBI_INCLUDE_STB_IMAGE_H
 
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wdouble-promotion"
 
 // DOCUMENTATION
 //
@@ -3698,6 +3699,9 @@ static int stbi__jpeg_test(stbi__context *s)
 {
    int r;
    stbi__jpeg* j = (stbi__jpeg*)stbi__malloc(sizeof(stbi__jpeg));
+   if (!j) {
+	return 0;
+   }
    j->s = s;
    stbi__setup_jpeg(j);
    r = stbi__decode_jpeg_header(j, STBI__SCAN_type);
@@ -4678,6 +4682,7 @@ static void stbi__de_iphone(stbi__png *z)
 }
 
 #define STBI__PNG_TYPE(a,b,c,d)  (((a) << 24) + ((b) << 16) + ((c) << 8) + (d))
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
 
 static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
 {
@@ -5228,6 +5233,7 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
 }
 #endif
 
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough="
 // Targa Truevision - TGA
 // by Jonathan Dummer
 #ifndef STBI_NO_TGA

@@ -111,6 +111,7 @@ COMMON_OBJS =	system.o \
 				snd_dma.c \
 				snd_mix.c \
 				snd_mem.c \
+				images.c \
 				platform/ctr/snd_ctr.c \
 				platform/ctr/in_ctr.c \
 				platform/ctr/cd_null.c \

@@ -35,14 +35,7 @@ typedef unsigned char 		byte;
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
-#undef true
-#undef false
-
-#ifdef __cplusplus
-typedef enum {qfalse, qtrue}	qboolean;
-#else
-typedef enum {false, true}	qboolean;
-#endif
+typedef unsigned int qboolean;
 
 #define stringify__(x) #x
 #define stringify(x) stringify__(x)

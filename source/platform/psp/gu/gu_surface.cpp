@@ -228,7 +228,7 @@ void R_BuildLightMap (msurface_t *surf, byte *dest, int stride)
 
     //unsigned *blcr, *blcg, *blcb;
 
-	surf->cached_dlight = (surf->dlightframe == r_framecount) ? qtrue : qfalse;
+	surf->cached_dlight = (surf->dlightframe == r_framecount) ? true : false;
 
 	smax = (surf->extents[0]>>4)+1;
 	tmax = (surf->extents[1]>>4)+1;
@@ -804,14 +804,14 @@ static void R_BlendLightmaps (void)
 		char lm_name[16];
 		if (lightmap_modified[i])
 		{
-			lightmap_modified[i] = qfalse;
+			lightmap_modified[i] = false;
 			lightmap_rectchange[i].l = BLOCK_WIDTH;
 			lightmap_rectchange[i].t = BLOCK_HEIGHT;
 			lightmap_rectchange[i].w = 0;
 			lightmap_rectchange[i].h = 0;
 
 			snprintf(lm_name, sizeof(lm_name), "lightmap%d",i);
-			lightmap_index[i] = GL_LoadTextureLM (lm_name, BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+(i*BLOCK_WIDTH*BLOCK_HEIGHT*LIGHTMAP_BYTES), LIGHTMAP_BYTES, GU_LINEAR, qtrue, qfalse);
+			lightmap_index[i] = GL_LoadTextureLM (lm_name, BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+(i*BLOCK_WIDTH*BLOCK_HEIGHT*LIGHTMAP_BYTES), LIGHTMAP_BYTES, GU_LINEAR, true, false);
 		}
 		GL_BindLM (lightmap_index[i]);
 		for (; lmface; lmface = lmface->next) {
@@ -969,7 +969,7 @@ void R_RenderBrushPoly (msurface_t *fa)
 dynamic:
 		if (r_dynamic.value)
 		{
-			lightmap_modified[fa->lightmaptexturenum] = qtrue;
+			lightmap_modified[fa->lightmaptexturenum] = true;
 			theRect = &lightmap_rectchange[fa->lightmaptexturenum];
 
 			if (fa->light_t < theRect->t) {
@@ -1006,7 +1006,7 @@ void R_MirrorChain (msurface_t *s)
 {
 	if (mirror)
 		return;
-	mirror = qtrue;
+	mirror = true;
 	mirror_plane = s->plane;
 }
 
@@ -1172,7 +1172,7 @@ void R_DrawBrushModel (entity_t *e)
 	qboolean	rotated;
 	qboolean    dlight;//
 
-	dlight = qtrue;//
+	dlight = true;//
 
 
 	currententity = e;
@@ -1184,13 +1184,13 @@ void R_DrawBrushModel (entity_t *e)
 
 	if (e->angles[0] || e->angles[1] || e->angles[2])
 	{
-		rotated = qtrue;
+		rotated = true;
 		frustum_check = R_FrustumCheckSphere(e->origin, clmodel->radius);
 		
 	}
 	else
 	{
-		rotated = qfalse;
+		rotated = false;
 		VectorAdd (e->origin, clmodel->mins, mins);
 		VectorAdd (e->origin, clmodel->maxs, maxs);
 	    frustum_check = R_FrustumCheckBox(mins, maxs);
@@ -1251,7 +1251,7 @@ void R_DrawBrushModel (entity_t *e)
 		sceGuBlendFunc(GU_ADD, GU_FIX, GU_FIX,
 		GU_COLOR(alpha1,alpha1,alpha1,alpha1),
 		GU_COLOR(alpha2,alpha2,alpha2,alpha2));
-		dlight = qfalse;
+		dlight = false;
 	}
 	else if (ISGLOW(e))
 	{
@@ -1268,13 +1268,13 @@ void R_DrawBrushModel (entity_t *e)
 		sceGuEnable(GU_ALPHA_TEST);
 		int c = (int)(e->renderamt * 255.0f);
 		sceGuAlphaFunc(GU_GREATER, c, 0xff);
-		dlight = qfalse;
+		dlight = false;
 	}
 	else if (ISTEXTURE(e))
 	{
 		sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 		sceGuColor(GU_RGBA(255, 255, 255, (int)(e->renderamt * 255.0f)));
-		dlight = qfalse;
+		dlight = false;
 	}
 	*/
 	else if (ISCOLOR(e))
@@ -1906,13 +1906,13 @@ void GL_BuildLightmaps (void)
             if (!allocated[i][0])
                 break;		// no more used
 
-            lightmap_modified[i] = qfalse;
+            lightmap_modified[i] = false;
             lightmap_rectchange[i].l = BLOCK_WIDTH;
             lightmap_rectchange[i].t = BLOCK_HEIGHT;
             lightmap_rectchange[i].w = 0;
             lightmap_rectchange[i].h = 0;
 
             sprintf(lm_name,"lightmap%d",i);
-            lightmap_index[i] = GL_LoadTextureLM (lm_name, BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+(i*BLOCK_WIDTH*BLOCK_HEIGHT*LIGHTMAP_BYTES), LIGHTMAP_BYTES, GU_LINEAR, qtrue, qfalse);
+            lightmap_index[i] = GL_LoadTextureLM (lm_name, BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+(i*BLOCK_WIDTH*BLOCK_HEIGHT*LIGHTMAP_BYTES), LIGHTMAP_BYTES, GU_LINEAR, true, false);
 	}
 }

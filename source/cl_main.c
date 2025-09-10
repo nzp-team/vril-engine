@@ -648,21 +648,7 @@ void CL_RelinkEntities (void)
 			}
 
 		}
-/*
-		if (ent->modelindex == cl_modelindex[mi_explo1] || ent->modelindex == cl_modelindex[mi_explo2])
-		{
-			// software removal of sprites
-			if (r_explosiontype.value == 2 || r_explosiontype.value == 3)
-				continue;
-
-			if (qmb_initialized && r_part_explosions.value)
-				continue;
-		}
-
-		if (!(model = cl.model_precache[ent->modelindex]))
-			Host_Error ("CL_RelinkEntities: bad modelindex");
-*/
-
+		
 // rotate binary objects locally
 
 		if (ent->model->flags & EF_ROTATE) {

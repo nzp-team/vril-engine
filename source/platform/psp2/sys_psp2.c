@@ -31,7 +31,7 @@ byte sys_bigstack[BIGSTACK_SIZE];
 int sys_bigstack_cursize;
 
 uint8_t is_uma0 = 0;
-int tex_cache = 1;
+int tex_cache = 0;
 
 int antialiasing;
 uint8_t netcheck_dialog_running;
