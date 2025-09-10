@@ -57,7 +57,11 @@ void Loop_SearchForHosts (qboolean xmit)
 	Q_strcpy(hostcache[0].map, sv.name);
 	hostcache[0].users = net_activeconnections;
 	hostcache[0].maxusers = svs.maxclients;
+#ifdef __NX__
+	hostcache[0].driver = net_driver;
+#else
 	hostcache[0].driver = net_driverlevel;
+#endif
 	Q_strcpy(hostcache[0].cname, "local");
 }
 

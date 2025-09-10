@@ -70,9 +70,9 @@ void NET_Ban_f(client_t *client) {
             if (banAddr.ip.l != INADDR_ANY) {
                 strcpy(addrStr, NET_AdrToString(&banAddr));
                 strcpy(maskStr, NET_AdrToString(&banMask));
-                SV_ClientPrintf(client, "Banning %s [%s]\n", addrStr, maskStr);
+                SV_ClientPrintf("Banning %s [%s]\n", addrStr, maskStr);
             } else {
-                SV_ClientPrintf(client, "Banning not active\n");
+                SV_ClientPrintf("Banning not active\n");
             }
             break;
 
@@ -90,7 +90,7 @@ void NET_Ban_f(client_t *client) {
             break;
 
         default:
-            SV_ClientPrintf(client, "BAN ip_address [mask]\n");
+            SV_ClientPrintf("BAN ip_address [mask]\n");
             break;
     }
 }
@@ -122,7 +122,7 @@ static int SendPacket(qsocket_t *sock) {
     return 1;
 }
 
-int Datagram_SendMessage(qsocket_t *sock, const sizebuf_t *data) {
+int Datagram_SendMessage(qsocket_t *sock, sizebuf_t *data) {
 #ifdef DEBUG
     if (data->cursize == 0) Sys_Error("%s: zero length message", __func__);
 
@@ -159,7 +159,7 @@ qboolean Datagram_CanSendMessage(qsocket_t *sock) {
 
 qboolean Datagram_CanSendUnreliableMessage(qsocket_t *sock) { return true; }
 
-int Datagram_SendUnreliableMessage(qsocket_t *sock, const sizebuf_t *data) {
+int Datagram_SendUnreliableMessage(qsocket_t *sock, sizebuf_t *data) {
     int packetLen;
 
 #ifdef DEBUG
@@ -934,7 +934,7 @@ void Datagram_SearchForHosts(qboolean xmit) {
     }
 }
 
-static qsocket_t *_Datagram_Connect(const char *host, net_landriver_t *driver) {
+static qsocket_t *_Datagram_Connect(char *host, net_landriver_t *driver) {
     netadr_t sendaddr;
     netadr_t readaddr;
     qsocket_t *sock;
@@ -1064,7 +1064,7 @@ ErrorReturn2:
     return NULL;
 }
 
-qsocket_t *Datagram_Connect(const char *host) {
+qsocket_t *Datagram_Connect(char *host) {
     int i;
     qsocket_t *ret = NULL;
     net_landriver_t *driver;

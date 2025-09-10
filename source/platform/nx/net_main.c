@@ -319,7 +319,7 @@ static void Slist_Poll(void) {
 int hostCacheCount = 0;
 hostcache_t hostcache[HOSTCACHESIZE];
 
-qsocket_t *NET_Connect(const char *host) {
+qsocket_t *NET_Connect(char *host) {
     qsocket_t *ret;
     int i, n;
     int numdrivers = net_numdrivers;
@@ -477,7 +477,7 @@ int NET_GetMessage(qsocket_t *sock) {
  * returns -1 : if the connection died
  * ==================
  */
-int NET_SendMessage(qsocket_t *sock, const sizebuf_t *data) {
+int NET_SendMessage(qsocket_t *sock, sizebuf_t *data) {
     int r;
 
     if (!sock) return -1;
@@ -494,7 +494,7 @@ int NET_SendMessage(qsocket_t *sock, const sizebuf_t *data) {
     return r;
 }
 
-int NET_SendUnreliableMessage(qsocket_t *sock, const sizebuf_t *data) {
+int NET_SendUnreliableMessage(qsocket_t *sock, sizebuf_t *data) {
     int r;
 
     if (!sock) return -1;
@@ -533,7 +533,7 @@ qboolean NET_CanSendMessage(qsocket_t *sock) {
     return r;
 }
 
-int NET_SendToAll(const sizebuf_t *data, double blocktime) {
+int NET_SendToAll(sizebuf_t *data, double blocktime) {
     client_t *client;
     double start;
     int i, count;
