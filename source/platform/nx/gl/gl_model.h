@@ -356,30 +356,10 @@ typedef enum {mod_brush, mod_sprite, mod_alias} modtype_t;
 #define	EF_TRACER2	64			// orange split trail + rotate
 #define	EF_TRACER3	128			// purple trail
 
-// some models are special
-typedef enum
-{
-	MOD_NORMAL,
-	MOD_PLAYER,
-	MOD_EYES,
-	MOD_FLAME,
-	MOD_THUNDERBOLT,
-	MOD_WEAPON,
-	MOD_LAVABALL,
-	MOD_SPIKE,
-	MOD_SHAMBLER,
-	MOD_SPR,
-	MOD_SPR32,
-//	MOD_GKEY,
-//	MOD_SKEY,
-} modhint_t;
-
 typedef struct model_s
 {
 	char		name[MAX_QPATH];
 	qboolean	needload;		// bmodels and sprites don't cache normally
-
-	modhint_t			modhint;
 
 	modtype_t	type;
 	int			numframes;

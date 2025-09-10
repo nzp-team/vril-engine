@@ -372,10 +372,10 @@ void Mod_LoadTextures (lump_t *l)
 		if (m->dataofs[i] == -1)
 			continue;
 		mt = (miptex_t *)((byte *)m + m->dataofs[i]);
-		mt->width = LittleLong (mt->width);
-		mt->height = LittleLong (mt->height);
+		mt->width = (uint32_t)LittleLong (mt->width);
+		mt->height = (uint32_t)LittleLong (mt->height);
 		for (j=0 ; j<MIPLEVELS ; j++)
-			mt->offsets[j] = LittleLong (mt->offsets[j]);
+			mt->offsets[j] = (uint32_t)LittleLong (mt->offsets[j]);
 		
 		if ( (mt->width & 15) || (mt->height & 15) )
 			Sys_Error ("Texture %s is not 16 aligned", mt->name);
@@ -694,8 +694,8 @@ void Mod_LoadEdges (lump_t *l)
 
 	for ( i=0 ; i<count ; i++, in++, out++)
 	{
-		out->v[0] = (unsigned short)LittleShort(in->v[0]);
-		out->v[1] = (unsigned short)LittleShort(in->v[1]);
+		out->v[0] = (uint16_t)LittleShort(in->v[0]);
+		out->v[1] = (uint16_t)LittleShort(in->v[1]);
 	}
 }
 
@@ -739,12 +739,6 @@ void Mod_LoadTexinfo (lump_t *l)
 			out->mipadjust = 2;
 		else
 			out->mipadjust = 1;
-#if 0
-		if (len1 + len2 < 0.001)
-			out->mipadjust = 1;		// don't crash
-		else
-			out->mipadjust = 1 / floor( (len1+len2)/2 + 0.1 );
-#endif
 
 		miptex = LittleLong (in->miptex);
 		out->flags = LittleLong (in->flags);
@@ -798,9 +792,9 @@ void CalcSurfaceExtents (msurface_t *s)
 		
 		for (j=0 ; j<2 ; j++)
 		{
-			val = v->position[0] * tex->vecs[j][0] + 
-				v->position[1] * tex->vecs[j][1] +
-				v->position[2] * tex->vecs[j][2] +
+			val = (long double)v->position[0] * tex->vecs[j][0] + 
+				  (long double)v->position[1] * tex->vecs[j][1] +
+				  (long double)v->position[2] * tex->vecs[j][2] +
 				tex->vecs[j][3];
 			if (val < mins[j])
 				mins[j] = val;
@@ -811,8 +805,8 @@ void CalcSurfaceExtents (msurface_t *s)
 
 	for (i=0 ; i<2 ; i++)
 	{	
-		bmins[i] = (int)floorf(mins[i]/16);
-		bmaxs[i] = (int)ceilf(maxs[i]/16);
+		bmins[i] = floorf(mins[i]/16);
+		bmaxs[i] = ceilf(maxs[i]/16);
 
 		s->texturemins[i] = bmins[i] * 16;
 		s->extents[i] = (bmaxs[i] - bmins[i]) * 16;
@@ -955,8 +949,8 @@ void Mod_LoadNodes (lump_t *l)
 		p = LittleLong(in->planenum);
 		out->plane = loadmodel->planes + p;
 
-		out->firstsurface = LittleShort (in->firstface);
-		out->numsurfaces = LittleShort (in->numfaces);
+		out->firstsurface = (uint16_t)LittleShort (in->firstface);
+		out->numsurfaces = (uint16_t)LittleShort (in->numfaces);
 		
 		for (j=0 ; j<2 ; j++)
 		{
@@ -1002,9 +996,8 @@ void Mod_LoadLeafs (lump_t *l)
 		p = LittleLong(in->contents);
 		out->contents = p;
 
-		out->firstmarksurface = loadmodel->marksurfaces +
-			LittleShort(in->firstmarksurface);
-		out->nummarksurfaces = LittleShort(in->nummarksurfaces);
+		out->firstmarksurface = loadmodel->marksurfaces + (uint16_t)LittleShort(in->firstmarksurface);
+		out->nummarksurfaces = (uint16_t)LittleShort(in->nummarksurfaces);
 		
 		p = LittleLong(in->visofs);
 		if (p == -1)
@@ -1111,8 +1104,8 @@ void Mod_LoadClipnodes (lump_t *l)
 	for (i=0 ; i<count ; i++, out++, in++)
 	{
 		out->planenum = LittleLong(in->planenum);
-		out->children[0] = LittleShort(in->children[0]);
-		out->children[1] = LittleShort(in->children[1]);
+		out->children[0] = (uint16_t)LittleShort(in->children[0]);
+		out->children[1] = (uint16_t)LittleShort(in->children[1]);
 	}
 }
 
@@ -1177,7 +1170,7 @@ void Mod_LoadMarksurfaces (lump_t *l)
 
 	for ( i=0 ; i<count ; i++)
 	{
-		j = LittleShort(in[i]);
+		j = (uint16_t)LittleShort(in[i]);
 		if (j >= loadmodel->numsurfaces)
 			Sys_Error ("bad surface number");
 		out[i] = loadmodel->surfaces + j;
@@ -1194,7 +1187,7 @@ void Mod_LoadSurfedges (lump_t *l)
 	int		i, count;
 	int		*in, *out;
 	
-	in = (void *)(mod_base + l->fileofs);
+	in = (int32_t *)(void *)(mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
 		Sys_Error ("funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
@@ -1776,35 +1769,6 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	daliasframetype_t	*pframetype;
 	daliasskintype_t	*pskintype;
 	int					start, end, total;
-
-// some models are special
-	// NOTE: comparing not only with player.mdl, but with all models
-	// begin with "player" coz we need to support DME models as well!
-	if (!strncmp(mod->name, "progs/player", 12))
-		mod->modhint = MOD_PLAYER;
-	else if (!strcmp(mod->name, "progs/eyes.mdl"))
-		mod->modhint = MOD_EYES;
-	else if (!strcmp(mod->name, "progs/flame0.mdl") ||
-		 !strcmp(mod->name, "progs/flame.mdl") ||
-		 !strcmp(mod->name, "progs/flame2.mdl"))
-		mod->modhint = MOD_FLAME;
-	else if (!strcmp(mod->name, "progs/bolt.mdl") ||
-		 !strcmp(mod->name, "models/misc/bolt2.mdl") ||
-		 !strcmp(mod->name, "progs/bolt3.mdl"))
-		mod->modhint = MOD_THUNDERBOLT;
-	else if (!strcmp(mod->name, "progs/VModels/v_Colt.mdl") || //JUKKI Add nzp weapons here please plox
-		 !strcmp(mod->name, "progs/VModels/v_kar.mdl") ||
-		 !strcmp(mod->name, "progs/VModels/v_thomp.mdl"))
-		mod->modhint = MOD_WEAPON;
-	else if (!strcmp(mod->name, "progs/lavaball.mdl"))
-		mod->modhint = MOD_LAVABALL;
-	else if (!strcmp(mod->name, "progs/spike.mdl") ||
-		 !strcmp(mod->name, "progs/s_spike.mdl"))
-		mod->modhint = MOD_SPIKE;
-	else if (!strcmp(mod->name, "progs/shambler.mdl"))
-		mod->modhint = MOD_SHAMBLER;
-	else
-		mod->modhint = MOD_NORMAL;
 	
 	start = Hunk_LowMark ();
 
@@ -1867,7 +1831,6 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 		pheader->scale_origin[i] = LittleFloat (pinmodel->scale_origin[i]);
 		pheader->eyeposition[i] = LittleFloat (pinmodel->eyeposition[i]);
 	}
-
 
 //
 // load the skins

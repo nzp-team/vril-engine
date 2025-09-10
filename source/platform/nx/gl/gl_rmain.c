@@ -559,56 +559,41 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 		frame = 0;
 	}
 
-	// HACK: if we're a certain distance away, don't bother blending
-	// cypress -- Lets not care about Z (up).. chances are they're out of the frustum anyway
-	int dist_x = (cl.viewent.origin[0] - e->origin[0]);
-	int dist_y = (cl.viewent.origin[1] - e->origin[1]);
-	int distance_from_client = (int)((dist_x) * (dist_x) + (dist_y) * (dist_y)); // no use sqrting, just slows us down.
+	pose = paliashdr->frames[frame].firstpose;
+	numposes = paliashdr->frames[frame].numposes;
 
-	// They're too far away from us to care about blending their frames.
-	if (distance_from_client >= 160000) { // 400 * 400
-		// Fix them from jumping from last lerp
-		e->pose1 = e->pose2 = paliashdr->frames[frame].firstpose;
-		e->frame_interval = 0.1;
-
-		GL_DrawAliasFrame (paliashdr, paliashdr->frames[frame].firstpose);
-	} else {
-		pose = paliashdr->frames[frame].firstpose;
-		numposes = paliashdr->frames[frame].numposes;
-
-		if (numposes > 1)
-		{
-			e->frame_interval = paliashdr->frames[frame].interval;
-			pose += (int)((float)cl.time / e->frame_interval) % numposes;
-		}
-		else
-		{
-			/* One tenth of a second is a good for most Quake animations.
-			If the nextthink is longer then the animation is usually meant to pause
-			(e.g. check out the shambler magic animation in shambler.qc).  If its
-			shorter then things will still be smoothed partly, and the jumps will be
-			less noticable because of the shorter time.  So, this is probably a good
-			assumption. */
-			e->frame_interval = 0.1;
-		}
-
-		if (e->pose2 != pose)
-		{
-			e->frame_start_time = realtime;
-			e->pose1 = e->pose2;
-			e->pose2 = pose;
-			blend = 0;
-		}
-		else
-			blend = ((float)realtime - e->frame_start_time) / e->frame_interval;
-		// wierd things start happening if blend passes 1
-		if (cl.paused || blend > 1) blend = 1;
-
-		if (blend == 1)
-			GL_DrawAliasFrame (paliashdr, pose);
-		else
-			GL_DrawAliasBlendedFrame (paliashdr, e->pose1, e->pose2, blend);
+	if (numposes > 1)
+	{
+		e->frame_interval = paliashdr->frames[frame].interval;
+		pose += (int)((float)cl.time / e->frame_interval) % numposes;
 	}
+	else
+	{
+		/* One tenth of a second is a good for most Quake animations.
+		If the nextthink is longer then the animation is usually meant to pause
+		(e.g. check out the shambler magic animation in shambler.qc).  If its
+		shorter then things will still be smoothed partly, and the jumps will be
+		less noticable because of the shorter time.  So, this is probably a good
+		assumption. */
+		e->frame_interval = 0.1;
+	}
+
+	if (e->pose2 != pose)
+	{
+		e->frame_start_time = realtime;
+		e->pose1 = e->pose2;
+		e->pose2 = pose;
+		blend = 0;
+	}
+	else
+		blend = ((float)realtime - e->frame_start_time) / e->frame_interval;
+	// wierd things start happening if blend passes 1
+	if (cl.paused || blend > 1) blend = 1;
+
+	if (blend == 1)
+		GL_DrawAliasFrame (paliashdr, pose);
+	else
+		GL_DrawAliasBlendedFrame (paliashdr, e->pose1, e->pose2, blend);
 }
 
 /*
@@ -955,25 +940,17 @@ void R_DrawAliasModel (entity_t *e)
     glPushMatrix ();
 	R_RotateForEntity (e, ENTSCALE_DEFAULT);
 
-	if (!strcmp (clmodel->name, "progs/eyes.mdl") && gl_doubleeyes.value) {
-		glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2] - (22 + 8));
-// double size of eyes, since they are really hard to see in gl
-		glScalef (paliashdr->scale[0]*2, paliashdr->scale[1]*2, paliashdr->scale[2]*2);
+	// Special handling of view model to keep FOV from altering look.  Pretty good.  Not perfect but rather close.
+	if ((e == &cl.viewent || e == &cl.viewent2) && scr_fov_viewmodel.value) {
+		float scale = 1.0f / tanf (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
+		if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) scale *= ENTSCALE_DECODE(e->scale);
+		glTranslatef (paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+		glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
 	} else {
-
-		// Special handling of view model to keep FOV from altering look.  Pretty good.  Not perfect but rather close.
-		if ((e == &cl.viewent || e == &cl.viewent2) && scr_fov_viewmodel.value) {
-			float scale = 1.0f / tanf (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
-			if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) scale *= ENTSCALE_DECODE(e->scale);
-			glTranslatef (paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
-			glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
-		} else {
-			float scale = 1.0f;
-			if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) scale *= ENTSCALE_DECODE(e->scale);
-			glTranslatef (paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1] * scale, paliashdr->scale_origin[2] * scale);
-			glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1] * scale, paliashdr->scale[2] * scale);
-		}
-		
+		float scale = 1.0f;
+		if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) scale *= ENTSCALE_DECODE(e->scale);
+		glTranslatef (paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1] * scale, paliashdr->scale_origin[2] * scale);
+		glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1] * scale, paliashdr->scale[2] * scale);
 	}
 
 	if (specChar == '%')//Zombie body
@@ -1130,7 +1107,7 @@ void R_DrawEntitiesOnList (void)
 		case mod_alias:
 			if(specChar == '$')//mdl model with blended alpha
 			{
-					R_DrawTransparentAliasModel(currententity);
+				R_DrawTransparentAliasModel(currententity);
 			}
 			break;
 		default: break;
@@ -1226,9 +1203,6 @@ void R_DrawViewModel (void)
 		return;
 
 	if (chase_active.value)
-		return;
-
-	if (envmap)
 		return;
 
 	if (!r_drawentities.value)
@@ -1421,16 +1395,17 @@ void R_SetupFrame(void) {
     c_lightmaps_uploaded = 0;
 }
 
-static void MYgluPerspective(GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar) {
-    GLdouble xmin, xmax, ymin, ymax;
+void MYgluPerspective( GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar )
+{
+	GLdouble xmin, xmax, ymin, ymax;
 
-    ymax = zNear * tan(fovy * M_PI / 360.0);
-    ymin = -ymax;
+	ymax = zNear * tan( fovy * M_PI / 360.0 );
+	ymin = -ymax;
 
-    xmin = ymin * aspect;
-    xmax = ymax * aspect;
+	xmin = ymin * aspect;
+	xmax = ymax * aspect;
 
-    glFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
+	glFrustum( xmin, xmax, ymin, ymax, zNear, zFar );
 }
 
 /*
@@ -1487,7 +1462,9 @@ static void R_SetupGL(void) {
     // smaller
     //         spaces
     // MYgluPerspective (r_refdef.fov_y, screenaspect, 4, 4096);
-    MYgluPerspective(r_refdef.fov_y, screenaspect, 4, 6144);
+    //MYgluPerspective(r_refdef.fov_y, screenaspect, 4, 6144);
+
+	MYgluPerspective (r_refdef.fov_y,  screenaspect,  4,  4096);
 
     if (mirror) {
         if (mirror_plane->normal[2])

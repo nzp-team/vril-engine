@@ -479,7 +479,6 @@ void R_RenderBrushPoly (msurface_t *fa)
 	if(choosealpha) {
 		glEnable(GL_ALPHA_TEST);
 		glAlphaFunc(GL_GREATER, 0xaa);
-		glEnable(GL_MODULATE);
 		glColor4f(1, 1, 1, 1);
 	}
 
@@ -544,7 +543,6 @@ dynamic:
 
 	if(choosealpha) {
 		glDisable(GL_ALPHA_TEST);
-		glDisable(GL_MODULATE);
 	}
 
 }

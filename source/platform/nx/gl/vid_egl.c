@@ -45,7 +45,7 @@ void (*VID_SetGammaRamp)(unsigned short ramp[3][256]) = NULL;
 
 float gldepthmin, gldepthmax;
 qboolean gl_mtexable;
-cvar_t gl_ztrick = {"gl_ztrick", "1"};
+cvar_t gl_ztrick = {"gl_ztrick", "0"};
 
 void VID_Update(vrect_t *rects) {}
 void D_BeginDirectRect(int x, int y, const byte *pbitmap, int width, int height) {}
