@@ -66,7 +66,7 @@ void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean
 void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel, qboolean keep);
 int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qboolean update);
-int GL_FindTexture (const char *identifier);
+int Image_FindImage (const char *identifier);
 void GL_UnloadTextures ();
 
 typedef struct

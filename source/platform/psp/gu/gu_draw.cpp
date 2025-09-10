@@ -2323,7 +2323,8 @@ void GL_UnloadAllTextures() {
 	}
 }
 
-int GL_FindTexture(const char *identifier) {
+int Image_FindImage(const char *identifier) 
+{
 	// See if the texture is already present.
 	if (identifier[0])
 	{
@@ -2377,7 +2378,7 @@ GL_LoadTexture
 */
 int GL_LoadTexture (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level)
 {
-	int texture_index = GL_FindTexture(identifier);
+	int texture_index = Image_FindImage(identifier);
 	if (texture_index >= 0) return texture_index;
 
 	tex_scale_down = r_tex_scale_down.value == true;
@@ -2468,7 +2469,7 @@ GL_LoadPalTex
 */
 int GL_LoadPalTex (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, byte *palette, int paltype)
 {
-	int texture_index = GL_FindTexture(identifier);
+	int texture_index = Image_FindImage(identifier);
 	if (texture_index >= 0) return texture_index;
 
 	byte * pal = palette;
@@ -2485,7 +2486,7 @@ GL_LoadTextureLM
 int GL_LoadTextureLM (const char *identifier, int width, int height, byte *data, int bpp, int filter, qboolean update, int forcopy)
 {
 	tex_scale_down = r_tex_scale_down.value == true;
-	int texture_index = GL_FindTexture(identifier);
+	int texture_index = Image_FindImage(identifier);
 	if (texture_index >= 0 && update == false) {
 		return texture_index;
 	}
@@ -2672,7 +2673,7 @@ GL_LoadImages
 int total_overbudget_texturemem;
 int GL_LoadImages (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp, qboolean keep)
 {
-	int texture_index = GL_FindTexture(identifier);
+	int texture_index = Image_FindImage(identifier);
 	if (texture_index >= 0) return texture_index;
 
 	tex_scale_down = r_tex_scale_down.value == true;
@@ -2918,7 +2919,7 @@ void GL_Upload4(int texture_index, const byte *data, int width, int height)
 
 int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, byte *data, int filter, qboolean swizzled)
 {
-	int texture_index = GL_FindTexture(identifier);
+	int texture_index = Image_FindImage(identifier);
 	if (texture_index >= 0) return texture_index;
 
 	texture_index = GL_GetTextureIndex();
@@ -2967,7 +2968,7 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 
 int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int height, byte *data, const byte *pal, int filter, int inpal_bpp, const byte * palhint)
 {
-	int texture_index = GL_FindTexture(identifier);
+	int texture_index = Image_FindImage(identifier);
 	if (texture_index >= 0) return texture_index;
 
 	tex_scale_down = r_tex_scale_down.value == true;

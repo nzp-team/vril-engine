@@ -805,7 +805,6 @@ SCR_DrawLoadScreen
 double loadingtimechange;
 int loadingdot;
 char *lodinglinetext;
-qpic_t *awoo;
 char *ReturnLoadingtex (void)
 {
     int StringNum = Random_Int(80);

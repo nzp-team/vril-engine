@@ -68,7 +68,7 @@ extern	int		texture_mode;
 
 extern	float	gldepthmin, gldepthmax;
 
-int GL_FindTexture (const char *identifier);
+int Image_FindImage (const char *identifier);
 void GL_UnloadTextures (void);
 
 void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha);

@@ -223,7 +223,7 @@ int Image_LoadImage(char* filename, int image_format, int filter, bool keep, boo
 	tex_filebase (filename, texname);
 
 	// does the texture already exist?
-	texture_index = GL_FindTexture(texname);
+	texture_index = Image_FindImage(texname);
 	if (texture_index >= 0) {
 		return texture_index;
 	}
@@ -241,11 +241,15 @@ int Image_LoadImage(char* filename, int image_format, int filter, bool keep, boo
 #elif __3DS__
 	texture_index = GL_LoadTexture (texname, image_width, image_height, data, mipmap, true, 4, keep);
 #elif __WII__
-texture_index = GL_LoadTexture (texname, image_width, image_height, data, false, true, keep, 4);
+	texture_index = GL_LoadTexture (texname, image_width, image_height, data, false, true, keep, 4);
+#elif __NSPIRE__
+	qboolean transparenttoblack = (qboolean)filter;
+	texture_index = Soft_LoadTexture (texname, image_width, image_height, data, transparenttoblack, keep);
 #endif
 
-	if(texture_index < 0)
+	if(texture_index < 0) {
 		Sys_Error("Image_LoadImage: failed to upload texture %s\n", texname);
+	}
 
 	free(data);
 
@@ -292,7 +296,7 @@ int loadskyboxsideimage (char* filename, int image_format, bool keep, int filter
 	tex_filebase (filename, texname);
 
 	// does the texture already exist?
-	texture_index = GL_FindTexture(texname);
+	texture_index = Image_FindImage(texname);
 	if (texture_index >= 0) {
 		return texture_index;
 	}
@@ -417,3 +421,80 @@ int loadpcxas4bpp (char* filename, int filter)
 	return texture;
 }
 #endif
+
+#ifdef __NSPIRE__
+
+cachepic_t		cachepics[MAX_CACHED_PICS];
+int				numcachepics = 1;
+// naievil -- texture conversion start 
+byte converted_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE]; 
+byte temp_pixel_storage_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE*4]; // naievil -- rgba storage for max pic size 
+// naievil -- texture conversion end
+
+byte* loadimagepixelstoqpal (char* texname, int width, int height, byte *data, qboolean transparenttoblack, qboolean usehunk)
+{
+	// Set the buffer to empty
+	memset(converted_pixels, 0, width * height);
+
+	// Convert the pixels 
+	int converted_counter = 0;
+	byte result;
+	for (int i = 0; i < width * height * 4; i+= 4) {
+		result = findclosestpalmatch(data[i], data[i + 1], data[i + 2], data[i + 3]);
+		converted_pixels[converted_counter] = transparenttoblack && result == 255 ? 0 : result;
+		converted_counter++;
+	}
+
+	if (usehunk)
+	{
+		byte *hunk_ptr = Hunk_AllocName (image_width * image_height, texname);
+		Q_memcpy (hunk_ptr, converted_pixels, width * height);
+
+		return hunk_ptr;
+	}
+	else
+	{
+		return converted_pixels;
+	}
+	
+}
+
+/*
+================
+Soft_LoadTexture
+================
+*/
+int Soft_LoadTexture (char *texname, int width, int height, byte *data, qboolean transparenttoblack, qboolean usehunk)
+{
+	cachepic_t	*pic;
+	int			i;
+	int			texture_index = -1;
+	
+	for (pic=cachepics, i=0 ; i<numcachepics ; pic++, i++) {
+		if (!pic->used) {
+			texture_index = i;
+			break;
+		}
+	}
+
+	if (numcachepics == MAX_CACHED_PICS) {
+		Sys_Error ("numcachepics == MAX_CACHED_PICS");
+	}
+
+	byte *buf = loadimagepixelstoqpal(texname, width, height, data, transparenttoblack, usehunk);
+	if (!buf) {
+		Sys_Error ("Soft_LoadTexture: failed to load %s", texname);
+	}
+
+	pic->data = Hunk_Alloc(sizeof(byte) + width * height);
+	memcpy(pic->data, buf, width * height);
+	strcpy (pic->name, texname);
+	pic->width = width;
+	pic->height = height;
+	pic->used = qtrue;
+	
+	numcachepics++;
+
+	return texture_index;
+}
+#endif // __NSPIRE__

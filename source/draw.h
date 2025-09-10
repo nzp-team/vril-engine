@@ -46,7 +46,7 @@ int getTextWidth(char *str, float scale);
 
 byte findclosestpalmatch(byte r, byte g, byte b, byte a);
 
-int GL_FindTexture (const char *identifier);
+int Image_FindImage (const char *identifier);
 
 //other
 void Clear_LoadingFill (void);
@@ -71,4 +71,16 @@ void Draw_BlackBackground (void);
 extern byte converted_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE]; 
 extern byte temp_pixel_storage_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE*4]; // naievil -- rgba storage for max pic size 
 // naievil -- texture conversion end
+
+typedef struct cachepic_s
+{
+	char			name[MAX_QPATH];
+	int				width, height;
+	qboolean		used;
+	byte			*data;
+	cache_user_t	cache;
+} cachepic_t;
+
+#define	MAX_CACHED_PICS	128
+extern cachepic_t cachepics[MAX_CACHED_PICS];
 #endif

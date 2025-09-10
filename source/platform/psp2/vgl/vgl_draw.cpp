@@ -149,10 +149,10 @@ void GL_UnloadTextures (void)
 
 /*
 ================
-GL_FindTexture
+Image_FindImage
 ================
 */
-int GL_FindTexture (const char *identifier)
+int Image_FindImage (const char *identifier)
 {
 	int		i;
 	gltexture_t	*glt;
@@ -1042,7 +1042,7 @@ void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipm
 
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel, qboolean keep)
 {
-	int texture_index = GL_FindTexture(identifier);
+	int texture_index = Image_FindImage(identifier);
 	if (texture_index >= 0) {
 		return texture_index;
 	}
@@ -1145,7 +1145,7 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 
 		GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, false, false);
 	} else if (update == true) {
-		texture_index = GL_FindTexture(identifier);
+		texture_index = Image_FindImage(identifier);
 
 		if (texture_index < 0) Sys_Error("tried to upload inactive lightmap\n");
 

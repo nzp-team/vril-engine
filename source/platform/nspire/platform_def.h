@@ -36,3 +36,5 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #undef atof
 double atof( const char *str );
+
+void Draw_Fill (int x, int y, int w, int h, int c);

@@ -5233,6 +5233,7 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
 }
 #endif
 
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough="
 // Targa Truevision - TGA
 // by Jonathan Dummer
 #ifndef STBI_NO_TGA
