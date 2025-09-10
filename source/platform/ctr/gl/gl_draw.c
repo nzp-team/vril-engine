@@ -219,7 +219,7 @@ void Draw_Init (void)
 {
 	int		start;
 
-	numgltextures = 1;
+	numgltextures++;
 
 	Cvar_RegisterVariable (&gl_max_size);
 	Cvar_RegisterVariable (&gl_picmip);

@@ -167,6 +167,8 @@ void HUD_DictateScaleFactor(void)
 	hud_scale_factor = 2.0f;
 #elif __3DS__
 	hud_scale_factor = 1.0f;
+#elif __NX__
+	hud_scale_factor = 2.0f;
 #else
 	hud_scale_factor = 1.0f;
 #endif // __WII__, __PSP__, __vita__, __3DS__
@@ -251,6 +253,21 @@ void HUD_Init (void)
 	b_zrt = Image_LoadImage ("gfx/butticons/shldr_zr", IMAGE_TGA, 0, true, false);
 	b_start = Image_LoadImage ("gfx/butticons/func_sta", IMAGE_TGA, 0, true, false);
 	b_select = Image_LoadImage ("gfx/butticons/func_sel", IMAGE_TGA, 0, true, false);
+#elif __NX__
+	b_abutton = Image_LoadImage ("gfx/butticons/abutton", IMAGE_TGA, 0, true, false);
+	b_bbutton = Image_LoadImage ("gfx/butticons/bbutton", IMAGE_TGA, 0, true, false);
+	b_ybutton = Image_LoadImage ("gfx/butticons/ybutton", IMAGE_TGA, 0, true, false);
+	b_xbutton = Image_LoadImage ("gfx/butticons/xbutton", IMAGE_TGA, 0, true, false);
+	b_left = Image_LoadImage ("gfx/butticons/left", IMAGE_TGA, 0, true, false);
+	b_right = Image_LoadImage ("gfx/butticons/right", IMAGE_TGA, 0, true, false);
+	b_up = Image_LoadImage ("gfx/butticons/up", IMAGE_TGA, 0, true, false);
+	b_down = Image_LoadImage ("gfx/butticons/down", IMAGE_TGA, 0, true, false);
+	b_lt = Image_LoadImage ("gfx/butticons/lt", IMAGE_TGA, 0, true, false);
+	b_rt = Image_LoadImage ("gfx/butticons/rt", IMAGE_TGA, 0, true, false);
+	b_zlt = Image_LoadImage ("gfx/butticons/lshoulder", IMAGE_TGA, 0, true, false);
+	b_zrt = Image_LoadImage ("gfx/butticons/rshoulder", IMAGE_TGA, 0, true, false);
+	b_start = Image_LoadImage ("gfx/butticons/rthumb", IMAGE_TGA, 0, true, false);
+	b_select = Image_LoadImage ("gfx/butticons/lthumb", IMAGE_TGA, 0, true, false);
 #elif __WII__
 	b_abutton = Image_LoadImage ("gfx/butticons/abutton", IMAGE_TGA, 0, true, false);
 	b_bbutton = Image_LoadImage ("gfx/butticons/bbutton", IMAGE_TGA, 0, true, false);

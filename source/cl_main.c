@@ -38,6 +38,8 @@ cvar_t	lookspring = {"lookspring","0", true};
 cvar_t	lookstrafe = {"lookstrafe","0", true};
 #ifdef __PSP__
 cvar_t	in_sensitivity = {"sensitivity","3", true};
+#elif __NX__
+cvar_t	sensitivity = {"sensitivity","3", true};
 #else
 cvar_t	sensitivity = {"sensitivity","8", true};
 #endif // __PSP__

@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int vid_modenum = VID_MODE_NONE;
 
-static cvar_t vid_mode = {"vid_mode", "1"};
+static cvar_t vid_mode = {"vid_mode", "0"};
 
 unsigned short d_8to16table[256];
 unsigned d_8to24table[256];
@@ -56,13 +56,13 @@ void D_EndDirectRect(int x, int y, int width, int height) {}
  *
  * Move stuff around or create abstractions so these hacks aren't needed
  */
- void IN_ProcessEvents(void);
+void IN_ProcessEvents(void);
 void Sys_SendKeyEvents(void) { IN_ProcessEvents(); }
 
 const char *gl_vendor;
 const char *gl_renderer;
 const char *gl_version;
-const char *gl_extensions = NULL;
+const char *gl_extensions;
 
 static void setMesaConfig() {
     // Uncomment below to disable error checking and save CPU time (useful for
@@ -70,7 +70,7 @@ static void setMesaConfig() {
 
     setenv("MESA_GL_VERSION_OVERRIDE", "3.2COMPAT", 1);
 
-#ifdef GPUDEBUG
+//#ifdef GPUDEBUG
     setenv("EGL_LOG_LEVEL", "debug", 1);
     setenv("MESA_VERBOSE", "all", 1);
     setenv("MESA_DEBUG", "1", 1);
@@ -78,7 +78,7 @@ static void setMesaConfig() {
     setenv("NV50_PROG_OPTIMIZE", "0", 1);
     setenv("NV50_PROG_DEBUG", "1", 1);
     setenv("NV50_PROG_CHIPSET", "0x120", 1);
-#endif
+//#endif
 }
 
 void Sys_InitSDL (void)
@@ -131,7 +131,6 @@ static qboolean InitEGL (NWindow *input_win)
 		goto _fail1;
 	}
 
-
 	// Create an EGL window surface
 	s_surface = eglCreateWindowSurface(s_display, config, input_win, NULL);
 	
@@ -147,7 +146,6 @@ static qboolean InitEGL (NWindow *input_win)
 		EGL_NONE
 	};
 
-
 	// Create an EGL rendering context
 	s_context = eglCreateContext(s_display, config, EGL_NO_CONTEXT, ctxAttributeList);
 	if (!s_context)
@@ -156,10 +154,8 @@ static qboolean InitEGL (NWindow *input_win)
 		goto _fail2;
 	}
 
-
 	// Connect the context to the surface
 	eglMakeCurrent(s_display, s_surface, s_surface, s_context);
-
 
 	return true;
 
@@ -191,7 +187,6 @@ static void DeinitEGL(void) {
 
 static void VID_InitGL(void) {
     Cvar_RegisterVariable(&vid_mode);
-    //var_RegisterVariable(&gl_npot);
     Cvar_RegisterVariable(&gl_ztrick);
 
     // Must be first
@@ -210,13 +205,13 @@ static void VID_InitGL(void) {
 
     int version = gladLoadGL(eglGetProcAddress);
     if (version == 0) {
-        printf("Failed to initialize OpenGL context\n");
+        Sys_Error("Failed to initialize OpenGL context\n");
         return;
     }
 
     // Successfully loaded OpenGL
     printf("Loaded OpenGL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
-
+/*
     gl_vendor = (const char *)glGetString(GL_VENDOR);
     gl_renderer = (const char *)glGetString(GL_RENDERER);
     gl_version = (const char *)glGetString(GL_VERSION);
@@ -226,10 +221,8 @@ static void VID_InitGL(void) {
     Con_Printf("GL_RENDERER: %s\n", gl_renderer);
     Con_Printf("GL_VERSION: %s\n", gl_version);
     Con_Printf("GL_EXTENSIONS: %s\n", gl_extensions);
-
+*/
     gl_mtexable = false;
-
-    //GL_ExtensionCheck_NPoT();
 
     glCullFace(GL_FRONT);
     glEnable(GL_TEXTURE_2D);
@@ -294,9 +287,9 @@ void VID_Init(unsigned char *palette) {
     /* TODO: read config files first to avoid multiple mode sets */
     setmode = &modelist[0];
 
-    printf("VID_InitGL start\n");
-
     VID_InitGL();
+
+
     VID_SetMode(setmode, palette);
     VID_SetPalette(palette);
 

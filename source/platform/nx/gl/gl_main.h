@@ -230,9 +230,6 @@ extern mplane_t *mirror_plane;
 
 extern float r_world_matrix[16];
 
-extern const char *gl_renderer;
-extern const char *gl_extensions;
-
 #define	MAX_LIGHTMAPS	128
 extern  int	skyimage[5]; // Where sky images are stored
 extern  int	lightmap_index[MAX_LIGHTMAPS]; // Where lightmaps are stored

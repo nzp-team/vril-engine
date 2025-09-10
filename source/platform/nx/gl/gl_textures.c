@@ -86,54 +86,67 @@ void GL_UnloadTextures (void)
 	}
 }
 
-typedef struct {
-    const char *name;
-    GLenum min_filter;
-    GLenum mag_filter;
+typedef struct
+{
+	char *name;
+	int	minimize, maximize;
 } glmode_t;
 
-static glmode_t *glmode;
-
-static glmode_t gl_texturemodes[] = {{"gl_nearest", GL_NEAREST, GL_NEAREST},
-                                     {"gl_linear", GL_LINEAR, GL_LINEAR},
-                                     {"gl_nearest_mipmap_nearest", GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST},
-                                     {"gl_linear_mipmap_nearest", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR},
-                                     {"gl_nearest_mipmap_linear", GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST},
-                                     {"gl_linear_mipmap_linear", GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR}};
+glmode_t modes[] = {
+	{"GL_NEAREST", GL_NEAREST, GL_NEAREST},
+	{"GL_LINEAR", GL_LINEAR, GL_LINEAR},
+	{"GL_NEAREST_MIPMAP_NEAREST", GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST},
+	{"GL_LINEAR_MIPMAP_NEAREST", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR},
+	{"GL_NEAREST_MIPMAP_LINEAR", GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST},
+	{"GL_LINEAR_MIPMAP_LINEAR", GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR}
+};
 
 /*
 ===============
 Draw_TextureMode_f
 ===============
 */
-static void GL_TextureMode_f(void) {
-    int i;
-    gltexture_t *glt;
+void Draw_TextureMode_f (void)
+{
+	int		i;
+	gltexture_t	*glt;
 
-    if (Cmd_Argc() == 1) {
-        Con_Printf("%s\n", glmode->name);
-        return;
-    }
+	if (Cmd_Argc() == 1)
+	{
+		for (i=0 ; i< 6 ; i++)
+			if (gl_filter_min == modes[i].minimize)
+			{
+				Con_Printf ("%s\n", modes[i].name);
+				return;
+			}
+		Con_Printf ("current filter is unknown???\n");
+		return;
+	}
 
-    for (i = 0; i < ARRAY_SIZE(gl_texturemodes); i++) {
-        if (!strcasecmp(gl_texturemodes[i].name, Cmd_Argv(1))) {
-            glmode = &gl_texturemodes[i];
-            break;
-        }
-    }
-    if (i == ARRAY_SIZE(gl_texturemodes)) {
-        Con_Printf("bad filter name\n");
-        return;
-    }
+	for (i=0 ; i< 6 ; i++)
+	{
+		if (!Q_strcasecmp (modes[i].name, Cmd_Argv(1) ) )
+			break;
+	}
+	if (i == 6)
+	{
+		Con_Printf ("bad filter name\n");
+		return;
+	}
 
-    /* change all the existing mipmap texture objects */
-    for (i = 0, glt = gltextures; i < numgltextures; i++, glt++) {
-        if (glt->mipmap) {
-            GL_Bind(glt->texnum);
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glmode->min_filter);
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glmode->mag_filter);
-        }
-    }
+	gl_filter_min = modes[i].minimize;
+	gl_filter_max = modes[i].maximize;
+
+	// change all the existing mipmap texture objects
+	for (i=0, glt=gltextures ; i<numgltextures ; i++, glt++)
+	{
+		if (glt->mipmap)
+		{
+			GL_Bind (glt->texnum);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+		}
+	}
 }
 
 /*
@@ -437,7 +450,7 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 void GL_InitTextures(void) {
     GLint max_size;
 
-    glmode = gl_texturemodes;
+	numgltextures++;
 
     Cvar_RegisterVariable(&gl_nobind);
     Cvar_RegisterVariable(&gl_max_size);
@@ -451,5 +464,5 @@ void GL_InitTextures(void) {
         Cvar_Set("gl_max_size", va("%d", max_size));
     }
 
-    Cmd_AddCommand("gl_texturemode", GL_TextureMode_f);
+    Cmd_AddCommand("gl_texturemode", Draw_TextureMode_f);
 }

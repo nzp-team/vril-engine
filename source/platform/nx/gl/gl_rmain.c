@@ -85,10 +85,10 @@ cvar_t r_netgraph = {"r_netgraph", "0"};
 #endif
 cvar_t r_waterwarp = {"r_waterwarp", "1"};
 
-cvar_t r_fullbright = {.name = "r_fullbright", .string = "0"};
-cvar_t gl_keeptjunctions = {.name = "gl_keeptjunctions", .string = "1"};
-cvar_t gl_reporttjunctions = {.name = "gl_reporttjunctions", .string = "0"};
-cvar_t gl_texsort = {.name = "gl_texsort", .string = "1"};
+cvar_t r_fullbright = {"r_fullbright", "0"};
+cvar_t gl_keeptjunctions = {"gl_keeptjunctions", "1"};
+cvar_t gl_reporttjunctions = {"gl_reporttjunctions", "0"};
+cvar_t gl_texsort = {"gl_texsort", "1"};
 
 cvar_t gl_finish = {"gl_finish", "0"};
 cvar_t gl_clear = {"gl_clear", "0"};

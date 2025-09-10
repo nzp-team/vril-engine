@@ -91,7 +91,6 @@ cvar_t	scr_fov = {"fov","90"};	// 10 - 170
 cvar_t 	scr_fov_viewmodel = {"r_viewmodel_fov","70"};
 cvar_t	scr_loadscreen = {"scr_loadscreen","1"};
 static cvar_t scr_conspeed = {"scr_conspeed", "300"};
-static cvar_t show_fps = {"show_fps", "0"}; /* set for running times */
 #ifdef GLQUAKE
 static cvar_t gl_triplebuffer = {"gl_triplebuffer", "0", true};
 #else
@@ -100,7 +99,8 @@ static vrect_t *pconupdate;
 
 cvar_t 	cl_crosshair_debug = {"cl_crosshair_debug", "0", true};
 
-extern	cvar_t	crosshair;
+extern cvar_t crosshair;
+extern cvar_t show_fps;
 
 qboolean	scr_initialized;		// ready to draw
 
@@ -1896,7 +1896,6 @@ void SCR_Init(void) {
     Cvar_RegisterVariable(&scr_conspeed);
     Cvar_RegisterVariable(&scr_centertime);
     Cvar_RegisterVariable(&scr_printspeed);
-    Cvar_RegisterVariable(&show_fps);
     Cvar_RegisterVariable (&scr_loadscreen);
 #ifdef GLQUAKE
     Cvar_RegisterVariable(&gl_triplebuffer);

@@ -81,15 +81,13 @@ void InitKerningMap(void)
 Draw_Init
 ===============
 */
-void Draw_Init(void) {
-    
+void Draw_Init(void) 
+{
     GL_InitTextures();
 
     char_texture = Image_LoadImage ("gfx/charset", IMAGE_TGA, 0, true, false);
 	if (char_texture < 0)// did not find a matching TGA...
 		Sys_Error ("Could not load charset, make sure you have every folder and file installed properly\nDouble check that all of your files are in their correct places\nAnd that you have installed the game properly.\n");
-
-    GL_Bind(char_texture);
 
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -98,6 +96,7 @@ void Draw_Init(void) {
 	// get the other pics we need
 	//
 	sniper_scope = Image_LoadImage ("gfx/hud/scope", IMAGE_TGA, 0, true, false);
+
 
 	Clear_LoadingFill ();
 

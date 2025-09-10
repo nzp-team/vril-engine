@@ -89,9 +89,6 @@ typedef struct {
     vid_menu_cursor_t cursor;
 } vid_menustate_t;
 
-#define VID_MODE_NONE (-1)
-#define VID_MODE_WINDOWED 0
-
 void VID_MenuInitState(const qvidmode_t *mode);
 void VID_MenuKey(int keynum);
 qboolean VID_SetMode(const qvidmode_t *mode, const byte *palette);

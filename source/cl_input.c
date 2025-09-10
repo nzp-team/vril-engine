@@ -331,6 +331,8 @@ void CL_AdjustAngles (void)
 	cl_sensitivity = in_sensitivity.value;
 #elif __3DS__
 	cl_sensitivity = sensitivity.value;
+#elif __NX__
+	cl_sensitivity = sensitivity.value;
 #else
 	cl_sensitivity = 1.0f;
 #endif

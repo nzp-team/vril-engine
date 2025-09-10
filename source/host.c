@@ -900,33 +900,16 @@ void Host_Init (quakeparms_t *parms)
 			Sys_Error ("Couldn't load gfx/colormap.lmp");
 
 		VID_Init (host_basepal);
-
-		Con_Printf ("Draw_Init\n");
 		Draw_Init ();
-
-		Con_Printf ("SCR_Init\n");
 		SCR_Init ();
-
-		Con_Printf ("R_Init\n");
 		R_Init ();
-
-		Con_Printf ("S_Init\n");
 		S_Init ();
-
-		Con_Printf ("CDAudio_Init\n");
 		CDAudio_Init ();
-
-		Con_Printf ("HUD_Init\n");
 		HUD_Init ();
-
-		Con_Printf ("CL_Init\n");
 		CL_Init ();
-
-		Con_Printf ("IN_Init\n");
 		IN_Init ();
 	}
 
-	Con_Printf ("Preload\n");
 	Preload();
 	Cbuf_InsertText ("exec nzp.rc\n");
 

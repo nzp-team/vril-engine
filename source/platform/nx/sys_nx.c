@@ -461,22 +461,8 @@ int Q_main(int argc, char **argv) {
     if (COM_CheckParm("-noconinput")) noconinput = true;
     if (COM_CheckParm("-nostdout")) nostdout = true;
 
-    // Make stdin non-blocking
-    // FIXME - check both return values
-    if (!nostdout)
-#ifdef NQ_HACK
-        printf("Quake -- TyrQuake Version %s\n", stringify(TYR_VERSION));
-#endif
-#ifdef QW_HACK
-        printf("QuakeWorld -- TyrQuake Version %s\n", stringify(TYR_VERSION));
-#endif
-
     Sys_InitSDL();
-
     Sys_Init();
-
-    //printf("userAppInit initialiazing\n");
-    //userAppInit();
 
     Host_Init(&parms);
     

@@ -170,13 +170,13 @@ char  user_levels[256][MAX_QPATH];
 void M_Load_Menu_Pics ()
 {
 	menu_bk 	= Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
-	menu_ndu 	= Image_LoadImage("gfx/menu/nacht_der_untoten", IMAGE_PNG, 0, false, false);
+	menu_ndu 	= Image_LoadImage("gfx/menu/nacht_der_untoten", IMAGE_TGA, 0, false, false);
 	//menu_kn 	= Draw_CachePic("gfx/menu/kino_der_toten");
-	menu_wh 	= Image_LoadImage("gfx/menu/nzp_warehouse", IMAGE_PNG, 0, false, false);
-	menu_wh2 	= Image_LoadImage("gfx/menu/nzp_warehouse2", IMAGE_PNG, 0, false, false);
+	menu_wh 	= Image_LoadImage("gfx/menu/nzp_warehouse", IMAGE_TGA, 0, false, false);
+	menu_wh2 	= Image_LoadImage("gfx/menu/nzp_warehouse2", IMAGE_TGA, 0, false, false);
 	//menu_wn 	= Draw_CachePic("gfx/menu/wahnsinn");
-	menu_ch 	= Image_LoadImage("gfx/menu/christmas_special", IMAGE_PNG, 0, false, false);
-	menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_PNG, 0, false, false);
+	menu_ch 	= Image_LoadImage("gfx/menu/christmas_special", IMAGE_TGA, 0, false, false);
+	menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_TGA, 0, false, false);
 
 	// Precache all menu pics 
 	for (int i = 0; i < 15; i++) {
@@ -203,7 +203,7 @@ static void M_Start_Menu_Draw ()
 {
 	// Background
 	//menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
-	Draw_StretchPic(0, 0, menu_bk, 400, 240);
+	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
@@ -215,7 +215,7 @@ void M_Start_Key (int key)
 {
 	switch (key)
 	{
-		case K_AUX1:
+		case K_ENTER:
 			S_LocalSound ("sounds/menu/enter.wav");
 			//Cbuf_AddText("cd playstring tensioned_by_the_damned 1\n");
 			Cbuf_AddText("togglemenu\n");
@@ -492,10 +492,10 @@ void M_Credits_Draw (void)
 {
    	// Background
 	//menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
-	Draw_StretchPic(0, 0, menu_bk, 400, 240);
+	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 400, 240, 0, 0, 0, 102);
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
 
 	// Header
 	Draw_ColoredString(5, 5, "CREDITS", 255, 255, 255, 255, 2);
@@ -691,10 +691,10 @@ void M_SinglePlayer_Draw (void)
 {
 	// Background
 	//menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
-	Draw_StretchPic(0, 0, menu_bk, 400, 240);
+	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 400, 240, 0, 0, 0, 102);
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
 
 	// Header
 	Draw_ColoredString(5, 5, "SOLO", 255, 255, 255, 255, 2);
@@ -744,7 +744,7 @@ void M_SinglePlayer_Draw (void)
 	// Map description & pic
 	switch(m_singleplayer_cursor) {
 		case 0:
-			menu_ndu = Image_LoadImage("gfx/menu/nacht_der_untoten", IMAGE_PNG, 0, false, false);
+			menu_ndu = Image_LoadImage("gfx/menu/nacht_der_untoten", IMAGE_TGA, 0, false, false);
 			Draw_StretchPic(185, 40, menu_ndu, 175, 100);
 			Draw_ColoredString(180, 148, "Desolate bunker located on a Ge-", 255, 255, 255, 255, 1);
 			Draw_ColoredString(180, 158, "rman airfield, stranded after a", 255, 255, 255, 255, 1);
@@ -756,7 +756,7 @@ void M_SinglePlayer_Draw (void)
 			Draw_ColoredString(180, 218, "to the overwhelming onslaught?", 255, 255, 255, 255, 1);
 			break;
 		case 1:
-			menu_wh2 = Image_LoadImage("gfx/menu/nzp_warehouse2", IMAGE_PNG, 0, false, false);
+			menu_wh2 = Image_LoadImage("gfx/menu/nzp_warehouse2", IMAGE_TGA, 0, false, false);
 			Draw_StretchPic(185, 40, menu_wh2, 175, 100);
 			Draw_ColoredString(180, 148, "Four nameless marines find them-", 255, 255, 255, 255, 1);
 			Draw_ColoredString(180, 158, "selves at a forsaken warehouse,", 255, 255, 255, 255, 1);
@@ -766,21 +766,21 @@ void M_SinglePlayer_Draw (void)
 			Draw_ColoredString(180, 198, "what you find..", 255, 255, 255, 255, 1);
 			break;
 		case 2:
-			menu_wh = Image_LoadImage("gfx/menu/nzp_warehouse", IMAGE_PNG, 0, false, false);
+			menu_wh = Image_LoadImage("gfx/menu/nzp_warehouse", IMAGE_TGA, 0, false, false);
 			Draw_StretchPic(185, 40, menu_wh, 175, 100);
 			Draw_ColoredString(180, 148, "Old Warehouse full of Zombies!", 255, 255, 255, 255, 1);
 			Draw_ColoredString(180, 158, "Fight your way to the Power", 255, 255, 255, 255, 1);
 			Draw_ColoredString(180, 168, "Switch through the Hordes!", 255, 255, 255, 255, 1);
 			break;
 		case 3:
-			menu_ch = Image_LoadImage("gfx/menu/christmas_special", IMAGE_PNG, 0, false, false);
+			menu_ch = Image_LoadImage("gfx/menu/christmas_special", IMAGE_TGA, 0, false, false);
 			Draw_StretchPic(185, 40, menu_ch, 175, 100);
 			Draw_ColoredString(180, 148, "No Santa this year. Though we're", 255, 255, 255, 255, 1);
 			Draw_ColoredString(180, 158, "sure you will get presents from", 255, 255, 255, 255, 1);
 			Draw_ColoredString(180, 168, "the undead! Will you accept them?", 255, 255, 255, 255, 1);
 			break;
 		case 4:
-			menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_PNG, 0, false, false);
+			menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_TGA, 0, false, false);
 			Draw_StretchPic(185, 40, menu_custom, 175, 100);
 			Draw_ColoredString(180, 148, "Custom Maps made by Community", 255, 255, 255, 255, 1);
 			Draw_ColoredString(180, 158, "Members on GitHub and on the", 255, 255, 255, 255, 1);
@@ -1016,10 +1016,10 @@ void M_Menu_CustomMaps_Draw (void)
 {
 	// Background
 	//menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
-	Draw_StretchPic(0, 0, menu_bk, 400, 240);
+	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 400, 240, 0, 0, 0, 102);
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
 
 	// Header
 	Draw_ColoredString(5, 5, "CUSTOM MAPS", 255, 255, 255, 255, 2);

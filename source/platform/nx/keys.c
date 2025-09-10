@@ -55,17 +55,6 @@ typedef struct
 
 keyname_t keynames[] =
 {
-	#ifdef __3DS__
-	{"TAB", K_TAB},
-	{"START", K_ESCAPE},
-	{"SELECT", K_SELECT},
-	{"SPACE", K_SPACE},
-	{"BACKSPACE", K_BACKSPACE},
-	{"PADUP", K_UPARROW},
-	{"PADDOWN", K_DOWNARROW},
-	{"PADLEFT", K_LEFTARROW},
-	{"PADRIGHT", K_RIGHTARROW},
-	#else
 	{"TAB", K_TAB},
 	{"ENTER", K_ENTER},
 	{"ESCAPE", K_ESCAPE},
@@ -75,7 +64,6 @@ keyname_t keynames[] =
 	{"DOWNARROW", K_DOWNARROW},
 	{"LEFTARROW", K_LEFTARROW},
 	{"RIGHTARROW", K_RIGHTARROW},
-	#endif
 
 	{"ALT", K_ALT},
 	{"CTRL", K_CTRL},
@@ -110,7 +98,6 @@ keyname_t keynames[] =
 	{"JOY3", K_JOY3},
 	{"JOY4", K_JOY4},
 
-	#ifdef __3DS__
 	{"ABUTTON", K_AUX1},
 	{"BBUTTON", K_AUX2},
 	{"XBUTTON", K_AUX3},
@@ -143,40 +130,6 @@ keyname_t keynames[] =
 	{"AUX30", K_AUX30},
 	{"AUX31", K_AUX31},
 	{"AUX32", K_AUX32},
-	#else
-	{"AUX1", K_AUX1},
-	{"AUX2", K_AUX2},
-	{"AUX3", K_AUX3},
-	{"AUX4", K_AUX4},
-	{"AUX5", K_AUX5},
-	{"AUX6", K_AUX6},
-	{"AUX7", K_AUX7},
-	{"AUX8", K_AUX8},
-	{"AUX9", K_AUX9},
-	{"AUX10", K_AUX10},
-	{"AUX11", K_AUX11},
-	{"AUX12", K_AUX12},
-	{"AUX13", K_AUX13},
-	{"AUX14", K_AUX14},
-	{"AUX15", K_AUX15},
-	{"AUX16", K_AUX16},
-	{"AUX17", K_AUX17},
-	{"AUX18", K_AUX18},
-	{"AUX19", K_AUX19},
-	{"AUX20", K_AUX20},
-	{"AUX21", K_AUX21},
-	{"AUX22", K_AUX22},
-	{"AUX23", K_AUX23},
-	{"AUX24", K_AUX24},
-	{"AUX25", K_AUX25},
-	{"AUX26", K_AUX26},
-	{"AUX27", K_AUX27},
-	{"AUX28", K_AUX28},
-	{"AUX29", K_AUX29},
-	{"AUX30", K_AUX30},
-	{"AUX31", K_AUX31},
-	{"AUX32", K_AUX32},
-	#endif
 
 	{"PAUSE", K_PAUSE},
 
@@ -738,8 +691,6 @@ void Key_Init (void)
 	Cmd_AddCommand ("binddt",Key_Binddt_f);
 	Cmd_AddCommand ("unbind",Key_Unbind_f);
 	Cmd_AddCommand ("unbindall",Key_Unbindall_f);
-
-
 }
 
 /*
