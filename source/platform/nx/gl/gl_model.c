@@ -1155,11 +1155,11 @@ Mod_LoadMarksurfaces
 */
 void Mod_LoadMarksurfaces (lump_t *l)
 {	
-	int		i, j, count;
-	short		*in;
-	msurface_t **out;
+	int				i, j, count;
+	const uint16_t	*in;
+	msurface_t 		**out;
 	
-	in = (void *)(mod_base + l->fileofs);
+	in = (uint16_t *)((byte *)(mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
 		Sys_Error ("funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
