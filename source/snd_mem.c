@@ -102,7 +102,7 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 	int		len;
 	float	stepscale;
 	sfxcache_t	*sc;
-	byte	stackbuf[1*1024];		// avoid dirtying the cache heap
+	byte	stackbuf[1024];		// avoid dirtying the cache heap
 
 // see if still in memory
 	if ((sc = Cache_Check (&s->cache)))
@@ -115,7 +115,7 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 
 //	Con_Printf ("loading %s\n",namebuffer);
 
-	if (!(data = COM_LoadStackFile(namebuffer, stackbuf, sizeof(stackbuf))))
+	if (!(data = COM_LoadStackFile(namebuffer, stackbuf, sizeof(stackbuf), NULL)))
 	{
 		Con_Printf ("Couldn't load %s\n", namebuffer);
 		return NULL;
@@ -236,7 +236,7 @@ void DumpChunks(void)
 #endif // PSP_VFPU
 		data_p += 4;
 		iff_chunk_len = GetLittleLong();
-		Con_Printf ("0x%x : %s (%d)\n", (int)(data_p - 4), str, iff_chunk_len);
+		Con_Printf ("0x%x : %s (%d)\n", (intptr_t)(data_p - 4), str, iff_chunk_len);
 		data_p += (iff_chunk_len + 1) & ~1;
 	} while (data_p < iff_end);
 }

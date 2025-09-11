@@ -1506,17 +1506,17 @@ static void *COM_LoadFile(char *path, int usehunk, size_t *size) {
     return buf;
 }
 
-void *COM_LoadHunkFile(char *path) { return COM_LoadFile(path, 1); }
+void *COM_LoadHunkFile(char *path) { return COM_LoadFile(path, 1, NULL); }
 
-void *COM_LoadTempFile(char *path) { return COM_LoadFile(path, 2); }
+void *COM_LoadTempFile(char *path) { return COM_LoadFile(path, 2, NULL); }
 
 void COM_LoadCacheFile(char *path, struct cache_user_s *cu) {
     loadcache = cu;
-    COM_LoadFile(path, 3);
+    COM_LoadFile(path, 3, NULL);
 }
 
 // uses temp hunk if larger than bufsize
-byte *COM_LoadStackFile (char *path, void *buffer, int bufsize, size_t *size)
+void *COM_LoadStackFile (char *path, void *buffer, int bufsize, size_t *size)
 {
 	byte    *buf;
 	

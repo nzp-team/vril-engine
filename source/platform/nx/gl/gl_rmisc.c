@@ -207,7 +207,7 @@ void R_SetVrect(const vrect_t *pvrectin, vrect_t *pvrect, int lineadj) {
 #ifdef QW_HACK
     full = (!cl_sbar.value && scr_viewsize.value >= 100.0f);
 #endif
-    size = min(scr_viewsize.value, 100.0f);
+    size = MIN(scr_viewsize.value, 100.0f);
 
     /* Hide the status bar during intermission */
     if (cl.intermission) {

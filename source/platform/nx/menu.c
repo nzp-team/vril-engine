@@ -930,7 +930,7 @@ void Map_Finder(void)
 	    {
 			char ntype[32];
 
-			COM_StripExtension(dp->d_name, ntype);
+			COM_StripExtension(dp->d_name, ntype, sizeof(ntype));
 			custom_maps[user_maps_num].occupied = true;
 			custom_maps[user_maps_num].map_name = malloc(sizeof(char)*32);
 			sprintf(custom_maps[user_maps_num].map_name, "%s", ntype);

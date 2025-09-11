@@ -264,11 +264,11 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 //
 // load the file
 //
-	buf = COM_LoadStackFile (mod->name, stackbuf, &size);
+	buf = COM_LoadStackFile (mod->name, stackbuf, sizeof(stackbuf), &size);
 	if (!buf)
 	{
 		// Reload with another .mdl
-		buf = COM_LoadStackFile("models/missing_model.mdl", stackbuf, &size);
+		buf = COM_LoadStackFile("models/missing_model.mdl", stackbuf, sizeof(stackbuf), &size);
 		if (buf)
 		{
 			Con_Printf ("Missing model %s substituted\n", mod->name);
@@ -279,7 +279,7 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 //
 // allocate a new model
 //
-	COM_FileBase (mod->name, loadname);
+	COM_FileBase (mod->name, loadname, sizeof(loadname));
 	
 	loadmodel = mod;
 
@@ -535,7 +535,7 @@ void Mod_LoadLighting (lump_t *l)
 
 	// LordHavoc: check for a .lit file
 	strcpy(litfilename, loadmodel->name);
-	COM_StripExtension(litfilename, litfilename);
+	COM_StripExtension(litfilename, litfilename, sizeof(litfilename));
 	strcat(litfilename, ".lit");
 	data = (byte*) COM_LoadHunkFile (litfilename);
 	if (data)
@@ -1160,7 +1160,7 @@ void Mod_LoadMarksurfaces (lump_t *l)
 	const uint16_t	*in;
 	msurface_t 		**out;
 	
-	in = (uint16_t *)((byte *)(mod_base + l->fileofs);
+	in = (uint16_t *)(byte *)(mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
 		Sys_Error ("funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
@@ -1702,7 +1702,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 	{
 		if (pskintype->type == ALIAS_SKIN_SINGLE) {
 			Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
-			COM_StripExtension(loadmodel->name, model);
+			COM_StripExtension(loadmodel->name, model, sizeof(model));
 
 			// HACK HACK HACK
 			snprintf(model2, 128, "%s.mdl_%i", model, i);
@@ -1958,7 +1958,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	// HACK HACK HACK
 	snprintf(name, 128, "%s.spr_%i", loadmodel->name, framenum);
 
-	COM_StripExtension(loadmodel->name, sprite);
+	COM_StripExtension(loadmodel->name, sprite, sizeof(sprite));
 	snprintf(sprite2, 128, "%s.spr_%i", sprite, framenum);
 	pspriteframe->gl_texturenum = Image_LoadImage(sprite2, IMAGE_TGA, 0, false, false);
 

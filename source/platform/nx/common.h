@@ -109,7 +109,7 @@ void InsertLinkAfter(link_t *l, link_t *after);
 // (type *)STRUCT_FROM_LINK(link_t *link, type, member)
 // ent = STRUCT_FROM_LINK(link,entity_t,order)
 // FIXME: remove this mess!
-#define	STRUCT_FROM_LINK(l,t,m) ((t *)((byte *)l - (int)&(((t *)0)->m)))
+#define	STRUCT_FROM_LINK(l,t,m) ((t *)((byte *)l - (intptr_t)&(((t *)0)->m)))
 
 //============================================================================
 
@@ -228,7 +228,7 @@ void COM_InitArgv(int argc, char **argv);
 char *COM_SkipPath(char *pathname);
 void COM_StripExtension(char *filename, char *out, size_t buflen);
 void COM_FileBase(char *in, char *out, size_t buflen);
-void COM_DefaultExtension (char *path, char *extension, size_t buflen);
+void COM_DefaultExtension (char *path, char *extension);
 char *COM_FileExtension(char *in);
 
 char *CopyString (char *in);
@@ -246,7 +246,7 @@ extern char com_gamedir[MAX_OSPATH];
 
 void COM_WriteFile(char *filename, const void *data, int len);
 int COM_FOpenFile(char *filename, FILE **file);
-byte *COM_LoadStackFile (char *path, void *buffer, int bufsize, size_t *size);
+void *COM_LoadStackFile (char *path, void *buffer, int bufsize, size_t *size);
 void *COM_LoadTempFile(char *path);
 void *COM_LoadHunkFile(char *path);
 void COM_LoadCacheFile(char *path, struct cache_user_s *cu);
