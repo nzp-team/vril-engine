@@ -919,7 +919,7 @@ char *COM_SkipPath(char *pathname) {
 COM_StripExtension
 ============
 */
-void COM_StripExtension(char *filename, char *out) {
+void COM_StripExtension(char *filename, char *out, size_t buflen) {
     char *start, *pos;
     size_t copylen;
 
@@ -930,7 +930,7 @@ void COM_StripExtension(char *filename, char *out) {
         return;
     }
 
-    copylen = (size_t)(pos - filename);
+    copylen = MIN((size_t)(pos - filename), buflen -1 );
     memcpy(out, filename, copylen);
     out[copylen] = 0;
 }
@@ -961,7 +961,7 @@ char *COM_FileExtension(char *in) {
 COM_FileBase
 ============
 */
-void COM_FileBase(char *in, char *out) {
+void COM_FileBase(char *in, char *out, size_t buflen) {
     const char *dot;
     int copylen;
 
@@ -973,7 +973,7 @@ void COM_FileBase(char *in, char *out) {
         in = "?model?";
         copylen = strlen(in);
     }
-    snprintf(out, sizeof(copylen), "%.*s", copylen, in);
+    snprintf(out, buflen, "%.*s", copylen, in);
 }
 
 /*
@@ -1463,7 +1463,7 @@ static cache_user_t *loadcache;
 static byte *loadbuf;
 static int loadsize;
 
-static void *COM_LoadFile(char *path, int usehunk) {
+static void *COM_LoadFile(char *path, int usehunk, size_t *size) {
     FILE *f;
     byte *buf;
     char base[32];
@@ -1475,8 +1475,10 @@ static void *COM_LoadFile(char *path, int usehunk) {
     len = com_filesize = COM_FOpenFile(path, &f);
     if (!f) return NULL;
 
+    if (size) *size = len;
+
     // extract the filename base name for hunk tag
-    COM_FileBase(path, base);
+    COM_FileBase(path, base, sizeof(base));
 
     if (usehunk == 1)
         buf = Hunk_AllocName(len + 1, base);
@@ -1514,13 +1516,13 @@ void COM_LoadCacheFile(char *path, struct cache_user_s *cu) {
 }
 
 // uses temp hunk if larger than bufsize
-byte *COM_LoadStackFile (char *path, void *buffer, int bufsize)
+byte *COM_LoadStackFile (char *path, void *buffer, int bufsize, size_t *size)
 {
 	byte    *buf;
 	
 	loadbuf = (byte *)buffer;
 	loadsize = bufsize;
-	buf = COM_LoadFile (path, 4);
+	buf = COM_LoadFile (path, 4, size);
 	
 	return buf;
 }

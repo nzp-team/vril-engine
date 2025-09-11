@@ -226,9 +226,9 @@ void COM_Init(char *path);
 void COM_InitArgv(int argc, char **argv);
 
 char *COM_SkipPath(char *pathname);
-void COM_StripExtension(char *filename, char *out);
-void COM_FileBase(char *in, char *out);
-void COM_DefaultExtension (char *path, char *extension);
+void COM_StripExtension(char *filename, char *out, size_t buflen);
+void COM_FileBase(char *in, char *out, size_t buflen);
+void COM_DefaultExtension (char *path, char *extension, size_t buflen);
 char *COM_FileExtension(char *in);
 
 char *CopyString (char *in);
@@ -246,7 +246,7 @@ extern char com_gamedir[MAX_OSPATH];
 
 void COM_WriteFile(char *filename, const void *data, int len);
 int COM_FOpenFile(char *filename, FILE **file);
-byte *COM_LoadStackFile (char *path, void *buffer, int bufsize);
+byte *COM_LoadStackFile (char *path, void *buffer, int bufsize, size_t *size);
 void *COM_LoadTempFile(char *path);
 void *COM_LoadHunkFile(char *path);
 void COM_LoadCacheFile(char *path, struct cache_user_s *cu);

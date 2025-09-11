@@ -31,7 +31,7 @@ model_t	*loadmodel;
 char	loadname[32];	// for hunk tags
 
 void Mod_LoadSpriteModel (model_t *mod, void *buffer);
-void Mod_LoadBrushModel (model_t *mod, void *buffer);
+void Mod_LoadBrushModel (model_t *mod, void *buffer, size_t size);
 void Mod_LoadAliasModel (model_t *mod, void *buffer);
 model_t *Mod_LoadModel (model_t *mod, qboolean crash);
 
@@ -239,6 +239,7 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 	void	*d;
 	unsigned *buf;
 	byte	stackbuf[1024];		// avoid dirtying the cache heap
+	size_t 	size;
 
 	if (!mod->needload)
 	{
@@ -263,11 +264,11 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 //
 // load the file
 //
-	buf = (unsigned *)COM_LoadStackFile (mod->name, stackbuf, sizeof(stackbuf));
+	buf = COM_LoadStackFile (mod->name, stackbuf, &size);
 	if (!buf)
 	{
 		// Reload with another .mdl
-		buf = (unsigned *)COM_LoadStackFile("models/missing_model.mdl", stackbuf, sizeof(stackbuf));
+		buf = COM_LoadStackFile("models/missing_model.mdl", stackbuf, &size);
 		if (buf)
 		{
 			Con_Printf ("Missing model %s substituted\n", mod->name);
@@ -300,7 +301,7 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 		break;
 	
 	default:
-		Mod_LoadBrushModel (mod, buf);
+		Mod_LoadBrushModel (mod, buf, size);
 		break;
 	}
 
@@ -1263,7 +1264,7 @@ float RadiusFromBounds (vec3_t mins, vec3_t maxs)
 Mod_LoadBrushModel
 =================
 */
-void Mod_LoadBrushModel (model_t *mod, void *buffer)
+void Mod_LoadBrushModel (model_t *mod, void *buffer, size_t size)
 {
 	int			i, j;
 	dheader_t	*header;
@@ -1271,7 +1272,7 @@ void Mod_LoadBrushModel (model_t *mod, void *buffer)
 	
 	loadmodel->type = mod_brush;
 	
-	header = (dheader_t *)buffer;
+	header = buffer;
 
 	i = LittleLong (header->version);
 	mod->bspversion = i;
