@@ -3068,14 +3068,14 @@ void PF_GetSoundLen (void)
     char	namebuffer[256];
 	byte	*data;
 	wavinfo_t	info;
-	byte	stackbuf[1*1024];		// avoid dirtying the cache heap
+	byte	stackbuf[1024];		// avoid dirtying the cache heap
 
 //Con_Printf ("S_LoadSound: %x\n", (int)stackbuf);
 // load it in
     Q_strcpy(namebuffer, "");
     Q_strcat(namebuffer, name);
 
-	data = COM_LoadStackFile(namebuffer, stackbuf, sizeof(stackbuf));
+	data = COM_LoadStackFile(namebuffer, stackbuf, sizeof(stackbuf), NULL);
 
 	if (!data)
 	{
