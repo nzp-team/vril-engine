@@ -1184,10 +1184,11 @@ Mod_LoadSurfedges
 */
 void Mod_LoadSurfedges (lump_t *l)
 {	
-	int		i, count;
-	int		*in, *out;
+	int				i, count;
+	const int32_t 	*in;
+	int32_t 	 	*out;
 	
-	in = (int32_t *)(void *)(mod_base + l->fileofs);
+	in = (int32_t *)(byte *)(mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
 		Sys_Error ("funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);

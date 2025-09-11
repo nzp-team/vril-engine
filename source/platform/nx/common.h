@@ -44,28 +44,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define stringify__(x) #x
 #define stringify(x) stringify__(x)
 
-#ifdef QW_HACK
-#define MAX_INFO_STRING 196
-#define MAX_SERVERINFO_STRING 512
-#define MAX_LOCALINFO_STRING 32768
-#endif
-
-#ifndef min
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#endif
-#ifndef max
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#endif
-
 #define bound(a, b, c) ((a) >= (c) ? (a) : (b) < (a) ? (a) : (b) > (c) ? (c) : (b))
 
 typedef unsigned char byte;
 
-// KJB Undefine true and false defined in SciTech's DEBUG.H header
-#undef true
-#undef false
-
-typedef enum { false, true } qboolean;
+typedef uint32_t qboolean;
 
 #ifndef offsetof
 #define offsetof(type, member) __builtin_offsetof(type, member)
