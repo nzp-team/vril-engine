@@ -226,9 +226,7 @@ void SV_SendServerinfo (client_t *client)
 	else
 		MSG_WriteByte (&client->message, GAME_COOP);
 
-	sprintf (message, "%s", pr_strings+sv.edicts->v.message);
-
-	MSG_WriteString (&client->message,message);
+	MSG_WriteString (&client->message, PR_GetString(sv.edicts->v.message));
 
 	for (s = sv.model_precache+1 ; *s ; s++)
 		MSG_WriteString (&client->message, *s);
@@ -488,7 +486,7 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg, qboolean nomap)
 		if (ent != clent)	// clent is ALLWAYS sent
 		{
 // ignore ents without visible models
-			if (!ent->v.modelindex || !pr_strings[ent->v.model])
+			if (!ent->v.modelindex || !PR_GetString(ent->v.model)[0])
 				continue;
 
 			for (i=0 ; i < ent->num_leafs ; i++)
@@ -783,7 +781,7 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	if (bits & SU_WEAPONSKIN)
 		MSG_WriteByte (msg, ent->v.weaponskin);
 
-	MSG_WriteShort (msg, SV_ModelIndex(pr_strings+ent->v.weaponmodel));
+	MSG_WriteShort (msg, SV_ModelIndex(PR_GetString(ent->v.weaponmodel)));
 
 	if (bits & SU_GRENADES)
 		MSG_WriteLong (msg, ent->v.grenades);
@@ -801,7 +799,7 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	MSG_WriteByte (msg, ent->v.x2_icon);
 	MSG_WriteByte (msg, ent->v.insta_icon);
 	MSG_WriteByte (msg, ent->v.progress_bar);
-	MSG_WriteShort (msg, SV_ModelIndex(pr_strings+ent->v.weapon2model));
+	MSG_WriteByte (msg, SV_ModelIndex(PR_GetString(ent->v.weapon2model)));
 	MSG_WriteByte (msg, ent->v.weapon2skin);
 	MSG_WriteByte (msg, ent->v.weapon2frame);
 	MSG_WriteShort (msg, ent->v.currentmag2);
@@ -1073,8 +1071,7 @@ void SV_CreateBaseline (void)
 		else
 		{
 			svent->baseline.colormap = 0;
-			svent->baseline.modelindex =
-				SV_ModelIndex(pr_strings + svent->v.model);
+			svent->baseline.modelindex = SV_ModelIndex(PR_GetString(svent->v.model));
 		}
 
 	//
@@ -1163,6 +1160,7 @@ void SV_SpawnServer (char *server)
 {
 	edict_t		*ent;
 	int			i;
+	static char	dummy[8] = { 0,0,0,0,0,0,0,0 };
 
 	// let's not have any servers with no name
 	if (hostname.string[0] == 0)
@@ -1252,9 +1250,9 @@ void SV_SpawnServer (char *server)
 //
 	SV_ClearWorld ();
 
-	sv.sound_precache[0] = pr_strings;
+	sv.sound_precache[0] = dummy;
 
-	sv.model_precache[0] = pr_strings;
+	sv.model_precache[0] = dummy;
 	sv.model_precache[1] = sv.modelname;
 	for (i=1 ; i<sv.worldmodel->numsubmodels ; i++)
 	{
@@ -1268,7 +1266,7 @@ void SV_SpawnServer (char *server)
 	ent = EDICT_NUM(0);
 	memset (&ent->v, 0, progs->entityfields * 4);
 	ent->free = false;
-	ent->v.model = sv.worldmodel->name - pr_strings;
+	ent->v.model = PR_SetEngineString(sv.worldmodel->name);
 	ent->v.modelindex = 1;		// world model
 	ent->v.solid = SOLID_BSP;
 	ent->v.movetype = MOVETYPE_PUSH;
@@ -1278,7 +1276,7 @@ void SV_SpawnServer (char *server)
 	else
 		pr_global_struct->deathmatch = deathmatch.value;
 
-	pr_global_struct->mapname = sv.name - pr_strings;
+	pr_global_struct->mapname = PR_SetEngineString(sv.name);
 
 // serverflags are for cross level information (sigils)
 	pr_global_struct->serverflags = svs.serverflags;
