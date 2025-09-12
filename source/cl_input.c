@@ -480,7 +480,7 @@ int EN_Find(int num,char *string)
 		ed = EDICT_NUM(e);
 		if(ed->free)
 			continue;
-		if(!strcmp(pr_strings + ed->v.classname,string))
+		if(!strcmp(PR_GetString(ed->v.classname),string))
 		{
 			return e;
 		}

@@ -1209,7 +1209,7 @@ void PF_strzone (void)
 	p = Z_Malloc(strlen(m) + 1);
 	strcpy(p, m);
 
-	G_INT(OFS_RETURN) = p - pr_strings;
+	G_INT(OFS_RETURN) = PR_SetEngineString(p);
 }
 
 /*
@@ -1263,7 +1263,7 @@ void PF_strtrim (void)
 	strncpy(pr_string_temp, str, length);
 	pr_string_temp[length] = 0;
 
-	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
+	G_INT(OFS_RETURN) = PR_SetEngineString(pr_string_temp);
 };
 
 /*
@@ -1322,7 +1322,7 @@ void PF_strcat (void)
 	}
 // 2001-10-25 Enhanced temp string handling by Maddes  end
 
-	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
+	G_INT(OFS_RETURN) = PR_SetEngineString(pr_string_temp);
 }
 
 /*
@@ -1361,7 +1361,7 @@ void PF_substring (void)
 	strncpy(pr_string_temp, p, length);
 	pr_string_temp[length]=0;
 
-	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
+	G_INT(OFS_RETURN) = PR_SetEngineString(pr_string_temp);
 }
 
 /*
@@ -1411,7 +1411,7 @@ void PF_strtolower(void)
 		    pr_string_temp[i] = pr_string_temp[i] - 'a'-'A'; 
 	}
 
-	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
+	G_INT(OFS_RETURN) = PR_SetEngineString(pr_string_temp);
 }
 
 /*
@@ -2561,7 +2561,7 @@ void PF_fgets (void)
 	};
 	pr_string_temp[i] = 0;
 
-	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
+	G_INT(OFS_RETURN) = PR_SetEngineString(pr_string_temp);
 }
 
 /*
@@ -3714,7 +3714,7 @@ void PF_ArgV  (void)
 {
 	char tempc[256];
 	strcpy(tempc, Cmd_Argv(G_FLOAT(OFS_PARM0)));
-	G_INT(OFS_RETURN) = tempc - pr_strings;
+	G_INT(OFS_RETURN) = PR_SetEngineString(tempc);
 }
 
 

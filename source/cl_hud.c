@@ -1710,7 +1710,7 @@ void HUD_Weapon (void)
 	x_value = vid.width;
 	y_value = vid.height - (40 * hud_scale_factor);
 
-	strcpy(str, pr_strings+sv_player->v.Weapon_Name);
+	strcpy(str, PR_GetString(sv_player->v.Weapon_Name));
 
 	x_value = (vid.width - (55 * hud_scale_factor)) - getTextWidth(str, hud_scale_factor);
 	Draw_ColoredString (x_value, y_value, str, 255, 255, 255, 255, hud_scale_factor);

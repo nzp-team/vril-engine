@@ -623,7 +623,7 @@ while (1)
 			if ( (i >= pr_numbuiltins)
 			||   (pr_builtins[i] == pr_ebfs_builtins[0].function) )
 			{
-				funcname = pr_strings + newf->s_name;
+				funcname = PR_GetString(newf->s_name);
 				if (pr_builtin_remap.value)
 				{
 					remaphint = NULL;
