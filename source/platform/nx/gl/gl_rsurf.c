@@ -164,12 +164,12 @@ Combine and scale multiple lightmaps into the 8.8 format in blocklights
 */
 void R_BuildLightMap (msurface_t *surf, byte *dest, int stride)
 {
-	int			smax, tmax;
-	int			t;
+	int32_t		smax, tmax;
+	int32_t		t;
 	int			i, j, size;
-	byte		*lightmap;
+	uint8_t		*lightmap;
 	unsigned	scale;
-	int			maps;
+	int32_t			maps;
 	unsigned	*bl;
 
 	surf->cached_dlight = (surf->dlightframe == r_framecount);
@@ -458,10 +458,10 @@ R_RenderBrushPoly
 void R_RenderBrushPoly (msurface_t *fa)
 {
 	texture_t	*t;
-	byte		*base;
-	int			maps;
+	uint8_t		*base;
+	int32_t		maps;
 	glRect_t    *theRect;
-	int smax, tmax;
+	int32_t		smax, tmax;
 
 	c_brush_polys++;
 
@@ -637,7 +637,7 @@ DrawTextureChains
 */
 void DrawTextureChains (void)
 {
-	int		i;
+	int			i;
 	msurface_t	*s;
 	texture_t	*t;
 
@@ -681,9 +681,9 @@ R_DrawBrushModel
 */
 void R_DrawBrushModel (entity_t *e)
 {
-	int			k;
+	int32_t		k;
 	vec3_t		mins, maxs;
-	int			i;
+	int32_t		i;
 	msurface_t	*psurf;
 	float		dot;
 	mplane_t	*pplane;
@@ -836,7 +836,7 @@ R_RecursiveWorldNode
 */
 void R_RecursiveWorldNode (mnode_t *node)
 {
-	int			c, side;
+	int32_t		c, side;
 	mplane_t	*plane;
 	msurface_t	*surf, **mark;
 	mleaf_t		*pleaf;
@@ -1047,10 +1047,10 @@ R_MarkLeaves
 */
 void R_MarkLeaves (void)
 {
-	byte	*vis;
+	uint8_t	*vis;
 	mnode_t	*node;
 	int		i;
-	byte	solid[4096];
+	uint8_t	solid[4096];
 
 	if (r_oldviewleaf == r_viewleaf && !r_novis.value)
 		return;
@@ -1102,9 +1102,9 @@ AllocBlock -- returns a texture number and the position inside it
 */
 int AllocBlock (int w, int h, int *x, int *y)
 {
-	int		i, j;
-	int		best, best2;
-	int		texnum;
+	int			i, j;
+	int32_t		best, best2;
+	int			texnum;
 
 	for (texnum=0 ; texnum<MAX_LIGHTMAPS ; texnum++)
 	{
@@ -1154,7 +1154,7 @@ BuildSurfaceDisplayList
 */
 void BuildSurfaceDisplayList (msurface_t *fa)
 {
-	int			i, lindex, lnumverts;
+	int32_t	i, lindex, lnumverts;
 	medge_t		*pedges, *r_pedge;
 	float		*vec;
 	float		s, t;
@@ -1266,8 +1266,8 @@ GL_CreateSurfaceLightmap
 */
 void GL_CreateSurfaceLightmap (msurface_t *surf)
 {
-	int		smax, tmax;
-	byte	*base;
+	int32_t	smax, tmax;
+	uint8_t		*base;
 
 	if (surf->flags & (SURF_DRAWSKY|SURF_DRAWTURB))
 		return;
