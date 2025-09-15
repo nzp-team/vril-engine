@@ -844,7 +844,8 @@ GL_Set2D
 Setup as if the screen was 320*200
 ================
 */
-void GL_Set2D(void) {
+void GL_Set2D(void) 
+{
     glViewport(glx, gly, glwidth, glheight);
 
     glMatrixMode(GL_PROJECTION);
@@ -857,8 +858,8 @@ void GL_Set2D(void) {
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glDisable(GL_BLEND);
-    glEnable(GL_ALPHA_TEST);
-    //      glDisable(GL_ALPHA_TEST);
+    //glEnable(GL_ALPHA_TEST);
+    //glDisable(GL_ALPHA_TEST);
 
     glColor4f(1, 1, 1, 1);
 }

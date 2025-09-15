@@ -24,9 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../../../nzportable_def.h"
 #include <switch.h>
 
-#define WARP_WIDTH 320
-#define WARP_HEIGHT 200
-
 int vid_modenum = VID_MODE_NONE;
 
 static cvar_t vid_mode = {"vid_mode", "0"};
@@ -45,11 +42,6 @@ void (*VID_SetGammaRamp)(unsigned short ramp[3][256]) = NULL;
 
 float gldepthmin, gldepthmax;
 qboolean gl_mtexable;
-cvar_t gl_ztrick = {"gl_ztrick", "0"};
-
-void VID_Update(vrect_t *rects) {}
-void D_BeginDirectRect(int x, int y, const byte *pbitmap, int width, int height) {}
-void D_EndDirectRect(int x, int y, int width, int height) {}
 
 /*
  * FIXME!!
@@ -70,7 +62,7 @@ static void setMesaConfig() {
 
     setenv("MESA_GL_VERSION_OVERRIDE", "3.2COMPAT", 1);
 
-//#ifdef GPUDEBUG
+#ifdef GPUDEBUG
     setenv("EGL_LOG_LEVEL", "debug", 1);
     setenv("MESA_VERBOSE", "all", 1);
     setenv("MESA_DEBUG", "1", 1);
@@ -78,7 +70,7 @@ static void setMesaConfig() {
     setenv("NV50_PROG_OPTIMIZE", "0", 1);
     setenv("NV50_PROG_DEBUG", "1", 1);
     setenv("NV50_PROG_CHIPSET", "0x120", 1);
-//#endif
+#endif
 }
 
 void Sys_InitSDL (void)
@@ -187,7 +179,6 @@ static void DeinitEGL(void) {
 
 static void VID_InitGL(void) {
     Cvar_RegisterVariable(&vid_mode);
-    Cvar_RegisterVariable(&gl_ztrick);
 
     // Must be first
     appletInitialize();
@@ -225,9 +216,15 @@ static void VID_InitGL(void) {
 
     gl_mtexable = false;
 
+    glClearDepth (1.0f);
+	glClearColor ((float)(16/255),(float)(32/255),(float)(64/255),1);
     glCullFace(GL_FRONT);
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.666);
+
+	glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+	glShadeModel (GL_FLAT);
 
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -236,16 +233,16 @@ static void VID_InitGL(void) {
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glClear(GL_COLOR_BUFFER_BIT);
 }
 
 qboolean VID_SetMode(const qvidmode_t *mode, const byte *palette) {
     vid.numpages = 1;
     vid.width = vid.conwidth = mode->width;
     vid.height = vid.conheight = mode->height;
-    vid.maxwarpwidth = WARP_WIDTH;
-    vid.maxwarpheight = WARP_HEIGHT;
+    vid.maxwarpwidth = vid.width;
+    vid.maxwarpheight = vid.height;
     vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0);
 
     vid.colormap = host_colormap;
@@ -258,7 +255,7 @@ qboolean VID_SetMode(const qvidmode_t *mode, const byte *palette) {
     Cvar_SetValue("vid_height", mode->height);
     Cvar_SetValue("vid_bpp", mode->bpp);
     Cvar_SetValue("vid_refreshrate", mode->refresh);
-
+    
     vid.recalc_refdef = 1;
 
     return true;
@@ -290,7 +287,6 @@ void VID_Init(unsigned char *palette) {
 
     VID_InitGL();
 
-
     VID_SetMode(setmode, palette);
     VID_SetPalette(palette);
 
@@ -304,7 +300,8 @@ void VID_Shutdown(void) {
 	DeinitEGL();
 }
 
-void GL_BeginRendering(int *x, int *y, int *width, int *height) {
+void GL_BeginRendering(int *x, int *y, int *width, int *height) 
+{
     *x = *y = 0;
     *width = vid.width;
     *height = vid.height;

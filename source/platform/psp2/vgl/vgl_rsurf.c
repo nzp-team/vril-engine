@@ -1084,7 +1084,7 @@ void R_DrawWorld (void)
 
 	R_BlendLightmaps();
 
-	DrawFullBrightTextures (cl.worldmodel->surfaces, cl.worldmodel->numsurfaces);
+	//DrawFullBrightTextures (cl.worldmodel->surfaces, cl.worldmodel->numsurfaces);
 }
 
 

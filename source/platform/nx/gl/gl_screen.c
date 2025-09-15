@@ -748,67 +748,6 @@ static void SCR_SizeDown_f(void) {
 ==============================================================================
 */
 
-/*
-==============
-WritePCXfile
-==============
-*/
-static void WritePCXfile(const char *filename, const byte *data, int width, int height,
-                         int rowbytes, const byte *palette, qboolean upload) {
-    int i, j, length;
-    pcx_t *pcx;
-    byte *pack;
-
-    pcx = Hunk_TempAlloc(width * height * 2 + 1000);
-    if (pcx == NULL) {
-        Con_Printf("SCR_ScreenShot_f: not enough memory\n");
-        return;
-    }
-
-    pcx->manufacturer = 0x0a;  // PCX id
-    pcx->version = 5;          // 256 color
-    pcx->encoding = 1;         // uncompressed
-    pcx->bits_per_pixel = 8;   // 256 color
-    pcx->xmin = 0;
-    pcx->ymin = 0;
-    pcx->xmax = LittleShort((short)(width - 1));
-    pcx->ymax = LittleShort((short)(height - 1));
-    pcx->hres = LittleShort((short)width);
-    pcx->vres = LittleShort((short)height);
-    memset(pcx->palette, 0, sizeof(pcx->palette));
-    pcx->color_planes = 1;  // chunky image
-    pcx->bytes_per_line = LittleShort((short)width);
-    pcx->palette_type = LittleShort(1);  // not a grey scale
-    memset(pcx->filler, 0, sizeof(pcx->filler));
-
-    // pack the image
-    pack = &pcx->data;
-
-    // The GL buffer addressing is bottom to top?
-    data += rowbytes * (height - 1);
-    for (i = 0; i < height; i++) {
-        for (j = 0; j < width; j++) {
-            if ((*data & 0xc0) != 0xc0) {
-                *pack++ = *data++;
-            } else {
-                *pack++ = 0xc1;
-                *pack++ = *data++;
-            }
-        }
-        data += rowbytes - width;
-        data -= rowbytes * 2;
-    }
-
-    // write the palette
-    *pack++ = 0x0c;  // palette ID byte
-    for (i = 0; i < 768; i++) *pack++ = *palette++;
-
-    // write output file
-    length = pack - (byte *)pcx;
-
-    COM_WriteFile(filename, pcx, length);
-}
-
 typedef struct _TargaHeader {
     unsigned char id_length, colormap_type, image_type;
     unsigned short colormap_index, colormap_length;

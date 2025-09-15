@@ -935,7 +935,7 @@ if (!strcmp(com_token, "light"))
 				strcmp (keyname, "Maxrange") &&
 				strcmp (keyname, "light_lev") &&
 				strcmp (keyname, "fog"))
-				Con_Printf ("'%s' is not a field\n", keyname);
+				Con_DPrintf ("'%s' is not a field\n", keyname);
 			continue;
 		}
 
