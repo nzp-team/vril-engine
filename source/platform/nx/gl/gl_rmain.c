@@ -95,7 +95,6 @@ cvar_t gl_polyblend = {"gl_polyblend", "1"};
 cvar_t gl_flashblend = {"gl_flashblend", "1"};
 cvar_t gl_playermip = {"gl_playermip", "0"};
 cvar_t gl_nocolors = {"gl_nocolors", "0"};
-cvar_t gl_zfix = {"gl_zfix", "0"};
 cvar_t gl_doubleeyes = {"gl_doubleeyes", "1"};
 
 cvar_t _gl_allowgammafallback = {"_gl_allowgammafallback", "1"};
@@ -1515,22 +1514,6 @@ static void R_Clear(void) {
         gldepthmin = 0;
         gldepthmax = 0.5;
         glDepthFunc(GL_LEQUAL);
-    } else if (gl_ztrick.value) {
-        static unsigned int trickframe = 0;
-
-        if (gl_clear.value)
-            glClear(GL_COLOR_BUFFER_BIT);
-
-        trickframe++;
-        if (trickframe & 1) {
-            gldepthmin = 0;
-            gldepthmax = 0.49999;
-            glDepthFunc(GL_LEQUAL);
-        } else {
-            gldepthmin = 1;
-            gldepthmax = 0.5;
-            glDepthFunc(GL_GEQUAL);
-        }
     } else {
         if (gl_clear.value)
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1542,13 +1525,6 @@ static void R_Clear(void) {
     }
 
     glDepthRange(gldepthmin, gldepthmax);
-
-    if (gl_zfix.value) {
-        if (gldepthmax > gldepthmin)
-            glPolygonOffset(1, 1);
-        else
-            glPolygonOffset(-1, -1);
-    }
 }
 
 /*

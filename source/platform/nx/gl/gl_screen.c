@@ -91,11 +91,7 @@ cvar_t	scr_fov = {"fov","90"};	// 10 - 170
 cvar_t 	scr_fov_viewmodel = {"r_viewmodel_fov","70"};
 cvar_t	scr_loadscreen = {"scr_loadscreen","1"};
 static cvar_t scr_conspeed = {"scr_conspeed", "300"};
-#ifdef GLQUAKE
 static cvar_t gl_triplebuffer = {"gl_triplebuffer", "0", true};
-#else
-static vrect_t *pconupdate;
-#endif
 
 cvar_t 	cl_crosshair_debug = {"cl_crosshair_debug", "0", true};
 
@@ -754,7 +750,6 @@ static void SCR_SizeDown_f(void) {
 ==============================================================================
 */
 
-#if !defined(NQ_HACK) || !defined(GLQUAKE)
 /*
 ==============
 WritePCXfile
@@ -791,7 +786,6 @@ static void WritePCXfile(const char *filename, const byte *data, int width, int 
     // pack the image
     pack = &pcx->data;
 
-#ifdef GLQUAKE
     // The GL buffer addressing is bottom to top?
     data += rowbytes * (height - 1);
     for (i = 0; i < height; i++) {
@@ -806,19 +800,6 @@ static void WritePCXfile(const char *filename, const byte *data, int width, int 
         data += rowbytes - width;
         data -= rowbytes * 2;
     }
-#else
-    for (i = 0; i < height; i++) {
-        for (j = 0; j < width; j++) {
-            if ((*data & 0xc0) != 0xc0) {
-                *pack++ = *data++;
-            } else {
-                *pack++ = 0xc1;
-                *pack++ = *data++;
-            }
-        }
-        data += rowbytes - width;
-    }
-#endif
 
     // write the palette
     *pack++ = 0x0c;  // palette ID byte
@@ -829,9 +810,7 @@ static void WritePCXfile(const char *filename, const byte *data, int width, int 
 
     COM_WriteFile(filename, pcx, length);
 }
-#endif /* !defined(NQ_HACK) && !defined(GLQUAKE) */
 
-#ifdef GLQUAKE
 typedef struct _TargaHeader {
     unsigned char id_length, colormap_type, image_type;
     unsigned short colormap_index, colormap_length;
@@ -842,7 +821,6 @@ typedef struct _TargaHeader {
 
 /* FIXME - poorly chosen globals? need to be global? */
 int glx, gly, glwidth, glheight;
-#endif
 
 /*
 ==================
@@ -850,7 +828,6 @@ SCR_ScreenShot_f
 ==================
 */
 static void SCR_ScreenShot_f(void) {
-#ifdef GLQUAKE
     byte *buffer;
     char tganame[80];
     char checkname[MAX_OSPATH*2];
@@ -895,39 +872,6 @@ static void SCR_ScreenShot_f(void) {
 
     free(buffer);
     Con_Printf("Wrote %s\n", tganame);
-#else
-    int i;
-    char pcxname[80];
-    char checkname[MAX_OSPATH];
-
-    //
-    // find a file name to save it to
-    //
-    strcpy(pcxname, "quake00.pcx");
-
-    for (i = 0; i <= 99; i++) {
-        pcxname[5] = i / 10 + '0';
-        pcxname[6] = i % 10 + '0';
-        sprintf(checkname, "%s/%s", com_gamedir, pcxname);
-        if (Sys_FileTime(checkname) == -1) break;  // file doesn't exist
-    }
-    if (i == 100) {
-        Con_Printf("%s: Couldn't create a PCX file\n", __func__);
-        return;
-    }
-    //
-    // save the pcx file
-    //
-    D_EnableBackBufferAccess();  // enable direct drawing of console to back
-    //  buffer
-
-    WritePCXfile(pcxname, vid.buffer, vid.width, vid.height, vid.rowbytes, host_basepal, false);
-
-    D_DisableBackBufferAccess();  // for adapters that can't stay mapped in
-    //  for linear writes all the time
-
-    Con_Printf("Wrote %s\n", pcxname);
-#endif
 }
 
 //=============================================================================
@@ -1447,18 +1391,10 @@ int original_fov;
 int original_view_fov;
 void Draw_Crosshair (void);
 void SCR_UpdateScreen(void) {
-#ifndef GLQUAKE
-    vrect_t vrect;
-
-    if (scr_skipupdate) return;
-#endif
     if (scr_block_drawing) return;
 
-#ifdef GLQUAKE
     vid.numpages = 2 + gl_triplebuffer.value;
-#endif
 
-#ifdef NQ_HACK
     if (scr_disabled_for_loading) {
         /*
          * FIXME - this really needs to be fixed properly.
@@ -1471,8 +1407,6 @@ void SCR_UpdateScreen(void) {
         } else
             return;
     }
-#endif
-
 
     if (cls.state == ca_dedicated) return;  // stdout only
 
@@ -1481,9 +1415,7 @@ void SCR_UpdateScreen(void) {
     scr_copytop = 0;
     scr_copyeverything = 0;
 
-#ifdef GLQUAKE
     GL_BeginRendering(&glx, &gly, &glwidth, &glheight);
-#endif
 
     if (cl.stats[STAT_ZOOM] == 1)
     {
@@ -1562,18 +1494,11 @@ void SCR_UpdateScreen(void) {
 
 	Draw_LoadingFill();
 
-#ifndef GLQUAKE
-    /* for adapters that can't stay mapped in for linear writes all the time */
-    D_DisableBackBufferAccess();
-    if (pconupdate) D_UpdateRects(pconupdate);
-#endif
-
     V_UpdatePalette();
 
     GL_EndRendering();
 }
 
-#if !defined(GLQUAKE) && defined(_WIN32)
 /*
 ==================
 SCR_UpdateWholeScreen
@@ -1584,7 +1509,6 @@ void SCR_UpdateWholeScreen(void) {
     scr_fullupdate = 0;
     SCR_UpdateScreen();
 }
-#endif
 
 //=============================================================================
 
@@ -1601,9 +1525,7 @@ void SCR_Init(void) {
     Cvar_RegisterVariable(&scr_centertime);
     Cvar_RegisterVariable(&scr_printspeed);
     Cvar_RegisterVariable (&scr_loadscreen);
-#ifdef GLQUAKE
     Cvar_RegisterVariable(&gl_triplebuffer);
-#endif
 
     Cmd_AddCommand("screenshot", SCR_ScreenShot_f);
     Cmd_AddCommand("sizeup", SCR_SizeUp_f);

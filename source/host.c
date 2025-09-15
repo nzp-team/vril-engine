@@ -68,9 +68,11 @@ cvar_t	teamplay = {"teamplay","0",false,true};
 cvar_t	samelevel = {"samelevel","0"};
 
 cvar_t	show_fps = {"show_fps","0", true};	// set for running times - muff
-#ifndef __WII__
+#if defined(__WII__) || defined(__NX__)
+cvar_t	cl_maxfps = {"cl_maxfps", "60", true}; // dr_mabuse1981: maxfps setting
+#else
 cvar_t	cl_maxfps = {"cl_maxfps", "30", true}; // dr_mabuse1981: maxfps setting
-#endif // __WII__ creates a timing issue within Dolphin emu - and vsync is always on anyhow
+#endif // __WII__, __NX__
 
 #ifdef __PSP__
 cvar_t	show_bat = {"show_bat","0"};	// test
@@ -529,12 +531,12 @@ Returns false if the time is too short to run a frame
 qboolean Host_FilterTime (float time)
 {
 	realtime += (double)time;
-#ifndef __WII__
-   if (cl_maxfps.value < 1) Cvar_SetValue("cl_maxfps", 30);
-   if (!cls.timedemo && realtime - oldrealtime < 1.0/(double)cl_maxfps.value)
+#if defined(__WII__) || defined(__NX__)
+	if (!cls.timedemo && realtime - oldrealtime < 1.0f/60.0f)
 		return false;		// framerate is too high
 #else
-	if (!cls.timedemo && realtime - oldrealtime < 1.0f/60.0f)
+	if (cl_maxfps.value < 1) Cvar_SetValue("cl_maxfps", 30);
+	if (!cls.timedemo && realtime - oldrealtime < 1.0/(double)cl_maxfps.value)
 		return false;		// framerate is too high
 #endif
 

@@ -300,11 +300,6 @@ void Sky_LoadSkyBox(char* name);
 extern vec3_t lightspot;
 
 //
-// gl_rmain.c, external only because it's registered elsewhere... broken?
-//
-extern cvar_t gl_ztrick;
-
-//
 // r_part.c
 //
 extern float r_avertexnormals[][3];

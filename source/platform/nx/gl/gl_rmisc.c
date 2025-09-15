@@ -159,7 +159,6 @@ void R_Init(void) {
     Cvar_RegisterVariable(&gl_flashblend);
     Cvar_RegisterVariable(&gl_playermip);
     Cvar_RegisterVariable(&gl_nocolors);
-    Cvar_RegisterVariable(&gl_zfix);
 
     Cvar_RegisterVariable(&gl_keeptjunctions);
     Cvar_RegisterVariable(&gl_reporttjunctions);

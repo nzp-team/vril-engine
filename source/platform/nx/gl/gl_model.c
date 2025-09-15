@@ -41,9 +41,8 @@ byte	mod_novis[MAX_MAP_LEAFS/8];
 model_t	mod_known[MAX_MOD_KNOWN];
 int		mod_numknown;
 
-#ifdef GLQUAKE
 cvar_t gl_subdivide_size = {"gl_subdivide_size", "128", true};
-#endif
+
 
 /*
 ===============

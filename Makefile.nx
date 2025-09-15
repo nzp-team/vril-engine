@@ -41,7 +41,7 @@ SOURCES		:=	source
 DATA		:=	data
 INCLUDES	:=	include
 EXEFS_SRC	:=	exefs_src
-DEFINES	:=	-DTYR_VERSION=0.62-nx -DUSE_SDL2 -DNQ_HACK -DGLQUAKE -D__NX__ -DDEBUG -DPLATFORM_DIRECTORY="nx" -DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=24
+DEFINES	:=	-DTYR_VERSION=0.62-nx -DUSE_SDL2 -DNQ_HACK -D__NX__ -DDEBUG -DPLATFORM_DIRECTORY="nx" -DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=24
 #ROMFS	:=	romfs
 
 #---------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ DEFINES	:=	-DTYR_VERSION=0.62-nx -DUSE_SDL2 -DNQ_HACK -DGLQUAKE -D__NX__ -DDEBUG
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIE
 
-CFLAGS	:=	-fpermissive -Wall -O3 -fno-strict-aliasing -std=gnu99 \
+CFLAGS	:=	-fpermissive -Wall -O0 -fno-strict-aliasing -std=gnu99 \
 			$(ARCH) $(DEFINES)
 
 CFLAGS	+=	$(INCLUDE) -D__SWITCH__
