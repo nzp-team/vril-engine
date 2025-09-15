@@ -72,8 +72,7 @@ void PR_LoadProgs (void);
 void PR_Profile_f (void);
 
 char *PR_GetString (int num);
-int PR_SetEngineString (char *s);
-int PR_AllocString (int size, char **ptr);
+int PR_SetString(char *s);
 
 edict_t *ED_Alloc (void);
 void ED_Free (edict_t *ed);

@@ -98,7 +98,7 @@ void *Q_strdup (const char *str);		//
 
 void Z_Free (void *ptr);
 void *Z_Malloc (int size);			// returns 0 filled memory
-void *Z_Realloc (void *ptr, int size);
+void *Z_Realloc(void *ptr, int size);
 char *Z_Strdup (char *s);
 
 void *Hunk_Alloc (int size);		// returns 0 filled memory

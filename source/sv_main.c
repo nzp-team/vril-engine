@@ -486,7 +486,7 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg, qboolean nomap)
 		if (ent != clent)	// clent is ALLWAYS sent
 		{
 // ignore ents without visible models
-			if (!ent->v.modelindex || !PR_GetString(ent->v.model)[0])
+			if (!ent->v.modelindex || !*PR_GetString(ent->v.model))
 				continue;
 
 			for (i=0 ; i < ent->num_leafs ; i++)
@@ -799,7 +799,7 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	MSG_WriteByte (msg, ent->v.x2_icon);
 	MSG_WriteByte (msg, ent->v.insta_icon);
 	MSG_WriteByte (msg, ent->v.progress_bar);
-	MSG_WriteByte (msg, SV_ModelIndex(PR_GetString(ent->v.weapon2model)));
+	MSG_WriteShort (msg, SV_ModelIndex(PR_GetString(ent->v.weapon2model)));
 	MSG_WriteByte (msg, ent->v.weapon2skin);
 	MSG_WriteByte (msg, ent->v.weapon2frame);
 	MSG_WriteShort (msg, ent->v.currentmag2);
@@ -1251,7 +1251,6 @@ void SV_SpawnServer (char *server)
 	SV_ClearWorld ();
 
 	sv.sound_precache[0] = dummy;
-
 	sv.model_precache[0] = dummy;
 	sv.model_precache[1] = sv.modelname;
 	for (i=1 ; i<sv.worldmodel->numsubmodels ; i++)
@@ -1266,7 +1265,7 @@ void SV_SpawnServer (char *server)
 	ent = EDICT_NUM(0);
 	memset (&ent->v, 0, progs->entityfields * 4);
 	ent->free = false;
-	ent->v.model = PR_SetEngineString(sv.worldmodel->name);
+	ent->v.model = PR_SetString(sv.worldmodel->name);
 	ent->v.modelindex = 1;		// world model
 	ent->v.solid = SOLID_BSP;
 	ent->v.movetype = MOVETYPE_PUSH;
@@ -1276,7 +1275,7 @@ void SV_SpawnServer (char *server)
 	else
 		pr_global_struct->deathmatch = deathmatch.value;
 
-	pr_global_struct->mapname = PR_SetEngineString(sv.name);
+	pr_global_struct->mapname = PR_SetString(sv.name);
 
 // serverflags are for cross level information (sigils)
 	pr_global_struct->serverflags = svs.serverflags;

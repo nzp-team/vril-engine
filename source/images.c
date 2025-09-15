@@ -57,7 +57,6 @@ void tex_filebase (char *in, char *out)
   mem fix by Crow_bar.
 =================================================================
 */
-#pragma pack(1)
 typedef struct
 {
     char	manufacturer;
@@ -119,7 +118,7 @@ byte* LoadPCX(FILE* f, int matchwidth, int matchheight)
     fseek(f, 128, SEEK_SET);
 
     int count = (pcx->xmax + 1) * (pcx->ymax + 1);
-    byte* image_rgba = (unsigned char*)(Q_malloc(4 * count));
+    byte* image_rgba = (Q_malloc(4 * count));
 	byte* pix = image_rgba;
 
     for (int y = 0; y <= pcx->ymax; y++) {

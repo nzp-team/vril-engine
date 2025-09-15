@@ -263,19 +263,10 @@ void CL_KeepaliveMessage (void)
 CL_ParseServerInfo
 ==================
 */
-int has_pap;
-int has_perk_revive;
-int has_perk_juggernog;
-int has_perk_speedcola;
-int has_perk_doubletap;
-int has_perk_staminup;
-int has_perk_flopper;
-int has_perk_deadshot;
-int has_perk_mulekick;
 void CL_ParseServerInfo (void)
 {
-	char	*str;
-	int		i;
+	char 	*level;
+	int		i, maxlen;
 	int		nummodels, numsounds;
 	char	model_precache[MAX_MODELS][MAX_QPATH];
 	char	sound_precache[MAX_SOUNDS][MAX_QPATH];
@@ -312,12 +303,13 @@ void CL_ParseServerInfo (void)
 	cl.gametype = MSG_ReadByte ();
 
 // parse signon message
-	str = MSG_ReadString ();
-	strncpy (cl.levelname, str, sizeof(cl.levelname)-1);
+	level = cl.levelname;
+	maxlen = sizeof(cl.levelname);
+	snprintf(level, maxlen, "%s", MSG_ReadString());
 
 // seperate the printfs so the server message can have a color
 	Con_Printf("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n\n");
-	Con_Printf ("%c%s\n", 2, str);
+	Con_Printf ("%c%s\n", 2, level);
 
 //
 // first we go through and touch all of the precache data that still
@@ -329,23 +321,12 @@ void CL_ParseServerInfo (void)
 	for (i=0 ; i<NUM_MODELINDEX ; i++)
 		cl_modelindex[i] = -1;
 
-	has_pap = EN_Find(0,"perk_pap");
-	has_perk_revive = EN_Find(0, "perk_revive");
-	has_perk_juggernog = EN_Find(0, "perk_juggernog");
-	has_perk_speedcola = EN_Find(0, "perk_speed");
-	has_perk_doubletap = EN_Find(0, "perk_double");
-	has_perk_staminup = EN_Find(0, "perk_staminup");
-	has_perk_flopper = EN_Find(0, "perk_flopper");
-	has_perk_deadshot = EN_Find(0, "perk_deadshot");
-	has_perk_mulekick = EN_Find(0, "perk_mule");
-
-
 // precache models
 	memset (cl.model_precache, 0, sizeof(cl.model_precache));
 	//Con_Printf("GotModelsToLoad: ");
 	for (nummodels=1 ; ; nummodels++)
 	{
-		str = MSG_ReadString ();
+		char *str = MSG_ReadString ();
 
 		if (!str[0])
 			break;
@@ -370,12 +351,11 @@ void CL_ParseServerInfo (void)
   }
 
 // precache sounds
-	//Con_Printf("Got Sounds to load: ");
 	memset (cl.sound_precache, 0, sizeof(cl.sound_precache));
 	for (numsounds=1 ; ; numsounds++)
 	{
 
-		str = MSG_ReadString ();
+		char *str = MSG_ReadString ();
 		if (!str[0])
 			break;
 		if (numsounds==MAX_SOUNDS)
@@ -434,7 +414,7 @@ void CL_ParseServerInfo (void)
 	loading_step = 4;
 
 	S_BeginPrecaching ();
-	//Con_Printf("Loaded Sounds: ");
+
 	for (i=1 ; i<numsounds ; i++)
 	{
 		cl.sound_precache[i] = S_PrecacheSound (sound_precache[i]);
@@ -446,7 +426,6 @@ void CL_ParseServerInfo (void)
 	S_EndPrecaching ();
 
 	//Con_Printf("...\n");
-	//Con_Printf("Total Sounds Loaded: %i\n",numsounds);
 	SCR_UpdateScreen ();
 
    	Clear_LoadingFill ();
@@ -455,7 +434,6 @@ void CL_ParseServerInfo (void)
 	cl_entities[0].model = cl.worldmodel = cl.model_precache[1];
 
 	R_NewMap ();
-
 	Hunk_Check ();		// make sure nothing is hurt
 	HUD_NewMap ();
 
@@ -474,7 +452,7 @@ relinked.  Other attributes can change without relinking.
 */
 int	bitcounts[16];
 
-void CL_ParseUpdate (int bits)
+void CL_ParseUpdate (unsigned int bits)
 {
 	int			i;
 	model_t		*model;
@@ -683,10 +661,12 @@ CL_ParseClientdata
 Server information pertaining to this client only
 ==================
 */
-void CL_ParseClientdata (int bits)
+void CL_ParseClientdata (void)
 {
 	int		i, s;
+	unsigned int bits;
 
+	bits = (unsigned short)MSG_ReadShort();
 	if (bits & SU_VIEWHEIGHT)
 		cl.viewheight = MSG_ReadChar ();
 	else
@@ -1174,8 +1154,7 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_clientdata:
-			i = MSG_ReadShort ();
-			CL_ParseClientdata (i);
+			CL_ParseClientdata ();
 			break;
 
 		case svc_version:

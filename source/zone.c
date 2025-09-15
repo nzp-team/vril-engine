@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "nzportable_def.h"
 
 // cypress -- who the fuck needs a 250kB zone block?? what?? restoring to 50kB.
-#define DYNAMIC_SIZE	0xc000
+#define DYNAMIC_SIZE	0x40000
 
 #define	ZONEID	0x1d4a11
 #define MINFRAGMENT	64
@@ -32,15 +32,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 typedef struct memblock_s
 {
 	int	size;		// including the header and possibly tiny fragments
-	int	tag;		// a tag of 0 is a free block
-	int	id;		// should be ZONEID
-	int	pad;		// pad to 64 bit boundary
+	int		tag;		// a tag of 0 is a free block
+	int		id;			// should be ZONEID
+	int		pad;		// pad to 64 bit boundary
 	struct	memblock_s	*next, *prev;
 } memblock_t;
 
 typedef struct
 {
-	int		size;		// total bytes malloced, including header
+	int		size;			// total bytes malloced, including header
 	memblock_t	blocklist;	// start / end cap for linked list
 	memblock_t	*rover;
 } memzone_t;
@@ -510,10 +510,10 @@ void Z_Free (void *ptr)
 	}
 }
 
-
+void Z_CheckHeap (void);
 void *Z_TagMalloc (int size, int tag)
 {
-	int		extra;
+	int		extra, *marker;
 	memblock_t	*start, *rover, *newblock, *base;
 
 	if (!tag)
@@ -524,7 +524,7 @@ void *Z_TagMalloc (int size, int tag)
 // of sufficient size
 //
 	size += sizeof(memblock_t);	// account for size of block header
-	size += 4;					// space for memory trash tester
+	size += sizeof(int);		// space for memory trash tester
 	size = (size + 7) & ~7;		// align to 8-byte boundary
 
 	base = rover = mainzone->rover;
@@ -563,10 +563,11 @@ void *Z_TagMalloc (int size, int tag)
 
 	base->id = ZONEID;
 
-// marker for memory trash testing
-	*(int *)((byte *)base + base->size - 4) = ZONEID;
+	/* marker for memory trash testing */
+    marker = (int *)((byte *)base + base->size - sizeof(int));
+    *marker = ZONEID;
 
-	return (void *) ((byte *)base + sizeof(memblock_t));
+	return base + 1;
 }
 
 /*
@@ -604,52 +605,44 @@ void *Z_Malloc (int size)
 	Z_CheckHeap ();	// DEBUG
 	buf = Z_TagMalloc (size, 1);
 	if (!buf)
-		Sys_Error ("failed on allocation of %i bytes",size);
+		Sys_Error ("failed on allocation of %zu bytes",size);
 	Q_memset (buf, 0, size);
 
 	return buf;
 }
 
 /*
-========================
-Z_Realloc
-========================
-*/
-void *Z_Realloc(void *ptr, int size)
-{
-	int old_size;
-	void *old_ptr;
-	memblock_t *block;
+ * ========================
+ * Z_Realloc
+ * ========================
+ */
+ void *Z_Realloc(void *ptr, int size) 
+ {
+    memblock_t *block;
+    int orig_size;
+    void *ret;
 
-	if (!ptr)
-		return Z_Malloc (size);
+    if (!ptr) return Z_Malloc(size);
 
-	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
-	if (block->id != ZONEID)
-		Sys_Error ("realloced a pointer without ZONEID");
-	if (block->tag == 0)
-		Sys_Error ("realloced a freed pointer");
+    block = (memblock_t *)((byte *)ptr - sizeof(memblock_t));
+    if (block->id != ZONEID) Sys_Error("%s: realloced a pointer without ZONEID", __func__);
+    if (!block->tag) Sys_Error("%s: realloced a freed pointer", __func__);
 
-	old_size = block->size;
-	old_size -= (4 + (int)sizeof(memblock_t));	/* see Z_TagMalloc() */
-	old_ptr = ptr;
+    orig_size = block->size;
+    orig_size -= sizeof(memblock_t);
+    orig_size -= sizeof(int); /* ZONEID marker */
 
-	Z_Free (ptr);
-	ptr = Z_TagMalloc (size, 1);
-	if (!ptr)
-		Sys_Error ("failed on allocation of %i bytes", size);
-
-	if (ptr != old_ptr)
-		memmove (ptr, old_ptr, MIN(old_size, size));
-	if (old_size < size)
-		memset ((byte *)ptr + old_size, 0, size - old_size);
-
-	return ptr;
+    Z_Free(ptr);
+    ret = Z_TagMalloc(size, 1);
+    if (!ret) Sys_Error("%s: failed on allocation of %i bytes", __func__, size);
+    if (ret != ptr) memmove(ret, ptr, qmin(orig_size, size));
+    if (size > orig_size) memset((byte *)ret + orig_size, 0, size - orig_size);
+    return ret;
 }
 
 char *Z_Strdup (char *s)
 {
-	size_t sz = strlen(s) + 1;
+	int sz = strlen(s) + 1;
 	char *ptr = (char *) Z_Malloc (sz);
 	memcpy (ptr, s, sz);
 	return ptr;
@@ -976,7 +969,7 @@ void *Hunk_TempAlloc (int size)
 
 char *Hunk_Strdup (char *s, char *name)
 {
-	size_t sz = strlen(s) + 1;
+	int sz = strlen(s) + 1;
 	char *ptr = (char *) Hunk_AllocName (sz, name);
 	memcpy (ptr, s, sz);
 	return ptr;
@@ -993,9 +986,9 @@ CACHE MEMORY
 #define CACHENAME_LEN	32
 typedef struct cache_system_s
 {
-	int			size;		// including this header
-	cache_user_t		*user;
-	char			name[CACHENAME_LEN];
+	int					size;		// including this header
+	cache_user_t			*user;
+	char					name[CACHENAME_LEN];
 	struct cache_system_s	*prev, *next;
 	struct cache_system_s	*lru_prev, *lru_next;	// for LRU flushing
 } cache_system_t;
@@ -1374,7 +1367,7 @@ void Memory_Init (void *buf, int size)
 		else
 			Sys_Error ("you must specify a size in KB after -zone");
 	}
-	mainzone = (memzone_t *) Hunk_AllocName (zonesize, "zone" );
+	mainzone = Hunk_AllocName (zonesize, "zone" );
 	Memory_InitZone (mainzone, zonesize);
 
 	Cmd_AddCommand ("hunk_print", Hunk_Print_f); //johnfitz

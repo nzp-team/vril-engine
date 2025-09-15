@@ -27,17 +27,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 typedef int32_t	func_t;
 typedef int32_t	string_t;
 
-typedef enum
-{
-	ev_bad = -1,
-	ev_void = 0,
-	ev_string,
-	ev_float,
-	ev_vector,
-	ev_entity,
-	ev_field,
-	ev_function,
-	ev_pointer
+typedef enum {
+    ev_void,
+    ev_string,
+    ev_float,
+    ev_vector,
+    ev_entity,
+    ev_field,
+    ev_function,
+    ev_pointer
 } etype_t;
 
 #define	OFS_NULL		0
