@@ -1234,10 +1234,6 @@ typedef enum {
     // M_OPTIONS_CURSOR_MOUSELOOK,
     M_OPTIONS_CURSOR_LOOKSPRING,
     M_OPTIONS_CURSOR_LOOKSTRAFE,
-#ifdef QW_HACK
-    M_OPTIONS_CURSOR_SBAR,
-    M_OPTIONS_CURSOR_HUD,
-#endif
     M_OPTIONS_CURSOR_VIDEO,
     // M_OPTIONS_CURSOR_MOUSEGRAB,
     M_OPTIONS_CURSOR_LINES,
@@ -1258,9 +1254,9 @@ void M_AdjustSliders(int dir) {
 
     switch (m_options_cursor) {
         case M_OPTIONS_CURSOR_SCREENSIZE:
-            scr_viewsize.value += dir * 10;
-            scr_viewsize.value = CLAMP(scr_viewsize.value, 30.0f, 120.0f);
-            Cvar_SetValue("viewsize", scr_viewsize.value);
+           // scr_viewsize.value += dir * 10;
+           // scr_viewsize.value = CLAMP(scr_viewsize.value, 30.0f, 120.0f);
+           // Cvar_SetValue("viewsize", scr_viewsize.value);
             break;
         case M_OPTIONS_CURSOR_BRIGHTNESS:
             v_gamma.value -= dir * 0.05;
@@ -1298,14 +1294,6 @@ void M_AdjustSliders(int dir) {
         case M_OPTIONS_CURSOR_LOOKSTRAFE:
             Cvar_SetValue("lookstrafe", !lookstrafe.value);
             break;
-#ifdef QW_HACK
-        case M_OPTIONS_CURSOR_SBAR:
-            Cvar_SetValue("cl_sbar", !cl_sbar.value);
-            break;
-        case M_OPTIONS_CURSOR_HUD:
-            Cvar_SetValue("cl_hudswap", !cl_hudswap.value);
-            break;
-#endif
         // case M_OPTIONS_CURSOR_MOUSEGRAB:
         //     Cvar_SetValue("_windowed_mouse", !_windowed_mouse.value);
         //     break;
@@ -1366,14 +1354,6 @@ void M_Options_Draw(void) {
 
     M_Print(16, height += 8, "            Lookstrafe");
     M_DrawCheckbox(220, height, lookstrafe.value);
-
-#ifdef QW_HACK
-    M_Print(16, height += 8, "    Use old status bar");
-    M_DrawCheckbox(220, height, cl_sbar.value);
-
-    M_Print(16, height += 8, "      HUD on left side");
-    M_DrawCheckbox(220, height, cl_hudswap.value);
-#endif
 
     M_Print(16, height += 8, "         Video Options");
 

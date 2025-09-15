@@ -57,10 +57,6 @@ static char com_cmdline[CMDLINE_LENGTH];
 
 qboolean standard_quake = true, rogue, hipnotic;
 
-#ifdef QW_HACK
-char gamedirfile[MAX_OSPATH];
-#endif
-
 /*
 
 All of Quake's data access is through a hierchal file system, but the contents
@@ -518,10 +514,6 @@ Handles byte ordering and avoids alignment errors
      return buffers[3 & ++index];
  }
 
-#ifdef QW_HACK
-usercmd_t nullcmd;  // guarenteed to be zero
-#endif
-
 //
 // writing functions
 //
@@ -628,40 +620,6 @@ void MSG_WriteAngle16(sizebuf_t *sb, float f) {
     MSG_WriteShort(sb, (int)floorf((f * 65536 / 360) + 0.5f) & 65535);
 }
 
-#ifdef QW_HACK
-void MSG_WriteDeltaUsercmd(sizebuf_t *buf, const usercmd_t *from, const usercmd_t *cmd) {
-    int bits;
-
-    //
-    // send the movement message
-    //
-    bits = 0;
-    if (cmd->angles[0] != from->angles[0]) bits |= CM_ANGLE1;
-    if (cmd->angles[1] != from->angles[1]) bits |= CM_ANGLE2;
-    if (cmd->angles[2] != from->angles[2]) bits |= CM_ANGLE3;
-    if (cmd->forwardmove != from->forwardmove) bits |= CM_FORWARD;
-    if (cmd->sidemove != from->sidemove) bits |= CM_SIDE;
-    if (cmd->upmove != from->upmove) bits |= CM_UP;
-    if (cmd->buttons != from->buttons) bits |= CM_BUTTONS;
-    if (cmd->impulse != from->impulse) bits |= CM_IMPULSE;
-
-    MSG_WriteByte(buf, bits);
-
-    if (bits & CM_ANGLE1) MSG_WriteAngle16(buf, cmd->angles[0]);
-    if (bits & CM_ANGLE2) MSG_WriteAngle16(buf, cmd->angles[1]);
-    if (bits & CM_ANGLE3) MSG_WriteAngle16(buf, cmd->angles[2]);
-
-    if (bits & CM_FORWARD) MSG_WriteShort(buf, cmd->forwardmove);
-    if (bits & CM_SIDE) MSG_WriteShort(buf, cmd->sidemove);
-    if (bits & CM_UP) MSG_WriteShort(buf, cmd->upmove);
-
-    if (bits & CM_BUTTONS) MSG_WriteByte(buf, cmd->buttons);
-    if (bits & CM_IMPULSE) MSG_WriteByte(buf, cmd->impulse);
-    MSG_WriteByte(buf, cmd->msec);
-}
-#endif /* QW_HACK */
-
-#ifdef NQ_HACK
 /*
  * Write the current message length to the start of the buffer (in big
  * endian format) with the control flag set.
@@ -674,7 +632,6 @@ void MSG_WriteControlHeader(sizebuf_t *sb) {
     sb->data[2] = (c >> 8) & 0xff;
     sb->data[3] = c & 0xff;
 }
-#endif
 
 //
 // reading functions
@@ -686,10 +643,6 @@ void MSG_BeginReading(void) {
     msg_readcount = 0;
     msg_badread = false;
 }
-
-#ifdef QW_HACK
-int MSG_GetReadCount(void) { return msg_readcount; }
-#endif
 
 // returns -1 and sets msg_badread if no more characters are available
 int MSG_ReadChar(void) {
@@ -786,25 +739,6 @@ char *MSG_ReadString(void) {
     return buf;
 }
 
-#ifdef QW_HACK
-char *MSG_ReadStringLine(void) {
-    char *buf;
-    int len, c;
-
-    buf = COM_GetStrBuf();
-    len = 0;
-    do {
-        c = MSG_ReadChar();
-        if (c == -1 || c == 0 || c == '\n') break;
-        buf[len++] = c;
-    } while (len < COM_STRBUF_LEN - 1);
-
-    buf[len] = 0;
-
-    return buf;
-}
-#endif
-
 float MSG_ReadCoord(void) {
     /*
      * Co-ords are send as shorts, with the low 3 bits being the fractional
@@ -817,35 +751,6 @@ float MSG_ReadAngle(void) { return MSG_ReadChar() * (360.0 / 256); }
 
 float MSG_ReadAngle16(void) { return MSG_ReadShort() * (360.0 / 65536); }
 
-#ifdef QW_HACK
-void MSG_ReadDeltaUsercmd(const usercmd_t *from, usercmd_t *move) {
-    int bits;
-
-    memcpy(move, from, sizeof(*move));
-
-    bits = MSG_ReadByte();
-
-    // read current angles
-    if (bits & CM_ANGLE1) move->angles[0] = MSG_ReadAngle16();
-    if (bits & CM_ANGLE2) move->angles[1] = MSG_ReadAngle16();
-    if (bits & CM_ANGLE3) move->angles[2] = MSG_ReadAngle16();
-
-    // read movement
-    if (bits & CM_FORWARD) move->forwardmove = MSG_ReadShort();
-    if (bits & CM_SIDE) move->sidemove = MSG_ReadShort();
-    if (bits & CM_UP) move->upmove = MSG_ReadShort();
-
-    // read buttons
-    if (bits & CM_BUTTONS) move->buttons = MSG_ReadByte();
-
-    if (bits & CM_IMPULSE) move->impulse = MSG_ReadByte();
-
-    // read time to run command
-    move->msec = MSG_ReadByte();
-}
-#endif /* QW_HACK */
-
-#ifdef NQ_HACK
 /*
  * Read back the message control header
  * Essentially this is MSG_ReadLong, but big-endian byte order.
@@ -865,11 +770,9 @@ int MSG_ReadControlHeader(void) {
 
     return c;
 }
-#endif
 
 //===========================================================================
 
-#ifdef NQ_HACK
 void SZ_Alloc(sizebuf_t *buf, int startsize) {
     if (startsize < 256) startsize = 256;
     buf->data = Hunk_AllocName(startsize, "sizebuf");
@@ -883,7 +786,6 @@ void SZ_Free(sizebuf_t *buf) {
     //      buf->maxsize = 0;
     buf->cursize = 0;
 }
-#endif
 
 void SZ_Clear(sizebuf_t *buf) {
     buf->cursize = 0;
@@ -1117,12 +1019,8 @@ skipwhite:
 }
 
 char *COM_Parse(char *data) {
-#ifdef NQ_HACK
+
     return COM_Parse_(data, true);
-#endif
-#ifdef QW_HACK
-    return COM_Parse_(data, false);
-#endif
 }
 
 /*
@@ -1314,9 +1212,6 @@ typedef struct searchpath_s {
 } searchpath_t;
 
 static searchpath_t *com_searchpaths;
-#ifdef QW_HACK
-static searchpath_t *com_base_searchpaths;  // without gamedirs
-#endif
 
 /*
 ================
@@ -1359,9 +1254,6 @@ static void COM_Path_f(void) {
 
     Con_Printf("Current search path:\n");
     for (s = com_searchpaths; s; s = s->next) {
-#ifdef QW_HACK
-        if (s == com_base_searchpaths) Con_Printf("----------\n");
-#endif
         if (s->pack)
             Con_Printf("%s (%i files)\n", s->pack->filename, s->pack->numfiles);
         else
@@ -1583,15 +1475,9 @@ static pack_t *COM_LoadPackFile(char *packfile) {
 
     numfiles = header.dirlen / sizeof(dpackfile_t);
 
-#ifdef NQ_HACK
     mfiles = Hunk_AllocName(numfiles * sizeof(*mfiles), "packfile");
     int mark = Hunk_LowMark();
     dfiles = Hunk_AllocName(numfiles * sizeof(*dfiles), "packfile");
-#endif
-#ifdef QW_HACK
-    mfiles = Z_Malloc(numfiles * sizeof(*mfiles));
-    dfiles = Z_Malloc(numfiles * sizeof(*dfiles));
-#endif
 
     fseek(packhandle, header.dirofs, SEEK_SET);
     fread(dfiles, 1, header.dirlen, packhandle);
@@ -1611,14 +1497,9 @@ static pack_t *COM_LoadPackFile(char *packfile) {
         mfiles[i].filelen = LittleLong(dfiles[i].filelen);
     }
 
-#ifdef NQ_HACK
     Hunk_FreeToLowMark(mark);
     pack = Hunk_Alloc(sizeof(pack_t));
-#endif
-#ifdef QW_HACK
-    Z_Free(dfiles);
-    pack = Z_Malloc(sizeof(pack_t));
-#endif
+
     snprintf(pack->filename, sizeof(pack->filename), "%s", packfile);
     pack->numfiles = numfiles;
     pack->files = mfiles;
@@ -1647,13 +1528,6 @@ static void COM_AddGameDirectory(const char *base, const char *dir) {
     if (!base) return;
 
     strcpy(com_gamedir, va("%s/%s", base, dir));
-#ifdef QW_HACK
-    {
-        char *p;
-        p = strrchr(com_gamedir, '/');
-        strcpy(gamedirfile, ++p);
-    }
-#endif
 
     //
     // add the directory to the search path
@@ -1718,7 +1592,6 @@ static void COM_InitFilesystem(void)
 // -path <dir or packfile> [<dir or packfile>] ...
 // Fully specifies the exact search path, overriding the generated one
 //
-#ifdef NQ_HACK
     i = COM_CheckParm("-path");
     if (i) {
         com_modified = true;
@@ -1736,11 +1609,6 @@ static void COM_InitFilesystem(void)
             com_searchpaths = search;
         }
     }
-#endif
-#ifdef QW_HACK
-    // any set gamedirs will be freed up to here
-    com_base_searchpaths = com_searchpaths;
-#endif
 }
 
 

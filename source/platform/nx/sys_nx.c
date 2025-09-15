@@ -471,7 +471,7 @@ int Q_main(int argc, char **argv) {
     /*
      * Main Loop
      */
-#if defined(NQ_HACK) || defined(SERVERONLY)
+#if defined(__NX__) || defined(SERVERONLY)
     oldtime = Sys_FloatTime() - 0.1;
 #else
     oldtime = Sys_FloatTime();
@@ -481,7 +481,6 @@ int Q_main(int argc, char **argv) {
         newtime = Sys_FloatTime();
         time = newtime - oldtime;
 
-#ifdef NQ_HACK
         if (cls.state == ca_dedicated) {
             if (time < sys_ticrate.value) {
                 usleep(1);
@@ -493,10 +492,6 @@ int Q_main(int argc, char **argv) {
             oldtime = newtime;
         else
             oldtime += time;
-#endif
-#ifdef QW_HACK
-        oldtime = newtime;
-#endif
 
 #ifdef SERVERONLY
         SV_Frame(time);

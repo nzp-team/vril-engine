@@ -79,9 +79,6 @@ cvar_t r_dynamic = {"r_dynamic", "1"};
 cvar_t r_novis = {"r_novis", "0"};
 cvar_t r_skyfog = {"r_skyfog", "1"};
 
-#ifdef QW_HACK
-cvar_t r_netgraph = {"r_netgraph", "0"};
-#endif
 cvar_t r_waterwarp = {"r_waterwarp", "1"};
 
 cvar_t r_fullbright = {"r_fullbright", "0"};
@@ -99,22 +96,18 @@ cvar_t gl_flashblend = {"gl_flashblend", "1"};
 cvar_t gl_playermip = {"gl_playermip", "0"};
 cvar_t gl_nocolors = {"gl_nocolors", "0"};
 cvar_t gl_zfix = {"gl_zfix", "0"};
-#ifdef NQ_HACK
 cvar_t gl_doubleeyes = {"gl_doubleeyes", "1"};
-#endif
 
 cvar_t _gl_allowgammafallback = {"_gl_allowgammafallback", "1"};
 
 cvar_t  r_model_brightness  = { "r_model_brightness", "1", true};   // Toggle high brightness model lighting
 
-#ifdef NQ_HACK
 /*
  * incomplete model interpolation support
  * -> default to off and don't save to config for now
  */
 cvar_t r_lerpmodels = {"r_lerpmodels", "0", false};
 cvar_t r_lerpmove = {"r_lerpmove", "0", false};
-#endif
 
 extern 	cvar_t 	scr_fov_viewmodel;
 

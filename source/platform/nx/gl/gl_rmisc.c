@@ -88,29 +88,21 @@ static const byte dottexture[8][8] = {
 };
 
 static void R_InitParticleTexture(void) {
-    int x, y;
-    byte data[8][8][4];
+    int		x,y;
+	byte	data[8][8];
 
-    //
-    // particle texture
-    //
-    glGenTextures(1, &particletexture);
-    GL_Bind(particletexture);
+	//
+	// particle texture
+	//
+	for (x=0 ; x<8 ; x++)
+	{
+		for (y=0 ; y<8 ; y++)
+		{
+			data[y][x] = dottexture[x][y] ? 15 : 255; // ELUTODO assumes 15 is white
+		}
+	}
 
-    for (x = 0; x < 8; x++) {
-        for (y = 0; y < 8; y++) {
-            data[y][x][0] = 255;
-            data[y][x][1] = 255;
-            data[y][x][2] = 255;
-            data[y][x][3] = dottexture[x][y] * 255;
-        }
-    }
-    glTexImage2D(GL_TEXTURE_2D, 0, gl_alpha_format, 8, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	particletexture = GL_LoadTexture("particletex", 8, 8, (byte *)data, false, true, 1, true);
 }
 
 /*
@@ -171,13 +163,7 @@ void R_Init(void) {
 
     Cvar_RegisterVariable(&gl_keeptjunctions);
     Cvar_RegisterVariable(&gl_reporttjunctions);
-
-#ifdef NQ_HACK
     Cvar_RegisterVariable(&gl_doubleeyes);
-#endif
-#ifdef QW_HACK
-    Cvar_RegisterVariable(&r_netgraph);
-#endif
 
     Cvar_RegisterVariable (&r_skyfog);
     Cvar_RegisterVariable (&r_model_brightness);
@@ -201,12 +187,7 @@ void R_SetVrect(const vrect_t *pvrectin, vrect_t *pvrect, int lineadj) {
     float size;
     qboolean full;
 
-#ifdef NQ_HACK
     full = (scr_viewsize.value >= 120.0f);
-#endif
-#ifdef QW_HACK
-    full = (!cl_sbar.value && scr_viewsize.value >= 100.0f);
-#endif
     size = MIN(scr_viewsize.value, 100.0f);
 
     /* Hide the status bar during intermission */

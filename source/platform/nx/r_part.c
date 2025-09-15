@@ -143,12 +143,7 @@ void R_ReadPointFile_f(void) {
     particle_t *p;
     char name[MAX_OSPATH];
 
-#ifdef NQ_HACK
     snprintf(name, sizeof(name), "maps/%s.pts", sv.name);
-#endif
-#ifdef QW_HACK
-    snprintf(name, sizeof(name), "maps/%s.pts", Info_ValueForKey(cl.serverinfo, "map"));
-#endif
 
     COM_FOpenFile(name, &f);
     if (!f) {
@@ -329,16 +324,6 @@ R_RunParticleEffect
 void R_RunParticleEffect(vec3_t org, vec3_t dir, int color, int count) {
     int i, j;
     particle_t *p;
-#ifdef QW_HACK
-    int scale;
-
-    if (count > 130)
-        scale = 3;
-    else if (count > 20)
-        scale = 2;
-    else
-        scale = 1;
-#endif
 
     for (i = 0; i < count; i++) {
         if (!free_particles)
@@ -348,7 +333,6 @@ void R_RunParticleEffect(vec3_t org, vec3_t dir, int color, int count) {
         p->next = active_particles;
         active_particles = p;
 
-#ifdef NQ_HACK
         if (count == 1024) { // rocket explosion
             p->die = cl.time + 5;
             p->color = ramp1[0];
@@ -375,16 +359,6 @@ void R_RunParticleEffect(vec3_t org, vec3_t dir, int color, int count) {
                 p->vel[j] = dir[j] * 15; // + (rand()%300)-150;
             }
         }
-#endif
-#ifdef QW_HACK
-        p->die = cl.time + 0.1 * (rand() % 5);
-        p->color = (color & ~7) + (rand() & 7);
-        p->type = pt_grav;
-        for (j = 0; j < 3; j++) {
-            p->org[j] = org[j] + scale * ((rand() & 15) - 8);
-            p->vel[j] = dir[j] * 15; // + (rand()%300)-150;
-        }
-#endif
     }
 }
 
@@ -474,28 +448,22 @@ void R_RocketTrail(vec3_t start, vec3_t end, int type) {
     float len;
     int j;
     particle_t *p;
-#ifdef NQ_HACK
     int dec;
-#endif
+
 
     VectorSubtract(end, start, vec);
     len = VectorNormalize(vec);
-#ifdef NQ_HACK
+
     if (type < 128)
         dec = 3;
     else {
         dec = 1;
         type -= 128;
     }
-#endif
 
     while (len > 0) {
-#ifdef NQ_HACK
         len -= dec;
-#endif
-#ifdef QW_HACK
-        len -= 3;
-#endif
+
         if (!free_particles)
             return;
         p = free_particles;
@@ -585,14 +553,9 @@ void CL_RunParticles(void) {
     float dvel;
     int i;
 
-#ifdef NQ_HACK
     frametime = cl.time - cl.oldtime;
     grav = frametime * sv_gravity.value * 0.05;
-#endif
-#ifdef QW_HACK
-    frametime = host_frametime;
-    grav = frametime * 800 * 0.05;
-#endif
+
     time3 = frametime * 15;
     time2 = frametime * 10; // 15;
     time1 = frametime * 5;
@@ -687,11 +650,6 @@ R_DrawParticles
 void R_DrawParticles(void) {
     particle_t *p;
 
-#ifdef GLQUAKE
-#ifdef QW_HACK
-    unsigned char *at;
-    unsigned char theAlpha;
-#endif
     qboolean alphaTestEnabled;
     vec3_t up, right;
     float scale;
@@ -710,17 +668,16 @@ void R_DrawParticles(void) {
 
     VectorScale(vup, 1.5, up);
     VectorScale(vright, 1.5, right);
-#else
+/*
     D_StartParticles();
 
     VectorScale(vright, xscaleshrink, r_pright);
     VectorScale(vup, yscaleshrink, r_pup);
     VectorCopy(vpn, r_ppn);
-#endif
+*/
 
     for (p = active_particles; p; p = p->next) {
 
-#ifdef GLQUAKE
         // hack a scale up to keep particles from disapearing
         scale = (p->org[0] - r_origin[0]) * vpn[0] + (p->org[1] - r_origin[1]) * vpn[1] +
                 (p->org[2] - r_origin[2]) * vpn[2];
@@ -728,36 +685,26 @@ void R_DrawParticles(void) {
             scale = 1;
         else
             scale = 1 + scale * 0.004;
-#ifdef QW_HACK
-        at = (byte *)&d_8to24table[(int)p->color];
-        if (p->type == pt_fire)
-            theAlpha = 255 * (6 - p->ramp) / 6;
-        else
-            theAlpha = 255;
-        glColor4ub(*at, *(at + 1), *(at + 2), theAlpha);
-#endif
-#ifdef NQ_HACK
+
+
         glColor3ubv((byte *)&d_8to24table[(int)p->color]);
-#endif
         glTexCoord2f(0, 0);
         glVertex3fv(p->org);
         glTexCoord2f(1, 0);
         glVertex3f(p->org[0] + up[0] * scale, p->org[1] + up[1] * scale, p->org[2] + up[2] * scale);
         glTexCoord2f(0, 1);
         glVertex3f(p->org[0] + right[0] * scale, p->org[1] + right[1] * scale, p->org[2] + right[2] * scale);
-#else
-        D_DrawParticle(p);
-#endif
+
+        //D_DrawParticle(p);
+
     }
 
-#ifdef GLQUAKE
     glEnd();
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
     if (alphaTestEnabled)
         glEnable(GL_ALPHA_TEST);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-#else
-    D_EndParticles();
-#endif
+
+    //D_EndParticles();
 }

@@ -119,7 +119,6 @@ extern vec3_t modelorg, r_entorigin;
 extern int r_visframecount;  // ??? what difs?
 extern int r_framecount;
 extern int c_brush_polys;
-extern int c_lightmaps_uploaded;
 
 //
 // view origin
@@ -174,15 +173,7 @@ extern cvar_t gl_subdivide_size;
 
 extern cvar_t _gl_allowgammafallback;
 
-#ifdef NQ_HACK
 extern cvar_t gl_doubleeyes;
-#endif
-
-#ifdef QW_HACK
-extern GLuint netgraphtexture;  // netgraph texture
-extern cvar_t r_netgraph;
-void R_NetGraph(void);
-#endif
 
 extern int gl_lightmap_format;
 extern int gl_solid_format;
