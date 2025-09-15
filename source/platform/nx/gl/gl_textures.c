@@ -169,11 +169,11 @@ int GL_FindTexture(const char *identifier)
 GL_ResampleTexture
 ================
 */
-void GL_ResampleTexture (unsigned *in, int inwidth, int inheight, unsigned *out,  int outwidth, int outheight)
+void GL_ResampleTexture (uint32_t *in, int inwidth, int inheight, uint32_t *out,  int outwidth, int outheight)
 {
 	int		i, j;
-	unsigned	*inrow;
-	unsigned	frac, fracstep;
+	uint32_t	*inrow;
+	uint32_t	frac, fracstep;
 
 	fracstep = inwidth*0x10000/outwidth;
 	for (i=0 ; i<outheight ; i++, out += outwidth)
@@ -227,7 +227,7 @@ void GL_MipMap (byte *in, int width, int height)
 GL_Upload32
 ===============
 */
-void GL_Upload32(GLuint gl_id, unsigned *data, int width, int height, qboolean mipmap, qboolean alpha)
+void GL_Upload32(GLuint gl_id, uint32_t *data, int width, int height, qboolean mipmap, qboolean alpha)
 {
     int scaled_width = 1, scaled_height = 1;
     while (scaled_width < width) scaled_width <<= 1;
@@ -242,7 +242,7 @@ void GL_Upload32(GLuint gl_id, unsigned *data, int width, int height, qboolean m
     if (scaled_width < 1) scaled_width = 1;
     if (scaled_height < 1) scaled_height = 1;
 
-    unsigned *scaled = malloc(scaled_width * scaled_height * sizeof(unsigned));
+    uint32_t *scaled = malloc(scaled_width * scaled_height * sizeof(uint32_t));
     if (!scaled) Sys_Error("GL_Upload32: out of memory");
 
     // bind the texture
@@ -286,7 +286,7 @@ void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipm
 	int			i, s;
 	qboolean	noalpha;
 	int			p;
-	unsigned *trans = malloc(width*height*sizeof(unsigned));
+	uint32_t *trans = malloc(width*height*sizeof(uint32_t));
 
 	s = width*height;
 	// if there are no transparent pixels, make it a 3 component
@@ -366,7 +366,7 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 		GL_Upload8 (glt->gl_id, data, width, height, mipmap, alpha);
 	}
 	else if (bytesperpixel == 4) {
-		GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, mipmap, alpha);
+		GL_Upload32 (glt->gl_id, (uint32_t*)data, width, height, mipmap, alpha);
 	}
 	else {
 		Sys_Error("GL_LoadTexture: unknown bytesperpixel\n");
@@ -424,7 +424,7 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-		GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, false, false);
+		GL_Upload32 (glt->gl_id, (uint32_t*)data, width, height, false, false);
 
 		numgltextures++;
 	} else if (update == true) {
@@ -438,7 +438,7 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-			GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, false, false);
+			GL_Upload32 (glt->gl_id, (uint32_t*)data, width, height, false, false);
 		}
 	}
 

@@ -157,11 +157,11 @@ int q_snprintf (char *str, size_t size, const char *format, ...)
 	return ret;
 }
 
-void Q_memset (void *dest, int fill, size_t count)
+void Q_memset (void *dest, int fill, int count)
 {
-	size_t             i;
+	int             i;
 	
-	if ( (((size_t)dest | count) & 3) == 0)
+	if ( (((long)dest | count) & 3) == 0)
 	{
 		count >>= 2;
 		fill = fill | (fill<<8) | (fill<<16) | (fill<<24);
@@ -173,11 +173,11 @@ void Q_memset (void *dest, int fill, size_t count)
 			((byte *)dest)[i] = fill;
 }
 
-void Q_memcpy (void *dest, void *src, size_t count)
+void Q_memcpy (void *dest, void *src, int count)
 {
-	size_t             i;
+	int             i;
 	
-	if (( ( (size_t)dest | (size_t)src | count) & 3) == 0 )
+	if (( ( (long)dest | (long)src | count) & 3) == 0 )
 	{
 		count>>=2;
 		for (i=0 ; i<count ; i++)
@@ -188,7 +188,7 @@ void Q_memcpy (void *dest, void *src, size_t count)
 			((byte *)dest)[i] = ((byte *)src)[i];
 }
 
-int Q_memcmp (void *m1, void *m2, size_t count)
+int Q_memcmp (void *m1, void *m2, int count)
 {
 	while(count)
 	{
@@ -217,6 +217,32 @@ void Q_strncpy (char *dest, char *src, int count)
 	if (count)
 		*dest++ = 0;
 }
+
+size_t Q_strlcpy (char *dst, const char *src, size_t siz)
+{
+	char *d = dst;
+	const char *s = src;
+	size_t n = siz;
+
+	/* Copy as many bytes as will fit */
+	if (n != 0) {
+		while (--n != 0) {
+			if ((*d++ = *s++) == '\0')
+				break;
+		}
+	}
+
+	/* Not enough room in dst, add NUL and traverse rest of src */
+	if (n == 0) {
+		if (siz != 0)
+			*d = '\0';		/* NUL-terminate dst */
+		while (*s++)
+			;
+	}
+
+	return(s - src - 1);	/* count does not include NUL */
+}
+
 
 int Q_strlen (char *str)
 {
@@ -247,7 +273,10 @@ void Q_strcat (char *dest, char *src)
 int Q_strncasecmp (char *s1, char *s2, int n)
 {
 	int             c1, c2;
-	
+
+	if (s1 == s2 || n <= 0)
+		return 0;
+
 	while (1)
 	{
 		c1 = *s1++;
@@ -255,23 +284,21 @@ int Q_strncasecmp (char *s1, char *s2, int n)
 
 		if (!n--)
 			return 0;               // strings are equal until end point
-		
+
 		if (c1 != c2)
 		{
 			if (c1 >= 'a' && c1 <= 'z')
 				c1 -= ('a' - 'A');
 			if (c2 >= 'a' && c2 <= 'z')
 				c2 -= ('a' - 'A');
-			if (c1 != c2)
-				return -1;              // strings not equal
 		}
 		if (!c1)
-			return 0;               // strings are equal
-//              s1++;
-//              s2++;
+			return (c2 == 0) ? 0 : -1;
+		if (c1 < c2)
+			return -1;
+		if (c1 > c2)
+			return 1;
 	}
-	
-	return -1;
 }
 
 int Q_strcasecmp (char *s1, char *s2)
@@ -930,7 +957,7 @@ void COM_StripExtension(char *filename, char *out, size_t buflen) {
         return;
     }
 
-    copylen = MIN((size_t)(pos - filename), buflen -1 );
+    copylen = qmin((size_t)(pos - filename), buflen -1 );
     memcpy(out, filename, copylen);
     out[copylen] = 0;
 }

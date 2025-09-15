@@ -211,7 +211,7 @@ static void VID_InitGL(void) {
 
     // Successfully loaded OpenGL
     printf("Loaded OpenGL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
-/*
+
     gl_vendor = (const char *)glGetString(GL_VENDOR);
     gl_renderer = (const char *)glGetString(GL_RENDERER);
     gl_version = (const char *)glGetString(GL_VERSION);
@@ -220,8 +220,9 @@ static void VID_InitGL(void) {
     Con_Printf("GL_VENDOR: %s\n", gl_vendor);
     Con_Printf("GL_RENDERER: %s\n", gl_renderer);
     Con_Printf("GL_VERSION: %s\n", gl_version);
-    Con_Printf("GL_EXTENSIONS: %s\n", gl_extensions);
-*/
+    //Con_Printf("GL_EXTENSIONS: %s\n", gl_extensions);
+    // sbTODO - Extensions string crashes in Vril's console implementation. Too big? Check back later..
+
     gl_mtexable = false;
 
     glCullFace(GL_FRONT);
@@ -336,7 +337,7 @@ void VID_SetPalette(unsigned char *palette) {
 */
 void	VID_SetPalette (unsigned char *palette)
 {
-	byte	*pal;
+	uint8_t	*pal;
 	unsigned r,g,b;
 	unsigned v;
 	int     r1,g1,b1;

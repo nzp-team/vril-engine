@@ -37,7 +37,7 @@ extern float gldepthmin, gldepthmax;
 
 void GL_UnloadTextures (void);
 int GL_FindTexture(const char *identifier);
-void GL_Upload32(GLuint gl_id, unsigned *data, int width, int height, qboolean mipmap, qboolean alpha);
+void GL_Upload32(GLuint gl_id, uint32_t *data, int width, int height, qboolean mipmap, qboolean alpha);
 void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel, qboolean keep);
 int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qboolean update);

@@ -236,10 +236,10 @@ Loads a model into the cache
 */
 model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 {
-	void	*d;
-	byte 	*buf;
-	byte	stackbuf[1024];		// avoid dirtying the cache heap
-	size_t 	size;
+	void		*d;
+	unsigned 	*buf, header;
+	byte		stackbuf[1024];		// avoid dirtying the cache heap
+	size_t 		size;
 
 	if (!mod->needload)
 	{
@@ -275,7 +275,8 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 		}
 		return NULL;
 	}
-	
+
+	header = LittleLong(*buf);
 //
 // allocate a new model
 //
@@ -289,20 +290,20 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 
 // call the apropriate loader
 	mod->needload = false;
-	
-	switch (LittleLong(*(unsigned *)buf))
+
+	switch (header)
 	{
-	case IDPOLYHEADER:
-		Mod_LoadAliasModel (mod, buf);
-		break;
+		case IDPOLYHEADER:
+			Mod_LoadAliasModel (mod, buf);
+			break;
+			
+		case IDSPRITEHEADER:
+			Mod_LoadSpriteModel (mod, buf);
+			break;
 		
-	case IDSPRITEHEADER:
-		Mod_LoadSpriteModel (mod, buf);
-		break;
-	
-	default:
-		Mod_LoadBrushModel (mod, buf, size);
-		break;
+		default:
+			Mod_LoadBrushModel (mod, buf, size);
+			break;
 	}
 
 	return mod;
@@ -1157,10 +1158,10 @@ Mod_LoadMarksurfaces
 void Mod_LoadMarksurfaces (lump_t *l)
 {	
 	int				i, j, count;
-	const uint16_t	*in;
+	const int16_t	*in;
 	msurface_t 		**out;
 	
-	in = (uint16_t *)(byte *)(mod_base + l->fileofs);
+	in = (int16_t *)(byte *)(mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
 		Sys_Error ("funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
@@ -1171,7 +1172,7 @@ void Mod_LoadMarksurfaces (lump_t *l)
 
 	for ( i=0 ; i<count ; i++)
 	{
-		j = (uint16_t)LittleShort(in[i]);
+		j = (int16_t)LittleShort(in[i]);
 		if (j >= loadmodel->numsurfaces)
 			Sys_Error ("bad surface number");
 		out[i] = loadmodel->surfaces + j;

@@ -48,7 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 typedef unsigned char byte;
 
-typedef uint32_t qboolean;
+typedef unsigned int qboolean;
 
 #ifndef offsetof
 #define offsetof(type, member) __builtin_offsetof(type, member)
@@ -57,6 +57,22 @@ typedef uint32_t qboolean;
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 #endif
+
+/* min and max macros with type checking */
+#define qmax(a, b)           \
+    ({                       \
+        typeof(a) a_ = (a);  \
+        typeof(b) b_ = (b);  \
+        (void)(&a_ == &b_);  \
+        (a_ > b_) ? a_ : b_; \
+    })
+#define qmin(a, b)           \
+    ({                       \
+        typeof(a) a_ = (a);  \
+        typeof(b) b_ = (b);  \
+        (void)(&a_ == &b_);  \
+        (a_ < b_) ? a_ : b_; \
+    })
 
 /**
  * container_of - cast a member of a structure out to the containing structure
@@ -195,11 +211,12 @@ int MSG_ReadControlHeader(void);
 
 //============================================================================
 
-void Q_memset (void *dest, int fill, size_t count);
-void Q_memcpy (void *dest, void *src, size_t count);
-int Q_memcmp (void *m1, void *m2, size_t count);
+void Q_memset (void *dest, int fill, int count);
+void Q_memcpy (void *dest, void *src, int count);
+int Q_memcmp (void *m1, void *m2, int count);
 void Q_strcpy (char *dest, char *src);
 void Q_strncpy (char *dest, char *src, int count);
+size_t Q_strlcpy (char *dst, const char *src, size_t siz);
 int Q_strlen (char *str);
 char *Q_strrchr (char *s, char c);
 void Q_strcat (char *dest, char *src);
