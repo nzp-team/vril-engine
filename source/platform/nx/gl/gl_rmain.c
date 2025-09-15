@@ -34,7 +34,6 @@ int r_framecount;    // used for dlight push checking
 
 static mplane_t frustum[4];
 
-int c_lightmaps_uploaded;
 int c_brush_polys;
 int c_alias_polys;
 
@@ -1360,16 +1359,8 @@ R_SetupFrame
 void V_CalcBlend (void);
 void R_SetupFrame(void) {
 // don't allow cheats in multiplayer
-#ifdef NQ_HACK
     if (cl.maxclients > 1)
         Cvar_Set("r_fullbright", "0");
-#endif
-#ifdef QW_HACK
-    r_fullbright.value = 0;
-    r_lightmap.value = 0;
-    if (!atoi(Info_ValueForKey(cl.serverinfo, "watervis")))
-        r_wateralpha.value = 1;
-#endif
 
     R_AnimateLight();
 
@@ -1392,7 +1383,6 @@ void R_SetupFrame(void) {
     // reset count of polys for this frame
     c_brush_polys = 0;
     c_alias_polys = 0;
-    c_lightmaps_uploaded = 0;
 }
 
 void MYgluPerspective( GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar )
@@ -1591,7 +1581,6 @@ void R_RenderView(void) {
         time1 = Sys_FloatTime();
         c_brush_polys = 0;
         c_alias_polys = 0;
-        c_lightmaps_uploaded = 0;
     }
 
     mirror = false;
@@ -1602,7 +1591,8 @@ void R_RenderView(void) {
 
     // render normal view
     R_RenderScene();
-    R_DrawView2Model ();
+    R_DrawViewModel ();
+	R_DrawView2Model ();
 	R_DrawWaterSurfaces ();
 
 	Fog_DisableGFog (); //johnfitz;
@@ -1613,7 +1603,7 @@ void R_RenderView(void) {
         //              glFinish ();
         time2 = Sys_FloatTime();
         Con_Printf("%3i ms  %4i wpoly %4i epoly %4i dlit\n", (int)((time2 - time1) * 1000), c_brush_polys,
-                   c_alias_polys, c_lightmaps_uploaded);
+                   c_alias_polys);
     }
 }
 
