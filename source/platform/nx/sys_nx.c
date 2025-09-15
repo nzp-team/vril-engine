@@ -281,7 +281,6 @@ double Sys_FloatTime(void) {
     return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
 }
 
-#if defined(NQ_HACK) || defined(SERVERONLY)
 /*
 ================
 Sys_ConsoleInput
@@ -293,7 +292,6 @@ it to the host command processor
 char *Sys_ConsoleInput(void) {
     static char text[256];
     int len;
-#ifdef NQ_HACK
     fd_set fdset;
     struct timeval timeout;
 
@@ -306,25 +304,14 @@ char *Sys_ConsoleInput(void) {
     if (select(STDIN_FILENO + 1, &fdset, NULL, NULL, &timeout) == -1 ||
         !FD_ISSET(STDIN_FILENO, &fdset))
         return NULL;
-#endif
-#ifdef SERVERONLY
-    /* check that the select returned ready */
-    if (!stdin_ready || !do_stdin) return NULL;
-    stdin_ready = false;
-#endif
 
     len = read(STDIN_FILENO, text, sizeof(text));
-#ifdef SERVERONLY
-    if (len == 0) do_stdin = 0; /* end of file */
-#endif
     if (len < 1) return NULL;
     text[len - 1] = 0; /* remove the /n and terminate */
 
     return text;
 }
-#endif /* NQ_HACK || SERVERONLY */
 
-#ifndef SERVERONLY
 void Sys_Sleep(void) {
     struct timespec ts;
 
@@ -374,7 +361,6 @@ void Sys_MakeCodeWriteable(void *start_addr, void *end_addr) {
     if (result < 0) Sys_Error("Protection change failed");
 #endif
 }
-#endif /* !SERVERONLY */
 
 /*
  * ===========================================================================

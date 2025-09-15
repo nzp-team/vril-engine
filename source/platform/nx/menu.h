@@ -37,11 +37,9 @@ void M_DrawCheckbox(int x, int y, qboolean checked);
 void M_Print(int cx, int cy, const char *str);
 void M_PrintWhite(int cx, int cy, const char *str);
 
-#ifdef NQ_HACK
 /* FIXME - These are only here for NQ/net_dgrm.c */
 extern qboolean m_return_onerror;
 extern char m_return_reason[32];
 extern int m_return_state;
-#endif
 
 #endif /* MENU_H */

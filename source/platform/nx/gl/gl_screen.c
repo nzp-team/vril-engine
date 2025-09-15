@@ -617,9 +617,7 @@ keypress.
 ==================
 */
 int SCR_ModalMessage(const char *text) {
-#ifdef NQ_HACK
     if (cls.state == ca_dedicated) return true;
-#endif
 
     scr_notifystring = text;
 

@@ -59,7 +59,6 @@ void R_InitParticles(void) {
     particles = (particle_t *)Hunk_AllocName(r_numparticles * sizeof(particle_t), "particles");
 }
 
-#ifdef NQ_HACK
 /*
 ===============
 R_EntityParticles
@@ -117,7 +116,6 @@ void R_EntityParticles(const entity_t *ent) {
         p->org[2] = ent->origin[2] + r_avertexnormals[i][2] * dist + forward[2] * beamlength;
     }
 }
-#endif /* NQ_HACK */
 
 /*
 ===============
@@ -179,7 +177,6 @@ void R_ReadPointFile_f(void) {
     Con_Printf("%i points read\n", c);
 }
 
-#ifdef NQ_HACK
 /*
 ===============
 R_ParseParticleEffect
@@ -205,7 +202,6 @@ void R_ParseParticleEffect(void) {
 
     R_RunParticleEffect(org, dir, color, count);
 }
-#endif
 
 /*
 ===============
@@ -244,7 +240,6 @@ void R_ParticleExplosion(vec3_t org) {
     }
 }
 
-#ifdef NQ_HACK
 /*
 ===============
 R_ParticleExplosion2
@@ -275,7 +270,6 @@ void R_ParticleExplosion2(vec3_t org, int colorStart, int colorLength) {
         }
     }
 }
-#endif
 
 /*
 ===============
@@ -356,7 +350,7 @@ void R_RunParticleEffect(vec3_t org, vec3_t dir, int color, int count) {
             p->type = pt_slowgrav;
             for (j = 0; j < 3; j++) {
                 p->org[j] = org[j] + ((rand() & 15) - 8);
-                p->vel[j] = dir[j] * 15; // + (rand()%300)-150;
+                p->vel[j] = dir[j] * 15 + (rand()%300)-150;
             }
         }
     }

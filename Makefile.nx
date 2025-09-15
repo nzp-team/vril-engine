@@ -41,7 +41,7 @@ SOURCES		:=	source
 DATA		:=	data
 INCLUDES	:=	include
 EXEFS_SRC	:=	exefs_src
-DEFINES	:=	-DTYR_VERSION=0.62-nx -DUSE_SDL2 -DNQ_HACK -D__NX__ -DDEBUG -DPLATFORM_DIRECTORY="nx" -DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=24
+DEFINES	:=	-DTYR_VERSION=0.62-nx -DUSE_SDL2 -D__NX__ -DDEBUG -DPLATFORM_DIRECTORY="nx" -DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=24
 #ROMFS	:=	romfs
 
 #---------------------------------------------------------------------------------

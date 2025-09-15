@@ -37,9 +37,7 @@ static char *safeargvs[NUM_SAFE_ARGVS] = {"-stdvid", "-nolan",   "-nosound", "-n
                                                 "-nojoy",  "-nomouse", "-dibonly"};
 
 cvar_t registered = {"registered", "0"};
-#ifdef NQ_HACK
 static cvar_t cmdline = {"cmdline", "0", false, true};
-#endif
 
 static qboolean com_modified;      // set true if using non-id files
 static int static_registered = 1;  // only for startup check, then set
@@ -50,10 +48,8 @@ static void COM_InitFilesystem(void);
 static void COM_Path_f(void);
 static void *SZ_GetSpace(sizebuf_t *buf, int length);
 
-#ifdef NQ_HACK
 #define CMDLINE_LENGTH 256
 static char com_cmdline[CMDLINE_LENGTH];
-#endif
 
 qboolean standard_quake = true, rogue, hipnotic;
 
@@ -1050,7 +1046,6 @@ COM_InitArgv
 void COM_InitArgv(int argc, char **argv) {
     qboolean safe;
     int i;
-#ifdef NQ_HACK
     int j, n;
 
     // reconstitute the command line for the cmdline externally visible cvar
@@ -1067,7 +1062,6 @@ void COM_InitArgv(int argc, char **argv) {
             break;
     }
     com_cmdline[n] = 0;
-#endif
 
     safe = false;
 
@@ -1087,18 +1081,6 @@ void COM_InitArgv(int argc, char **argv) {
 
     largv[com_argc] = argvdummy;
     com_argv = largv;
-
-#ifdef NQ_HACK
-    if (COM_CheckParm("-rogue")) {
-        rogue = true;
-        standard_quake = false;
-    }
-
-    if (COM_CheckParm("-hipnotic") || COM_CheckParm("-quoth")) {
-        hipnotic = true;
-        standard_quake = false;
-    }
-#endif
 }
 
 /*
@@ -1362,7 +1344,7 @@ int COM_FOpenFile(char *filename, FILE **file) {
         }
     }
 
-    Sys_Printf("FindFile: can't find %s\n", filename);
+    Con_DPrintf("FindFile: can't find %s\n", filename);
     *file = NULL;
     com_filesize = -1;
 
@@ -1560,9 +1542,7 @@ static void COM_InitFilesystem(void)
 {
     int i;
     char *home;
-#ifdef NQ_HACK
     searchpath_t *search;
-#endif
 
     home = getenv("HOME");
 

@@ -132,10 +132,8 @@ void R_Init(void) {
     Cvar_RegisterVariable(&r_drawentities);
     Cvar_RegisterVariable(&r_drawviewmodel);
     Cvar_RegisterVariable(&r_drawflat);
-#ifdef NQ_HACK
     Cvar_RegisterVariable(&r_lerpmodels);
     Cvar_RegisterVariable(&r_lerpmove);
-#endif
 
     Cvar_RegisterVariable(&r_norefresh);
     Cvar_RegisterVariable(&r_lightmap);

@@ -241,10 +241,7 @@ static void CD_f(void) {
 int CDAudio_Init(void) {
     int i, err;
 
-#ifdef NQ_HACK
-    // FIXME - not a valid client state in QW?
     if (cls.state == ca_dedicated) return -1;
-#endif
 
     if (COM_CheckParm("-nocdaudio")) return -1;
 
