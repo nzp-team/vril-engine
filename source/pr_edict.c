@@ -141,7 +141,7 @@ edict_t *ED_Alloc (void)
 		e = EDICT_NUM(i);
 		// the first couple seconds of server time can involve a lot of
 		// freeing and allocating, so relax the replacement policy
-		if (e->free && ( e->freetime < 2 || sv.time - e->freetime > 0.5f ) )
+		if (e->free && ( e->freetime < 2 || sv.time - (double)e->freetime > (double)0.5f ) )
 		{
 			ED_ClearEdict (e);
 			return e;
@@ -356,10 +356,10 @@ char *PR_ValueString (etype_t type, eval_t *val)
 		q_snprintf (line, sizeof(line), "void");
 		break;
 	case ev_float:
-		q_snprintf (line, sizeof(line), "%5.1f", val->_float);
+		q_snprintf (line, sizeof(line), "%5.1f", (double)val->_float);
 		break;
 	case ev_vector:
-		q_snprintf (line, sizeof(line), "'%5.1f %5.1f %5.1f'", val->vector[0], val->vector[1], val->vector[2]);
+		q_snprintf (line, sizeof(line), "'%5.1f %5.1f %5.1f'", (double)val->vector[0], (double)val->vector[1], (double)val->vector[2]);
 		break;
 	case ev_pointer:
 		q_snprintf (line, sizeof(line), "pointer");
@@ -408,10 +408,10 @@ char *PR_UglyValueString (etype_t type, eval_t *val)
 		q_snprintf (line, sizeof(line), "void");
 		break;
 	case ev_float:
-		q_snprintf (line, sizeof(line), "%f", val->_float);
+		q_snprintf (line, sizeof(line), "%f", (double)val->_float);
 		break;
 	case ev_vector:
-		q_snprintf (line, sizeof(line), "%f %f %f", val->vector[0], val->vector[1], val->vector[2]);
+		q_snprintf (line, sizeof(line), "%f %f %f", (double)val->vector[0], (double)val->vector[1], (double)val->vector[2]);
 		break;
 	default:
 		q_snprintf (line, sizeof(line), "bad type %i", type);

@@ -224,6 +224,31 @@ void Q_strncpy (char *dest, char *src, int count)
 		*dest++ = 0;
 }
 
+size_t Q_strlcpy (char *dst, const char *src, size_t siz)
+{
+	char *d = dst;
+	const char *s = src;
+	size_t n = siz;
+
+	/* Copy as many bytes as will fit */
+	if (n != 0) {
+		while (--n != 0) {
+			if ((*d++ = *s++) == '\0')
+				break;
+		}
+	}
+
+	/* Not enough room in dst, add NUL and traverse rest of src */
+	if (n == 0) {
+		if (siz != 0)
+			*d = '\0';		/* NUL-terminate dst */
+		while (*s++)
+			;
+	}
+
+	return(s - src - 1);	/* count does not include NUL */
+}
+
 int Q_strlen (char *str)
 {
 	int             count;
@@ -1405,7 +1430,7 @@ Allways appends a 0 byte.
 cache_user_t *loadcache;
 byte    *loadbuf;
 int             loadsize;
-byte *COM_LoadFile (char *path, int usehunk)
+byte *COM_LoadFile (char *path, int usehunk, size_t *size)
 {
 	int             h;
 	byte    *buf;
@@ -1453,28 +1478,28 @@ byte *COM_LoadFile (char *path, int usehunk)
 
 byte *COM_LoadHunkFile (char *path)
 {
-	return COM_LoadFile (path, 1);
+	return COM_LoadFile (path, 1, NULL);
 }
 
 byte *COM_LoadTempFile (char *path)
 {
-	return COM_LoadFile (path, 2);
+	return COM_LoadFile (path, 2, NULL);
 }
 
 void COM_LoadCacheFile (char *path, struct cache_user_s *cu)
 {
 	loadcache = cu;
-	COM_LoadFile (path, 3);
+	COM_LoadFile (path, 3, NULL);
 }
 
 // uses temp hunk if larger than bufsize
-byte *COM_LoadStackFile (char *path, void *buffer, int bufsize)
+void *COM_LoadStackFile (char *path, void *buffer, int bufsize, size_t *size)
 {
 	byte    *buf;
 	
 	loadbuf = (byte *)buffer;
 	loadsize = bufsize;
-	buf = COM_LoadFile (path, 4);
+	buf = COM_LoadFile (path, 4, size);
 	
 	return buf;
 }
