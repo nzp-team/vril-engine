@@ -27,11 +27,11 @@
 void
 Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, float green, float blue, float alpha)
 {
-	float color[4] = {red, green, blue, alpha};
+	float color[4] = {red / 96.0f, green / 96.0f, blue / 96.0f, alpha};
 
     glFogfv(GL_FOG_COLOR, color);
-	glFogf(GL_FOG_START, start);
-	glFogf(GL_FOG_END, end);
+	glFogf(GL_FOG_START, start*1.2f);
+	glFogf(GL_FOG_END, end*1.2f);
 }
 
 /**
