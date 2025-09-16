@@ -478,7 +478,6 @@ void R_RenderBrushPoly (msurface_t *fa)
 	bool choosealpha = t->name[0] == '{' ? true : false; // naievil -- need to choose alpha mode for certain textures
 	if(choosealpha) {
 		glEnable(GL_ALPHA_TEST);
-		glAlphaFunc(GL_GREATER, 0xaa);
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		glColor4f(1, 1, 1, 1);
 	}
