@@ -182,10 +182,12 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 
 	GL_Bind (char_texture);
 
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
 	glEnable(GL_BLEND);
 	glColor4f(r/255, g/255, b/255, a/255);
 	glDisable (GL_ALPHA_TEST);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	glBegin (GL_QUADS);
 	glTexCoord2f (fcol, frow);
@@ -199,7 +201,6 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 	glEnd ();
 	
 	glColor4f(1,1,1,1);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	glEnable(GL_ALPHA_TEST);
 	glDisable (GL_BLEND);
 }
