@@ -213,7 +213,7 @@ void Key_Console (int key)
 									// may take some time
 		// for clientside cmds							
 		if (cls.state == ca_connected){
-			pr_global_struct->CMD_STRING = (key_lines[edit_line-1]+1 - pr_strings);
+			pr_global_struct->CMD_STRING = (PR_SetString(key_lines[edit_line-1]+1));
 			PR_ExecuteProgram (pr_global_struct->ParseClientCommand);
 		}
 		return;

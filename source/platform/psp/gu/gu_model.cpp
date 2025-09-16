@@ -332,10 +332,10 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 		COM_StripExtension(mod->name, &strip[0]);
 		snprintf (&md3name[0], 132, "%s.md3", &strip[0]);
 
-		buf = (unsigned *)COM_LoadStackFile (md3name, stackbuf, sizeof(stackbuf));
+		buf = (unsigned *)COM_LoadStackFile (md3name, stackbuf, sizeof(stackbuf), NULL);
 		if (!buf)
 		{
-			buf = (unsigned *)COM_LoadStackFile (mod->name, stackbuf, sizeof(stackbuf));
+			buf = (unsigned *)COM_LoadStackFile (mod->name, stackbuf, sizeof(stackbuf), NULL);
 			if (!buf)
 			{
 				if (crash)
@@ -346,11 +346,11 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 	}
 	else
 	{
-		buf = (unsigned *)COM_LoadStackFile (mod->name, stackbuf, sizeof(stackbuf));
+		buf = (unsigned *)COM_LoadStackFile (mod->name, stackbuf, sizeof(stackbuf), NULL);
 	    if (!buf && crash)
 		{
 			// Reload with another .mdl
-			buf = (unsigned *)COM_LoadStackFile("models/missing_model.mdl", stackbuf, sizeof(stackbuf));
+			buf = (unsigned *)COM_LoadStackFile("models/missing_model.mdl", stackbuf, sizeof(stackbuf), NULL);
 			if (buf)
 			{
 				Con_Printf ("Missing model %s substituted\n", mod->name);

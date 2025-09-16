@@ -34,6 +34,22 @@ typedef unsigned int qboolean;
 #define fmax(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
+/* min and max macros with type checking */
+#define qmax(a, b)           \
+    ({                       \
+        typeof(a) a_ = (a);  \
+        typeof(b) b_ = (b);  \
+        (void)(&a_ == &b_);  \
+        (a_ > b_) ? a_ : b_; \
+    })
+#define qmin(a, b)           \
+    ({                       \
+        typeof(a) a_ = (a);  \
+        typeof(b) b_ = (b);  \
+        (void)(&a_ == &b_);  \
+        (a_ < b_) ? a_ : b_; \
+    })
+
 #define bound(a, b, c) ((a) >= (c) ? (a) : (b) < (a) ? (a) : (b) > (c) ? (c) : (b))
 
 //============================================================================
@@ -134,6 +150,7 @@ void Q_memcpy (void *dest, void *src, int count);
 int Q_memcmp (void *m1, void *m2, int count);
 void Q_strcpy (char *dest, char *src);
 void Q_strncpy (char *dest, char *src, int count);
+size_t Q_strlcpy (char *dst, const char *src, size_t siz);
 int Q_strlen (char *str);
 char *Q_strrchr (char *s, char c);
 void Q_strcat (char *dest, char *src);
@@ -182,9 +199,9 @@ int COM_OpenFile (char *filename, int *hndl);
 int COM_FOpenFile (char *filename, FILE **file);
 void COM_CloseFile (int h);
 void COM_CreatePath(char* path);
-byte *COM_LoadFile(char* path, int usehunk);
+byte *COM_LoadFile (char *path, int usehunk, size_t *size);
 
-byte *COM_LoadStackFile (char *path, void *buffer, int bufsize);
+void *COM_LoadStackFile (char *path, void *buffer, int bufsize, size_t *size);
 byte *COM_LoadTempFile (char *path);
 byte *COM_LoadHunkFile (char *path);
 void COM_LoadCacheFile (char *path, struct cache_user_s *cu);
