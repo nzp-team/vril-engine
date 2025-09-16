@@ -117,8 +117,6 @@ static int scr_erase_center;
 static qboolean scr_drawloading;
 static float scr_disabled_time;
 
-int			sb_lines;
-
 //=============================================================================
 
 
@@ -141,7 +139,7 @@ static void SCR_DrawFPS(void) {
 
     sprintf(st, "%3d FPS", lastfps);
     x = vid.width - strlen(st) * 8 - 8;
-    y = vid.height - sb_lines - 8;
+    y = vid.height - 8;
     Draw_String(x, y, st);
 }
 
@@ -669,10 +667,8 @@ Must be called whenever vid changes
 Internal use only
 =================
 */
-static void SCR_CalcRefdef(void) {
-    float size;
-	vrect_t vrect;
-
+static void SCR_CalcRefdef(void) 
+{
     scr_fullupdate = 0;  // force a background redraw
     vid.recalc_refdef = 0;
 
@@ -688,27 +684,12 @@ static void SCR_CalcRefdef(void) {
     if (scr_fov.value < 10) Cvar_Set("fov", "10");
     if (scr_fov.value > 170) Cvar_Set("fov", "170");
 
-    // intermission is always full screen
-    if (cl.intermission)
-        size = 120;
-    else
-        size = scr_viewsize.value;
-
-    if (size >= 120)
-        sb_lines = 0;  // no status bar at all
-    else if (size >= 110)
-        sb_lines = 24;  // no inventory
-    else
-        sb_lines = 24 + 16 + 8;
-
 	// these calculations mirror those in R_Init() for r_refdef, but take no
     // account of water warping
-    vrect.x = 0;
-    vrect.y = 0;
-    vrect.width = vid.width;
-    vrect.height = vid.height;
-
-	R_SetVrect(&vrect, &r_refdef.vrect, sb_lines);
+    r_refdef.vrect.x = 0;
+    r_refdef.vrect.y = 0;
+    r_refdef.vrect.width = vid.width;
+    r_refdef.vrect.height = vid.height;
 
     r_refdef.fov_x = scr_fov.value;
     r_refdef.fov_y = CalcFov(r_refdef.fov_x, r_refdef.vrect.width, r_refdef.vrect.height);
