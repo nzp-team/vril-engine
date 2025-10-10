@@ -367,7 +367,7 @@ void Mod_LoadTextures (lump_t *l)
 	dmiptexlump_t *m;
 	char		texname[64];
 
-	byte      *data;
+	byte      *data = NULL;
 
 	loadmodel->textures = NULL;
 
@@ -411,18 +411,19 @@ void Mod_LoadTextures (lump_t *l)
 			R_InitSky (mt);
 		} else {
 			if (loadmodel->bspversion == HL_BSPVERSION) {
-				data = WAD3_LoadTexture(mt);
 
-			  	if (data != NULL) {
+				texture_mode = GL_LINEAR_MIPMAP_NEAREST;
+				sprintf (texname, "textures/%s", mt->name);
+				tx->gl_texturenum = Image_LoadImage (texname, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, true);			//Diabolickal TGA textures
+				texture_mode = GL_LINEAR;
+
+			  	if (tx->gl_texturenum <= 0) {
+					data = WAD3_LoadTexture(mt);
+
 					bool choosealpha = mt->name[0] == '{' ? true : false; // naievil -- need to choose alpha mode for certain textures
 					tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)data, false, choosealpha, 4, false);
 					texture_mode = GL_LINEAR;
 					free(data);
-			  	} else {
-					texture_mode = GL_LINEAR_MIPMAP_NEAREST;
-					sprintf (texname, "textures/%s", mt->name);
-					tx->gl_texturenum = Image_LoadImage (texname, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, true);			//Diabolickal TGA textures
-					texture_mode = GL_LINEAR;
 				}
 			} else {
 				texture_mode = GL_LINEAR_MIPMAP_NEAREST; //_LINEAR;

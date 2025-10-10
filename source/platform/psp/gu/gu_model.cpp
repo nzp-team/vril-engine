@@ -511,42 +511,45 @@ void Mod_LoadTextures (lump_t *l)
 	{
 		if (loadmodel->bspversion == HL_BSPVERSION)
 		{	
-			// Load WAD3 textures first, since they're most likely the ones we want
-			int index = WAD3_LoadTextureClut4(mt);
-			byte *data = NULL;
-
-			if (index != 0) {
-				tx->gl_texturenum = index;
-				tx->fullbright = -1;
-				tx->dt_texturenum = 0;
-			} else {
-				// if we can't load it in the wad, look in external folders
-				char filename[128];
-				snprintf(filename, 128, "textures/maps/%s/%s", sv.name, mt->name);		// search in textures/maps/MAPNAME/TEXNAME
-				
+			char filename[128];		// Filename to check r4w file
+			byte *data;
+			snprintf(filename, 128, "textures/maps/%s/%s.r4w", sv.name, mt->name);		// search in textures/maps/MAPNAME/TEXNAME
+			
+			data = static_cast<byte*>(COM_LoadHunkFile(filename));
+			
+			if (data == NULL) {
+				sprintf(filename, "textures/%s.r4w", mt->name);					// search in textures/TEXNAME
 				data = static_cast<byte*>(COM_LoadHunkFile(filename));
-				
-				if (data == NULL) {
-					sprintf(filename, "textures/%s", mt->name);					// search in textures/TEXNAME
-					data = static_cast<byte*>(COM_LoadHunkFile(filename));
-				}
+			}
+			
+			if (data == NULL) {
+				Con_Printf("Loading texture %s as WAD3, %dx%d\n", mt->name, mt->width, mt->height);		// didn't find the texture in the folder
+					
+				int index = WAD3_LoadTextureClut4(mt);
 
-				if (data != NULL) {
-					int w, h;
-				
-					unsigned int magic = *((unsigned int*)(data));
-					if (magic == 0x65663463)								// what the fuck? 
-					{
-						w = *((int*)(data + 4));
-						h = *((int*)(data + 8));
-
-						tx->gl_texturenum = GL_LoadTexture4(mt->name, w, h, (byte*)(data + 16), GU_LINEAR, false);
-					}
+				if (index != 0) {
+					tx->gl_texturenum = index;
+					tx->fullbright = -1;
+					tx->dt_texturenum = 0;
 				} else {
 					// Fall back to missing texture.
 					Con_Printf("Texture %s not found\n", mt->name);
 					tx->gl_texturenum = nonetexture;
 				}
+			
+			} else {
+				
+				int w, h;
+				
+				unsigned int magic = *((unsigned int*)(data));
+				if (magic == 0x65663463)								// what the fuck? 
+				{
+					w = *((int*)(data + 4));
+					h = *((int*)(data + 8));
+
+					tx->gl_texturenum = GL_LoadTexture4(mt->name, w, h, (byte*)(data + 16), GU_LINEAR, false);
+				}
+	
 			}
 		}
 		else
