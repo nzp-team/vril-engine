@@ -84,14 +84,14 @@ COMMON_OBJS = \
 	source/render/r_fog.o \
 	source/render/r_entity_fragments.o \
 	source/render/r_color_quantization.o \
-	source/render/r_light.o
+	source/render/r_light.o \
+	source/images.o \
 
 HARDWARE_VIDEO_ONLY_OBJS = \
 	source/platform/psp/clipping.o \
 	source/platform/psp/vram.o \
     source/platform/psp/gu/gu_psp.o \
     source/platform/psp/gu/gu_resample.o \
-    source/platform/psp/gu/gu_images.o \
     source/platform/psp/gu/gu_fullbright.o \
     source/platform/psp/gu/gu_draw.o \
     source/platform/psp/gu/gu_QMB.o \

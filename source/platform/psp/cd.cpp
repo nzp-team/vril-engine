@@ -272,7 +272,7 @@ void CDAudio_Update(void)
 		/*if(mp3_status == MP3_END)
 		{
 			if(cd_loop == 1) {
-				CDAudio_PlayFromString(last_track_string, qtrue);
+				CDAudio_PlayFromString(last_track_string, true);
 			} 
 		}*/
 

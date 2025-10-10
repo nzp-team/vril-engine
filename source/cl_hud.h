@@ -39,7 +39,7 @@ extern double HUD_Change_time;
 #define MAX_ACHIEVEMENTS 5//23
 typedef struct achievement_list_s
 {
-    qpic_t      *img;
+    int         img;
     int         unlocked;
     char        name[64];
     char        description[256];
@@ -48,9 +48,15 @@ typedef struct achievement_list_s
 
 void Achievement_Init (void);
 extern achievement_list_t achievement_list[MAX_ACHIEVEMENTS];
-extern qpic_t *achievement_locked;
+extern int achievement_locked;
 extern char player_name[16];
 extern double nameprint_time;
+
+extern int perk_order[8];
+extern int current_perk_order;
+extern double Hitmark_Time, crosshair_spread_time;
+extern float cur_spread;
+extern float crosshair_offset_step;
 
 extern int screenflash_color;
 extern double screenflash_duration;

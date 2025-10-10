@@ -26,20 +26,12 @@ unsigned char d_15to8table[65536];
 
 int		texture_mode = GL_LINEAR;
 
-int		texture_extension_number = 1;
-
 double	gldepthmin, gldepthmax;
 
 cvar_t	gl_ztrick = {"gl_ztrick","0"};
 
-const char *gl_vendor;
-const char *gl_renderer;
-const char *gl_version;
-const char *gl_extensions;
-
 static float vid_gamma = 1.0;
 
-qboolean is8bit = false;
 qboolean isPermedia = true;
 qboolean gl_mtexable = false;
 
@@ -52,17 +44,8 @@ void GL_Init (void)
 {
 	pglInitEx(0x040000, 0x100000);
 
-#pragma GCC diagnostic ignored "-Wpointer-sign"
-
-	gl_vendor = glGetString (GL_VENDOR);
-	gl_renderer = glGetString (GL_RENDERER);
-	gl_version = glGetString (GL_VERSION);
-	gl_extensions = glGetString (GL_EXTENSIONS);
-
-#pragma GCC diagnostic pop
-
-	glClearDepth (1.0);
-	glClearColor ((float)(16.0f/255),(float)(32.0f/255),(float)(64.0f/255),1);
+	glClearDepth (1.0f);
+	glClearColor ((float)(16/255),(float)(32/255),(float)(64/255),1);
 	glCullFace(GL_FRONT);
 	glEnable(GL_TEXTURE_2D);
 
@@ -95,7 +78,6 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 
 void GL_EndRendering (void)
 {
-	// naievil -- this requies the new version of picagl to be used properly
 	//glFinish();
 	pglSwapBuffersEx(1,0); 
 }
@@ -159,11 +141,6 @@ void	VID_ShiftPalette (unsigned char *palette)
 	//VID_SetPalette(palette);
 }
 
-qboolean VID_Is8bit(void)
-{
-	return is8bit;
-}
-
 static void Check_Gamma (unsigned char *pal)
 {
 	float	f, inf;
@@ -187,14 +164,12 @@ static void Check_Gamma (unsigned char *pal)
 	}
 
 	memcpy (pal, palette, sizeof(palette));
-
-	BuildGammaTable (vid_gamma);		//Diabolickal HLBSP
 }
 
 void	VID_Init (unsigned char *palette)
 {
 	int i;
-	char	gldir[512];
+	//char	gldir[512];
 	int width = 400;
 	int height = 240;
 
@@ -234,8 +209,8 @@ void	VID_Init (unsigned char *palette)
 
 	GL_Init();
 
-	snprintf(gldir, 512, "%s/glquake", com_gamedir);
-	Sys_mkdir (gldir);
+	//snprintf(gldir, 512, "%s/glquake", com_gamedir);
+	//Sys_mkdir (gldir);
 
 	Check_Gamma(palette);
 	VID_SetPalette(palette);

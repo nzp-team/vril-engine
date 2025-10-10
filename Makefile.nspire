@@ -34,6 +34,7 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/cl_tent.c \
 		source/cmd.c \
 		source/platform/nspire/common.c \
+		source/images.c \
 		source/console.c \
 		source/crc.c \
 		source/cvar.c \

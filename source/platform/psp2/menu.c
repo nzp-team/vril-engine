@@ -67,6 +67,11 @@ int			m_return_state;
 qboolean	m_return_onerror;
 char		m_return_reason [32];
 
+extern qboolean loadscreeninit;
+extern int loadingScreen;
+extern char* loadname2;
+extern char* loadnamespec;
+
 /*
 ================
 M_DrawCharacter
@@ -99,12 +104,7 @@ void M_PrintWhite (int cx, int cy, char *str)
 	}
 }
 
-void M_DrawTransPic (int x, int y, qpic_t *pic)
-{
-	Draw_TransPic (x + ((vid.width - 320)>>1), y, pic);
-}
-
-void M_DrawPic (int x, int y, qpic_t *pic)
+void M_DrawPic (int x, int y, int pic)
 {
 	Draw_Pic (x + ((vid.width - 320)>>1), y, pic);
 }
@@ -134,68 +134,6 @@ void M_BuildTranslationTable(int top, int bottom)
 	else
 		for (j=0 ; j<16 ; j++)
 			dest[BOTTOM_RANGE+j] = source[bottom+15-j];
-}
-
-
-void M_DrawTransPicTranslate (int x, int y, qpic_t *pic)
-{
-	Draw_TransPicTranslate (x + ((vid.width - 320)>>1), y, pic, translationTable);
-}
-
-
-void M_DrawTextBox (int x, int y, int width, int lines)
-{
-	qpic_t	*p;
-	int		cx, cy;
-	int		n;
-
-	// draw left side
-	cx = x;
-	cy = y;
-	p = Draw_CachePic ("gfx/box_tl.lmp");
-	M_DrawTransPic (cx, cy, p);
-	p = Draw_CachePic ("gfx/box_ml.lmp");
-	for (n = 0; n < lines; n++)
-	{
-		cy += 8;
-		M_DrawTransPic (cx, cy, p);
-	}
-	p = Draw_CachePic ("gfx/box_bl.lmp");
-	M_DrawTransPic (cx, cy+8, p);
-
-	// draw middle
-	cx += 8;
-	while (width > 0)
-	{
-		cy = y;
-		p = Draw_CachePic ("gfx/box_tm.lmp");
-		M_DrawTransPic (cx, cy, p);
-		p = Draw_CachePic ("gfx/box_mm.lmp");
-		for (n = 0; n < lines; n++)
-		{
-			cy += 8;
-			if (n == 1)
-				p = Draw_CachePic ("gfx/box_mm2.lmp");
-			M_DrawTransPic (cx, cy, p);
-		}
-		p = Draw_CachePic ("gfx/box_bm.lmp");
-		M_DrawTransPic (cx, cy+8, p);
-		width -= 2;
-		cx += 16;
-	}
-
-	// draw right side
-	cy = y;
-	p = Draw_CachePic ("gfx/box_tr.lmp");
-	M_DrawTransPic (cx, cy, p);
-	p = Draw_CachePic ("gfx/box_mr.lmp");
-	for (n = 0; n < lines; n++)
-	{
-		cy += 8;
-		M_DrawTransPic (cx, cy, p);
-	}
-	p = Draw_CachePic ("gfx/box_br.lmp");
-	M_DrawTransPic (cx, cy+8, p);
 }
 
 //=============================================================================
@@ -250,6 +188,8 @@ void M_Menu_Main_f (void)
 	key_dest = key_menu;
 	m_state = m_main;
 	m_entersound = true;
+
+	loadscreeninit = false;
 }
 
 void M_Main_Draw (void)
@@ -326,6 +266,7 @@ void M_Menu_SinglePlayer_f (void)
 {
 	key_dest = key_menu;
 	m_state = m_singleplayer;
+	loadingScreen = 0;
 	m_entersound = true;
 }
 
@@ -346,7 +287,6 @@ void M_SinglePlayer_Draw (void)
 	Draw_FillByColor(vid.width/4, vid.height/4 - 3 + (16 * m_singleplayer_cursor), strlen(SINGLE_MENU_ITEMS[m_singleplayer_cursor])*8, 2, 255, 255, 255, 255);
 	Draw_FillByColor(vid.width/4, vid.height/4 + 2 + 8 + (16 * m_singleplayer_cursor), strlen(SINGLE_MENU_ITEMS[m_singleplayer_cursor])*8, 2, 255, 255, 255, 255);
 }
-
 
 void M_SinglePlayer_Key (int key)
 {
@@ -374,21 +314,33 @@ void M_SinglePlayer_Key (int key)
 		case 0:
 			Cbuf_AddText ("map ndu\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "ndu";
+			loadnamespec = "Nacht der Untoten";
 			break;
 
 		case 1:
 			Cbuf_AddText ("map nzp_warehouse2\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "nzp_warehouse2";
+			loadnamespec = "Warehouse";
 			break;
 
 		case 2:
 			Cbuf_AddText ("map nzp_warehouse\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "nzp_warehouse";
+			loadnamespec = "Warehouse (Classic)";
 			break;
 
 		case 3:
 			Cbuf_AddText ("map christmas_special\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+			loadnamespec = "Christmas Special";
 			break;
 
 		case 4:
@@ -476,91 +428,145 @@ void M_Menu_CustomMaps_Key (int key)
 		case 0:
 			Cbuf_AddText ("map 4all\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 1:
 			Cbuf_AddText ("map B1ooDv3\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 2:
 			Cbuf_AddText ("map B1ooDv4\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 3:
 			Cbuf_AddText ("map boxxer\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 4:
 			Cbuf_AddText ("map Bunker-Defense\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 5:
 			Cbuf_AddText ("map christmas_special\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 6:
 			Cbuf_AddText ("map Dung3on\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 7:
 			Cbuf_AddText ("map Fegefeuer\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 8:
 			Cbuf_AddText ("map Hangar\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 9:
 			Cbuf_AddText ("map lexi_house\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 10:
 			Cbuf_AddText ("map lexi_overlook\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 11:
 			Cbuf_AddText ("map lexi_temple\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 12:
 			Cbuf_AddText ("map Loop\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 13:
 			Cbuf_AddText ("map ndu\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 14:
 			Cbuf_AddText ("map nzp_warehouse2\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 15:
 			Cbuf_AddText ("map nzp_warehouse\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 16:
 			Cbuf_AddText ("map wahnsinn\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		case 17:
 			Cbuf_AddText ("map weapon_test\n");
 			key_dest = key_game;
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+					loadnamespec = "Christmas Special";
 			break;
 
 		}
@@ -696,11 +702,6 @@ void M_DrawCheckbox (int x, int y, int on)
 void M_Options_Draw (void)
 {
 	float		r;
-	qpic_t	*p;
-
-	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
-	p = Draw_CachePic ("gfx/p_option.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
 
 	M_Print (16, 32, "    Customize controls");
 	M_Print (16, 40, "         Go to console");
@@ -901,9 +902,6 @@ void M_Keys_Draw (void)
 	int		x, y;
 	qpic_t	*p;
 
-	p = Draw_CachePic ("gfx/ttl_cstm.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
-
 	if (bind_grab)
 		M_Print (12, 32, "Press a key or button for this action");
 	else
@@ -1043,7 +1041,7 @@ void M_Menu_Help_f (void)
 
 void M_Help_Draw (void)
 {
-	M_DrawPic (0, 0, Draw_CachePic ( va("gfx/help%i.lmp", help_page)) );
+	return;
 }
 
 
@@ -1125,8 +1123,6 @@ void M_Quit_Draw (void)
 		M_Draw ();
 		m_state = m_quit;
 	}
-
-	M_DrawTextBox (56, 76, 24, 4);
 	M_Print (64, 84,  quitMessage[0]);
 	M_Print (64, 92,  quitMessage[1]);
 	M_Print (64, 100, quitMessage[2]);
@@ -1308,13 +1304,6 @@ void M_GameOptions_Draw (void)
 	qpic_t	*p;
 	int		x;
 
-	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
-	p = Draw_CachePic ("gfx/p_multi.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
-
-	M_DrawTextBox (152, 32, 10, 1);
-	M_Print (160, 40, "begin game");
-
 	M_Print (0, 56, "      Max players");
 	M_Print (160, 56, va("%i", maxplayers) );
 
@@ -1413,7 +1402,6 @@ void M_GameOptions_Draw (void)
 		if ((realtime - m_serverInfoMessageTime) < 5.0)
 		{
 			x = (320-26*8)/2;
-			M_DrawTextBox (x, 138, 24, 4);
 			x += 8;
 			M_Print (x, 146, "  More than 4 players   ");
 			M_Print (x, 154, " requires using command ");

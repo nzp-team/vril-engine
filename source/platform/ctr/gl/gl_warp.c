@@ -276,8 +276,6 @@ will have them chained together.
 */
 void EmitBothSkyLayers (msurface_t *fa)
 {
-	GL_DisableMultitexture();
-
 	GL_Bind (solidskytexture);
 	speedscale = realtime*8;
 	speedscale -= (int)speedscale & ~127 ;
@@ -303,8 +301,6 @@ R_DrawSkyChain
 void R_DrawSkyChain (msurface_t *s)
 {
 	msurface_t	*fa;
-
-	GL_DisableMultitexture();
 
 	// used when gl_texsort is on
 	GL_Bind(solidskytexture);
@@ -357,11 +353,11 @@ void Sky_LoadSkyBox(char* name)
     {
         int mark = Hunk_LowMark ();
 
-		if(!(skyimage[i] = loadtextureimage (va("gfx/env/%s%s", name, suf[i]), 0, 0, false, false)) &&
-           !(skyimage[i] = loadtextureimage (va("gfx/env/%s_%s", name, suf[i]), 0, 0, false, false)))
+		if(!(skyimage[i] = Image_LoadImage (va("gfx/env/%s%s", name, suf[i]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false)) &&
+           !(skyimage[i] = Image_LoadImage (va("gfx/env/%s_%s", name, suf[i]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false)))
 		{
 			Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[i]);
-		    if(!(skyimage[i] = loadtextureimage (va("gfx/env/skybox%s", suf[i]), 0, 0, false, false)))
+		    if(!(skyimage[i] = Image_LoadImage (va("gfx/env/skybox%s", suf[i]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false)))
 		    {
 			    Sys_Error("STD SKY NOT FOUND!");
 			}
@@ -371,11 +367,11 @@ void Sky_LoadSkyBox(char* name)
     }
 
 	int mark = Hunk_LowMark ();
-	if(!(skyimage[4] = loadtextureimage (va("gfx/env/%sup", name), 0, 0, false, false)) &&
-		!(skyimage[4] = loadtextureimage (va("gfx/env/%s_up", name), 0, 0, false, false)))
+	if(!(skyimage[4] = Image_LoadImage (va("gfx/env/%sup", name), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false)) &&
+		!(skyimage[4] = Image_LoadImage (va("gfx/env/%s_up", name), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false)))
 	{
 		Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[4]);
-		if(!(skyimage[4] = loadtextureimage (va("gfx/env/skybox%s", suf[4]), 0, 0, false, false)))
+		if(!(skyimage[4] = Image_LoadImage (va("gfx/env/skybox%s", suf[4]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false)))
 		{
 			Sys_Error("STD SKY NOT FOUND!");
 		}
@@ -725,12 +721,7 @@ void R_InitSky (miptex_t *mt)
 
 
 	if (!solidskytexture)
-		solidskytexture = texture_extension_number++;
-	GL_Bind (solidskytexture );
-	glTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, 128, 128, 0, GL_RGBA, GL_UNSIGNED_BYTE, trans);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
+		solidskytexture = GL_LoadTexture("render_solidskytexture", 128, 128, (byte *)trans, false, true, 1, true);
 
 	for (i=0 ; i<128 ; i++)
 		for (j=0 ; j<128 ; j++)
@@ -743,10 +734,6 @@ void R_InitSky (miptex_t *mt)
 		}
 
 	if (!alphaskytexture)
-		alphaskytexture = texture_extension_number++;
-	GL_Bind(alphaskytexture);
-	glTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 128, 128, 0, GL_RGBA, GL_UNSIGNED_BYTE, trans);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		alphaskytexture = GL_LoadTexture("render_alphaskytexture", 128, 128, (byte *)trans, false, true, 1, true);
 }
 
