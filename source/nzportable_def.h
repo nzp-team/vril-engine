@@ -138,7 +138,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 #define	MAX_CL_STATS		32
 #define	STAT_HEALTH			0
-#define	STAT_points			1
+#define	STAT_POINTS			1
 #define	STAT_WEAPON			2
 #define	STAT_AMMO			3
 #define	STAT_SECGRENADES	4
@@ -157,6 +157,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	STAT_WEAPON2SKIN	18
 #define	STAT_WEAPON2FRAME	19
 #define STAT_CURRENTMAG2 	20
+#define STAT_VIEWMODEL_EFFECTS 21
+#define STAT_VIEWMODEL2_EFFECTS 22
 
 // stock defines
 

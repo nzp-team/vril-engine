@@ -909,7 +909,6 @@ void CL_ParseClientdata (int bits)
 	else
 		cl.stats[STAT_WEAPONSKIN] = 0;
 
-
 	// Weapon model index
 	i = MSG_ReadShort();
 	if (cl.stats[STAT_WEAPON] != i)
@@ -1006,6 +1005,18 @@ void CL_ParseClientdata (int bits)
 	i = MSG_ReadShort ();
 	if (cl.stats[STAT_CURRENTMAG2] != i)
 		cl.stats[STAT_CURRENTMAG2] = i;
+
+	i = MSG_ReadByte ();
+	if (cl.stats[STAT_VIEWMODEL_EFFECTS] != i)
+		cl.stats[STAT_VIEWMODEL_EFFECTS] = i;
+	else
+		cl.stats[STAT_VIEWMODEL_EFFECTS] = 0;
+
+	i = MSG_ReadByte ();
+	if (cl.stats[STAT_VIEWMODEL2_EFFECTS] != i)
+		cl.stats[STAT_VIEWMODEL2_EFFECTS] = i;
+	else
+		cl.stats[STAT_VIEWMODEL2_EFFECTS] = 0;
 }
 
 /*

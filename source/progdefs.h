@@ -164,5 +164,7 @@ typedef struct
 	float   	maxspeed;
 	float 		facingenemy;
 	float 		scale;
+	float		viewmodel_effects;
+	float		viewmodel2_effects;
 	float		light_lev;
 } entvars_t;
