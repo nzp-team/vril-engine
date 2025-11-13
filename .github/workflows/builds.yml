@@ -89,7 +89,7 @@ jobs:
     name: PSP-1000 Pull Request Tests
     runs-on: ubuntu-latest
     container:
-      image: ubuntu:24.10
+      image: ubuntu:24.04
       options: --shm-size=8192m
     needs: [Compile-EBOOT, Compile-3DSX, Compile-TNS, Compile-VPK]
     steps:
@@ -111,7 +111,7 @@ jobs:
     name: PSP-2000 Pull Request Tests
     runs-on: ubuntu-latest
     container:
-      image: ubuntu:24.10
+      image: ubuntu:24.04
       options: --shm-size=8192m
     needs: [Compile-EBOOT, Compile-3DSX, Compile-TNS, Compile-VPK]
     steps:
