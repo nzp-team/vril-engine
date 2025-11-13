@@ -1073,20 +1073,20 @@ void R_DrawAliasModel (entity_t *e)
 		lightcolor[2] += 60;
 	}
 
-	if(specChar == '!' || (e->effects & EF_FULLBRIGHT))
-	{
+	if(specChar == '!' || (e->effects & EF_FULLBRIGHT)) {
 		lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
 	}
 
-	//Con_DPrintf("STAT_VIEWMODEL_EFFECTS %i\n", cl.stats[STAT_VIEWMODEL_EFFECTS]);
+	if (cl.stats[STAT_VIEWMODEL_EFFECTS] & EF_FULLBRIGHT) {
 
-	if ((cl.stats[STAT_VIEWMODEL_EFFECTS] & EF_FULLBRIGHT) || (cl.stats[STAT_VIEWMODEL2_EFFECTS] & EF_FULLBRIGHT)) {
+		if (e == &cl.viewent)
+			lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
+	}
 
-		//Con_DPrintf("viewmodel wants fullbright\n");
+	if (cl.stats[STAT_VIEWMODEL2_EFFECTS] & EF_FULLBRIGHT) {
 
-		if (e != &cl.viewent || e != &cl.viewent2) return;
-
-		lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
+		if (e == &cl.viewent2)
+			lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
 	}
 
 	add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);

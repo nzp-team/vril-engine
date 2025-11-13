@@ -161,10 +161,10 @@ typedef struct
 	string_t	Weapon_Name;
 	string_t 	Weapon_Name_Touch;
 	float   	currentmag2;
+	float		viewmodel_effects;
+	float		viewmodel2_effects;
 	float   	maxspeed;
 	float 		facingenemy;
 	float 		scale;
-	float		viewmodel_effects;
-	float		viewmodel2_effects;
 	float		light_lev;
 } entvars_t;

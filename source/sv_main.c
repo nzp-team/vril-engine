@@ -805,8 +805,8 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	MSG_WriteByte (msg, ent->v.weapon2skin);
 	MSG_WriteByte (msg, ent->v.weapon2frame);
 	MSG_WriteShort (msg, ent->v.currentmag2);
-	MSG_WriteByte (msg, ent->v.viewmodel_effects);
-	MSG_WriteByte (msg, ent->v.viewmodel2_effects);
+	MSG_WriteShort (msg, ent->v.viewmodel_effects);
+	MSG_WriteShort (msg, ent->v.viewmodel2_effects);
 }
 
 /*
