@@ -787,7 +787,6 @@ int quake_main (unsigned int argc, void* argv){
 
 	}
 
-	vglEnd();
 	return 0;
 }
 

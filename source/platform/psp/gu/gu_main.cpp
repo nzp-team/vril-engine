@@ -1440,6 +1440,23 @@ void R_DrawAliasModel (entity_t *e)
 		lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
 		force_fullbright = true;
 	}
+
+	if (cl.stats[STAT_VIEWMODEL_EFFECTS] & EF_FULLBRIGHT) {
+
+		if (e == &cl.viewent) {
+			lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
+			force_fullbright = true;
+		}
+	}
+
+	if (cl.stats[STAT_VIEWMODEL2_EFFECTS] & EF_FULLBRIGHT) {
+
+		if (e == &cl.viewent2) {
+			lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
+			force_fullbright = true;
+		}
+	}
+
 	if(specChar == '@')
 	{
 		alphafunc = true;
