@@ -269,7 +269,7 @@ void Sys_SendKeyEvents (void)
 	if (!padInfo.status[0]) return;
 
 	padData padData;
-	ioPadGetData(&padData, 0);	
+	ioPadGetData(0, &padData);	
 	Key_Event(K_SELECT, padData.BTN_SELECT);
 	Key_Event(K_ESCAPE, padData.BTN_START);
 	Key_Event(K_UPARROW, padData.BTN_UP);
@@ -280,10 +280,10 @@ void Sys_SendKeyEvents (void)
 	Key_Event(K_AUX3, padData.BTN_TRIANGLE);
 	Key_Event(K_AUX2, padData.BTN_CROSS);
 	Key_Event(K_AUX1, padData.BTN_CIRCLE);
-	Key_Event(K_AUX5, padData.L1);
-	Key_Event(K_AUX7, padData.R1);
-	Key_Event(K_AUX6, padData.L2);
-	Key_Event(K_AUX8, padData.R2);
+	Key_Event(K_AUX5, padData.BTN_L1);
+	Key_Event(K_AUX7, padData.BTN_R1);
+	Key_Event(K_AUX6, padData.BTN_L2);
+	Key_Event(K_AUX8, padData.BTN_R2);
 }
 
 void Sys_HighFPPrecision (void)
