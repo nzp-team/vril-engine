@@ -1,7 +1,6 @@
 #---------------------------------------------------------------------------------
 .SUFFIXES:
 #---------------------------------------------------------------------------------
-
 ifeq ($(strip $(PSL1GHT)),)
 $(error "Please set PSL1GHT in your environment. export PSL1GHT=<path>")
 endif
@@ -26,7 +25,7 @@ ARCH	:=	$(MACHDEP) -maltivec
 
 CFLAGS	:=	-g -Wall -Wdouble-promotion -std=gnu99 -O3 \
 			-fomit-frame-pointer -ffunction-sections \
-			 $(ARCH)
+			 $(ARCH) $(INCLUDE)
 
 CFLAGS	+=	$(INCLUDE) -D__PS3__ -DGLQUAKE -DPLATFORM_DIRECTORY="ps3" -DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=18
 
@@ -50,7 +49,6 @@ LIBS	:=  -lPS3GL -lsimdmath -lrsx -lgcm_sys -lio -lsysutil -lrt -llv2 -lm
 # include and lib
 #---------------------------------------------------------------------------------
 LIBDIRS	:= $(PS3DEV)/portlibs/ppu
-
 
 #---------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
@@ -156,20 +154,23 @@ export OFILES_SOURCES 	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
 export OFILES_BIN	:=	$(addsuffix .o,$(BINFILES)) \
 			$(PICAFILES:.v.pica=.shbin.o) $(SHLISTFILES:.shlist=.shbin.o)
 
-export OFILES := $(OFILES_BIN) $(OFILES_SOURCES)
-
-export HFILES	:=	$(PICAFILES:.v.pica=_shbin.h) $(SHLISTFILES:.shlist=_shbin.h) $(addsuffix .h,$(subst .,_,$(BINFILES)))
-
-export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
-			$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
-			-I$(CURDIR)/$(BUILD)
-
-export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
-
-.PHONY: $(BUILD) clean all
+#---------------------------------------------------------------------------------
+# build a list of include paths
+#---------------------------------------------------------------------------------
+export INCLUDE	:=	$(foreach dir,$(INCLUDES), -I$(CURDIR)/$(dir)) \
+					$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
+					$(LIBPSL1GHT_INC) \
+					-I$(CURDIR)/$(BUILD)
 
 #---------------------------------------------------------------------------------
-all: _build_info.h $(BUILD) pkg
+# build a list of library paths
+#---------------------------------------------------------------------------------
+export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) $(LIBPSL1GHT_LIB)
+
+.PHONY: $(BUILD) clean all pkg
+
+#---------------------------------------------------------------------------------
+all: _build_info.h $(BUILD)
 
 _build_info.h:
 	rm -rf $(CURDIR)/source/_build_info.h
@@ -210,12 +211,12 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
-$(OUTPUT).self	:	$(OUTPUT).elf
+$(OUTPUT).self: $(OUTPUT).elf
 $(OFILES_SOURCES) : $(HFILES)
-$(OUTPUT).elf	:	$(OFILES)
+$(OUTPUT).elf:	$(OFILES)
 
 -include $(DEPENDS)
 
-#---------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------
 endif
-#---------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------
