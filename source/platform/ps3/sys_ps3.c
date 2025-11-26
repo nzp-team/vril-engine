@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // PS3 Headers
 #include <sys/systime.h>
+#include <sys/process.h>
 #include <io/pad.h>
 // TODO: gem stuff for PSMove eventually
 
@@ -168,19 +169,9 @@ void Sys_PrintSystemInfo(void)
 
 void Sys_SystemError(char *error)
 {
-	consoleInit(GFX_TOP, NULL);
-
-	printf("%s=== Vril Engine Exception ===\n", CONSOLE_RED);
-	printf("%s%s\n\n", CONSOLE_WHITE, error);
-	
-	printf("%sPress START to quit.\n", CONSOLE_CYAN);
-
-	while(!(hidKeysDown() & KEY_START))
-		hidScanInput();
-
-	Host_Shutdown();
-
-	gfxExit();
+	FILE* f = f = fopen("log.txt", "a+");
+	fwrite(error, 1, strlen(error), f);
+	fclose(f);
 	Sys_Quit();
 }
 
