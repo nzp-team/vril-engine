@@ -138,7 +138,7 @@ int UDP_OpenSocket (int port)
 		goto ErrorReturn;*/
 
 	int nbio = 1;
-	if (setsockopt(sock, SOL_SOCKET, SO_NBIO, &nbio, sizeof(nbio)) != 0)
+	if (setsockopt(newsocket, SOL_SOCKET, SO_NBIO, &nbio, sizeof(nbio)) != 0)
 		goto ErrorReturn;
 
 	address.sin_family = AF_INET;
@@ -410,5 +410,6 @@ int UDP_SetSocketPort (struct qsockaddr *addr, int port)
 	((struct sockaddr_in *)addr)->sin_port = htons(port);
 	return 0;
 }
+
 
 //=============================================================================
