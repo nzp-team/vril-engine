@@ -118,7 +118,7 @@ void IN_Move (usercmd_t *cmd)
 	V_StopPitchDrift();
 
 	// Read the pad states
-	ioPadGetData(&padData, 0);
+	ioPadGetData(0, &padData);
 	
 
 	// Convert the inputs to floats in the range [-1, 1].
