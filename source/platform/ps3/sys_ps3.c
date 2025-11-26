@@ -265,13 +265,11 @@ void Sys_SetKeys(u32 keys, u32 state){
 void Sys_SendKeyEvents (void)
 {
 	padInfo padInfo;
-	ioPadGetInfo(&pad_info);
-	if (!pad_info.status[0]) continue;
-
+	ioPadGetInfo(&padInfo);
+	if (!padInfo.status[0]) return;
 
 	padData padData;
-	ioPadGetData(&padData, 0);
-	
+	ioPadGetData(&padData, 0);	
 	Key_Event(K_SELECT, padData.BTN_SELECT);
 	Key_Event(K_ESCAPE, padData.BTN_START);
 	Key_Event(K_UPARROW, padData.BTN_UP);
