@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -34,10 +34,19 @@ typedef unsigned char 		byte;
 #define BYTE_DEFINED 1
 #endif
 
-#undef true
-#undef false
+//#undef true
+//#undef false
 
-typedef enum {false, true}	qboolean;
+#include <stdbool.h>
+#ifndef qtrue
+#define qtrue true
+#endif
+
+#ifndef qfalse
+#define qfalse false
+#endif
+
+typedef bool	qboolean;
 
 //============================================================================
 
@@ -73,7 +82,7 @@ void InsertLinkAfter (link_t *l, link_t *after);
 // (type *)STRUCT_FROM_LINK(link_t *link, type, member)
 // ent = STRUCT_FROM_LINK(link,entity_t,order)
 // FIXME: remove this mess!
-#define	STRUCT_FROM_LINK(l,t,m) ((t *)((byte *)l - (int)&(((t *)0)->m)))
+#define	STRUCT_FROM_LINK(l,t,m) ((t *)((byte *)l - (intptr_t)&(((t *)0)->m)))
 
 //============================================================================
 
@@ -101,9 +110,9 @@ extern	short	(*BigShort) (short l);
 extern	short	(*LittleShort) (short l);
 extern	int	(*BigLong) (int l);
 
-#define LittleLong(l) l
-#define LittleShort(l) l
-#define LittleFloat(l) l
+extern	int	(*LittleLong) (int l);
+extern	float	(*BigFloat) (float l);
+extern	float	(*LittleFloat) (float l);
 
 //============================================================================
 
@@ -195,3 +204,5 @@ extern	struct cvar_s	registered;
 
 extern qboolean		standard_quake, rogue, hipnotic;
 void Q_strncpyz (char *dest, char *src, size_t size);        //Diabolickal HLBSP
+
+#endif /* COMMON_H */
