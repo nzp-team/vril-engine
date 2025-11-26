@@ -165,7 +165,7 @@ export INCLUDE	:=	$(foreach dir,$(INCLUDES), -I$(CURDIR)/$(dir)) \
 
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) $(LIBPSL1GHT_LIB)
 
-.PHONY: $(BUILD) clean all pkg
+.PHONY: $(BUILD) clean all
 
 #---------------------------------------------------------------------------------
 all: _build_info.h $(BUILD)
@@ -190,8 +190,6 @@ $(BUILD):
 	@mv $(BUILD)/render $(BUILD)/ps3/
 	@mv $(TARGET).* $(BUILD)/ps3/bin/
 
-pkg: $(BUILD) $(OUTPUT).pkg
-
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
@@ -207,6 +205,7 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
+$(OUTPUT).pkg: $(OUTPUT).self
 $(OUTPUT).self: $(OUTPUT).elf
 $(OFILES_SOURCES) : $(HFILES)
 $(OUTPUT).elf:	$(OFILES)
