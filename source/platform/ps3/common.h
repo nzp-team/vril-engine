@@ -204,5 +204,3 @@ extern	struct cvar_s	registered;
 
 extern qboolean		standard_quake, rogue, hipnotic;
 void Q_strncpyz (char *dest, char *src, size_t size);        //Diabolickal HLBSP
-
-#endif /* COMMON_H */
