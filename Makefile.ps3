@@ -188,8 +188,6 @@ $(BUILD):
 	@mv $(BUILD)/*.d $(BUILD)/ps3/
 	@mv $(BUILD)/platform/ps3 $(BUILD)/ps3/
 	@mv $(BUILD)/render $(BUILD)/ps3/
-#	@mv $(BUILD)/$(TARGET).lst $(BUILD)/ps3/
-	@mv $(BUILD)/$(TARGET).map $(BUILD)/ps3/
 	@mv $(TARGET).* $(BUILD)/ps3/bin/
 
 pkg: $(BUILD) $(OUTPUT).pkg
