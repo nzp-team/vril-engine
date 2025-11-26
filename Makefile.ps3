@@ -24,7 +24,7 @@ CONTENTID	:=	UP0001-$(APPID)_00-0000000000000000
 #---------------------------------------------------------------------------------
 ARCH	:=	$(MACHDEP) -maltivec
 
-CFLAGS	:=	-g -Wall -Wdouble-promotion -std=gnu99 -O3 -mword-relocations \
+CFLAGS	:=	-g -Wall -Wdouble-promotion -std=gnu99 -O3 \
 			-fomit-frame-pointer -ffunction-sections \
 			 $(ARCH)
 
