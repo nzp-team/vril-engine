@@ -68,7 +68,7 @@ int UDP_Init (void)
 	}	
 	
 	// Getting IP address
-	devicenet_ctl_info info;
+	net_ctl_info info;
 	netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, &info);
 	inet_pton(AF_INET, info.ip_address, &myAddr);
 
