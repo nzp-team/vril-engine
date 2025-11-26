@@ -429,43 +429,17 @@ float Q_atof (char *str)
 
 qboolean        bigendien;
 
-short   (*BigShort) (short l);
 short   (*LittleShort) (short l);
-int     (*BigLong) (int l);
 int     (*LittleLong) (int l);
-float   (*BigFloat) (float l);
 float   (*LittleFloat) (float l);
-
 short   ShortSwap (short l)
 {
-	byte    b1,b2;
-
-	b1 = l&255;
-	b2 = (l>>8)&255;
-
-	return (b1<<8) | b2;
-}
-
-short   ShortNoSwap (short l)
-{
-	return l;
+	return __builtin_bswap16(l);
 }
 
 int    LongSwap (int l)
 {
-	byte    b1,b2,b3,b4;
-
-	b1 = l&255;
-	b2 = (l>>8)&255;
-	b3 = (l>>16)&255;
-	b4 = (l>>24)&255;
-
-	return ((int)b1<<24) | ((int)b2<<16) | ((int)b3<<8) | b4;
-}
-
-int     LongNoSwap (int l)
-{
-	return l;
+	return __builtin_bswap32(l);
 }
 
 float FloatSwap (float f)
@@ -483,11 +457,6 @@ float FloatSwap (float f)
 	dat2.b[2] = dat1.b[1];
 	dat2.b[3] = dat1.b[0];
 	return dat2.f;
-}
-
-float FloatNoSwap (float f)
-{
-	return f;
 }
 
 /*
@@ -1081,12 +1050,9 @@ void COM_Init (char *basedir)
 {
 	// force set big endian to be cool and fast
 	bigendien = true;
-	BigShort = ShortNoSwap;
-	LittleShort = ShortSwap;
-	BigLong = LongNoSwap;
-	LittleLong = LongSwap;
-	BigFloat = FloatNoSwap;
-	LittleFloat = FloatSwap;
+	BigShort = ShortSwap;
+	BigLong = LongSwap;
+	BigFloat = FloatSwap;
 
 	Cvar_RegisterVariable (&cmdline);
 	Cmd_AddCommand ("path", COM_Path_f);
@@ -1303,7 +1269,7 @@ Sets com_filesize and one of handle or file
 int COM_FindFile (char *filename, int *handle, FILE **file)
 {
 	searchpath_t    *search;
-	char            netpath[128];
+    char            netpath[128];
 	char            cachepath[MAX_OSPATH * 2];
 	pack_t          *pak;
 	int                     i;
@@ -1342,16 +1308,16 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 					}
 					else
 					{       // open a new file on the pakfile
-						Sys_FileOpenRead(pak->filename, (int *)file);
-						if ((*file) >= 0)
-							Sys_FileSeek((int)file, pak->files[i].filepos);
+						*file = fopen (pak->filename, "rb");
+						if (*file)
+							fseek (*file, pak->files[i].filepos, SEEK_SET);
 					}
 					com_filesize = pak->files[i].filelen;
 					return com_filesize;
 				}
 		}
 		else
-		{       
+		{               
 			// check a file in the directory tree
 			snprintf (netpath, MAX_OSPATH * 2, "%s/%s", search->filename, filename);
 			
@@ -1363,7 +1329,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 			if (!com_cachedir[0])
 				strcpy (cachepath, netpath);
 			else
-			{
+			{	
 				snprintf(cachepath, MAX_OSPATH * 2, "%s%s", com_cachedir, netpath);
 
 				cachetime = Sys_FileTime (cachepath);
@@ -1380,7 +1346,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 			else
 			{
 				Sys_FileClose (i);
-				Sys_FileOpenRead(netpath, (int *)file);
+				*file = fopen (netpath, "rb");
 			}
 			return com_filesize;
 		}
@@ -1392,7 +1358,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 	if (handle)
 		*handle = -1;
 	else
-		*file = (FILE *)-1;
+		*file = NULL;
 	com_filesize = -1;
 	return -1;
 }
@@ -1416,7 +1382,7 @@ int COM_OpenFile (char *filename, int *handle)
 ===========
 COM_FOpenFile
 
-If the requested file is inside a packfile, a new file will be opened
+If the requested file is inside a packfile, a new FILE * will be opened
 into the file.
 ===========
 */
@@ -1755,7 +1721,7 @@ void COM_InitFilesystem (void)
 //Diabolickal HLBSP
 void Q_strncpyz (char *dest, char *src, size_t size)
 {
-	strncpy (dest, src, size - 1);
-	dest[size-1] = 0;
+   strncpy (dest, src, size - 1);
+   dest[size-1] = 0;
 }
 //Diabolickal End
