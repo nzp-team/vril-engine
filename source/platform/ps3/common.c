@@ -1050,9 +1050,9 @@ void COM_Init (char *basedir)
 {
 	// force set big endian to be cool and fast
 	bigendien = true;
-	BigShort = ShortSwap;
-	BigLong = LongSwap;
-	BigFloat = FloatSwap;
+	LittleShort = ShortSwap;
+	LittleLong = LongSwap;
+	LittleFloat = FloatSwap;
 
 	Cvar_RegisterVariable (&cmdline);
 	Cmd_AddCommand ("path", COM_Path_f);
