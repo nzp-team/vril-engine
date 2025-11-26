@@ -303,7 +303,9 @@ void GL_Bind (int texnum);
 #define    TEXTURE1_SGIS				0x835F
 
 #ifndef _WIN32
+#ifndef APIENTRY
 #define APIENTRY /* */
+#endif
 #endif
 
 typedef void (APIENTRY *lpMTexFUNC) (GLenum, GLfloat, GLfloat);
