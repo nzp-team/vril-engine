@@ -165,7 +165,7 @@ export INCLUDE	:=	$(foreach dir,$(INCLUDES), -I$(CURDIR)/$(dir)) \
 
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) $(LIBPSL1GHT_LIB)
 
-.PHONY: $(BUILD) clean all pkg
+.PHONY: $(BUILD) clean all
 
 #---------------------------------------------------------------------------------
 all: _build_info.h $(BUILD)
@@ -188,7 +188,7 @@ $(BUILD):
 	@mv $(BUILD)/*.d $(BUILD)/ps3/
 	@mv $(BUILD)/platform/ps3 $(BUILD)/ps3/
 	@mv $(BUILD)/render $(BUILD)/ps3/
-	@mv $(BUILD)/$(TARGET).lst $(BUILD)/ps3/
+#	@mv $(BUILD)/$(TARGET).lst $(BUILD)/ps3/
 	@mv $(BUILD)/$(TARGET).map $(BUILD)/ps3/
 	@mv $(TARGET).* $(BUILD)/ps3/bin/
 
