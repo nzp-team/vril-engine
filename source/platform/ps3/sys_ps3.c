@@ -316,11 +316,11 @@ int main (int argc, char **argv)
 	//gfxSetDoubleBuffering(GFX_BOTTOM, false);
 	//gfxSwapBuffersGpu();
 
-	uint8_t model;
+	//uint8_t model;
 
-	cfguInit();
-	CFGU_GetSystemModel(&model);
-	cfguExit();
+	//cfguInit();
+	//CFGU_GetSystemModel(&model);
+	//cfguExit();
 	
 	ioPadInit(1);
 	//if(model != CFG_MODEL_2DS && new3ds_flag == true)
