@@ -150,7 +150,7 @@ HUD_DictateScaleFactor
 // it's not actually exposed in it's headers
 // but it's better than calling videoOutGetState
 // here just to get the display width
-extern u32 display_height;
+extern unsigned int display_height;
 #endif
 
 void HUD_DictateScaleFactor(void)
