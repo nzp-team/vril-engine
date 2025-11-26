@@ -1,0 +1,221 @@
+#---------------------------------------------------------------------------------
+.SUFFIXES:
+#---------------------------------------------------------------------------------
+
+ifeq ($(strip $(PSL1GHT)),)
+$(error "Please set PSL1GHT in your environment. export PSL1GHT=<path>")
+endif
+
+TOPDIR ?= $(CURDIR)
+include $(PSL1GHT)/ppu_rules
+
+TARGET		:=	nzportable
+BUILD		:=	build
+SOURCES		:=	source
+INCLUDES	:=	include
+PKGFILES	:=	source/platform/ps3/pics
+
+TITLE		:=	Nazi Zombies: Portable
+APPID		:=	NZPORTABL
+CONTENTID	:=	UP0001-$(APPID)_00-0000000000000000
+
+#---------------------------------------------------------------------------------
+# options for code generation
+#---------------------------------------------------------------------------------
+ARCH	:=	$(MACHDEP) -maltivec
+
+CFLAGS	:=	-g -Wall -Wdouble-promotion -std=gnu99 -O3 -mword-relocations \
+			-fomit-frame-pointer -ffunction-sections \
+			 $(ARCH)
+
+CFLAGS	+=	$(INCLUDE) -D__PS3__ -DGLQUAKE -DPLATFORM_DIRECTORY="ps3" -DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=18
+
+ifeq ($(WERROR),1)
+CFLAGS 		+= -Werror
+endif
+
+ifeq ($(FANALYZER),1)
+CFLAGS		+= -fanalyzer
+endif
+
+CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
+
+ASFLAGS	:=	-g $(ARCH)
+LDFLAGS		=	$(ARCH) -Wl,-Map,$(notdir $@).map
+
+LIBS	:=  -lPS3GL -lsimdmath -lrsx -lgcm_sys -lio -lsysutil -lrt -llv2 -lm
+
+#---------------------------------------------------------------------------------
+# list of directories containing libraries, this must be the top level containing
+# include and lib
+#---------------------------------------------------------------------------------
+LIBDIRS	:= $(PS3DEV)/portlibs/ppu
+
+
+#---------------------------------------------------------------------------------
+# no real need to edit anything past this point unless you need to add additional
+# rules for different file extensions
+#---------------------------------------------------------------------------------
+ifneq ($(BUILD),$(notdir $(CURDIR)))
+#---------------------------------------------------------------------------------
+
+export OUTPUT	:=	$(CURDIR)/$(TARGET)
+export TOPDIR	:=	$(CURDIR)
+
+export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
+
+export DEPSDIR	:=	$(CURDIR)/$(BUILD)
+
+COMMON_OBJS =	system.o \
+				test_handler.c \
+				chase.c \
+                cl_hud.c \
+				cl_demo.c \
+				cl_input.c \
+				cl_main.c \
+				cl_parse.c \
+				cl_tent.c \
+				cl_slist.c \
+				platform/ps3/bsp_strlcpy.c \
+				cmd.c \
+				platform/ps3/common.c \
+				console.c \
+				crc.c \
+				cvar.c \
+				host.c \
+				host_cmd.c \
+				platform/ps3/keys.c \
+				mathlib.c \
+				matrixlib.c \
+				platform/ps3/menu.c \
+				platform/ps3/net_dgrm.c \
+				platform/ps3/net_udpps3.c \
+				net_loop.c \
+				platform/ps3/net_bsd.c \
+				platform/ps3/net_main.c \
+				net_vcr.c \
+				pr_cmds.c \
+				pr_edict.c \
+				pr_exec.c \
+				sv_main.c \
+				sv_move.c \
+				sv_phys.c \
+				sv_user.c \
+				view.c \
+				wad.c \
+				world.c \
+				zone.c \
+				platform/ps3/sys_ps3.c \
+				snd_dma.c \
+				snd_mix.c \
+				snd_mem.c \
+				platform/ps3/snd_ps3.c \
+				platform/ps3/in_ps3.c \
+				platform/ps3/cd_null.c \
+				platform/ps3/gl/gl_qmb.c \
+				platform/ps3/gl/gl_decal.c \
+				platform/ps3/gl/gl_draw.c \
+				render/r_fog.c \
+		    	platform/ps3/gl/gl_fog.c \
+				platform/ps3/gl/gl_mesh.c \
+				platform/ps3/gl/gl_model.c \
+				render/r_entity_fragments.c \
+				render/r_light.c \
+				platform/ps3/gl/gl_rmain.c \
+				platform/ps3/gl/gl_rmisc.c \
+				platform/ps3/gl/gl_rsurf.c \
+				platform/ps3/gl/gl_screen.c \
+				platform/ps3/gl/gl_warp.c \
+				platform/ps3/gl/gl_vidps3.c \
+				platform/ps3/r_part.c \
+				crypter.c
+
+CFILES		:=	$(COMMON_OBJS)
+CPPFILES	:=	
+SFILES		:=	
+PICAFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.v.pica)))
+SHLISTFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.shlist)))
+#BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
+
+#---------------------------------------------------------------------------------
+# use CXX for linking C++ projects, CC for standard C
+#---------------------------------------------------------------------------------
+ifeq ($(strip $(CPPFILES)),)
+#---------------------------------------------------------------------------------
+	export LD	:=	$(CC)
+#---------------------------------------------------------------------------------
+else
+#---------------------------------------------------------------------------------
+	export LD	:=	$(CXX)
+#---------------------------------------------------------------------------------
+endif
+#---------------------------------------------------------------------------------
+
+export OFILES_SOURCES 	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
+
+export OFILES_BIN	:=	$(addsuffix .o,$(BINFILES)) \
+			$(PICAFILES:.v.pica=.shbin.o) $(SHLISTFILES:.shlist=.shbin.o)
+
+export OFILES := $(OFILES_BIN) $(OFILES_SOURCES)
+
+export HFILES	:=	$(PICAFILES:.v.pica=_shbin.h) $(SHLISTFILES:.shlist=_shbin.h) $(addsuffix .h,$(subst .,_,$(BINFILES)))
+
+export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
+			$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
+			-I$(CURDIR)/$(BUILD)
+
+export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
+
+.PHONY: $(BUILD) clean all
+
+#---------------------------------------------------------------------------------
+all: _build_info.h $(BUILD) pkg
+
+_build_info.h:
+	rm -rf $(CURDIR)/source/_build_info.h
+	echo "#define GIT_HASH \"$(shell git rev-parse --short HEAD)$(shell git diff --quiet || echo -dirty)\"" > $(CURDIR)/source/_build_info.h
+	echo "#define GIT_BRANCH \"$(shell git rev-parse --abbrev-ref HEAD)\"" >> $(CURDIR)/source/_build_info.h
+	echo "#define BUILD_DATE \"$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")\"" >> $(CURDIR)/source/_build_info.h
+
+$(BUILD):
+	@[ -d $@ ] || mkdir -p $@
+	@mkdir -p $(BUILD)/platform/ps3
+	@mkdir -p $(BUILD)/platform/ps3/gl
+	@mkdir -p $(BUILD)/render
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile.ps3
+	@mkdir -p $(BUILD)/ps3
+	@mkdir -p $(BUILD)/ps3/bin/
+	@mv $(BUILD)/*.o $(BUILD)/ps3/
+	@mv $(BUILD)/*.d $(BUILD)/ps3/
+	@mv $(BUILD)/platform/ps3 $(BUILD)/ps3/
+	@mv $(BUILD)/render $(BUILD)/ps3/
+	@mv $(BUILD)/$(TARGET).lst $(BUILD)/ps3/
+	@mv $(BUILD)/$(TARGET).map $(BUILD)/ps3/
+	@mv $(TARGET).* $(BUILD)/ps3/bin/
+
+pkg: $(BUILD) $(OUTPUT).pkg
+
+#---------------------------------------------------------------------------------
+clean:
+	@echo clean ...
+	@rm -fr $(CURDIR)/source/_build_info.h
+	@rm -fr $(BUILD)
+
+
+#---------------------------------------------------------------------------------
+else
+
+DEPENDS	:=	$(OFILES:.o=.d)
+
+#---------------------------------------------------------------------------------
+# main targets
+#---------------------------------------------------------------------------------
+$(OUTPUT).self	:	$(OUTPUT).elf
+$(OFILES_SOURCES) : $(HFILES)
+$(OUTPUT).elf	:	$(OFILES)
+
+-include $(DEPENDS)
+
+#---------------------------------------------------------------------------------------
+endif
+#---------------------------------------------------------------------------------------

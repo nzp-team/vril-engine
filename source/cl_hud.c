@@ -48,7 +48,7 @@ qpic_t 		*b_circle;
 qpic_t 		*b_square;
 qpic_t 		*b_cross;
 qpic_t 		*b_triangle;
-#elif __3DS__
+#elif __3DS__ || __PS3__ // TODO: Add actual PS3 buttons
 qpic_t 		*b_abutton;
 qpic_t 		*b_bbutton;
 qpic_t 		*b_xbutton;
@@ -63,7 +63,7 @@ qpic_t 		*b_plus;
 qpic_t 		*b_one;
 qpic_t 		*b_two;
 qpic_t 		*b_home;
-#endif // __PSP__, __vita__, __3DS__, __WII__
+#endif // __PSP__, __vita__, __3DS__, __PS3__, __WII__
 
 qpic_t 		*b_left;
 qpic_t 		*b_right;
@@ -74,10 +74,10 @@ qpic_t 		*b_rt;
 
 #ifdef __PSP__
 qpic_t 		*b_home;
-#elif __3DS__
+#elif __3DS__ || __PS3__
 qpic_t 		*b_zlt;
 qpic_t 		*b_zrt;
-#endif // __PSP__, __3DS__
+#endif // __PSP__, __PS3__, __3DS__
 
 qpic_t 		*b_start;
 qpic_t 		*b_select;
@@ -145,6 +145,14 @@ float	hud_scale_factor;
 HUD_DictateScaleFactor
 ===============
 */
+#ifdef __PS3__
+// this is a global from PS3GL
+// it's not actually exposed in it's headers
+// but it's better than calling videoOutGetState
+// here just to get the display width
+extern u32 display_height;
+#endif
+
 void HUD_DictateScaleFactor(void)
 {
 	// Platform-dictated text scale.
@@ -156,9 +164,16 @@ void HUD_DictateScaleFactor(void)
 	hud_scale_factor = 2.0f;
 #elif __3DS__
 	hud_scale_factor = 1.0f;
+#elif __PS3__
+	// the PS3 can be using the resolution of
+	// 480p/i, 576p/i, 720p and 1080p
+	// so we calculate the scale by dividing
+	// the current display height by the 
+	// psp display height
+	hud_scale_factor = display_height/240.0f;
 #else
 	hud_scale_factor = 1.0f;
-#endif // __WII__, __PSP__, __vita__, __3DS__
+#endif // __WII__, __PSP__, __vita__, __3DS__, __PS3__
 }
 
 /*
@@ -212,7 +227,7 @@ void HUD_Init (void)
 	b_start = Draw_CachePic ("gfx/butticons/start");
 	b_select = Draw_CachePic ("gfx/butticons/select");
 	b_home = Draw_CachePic ("gfx/butticons/home");
-#elif __vita__
+#elif __vita__ 
 	b_circle = Draw_CachePic ("gfx/butticons/fbtncircle");
 	b_square = Draw_CachePic ("gfx/butticons/fbtnsquare");
 	b_cross = Draw_CachePic ("gfx/butticons/fbtncross");
@@ -225,7 +240,7 @@ void HUD_Init (void)
 	b_rt = Draw_CachePic ("gfx/butticons/backr1");
 	b_start = Draw_CachePic ("gfx/butticons/funcstart");
 	b_select = Draw_CachePic ("gfx/butticons/funcselect");
-#elif __3DS__
+#elif __3DS__ ||  __PS3__ // NOTE: This is temporary
 	b_abutton = Draw_CachePic ("gfx/butticons/facebt_a");
 	b_bbutton = Draw_CachePic ("gfx/butticons/facebt_b");
 	b_ybutton = Draw_CachePic ("gfx/butticons/facebt_y");
@@ -254,7 +269,7 @@ void HUD_Init (void)
 	b_home = Draw_CachePic ("gfx/butticons/homebutton");
 	b_one = Draw_CachePic ("gfx/butticons/1button");
 	b_two = Draw_CachePic ("gfx/butticons/2button");
-#endif // __PSP__, __3DS__, __WII__
+#endif // __PSP__, __3DS__, __PS3__, __WII__
 
 	fx_blood_lu = Draw_CachePic ("gfx/hud/blood");
 
@@ -1683,7 +1698,7 @@ HUD_BettyPrompt
 */
 void HUD_BettyPrompt (void)
 {
-#ifdef __PSP__
+#if __PSP__ || __PS3__
 
 	char str[64];
 	char str2[32];
@@ -1728,7 +1743,7 @@ void HUD_BettyPrompt (void)
 	Draw_ColoredStringCentered((90 * hud_scale_factor), str2, 255, 255, 255, 255, hud_scale_factor);
 	Draw_Pic (200 * hud_scale_factor + 14, 68 * hud_scale_factor, b_minus);
 
-#endif // __PSP__, __3DS__, __WII__
+#endif // __PSP__, __PS3__, __3DS__, __WII__
 }
 
 /*
