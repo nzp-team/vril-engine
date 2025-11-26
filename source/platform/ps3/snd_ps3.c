@@ -28,77 +28,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SAMPLE_SIZE		4
 #define BUFFER_SIZE 	NUM_SAMPLES*SAMPLE_SIZE
 
-static int sound_initialized = 0;
-#if 0
-static byte *audio_buffer;
-static ndspWaveBuf wave_buf;
-#endif
-
 qboolean SNDDMA_Init(void)
 {
-	sound_initialized = 0;
-
-#if 0
-  	if(ndspInit() != 0) {
-    	return false;
-  	}
-
-    audio_buffer = linearAlloc(BUFFER_SIZE);
-
-    ndspSetOutputMode(NDSP_OUTPUT_STEREO);
-	ndspChnReset(0);
-	ndspChnWaveBufClear(0);
-	ndspChnSetInterp(0, NDSP_INTERP_LINEAR);
-	ndspChnSetRate(0, (float)SAMPLE_RATE);
-	ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16);
-
-	memset(&wave_buf, 0, sizeof(wave_buf));
-	wave_buf.data_vaddr = audio_buffer;
-	wave_buf.nsamples 	= BUFFER_SIZE / 4;
-	wave_buf.looping	= 1;
-
-	shm = &sn;
-	shm->splitbuffer = 0;
-	shm->samplebits = 16;
-	shm->speed = SAMPLE_RATE;
-	shm->channels = 2;
-	shm->samples = BUFFER_SIZE / 2;
-	shm->samplepos = 0;
-	shm->submission_chunk = 1;
-	shm->buffer = audio_buffer;
-
-	ndspChnWaveBufAdd(0, &wave_buf);
-
-	sound_initialized = 1;
-#endif
 	return true;
 }
 
 int SNDDMA_GetDMAPos(void)
 {
-	if(!sound_initialized)
-		return 0;
-
-#if 0
-	shm->samplepos = ndspChnGetSamplePos(0) / (shm->samplebits / 8);
-	return shm->samplepos;
-#endif
+    return 0;
 }
 
 void SNDDMA_Shutdown(void)
 {
-	if(!sound_initialized)
-		return;
-
-#if 0
-	ndspChnWaveBufClear(0);
-	ndspExit();
-	linearFree(audio_buffer);
-
-	sound_initialized = 0;
-#endif
+	return;
 }
 
 void SNDDMA_Submit(void)
 {
+    return;
 }
