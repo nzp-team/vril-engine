@@ -42,7 +42,7 @@ CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS		=	$(ARCH) -Wl,-Map,$(notdir $@).map
 
-LIBS	:=  -lPS3GL -lsimdmath -lrsx -lgcm_sys -lio -lsysutil -lrt -llv2 -lm
+LIBS	:=  -lPS3GL -lnet -lsimdmath -lrsx -lgcm_sys -lio -lsysutil -lrt -llv2 -lm
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
@@ -218,3 +218,4 @@ $(OUTPUT).elf:	$(OFILES)
 #---------------------------------------------------------------------------------
 endif
 #---------------------------------------------------------------------------------
+
