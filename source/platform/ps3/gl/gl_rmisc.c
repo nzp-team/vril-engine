@@ -273,10 +273,10 @@ void R_Init (void)
 	playertextures = texture_extension_number;
 	texture_extension_number += 16;
 
-	if (new3ds_flag == true)
+	//if (new3ds_flag == true)
 		Cvar_SetValue("r_dynamic", 1);
-	else
-		Cvar_SetValue("r_dynamic", 0);
+	//else
+	//	Cvar_SetValue("r_dynamic", 0);
 }
 
 /*

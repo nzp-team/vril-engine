@@ -30,4 +30,4 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // Behaviors differ on OLD CTR / NEW CTR, this boolean is TRUE if we are running
 // on NEW CTR.
 #include <stdbool.h>
-extern bool new3ds_flag;
+//extern bool new3ds_flag;

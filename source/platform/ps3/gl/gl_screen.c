@@ -1210,6 +1210,8 @@ SCR_ScreenShot_f
 */  
 void SCR_ScreenShot_f (void) 
 {
+// fancyTODO: Implement
+#if 0
 	byte		*buffer;
 	char		pcxname[80]; 
 	char		checkname[MAX_OSPATH * 2];
@@ -1257,6 +1259,7 @@ void SCR_ScreenShot_f (void)
 
 	free (buffer);
 	Con_Printf ("Wrote %s\n", pcxname);
+#endif
 } 
 
 

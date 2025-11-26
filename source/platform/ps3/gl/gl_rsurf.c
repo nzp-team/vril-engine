@@ -25,12 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	GL_RGBA4	0
 #endif
 
-// fancyTODO: Add glTexSubImage2D to PS3GL
-#ifdef glTexSubImage2D
-#undef glTexSubImage2D
-#define glTexSubImage2D glTexImage2D
-#endif
-
 
 int		lightmap_bytes;		// 1, 2, or 4
 
@@ -363,9 +357,10 @@ void R_DrawSequentialPoly (msurface_t *s)
 			{
 				lightmap_modified[i] = false;
 				theRect = &lightmap_rectchange[i];
-				glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t, 
-					BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
-					lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
+				// fancyTODO: Add glTexSubImage2D to PS3GL
+				//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t, 
+				//	BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
+				//	lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
 				theRect->l = BLOCK_WIDTH;
 				theRect->t = BLOCK_HEIGHT;
 				theRect->h = 0;
@@ -465,9 +460,10 @@ void R_DrawSequentialPoly (msurface_t *s)
 		{
 			lightmap_modified[i] = false;
 			theRect = &lightmap_rectchange[i];
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t, 
-				BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
-				lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
+			// fancyTODO: Add glTexSubImage2D to PS3GL
+			//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t, 
+			//	BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
+			//	lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
 			theRect->l = BLOCK_WIDTH;
 			theRect->t = BLOCK_HEIGHT;
 			theRect->h = 0;
@@ -633,9 +629,10 @@ void R_BlendLightmaps ()
 		{
 			lightmap_modified[i] = false;
 			theRect = &lightmap_rectchange[i];
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t, 
-				BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
-				lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
+			// fancyTODO: Add glTexSubImage2D to PS3GL
+			//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t, 
+			//	BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
+			//	lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
 			theRect->l = BLOCK_WIDTH;
 			theRect->t = BLOCK_HEIGHT;
 			theRect->h = 0;
