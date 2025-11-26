@@ -168,7 +168,7 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) $(LIBPSL1GHT_LIB)
 .PHONY: $(BUILD) clean all
 
 #---------------------------------------------------------------------------------
-all: _build_info.h $(BUILD)
+all: _build_info.h $(BUILD) pkg
 
 _build_info.h:
 	rm -rf $(CURDIR)/source/_build_info.h
