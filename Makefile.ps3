@@ -165,10 +165,10 @@ export INCLUDE	:=	$(foreach dir,$(INCLUDES), -I$(CURDIR)/$(dir)) \
 
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) $(LIBPSL1GHT_LIB)
 
-.PHONY: $(BUILD) clean all
+.PHONY: $(BUILD) clean all pkg
 
 #---------------------------------------------------------------------------------
-all: _build_info.h $(BUILD) pkg
+all: _build_info.h $(BUILD)
 
 _build_info.h:
 	rm -rf $(CURDIR)/source/_build_info.h
