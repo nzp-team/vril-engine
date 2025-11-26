@@ -1698,7 +1698,7 @@ HUD_BettyPrompt
 */
 void HUD_BettyPrompt (void)
 {
-#if __PSP__ || __PS3__
+#if __PSP__
 
 	char str[64];
 	char str2[32];
@@ -1715,7 +1715,7 @@ void HUD_BettyPrompt (void)
 	Draw_Pic (x + getTextWidth("Double-tap  ", 1) - 4, 60, GetButtonIcon("+use"));
 	Draw_Pic (x + getTextWidth("Double-tap     then press   ", 1) - 4, 60, GetButtonIcon("+grenade"));
 
-#elif __3DS__
+#elif __3DS__  || __PS3__
 
 	char str[32];
 	char str2[32];
