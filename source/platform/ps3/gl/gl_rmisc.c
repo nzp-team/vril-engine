@@ -131,6 +131,7 @@ Grab six views for environment mapping tests
 */
 void R_Envmap_f (void)
 {
+#if 0
 	byte	buffer[256*256*4];
 
 	glDrawBuffer  (GL_FRONT);
@@ -186,6 +187,7 @@ void R_Envmap_f (void)
 	glDrawBuffer  (GL_BACK);
 	glReadBuffer  (GL_BACK);
 	GL_EndRendering ();
+#endif
 }
 
 /*
@@ -481,6 +483,7 @@ For program optimization
 */
 void R_TimeRefresh_f (void)
 {
+#if 0
 	int			i;
 	float		start, stop, time;
 
@@ -501,6 +504,7 @@ void R_TimeRefresh_f (void)
 
 	glDrawBuffer  (GL_BACK);
 	GL_EndRendering ();
+#endif
 }
 
 void D_FlushCaches (void)

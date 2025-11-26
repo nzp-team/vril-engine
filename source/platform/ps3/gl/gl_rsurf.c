@@ -25,6 +25,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	GL_RGBA4	0
 #endif
 
+// fancyTODO: Add glTexSubImage2D to PS3GL
+#ifdef glTexSubImage2D
+#undef glTexSubImage2D
+#define glTexSubImage2D glTexImage2D
+#endif
+
 
 int		lightmap_bytes;		// 1, 2, or 4
 
@@ -981,6 +987,10 @@ void DrawTextureChains (void)
 
 	glDisable(GL_ALPHA_TEST);
 }
+
+// fancyTODO: Implement these in PS3GL
+void glPushMatrix(void) {}
+void glPopMatrix(void) {}
 /*
 =================
 R_DrawBrushModel

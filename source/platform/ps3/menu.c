@@ -2414,3 +2414,9 @@ void M_Keydown (int key)
 		Con_Printf("Cannot identify menu for case %d\n", m_state);
 	}
 }
+
+void M_OSK_Draw (void)
+{
+	// TODO: Implement.
+	Con_Printf("M_OSK_Draw: unimplemented\n");
+}
