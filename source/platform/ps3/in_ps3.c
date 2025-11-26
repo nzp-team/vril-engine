@@ -80,7 +80,6 @@ float IN_CalcInput(int axis, float speed, float tolerance, float acceleration) {
 
 extern cvar_t scr_fov;
 extern int original_fov, final_fov;
-touchPosition old_touch, cur_touch;
 void IN_Move (usercmd_t *cmd)
 {
 // TODO: Could use cellSubDisplayGetTouchInfo here if we want
