@@ -17,8 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-#include <3ds.h>
-#include <GL/picaGL.h>
+#include <GL/ps3gl.h>
 #include "../../../nzportable_def.h"
 
 unsigned	d_8to24table[256];
@@ -32,10 +31,10 @@ double	gldepthmin, gldepthmax;
 
 cvar_t	gl_ztrick = {"gl_ztrick","0"};
 
-const char *gl_vendor;
-const char *gl_renderer;
-const char *gl_version;
-const char *gl_extensions;
+//const char *gl_vendor;
+//const char *gl_renderer;
+//const char *gl_version;
+//const char *gl_extensions;
 
 static float vid_gamma = 1.0;
 
@@ -50,16 +49,17 @@ GL_Init
 */
 void GL_Init (void)
 {
-	pglInitEx(0x040000, 0x100000);
+	//pglInitEx(0x040000, 0x100000);
+	ps3glInit();
 
-#pragma GCC diagnostic ignored "-Wpointer-sign"
-
-	gl_vendor = glGetString (GL_VENDOR);
-	gl_renderer = glGetString (GL_RENDERER);
-	gl_version = glGetString (GL_VERSION);
-	gl_extensions = glGetString (GL_EXTENSIONS);
-
-#pragma GCC diagnostic pop
+//#pragma GCC diagnostic ignored "-Wpointer-sign"
+//
+//	gl_vendor = glGetString (GL_VENDOR);
+//	gl_renderer = glGetString (GL_RENDERER);
+//	gl_version = glGetString (GL_VERSION);
+//	gl_extensions = glGetString (GL_EXTENSIONS);
+//
+//#pragma GCC diagnostic pop
 
 	glClearDepth (1.0);
 	glClearColor ((float)(16.0f/255),(float)(32.0f/255),(float)(64.0f/255),1);
@@ -97,7 +97,8 @@ void GL_EndRendering (void)
 {
 	// naievil -- this requies the new version of picagl to be used properly
 	//glFinish();
-	pglSwapBuffersEx(1,0); 
+	//pglSwapBuffersEx(1,0); 
+	ps3glSwapBuffers();
 }
 
 void	VID_SetPalette (unsigned char *palette)

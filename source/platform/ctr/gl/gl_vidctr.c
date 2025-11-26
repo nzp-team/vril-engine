@@ -52,6 +52,7 @@ void GL_Init (void)
 {
 	pglInitEx(0x040000, 0x100000);
 
+
 #pragma GCC diagnostic ignored "-Wpointer-sign"
 
 	gl_vendor = glGetString (GL_VENDOR);

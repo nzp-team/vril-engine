@@ -20,27 +20,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../../nzportable_def.h"
 #include "errno.h"
-#include "touch_ctr.h"
 
-#include <3ds.h>
+// PS3 Headers
+#include <sys/systime.h>
+#include <io/pad.h>
+// TODO: gem stuff for PSMove eventually
+
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define TICKS_PER_SEC 268123480.0
+#define TICKS_PER_SEC sysGetTimebaseFrequency()
 
 #define QUAKE_HUNK_MB			24 		// cypress -- usable quake hunk size in mB
 #define QUAKE_HUNK_MB_NEW3DS	72		// ^^ ditto, but n3ds
+// TODO: Decide how big the PS3 hunk should be
 
 #define LINEAR_HEAP_SIZE_MB		16		// cypress -- we lower this as much as possible while still remaining
 										// bootable so we can up the quake hunk and actually viable memory.
 
-int __stacksize__ = 1024 * 1024; 		// down to 1mB from 4mB.. who set this? probably me, whatever.
-
-u32 __ctru_linear_heap_size = LINEAR_HEAP_SIZE_MB * 1024 * 1024; 
-bool new3ds_flag;
-
-extern void Touch_Init();
-extern void Touch_Update();
+// Stack size from Vita, no idea if it's right
+SYS_PROCESS_PARAM(1001, 0x800000);
 
 qboolean isDedicated;
 
@@ -164,12 +163,7 @@ void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 
 void Sys_PrintSystemInfo(void)
 {
-	Con_Printf ("3DS NZP v%4.1f (3DSX: "__TIME__" "__DATE__")\n", (double)(VERSION));
-
-	if (new3ds_flag)
-		Con_Printf ("3DS Model: NEW Nintendo 3DS\n");
-	else
-		Con_Printf ("3DS Model: Nintendo 3DS\n");
+	Con_Printf ("PS3 NZP v%4.1f (PKG: "__TIME__" "__DATE__")\n", (double)(VERSION));
 }
 
 void Sys_SystemError(char *error)
@@ -203,7 +197,8 @@ void Sys_Quit (void)
 {
 	Host_Shutdown();
 
-	gfxExit();
+	// TODO: PS3GL has no deinit
+	//gfxExit();
 	exit(0);
 }
 
@@ -212,9 +207,9 @@ double Sys_FloatTime (void)
 	static u64 initial_tick = 0;
 
 	if(!initial_tick)
-		initial_tick = svcGetSystemTick();
+		initial_tick = __builtin_ppc_mftb();
 	
-	u64 current_tick = svcGetSystemTick();
+	u64 current_tick = __builtin_ppc_mftb();
 
 	return (current_tick - initial_tick)/TICKS_PER_SEC;
 }
@@ -231,6 +226,7 @@ void Sys_Sleep (void)
 void Sys_DefaultConfig(void)
 {
 	// naievil -- fixme I didn't do this
+	// fancyTODO: Bind PS3
 	Cbuf_AddText ("bind ABUTTON +right\n");
 	Cbuf_AddText ("bind BBUTTON +lookdown\n");
 	Cbuf_AddText ("bind XBUTTON +lookup\n");
@@ -243,6 +239,7 @@ void Sys_DefaultConfig(void)
 	//Cbuf_AddText ("lookspring \"0.000000\"\n");
 }
 
+#if 0
 void Sys_SetKeys(u32 keys, u32 state){
 	if( keys & KEY_SELECT)
 		Key_Event(K_SELECT, state);
@@ -273,10 +270,18 @@ void Sys_SetKeys(u32 keys, u32 state){
 	if( keys & KEY_ZR)
 		Key_Event(K_AUX8, state);
 }
-
+#endif
 void Sys_SendKeyEvents (void)
 {
-	hidScanInput();
+#if 0
+	padInfo padinfo;
+  	padData paddata;
+	ioPadGetInfo(&pad_info);
+	for (int i = 0; i < MAX_PORT_NUM; i++)
+	{
+		if (!pad_info.status[i]) continue;
+		ioPadGetData(i, &pad_data[i]);
+
 
 	u32 kDown = hidKeysDown();
 	u32 kUp = hidKeysUp();
@@ -285,8 +290,7 @@ void Sys_SendKeyEvents (void)
 		Sys_SetKeys(kDown, true);
 	if(kUp)
 		Sys_SetKeys(kUp, false);
-
-	Touch_Update();
+#endif
 }
 
 void Sys_HighFPPrecision (void)
@@ -309,15 +313,15 @@ int main (int argc, char **argv)
 {
 	static float time, oldtime;
 	static quakeparms_t parms;
-	new3ds_flag = false;
+	//new3ds_flag = false;
 
-	osSetSpeedupEnable(true);
+	//osSetSpeedupEnable(true);
 
-	APT_CheckNew3DS(&new3ds_flag);
+	//APT_CheckNew3DS(&new3ds_flag);
 
-	gfxInit(GSP_BGR8_OES, GSP_RGB565_OES, false); 
-	gfxSetDoubleBuffering(GFX_BOTTOM, false);
-	gfxSwapBuffersGpu();
+	//gfxInit(GSP_BGR8_OES, GSP_RGB565_OES, false); 
+	//gfxSetDoubleBuffering(GFX_BOTTOM, false);
+	//gfxSwapBuffersGpu();
 
 	uint8_t model;
 
@@ -325,15 +329,16 @@ int main (int argc, char **argv)
 	CFGU_GetSystemModel(&model);
 	cfguExit();
 	
-	if(model != CFG_MODEL_2DS && new3ds_flag == true)
-		gfxSetWide(true);
+	ioPadInit(1);
+	//if(model != CFG_MODEL_2DS && new3ds_flag == true)
+	//	gfxSetWide(true);
 	
-	chdir("sdmc:/3ds/nzportable");
+	//chdir("sdmc:/3ds/nzportable");
 
-	if (new3ds_flag == true)
+	//if (new3ds_flag == true)
 		parms.memsize = QUAKE_HUNK_MB_NEW3DS * 1024 * 1024;
-	else
-		parms.memsize = QUAKE_HUNK_MB * 1024 * 1024;
+	//else
+	//	parms.memsize = QUAKE_HUNK_MB * 1024 * 1024;
 	
 	parms.membase = malloc(parms.memsize);
 	parms.basedir = ".";
@@ -344,13 +349,11 @@ int main (int argc, char **argv)
 	parms.argv = com_argv;
 
 	Host_Init (&parms);
-	Touch_Init();
-	Touch_DrawOverlay();
 
 	oldtime = Sys_FloatTime();
 
 	game_running = true;
-	while (aptMainLoop() && game_running)
+	while (/*aptMainLoop() && */game_running)
 	{
 		time = Sys_FloatTime();
 		Host_Frame (time - oldtime);
