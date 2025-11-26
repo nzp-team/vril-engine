@@ -58,7 +58,7 @@ int UDP_Init (void)
 		return -1;
 
 	// Start SceNet & SceNetCtl
-	int ret = netInitialize();
+	ret = netInitialize();
 	if (ret < 0) return -1;
 	
 	ret = netCtlInit();
