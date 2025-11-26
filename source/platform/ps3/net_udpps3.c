@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "net_udp.h"
 
 #include <net/net.h>
+#include <net/netctl.h>
 #include <net/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -56,14 +57,20 @@ int UDP_Init (void)
 	if (COM_CheckParm ("-noudp"))
 		return -1;
 
-	ret = netInitialize();
+	// Start SceNet & SceNetCtl
+	int ret = netInitialize();
+	if (ret < 0) return -1;
 	
-	if(ret != 0)
-	{
-		
+	ret = netCtlInit();
+	if (ret < 0){
+		netDeinitialize();
 		return -1;
-	}
-	myAddr = gethostid();
+	}	
+	
+	// Getting IP address
+	devicenet_ctl_info info;
+	netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, &info);
+	inet_pton(AF_INET, info.ip_address, &myAddr);
 
 	// if the quake hostname isn't set, set it to the machine name
 	if (strcmp(hostname.string, "UNNAMED") == 0)
@@ -74,6 +81,7 @@ int UDP_Init (void)
 	if ((net_controlsocket = UDP_OpenSocket (5000)) == -1) //Passing 0 causes function to fail on 3DS
 	{
 		netDeinitialize();
+		netCtlTerm();
 		return -1;
 	}
 
@@ -100,6 +108,7 @@ void UDP_Shutdown (void)
 	UDP_Listen (false);
 	UDP_CloseSocket (net_controlsocket);
 	netDeinitialize();
+	netCtlTerm();
 }
 
 //=============================================================================
