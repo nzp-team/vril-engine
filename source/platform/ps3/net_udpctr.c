@@ -22,19 +22,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../../nzportable_def.h"
 #include "net_udp.h"
 
-#include <sys/socket.h>
+#include <net/net.h>
+#include <net/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <malloc.h>
 #include <arpa/inet.h>
 
-#include <3ds.h>
+//#include <3ds.h>
 #include <sys/fcntl.h>
-
-#define SOC_BUFFERSIZE  0x100000
-#define SOC_ALIGN       0x1000
-
-static u32 *SOC_buffer = NULL;
 
 extern int close (int);
 
@@ -60,18 +56,11 @@ int UDP_Init (void)
 	if (COM_CheckParm ("-noudp"))
 		return -1;
 
-	SOC_buffer = (u32*)memalign(SOC_ALIGN, SOC_BUFFERSIZE);
-	
-	if(SOC_buffer == NULL)
-	{
-		Sys_Error("Failed to allocate SOC_Buffer\n");
-	}
-	ret = socInit(SOC_buffer, SOC_BUFFERSIZE);
+	ret = netInitialize();
 	
 	if(ret != 0)
 	{
 		
-		free(SOC_buffer);
 		return -1;
 	}
 	myAddr = gethostid();
@@ -79,13 +68,12 @@ int UDP_Init (void)
 	// if the quake hostname isn't set, set it to the machine name
 	if (strcmp(hostname.string, "UNNAMED") == 0)
 	{
-		Cvar_Set ("hostname", "3ds");
+		Cvar_Set ("hostname", "ps3");
 	}
 
 	if ((net_controlsocket = UDP_OpenSocket (5000)) == -1) //Passing 0 causes function to fail on 3DS
 	{
-		socExit();
-		free(SOC_buffer);
+		netDeinitialize();
 		return -1;
 	}
 
@@ -111,7 +99,7 @@ void UDP_Shutdown (void)
 {
 	UDP_Listen (false);
 	UDP_CloseSocket (net_controlsocket);
-	socExit();
+	netDeinitialize();
 }
 
 //=============================================================================
@@ -145,8 +133,12 @@ int UDP_OpenSocket (int port)
 	if ((newsocket = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 		return -1;
 
-	int flags = fcntl(newsocket, F_GETFL, 0);
+	/*int flags = fcntl(newsocket, F_GETFL, 0);
 	if ( fcntl(newsocket, F_SETFL, flags | O_NONBLOCK) == -1)
+		goto ErrorReturn;*/
+
+	int nbio = 1;
+	if (setsockopt(sock, SOL_SOCKET, SO_NBIO, &nbio, sizeof(nbio)) != 0)
 		goto ErrorReturn;
 
 	address.sin_family = AF_INET;

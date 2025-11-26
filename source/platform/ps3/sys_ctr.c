@@ -273,24 +273,28 @@ void Sys_SetKeys(u32 keys, u32 state){
 #endif
 void Sys_SendKeyEvents (void)
 {
-#if 0
-	padInfo padinfo;
-  	padData paddata;
+	padInfo padInfo;
 	ioPadGetInfo(&pad_info);
-	for (int i = 0; i < MAX_PORT_NUM; i++)
-	{
-		if (!pad_info.status[i]) continue;
-		ioPadGetData(i, &pad_data[i]);
+	if (!pad_info.status[0]) continue;
 
 
-	u32 kDown = hidKeysDown();
-	u32 kUp = hidKeysUp();
-
-	if(kDown)
-		Sys_SetKeys(kDown, true);
-	if(kUp)
-		Sys_SetKeys(kUp, false);
-#endif
+	padData padData;
+	ioPadGetData(&padData, 0);
+	
+	Key_Event(K_SELECT, padData.BTN_SELECT);
+	Key_Event(K_ESCAPE, padData.BTN_START);
+	Key_Event(K_UPARROW, padData.BTN_UP);
+	Key_Event(K_DOWNARROW, padData.BTN_DOWN);
+	Key_Event(K_LEFTARROW, padData.BTN_LEFT);
+	Key_Event(K_RIGHTARROW, padData.BTN_RIGHT);
+	Key_Event(K_AUX4, padData.BTN_SQUARE);
+	Key_Event(K_AUX3, padData.BTN_TRIANGLE);
+	Key_Event(K_AUX2, padData.BTN_CROSS);
+	Key_Event(K_AUX1, padData.BTN_CIRCLE);
+	Key_Event(K_AUX5, padData.L1);
+	Key_Event(K_AUX7, padData.R1);
+	Key_Event(K_AUX6, padData.L2);
+	Key_Event(K_AUX8, padData.R2);
 }
 
 void Sys_HighFPPrecision (void)

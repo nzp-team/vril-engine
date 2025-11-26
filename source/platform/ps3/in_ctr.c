@@ -20,8 +20,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // in_ctr.c -- for the Nintendo 3DS
 
 #include "../../nzportable_def.h"
+/*
 #include <GL/picaGL.h>
 #include <3ds.h>
+*/
 
 extern int bind_grab;
 
@@ -33,9 +35,9 @@ extern cvar_t in_anub_mode;
 
 void IN_Init (void)
 {
-	if (new3ds_flag) {
+	//if (new3ds_flag) {
 		Cvar_SetValue("in_anub_mode", 1);
-	}
+	//}
 }
 
 void IN_Shutdown (void)
@@ -50,7 +52,7 @@ void IN_Commands (void)
 
 float IN_CalcInput(int axis, float speed, float tolerance, float acceleration) {
 
-	float value = ((float) axis / 154.0f);
+	float value = ((float) axis / 255.0f);
 
 	if (value == 0.0f) {
 		return 0.0f;
@@ -80,6 +82,9 @@ extern int original_fov, final_fov;
 touchPosition old_touch, cur_touch;
 void IN_Move (usercmd_t *cmd)
 {
+// TODO: Could use cellSubDisplayGetTouchInfo here if we want
+// to use cellSubDisplay to use the PSVita like the 3DS Bottom Screen
+#if 0
 	// Touch based viewangles based on Quake2CTR
 	// This was originally based on ctrQuake, however
 	// that implementation was less elegant and had
@@ -105,16 +110,16 @@ void IN_Move (usercmd_t *cmd)
 
 		old_touch = cur_touch;
 	}
+#endif
 
 	// TODO: Detect circle pad pro?
-	circlePosition left;
-	circlePosition right;
-
+	padData padData;
+	
 	V_StopPitchDrift();
 
 	// Read the pad states
-	hidCircleRead(&left);
-	hidCstickRead(&right);
+	ioPadGetData(&padData, 0);
+	
 
 	// Convert the inputs to floats in the range [-1, 1].
 	// Implement the dead zone.
@@ -145,11 +150,11 @@ void IN_Move (usercmd_t *cmd)
 	
 	// Are we using the left or right stick for looking?
 	if (!in_anub_mode.value) { // Left
-		look_x = IN_CalcInput(left.dx, speed, deadZone, acceleration);
-		look_y = IN_CalcInput(left.dy, speed, deadZone, acceleration);
+		look_x = IN_CalcInput(padData.ANA_L_H, speed, deadZone, acceleration);
+		look_y = IN_CalcInput(padData.ANA_L_V, speed, deadZone, acceleration);
 	} else { // Right
-		look_x = IN_CalcInput(right.dx, speed, deadZone, acceleration);
-		look_y = IN_CalcInput(right.dy, speed, deadZone, acceleration);
+		look_x = IN_CalcInput(padData.ANA_R_H, speed, deadZone, acceleration);
+		look_y = IN_CalcInput(padData.ANA_R_V, speed, deadZone, acceleration);
 	}
 
 	const float yawScale = 30.0f;
@@ -172,11 +177,11 @@ void IN_Move (usercmd_t *cmd)
 	float input_x, input_y;
 
 	if (in_anub_mode.value) {
-		input_x = left.dx;
-		input_y = left.dy;
+		input_x = padData.ANA_L_H;
+		input_y = padData.ANA_L_V;
 	} else {
-		input_x = right.dx;
-		input_y = right.dy;
+		input_x = padData.ANA_R_H;
+		input_y = padData.ANA_R_V;
 	}
 
 	cl_backspeed = cl_forwardspeed = cl_sidespeed = sv_player->v.maxspeed;
@@ -218,6 +223,11 @@ void IN_Move (usercmd_t *cmd)
 //
 void IN_SwitchKeyboard(void)
 {
+// TODO: PS3 has a software keyboard, 
+// just needs a bunch of callbacks 
+// and conversions between UTF8 and UTF16
+// That I will add later
+#if 0
 	static SwkbdState swkbd;
 	static char console_buffer[64];
 
@@ -228,4 +238,5 @@ void IN_SwitchKeyboard(void)
 	swkbdInputText(&swkbd, console_buffer, sizeof(console_buffer));
 
 	Cbuf_AddText(va("%s\n", console_buffer));
+#endif
 }

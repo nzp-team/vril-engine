@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include <stdio.h>
-#include <3ds.h>
+//#include <3ds.h>
 #include "../../nzportable_def.h"
 
 #define SAMPLE_RATE   	22050
@@ -29,13 +29,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define BUFFER_SIZE 	NUM_SAMPLES*SAMPLE_SIZE
 
 static int sound_initialized = 0;
+#if 0
 static byte *audio_buffer;
 static ndspWaveBuf wave_buf;
+#endif
 
 qboolean SNDDMA_Init(void)
 {
 	sound_initialized = 0;
 
+#if 0
   	if(ndspInit() != 0) {
     	return false;
   	}
@@ -67,7 +70,7 @@ qboolean SNDDMA_Init(void)
 	ndspChnWaveBufAdd(0, &wave_buf);
 
 	sound_initialized = 1;
-
+#endif
 	return true;
 }
 
@@ -76,8 +79,10 @@ int SNDDMA_GetDMAPos(void)
 	if(!sound_initialized)
 		return 0;
 
+#if 0
 	shm->samplepos = ndspChnGetSamplePos(0) / (shm->samplebits / 8);
 	return shm->samplepos;
+#endif
 }
 
 void SNDDMA_Shutdown(void)
@@ -85,11 +90,13 @@ void SNDDMA_Shutdown(void)
 	if(!sound_initialized)
 		return;
 
+#if 0
 	ndspChnWaveBufClear(0);
 	ndspExit();
 	linearFree(audio_buffer);
 
 	sound_initialized = 0;
+#endif
 }
 
 void SNDDMA_Submit(void)
