@@ -208,12 +208,6 @@ extern qboolean console_enabled;
 void Key_Console (int key)
 {
 	char	*cmd;
-
-	if (key == K_SELECT)
-	{
-		IN_SwitchKeyboard();
-		return;
-	}
 	
 	if (key == K_JOY3 || key == K_ENTER)
 	{		

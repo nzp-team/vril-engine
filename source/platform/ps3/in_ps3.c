@@ -217,26 +217,3 @@ void IN_Move (usercmd_t *cmd)
 			crosshair_opacity = 128;
 	}
 }
-
-//
-// ctr software keyboard courtesy of libctru samples
-//
-void IN_SwitchKeyboard(void)
-{
-// TODO: PS3 has a software keyboard, 
-// just needs a bunch of callbacks 
-// and conversions between UTF8 and UTF16
-// That I will add later
-#if 0
-	static SwkbdState swkbd;
-	static char console_buffer[64];
-
-	swkbdInit(&swkbd, SWKBD_TYPE_QWERTY, 2, -1);
-	swkbdSetInitialText(&swkbd, console_buffer);
-	swkbdSetHintText(&swkbd, "Enter Quake console command");
-	swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Send", true);
-	swkbdInputText(&swkbd, console_buffer, sizeof(console_buffer));
-
-	Cbuf_AddText(va("%s\n", console_buffer));
-#endif
-}
