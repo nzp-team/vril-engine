@@ -542,6 +542,8 @@ int getTextWidth(char *str, float scale)
 {
 	int width = 0;
 
+	if (str == NULL) return 0;
+
     for (int i = 0; i < strlen(str); i++) {
         // Hooray for variable-spacing!
 		if (str[i] == ' ')
