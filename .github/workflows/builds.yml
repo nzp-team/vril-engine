@@ -106,7 +106,9 @@ jobs:
        uses: actions/upload-artifact@v4
        with:
          name: ps3-nzp-pkg
-         path: ./build/ps3/bin/nzportable.pkg
+         path: |
+             ./build/ps3/bin/nzportable.pkg
+             ./build/ps3/bin/nzportable.elf
   Pull-Request-Test-PSP1000:
     if: github.event_name == 'pull_request'
     name: PSP-1000 Pull Request Tests
