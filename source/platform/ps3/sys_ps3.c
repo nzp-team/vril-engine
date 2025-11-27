@@ -326,8 +326,7 @@ int main (int argc, char **argv)
 	//if(model != CFG_MODEL_2DS && new3ds_flag == true)
 	//	gfxSetWide(true);
 	
-	//chdir("sdmc:/3ds/nzportable");
-	chdir("/dev_hdd0/game/NZPORTABL/USRDIR");
+	//chdir("sdmc:/3ds/nzportable");;
 
 	//if (new3ds_flag == true)
 		parms.memsize = QUAKE_HUNK_MB_NEW3DS * 1024 * 1024;
@@ -335,7 +334,7 @@ int main (int argc, char **argv)
 	//	parms.memsize = QUAKE_HUNK_MB * 1024 * 1024;
 	
 	parms.membase = malloc(parms.memsize);
-	parms.basedir = ".";
+	parms.basedir = "/dev_hdd0/game/NZPORTABL/USRDIR";
 
 	COM_InitArgv (argc, argv);
 
@@ -356,4 +355,5 @@ int main (int argc, char **argv)
 
 	return 0;
 }
+
 
