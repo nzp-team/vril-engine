@@ -84,8 +84,8 @@ void GL_Init (void)
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
-extern u32 display_width;
-extern u32 display_height;
+extern unsigned int display_width;
+extern unsigned int display_height;
 void GL_BeginRendering (int *x, int *y, int *width, int *height)
 {
 	*x = *y = 0;
@@ -193,8 +193,6 @@ static void Check_Gamma (unsigned char *pal)
 	BuildGammaTable (vid_gamma);		//Diabolickal HLBSP
 }
 
-extern u32 display_width;
-extern u32 display_height;
 void	VID_Init (unsigned char *palette)
 {
 	int i;
@@ -255,5 +253,6 @@ void	VID_Shutdown (void)
 void	VID_Update (vrect_t *rects)
 {
 }
+
 
 
