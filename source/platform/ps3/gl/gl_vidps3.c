@@ -196,7 +196,7 @@ static void Check_Gamma (unsigned char *pal)
 void	VID_Init (unsigned char *palette)
 {
 	int i;
-	char	gldir[512];
+	//char	gldir[512];
 	GL_Init();
 	int width = (int)display_width;
 	int height = (int)display_height;
@@ -234,8 +234,8 @@ void	VID_Init (unsigned char *palette)
 	vid.aspect = (float)vid.height / (float)vid.width;
 	vid.numpages = 2;
 
-	snprintf(gldir, 512, "%s/glquake", com_gamedir);
-	Sys_mkdir (gldir);
+	//snprintf(gldir, 512, "%s/glquake", com_gamedir);
+	//Sys_mkdir (gldir);
 
 	Check_Gamma(palette);
 	VID_SetPalette(palette);
