@@ -227,7 +227,7 @@ void Con_Init (void)
 {
 	char 	*t2 = "/" FILE_SPECIAL_PREFIX "condebug.log" FILE_SPECIAL_SUFFIX;
 
-	con_debuglog = COM_CheckParm("-condebug");
+	con_debuglog = true;//COM_CheckParm("-condebug");
 
 	if (con_debuglog)
 	{
