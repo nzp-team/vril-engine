@@ -193,12 +193,14 @@ static void Check_Gamma (unsigned char *pal)
 	BuildGammaTable (vid_gamma);		//Diabolickal HLBSP
 }
 
+extern u32 display_width;
+extern u32 display_height;
 void	VID_Init (unsigned char *palette)
 {
 	int i;
 	char	gldir[512];
-	int width = 400;
-	int height = 240;
+	int width = display_width;
+	int height = display_height;
 
 	Cvar_RegisterVariable (&gl_ztrick);
 	
@@ -227,11 +229,10 @@ void	VID_Init (unsigned char *palette)
 	if (vid.conwidth > width)
 		vid.conwidth = width;
 
-	vid.width = 400;
-	vid.height = 240;
+	vid.width = width;
+	vid.height = height;
 
-	vid.aspect = ((float)vid.height / (float)vid.width) *
-				(320.0f / 240.0f);
+	vid.aspect = ((float)vid.height / (float)vid.width));
 	vid.numpages = 2;
 
 	GL_Init();
@@ -254,4 +255,5 @@ void	VID_Shutdown (void)
 void	VID_Update (vrect_t *rects)
 {
 }
+
 
