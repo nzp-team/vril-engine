@@ -84,12 +84,13 @@ void GL_Init (void)
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
-
+extern u32 display_width;
+extern u32 display_height;
 void GL_BeginRendering (int *x, int *y, int *width, int *height)
 {
 	*x = *y = 0;
-	*width = 400;
-	*height = 240;
+	*width = (int)display_width;
+	*height = (int)display_height;
 }
 
 
@@ -253,3 +254,4 @@ void	VID_Shutdown (void)
 void	VID_Update (vrect_t *rects)
 {
 }
+
