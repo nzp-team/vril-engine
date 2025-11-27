@@ -13,6 +13,7 @@ BUILD		:=	build
 SOURCES		:=	source
 INCLUDES	:=	include
 PKGFILES	:=	source/platform/ps3/pics
+ICON0       :=  source/platform/ps3/pics/ICON0.PNG
 
 TITLE		:=	Nazi Zombies: Portable
 APPID		:=	NZPORTABL
@@ -215,4 +216,5 @@ $(OUTPUT).elf:	$(OFILES)
 #---------------------------------------------------------------------------------
 endif
 #---------------------------------------------------------------------------------
+
 
