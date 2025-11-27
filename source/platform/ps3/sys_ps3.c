@@ -327,6 +327,7 @@ int main (int argc, char **argv)
 	//	gfxSetWide(true);
 	
 	//chdir("sdmc:/3ds/nzportable");
+	chdir("/dev_hdd0/game/NZPORTABL/USRDIR");
 
 	//if (new3ds_flag == true)
 		parms.memsize = QUAKE_HUNK_MB_NEW3DS * 1024 * 1024;
@@ -355,3 +356,4 @@ int main (int argc, char **argv)
 
 	return 0;
 }
+
