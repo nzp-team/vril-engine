@@ -110,7 +110,7 @@ int			ShowBlslogo;
 qboolean 	loadscreeninit;
 
 char* 		loadname2;
-char* 		loadnamespec;
+char* 		loadnamespec = "";
 
 int			clearconsole;
 int			clearnotify;
