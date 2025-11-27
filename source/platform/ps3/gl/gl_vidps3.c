@@ -197,6 +197,7 @@ void	VID_Init (unsigned char *palette)
 {
 	int i;
 	char	gldir[512];
+	GL_Init();
 	int width = (int)display_width;
 	int height = (int)display_height;
 
@@ -233,8 +234,6 @@ void	VID_Init (unsigned char *palette)
 	vid.aspect = (float)vid.height / (float)vid.width;
 	vid.numpages = 2;
 
-	GL_Init();
-
 	snprintf(gldir, 512, "%s/glquake", com_gamedir);
 	Sys_mkdir (gldir);
 
@@ -253,6 +252,7 @@ void	VID_Shutdown (void)
 void	VID_Update (vrect_t *rects)
 {
 }
+
 
 
 
