@@ -110,7 +110,7 @@ int			ShowBlslogo;
 qboolean 	loadscreeninit;
 
 char* 		loadname2;
-char* 		loadnamespec = "";
+char* 		loadnamespec;
 
 int			clearconsole;
 int			clearnotify;
@@ -1096,7 +1096,7 @@ void SCR_DrawLoadScreen (void)
 
 		Draw_FillByColor(0, 0, 480, 24, 0, 0, 0, 175);
 		Draw_FillByColor(0, 216, 480, 24, 0, 0, 0, 175);
-		if(loadnamespec != "") {
+		if(loadnamespec != NULL) {
 			Draw_ColoredString(2, 4, loadnamespec, 255, 255, 0, 255, 2);
 		}
 	}
