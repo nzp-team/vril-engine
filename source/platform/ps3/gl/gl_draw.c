@@ -1830,6 +1830,15 @@ byte* LoadPCX (FILE *f, int matchwidth, int matchheight)
 	fread (&pcxbuf, 1, sizeof(pcxbuf), f);
 	pcx = &pcxbuf;
 
+	pcx->xmin = LittleShort(pcx->xmin);
+    pcx->ymin = LittleShort(pcx->ymin);
+    pcx->xmax = LittleShort(pcx->xmax);
+    pcx->ymax = LittleShort(pcx->ymax);
+    pcx->hres = LittleShort(pcx->hres);
+    pcx->vres = LittleShort(pcx->vres);
+    pcx->bytes_per_line = LittleShort(pcx->bytes_per_line);
+    pcx->palette_type = LittleShort(pcx->palette_type);
+
 	if (pcx->manufacturer != 0x0a
 		|| pcx->version != 5
 		|| pcx->encoding != 1
