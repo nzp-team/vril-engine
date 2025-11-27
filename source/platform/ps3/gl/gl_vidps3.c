@@ -197,8 +197,8 @@ void	VID_Init (unsigned char *palette)
 {
 	int i;
 	char	gldir[512];
-	int width = display_width;
-	int height = display_height;
+	int width = (int)display_width;
+	int height = (int)display_height;
 
 	Cvar_RegisterVariable (&gl_ztrick);
 	
@@ -230,7 +230,7 @@ void	VID_Init (unsigned char *palette)
 	vid.width = width;
 	vid.height = height;
 
-	vid.aspect = ((float)vid.height / (float)vid.width));
+	vid.aspect = (float)vid.height / (float)vid.width;
 	vid.numpages = 2;
 
 	GL_Init();
@@ -253,6 +253,7 @@ void	VID_Shutdown (void)
 void	VID_Update (vrect_t *rects)
 {
 }
+
 
 
 
