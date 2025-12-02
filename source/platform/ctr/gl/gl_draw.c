@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <3ds.h>
 
 #define GL_COLOR_INDEX8_EXT     0x80E5
+#define MAX_VRAM_TEX	256*256*4
 
 cvar_t		gl_max_size = {"gl_max_size", "1024"};
 cvar_t		gl_picmip = {"gl_picmip", "0"};
@@ -38,8 +39,6 @@ typedef struct
 	int		texnum;
 	float	sl, tl, sh, th;
 } glpic_t;
-
-byte		conback_buffer[sizeof(qpic_t) + sizeof(glpic_t)];
 
 int		gl_lightmap_format = 4;
 int		gl_solid_format = 3;
@@ -56,7 +55,6 @@ int 	loading_step;
 float 	loading_cur_step_bk;
 
 #define	MAX_GLTEXTURES	1024
-#define MAX_VRAM_TEX	256*256*4
 static gltexture_t	gltextures[MAX_GLTEXTURES];
 static int	numgltextures = 0;
 static GLuint current_gl_id = 0;
@@ -99,7 +97,7 @@ void GL_FreeTextures (int texnum)
 	glt->keep = false;
 	glt->used = false;
 
-	numgltextures--;
+	//numgltextures--;
 	current_gl_id = 0;
 }
 
@@ -224,10 +222,10 @@ void Draw_Init (void)
 	Cvar_RegisterVariable (&gl_max_size);
 	Cvar_RegisterVariable (&gl_picmip);
 
-	if (!new3ds_flag) {
+	//if (!new3ds_flag) {
 		//Cvar_SetValue("gl_picmip", 1);
 		Cvar_Set ("gl_max_size", "256");
-	}
+	//}
 
 	Cmd_AddCommand ("gl_texturemode", &Draw_TextureMode_f);
 
@@ -367,6 +365,8 @@ void Draw_String (int x, int y, char *str)
 
 void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, float a, float scale) 
 {
+	if (str == NULL) return;
+
 	while (*str)
 	{
 		Draw_CharacterRGBA (x, y, *str, r, g, b, a, (int)scale);
@@ -385,6 +385,8 @@ void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, floa
 
 int getTextWidth(char *str, float scale)
 {
+	if (str == NULL) return 0;
+
 	int width = 0;
 
     for (int i = 0; i < strlen(str); i++) {
@@ -635,30 +637,6 @@ void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a)
 	glEnable (GL_TEXTURE_2D);
 }
 //=============================================================================
-
-byte *StringToRGB (char *s)
-{
-	byte		*col;
-	static	byte	rgb[4];
-
-	Cmd_TokenizeString (s);
-	if (Cmd_Argc() == 3)
-	{
-		rgb[0] = (byte)Q_atoi(Cmd_Argv(0));
-		rgb[1] = (byte)Q_atoi(Cmd_Argv(1));
-		rgb[2] = (byte)Q_atoi(Cmd_Argv(2));
-	}
-	else
-	{
-		col = (byte *)&d_8to24table[(byte)Q_atoi(s)];
-		rgb[0] = col[0];
-		rgb[1] = col[1];
-		rgb[2] = col[2];
-	}
-	rgb[3] = 255;
-
-	return rgb;
-}
 
 extern cvar_t crosshair;
 extern qboolean croshhairmoving;
@@ -1107,7 +1085,7 @@ void GL_Upload32(GLuint gl_id, unsigned *data, int width, int height, qboolean m
     if (scaled_width < 1) scaled_width = 1;
     if (scaled_height < 1) scaled_height = 1;
 
-    unsigned *scaled = malloc(scaled_width * scaled_height * sizeof(unsigned));
+    unsigned *scaled = malloc(scaled_width * scaled_height * 4);
     if (!scaled) Sys_Error("GL_Upload32: out of memory");
 
     // bind the texture
@@ -1151,7 +1129,7 @@ void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipm
 	int			i, s;
 	qboolean	noalpha;
 	int			p;
-	unsigned *trans = malloc(width*height*sizeof(unsigned));
+	unsigned 	*trans = malloc(width*height*4);
 
 	s = width*height;
 	// if there are no transparent pixels, make it a 3 component

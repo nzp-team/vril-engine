@@ -1006,6 +1006,14 @@ void CL_ParseClientdata (int bits)
 	i = MSG_ReadShort ();
 	if (cl.stats[STAT_CURRENTMAG2] != i)
 		cl.stats[STAT_CURRENTMAG2] = i;
+
+	i = MSG_ReadShort ();
+	if (cl.stats[STAT_VIEWMODEL_EFFECTS] != i)
+		cl.stats[STAT_VIEWMODEL_EFFECTS] = i;
+
+	i = MSG_ReadShort ();
+	if (cl.stats[STAT_VIEWMODEL2_EFFECTS] != i)
+		cl.stats[STAT_VIEWMODEL2_EFFECTS] = i;
 }
 
 /*

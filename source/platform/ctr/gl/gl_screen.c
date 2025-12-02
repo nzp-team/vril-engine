@@ -1078,7 +1078,9 @@ void SCR_DrawLoadScreen (void)
 		Draw_FillByColor(0, 0, 480, 24, 0, 0, 0, 175);
 		Draw_FillByColor(0, 216, 480, 24, 0, 0, 0, 175);
 
-		Draw_ColoredString(2, 4, loadnamespec, 255, 255, 0, 255, 2);
+		if (loadnamespec != NULL) {
+			Draw_ColoredString(2, 4, loadnamespec, 255, 255, 0, 255, 2);
+		}
 	}
 
 	if (loadingtimechange < Sys_FloatTime ())
