@@ -366,7 +366,8 @@ void QMB_InitParticles (void)
 
 	loading_num_step = loading_num_step + 24;
 	
-	if (!(particleimage = Image_LoadImage("textures/particles/particlefont", IMAGE_TGA, 0, true, false)))
+	particleimage = Image_LoadImage("textures/particles/particlefont", IMAGE_TGA, 0, true, false);
+	if (particleimage < 0)
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -394,7 +395,8 @@ void QMB_InitParticles (void)
 	
 	max_s = max_t = 128.0;
 
-	if (!(particleimage = Image_LoadImage("textures/particles/flame", IMAGE_TGA, 0, true, false)))
+	particleimage = Image_LoadImage("textures/particles/flame", IMAGE_TGA, 0, true, false);
+	if (particleimage < 0)
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -406,7 +408,8 @@ void QMB_InitParticles (void)
 
 	max_s = max_t = 64.0;
 
-	if (!(particleimage = Image_LoadImage("textures/particles/inferno", IMAGE_TGA, 0, true, false)))
+	particleimage = Image_LoadImage("textures/particles/inferno", IMAGE_TGA, 0, true, false);
+	if (particleimage < 0)
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -417,7 +420,8 @@ void QMB_InitParticles (void)
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	if (!(particleimage = Image_LoadImage("textures/particles/zing1", IMAGE_TGA | IMAGE_PNG, 0, true, false)))
+	particleimage = Image_LoadImage("textures/particles/zing1", IMAGE_TGA | IMAGE_PNG, 0, true, false);
+	if (particleimage < 0)
 	{
         //Clear_LoadingFill ();
 		return;
@@ -430,7 +434,8 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 	max_s = max_t = 128.0;
 	
-	if (!(particleimage = Image_LoadImage("textures/mzfl/mzfl0", IMAGE_TGA, 0, true, false)))
+	particleimage = Image_LoadImage("textures/mzfl/mzfl0", IMAGE_TGA, 0, true, false);
+	if (particleimage < 0)
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -441,7 +446,8 @@ void QMB_InitParticles (void)
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	if (!(particleimage = Image_LoadImage("textures/mzfl/mzfl1", IMAGE_TGA, 0, true, false)))
+	particleimage = Image_LoadImage("textures/mzfl/mzfl1", IMAGE_TGA, 0, true, false);
+	if (particleimage < 0)
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -451,7 +457,8 @@ void QMB_InitParticles (void)
 
     loading_cur_step++;	
 	SCR_UpdateScreen ();
-	if (!(particleimage = Image_LoadImage("textures/mzfl/mzfl2", IMAGE_TGA, 0, true, false)))
+	particleimage = Image_LoadImage("textures/mzfl/mzfl2", IMAGE_TGA, 0, true, false);
+	if (particleimage < 0)
 	{
         //Clear_LoadingFill ();
 		return;
@@ -463,7 +470,8 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 	
 	max_s = max_t = 64.0;
-	if (!(particleimage = Image_LoadImage("textures/particles/bloodcloud", IMAGE_TGA, 0, true, false)))
+	particleimage = Image_LoadImage("textures/particles/bloodcloud", IMAGE_TGA, 0, true, false);
+	if (particleimage < 0)
 	{
         //Clear_LoadingFill ();
 		return;

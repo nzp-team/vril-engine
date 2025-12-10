@@ -353,29 +353,31 @@ void Sky_LoadSkyBox(char* name)
     {
         int mark = Hunk_LowMark ();
 
-		if(!(skyimage[i] = Image_LoadImage (va("gfx/env/%s%s", name, suf[i]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false)) &&
-           !(skyimage[i] = Image_LoadImage (va("gfx/env/%s_%s", name, suf[i]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false)))
-		{
-			Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[i]);
-		    if(!(skyimage[i] = Image_LoadImage (va("gfx/env/skybox%s", suf[i]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false)))
-		    {
-			    Sys_Error("STD SKY NOT FOUND!");
+		skyimage[i] = Image_LoadImage (va("gfx/env/%s%s", name, suf[i]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+		if (skyimage[i] < 0) {
+			skyimage[i] = Image_LoadImage (va("gfx/env/%s_%s", name, suf[i]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+			if (skyimage[i] < 0) {
+				Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[i]);
+				skyimage[i] = Image_LoadImage (va("gfx/env/skybox%s", suf[i]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+				if(skyimage[i] < 0) {
+					Sys_Error("STD SKY NOT FOUND!");
+				}
 			}
-
 		}
         Hunk_FreeToLowMark (mark);
     }
 
 	int mark = Hunk_LowMark ();
-	if(!(skyimage[4] = Image_LoadImage (va("gfx/env/%sup", name), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false)) &&
-		!(skyimage[4] = Image_LoadImage (va("gfx/env/%s_up", name), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false)))
-	{
-		Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[4]);
-		if(!(skyimage[4] = Image_LoadImage (va("gfx/env/skybox%s", suf[4]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false)))
-		{
-			Sys_Error("STD SKY NOT FOUND!");
+	skyimage[4] = Image_LoadImage (va("gfx/env/%sup", name), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+	if (skyimage[4] < 0) {
+		skyimage[4] = Image_LoadImage (va("gfx/env/%s_up", name), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+		if (skyimage[4] < 0) {
+			Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[4]);
+			skyimage[4] = Image_LoadImage (va("gfx/env/skybox%s", suf[4]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+			if (skyimage[4] < 0) {
+				Sys_Error("STD SKY NOT FOUND!");
+			}
 		}
-
 	}
 	Hunk_FreeToLowMark (mark);
 
@@ -393,7 +395,7 @@ void Sky_NewMap (void)
 	char	*data;
 
     //purge old sky textures
-    //UnloadSkyTexture ();
+    //UnloadSkyTexture ();-
 
 	//
 	// initially no sky
