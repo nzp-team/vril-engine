@@ -192,7 +192,7 @@ void Mod_ClearAll (void)
 
 	//purge old sky textures
 	for (i=0; i<5; i++)
-		skyimage[i] = 0;
+		skyimage[i] = -1;
 		
 	ent_file = NULL;
 }

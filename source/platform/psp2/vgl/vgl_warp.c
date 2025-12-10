@@ -491,7 +491,7 @@ void Sky_Init (void)
 	Cmd_AddCommand ("sky",Sky_SkyCommand_f);
 
 	for (i=0; i<5; i++)
-		skyimage[i] = 0;
+		skyimage[i] = -1;
 }
 
 int	c_sky;

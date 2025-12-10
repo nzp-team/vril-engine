@@ -2293,7 +2293,7 @@ void GL_UnloadTexture(int texture_index)
 	texture.height  = 0;
 	texture.mipmaps = 0;
 	texture.swizzle = 0;
-	texture.texnum 	= 0;
+	texture.texnum 	= -1;
 
 	if (texture.palette != NULL)
 	{

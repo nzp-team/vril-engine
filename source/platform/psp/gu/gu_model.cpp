@@ -220,11 +220,11 @@ void Mod_ClearAll (void)
 
 	//purge old sky textures
 	for (i=0; i<5; i++)
-		skyimage[i] = 0;
+		skyimage[i] = -1;
 
 	//purge old lightmaps
 	for (i=0; i<MAX_LIGHTMAPS; i++)
-		lightmap_index[i] = 0;
+		lightmap_index[i] = -1;
 }
 
 /*

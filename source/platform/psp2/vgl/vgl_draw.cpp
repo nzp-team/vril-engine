@@ -119,15 +119,15 @@ void GL_Bind (int texnum)
 
 void GL_FreeTextures (int texnum)
 {
-	if (texnum <= 0) return;
+	if (texnum < 0) return;
 
 	gltexture_t *glt = &gltextures[texnum];
 	if (glt->used == false) return;
 	if (glt->keep) return;
 
 	glDeleteTextures(1, &glt->gl_id);
-	glt->gl_id = 0;
-	glt->texnum = texnum;
+	glt->gl_id = -1;
+	glt->texnum = -1;
 	strcpy(glt->identifier, "");
 	glt->width = 0;
 	glt->height = 0;
@@ -136,8 +136,9 @@ void GL_FreeTextures (int texnum)
 	glt->bpp = 0;
 	glt->keep = false;
 	glt->used = false;
-	memset(glt, 0, sizeof(*glt));   // clear slot
+
 	numgltextures--;
+	current_gl_id = -1;
 }
 
 void GL_UnloadTextures (void)

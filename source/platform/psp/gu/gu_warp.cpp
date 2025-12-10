@@ -876,7 +876,7 @@ void UnloadSkyTexture (void)
 	{
 		if (skyimage[i])
 			GL_UnloadTexture(skyimage[i]);
-		skyimage[i] = 0;
+		skyimage[i] = -1;
 	}
 }
 
@@ -1046,7 +1046,7 @@ void Sky_Init (void)
 	Cmd_AddCommand ("sky",Sky_SkyCommand_f);
 
 	for (i=0; i<5; i++)
-		skyimage[i] = 0;
+		skyimage[i] = -1;
 }
 
 static vec3_t	skyclip[6] = {
