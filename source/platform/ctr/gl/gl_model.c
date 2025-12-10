@@ -189,7 +189,7 @@ void Mod_ClearAll (void)
 
 	//purge old sky textures
 	for (i=0; i<5; i++)
-		skyimage[i] = 0;
+		skyimage[i] = -1;
 }
 
 /*
@@ -417,7 +417,7 @@ void Mod_LoadTextures (lump_t *l)
 				tx->gl_texturenum = Image_LoadImage (texname, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, true);			//Diabolickal TGA textures
 				texture_mode = GL_LINEAR;
 
-			  	if (tx->gl_texturenum <= 0) {
+			  	if (tx->gl_texturenum < 0) {
 					data = WAD3_LoadTexture(mt);
 
 					bool choosealpha = mt->name[0] == '{' ? true : false; // naievil -- need to choose alpha mode for certain textures
@@ -1644,7 +1644,8 @@ Mod_LoadAllSkins
 void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 {
 	int		i, j, k;
-	char	name[MAX_OSPATH], model[64], model2[128], texname[32];
+	char	name[MAX_OSPATH], model[64], model2[128];
+	char 	texname[32] = {0};
 	int		s;
 	byte	*skin;
 	daliasskingroup_t		*pinskingroup;
@@ -1668,12 +1669,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 		pheader->gl_texturenum[0][0] = 
 		pheader->gl_texturenum[0][1] = 
 		pheader->gl_texturenum[0][2] = 
-		pheader->gl_texturenum[0][3] = Image_LoadImage("models/weapons/m1911/v_biatch.mdl_0", IMAGE_PCX, 0, false, false);
+		pheader->gl_texturenum[0][3] = Image_LoadImage("models/weapons/m1911/v_biatch.mdl_0", IMAGE_PCX, 0, true, false);
 		
 		pheader->gl_texturenum[1][0] = 
 		pheader->gl_texturenum[1][1] = 
 		pheader->gl_texturenum[1][2] = 
-		pheader->gl_texturenum[1][3] = Image_LoadImage("models/weapons/m1911/v_biatch.mdl_0", IMAGE_PCX, 0, false, false);
+		pheader->gl_texturenum[1][3] = Image_LoadImage("models/weapons/m1911/v_biatch.mdl_0", IMAGE_PCX, 0, true, false);
 
 		pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 		return (void *)pskintype;
@@ -1690,17 +1691,20 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] =
 			pheader->gl_texturenum[i][1] =
 			pheader->gl_texturenum[i][2] =
-			pheader->gl_texturenum[i][3] = Image_LoadImage(model2, IMAGE_PCX, 0, false, false);
+			pheader->gl_texturenum[i][3] = Image_LoadImage(model2, IMAGE_TGA | IMAGE_PCX, 0, true, false);
 
-			if (pheader->gl_texturenum[i][0] == 0) // did not find a matching TGA...
+			if (pheader->gl_texturenum[i][0] < 0) // did not find a matching TGA...
 			{
 				sprintf(name, "%s_%i", loadmodel->name, i);
 				tex_filebase(name, texname);
+				if (texname[0] == '\0') {
+					Sys_Error("bad texname: %s\n", name);
+				}
 				pheader->gl_texturenum[i][0] =
 				pheader->gl_texturenum[i][1] =
 				pheader->gl_texturenum[i][2] =
 				pheader->gl_texturenum[i][3] = GL_LoadTexture (texname, pheader->skinwidth, 
-					pheader->skinheight, (byte *)(pskintype + 1), false, false, 1, false);
+					pheader->skinheight, (byte *)(pskintype + 1), false, true, 1, true);
 			}
 			
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
@@ -1716,11 +1720,14 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			for (j=0 ; j<groupskins ; j++)
 			{
 					Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
-
-					snprintf (name, MAX_OSPATH, "%s_%i_%i", loadmodel->name, i,j);
+					COM_StripExtension(loadmodel->name, model);
+					snprintf(model2, 128, "%s_%i_%i", model, i, j);
 					tex_filebase(name, texname);
-					pheader->gl_texturenum[i][j&3] = GL_LoadTexture (texname, pheader->skinwidth, 
-						pheader->skinheight, (byte *)(pskintype), false, false, 1, false);
+					if (texname[0] == '\0') {
+						Sys_Error("bad texname: %s\n", name);
+					}
+					pheader->gl_texturenum[i][j&3] = GL_LoadTexture (model2, pheader->skinwidth, 
+						pheader->skinheight, (byte *)(pskintype), false, true, 1, true);
 
 					pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
 			}
@@ -1942,7 +1949,8 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	dspriteframe_t		*pinframe;
 	mspriteframe_t		*pspriteframe;
 	int					width, height, size, origin[2];
-	char				name[128], sprite[64], sprite2[128], texname[32];
+	char				name[128], sprite[64], sprite2[128];
+	char 				texname[32] = {0};
 
 	pinframe = (dspriteframe_t *)pin;
 
@@ -1971,12 +1979,15 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 
 	COM_StripExtension(loadmodel->name, sprite);
 	snprintf(sprite2, 128, "%s.spr_%i", sprite, framenum);
-	pspriteframe->gl_texturenum = Image_LoadImage(sprite2, IMAGE_TGA, 0, false, false);
+	pspriteframe->gl_texturenum = Image_LoadImage(sprite2, IMAGE_TGA, 0, true, false);
 
-	if (pspriteframe->gl_texturenum == 0) // did not find a matching TGA...
+	if (pspriteframe->gl_texturenum < 0) // did not find a matching TGA...
 	{
 		tex_filebase(sprite2, texname);
-		pspriteframe->gl_texturenum = GL_LoadTexture (texname, width, height, (byte *)(pinframe + 1), false, true, 1, false);
+		if (texname[0] == '\0') {
+			Sys_Error("bad texname: %s\n", sprite2);
+		}
+		pspriteframe->gl_texturenum = GL_LoadTexture (texname, width, height, (byte *)(pinframe + 1), false, true, 1, true);
 	}
 
 	return (void *)((byte *)pinframe + sizeof (dspriteframe_t) + size);
