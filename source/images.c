@@ -342,7 +342,7 @@ int loadpcxas4bpp (char* filename, int filter)
 	COM_FOpenFile(name, &f);
 	if (!f) {
 		Con_DPrintf("Could not load PCX file %s\n", name);
-		return 0;
+		return -1;
 	}
 
 	pcx_t pcxbuf;
@@ -353,7 +353,7 @@ int loadpcxas4bpp (char* filename, int filter)
     if (pcx->manufacturer != 0x0a || pcx->version != 5 || pcx->encoding != 1 ||
         pcx->bits_per_pixel != 8 || pcx->xmax >= 320 || pcx->ymax >= 256) {
         Con_DPrintf("Bad pcx file %s\n", name);
-        return 0;
+        return -1;
     }
 
 	unsigned int width = pcx->xmax + 1;
@@ -386,7 +386,7 @@ int loadpcxas4bpp (char* filename, int filter)
 
 	fclose(f);
 
-	int texture = 0;
+	int texture = -1;
 	sprintf(name, "%s.palhint", filename);
 	FILE* f2;
 	COM_FOpenFile(name, &f2);
