@@ -32,7 +32,7 @@ cvar_t		gl_picmip = {"gl_picmip", "0"};
 
 static int	sniper_scope;
 
-static int	char_texture;
+int	char_texture;
 
 typedef struct
 {
@@ -62,12 +62,12 @@ static GLuint current_gl_id = 0;
 void GL_Bind (int texnum)
 {
 	if (texnum < 0) {
-        Con_DPrintf("GL_Bind: invalid texnum %d\n", texnum);
+        Con_DPrintf("GL_Bind: tried to bind an invalid texnum\n");
         return;
     }
     gltexture_t *glt = &gltextures[texnum];
     if (!glt->used) {
-        Con_DPrintf("GL_Bind: unused texnum %d\n", texnum);
+        Sys_Error("GL_Bind: Tried to bind unused texture %d\n", texnum);
         return;
     }
 
@@ -79,15 +79,15 @@ void GL_Bind (int texnum)
 
 void GL_FreeTextures (int texnum)
 {
-	if (texnum <= 0) return;
+	if (texnum < 0) return;
 
 	gltexture_t *glt = &gltextures[texnum];
 	if (glt->used == false) return;
 	if (glt->keep) return;
 
 	glDeleteTextures(1, &glt->gl_id);
-	glt->gl_id = 0;
-	glt->texnum = texnum;
+	glt->gl_id = -1;
+	glt->texnum = -1;
 	strcpy(glt->identifier, "");
 	glt->width = 0;
 	glt->height = 0;
@@ -97,8 +97,8 @@ void GL_FreeTextures (int texnum)
 	glt->keep = false;
 	glt->used = false;
 
-	//numgltextures--;
-	current_gl_id = 0;
+	numgltextures--;
+	current_gl_id = -1;
 }
 
 void GL_UnloadTextures (void)
@@ -448,6 +448,8 @@ Draw_ColoredStretchPic
 */
 void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, int r, int g, int b, int a)
 {
+	if (pic < 0) return;
+
 	glEnable(GL_BLEND);
 	glDisable(GL_ALPHA_TEST);
 	glColor4f(r/255.0,g/255.0,b/255.0,a/255.0);
@@ -476,6 +478,8 @@ Draw_StretchPic
 */
 void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
 {
+	if (pic < 0) return;
+
 	glEnable(GL_ALPHA_TEST);
 	glColor4f(1,1,1,1);
 
@@ -501,6 +505,8 @@ Draw_ColorPic
 */
 void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 {
+	if (pic < 0) return;
+
 	glDisable(GL_ALPHA_TEST);
 	glEnable(GL_BLEND);
 	glColor4f(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
@@ -533,6 +539,8 @@ Draw_TransPic
 */
 void Draw_TransPic (int x, int y, int pic)
 {
+	if (pic < 0) return;
+
 	gltexture_t *glt = &gltextures[pic];
 
 	if (x < 0 || (unsigned)(x + glt->width) > vid.width || y < 0 ||
@@ -998,14 +1006,24 @@ void GL_Set2D (void)
 Image_FindImage
 ================
 */
-int Image_FindImage(const char *identifier)
+// See if the texture is already present.
+int Image_FindImage(const char *identifier) 
 {
-    for (int i = 0; i < MAX_GLTEXTURES; i++) {
-        if (gltextures[i].used && strcmp(gltextures[i].identifier, identifier) == 0) {
-            return i;  // return array index directly
-        }
-    }
-    return -1;
+	// See if the texture is already present.
+	if (identifier[0])
+	{
+		for (int i = 0; i < MAX_GLTEXTURES; ++i)
+		{
+			if (gltextures[i].used == true)
+			{
+				if (!strcmp (identifier, gltextures[i].identifier))
+				{
+					return i;
+				}
+			}
+		}
+	}
+	return -1;
 }
 
 /*
@@ -1082,10 +1100,10 @@ void GL_Upload32(GLuint gl_id, unsigned *data, int width, int height, qboolean m
     if (scaled_width > gl_max_size.value) scaled_width = gl_max_size.value;
     if (scaled_height > gl_max_size.value) scaled_height = gl_max_size.value;
 
-    if (scaled_width < 1) scaled_width = 1;
-    if (scaled_height < 1) scaled_height = 1;
+    if (scaled_width < 4) scaled_width = 4;
+    if (scaled_height < 4) scaled_height = 4;
 
-    unsigned *scaled = malloc(scaled_width * scaled_height * 4);
+    unsigned *scaled = malloc(scaled_width * scaled_height * sizeof(unsigned));
     if (!scaled) Sys_Error("GL_Upload32: out of memory");
 
     // bind the texture
@@ -1095,7 +1113,7 @@ void GL_Upload32(GLuint gl_id, unsigned *data, int width, int height, qboolean m
     if (scaled_width != width || scaled_height != height)
         GL_ResampleTexture(data, width, height, scaled, scaled_width, scaled_height);
     else
-        memcpy(scaled, data, width * height * 4);
+        memcpy(scaled, data, width * height * sizeof(unsigned));
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
 
@@ -1164,7 +1182,7 @@ void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipm
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel, qboolean keep)
 {
 	int texture_index = Image_FindImage(identifier);
-	if (texture_index >= 0) {
+	if (texture_index > 0) {
 		return texture_index;
 	}
 
