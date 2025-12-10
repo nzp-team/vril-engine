@@ -35,6 +35,8 @@ tex_filebase
 // create a unique identifier for each externally loaded texture based on filename
 void tex_filebase (char *in, char *out)
 {
+	if (in == NULL || !*in) return;
+
 	char *s, *s2;
 	
 	s = in + strlen(in) - 1;
@@ -217,10 +219,17 @@ int Image_LoadImage(char* filename, int image_format, int filter, bool keep, boo
 {
 	int texture_index;
 	byte *data;
-	char texname[32];
+	char texname[32] = {0};
+
+	if (filename == NULL) return -1;
 
 	// create a unique identifier
 	tex_filebase (filename, texname);
+
+	if (texname[0] == '\0') {
+		Con_DPrintf("bad texture %s\n", filename);
+		return -1;
+	}
 
 	// does the texture already exist?
 	texture_index = Image_FindImage(texname);
@@ -231,7 +240,7 @@ int Image_LoadImage(char* filename, int image_format, int filter, bool keep, boo
 	data = Image_LoadPixels (filename, image_format);
 
 	if(data == NULL) {
-		return 0;
+		return -1;
 	}
 	
 #ifdef __PSP__
@@ -297,7 +306,7 @@ int loadskyboxsideimage (char* filename, int image_format, bool keep, int filter
 
 	// does the texture already exist?
 	texture_index = Image_FindImage(texname);
-	if (texture_index >= 0) {
+	if (texture_index > 0) {
 		return texture_index;
 	}
 
