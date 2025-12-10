@@ -27,21 +27,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <unistd.h>
 
 #define TICKS_PER_SEC 268123480.0
+
 // this is more than enough for the hunk
-#define QUAKE_HUNK_MB			20	 	// cypress -- usable quake hunk size in mB
-#define QUAKE_HUNK_MB_NEW3DS	28		// ^^ ditto, but n3ds
+#define QUAKE_HUNK_MB			24	 	// cypress -- usable quake hunk size in mB
+#define QUAKE_HUNK_MB_NEW3DS	72		// ^^ ditto, but n3ds
 
-#define LINEAR_HEAP_SIZE_MB		18		// cypress -- we lower this as much as possible while still remaining
-										// bootable so we can up the quake hunk and actually viable memory.
-
-// set heap size explicitly to 0
-// libctru will configure the 
-// memory configutation for us
-u32 __ctru_heap_size        = 0;
-
-u32 __ctru_linear_heap_size = LINEAR_HEAP_SIZE_MB * 1024 * 1024;
 // we don't need a very big stack. this seems to work fine
-u32 __stacksize__ = 512*1024; 		// down to 2mB from 4mB.. who set this? probably me, whatever.
+u32 __stacksize__ = 256*1024;
+
+// linear heap is where PicaGL stores 
+// textures, unless able to store in VRAM
+u32 __ctru_linear_heap_size = 16 * 1024 * 1024;
 
 bool new3ds_flag;
 
