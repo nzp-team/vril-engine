@@ -1810,9 +1810,9 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] =
 			pheader->gl_texturenum[i][1] =
 			pheader->gl_texturenum[i][2] =
-			pheader->gl_texturenum[i][3] = Image_LoadImage(model2, IMAGE_PCX, 0, true, false);
+			pheader->gl_texturenum[i][3] = Image_LoadImage(model2, IMAGE_TGA | IMAGE_PCX, 0, true, false);
 
-			if (pheader->gl_texturenum[i][0] == 0) // did not find a matching TGA...
+			if (pheader->gl_texturenum[i][0] < 0) // did not find a matching TGA...
 			{
 				sprintf(name, "%s_%i", loadmodel->name, i);
 				tex_filebase (name, texname);
@@ -2071,7 +2071,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	snprintf(sprite2, 128, "%s.spr_%i", sprite, framenum);
 	pspriteframe->gl_texturenum = Image_LoadImage(sprite2, IMAGE_TGA, 0, true, false);
 
-	if (pspriteframe->gl_texturenum == 0) // did not find a matching TGA...
+	if (pspriteframe->gl_texturenum < 0) // did not find a matching TGA...
 	{
 		tex_filebase(sprite2, texname);
 		pspriteframe->gl_texturenum = GL_LoadTexture (texname, width, height, (byte *)(pinframe + 1), false, false, 1, false);

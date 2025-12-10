@@ -2044,9 +2044,9 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
 			pheader->gl_texturenum[i][2] =
-			pheader->gl_texturenum[i][3] = is_viewmodel ? Image_LoadImage (model2, IMAGE_PCX, GU_LINEAR, false, false) : loadpcxas4bpp(model2, GU_LINEAR);
+			pheader->gl_texturenum[i][3] = is_viewmodel ? Image_LoadImage (model2, IMAGE_TGA | IMAGE_PCX, GU_LINEAR, false, false) : loadpcxas4bpp(model2, GU_LINEAR);
 
-			if (pheader->gl_texturenum[i][0] == 0)// did not find a matching TGA...
+			if (pheader->gl_texturenum[i][0] < 0)// did not find a matching TGA...
 			{
 				sprintf (name, "%s_%i", loadmodel->name, i);
 				tex_filebase(name, texname);
@@ -2076,7 +2076,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 				snprintf(model2, 128, "%s_%i_%i", model, i, j);
 				pheader->gl_texturenum[i][j&3] = is_viewmodel ? Image_LoadImage (model2, IMAGE_PCX, GU_LINEAR, false, false) : loadpcxas4bpp(model2, GU_LINEAR);
 				
-				if (pheader->gl_texturenum[i][j&3] == 0)// did not find a matching TGA...
+				if (pheader->gl_texturenum[i][j&3] < 0)// did not find a matching TGA...
 				{
 					snprintf (name, 128, "%s_%i_%i", loadmodel->name, i, j);
 					tex_filebase(name, texname);
@@ -2325,7 +2325,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum, 
 		snprintf (sprite2, 128, "%s.spr_%i", sprite, framenum);
 		pspriteframe->gl_texturenum = Image_LoadImage (sprite2, IMAGE_TGA, GU_LINEAR, true, false);
 		tex_filebase(sprite2, texname);
-		if (pspriteframe->gl_texturenum == 0)// did not find a matching TGA...
+		if (pspriteframe->gl_texturenum < 0)// did not find a matching TGA...
 		{
 			pspriteframe->gl_texturenum = GL_LoadTexture (texname, width, height, (byte *)(pinframe + 1), true, GU_LINEAR, 0);
 		}
