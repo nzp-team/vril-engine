@@ -29,15 +29,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define TICKS_PER_SEC 268123480.0
 
 // this is more than enough for the hunk
-#define QUAKE_HUNK_MB			24	 	// cypress -- usable quake hunk size in mB
-#define QUAKE_HUNK_MB_NEW3DS	72		// ^^ ditto, but n3ds
+#define QUAKE_HUNK_MB			20	 	// cypress -- usable quake hunk size in mB
+#define QUAKE_HUNK_MB_NEW3DS	64		// ^^ ditto, but n3ds
 
 // we don't need a very big stack. this seems to work fine
 u32 __stacksize__ = 256*1024;
 
 // linear heap is where PicaGL stores 
 // textures, unless able to store in VRAM
-u32 __ctru_linear_heap_size = 16 * 1024 * 1024;
+u32 __ctru_linear_heap_size = 20 * 1024 * 1024;
 
 bool new3ds_flag;
 

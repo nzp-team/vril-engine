@@ -1066,7 +1066,7 @@ void SCR_DrawLoadScreen (void)
 		if (!loadscreeninit) {
 			lscreen = Image_LoadImage(va("gfx/lscreen/%s", loadname2), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
 
-			if (lscreen == 0 || lscreen == 0) {
+			if (lscreen < 0 || lscreen < 0) {
 				lscreen = Image_LoadImage("gfx/lscreen/lscreen", IMAGE_PNG, 0, false, false);
 			}
 
