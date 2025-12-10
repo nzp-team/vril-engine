@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define TICKS_PER_SEC 268123480.0
 
 // this is more than enough for the hunk
-#define QUAKE_HUNK_MB			20	 	// cypress -- usable quake hunk size in mB
+#define QUAKE_HUNK_MB			24	 	// cypress -- usable quake hunk size in mB
 #define QUAKE_HUNK_MB_NEW3DS	64		// ^^ ditto, but n3ds
 
 // we don't need a very big stack. this seems to work fine
