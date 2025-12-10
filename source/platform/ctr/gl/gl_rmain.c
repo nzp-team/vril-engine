@@ -379,6 +379,8 @@ void R_DrawSpriteModel (entity_t *e)
 	frame = R_GetSpriteFrame (e);
 	psprite = currententity->model->cache.data;
 
+	if (frame->gl_texturenum < 0) return;
+
 	if (psprite->type == SPR_ORIENTED)
 	{	// bullet marks on walls
 		AngleVectors (currententity->angles, v_forward, v_right, v_up);
@@ -393,7 +395,7 @@ void R_DrawSpriteModel (entity_t *e)
 
 	glColor3f (1,1,1);
 
-  GL_Bind(frame->gl_texturenum);
+  	GL_Bind(frame->gl_texturenum);
 
 	Fog_DisableGFog ();
 

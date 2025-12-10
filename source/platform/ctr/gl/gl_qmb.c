@@ -1298,6 +1298,8 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
     vec3_t            up, right, p_downleft, p_upleft, p_downright, p_upright;
     GLubyte            color[4];
 
+	if (ptex->texnum < 0) return;
+
     VectorScale (vup, 1.5, up);
     VectorScale (vright, 1.5, right);
 
