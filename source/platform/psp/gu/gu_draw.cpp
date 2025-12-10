@@ -383,7 +383,7 @@ void Draw_Init (void)
 
 	// now turn them into textures
 	char_texture = Image_LoadImage ("gfx/charset", IMAGE_TGA, GU_NEAREST, true, false);
-	if (char_texture == 0)// did not find a matching TGA...
+	if (char_texture < 0)// did not find a matching TGA...
 		Sys_Error ("Could not load charset, make sure you have every folder and file installed properly\nDouble check that all of your files are in their correct places\nAnd that you have installed the game properly.\nRefer to the readme.txt file for help\n");
 	
 	Clear_LoadingFill ();
