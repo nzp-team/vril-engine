@@ -82,6 +82,7 @@ COMMON_OBJS =	system.o \
 				cmd.c \
 				platform/ctr/common.c \
 				console.c \
+				platform/ctr/cpp.c \
 				crc.c \
 				cvar.c \
 				host.c \

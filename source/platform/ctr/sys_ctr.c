@@ -21,10 +21,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../../nzportable_def.h"
 #include "errno.h"
 #include "touch_ctr.h"
+#include "cpp.h"
 
 #include <3ds.h>
 #include <sys/stat.h>
 #include <unistd.h>
+extern cvar_t	cpp_enabled;
 
 #define TICKS_PER_SEC 268123480.0
 
@@ -277,15 +279,17 @@ void Sys_SetKeys(u32 keys, u32 state){
 void Sys_SendKeyEvents (void)
 {
 	hidScanInput();
-
+	
 	u32 kDown = hidKeysDown();
 	u32 kUp = hidKeysUp();
-
+	if(!new3ds_flag && cpp_enabled.value){//maybe if(cpp_enabled.value && cppGetConnected()) but I think that It's not really useful?
+		kDown |= cppKeysDown();
+		kUp |= cppKeysUp();
+	}
 	if(kDown)
 		Sys_SetKeys(kDown, true);
 	if(kUp)
 		Sys_SetKeys(kUp, false);
-
 	Touch_Update();
 }
 
@@ -357,5 +361,7 @@ int main (int argc, char **argv)
 		oldtime = time;
 	}
 
+	if (!new3ds_flag && cpp_enabled.value==true) cppExit();
+	
 	return 0;
 }

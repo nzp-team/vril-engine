@@ -55,6 +55,7 @@ cvar_t	m_side = {"m_side","0.8", true};
 
 cvar_t	in_disable_analog = {"in_disable_analog", "0", true};
 cvar_t	in_anub_mode = {"in_anub_mode", "0", true};
+cvar_t	cpp_enabled = {"cpp_enabled", "0", true}; //Circle Pad Pro
 
 //=================================================//
 modelindex_t		cl_modelindex[NUM_MODELINDEX]; //
@@ -1046,6 +1047,7 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&in_acceleration);
 	Cvar_RegisterVariable (&in_disable_analog);
 	Cvar_RegisterVariable (&in_anub_mode);
+	Cvar_RegisterVariable (&cpp_enabled);
 	
 #ifdef __WII__
 	Cvar_RegisterVariable (&ads_center);

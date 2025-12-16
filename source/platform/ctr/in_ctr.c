@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <GL/picaGL.h>
 #include <3ds.h>
 
+#include "cpp.h"
+
 extern int bind_grab;
 
 extern bool croshhairmoving;
@@ -30,6 +32,7 @@ extern float crosshair_opacity;
 
 extern cvar_t in_mlook; //Heffo - mlook cvar
 extern cvar_t in_anub_mode;
+extern cvar_t cpp_enabled;
 
 void IN_Init (void)
 {
@@ -106,7 +109,6 @@ void IN_Move (usercmd_t *cmd)
 		old_touch = cur_touch;
 	}
 
-	// TODO: Detect circle pad pro?
 	circlePosition left;
 	circlePosition right;
 
@@ -114,7 +116,12 @@ void IN_Move (usercmd_t *cmd)
 
 	// Read the pad states
 	hidCircleRead(&left);
-	hidCstickRead(&right);
+	if(cpp_enabled.value){
+		cppCircleRead(&right);
+	}
+	else{
+		hidCstickRead(&right);
+	}
 
 	// Convert the inputs to floats in the range [-1, 1].
 	// Implement the dead zone.

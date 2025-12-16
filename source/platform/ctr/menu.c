@@ -19,16 +19,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "../../nzportable_def.h"
 #include <sys/dirent.h>
-
+#include <3ds.h>
+#include "cpp.h"
 extern cvar_t	r_wateralpha;
 extern cvar_t	r_vsync;
 extern cvar_t	in_disable_analog;
 extern cvar_t	in_anub_mode;
+extern cvar_t	cpp_enabled;
 extern cvar_t	crosshair;
 extern cvar_t	r_dithering;
 //extern cvar_t	r_retro;
 extern cvar_t	waypoint_mode;
-extern cvar_t   in_anub_mode;
+// extern cvar_t   in_anub_mode;
 
 extern int loadingScreen;
 extern char* loadname2;
@@ -1306,7 +1308,7 @@ void M_Menu_CustomMaps_Key (int key)
 //=============================================================================
 /* OPTIONS MENU */
 
-#define	OPTIONS_ITEMS	13
+#define	OPTIONS_ITEMS	14
 #define	SLIDER_RANGE	10
 
 int		options_cursor;
@@ -1393,6 +1395,27 @@ void M_AdjustSliders (int dir)
 	case 12: // anub swap
 		Cvar_SetValue ("in_anub_mode", !in_anub_mode.value);
 		break;
+
+
+	case 13: //enable Circle Pad Pro
+		if (new3ds_flag) {
+			break;
+		}
+		Cvar_SetValue ("cpp_enabled", !cpp_enabled.value);
+		if(cpp_enabled.value == true){
+			Result res = cppInit();
+			if (R_FAILED(res)) {
+				cppExit();
+				Cvar_SetValue ("cpp_enabled", false);
+			}
+			else{
+				Cvar_SetValue ("in_anub_mode", true);
+			}
+		}
+		else{
+			cppExit();
+		}
+		break;
 	}
 }
 
@@ -1472,6 +1495,21 @@ void M_Options_Draw (void)
 	M_Print (16, 128, "Swap C-Nub and C-Stick");
 	M_DrawCheckbox (220, 128, in_anub_mode.value);
 
+	M_Print (16, 136, "Enable Circle Pad Pro");
+	M_DrawCheckbox (220, 136, cpp_enabled.value);
+	M_Print (250,136, "(O3ds only)");
+
+	if(cpp_enabled.value == true){
+		M_Print (16, 152, "CPP connection state :");
+		M_DrawCheckbox (220, 152, cppGetConnected());
+		
+		if(cppGetConnected()){
+			char batteryLevel[32]; 
+			sprintf(batteryLevel, "CPP battery level : %d%%", (cppBatteryLevel() * 100) / 255);
+			M_Print (16, 160, batteryLevel);
+		}
+	}
+
 	if (vid_menudrawfn)
 		M_Print (16, 136, "         Video Options");
 
@@ -1482,6 +1520,7 @@ void M_Options_Draw (void)
 extern qboolean console_enabled;
 void M_Options_Key (int k)
 {
+	//TODO: ADD CPP EXTRAPAD APPLET CALIBRATION ?
 	switch (k)
 	{
 	case K_ENTER:
@@ -1501,7 +1540,7 @@ void M_Options_Key (int k)
 		case 2:
 			Cbuf_AddText ("exec default.cfg\n");
 			break;
-		case 13:
+		case 14:
 			M_Menu_Video_f ();
 			break;
 		default:
@@ -1540,11 +1579,10 @@ void M_Options_Key (int k)
 			M_Menu_Main_f ();
 		break;
 	}
-
-	if (options_cursor == 13 && vid_menudrawfn == NULL)
+	if (options_cursor == 14 && vid_menudrawfn == NULL)
 	{
 		if (k == K_UPARROW)
-			options_cursor = 12;
+			options_cursor = 13;
 		else
 			options_cursor = 0;
 	}
