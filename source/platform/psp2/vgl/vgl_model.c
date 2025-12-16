@@ -1759,7 +1759,7 @@ Mod_LoadAllSkins
 void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 {
 	int		i, j, k;
-	char	name[MAX_OSPATH], model[64], model2[128], texname[32];
+	char	name[MAX_OSPATH], model[64], model2[128];
 	int		s;
 	byte	*skin;
 	byte	*texels;
@@ -1815,11 +1815,10 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			if (pheader->gl_texturenum[i][0] < 0) // did not find a matching TGA...
 			{
 				sprintf(name, "%s_%i", loadmodel->name, i);
-				tex_filebase (name, texname);
 				pheader->gl_texturenum[i][0] =
 				pheader->gl_texturenum[i][1] =
 				pheader->gl_texturenum[i][2] =
-				pheader->gl_texturenum[i][3] = GL_LoadTexture (texname, pheader->skinwidth, 
+				pheader->gl_texturenum[i][3] = GL_LoadTexture (name, pheader->skinwidth, 
 					pheader->skinheight, (byte *)(pskintype + 1), false, false, 1, false);
 			}
 			
@@ -1842,9 +1841,8 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 						memcpy (texels, (byte *)(pskintype), s);
 					}
 					snprintf (name, MAX_OSPATH, "%s_%i_%i", loadmodel->name, i,j);
-					tex_filebase (name, texname);
 					pheader->gl_texturenum[i][j&3] = 
-						GL_LoadTexture (texname, pheader->skinwidth, 
+						GL_LoadTexture (name, pheader->skinwidth, 
 						pheader->skinheight, (byte *)(pskintype), false, false, 1, false);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
 			}
@@ -2040,7 +2038,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	dspriteframe_t		*pinframe;
 	mspriteframe_t		*pspriteframe;
 	int					width, height, size, origin[2];
-	char				name[128], sprite[64], sprite2[128], texname[32];
+	char				name[128], sprite[64], sprite2[128];
 
 	pinframe = (dspriteframe_t *)pin;
 
@@ -2073,8 +2071,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 
 	if (pspriteframe->gl_texturenum < 0) // did not find a matching TGA...
 	{
-		tex_filebase(sprite2, texname);
-		pspriteframe->gl_texturenum = GL_LoadTexture (texname, width, height, (byte *)(pinframe + 1), false, false, 1, false);
+		pspriteframe->gl_texturenum = GL_LoadTexture (sprite2, width, height, (byte *)(pinframe + 1), false, false, 1, false);
 	}
 
 	return (void *)((byte *)pinframe + sizeof (dspriteframe_t) + size);

@@ -1953,7 +1953,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 {
 	int 	i = 0;
 	int		j, k;
-	char	name[128], model[64], model2[128], texname[32];
+	char	name[128], model[64], model2[128];
 	int		s;
 	//byte	*copy;
 	byte	*skin;
@@ -2049,13 +2049,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			if (pheader->gl_texturenum[i][0] < 0)// did not find a matching TGA...
 			{
 				sprintf (name, "%s_%i", loadmodel->name, i);
-				tex_filebase(name, texname);
 				pheader->gl_texturenum[i][0] =
 				pheader->gl_texturenum[i][1] =
 				pheader->gl_texturenum[i][2] =
 				pheader->gl_texturenum[i][3] = is_viewmodel
-					? GL_LoadTexture (texname, pheader->skinwidth,pheader->skinheight, (byte *)(pskintype), true, GU_LINEAR, 0)
-					: GL_LoadTexture8to4(texname, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1), (byte*)d_8to24table, GU_LINEAR, 4, NULL);
+					? GL_LoadTexture (name, pheader->skinwidth,pheader->skinheight, (byte *)(pskintype), true, GU_LINEAR, 0)
+					: GL_LoadTexture8to4(name, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1), (byte*)d_8to24table, GU_LINEAR, 4, NULL);
 			}
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 		}
@@ -2079,10 +2078,9 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 				if (pheader->gl_texturenum[i][j&3] < 0)// did not find a matching TGA...
 				{
 					snprintf (name, 128, "%s_%i_%i", loadmodel->name, i, j);
-					tex_filebase(name, texname);
 					pheader->gl_texturenum[i][j&3] = is_viewmodel
-						? GL_LoadTexture (texname, pheader->skinwidth,pheader->skinheight, (byte *)(pskintype), true, GU_LINEAR, 0)
-						: GL_LoadTexture8to4(texname, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1), (byte*)d_8to24table, GU_LINEAR, 4, NULL);
+						? GL_LoadTexture (name, pheader->skinwidth,pheader->skinheight, (byte *)(pskintype), true, GU_LINEAR, 0)
+						: GL_LoadTexture8to4(name, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1), (byte*)d_8to24table, GU_LINEAR, 4, NULL);
 				}
 				pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
 			}
@@ -2292,7 +2290,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum, 
 	dspriteframe_t		*pinframe;
 	mspriteframe_t		*pspriteframe;
 	int					width, height, size, origin[2];
-	char				name[128], sprite[64], sprite2[128], texname[32];
+	char				name[128], sprite[64], sprite2[128];
 
 	pinframe = (dspriteframe_t *)pin;
 
@@ -2324,17 +2322,15 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum, 
 		COM_StripExtension(loadmodel->name, sprite);
 		snprintf (sprite2, 128, "%s.spr_%i", sprite, framenum);
 		pspriteframe->gl_texturenum = Image_LoadImage (sprite2, IMAGE_TGA, GU_LINEAR, true, false);
-		tex_filebase(sprite2, texname);
 		if (pspriteframe->gl_texturenum < 0)// did not find a matching TGA...
 		{
-			pspriteframe->gl_texturenum = GL_LoadTexture (texname, width, height, (byte *)(pinframe + 1), true, GU_LINEAR, 0);
+			pspriteframe->gl_texturenum = GL_LoadTexture (sprite2, width, height, (byte *)(pinframe + 1), true, GU_LINEAR, 0);
 		}
 	}
 	else if (version == SPRITE32_VERSION)
 	{
 		size *= 4;
-		tex_filebase(sprite2, texname);
-		pspriteframe->gl_texturenum = GL_LoadImages (texname, width, height, (byte *)(pinframe + 1), true, GU_LINEAR, 0, 4, true);
+		pspriteframe->gl_texturenum = GL_LoadImages (sprite2, width, height, (byte *)(pinframe + 1), true, GU_LINEAR, 0, 4, true);
 	}
 	else
 	{

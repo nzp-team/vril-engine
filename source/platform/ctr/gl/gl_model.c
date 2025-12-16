@@ -1645,7 +1645,6 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 {
 	int		i, j, k;
 	char	name[MAX_OSPATH], model[64], model2[128];
-	char 	texname[32] = {0};
 	int		s;
 	byte	*skin;
 	daliasskingroup_t		*pinskingroup;
@@ -1696,14 +1695,10 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			if (pheader->gl_texturenum[i][0] < 0) // did not find a matching TGA...
 			{
 				sprintf(name, "%s_%i", loadmodel->name, i);
-				tex_filebase(name, texname);
-				if (texname[0] == '\0') {
-					Sys_Error("bad texname: %s\n", name);
-				}
 				pheader->gl_texturenum[i][0] =
 				pheader->gl_texturenum[i][1] =
 				pheader->gl_texturenum[i][2] =
-				pheader->gl_texturenum[i][3] = GL_LoadTexture (texname, pheader->skinwidth, 
+				pheader->gl_texturenum[i][3] = GL_LoadTexture (name, pheader->skinwidth, 
 					pheader->skinheight, (byte *)(pskintype + 1), false, true, 1, true);
 			}
 			
@@ -1722,13 +1717,11 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
 					COM_StripExtension(loadmodel->name, model);
 					snprintf(model2, 128, "%s_%i_%i", model, i, j);
-					tex_filebase(name, texname);
-					if (texname[0] == '\0') {
-						Sys_Error("bad texname: %s\n", name);
-					}
-					pheader->gl_texturenum[i][j&3] = GL_LoadTexture (model2, pheader->skinwidth, 
+					pheader->gl_texturenum[i][j&3] = Image_LoadImage(model2, IMAGE_TGA | IMAGE_PCX, 0, true, false);
+					if (pheader->gl_texturenum[i][j&3] == -1) {
+						pheader->gl_texturenum[i][j&3] = GL_LoadTexture (model2, pheader->skinwidth, 
 						pheader->skinheight, (byte *)(pskintype), false, true, 1, true);
-
+					}
 					pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
 			}
 			k = j;
@@ -1950,7 +1943,6 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	mspriteframe_t		*pspriteframe;
 	int					width, height, size, origin[2];
 	char				name[128], sprite[64], sprite2[128];
-	char 				texname[32] = {0};
 
 	pinframe = (dspriteframe_t *)pin;
 
@@ -1983,11 +1975,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 
 	if (pspriteframe->gl_texturenum < 0) // did not find a matching TGA...
 	{
-		tex_filebase(sprite2, texname);
-		if (texname[0] == '\0') {
-			Sys_Error("bad texname: %s\n", sprite2);
-		}
-		pspriteframe->gl_texturenum = GL_LoadTexture (texname, width, height, (byte *)(pinframe + 1), false, true, 1, true);
+		pspriteframe->gl_texturenum = GL_LoadTexture (sprite2, width, height, (byte *)(pinframe + 1), false, true, 1, true);
 	}
 
 	return (void *)((byte *)pinframe + sizeof (dspriteframe_t) + size);
