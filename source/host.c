@@ -817,10 +817,6 @@ void Host_InitVCR (quakeparms_t *parms)
 
 void Preload (void)
 {
-
-	// why is this neccesary? 
-
-	/*
 	Mod_ForName ("models/player.mdl", true);
 
 	// Body
@@ -842,7 +838,6 @@ void Preload (void)
 	// Right Arm
 	Mod_ForName ("models/ai/zar(.mdl",true);
 	Mod_ForName ("models/ai/zarc(.mdl",true);
-	*/
 }
 /*
 ====================
