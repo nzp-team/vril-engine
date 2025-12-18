@@ -1029,7 +1029,6 @@ void Cache_Move ( cache_system_t *c)
 	{
 		//Con_DPrintf ("cache_move failed\n");
 		Cache_Free (c->user); // tough luck...
-		return;
 	}
 }
 
