@@ -238,7 +238,17 @@ int Image_LoadImage(char* filename, int image_format, int filter, bool keep, boo
 	if(data == NULL) {
 		return -1;
 	}
-	
+
+	/*
+	==================
+	FIXME:
+
+	This will need to be unified 
+	while building HYENA.
+	For now this is where we split off into seperate
+	platforms' respective texture upload functions 
+	==================
+	*/
 #ifdef __PSP__
 	texture_index = GL_LoadImages (texname, image_width, image_height, data, true, filter, 0, 4, keep);
 #elif __vita__
