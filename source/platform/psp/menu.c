@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "../../nzportable_def.h"
 
-#include <pspgu.h>
 #include <pspkernel.h>
 #include <psputility.h>
 //#include <pspctrl.h>

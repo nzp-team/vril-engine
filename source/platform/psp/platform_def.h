@@ -21,3 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // platform_def.h -- PSP-specific header to compliment primary definitions (../nzportable_def.h)
 //                   as a general rule, please try to keep this file as small as possible, and
 //                   provide context as to why additions are necessary.
+
+// needed for platform specific constants
+#include <pspgu.h>

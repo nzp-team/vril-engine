@@ -23,7 +23,6 @@ extern "C"
 {
 #include "../../../nzportable_def.h"
 }
-#include <pspgu.h>
 
 #include "../clipping.hpp"
 

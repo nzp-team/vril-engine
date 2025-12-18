@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <valarray>
 #include <vector>
 #include <malloc.h>
-#include <pspgu.h>
 #include <pspkernel.h>
 #include <pspctrl.h>
 #include <ctype.h>

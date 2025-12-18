@@ -29,7 +29,6 @@ extern "C"
 #include "../../../nzportable_def.h"
 }
 #include <malloc.h>
-#include <pspgu.h>
 
 #include "gu_fullbright.h"
 

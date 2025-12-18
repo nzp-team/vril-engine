@@ -26,7 +26,6 @@ extern "C"
 //entity_t *CL_NewTempEntity (void);
 }
 
-#include <pspgu.h>
 #include <pspgum.h>
 
 //#define	DEFAULT_NUM_PARTICLES		8192

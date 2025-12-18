@@ -20,7 +20,6 @@
 // gu_fog.c -- PSP sceGu Fog Rendering
 
 #include "../../../nzportable_def.h"
-#include <pspgu.h>
 
 /**
  * @brief Sets fogging mode. (Platform-specific, see `Fog_SetupFrame()`)

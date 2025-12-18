@@ -27,7 +27,6 @@ extern "C"
 }
 
 #include <pspdisplay.h>
-#include <pspgu.h>
 #include <pspgum.h>
 
 /*

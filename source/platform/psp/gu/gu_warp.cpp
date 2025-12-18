@@ -20,8 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // gl_warp.c -- sky and water polygons
 
-#include <pspgu.h>
-
 extern "C"
 {
 #include "../../../nzportable_def.h"
