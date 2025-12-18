@@ -427,7 +427,7 @@ int loadpcxas4bpp (char* filename, int filter)
 }
 #endif
 
-#ifdef __NSPIRE__
+#ifdef SOFTWARE_RENDERER
 
 cachepic_t		cachepics[MAX_CACHED_PICS];
 int				numcachepics = 1;
@@ -502,4 +502,4 @@ int Soft_LoadTexture (char *texname, int width, int height, byte *data, qboolean
 
 	return texture_index;
 }
-#endif // __NSPIRE__
+#endif // SOFTWARE_RENDERER
