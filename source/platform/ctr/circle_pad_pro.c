@@ -15,7 +15,7 @@
 #include <malloc.h>
 #include <stdio.h>
 
-#include "cpp.h"
+#include "circle_pad_pro.h"
 #include "3ds/services/apt.h"
 #include "3ds/services/hid.h"
 #include "3ds/thread.h"
