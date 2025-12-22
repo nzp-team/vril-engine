@@ -25,33 +25,33 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspmath.h>
 #endif // __PSP__
 
-int		sb_round[5];
-int		sb_round_num[10];
-int		sb_moneyback;
-int		instapic;
-int		x2pic;
-int 	revivepic;
-int		jugpic;
-int		floppic;
-int		staminpic;
-int		doublepic;
-int 	doublepic2;
-int		speedpic;
-int		deadpic;
-int 	mulepic;
-int		fragpic;
-int		bettypic;
+image_t		sb_round[5];
+image_t		sb_round_num[10];
+image_t		sb_moneyback;
+image_t		instapic;
+image_t		x2pic;
+image_t 	revivepic;
+image_t		jugpic;
+image_t		floppic;
+image_t		staminpic;
+image_t		doublepic;
+image_t 	doublepic2;
+image_t		speedpic;
+image_t		deadpic;
+image_t 	mulepic;
+image_t		fragpic;
+image_t		bettypic;
 
 #if defined(__PSP__) || defined(__vita__)
-int 		b_circle;
-int 		b_square;
-int 		b_cross;
-int 		b_triangle;
+image_t 		b_circle;
+image_t 		b_square;
+image_t 		b_cross;
+image_t 		b_triangle;
 #elif __3DS__
-int 	b_abutton;
-int 	b_bbutton;
-int 	b_xbutton;
-int 	b_ybutton;
+image_t 	b_abutton;
+image_t 	b_bbutton;
+image_t 	b_xbutton;
+image_t 	b_ybutton;
 #elif __WII__
 qpic_t 		*b_abutton;
 qpic_t 		*b_bbutton;
@@ -64,27 +64,27 @@ qpic_t 		*b_two;
 qpic_t 		*b_home;
 #endif // __PSP__, __vita__, __3DS__, __WII__
 
-int 	b_left;
-int 	b_right;
-int 	b_up;
-int 	b_down;
-int 	b_lt;
-int 	b_rt;
+image_t 	b_left;
+image_t 	b_right;
+image_t 	b_up;
+image_t 	b_down;
+image_t 	b_lt;
+image_t 	b_rt;
 
 #ifdef __PSP__
-int 	b_home;
+image_t 	b_home;
 #elif __3DS__
-int 	b_zlt;
-int 	b_zrt;
+image_t 	b_zlt;
+image_t 	b_zrt;
 #endif // __PSP__, __3DS__
 
-int 	b_start;
-int 	b_select;
+image_t 	b_start;
+image_t 	b_select;
 
-int     fx_blood_lu;
-int     fx_blood_ru;
-int     fx_blood_ld;
-int     fx_blood_rd;
+image_t     fx_blood_lu;
+image_t     fx_blood_ru;
+image_t     fx_blood_ld;
+image_t     fx_blood_rd;
 
 qboolean	sb_showscores;
 qboolean 	has_chaptertitle;

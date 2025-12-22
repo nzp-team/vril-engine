@@ -211,7 +211,7 @@ byte* Image_LoadPixels(char* filename, int image_format)
 	return NULL;					
 }
 
-int Image_LoadImage(char* filename, int image_format, int filter, bool keep, bool mipmap)
+image_t Image_LoadImage(char* filename, int image_format, int filter, bool keep, bool mipmap)
 {
 	int texture_index;
 	byte *data;

@@ -12,3 +12,5 @@ int Soft_LoadTexture (char *path, int width, int height, byte *data, qboolean tr
 #define IMAGE_PNG   4
 #define IMAGE_JPG   8
 
+typedef int image_t;
+
