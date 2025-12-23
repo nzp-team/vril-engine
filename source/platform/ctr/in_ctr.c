@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <GL/picaGL.h>
 #include <3ds.h>
 
+#include "circle_pad_pro.h"
+
 extern int bind_grab;
 
 extern bool croshhairmoving;
@@ -35,6 +37,16 @@ void IN_Init (void)
 {
 	if (new3ds_flag) {
 		Cvar_SetValue("in_anub_mode", 1);
+	}
+	else{
+		if(cppGetConnected()){
+			circlepadpro_flag = true;
+			Cvar_SetValue ("in_anub_mode", 1);
+		}
+		else{
+			circlepadpro_flag = false;
+			cppExit();
+		}
 	}
 }
 
@@ -106,7 +118,6 @@ void IN_Move (usercmd_t *cmd)
 		old_touch = cur_touch;
 	}
 
-	// TODO: Detect circle pad pro?
 	circlePosition left;
 	circlePosition right;
 
@@ -114,7 +125,12 @@ void IN_Move (usercmd_t *cmd)
 
 	// Read the pad states
 	hidCircleRead(&left);
-	hidCstickRead(&right);
+	if(circlepadpro_flag){
+		cppCircleRead(&right);
+	}
+	else{
+		hidCstickRead(&right);
+	}
 
 	// Convert the inputs to floats in the range [-1, 1].
 	// Implement the dead zone.

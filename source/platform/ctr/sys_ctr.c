@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../../nzportable_def.h"
 #include "errno.h"
 #include "touch_ctr.h"
+#include "circle_pad_pro.h"
 
 #include <3ds.h>
 #include <sys/stat.h>
@@ -38,6 +39,7 @@ int __stacksize__ = 1024 * 1024; 		// down to 1mB from 4mB.. who set this? proba
 
 u32 __ctru_linear_heap_size = LINEAR_HEAP_SIZE_MB * 1024 * 1024; 
 bool new3ds_flag;
+bool circlepadpro_flag;
 
 extern void Touch_Init();
 extern void Touch_Update();
@@ -277,15 +279,17 @@ void Sys_SetKeys(u32 keys, u32 state){
 void Sys_SendKeyEvents (void)
 {
 	hidScanInput();
-
+	
 	u32 kDown = hidKeysDown();
 	u32 kUp = hidKeysUp();
-
+	if(circlepadpro_flag){
+		kDown |= cppKeysDown();
+		kUp |= cppKeysUp();
+	}
 	if(kDown)
 		Sys_SetKeys(kDown, true);
 	if(kUp)
 		Sys_SetKeys(kUp, false);
-
 	Touch_Update();
 }
 
@@ -343,6 +347,12 @@ int main (int argc, char **argv)
 	parms.argc = com_argc;
 	parms.argv = com_argv;
 
+	if(!new3ds_flag){
+		Result res = cppInit();
+		if (R_FAILED(res)) {
+			cppExit();
+		}
+	}
 	Host_Init (&parms);
 	Touch_Init();
 	Touch_DrawOverlay();
@@ -357,5 +367,7 @@ int main (int argc, char **argv)
 		oldtime = time;
 	}
 
+	if (circlepadpro_flag) cppExit();
+	
 	return 0;
 }
