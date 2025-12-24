@@ -122,7 +122,7 @@ cvar_t	r_mipmaps             = {"r_mipmaps",                 "1",true};
 cvar_t  r_mipmaps_func        = {"r_mipmaps_func",            "2",true};          // Adjust mip map calculations
 cvar_t  r_mipmaps_bias        = {"r_mipmaps_bias",           "-7",true};         // Adjust mip map bias 
 cvar_t	r_retro   	          = {"r_retro",  	              "0",true}; // dr_mabuse1981: "retro filter".
-cvar_t	r_dynamic             = {"r_dynamic",                 "0"};
+cvar_t	r_dynamic             = {"r_dynamic",                 "1"};
 cvar_t	r_novis               = {"r_novis",                   "0"};
 cvar_t	r_tex_scale_down      = {"r_tex_scale_down",          "1",true};
 cvar_t	r_particles_simple    = {"r_particles_simple",        "0",true};
@@ -1439,6 +1439,23 @@ void R_DrawAliasModel (entity_t *e)
 		lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
 		force_fullbright = true;
 	}
+
+	if (cl.stats[STAT_VIEWMODEL_EFFECTS] & EF_FULLBRIGHT) {
+
+		if (e == &cl.viewent) {
+			lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
+			force_fullbright = true;
+		}
+	}
+
+	if (cl.stats[STAT_VIEWMODEL2_EFFECTS] & EF_FULLBRIGHT) {
+
+		if (e == &cl.viewent2) {
+			lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
+			force_fullbright = true;
+		}
+	}
+
 	if(specChar == '@')
 	{
 		alphafunc = true;

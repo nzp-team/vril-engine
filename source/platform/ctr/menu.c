@@ -19,7 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "../../nzportable_def.h"
 #include <sys/dirent.h>
-
+#include <3ds.h>
+#include "circle_pad_pro.h"
 extern cvar_t	r_wateralpha;
 extern cvar_t	r_vsync;
 extern cvar_t	in_disable_analog;
@@ -28,7 +29,7 @@ extern cvar_t	crosshair;
 extern cvar_t	r_dithering;
 //extern cvar_t	r_retro;
 extern cvar_t	waypoint_mode;
-extern cvar_t   in_anub_mode;
+// extern cvar_t   in_anub_mode;
 
 extern int loadingScreen;
 extern char* loadname2;
@@ -1531,7 +1532,6 @@ void M_Options_Key (int k)
 			M_Menu_Main_f ();
 		break;
 	}
-
 	if (options_cursor == 13 && vid_menudrawfn == NULL)
 	{
 		if (k == K_UPARROW)

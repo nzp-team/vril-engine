@@ -31,3 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // on NEW CTR.
 #include <stdbool.h>
 extern bool new3ds_flag;
+
+// Used to determine if the user is using the Circle Pad Pro.
+// on OLD CTR
+extern bool circlepadpro_flag;

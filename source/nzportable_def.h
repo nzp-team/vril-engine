@@ -126,7 +126,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 #define	MAX_EDICTS		1024			// note to myself: don't increase this further, 1024 is more than enough. :P
 #define	MAX_LIGHTSTYLES	64
-#define	MAX_MODELS		300			// motolegacy -- nzp protocol(115), uses memory inefficient shorts for model indexes, yay!
+#define	MAX_MODELS		512			// motolegacy -- nzp protocol(115), uses memory inefficient shorts for model indexes, yay!
 #define	MAX_SOUNDS		256			// so they cannot be blindly increased
 
 #define	SAVEGAME_COMMENT_LENGTH	39
@@ -138,7 +138,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 #define	MAX_CL_STATS		32
 #define	STAT_HEALTH			0
-#define	STAT_points			1
+#define	STAT_POINTS			1
 #define	STAT_WEAPON			2
 #define	STAT_AMMO			3
 #define	STAT_SECGRENADES	4

@@ -10,7 +10,7 @@
 #
 # This is done via an emulator, and intended
 # to be used via a Docker container running
-# ubuntu:24.10
+# ubuntu:24.04
 #
 set -o errexit
 

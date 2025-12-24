@@ -259,11 +259,6 @@ void R_Init (void)
 #ifdef GLTEST
 	Test_Init ();
 #endif
-
-	if (new3ds_flag == true)
-		Cvar_SetValue("r_dynamic", 1);
-	else
-		Cvar_SetValue("r_dynamic", 0);
 }
 
 /*
