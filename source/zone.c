@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // cypress -- who the fuck needs a 250kB zone block?? what?? restoring to 50kB.
 // sbeed bumped to 64kB
-#define DYNAMIC_SIZE	0x10000
+#define DYNAMIC_SIZE	0x80000
 
 #define	ZONEID	0x1d4a11
 #define MINFRAGMENT	64
