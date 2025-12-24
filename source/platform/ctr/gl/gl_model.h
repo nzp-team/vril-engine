@@ -459,9 +459,4 @@ void	Mod_TouchModel (char *name);
 
 mleaf_t *Mod_PointInLeaf (vec3_t p, model_t *model);
 byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model);
-
-int GL_LoadTexture32 (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha);		//Diabolickal HLBSP
-void BuildGammaTable (float g);
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap);			//Diabolickal TGA
-
 #endif	// __MODEL__

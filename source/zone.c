@@ -688,7 +688,7 @@ void Z_Print (memzone_t *zone)
 
 #define	HUNK_SENTINEL	0x1df001ed
 
-#define HUNKNAME_LEN	24
+#define HUNKNAME_LEN	32
 typedef struct
 {
 	int		sentinel;
@@ -1027,8 +1027,7 @@ void Cache_Move ( cache_system_t *c)
 	}
 	else
 	{
-//		Con_Printf ("cache_move failed\n");
-
+		//Con_DPrintf ("cache_move failed\n");
 		Cache_Free (c->user); // tough luck...
 	}
 }

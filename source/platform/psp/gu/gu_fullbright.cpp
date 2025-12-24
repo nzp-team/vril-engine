@@ -4,7 +4,6 @@ extern "C"
 {
 #include "../../../nzportable_def.h"
 }
-#include <pspgu.h>
 
 void DrawGLPoly_ex (glpoly_t *p);
 

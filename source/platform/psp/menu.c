@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "../../nzportable_def.h"
 
-#include <pspgu.h>
 #include <pspkernel.h>
 #include <psputility.h>
 //#include <pspctrl.h>
@@ -42,15 +41,15 @@ extern cvar_t	r_dithering;
 extern cvar_t	r_retro;
 extern cvar_t	waypoint_mode;
 
-extern qpic_t 		*b_square;
-extern qpic_t 		*b_triangle;
-extern qpic_t 		*b_cross;
-extern qpic_t 		*b_circle;
-extern qpic_t 		*b_lt;
-extern qpic_t 		*b_rt;
-extern qpic_t 		*b_start;
-extern qpic_t 		*b_left;
-extern qpic_t 		*b_right;
+extern int 		b_square;
+extern int 		b_triangle;
+extern int 		b_cross;
+extern int 		b_circle;
+extern int 		b_lt;
+extern int 		b_rt;
+extern int 		b_start;
+extern int 		b_left;
+extern int 		b_right;
 
 extern qboolean bmg_type_changed;
 
@@ -269,16 +268,6 @@ void M_PrintWhite (int cx, int cy, char *str)
 	}
 }
 
-void M_DrawTransPic (int x, int y, qpic_t *pic)
-{
-	Draw_TransPic (x + ((vid.width - 320)>>1), y, pic);
-}
-
-void M_DrawPic (int x, int y, qpic_t *pic)
-{
-	Draw_Pic (x + ((vid.width - 320)>>1), y, pic);
-}
-
 byte identityTable[256];
 byte translationTable[256];
 
@@ -307,65 +296,9 @@ void M_BuildTranslationTable(int top, int bottom)
 }
 
 
-void M_DrawTransPicTranslate (int x, int y, qpic_t *pic)
-{
-	Draw_TransPicTranslate (x + ((vid.width - 320)>>1), y, pic, translationTable);
-}
-
-
 void M_DrawTextBox (int x, int y, int width, int lines)
 {
-	qpic_t	*p;
-	int		cx, cy;
-	int		n;
 
-	// draw left side
-	cx = x;
-	cy = y;
-	p = Draw_CachePic ("gfx/box_tl.lmp");
-	M_DrawTransPic (cx, cy, p);
-	p = Draw_CachePic ("gfx/box_ml.lmp");
-	for (n = 0; n < lines; n++)
-	{
-		cy += 8;
-		M_DrawTransPic (cx, cy, p);
-	}
-	p = Draw_CachePic ("gfx/box_bl.lmp");
-	M_DrawTransPic (cx, cy+8, p);
-
-	// draw middle
-	cx += 8;
-	while (width > 0)
-	{
-		cy = y;
-		p = Draw_CachePic ("gfx/box_tm.lmp");
-		M_DrawTransPic (cx, cy, p);
-		p = Draw_CachePic ("gfx/box_mm.lmp");
-		for (n = 0; n < lines; n++)
-		{
-			cy += 8;
-			if (n == 1)
-				p = Draw_CachePic ("gfx/box_mm2.lmp");
-			M_DrawTransPic (cx, cy, p);
-		}
-		p = Draw_CachePic ("gfx/box_bm.lmp");
-		M_DrawTransPic (cx, cy+8, p);
-		width -= 2;
-		cx += 16;
-	}
-
-	// draw right side
-	cy = y;
-	p = Draw_CachePic ("gfx/box_tr.lmp");
-	M_DrawTransPic (cx, cy, p);
-	p = Draw_CachePic ("gfx/box_mr.lmp");
-	for (n = 0; n < lines; n++)
-	{
-		cy += 8;
-		M_DrawTransPic (cx, cy, p);
-	}
-	p = Draw_CachePic ("gfx/box_br.lmp");
-	M_DrawTransPic (cx, cy+8, p);
 }
 
 void M_DrawCheckbox (int x, int y, int on)
@@ -420,18 +353,18 @@ int M_Start_Cusor;
 
 void M_Load_Menu_Pics ()
 {
-	menu_bk = loadtextureimage("gfx/menu/menu_background", 0, 0, false, GU_LINEAR);
-	menu_ndu 	= loadtextureimage("gfx/menu/nacht_der_untoten", 0, 0, false, GU_LINEAR);
-	//menu_kn 	= Draw_CacheImg("gfx/menu/kino_der_toten");
-	menu_wh 	= loadtextureimage("gfx/menu/nzp_warehouse", 0, 0, false, GU_LINEAR);
-	menu_wh2 	= loadtextureimage("gfx/menu/nzp_warehouse2", 0, 0, false, GU_LINEAR);
-	//menu_wn 	= Draw_CacheImg("gfx/menu/wahnsinn");
-	menu_ch 	= loadtextureimage("gfx/menu/christmas_special", 0, 0, false, GU_LINEAR);
-	menu_custom = loadtextureimage("gfx/menu/custom", 0, 0, false, GU_LINEAR);
+	menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA | IMAGE_PNG, 0, true, false);
+	menu_ndu 	= Image_LoadImage("gfx/menu/nacht_der_untoten", IMAGE_TGA | IMAGE_PNG, 0, false, false);
+	//menu_kn 	= Image_LoadImage("gfx/menu/kino_der_toten");
+	menu_wh 	= Image_LoadImage("gfx/menu/nzp_warehouse", IMAGE_TGA | IMAGE_PNG, 0, false, false);
+	menu_wh2 	= Image_LoadImage("gfx/menu/nzp_warehouse2", IMAGE_TGA | IMAGE_PNG, 0, false, false);
+	//menu_wn 	= Image_LoadImage("gfx/menu/wahnsinn");
+	menu_ch 	= Image_LoadImage("gfx/menu/christmas_special", IMAGE_TGA | IMAGE_PNG, 0, false, false);
+	menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_TGA | IMAGE_PNG, 0, false, false);
 	for (int i = 0; i < MAX_CUSTOM_MAPS; i++) {
 		if (custom_maps[i].occupied == false) continue;
 		if (custom_maps[i].map_use_thumbnail == false) continue;
-		custom_maps[i].thumbnail_index = loadtextureimage(custom_maps[i].map_thumbnail_path, 0, 0, false, GU_LINEAR);
+		custom_maps[i].thumbnail_index = Image_LoadImage(custom_maps[i].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
 	}
 }
 
@@ -449,7 +382,7 @@ void M_Start_Menu_f ()
 static void M_Start_Menu_Draw ()
 {
 	// Background
-	Draw_PicIndex (0, 0, 480, 272, menu_bk);
+	Draw_StretchPic(0, 0, menu_bk, 480, 272);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
@@ -584,6 +517,8 @@ int	m_main_cursor;
 
 void M_Menu_Main_f (void)
 {
+	M_Load_Menu_Pics();
+
 	key_dest = key_menu;
 	m_state = m_main;
 	m_entersound = true;
@@ -593,7 +528,7 @@ void M_Menu_Main_f (void)
 void M_Main_Draw (void)
 {
 	// Background
-	Draw_PicIndex (0, 0, 480, 272, menu_bk);
+	Draw_StretchPic(0, 0, menu_bk, 480, 272);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
@@ -874,7 +809,7 @@ void M_Menu_Map_f (void)
 void M_Map_Draw (void)
 {
 	// Background
-	Draw_PicIndex(0, 0, 480, 272, menu_bk);
+	Draw_StretchPic(0, 0, menu_bk, 480, 272);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
@@ -898,7 +833,7 @@ void M_Map_Draw (void)
 		if (m_map_cursor == i) {
 
 			if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
-				Draw_PicIndex(246, 45, 175, 100, custom_maps[i + multiplier].thumbnail_index);
+				Draw_StretchPic(246, 45, custom_maps[i + multiplier].thumbnail_index, 175, 100);
 			}
 			
 			if (custom_maps[i + multiplier].map_name_pretty != 0)
@@ -1089,7 +1024,7 @@ void M_Menu_SinglePlayer_f (void)
 void M_SinglePlayer_Draw (void)
 {
 	// Background
-	Draw_PicIndex(0, 0, 480, 272, menu_bk);
+	Draw_StretchPic(0, 0, menu_bk, 480, 272);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
@@ -1142,7 +1077,7 @@ void M_SinglePlayer_Draw (void)
 	// Map description & pic
 	switch(m_singleplayer_cursor) {
 		case 0:
-			Draw_PicIndex(246, 45, 175, 100, menu_ndu);
+			Draw_StretchPic(246, 45, menu_ndu, 175, 100);
 			Draw_ColoredString(235, 155, "Desolate bunker located on a Ge-", 255, 255, 255, 255, 1);
 			Draw_ColoredString(235, 165, "rman airfield, stranded after a", 255, 255, 255, 255, 1);
 			Draw_ColoredString(235, 175, "brutal plane crash surrounded by", 255, 255, 255, 255, 1);
@@ -1153,7 +1088,7 @@ void M_SinglePlayer_Draw (void)
 			Draw_ColoredString(235, 225, "to the overwhelming onslaught?", 255, 255, 255, 255, 1);
 			break;
 		case 1:
-			Draw_PicIndex(246, 45, 175, 100, menu_wh2);
+			Draw_StretchPic(246, 45, menu_wh2, 175, 100);
 			Draw_ColoredString(235, 155, "Four nameless marines find them-", 255, 255, 255, 255, 1);
 			Draw_ColoredString(235, 165, "selves at a forsaken warehouse,", 255, 255, 255, 255, 1);
 			Draw_ColoredString(235, 175, "or is it something more? Fight", 255, 255, 255, 255, 1);
@@ -1162,19 +1097,19 @@ void M_SinglePlayer_Draw (void)
 			Draw_ColoredString(235, 205, "what you find..", 255, 255, 255, 255, 1);
 			break;
 		case 2:
-			Draw_PicIndex(246, 45, 175, 100, menu_wh);
+			Draw_StretchPic(246, 45, menu_wh, 175, 100);
 			Draw_ColoredString(235, 155, "Old Warehouse full of Zombies!", 255, 255, 255, 255, 1);
 			Draw_ColoredString(235, 165, "Fight your way to the Power", 255, 255, 255, 255, 1);
 			Draw_ColoredString(235, 175, "Switch through the Hordes!", 255, 255, 255, 255, 1);
 			break;
 		case 3:
-			Draw_PicIndex(246, 45, 175, 100, menu_ch);
+			Draw_StretchPic(246, 45, menu_ch, 175, 100);
 			Draw_ColoredString(235, 155, "No Santa this year. Though we're", 255, 255, 255, 255, 1);
 			Draw_ColoredString(235, 165, "sure you will get presents from", 255, 255, 255, 255, 1);
 			Draw_ColoredString(235, 175, "the undead! Will you accept them?", 255, 255, 255, 255, 1);
 			break;
 		case 4:
-			Draw_PicIndex(246, 45, 175, 100, menu_custom);
+			Draw_StretchPic(246, 45, menu_custom, 175, 100);
 			Draw_ColoredString(235, 155, "Custom Maps made by Community", 255, 255, 255, 255, 1);
 			Draw_ColoredString(235, 165, "Members on the Fourm and on", 255, 255, 255, 255, 1);
 			Draw_ColoredString(235, 175, "GitHub Discussions!", 255, 255, 255, 255, 1);
@@ -1278,35 +1213,35 @@ int total_locked_achievements;
 
 
 achievement_list_t achievement_list[MAX_ACHIEVEMENTS];
-qpic_t *achievement_locked;
+int achievement_locked;
 
 void Achievement_Init (void)
 {
-	achievement_list[0].img = Draw_CachePic("gfx/achievement/ready");
+	achievement_list[0].img = Image_LoadImage("gfx/achievement/ready", IMAGE_TGA, 0, true, false);
 	achievement_list[0].unlocked = 0;
 	achievement_list[0].progress = 0;
 	strcpy(achievement_list[0].name, "Ready..");
 	strcpy(achievement_list[0].description, "Reach round 5");
 
-	achievement_list[1].img = Draw_CachePic("gfx/achievement/steady");
+	achievement_list[1].img = Image_LoadImage("gfx/achievement/steady", IMAGE_TGA, 0, true, false);
 	achievement_list[1].unlocked = 0;
 	achievement_list[1].progress = 0;
 	strcpy(achievement_list[1].name, "Steady..");
 	strcpy(achievement_list[1].description, "Reach round 10");
 
-	achievement_list[2].img = Draw_CachePic("gfx/achievement/go_hell_no");
+	achievement_list[2].img = Image_LoadImage("gfx/achievement/go_hell_no", IMAGE_TGA, 0, true, false);
 	achievement_list[2].unlocked = 0;
 	achievement_list[2].progress = 0;
 	strcpy(achievement_list[2].name, "Go? Hell No...");
 	strcpy(achievement_list[2].description, "Reach round 15");
 
-	achievement_list[3].img = Draw_CachePic("gfx/achievement/where_legs_go");
+	achievement_list[3].img = Image_LoadImage("gfx/achievement/where_legs_go", IMAGE_TGA, 0, true, false);
 	achievement_list[3].unlocked = 0;
 	achievement_list[3].progress = 0;
 	strcpy(achievement_list[3].name, "Where Did Legs Go?");
 	strcpy(achievement_list[3].description, "Turn a zombie into a crawler");
 
-	achievement_list[4].img = Draw_CachePic("gfx/achievement/the_f_bomb");
+	achievement_list[4].img = Image_LoadImage("gfx/achievement/the_f_bomb", IMAGE_TGA, 0, true, false);
 	achievement_list[4].unlocked = 0;
 	achievement_list[4].progress = 0;
 	strcpy(achievement_list[4].name, "The F Bomb");
@@ -1432,7 +1367,7 @@ void Achievement_Init (void)
 	strcpy(achievement_list[22].name, "And Stay out");
 	strcpy(achievement_list[22].description, "Don't let zombies in for 2 rounds");*/
 
-	achievement_locked = Draw_CachePic("gfx/achievement/achievement_locked");
+	achievement_locked = Image_LoadImage("gfx/achievement/achievement_locked", IMAGE_TGA, 0, true, false);
 
 	m_achievement_scroll[0] = 0;
 	m_achievement_scroll[1] = 0;
@@ -1521,7 +1456,7 @@ void M_Achievement_Draw (void)
 
 	// Background
 	if (key_dest != key_menu_pause)
-		Draw_PicIndex (0, 0, 480, 272, menu_bk);
+		Draw_StretchPic(0, 0, menu_bk, 480, 272);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
@@ -1684,13 +1619,10 @@ void M_MultiPlayer_Draw (void)
 
 
     if (key_dest != key_menu_pause)
-		Draw_PicIndex (0, 0, 480, 272, menu_bk);
+		Draw_StretchPic(0, 0, menu_bk, 480, 272);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 	//f = (int)(host_time * 10)%6;
-
-	//M_DrawTransPic (54, 32 + m_multiplayer_cursor * 20,Draw_CachePic( va("gfx/menudot%i.lmp", f+1 ) ) );
-
 
     if (m_multiplayer_cursor == 0)
 		M_Print ((vid.width - ((9 * 8) + 16)), (vid.height - 64),  "Join Game");
@@ -1853,7 +1785,7 @@ void M_Setup_Draw (void)
 {
 
     if (key_dest != key_menu_pause)
-		Draw_PicIndex (0, 0, 480, 272, menu_bk);
+		Draw_StretchPic(0, 0, menu_bk, 480, 272);
 
 	if (setup_cursor == 0)
 		M_Print (64, 72,  "Access Point");
@@ -2050,7 +1982,7 @@ void M_ServerList_Draw (void)
 	int	serv, line;
 
     if (key_dest != key_menu_pause)
-		Draw_PicIndex (0, 0, 480, 272, menu_bk);
+		Draw_StretchPic(0, 0, menu_bk, 480, 272);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 
@@ -2240,7 +2172,7 @@ void M_SEdit_Draw (void)
 {
 
     if (key_dest != key_menu_pause)
-		Draw_PicIndex (0, 0, 480, 272, menu_bk);
+		Draw_StretchPic(0, 0, menu_bk, 480, 272);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 
@@ -2392,73 +2324,6 @@ void M_Menu_Net_f (void)
 
 void M_Net_Draw (void)
 {
-	int		f;
-
-    if (key_dest != key_menu_pause)
-		Draw_PicIndex (0, 0, 480, 272, menu_bk);
-	//else
-		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
-
-	f = 32;
-	qpic_t *p;
-
-	if (serialAvailable)
-	{
-		p = Draw_CachePic ("gfx/netmen1.lmp");
-	}
-	else
-	{
-		p = Draw_CachePic ("gfx/dim_modm.lmp");
-	}
-
-	if (p)
-		M_DrawTransPic (72, f, p);
-
-	f += 19;
-
-	if (serialAvailable)
-	{
-		p = Draw_CachePic ("gfx/netmen2.lmp");
-	}
-	else
-	{
-		p = Draw_CachePic ("gfx/dim_drct.lmp");
-	}
-
-	if (p)
-		M_DrawTransPic (72, f, p);
-
-	f += 19;
-	if (ipxAvailable)
-		p = Draw_CachePic ("gfx/netmen3.lmp");
-	else
-		p = Draw_CachePic ("gfx/dim_ipx.lmp");
-	M_DrawTransPic (72, f, p);
-
-	f += 19;
-	if (tcpipAvailable)
-		p = Draw_CachePic ("gfx/netmen4.lmp");
-	else
-		p = Draw_CachePic ("gfx/dim_tcp.lmp");
-	M_DrawTransPic (72, f, p);
-
-	if (m_net_items == 5)	// JDC, could just be removed
-	{
-		f += 19;
-		p = Draw_CachePic ("gfx/netmen5.lmp");
-		M_DrawTransPic (72, f, p);
-	}
-
-	f = (320-26*8)/2;
-	M_DrawTextBox (f, 134, 24, 4);
-	f += 8;
-	M_PrintOld (f, 142, net_helpMessage[m_net_cursor*4+0]);
-	M_PrintOld (f, 150, net_helpMessage[m_net_cursor*4+1]);
-	M_PrintOld (f, 158, net_helpMessage[m_net_cursor*4+2]);
-	M_PrintOld (f, 166, net_helpMessage[m_net_cursor*4+3]);
-
-	f = (int)(host_time * 10)%6;
-	M_DrawTransPic (54, 32 + m_net_cursor * 20,Draw_CachePic( va("gfx/menudot%i.lmp", f+1 ) ) );
 }
 
 
@@ -2728,7 +2593,7 @@ void M_Screen_Draw (void)
 
 	// Background
 	if (key_dest != key_menu_pause)
-		Draw_PicIndex (0, 0, 480, 272, menu_bk);
+		Draw_StretchPic(0, 0, menu_bk, 480, 272);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
@@ -2908,7 +2773,7 @@ void M_Audio_Draw (void)
 	float	 r;
 
 	if (key_dest != key_menu_pause)
-		Draw_PicIndex (0, 0, 480, 272, menu_bk);
+		Draw_StretchPic(0, 0, menu_bk, 480, 272);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 
@@ -3020,7 +2885,7 @@ void M_Gameplay_Draw (void)
 
 	// Background
 	if (key_dest != key_menu_pause)
-		Draw_PicIndex (0, 0, 480, 272, menu_bk);
+		Draw_StretchPic(0, 0, menu_bk, 480, 272);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
@@ -3197,7 +3062,7 @@ void M_Options_Draw (void)
 {
 	// Background
 	if (key_dest != key_menu_pause)
-		Draw_PicIndex (0, 0, 480, 272, menu_bk);
+		Draw_StretchPic(0, 0, menu_bk, 480, 272);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
@@ -3428,7 +3293,7 @@ void M_Keys_Draw (void)
 
 	// Background
 	if (key_dest != key_menu_pause)
-		Draw_PicIndex(0, 0, 480, 272, menu_bk);
+		Draw_StretchPic(0, 0, menu_bk, 480, 272);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
@@ -3575,7 +3440,7 @@ void M_Menu_Credits_f (void)
 void M_Credits_Draw (void)
 {
    	// Background
-	Draw_PicIndex(0, 0, 480, 272, menu_bk);
+	Draw_StretchPic(0, 0, menu_bk, 480, 272);
 
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, 480, 272, 0, 0, 0, 102);
@@ -3761,7 +3626,7 @@ void M_Quit_Draw (void)
 	if (wasInMenus)
 	{
 		if (key_dest != key_menu_pause)
-			Draw_PicIndex (0, 0, 480, 272, menu_bk);
+			Draw_StretchPic(0, 0, menu_bk, 480, 272);
 		//else
 			//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 
@@ -4069,7 +3934,7 @@ void M_SerialConfig_Draw (void)
 	char	*directModem;
 
     if (key_dest != key_menu_pause)
-		Draw_PicIndex(0, 0, 480, 272, menu_bk);
+		Draw_StretchPic(0, 0, menu_bk, 480, 272);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 
@@ -4323,7 +4188,7 @@ void M_ModemConfig_Draw (void)
 	int		basex;
 
     if (key_dest != key_menu_pause)
-		Draw_PicIndex(0, 0, 480, 272, menu_bk);
+		Draw_StretchPic(0, 0, menu_bk, 480, 272);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 
@@ -4510,7 +4375,7 @@ void M_LanConfig_Draw (void)
 	char	*protocol;
 
     if (key_dest != key_menu_pause)
-		Draw_PicIndex(0, 0, 480, 272, menu_bk);
+		Draw_StretchPic(0, 0, menu_bk, 480, 272);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 
@@ -5078,7 +4943,7 @@ void M_Search_Draw (void)
 	int x;
 
     if (key_dest != key_menu_pause)
-		Draw_PicIndex(0, 0, 480, 272, menu_bk);
+		Draw_StretchPic(0, 0, menu_bk, 480, 272);
 	//else
 		//Draw_AlphaPic (0, 0, pause_bk, 0.4);
 

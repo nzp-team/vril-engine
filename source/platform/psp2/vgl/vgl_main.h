@@ -46,7 +46,6 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);
 void GL_EnableState(GLenum state);
 void GL_DisableState(GLenum state);
-int loadtextureimage (const char* filename, int matchwidth, int matchheight, bool complain, bool mipmap);
 
 #ifdef _WIN32
 // Function prototypes for the Texture Object Extension routines
@@ -65,15 +64,34 @@ extern	DELTEXFUNCPTR delTexFunc;
 extern	TEXSUBIMAGEPTR TexSubImage2DFunc;
 #endif
 
-extern	int texture_extension_number;
 extern	int		texture_mode;
 
 extern	float	gldepthmin, gldepthmax;
 
-void GL_Upload32 (unsigned *data, int width, int height,  bool mipmap, bool alpha);
-void GL_Upload8 (byte *data, int width, int height,  bool mipmap, bool alpha);
-int GL_LoadTexture (const char *identifier, int width, int height, byte *data, bool mipmap, bool alpha);
-int GL_LoadTexture32 (const char *identifier, int width, int height, byte *data, bool mipmap, bool alpha, bool fullbright);
+int Image_FindImage (const char *identifier);
+void GL_UnloadTextures (void);
+
+void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha);
+void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
+int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel, qboolean keep);
+int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qboolean update);
+
+extern  int	skyimage[5]; // Where sky images are stored
+
+typedef struct
+{
+	GLuint 			gl_id; // real GL texture object
+	int				texnum;
+	char			identifier[64];
+	int				width, height, original_width, original_height;
+	int				bpp;
+	qboolean		mipmap;
+	qboolean		used;
+	qboolean		keep;
+} gltexture_t;
+
+#define	MAX_GLTEXTURES	1024
+extern gltexture_t gltextures[MAX_GLTEXTURES];
 
 extern	qboolean	qmb_initialized;
 

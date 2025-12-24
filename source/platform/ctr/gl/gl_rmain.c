@@ -37,12 +37,9 @@ int			c_brush_polys, c_alias_polys;
 
 qboolean	envmap;				// true during envmap command capture 
 
-int			currenttexture = -1;		// to avoid unnecessary texture sets
-
 int			cnttextures[2] = {-1, -1};     // cached
 
 int			particletexture;	// little dot for particles
-int			playertextures;		// up to 16 color translated skins
 
 int			mirrortexturenum;	// quake texturenum, not gltexturenum
 qboolean	mirror;
@@ -101,28 +98,28 @@ cvar_t	gl_reporttjunctions = {"gl_reporttjunctions","0"};
 cvar_t	gl_doubleeyes = {"gl_doubleeys", "1"};
 
 //QMB
-cvar_t  r_explosiontype     = {"r_explosiontype",    "0",qtrue};
-cvar_t	r_laserpoint		= {"r_laserpoint",       "0",qtrue};
-cvar_t	r_part_explosions	= {"r_part_explosions",  "1",qtrue};
-cvar_t	r_part_trails		= {"r_part_trails",      "1",qtrue};
-cvar_t	r_part_sparks		= {"r_part_sparks",      "1",qtrue};
-cvar_t	r_part_spikes		= {"r_part_spikes",      "1",qtrue};
-cvar_t	r_part_gunshots	    = {"r_part_gunshots",    "1",qtrue};
-cvar_t	r_part_blood		= {"r_part_blood",       "1",qtrue};
-cvar_t	r_part_telesplash	= {"r_part_telesplash",  "1",qtrue};
-cvar_t	r_part_blobs		= {"r_part_blobs",       "1",qtrue};
-cvar_t	r_part_lavasplash	= {"r_part_lavasplash",  "1",qtrue};
-cvar_t	r_part_flames		= {"r_part_flames",      "1",qtrue};
-cvar_t	r_part_lightning	= {"r_part_lightning",   "1",qtrue};
-cvar_t	r_part_flies		= {"r_part_flies",       "1",qtrue};
-cvar_t	r_part_muzzleflash  = {"r_part_muzzleflash", "1",qtrue};
-cvar_t	r_flametype	        = {"r_flametype",        "2",qtrue};
+cvar_t  r_explosiontype     = {"r_explosiontype",    "0",true};
+cvar_t	r_laserpoint		= {"r_laserpoint",       "0",true};
+cvar_t	r_part_explosions	= {"r_part_explosions",  "1",true};
+cvar_t	r_part_trails		= {"r_part_trails",      "1",true};
+cvar_t	r_part_sparks		= {"r_part_sparks",      "1",true};
+cvar_t	r_part_spikes		= {"r_part_spikes",      "1",true};
+cvar_t	r_part_gunshots	    = {"r_part_gunshots",    "1",true};
+cvar_t	r_part_blood		= {"r_part_blood",       "1",true};
+cvar_t	r_part_telesplash	= {"r_part_telesplash",  "1",true};
+cvar_t	r_part_blobs		= {"r_part_blobs",       "1",true};
+cvar_t	r_part_lavasplash	= {"r_part_lavasplash",  "1",true};
+cvar_t	r_part_flames		= {"r_part_flames",      "1",true};
+cvar_t	r_part_lightning	= {"r_part_lightning",   "1",true};
+cvar_t	r_part_flies		= {"r_part_flies",       "1",true};
+cvar_t	r_part_muzzleflash  = {"r_part_muzzleflash", "1",true};
+cvar_t	r_flametype	        = {"r_flametype",        "2",true};
 //Shpuld
-cvar_t  r_model_brightness  = { "r_model_brightness", "1", qtrue};   // Toggle high brightness model lighting
+cvar_t  r_model_brightness  = { "r_model_brightness", "1", true};   // Toggle high brightness model lighting
 
 cvar_t	r_farclip	        = {"r_farclip",              "4096"};        //far cliping for q3 models
 
-cvar_t	r_flatlightstyles = {"r_flatlightstyles", "0", qfalse};
+cvar_t	r_flatlightstyles = {"r_flatlightstyles", "0", false};
 
 extern	cvar_t	gl_ztrick;
 extern 	cvar_t 	scr_fov_viewmodel;
@@ -382,6 +379,8 @@ void R_DrawSpriteModel (entity_t *e)
 	frame = R_GetSpriteFrame (e);
 	psprite = currententity->model->cache.data;
 
+	if (frame->gl_texturenum < 0) return;
+
 	if (psprite->type == SPR_ORIENTED)
 	{	// bullet marks on walls
 		AngleVectors (currententity->angles, v_forward, v_right, v_up);
@@ -396,9 +395,7 @@ void R_DrawSpriteModel (entity_t *e)
 
 	glColor3f (1,1,1);
 
-	GL_DisableMultitexture();
-
-  GL_Bind(frame->gl_texturenum);
+  	GL_Bind(frame->gl_texturenum);
 
 	Fog_DisableGFog ();
 
@@ -791,8 +788,6 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	paliashdr = (aliashdr_t *)Mod_Extradata(clmodel);//e->model
 	c_alias_polys += paliashdr->numtris;
 
-	GL_DisableMultitexture();
-
 	//Shpuld
 	if(r_model_brightness.value)
 	{
@@ -906,7 +901,6 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	// draw all the triangles
 	//
 
-	GL_DisableMultitexture();
 	lightcolor[0] = lightcolor[1] = lightcolor[2] = 256.0f;
 
     glPushMatrix ();
@@ -1073,8 +1067,6 @@ void R_DrawAliasModel (entity_t *e)
 	// draw all the triangles
 	//
 
-	GL_DisableMultitexture();
-
 	//Shpuld
 	if(r_model_brightness.value)
 	{
@@ -1158,15 +1150,6 @@ void R_DrawAliasModel (entity_t *e)
 	{
 		anim = (int)(cl.time*10) & 3;
 		GL_Bind(paliashdr->gl_texturenum[e->skinnum][anim]);
-	}
-
-	// we can't dynamically colormap textures, so they are cached
-	// seperately for the players.  Heads are just uncolored.
-	if (currententity->colormap != vid.colormap && !gl_nocolors.value)
-	{
-		i = currententity - cl_entities;
-		if (i >= 1 && i<=cl.maxclients /* && !strcmp (currententity->model->name, "models/player.mdl") */)
-		    GL_Bind(playertextures - 1 + i);
 	}
 
 	if (gl_smoothmodels.value)
@@ -1452,8 +1435,6 @@ void R_PolyBlend (void)
 	if (!v_blend[3])
 		return;
 
-	GL_DisableMultitexture();
-
 	glDisable (GL_ALPHA_TEST);
 	glEnable (GL_BLEND);
 	glDisable (GL_DEPTH_TEST);
@@ -1687,8 +1668,6 @@ void R_RenderScene (void)
 	S_ExtraUpdate ();	// don't let sound get messed up if going slow
 
 	R_DrawEntitiesOnList ();
-
-	GL_DisableMultitexture();
 
 	R_DrawParticles ();
 }

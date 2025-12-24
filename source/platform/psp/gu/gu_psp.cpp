@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <cstddef>
 
 #include <pspdisplay.h>
-#include <pspgu.h>
 #include <pspgum.h>
 #include <pspkernel.h>
 #include <psputility.h>
@@ -35,8 +34,6 @@ extern "C"
 }
 
 #include <vram.h>
-
-#include "gu_images.h"
 
 #ifdef _WIN32
 # define ALIGNED(x)
@@ -105,7 +102,7 @@ void VID_SetPaletteLM()
 	sceKernelDcacheWritebackRange(d_8to24tableLM, sizeof(d_8to24tableLM));
 	sceGuClutLoad(palette_size / 8, d_8to24tableLM);
     reloaded_pallete = 1;
-	last_palette_wasnt_tx = qtrue;
+	last_palette_wasnt_tx = true;
 }
 
 void VID_SetPaletteTX()
@@ -115,14 +112,14 @@ void VID_SetPaletteTX()
 	sceKernelDcacheWritebackRange(d_8to24table, sizeof(d_8to24table));
 	sceGuClutLoad(palette_size / 8, d_8to24table);
 	reloaded_pallete = 1;
-	last_palette_wasnt_tx = qfalse;
+	last_palette_wasnt_tx = false;
 }
 
 void VID_SetPalette4(unsigned char* clut4pal) {
 	sceGuClutMode(GU_PSM_8888, 0, 0xFF, 0);
 	sceKernelDcacheWritebackRange(clut4pal, 4 * 16);
 	sceGuClutLoad(2, clut4pal);
-	last_palette_wasnt_tx = qtrue;
+	last_palette_wasnt_tx = true;
 }
 
 void VID_SetPalette(unsigned char* palette)
@@ -145,7 +142,7 @@ void VID_SetPalette(unsigned char* palette)
 	sceKernelDcacheWritebackRange(d_8to24table, sizeof(d_8to24table));
 	sceGuClutLoad(palette_size / 8, d_8to24table);
 	reloaded_pallete = 1;
-	last_palette_wasnt_tx = qtrue;
+	last_palette_wasnt_tx = true;
 }
 
 void VID_ShiftPalette(unsigned char* palette)
@@ -387,7 +384,7 @@ u32 GL_GetDrawBuffer(void)
 void D_StartParticles (void)
 {
 	sceGuDepthMask(GU_TRUE);
-	if (r_particles_simple.value == qtrue)
+	if (r_particles_simple.value == true)
 	{
 		sceGuDisable(GU_TEXTURE_2D);
 	}
@@ -405,7 +402,7 @@ void D_StartParticles (void)
 void D_EndParticles (void)
 {
 	sceGuDepthMask(GU_FALSE);
-	if (r_particles_simple.value == qtrue)
+	if (r_particles_simple.value == true)
 	{
 		 sceGuEnable(GU_TEXTURE_2D);
 	}
@@ -526,8 +523,6 @@ typedef struct _TargaHeader {
 	unsigned char	pixel_size, attributes;
 } TargaHeader;
 
-int Image_WriteJPEG (char *filename, int compression, byte *pixels, int width, int height);
-
 /*
 ==================
 SCR_ScreenShot_f
@@ -535,10 +530,10 @@ SCR_ScreenShot_f
 */
 void SCR_ScreenShot_f (void)
 {
-	byte		*buffer;
+	//byte		*buffer;
 	char		name[80];
 	char		checkname[MAX_OSPATH];
-    int		    buffersize = glwidth * glheight * 3;
+    //int		    buffersize = glwidth * glheight * 3;
 //
 // find a file name to save it to
 //
@@ -560,7 +555,7 @@ void SCR_ScreenShot_f (void)
 		Con_Printf ("SCR_ScreenShot_f: Couldn't create a TGA file\n");
 		return;
  	}
-
+	/*
 	buffer = static_cast<byte*>(Q_malloc(buffersize));
 	memset(buffer, 0, buffersize);
 
@@ -571,6 +566,7 @@ void SCR_ScreenShot_f (void)
 	free (buffer);
 
 	Con_Printf ("Wrote %s\n", name);
+	*/
 }
 
 #if 0
@@ -673,7 +669,7 @@ void M_Exit_f (void)
 	if(dialog.buttonPressed == PSP_UTILITY_MSGDIALOG_RESULT_YES)
 	{
 		CL_Disconnect ();
-	    Host_ShutdownServer(qfalse);
+	    Host_ShutdownServer(false);
 	    Sys_Quit ();
     }
 }

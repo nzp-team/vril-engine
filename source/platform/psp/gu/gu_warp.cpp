@@ -20,8 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // gl_warp.c -- sky and water polygons
 
-#include <pspgu.h>
-
 extern "C"
 {
 #include "../../../nzportable_def.h"
@@ -876,7 +874,7 @@ void UnloadSkyTexture (void)
 	{
 		if (skyimage[i])
 			GL_UnloadTexture(skyimage[i]);
-		skyimage[i] = 0;
+		skyimage[i] = -1;
 	}
 }
 
@@ -919,29 +917,31 @@ void Sky_LoadSkyBox (char *name)
     {
         int mark = Hunk_LowMark ();
 
-		if(!(skyimage[i] = loadskyboxsideimage (va("gfx/env/%s%s", name, suf[i]), 0, 0, qfalse, GU_LINEAR)) &&
-           !(skyimage[i] = loadskyboxsideimage (va("gfx/env/%s_%s", name, suf[i]), 0, 0, qfalse, GU_LINEAR)))
-		{
-			Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[i]);
-		    if(!(skyimage[i] = loadskyboxsideimage (va("gfx/env/skybox%s", suf[i]), 0, 0, qfalse, GU_LINEAR)))
-		    {
-			    Sys_Error("STD SKY NOT FOUND!");
+		skyimage[i] = Image_LoadImage (va("gfx/env/%s%s", name, suf[i]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+		if (skyimage[i] < 0) {
+			skyimage[i] = Image_LoadImage (va("gfx/env/%s_%s", name, suf[i]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+			if (skyimage[i] < 0) {
+				Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[i]);
+				skyimage[i] = Image_LoadImage (va("gfx/env/skybox%s", suf[i]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+				if(skyimage[i] < 0) {
+					Sys_Error("STD SKY NOT FOUND!");
+				}
 			}
-
 		}
         Hunk_FreeToLowMark (mark);
     }
 
 	int mark = Hunk_LowMark ();
-	if(!(skyimage[4] = loadtextureimage (va("gfx/env/%sup", name), 0, 0, qfalse, GU_LINEAR)) &&
-		!(skyimage[4] = loadtextureimage (va("gfx/env/%s_up", name), 0, 0, qfalse, GU_LINEAR)))
-	{
-		Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[4]);
-		if(!(skyimage[4] = loadtextureimage (va("gfx/env/skybox%s", suf[4]), 0, 0, qfalse, GU_LINEAR)))
-		{
-			Sys_Error("STD SKY NOT FOUND!");
+	skyimage[4] = Image_LoadImage (va("gfx/env/%sup", name), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+	if (skyimage[4] < 0) {
+		skyimage[4] = Image_LoadImage (va("gfx/env/%s_up", name), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+		if (skyimage[4] < 0) {
+			Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[4]);
+			skyimage[4] = Image_LoadImage (va("gfx/env/skybox%s", suf[4]), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+			if (skyimage[4] < 0) {
+				Sys_Error("STD SKY NOT FOUND!");
+			}
 		}
-
 	}
 	Hunk_FreeToLowMark (mark);
 
@@ -1046,7 +1046,7 @@ void Sky_Init (void)
 	Cmd_AddCommand ("sky",Sky_SkyCommand_f);
 
 	for (i=0; i<5; i++)
-		skyimage[i] = 0;
+		skyimage[i] = -1;
 }
 
 static vec3_t	skyclip[6] = {
@@ -1161,19 +1161,19 @@ void ClipSkyPolygon (int nump, vec3_t vecs, int stage)
 		return;
 	}
 
-	front = back = qfalse;
+	front = back = false;
 	norm = skyclip[stage];
 	for (i=0, v = vecs ; i<nump ; i++, v+=3)
 	{
 		d = DotProduct (v, norm);
 		if (d > ON_EPSILON)
 		{
-			front = qtrue;
+			front = true;
 			sides[i] = SIDE_FRONT;
 		}
 		else if (d < ON_EPSILON)
 		{
-			back = qtrue;
+			back = true;
 			sides[i] = SIDE_BACK;
 		}
 		else
@@ -1583,7 +1583,7 @@ void R_InitSky (byte *mt)
 	}
 
 	if (solidskytexture == -1)
-		solidskytexture = GL_LoadTexture("solidskytexture", 128, 128, trans, qfalse, GU_LINEAR, 0);
+		solidskytexture = GL_LoadTexture("solidskytexture", 128, 128, trans, false, GU_LINEAR, 0);
 
 	for (int i=0 ; i<128 ; i++)
 	{
@@ -1598,6 +1598,6 @@ void R_InitSky (byte *mt)
 	}
 
 	if (alphaskytexture == -1)
-		alphaskytexture = GL_LoadTexture("alphaskytexture", 128, 128, trans, qfalse, GU_LINEAR, 0);
+		alphaskytexture = GL_LoadTexture("alphaskytexture", 128, 128, trans, false, GU_LINEAR, 0);
 }
 

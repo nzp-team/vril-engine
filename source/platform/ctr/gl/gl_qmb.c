@@ -153,7 +153,7 @@ static	int		r_numparticles;
 static	vec3_t	zerodir = {22, 22, 22};
 static	int		particle_count = 0;
 static	float	particle_time;
-qboolean		qmb_initialized = qfalse;
+qboolean		qmb_initialized = false;
 int				particle_mode = 0;	// 0: classic (default), 1: QMB, 2: mixed
 
 qboolean OnChange_gl_particle_count (cvar_t *var, char *string)
@@ -165,16 +165,16 @@ qboolean OnChange_gl_particle_count (cvar_t *var, char *string)
 
 	QMB_ClearParticles ();		// also re-allocc particles
 
-	return qtrue;
+	return true;
 }
 
 extern cvar_t	cl_gun_offset;
-cvar_t	r_particle_count	= {"r_particle_count", "1024", qtrue};
-cvar_t	r_bounceparticles	= {"r_bounceparticles", "1",qtrue};
-cvar_t	r_decal_blood		= {"r_decal_blood", "1",qtrue};
-cvar_t	r_decal_bullets	    = {"r_decal_bullets","1",qtrue};
-cvar_t	r_decal_sparks		= {"r_decal_sparks","1",qtrue};
-cvar_t	r_decal_explosions	= {"r_decal_explosions","1",qtrue};
+cvar_t	r_particle_count	= {"r_particle_count", "1024", true};
+cvar_t	r_bounceparticles	= {"r_bounceparticles", "1",true};
+cvar_t	r_decal_blood		= {"r_decal_blood", "1",true};
+cvar_t	r_decal_bullets	    = {"r_decal_bullets","1",true};
+cvar_t	r_decal_sparks		= {"r_decal_sparks","1",true};
+cvar_t	r_decal_explosions	= {"r_decal_explosions","1",true};
 
 int	decals_enabled;
 
@@ -366,7 +366,8 @@ void QMB_InitParticles (void)
 
 	loading_num_step = loading_num_step + 24;
 	
-	if (!(particleimage = loadtextureimage("textures/particles/particlefont", 0, 0, qfalse, qtrue)))
+	particleimage = Image_LoadImage("textures/particles/particlefont", IMAGE_TGA, 0, true, false);
+	if (particleimage < 0)
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -394,7 +395,8 @@ void QMB_InitParticles (void)
 	
 	max_s = max_t = 128.0;
 
-	if (!(particleimage = loadtextureimage("textures/particles/flame", 0, 0, qfalse, qtrue)))
+	particleimage = Image_LoadImage("textures/particles/flame", IMAGE_TGA, 0, true, false);
+	if (particleimage < 0)
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -406,7 +408,8 @@ void QMB_InitParticles (void)
 
 	max_s = max_t = 64.0;
 
-	if (!(particleimage = loadtextureimage("textures/particles/inferno", 0, 0, qfalse, qtrue)))
+	particleimage = Image_LoadImage("textures/particles/inferno", IMAGE_TGA, 0, true, false);
+	if (particleimage < 0)
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -417,7 +420,8 @@ void QMB_InitParticles (void)
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	if (!(particleimage = loadtextureimage("textures/particles/zing1", 0, 0, qfalse, qtrue)))
+	particleimage = Image_LoadImage("textures/particles/zing1", IMAGE_TGA | IMAGE_PNG, 0, true, false);
+	if (particleimage < 0)
 	{
         //Clear_LoadingFill ();
 		return;
@@ -430,7 +434,8 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 	max_s = max_t = 128.0;
 	
-	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl0", 0, 0, qfalse, qtrue)))
+	particleimage = Image_LoadImage("textures/mzfl/mzfl0", IMAGE_TGA, 0, true, false);
+	if (particleimage < 0)
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -441,7 +446,8 @@ void QMB_InitParticles (void)
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl1", 0, 0, qfalse, qtrue)))
+	particleimage = Image_LoadImage("textures/mzfl/mzfl1", IMAGE_TGA, 0, true, false);
+	if (particleimage < 0)
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -451,7 +457,8 @@ void QMB_InitParticles (void)
 
     loading_cur_step++;	
 	SCR_UpdateScreen ();
-	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl2", 0, 0, qfalse, qtrue)))
+	particleimage = Image_LoadImage("textures/mzfl/mzfl2", IMAGE_TGA, 0, true, false);
+	if (particleimage < 0)
 	{
         //Clear_LoadingFill ();
 		return;
@@ -463,7 +470,8 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 	
 	max_s = max_t = 64.0;
-	if (!(particleimage = loadtextureimage("textures/particles/bloodcloud", 0, 0, qfalse, qtrue)))
+	particleimage = Image_LoadImage("textures/particles/bloodcloud", IMAGE_TGA, 0, true, false);
+	if (particleimage < 0)
 	{
         //Clear_LoadingFill ();
 		return;
@@ -558,7 +566,7 @@ void QMB_InitParticles (void)
 
 	Clear_LoadingFill ();
 
-	qmb_initialized = qtrue;
+	qmb_initialized = true;
 }
 
 #define	INIT_NEW_PARTICLE(_pt, _p, _color, _size, _time)	\
@@ -1298,8 +1306,12 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
     vec3_t            up, right, p_downleft, p_upleft, p_downright, p_upright;
     GLubyte            color[4];
 
+	if (ptex->texnum < 0) return;
+
     VectorScale (vup, 1.5, up);
     VectorScale (vright, 1.5, right);
+
+	GL_Bind (ptex->texnum);
 
     glEnable (GL_BLEND);
     glDepthMask (GL_FALSE);
@@ -1588,6 +1600,7 @@ void QMB_DrawParticles (void)
 		}
 	}
 
+	glEnd();
 	//glDepthMask (GL_FALSE);
 	glDisable (GL_BLEND);
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

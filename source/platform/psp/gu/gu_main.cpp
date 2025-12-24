@@ -27,7 +27,6 @@ float TraceLine (vec3_t start, vec3_t end, vec3_t impact, vec3_t normal);
 }
 
 //includes
-#include <pspgu.h>
 #include <pspgum.h>
 
 #include "../clipping.hpp"
@@ -92,7 +91,7 @@ ScePspFMatrix4  md3mult;
 
 int		d_lightstylevalue[256];	// 8.8 fraction of base light value
 
-cvar_t	r_partalpha           = {"r_partalpha",             "0.8",qtrue};
+cvar_t	r_partalpha           = {"r_partalpha",             "0.8",true};
 cvar_t	r_norefresh           = {"r_norefresh",               "0"};
 cvar_t	r_drawentities        = {"r_drawentities",            "1"};
 cvar_t	r_drawviewmodel       = {"r_drawviewmodel",           "1"};
@@ -100,67 +99,67 @@ cvar_t	r_speeds              = {"r_speeds",                  "0"};
 cvar_t	r_fullbright          = {"r_fullbright",              "0"};
 cvar_t	r_lightmap            = {"r_lightmap",                "0"};
 cvar_t	r_shadows             = {"r_shadows",                 "0"};
-cvar_t	r_mirroralpha         = {"r_mirroralpha",             "1",qtrue};
-cvar_t	r_wateralpha          = {"r_wateralpha",            "0.6",qtrue};
-cvar_t	r_vsync               = {"r_vsync",                   "0",qtrue};
+cvar_t	r_mirroralpha         = {"r_mirroralpha",             "1",true};
+cvar_t	r_wateralpha          = {"r_wateralpha",            "0.6",true};
+cvar_t	r_vsync               = {"r_vsync",                   "0",true};
 cvar_t	r_farclip	          = {"r_farclip",              "4096"};        //far cliping for q3 models
-cvar_t  r_loadq3models        = {"r_loadq3models",            "0",qtrue}; //replace player model to q3 player
-cvar_t  cl_loadmapcfg         = {"cl_loadmapcfg",             "0",qtrue}; //Load individual cfg for map
-cvar_t	r_restexf             = {"r_restexf",                 "0",qtrue}; //texture resampler setup
-cvar_t  r_texcompr            = {"r_texcompr",                "5",qtrue}; //texture compression setup (default DXT5) warning DXT1 conflicted with switches palettes
+cvar_t  r_loadq3models        = {"r_loadq3models",            "0",true}; //replace player model to q3 player
+cvar_t  cl_loadmapcfg         = {"cl_loadmapcfg",             "0",true}; //Load individual cfg for map
+cvar_t	r_restexf             = {"r_restexf",                 "0",true}; //texture resampler setup
+cvar_t  r_texcompr            = {"r_texcompr",                "5",true}; //texture compression setup (default DXT5) warning DXT1 conflicted with switches palettes
 cvar_t  r_maxrange            = {"r_maxrange",             "4096"}; //render distance
-cvar_t	r_skydis              = {"r_skydis",               "2560",qtrue};
-cvar_t  r_skyfog              = {"r_skyfog",                  "1",qtrue};
-cvar_t	r_caustics            = {"r_caustics",                "1",qtrue};
-cvar_t	r_detail              = {"r_detail",                  "1",qtrue};
-cvar_t	r_detail_mipmaps      = {"r_detail_mipmaps",          "1",qtrue};
-cvar_t	r_detail_mipmaps_func = {"r_detail_mipmaps_func",     "2",qtrue};
-cvar_t	r_detail_mipmaps_bias = {"r_detail_mipmaps_bias",    "-6",qtrue};
+cvar_t	r_skydis              = {"r_skydis",               "2560",true};
+cvar_t  r_skyfog              = {"r_skyfog",                  "1",true};
+cvar_t	r_caustics            = {"r_caustics",                "1",true};
+cvar_t	r_detail              = {"r_detail",                  "1",true};
+cvar_t	r_detail_mipmaps      = {"r_detail_mipmaps",          "1",true};
+cvar_t	r_detail_mipmaps_func = {"r_detail_mipmaps_func",     "2",true};
+cvar_t	r_detail_mipmaps_bias = {"r_detail_mipmaps_bias",    "-6",true};
 cvar_t  r_asynch              = {"r_asynch",                  "0"};
-cvar_t  r_i_model_animation   = {"r_i_model_animation",       "1",qtrue}; // Toggle smooth model animation
-cvar_t  r_i_model_transform   = {"r_i_model_transform",       "1",qtrue}; // Toggle smooth model movement
-cvar_t	r_mipmaps             = {"r_mipmaps",                 "1",qtrue};
-cvar_t  r_mipmaps_func        = {"r_mipmaps_func",            "2",qtrue};          // Adjust mip map calculations
-cvar_t  r_mipmaps_bias        = {"r_mipmaps_bias",           "-7",qtrue};         // Adjust mip map bias 
-cvar_t	r_retro   	          = {"r_retro",  	              "0",qtrue}; // dr_mabuse1981: "retro filter".
+cvar_t  r_i_model_animation   = {"r_i_model_animation",       "1",true}; // Toggle smooth model animation
+cvar_t  r_i_model_transform   = {"r_i_model_transform",       "1",true}; // Toggle smooth model movement
+cvar_t	r_mipmaps             = {"r_mipmaps",                 "1",true};
+cvar_t  r_mipmaps_func        = {"r_mipmaps_func",            "2",true};          // Adjust mip map calculations
+cvar_t  r_mipmaps_bias        = {"r_mipmaps_bias",           "-7",true};         // Adjust mip map bias 
+cvar_t	r_retro   	          = {"r_retro",  	              "0",true}; // dr_mabuse1981: "retro filter".
 cvar_t	r_dynamic             = {"r_dynamic",                 "1"};
 cvar_t	r_novis               = {"r_novis",                   "0"};
-cvar_t	r_tex_scale_down      = {"r_tex_scale_down",          "1",qtrue};
-cvar_t	r_particles_simple    = {"r_particles_simple",        "0",qtrue};
+cvar_t	r_tex_scale_down      = {"r_tex_scale_down",          "1",true};
+cvar_t	r_particles_simple    = {"r_particles_simple",        "0",true};
 cvar_t	gl_keeptjunctions     = {"gl_keeptjunctions",         "0"};
-cvar_t	r_waterripple         = {"r_waterripple",             "2",qtrue};
-cvar_t	r_waterwarp           = {"r_waterwarp",               "1",qtrue};
-cvar_t	r_fastsky             = {"r_fastsky",                 "1",qtrue};
-cvar_t  r_skycolor            = {"r_skycolor",         "64 64 70",qtrue};
+cvar_t	r_waterripple         = {"r_waterripple",             "2",true};
+cvar_t	r_waterwarp           = {"r_waterwarp",               "1",true};
+cvar_t	r_fastsky             = {"r_fastsky",                 "1",true};
+cvar_t  r_skycolor            = {"r_skycolor",         "64 64 70",true};
 cvar_t  r_showbboxes          = {"r_showbboxes",              "0"};
-cvar_t  r_showbboxes_full     = {"r_showbboxes_full",         "0",qtrue};
+cvar_t  r_showbboxes_full     = {"r_showbboxes_full",         "0",true};
 cvar_t	r_showtris            = {"r_showtris",                "0"};
-cvar_t	r_showtris_full       = {"r_showtris_full",           "0",qtrue};
-cvar_t	r_polyblend	          = {"r_polyblend",               "1",qtrue};
-cvar_t r_skyfogblend = {"r_skyfogblend", "0.6", qtrue}; 
+cvar_t	r_showtris_full       = {"r_showtris_full",           "0",true};
+cvar_t	r_polyblend	          = {"r_polyblend",               "1",true};
+cvar_t r_skyfogblend = {"r_skyfogblend", "0.6", true}; 
 
 //QMB
-cvar_t  r_explosiontype     = {"r_explosiontype",    "0",qtrue};
-cvar_t	r_laserpoint		= {"r_laserpoint",       "0",qtrue};
-cvar_t	r_part_explosions	= {"r_part_explosions",  "1",qtrue};
-cvar_t	r_part_trails		= {"r_part_trails",      "1",qtrue};
-cvar_t	r_part_sparks		= {"r_part_sparks",      "1",qtrue};
-cvar_t	r_part_spikes		= {"r_part_spikes",      "1",qtrue};
-cvar_t	r_part_gunshots	    = {"r_part_gunshots",    "1",qtrue};
-cvar_t	r_part_blood		= {"r_part_blood",       "1",qtrue};
-cvar_t	r_part_telesplash	= {"r_part_telesplash",  "1",qtrue};
-cvar_t	r_part_blobs		= {"r_part_blobs",       "1",qtrue};
-cvar_t	r_part_lavasplash	= {"r_part_lavasplash",  "1",qtrue};
-cvar_t	r_part_flames		= {"r_part_flames",      "1",qtrue};
-cvar_t	r_part_lightning	= {"r_part_lightning",   "1",qtrue};
-cvar_t	r_part_flies		= {"r_part_flies",       "1",qtrue};
-cvar_t	r_part_muzzleflash  = {"r_part_muzzleflash", "1",qtrue};
-cvar_t	r_flametype	        = {"r_flametype",        "2",qtrue};
+cvar_t  r_explosiontype     = {"r_explosiontype",    "0",true};
+cvar_t	r_laserpoint		= {"r_laserpoint",       "0",true};
+cvar_t	r_part_explosions	= {"r_part_explosions",  "1",true};
+cvar_t	r_part_trails		= {"r_part_trails",      "1",true};
+cvar_t	r_part_sparks		= {"r_part_sparks",      "1",true};
+cvar_t	r_part_spikes		= {"r_part_spikes",      "1",true};
+cvar_t	r_part_gunshots	    = {"r_part_gunshots",    "1",true};
+cvar_t	r_part_blood		= {"r_part_blood",       "1",true};
+cvar_t	r_part_telesplash	= {"r_part_telesplash",  "1",true};
+cvar_t	r_part_blobs		= {"r_part_blobs",       "1",true};
+cvar_t	r_part_lavasplash	= {"r_part_lavasplash",  "1",true};
+cvar_t	r_part_flames		= {"r_part_flames",      "1",true};
+cvar_t	r_part_lightning	= {"r_part_lightning",   "1",true};
+cvar_t	r_part_flies		= {"r_part_flies",       "1",true};
+cvar_t	r_part_muzzleflash  = {"r_part_muzzleflash", "1",true};
+cvar_t	r_flametype	        = {"r_flametype",        "2",true};
 //Shpuld
-cvar_t  r_model_brightness = { "r_model_brightness", "1", qtrue};   // Toggle high brightness model lighting
+cvar_t  r_model_brightness = { "r_model_brightness", "1", true};   // Toggle high brightness model lighting
 
 //cypress
-cvar_t 	r_runqmbparticles = {"r_runqmbparticles", 	"1", qtrue};
+cvar_t 	r_runqmbparticles = {"r_runqmbparticles", 	"1", true};
 
 extern cvar_t cl_maxfps;
 extern cvar_t scr_fov_viewmodel;
@@ -287,10 +286,10 @@ qboolean R_CullSphere (vec3_t centre, float radius)
 	for (i=0, p=frustum ; i<5 ; i++, p++)
 	{
 		if (PlaneDiff(centre, p) <= -radius)
-			return qtrue;
+			return true;
 	}
 
-	return qfalse;
+	return false;
 }
 
 /*
@@ -910,7 +909,7 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum)
 	int numcommands = order[0];
 	order++;
 
-	qboolean isStatic = paliashdr->numposes <= 1 ? qtrue : qfalse;
+	qboolean isStatic = paliashdr->numposes <= 1 ? true : false;
 
 	struct vertex
 	{
@@ -1520,9 +1519,9 @@ void R_DrawAliasModel (entity_t *e)
 			draw_partial_zombie = true;
 			paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
 		}
-	}
-	else
+	} else {
 		paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
+	}
 
 	c_alias_polys += paliashdr->numtris;
 
@@ -1635,6 +1634,7 @@ void R_DrawAliasModel (entity_t *e)
 	//Blubswillrule: disabled the next two calls, they look like duplicates
 	//sceGuShadeModel(GU_FLAT);
 	//sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
+	
 	if (ISADDITIVE(e))
 	{
 		float deg = e->renderamt;
@@ -1654,6 +1654,7 @@ void R_DrawAliasModel (entity_t *e)
 		//sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
 		//sceGuDisable (GU_BLEND);
 	}
+	
 	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 	sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
 	sceGuDisable(GU_BLEND);
@@ -1763,8 +1764,8 @@ void R_DrawLine(vec3_t start,vec3_t end, vec3_t rgb)
 R_DrawEntitiesOnList
 =============
 */
-extern int numgltextures;
 // The values in these are indices in current frame cl_visedicts, pointing to first entity of linked list
+extern int numgltextures;
 short entity_batches[MAX_GLTEXTURES];
 short trans_entity_batches[MAX_GLTEXTURES];
 // are human rights btw
@@ -1775,9 +1776,8 @@ void R_DrawEntitiesOnList (void)
 		return;
 	// Because 0 is a valid index for a visedict, we use short to get access to -1...
 	// Setting min size out of paranoia
-	int batches_max_size = MAX(256, sizeof(short) * numgltextures);
-	memset(entity_batches, -1, batches_max_size);
-	memset(trans_entity_batches, -1, batches_max_size);
+	memset(entity_batches, -1, sizeof(entity_batches));
+	memset(trans_entity_batches, -1, sizeof(trans_entity_batches));
 
 	// acceleration so we dont have to iterate all the textures,
 	// when we encounter a new texture, add it to this list.
@@ -2220,7 +2220,7 @@ void R_RenderScene (void)
 		gly + (glheight >> 1) - y2 - (h >> 1), //xaa - try to skip some divides (/2) here
 		w,
 		h);
-	sceGuScissor(x, glheight - y2 - h, w, h);
+	sceGuScissor(x, glheight - y2 - h, x + w, glheight - y2);
 
     screenaspect = (float)renderrect->width/renderrect->height;
 
@@ -2435,7 +2435,7 @@ void R_RenderView (void)
 	c_brush_polys = 0;
 	c_alias_polys = 0;
 
-	mirror = qfalse;
+	mirror = false;
 
 	R_Clear ();
 

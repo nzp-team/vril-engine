@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <valarray>
 #include <vector>
 #include <malloc.h>
-#include <pspgu.h>
 #include <pspkernel.h>
 #include <pspctrl.h>
 #include <ctype.h>
@@ -43,7 +42,7 @@ extern "C"
 #include "../vram.hpp"
 
 byte		*draw_chars;				// 8*8 graphic characters
-qpic_t		*sniper_scope;
+int		sniper_scope;
 
 int			translate_texture;
 int			char_texture;
@@ -51,9 +50,13 @@ int			char_texture;
 int			zombie_skins[2][2];
 int         ref_texture;
 int         nonetexture;
-typedef byte texel;
 
 bool 	 	tex_scale_down = true;
+
+gltexture_t	gltextures[MAX_GLTEXTURES];
+bool 		gltextures_used[MAX_GLTEXTURES];
+bool 		gltextures_is_permanent[MAX_GLTEXTURES];
+int			numgltextures;
 
 //Loading Fill by Crow_bar
 float 	loading_cur_step;
@@ -62,42 +65,7 @@ float 	loading_num_step;
 int 	loading_step;
 float 	loading_cur_step_bk;
 
-typedef struct
-{
-	// Source.
-	char	identifier[64];
-	int		original_width;
-	int		original_height;
-	bool	stretch_to_power_of_two;
-
-	// Texture description.
-	int		format;
-	int		filter;
-	int		width;
-	int		height;
-	int 	mipmaps;
-	int     bpp;
-	int     swizzle;
-	qboolean islmp;
-	unsigned char *palette;
-
-	// Buffers.
-	texel*	ram;
-	texel*	vram;
-} gltexture_t;
-
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, int filter);
 void VID_SetPalette4(unsigned char* clut4pal);
-
-gltexture_t	gltextures[MAX_GLTEXTURES];
-bool 		gltextures_used[MAX_GLTEXTURES];
-bool 		gltextures_is_permanent[MAX_GLTEXTURES];
-int			numgltextures;
-
-typedef struct
-{
-	int			index;	// index into gltextures[].
-} glpic_t;
 
 //cvar_t	png_compression_level = {"png_compression_level", "1"};
 //cvar_t	jpeg_compression_level = {"jpeg_compression_level", "75"};
@@ -176,6 +144,17 @@ void GL_Copy(int texture_index, int dx, int dy, int sx, int sy, int w, int h)
 	 sceGuTexSync();
 }
 
+/*
+For marking textures as something that should never be cleaned up, like fonts, zombie, etc.
+There should never be need to change anything back from permanent.
+*/
+void GL_MarkTextureAsPermanent(int texture_index) {
+	if (gltextures_used[texture_index] == false) {
+		Sys_Error("Tried to mark an empty texture as permanent!\n");
+	}
+
+	gltextures_is_permanent[texture_index] = true;
+}
 
 void VID_SetPaletteTX();
 extern qboolean last_palette_wasnt_tx;
@@ -295,149 +274,7 @@ void GL_BindDET (int texture_index)
 //=============================================================================
 /* Support Routines */
 
-typedef struct cachepic_s
-{
-	char		name[MAX_QPATH];
-	qpic_t		pic;
-	byte		padding[32];	// for appended glpic
-} cachepic_t;
-
-#define	MAX_CACHED_PICS		128
-cachepic_t	menu_cachepics[MAX_CACHED_PICS];
-int			menu_numcachepics;
-
 byte		menuplyr_pixels[4096];
-
-static int GL_LoadPicTexture (qpic_t *pic)
-{
-	return GL_LoadTexture ("", pic->width, pic->height, pic->data, qfalse, GU_NEAREST, 0);
-}
-
-/*
-================
-Draw_CachePic
-================
-*/
-qpic_t	*Draw_CachePic (char *path)
-{
-	cachepic_t	*pic;
-	int			i;
-	qpic_t		*dat;
-	glpic_t		*gl;
-	char		str[128];
-
-	strcpy (str, path);
-	for (pic=menu_cachepics, i=0 ; i<menu_numcachepics ; pic++, i++)
-		if (!strcmp (str, pic->name))
-			return &pic->pic;
-
-	if (menu_numcachepics == MAX_CACHED_PICS)
-		Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
-	menu_numcachepics++;
-	strcpy (pic->name, str);
-
-//
-// load the pic from disk
-//
-
-	int index = loadtextureimage (str, 0, 0, qfalse, GU_LINEAR);
-	if(index)
-	{
-		pic->pic.width  = gltextures[index].original_width;
-		pic->pic.height = gltextures[index].original_height;
-
-		gltextures[index].islmp = qfalse;
-		gl = (glpic_t *)pic->pic.data;
-		gl->index = index;
-		GL_MarkTextureAsPermanent(gl->index);
-	
-		return &pic->pic;
-	}
-
-	dat = (qpic_t *)COM_LoadTempFile (str);
-	if (!dat)
-	{
-		strcat (str, ".lmp");
-		dat = (qpic_t *)COM_LoadTempFile (str);
-		if (!dat)
-		{
-			Con_Printf ("Draw_CachePic: failed to load file %s\n", str);
-			return NULL;
-		}
-	}
-	SwapPic (dat);
-
-
-	pic->pic.width = dat->width;
-	pic->pic.height = dat->height;
-
-	gl = (glpic_t *)pic->pic.data;
-	gl->index = GL_LoadPicTexture (dat);
-	GL_MarkTextureAsPermanent(gl->index);
-
-	gltextures[gl->index].islmp = qtrue;
-	return &pic->pic;
-}
-
-/*
-================
-Draw_CacheImg
-================
-*/
-qpic_t	*Draw_CacheImg (char *path)
-{
-	cachepic_t	*pic;
-	int			i;
-	qpic_t		*dat;
-	glpic_t		*gl;
-
-	for (pic=menu_cachepics, i=0 ; i<menu_numcachepics ; pic++, i++)
-		if (!strcmp (path, pic->name))
-			return &pic->pic;
-
-	if (menu_numcachepics == MAX_CACHED_PICS)
-		Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
-	menu_numcachepics++;
-	strcpy (pic->name, path);
-
-//
-// load the pic from disk
-//
-
-	int index = loadtextureimage (path, 0, 0, qfalse, GU_LINEAR);
-	if(index != -1)
-	{
-		pic->pic.width  = gltextures[index].original_width;
-		pic->pic.height = gltextures[index].original_height;
-
-		gl = (glpic_t *)pic->pic.data;
-		gl->index = index;
-		GL_MarkTextureAsPermanent(gl->index);
-
-		return &pic->pic;
-	}
-
-	dat = (qpic_t *)COM_LoadTempFile (path);
-	if (!dat)
-		dat = (qpic_t *)COM_LoadTempFile ("gfx/error.lmp");
-	SwapPic (dat);
-
-	// HACK HACK HACK --- we need to keep the bytes for
-	// the translatable player picture just for the menu
-	// configuration dialog
-	if (!strcmp (path, "gfx/menuplyr.lmp"))
-		memcpy(menuplyr_pixels, dat->data, dat->width*dat->height);
-
-	pic->pic.width = dat->width;
-	pic->pic.height = dat->height;
-
-	gl = (glpic_t *)pic->pic.data;
-	gl->index = GL_LoadPicTexture (dat);
-	GL_MarkTextureAsPermanent(gl->index);
-
-	return &pic->pic;
-}
-
 
 byte nontexdt[8][8] =
 {
@@ -490,7 +327,7 @@ static void R_CreateDlightImage( void )
 			data[y][x] = b;
 		}
 	}
-	ref_texture = GL_LoadTexture ("reftexture", DLIGHT_SIZE, DLIGHT_SIZE, (byte*)data, qfalse, GU_LINEAR, 0);
+	ref_texture = GL_LoadTexture ("reftexture", DLIGHT_SIZE, DLIGHT_SIZE, (byte*)data, false, GU_LINEAR, 0);
 }
 
 // ! " # $ % & ' ( ) * _ , - . / 0
@@ -539,14 +376,13 @@ void Draw_Init (void)
 	// string into the background before turning
 	// it into a texture
 
-	nonetexture = GL_LoadTexture ("nonetexture", 8, 8, (byte*)nontexdt, qfalse, GU_NEAREST, 0);
+	nonetexture = GL_LoadTexture ("nonetexture", 8, 8, (byte*)nontexdt, false, GU_NEAREST, 0);
 	GL_MarkTextureAsPermanent(nonetexture);
 	R_CreateDlightImage();
 
 	// now turn them into textures
-	char_texture = loadtextureimage ("gfx/charset", 0, 0, qfalse, GU_NEAREST);
-	GL_MarkTextureAsPermanent(char_texture);
-	if (char_texture == 0)// did not find a matching TGA...
+	char_texture = Image_LoadImage ("gfx/charset", IMAGE_TGA, GU_NEAREST, true, false);
+	if (char_texture < 0)// did not find a matching TGA...
 		Sys_Error ("Could not load charset, make sure you have every folder and file installed properly\nDouble check that all of your files are in their correct places\nAnd that you have installed the game properly.\nRefer to the readme.txt file for help\n");
 	
 	Clear_LoadingFill ();
@@ -686,132 +522,15 @@ void Draw_String (int x, int y, char *str)
 
 /*
 =============
-Draw_AlphaPic
-=============
-*/
-void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha)
-{
-	if (alpha != 1.0f)
-	{
-		sceGuTexFunc(GU_TFX_DECAL, GU_TCC_RGBA);
-	}
-
-	glpic_t			*gl;
-
-	gl = (glpic_t *)pic->data;
-	if (!gl->index)
-        GL_Bind (nonetexture);
-	else
-        GL_Bind (gl->index);
-
-	struct vertex
-	{
-		short			u, v;
-		short			x, y, z;
-	};
-
-	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
-
-   	vertices[0].u		= 0;
-	vertices[0].v		= 0;
-	vertices[0].x		= x;
-	vertices[0].y		= y;
-	vertices[0].z		= 0;
-
-	const gltexture_t& glt = gltextures[gl->index];
-	if (gltextures[gl->index].islmp)
-	{
-		vertices[1].u	= glt.original_width;
-		vertices[1].v	= glt.original_height;
-	}
-	else
-	{
-		vertices[1].u 	= glt.width;
-		vertices[1].v 	= glt.height;
-	}
-	vertices[1].x		= x + pic->width;
-	vertices[1].y		= y + pic->height;
-	vertices[1].z		= 0;
-
-	sceGuColor(GU_RGBA(0xff, 0xff, 0xff, static_cast<unsigned int>(alpha * 255.0f)));
-
-	sceGuDrawArray(
-		GU_SPRITES,
-		GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D,
-		2, 0, vertices);
-
-    sceGuColor(0xffffffff);
-
-	if (alpha != 1.0f)
-	{
-		sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
-	}
-}
-
-/*
-=============
-Draw_AlphaPicIndex
-=============
-*/
-void Draw_PicIndex (int x, int y, int width, int height, int texture_index)
-{
-	GL_Bind(texture_index);
-
-	struct vertex
-	{
-		short			u, v;
-		short			x, y, z;
-	};
-
-	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
-
-   	vertices[0].u		= 0;
-	vertices[0].v		= 0;
-	vertices[0].x		= x;
-	vertices[0].y		= y;
-	vertices[0].z		= 0;
-
-	const gltexture_t& glt = gltextures[texture_index];
-	if (gltextures[texture_index].islmp)
-	{
-		vertices[1].u	= glt.original_width;
-		vertices[1].v	= glt.original_height;
-	}
-	else
-	{
-		vertices[1].u 	= glt.width;
-		vertices[1].v 	= glt.height;
-	}
-	vertices[1].x		= x + width;
-	vertices[1].y		= y + height;
-	vertices[1].z		= 0;
-
-	sceGuColor(0xffffffff);
-
-	sceGuDrawArray(
-		GU_SPRITES,
-		GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D,
-		2, 0, vertices);
-}
-
-
-
-/*
-=============
 Draw_ColorPic
 =============
 */
-void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float a)
+void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 {
 	sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 
-	glpic_t			*gl;
-
-	gl = (glpic_t *)pic->data;
-	if (!gl->index)
-        GL_Bind (nonetexture);
-	else
-        GL_Bind (gl->index);
+	const gltexture_t &glt = gltextures[pic];
+	GL_Bind (glt.texnum);
 
 	struct vertex
 	{
@@ -828,27 +547,18 @@ void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float
 	vertices[0].y		= y;
 	vertices[0].z		= 0;
 
-	const gltexture_t& glt = gltextures[gl->index];
-	if (gltextures[gl->index].islmp)
-	{
-		vertices[1].u		= glt.original_width;
-		vertices[1].v		= glt.original_height;
-	}
-	else
-	{
-		vertices[1].u 		= glt.width;
-		vertices[1].v 		= glt.height;
-	}
+	vertices[1].u 		= glt.width;
+	vertices[1].v 		= glt.height;
 
-	vertices[1].x		= x + pic->width;
-	vertices[1].y		= y + pic->height;
+	vertices[1].x		= x + glt.original_width;
+	vertices[1].y		= y + glt.original_height;
 	vertices[1].z		= 0;
 
 	sceGuColor(GU_RGBA(
-	static_cast<unsigned int>(r),
-	static_cast<unsigned int>(g),
-	static_cast<unsigned int>(b),
-	static_cast<unsigned int>(a)));
+		static_cast<unsigned int>(r),
+		static_cast<unsigned int>(g),
+		static_cast<unsigned int>(b),
+		static_cast<unsigned int>(a)));
 
 	sceGuDrawArray(
 		GU_SPRITES,
@@ -861,12 +571,22 @@ void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float
 
 /*
 =============
+Draw_AlphaPic
+=============
+*/
+void Draw_AlphaPic (int x, int y, int pic, float alpha)
+{
+	Draw_ColorPic(x, y, pic, 255, 255, 255, alpha);
+}
+
+/*
+=============
 Draw_Pic
 =============
 */
-void Draw_Pic (int x, int y, qpic_t *pic)
+void Draw_Pic (int x, int y, int pic)
 {
-	Draw_AlphaPic(x, y, pic, 1.0f);
+	Draw_AlphaPic(x, y, pic, 255);
 }
 
 /*
@@ -874,16 +594,10 @@ void Draw_Pic (int x, int y, qpic_t *pic)
 Draw_StretchPic
 =============
 */
-void Draw_StretchPic (int x, int y, qpic_t *pic, int x_value, int y_value)
+void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
 {
-
-	glpic_t			*gl;
-
-	gl = (glpic_t *)pic->data;
-	if (!gl->index)
-        GL_Bind (nonetexture);
-	else
-        GL_Bind (gl->index);
+	const gltexture_t &glt = gltextures[pic];
+	GL_Bind (glt.texnum);
 
 	struct vertex
 	{
@@ -893,23 +607,15 @@ void Draw_StretchPic (int x, int y, qpic_t *pic, int x_value, int y_value)
 
 
 	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
-	const gltexture_t& glt = gltextures[gl->index];
 	vertices[0].u = 0;
 	vertices[0].v = 0;
 	vertices[0].x = x;
 	vertices[0].y = y;
 	vertices[0].z = 0;
 
-	if (gltextures[gl->index].islmp)
-	{
-		vertices[1].u		= glt.original_width;
-		vertices[1].v		= glt.original_height;
-	}
-	else
-	{
-		vertices[1].u = glt.width;
-		vertices[1].v = glt.height;
-	}
+	vertices[1].u = glt.width;
+	vertices[1].v = glt.height;
+	
 	vertices[1].x = x + x_value;
 	vertices[1].y = y + y_value;
 	vertices[1].z = 0;
@@ -923,17 +629,12 @@ void Draw_StretchPic (int x, int y, qpic_t *pic, int x_value, int y_value)
 Draw_ColoredStretchPic
 =============
 */
-void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value, int r, int g, int b, int a)
+void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, int r, int g, int b, int a)
 {
 	sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 
-	glpic_t			*gl;
-
-	gl = (glpic_t *)pic->data;
-	if (!gl->index)
-        GL_Bind (nonetexture);
-	else
-        GL_Bind (gl->index);
+	const gltexture_t &glt = gltextures[pic];
+	GL_Bind (glt.texnum);
 
 	struct vertex
 	{
@@ -943,32 +644,24 @@ void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value
 
 
 	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
-	const gltexture_t& glt = gltextures[gl->index];
 	vertices[0].u = 0;
 	vertices[0].v = 0;
 	vertices[0].x = x;
 	vertices[0].y = y;
 	vertices[0].z = 0;
 
-	if (gltextures[gl->index].islmp)
-	{
-		vertices[1].u		= glt.original_width;
-		vertices[1].v		= glt.original_height;
-	}
-	else
-	{
-		vertices[1].u = glt.width;
-		vertices[1].v = glt.height;
-	}
+	vertices[1].u = glt.width;
+	vertices[1].v = glt.height;
+
 	vertices[1].x = x + x_value;
 	vertices[1].y = y + y_value;
 	vertices[1].z = 0;
 
-		sceGuColor(GU_RGBA(
-	static_cast<unsigned int>(r),
-	static_cast<unsigned int>(g),
-	static_cast<unsigned int>(b),
-	static_cast<unsigned int>(a)));
+	sceGuColor(GU_RGBA(
+		static_cast<unsigned int>(r),
+		static_cast<unsigned int>(g),
+		static_cast<unsigned int>(b),
+		static_cast<unsigned int>(a)));
 
 	sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D, 2, 0, vertices);
 
@@ -981,70 +674,18 @@ void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value
 Draw_TransPic
 =============
 */
-void Draw_TransPic (int x, int y, qpic_t *pic)
+void Draw_TransPic (int x, int y, int pic)
 {
+	gltexture_t &texture = gltextures[pic];
 
-	if (x < 0 || (unsigned)(x + pic->width) > vid.width || y < 0 ||
-		 (unsigned)(y + pic->height) > vid.height)
+	if (x < 0 || (unsigned)(x + texture.width) > vid.width || y < 0 ||
+		 (unsigned)(y + texture.height) > vid.height)
 	{
 		Sys_Error ("bad coordinates");
 	}
 
 	Draw_Pic (x, y, pic);
 }
-
-/*
-=============
-Draw_TransPicTranslate
-
-Only used for the player color selection menu
-=============
-*/
-void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation)
-{
-	int				v, c;
-	unsigned	    trans[64*64];
-	int				p;
-
-	c = pic->width * pic->height;
-
-	for(v = 0; v < c ; v++)
-	{
-       	p = menuplyr_pixels[v];
-		if (p == 255)
-			trans[v] = p;
-		else
-			trans[v] = translation[p];
-	}
-    int translate_texture = GL_LoadTexture ("Player_Trl", pic->width, pic->height, (byte*)trans, qtrue, GU_LINEAR, 0);
-
-	GL_Bind (translate_texture);
-
-	struct vertex
-	{
-		short u, v;
-		short x, y, z;
-	};
-
-	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
-
-	vertices[0].u = 0;
-	vertices[0].v = 0;
-	vertices[0].x = x;
-	vertices[0].y = y;
-	vertices[0].z = 0;
-
-	vertices[1].u = 64;
-	vertices[1].v = 64;
-	vertices[1].x = x + pic->width;
-	vertices[1].y = y + pic->height;
-	vertices[1].z = 0;
-
-	sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D, 2, 0, vertices);
-
-    GL_UnloadTexture(translate_texture);
-}
-
 
 /*
 ================
@@ -1074,6 +715,10 @@ void Draw_LoadingFill(void)
 {
     if(!loading_num_step)
 		return;
+
+	if (developer.value) {
+		return;
+	}
 
 	int size       	= 8;
 	int max_step   	= 350;
@@ -1203,10 +848,7 @@ extern "C"	cvar_t	crosshair;
 extern cvar_t crosshair;
 extern qboolean croshhairmoving;
 //extern cvar_t cl_zoom;
-extern qpic_t *hitmark;
-double Hitmark_Time, crosshair_spread_time;
-float cur_spread;
-float crosshair_offset_step;
+extern int hitmark;
 
 int CrossHairWeapon (void)
 {
@@ -1403,7 +1045,7 @@ void Draw_Crosshair (void)
 	}
 		
    	if (Hitmark_Time > sv.time)
-        Draw_Pic ((vid.width - hitmark->width)/2,(vid.height - hitmark->height)/2, hitmark);
+		Draw_ColoredStretchPic ((vid.width - 16)/2, (vid.height - 16)/2, hitmark, 16, 16, 255, 255, 255, 225);
 
 	// Make sure to do this after hitmark drawing.
 	if (cl.stats[STAT_ZOOM] == 2 || cl.stats[STAT_ZOOM] == 1)
@@ -1506,7 +1148,7 @@ void Draw_Crosshair (void)
 			cur_spread = 2;
 		}
 
-		crosshair_pulse_grenade = qfalse;
+		crosshair_pulse_grenade = false;
 
         crosshair_offset = 12 + cur_spread;
 		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5;
@@ -1548,7 +1190,7 @@ void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, flo
 {
 	int num;
 	int scale_int = rint(scale);
-	qboolean white = qtrue;
+	qboolean white = true;
 
 	if (y <= -8)
 		return;			// totally off screen
@@ -2630,16 +2272,17 @@ GL_UnloadTexture
 void GL_UnloadTexture(int texture_index)
 {
 	if (gltextures_used[texture_index] == false) return;
+	if (gltextures[texture_index].keep) return;
 	if (gltextures_is_permanent[texture_index]) return;
 
-	gltexture_t& texture = gltextures[texture_index];
+	gltexture_t &texture = gltextures[texture_index];
 
 	// Con_Printf("Unloading: %s,%d\n",texture.identifier, texture.bpp);
 	// Source.
 	strcpy(texture.identifier,"");
 	texture.original_width = 0;
 	texture.original_height = 0;
-	texture.stretch_to_power_of_two = qfalse;
+	texture.stretch_to_power_of_two = false;
 
 	// Fill in the texture description.
 	texture.format  = GU_PSM_T8;
@@ -2649,12 +2292,14 @@ void GL_UnloadTexture(int texture_index)
 	texture.height  = 0;
 	texture.mipmaps = 0;
 	texture.swizzle = 0;
+	texture.texnum 	= -1;
 
 	if (texture.palette != NULL)
 	{
 		free(texture.palette);
 		texture.palette = NULL;
 	}
+	
 	// Buffers.
 	if (texture.ram != NULL)
 	{
@@ -2677,19 +2322,8 @@ void GL_UnloadAllTextures() {
 	}
 }
 
-/*
-For marking textures as something that should never be cleaned up, like fonts, zombie, etc.
-There should never be need to change anything back from permanent.
-*/
-void GL_MarkTextureAsPermanent(int texture_index) {
-	if (gltextures_used[texture_index] == false) {
-		Sys_Error("Tried to mark an empty texture as permanent!\n");
-	}
-
-	gltextures_is_permanent[texture_index] = true;
-}
-
-int GL_TextureForName(const char * identifier) {
+int Image_FindImage(const char *identifier) 
+{
 	// See if the texture is already present.
 	if (identifier[0])
 	{
@@ -2697,7 +2331,7 @@ int GL_TextureForName(const char * identifier) {
 		{
 			if (gltextures_used[i] == true)
 			{
-				const gltexture_t& texture = gltextures[i];
+				const gltexture_t &texture = gltextures[i];
 				if (!strcmp (identifier, texture.identifier))
 				{
 					return i;
@@ -2743,20 +2377,20 @@ GL_LoadTexture
 */
 int GL_LoadTexture (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level)
 {
-	int texture_index = GL_TextureForName(identifier);
+	int texture_index = Image_FindImage(identifier);
 	if (texture_index >= 0) return texture_index;
 
-	tex_scale_down = r_tex_scale_down.value == qtrue;
+	tex_scale_down = r_tex_scale_down.value == true;
 	
 	texture_index = GL_GetTextureIndex();
 
-	gltexture_t& texture = gltextures[texture_index];
+	gltexture_t &texture = gltextures[texture_index];
 
 	// Fill in the source data.
 	strcpy(texture.identifier, identifier);
 	texture.original_width			= width;
 	texture.original_height			= height;
-	texture.stretch_to_power_of_two	= stretch_to_power_of_two != qfalse;
+	texture.stretch_to_power_of_two	= stretch_to_power_of_two != false;
 
 	// Fill in the texture description.
 	texture.format			= GU_PSM_T8;
@@ -2764,6 +2398,7 @@ int GL_LoadTexture (const char *identifier, int width, int height, byte *data, q
 	texture.mipmaps			= mipmap_level;
 	texture.swizzle         = GU_TRUE;
 	texture.bpp             = 1;
+	texture.texnum			= texture_index;
 
 	if (tex_scale_down == true && texture.stretch_to_power_of_two == true)
 	{
@@ -2833,7 +2468,7 @@ GL_LoadPalTex
 */
 int GL_LoadPalTex (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, byte *palette, int paltype)
 {
-	int texture_index = GL_TextureForName(identifier);
+	int texture_index = Image_FindImage(identifier);
 	if (texture_index >= 0) return texture_index;
 
 	byte * pal = palette;
@@ -2849,16 +2484,16 @@ GL_LoadTextureLM
 */
 int GL_LoadTextureLM (const char *identifier, int width, int height, byte *data, int bpp, int filter, qboolean update, int forcopy)
 {
-	tex_scale_down = r_tex_scale_down.value == qtrue;
-	int texture_index = GL_TextureForName(identifier);
-	if (texture_index >= 0 && update == qfalse) {
+	tex_scale_down = r_tex_scale_down.value == true;
+	int texture_index = Image_FindImage(identifier);
+	if (texture_index >= 0 && update == false) {
 		return texture_index;
 	}
 
-	if (update == qfalse || texture_index == -1)
+	if (update == false || texture_index == -1)
 	{
 		texture_index = GL_GetTextureIndex();
-		gltexture_t& texture = gltextures[texture_index];
+		gltexture_t &texture = gltextures[texture_index];
 		gltextures_used[texture_index] = true;
 
 		// Fill in the source data.
@@ -2889,6 +2524,7 @@ int GL_LoadTextureLM (const char *identifier, int width, int height, byte *data,
 
 		texture.filter			= filter;
 		texture.mipmaps			= 0;
+		texture.texnum			= texture_index;
 
 		if(forcopy)
 		{
@@ -2971,7 +2607,7 @@ int GL_LoadTextureLM (const char *identifier, int width, int height, byte *data,
 	}
 	else
 	{
-		gltexture_t& texture = gltextures[texture_index];
+		gltexture_t &texture = gltextures[texture_index];
 
 		if ((width == texture.original_width) && (height == texture.original_height))
 		{
@@ -3034,22 +2670,24 @@ GL_LoadImages
 ================
 */
 int total_overbudget_texturemem;
-int GL_LoadImages (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp)
+int GL_LoadImages (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp, qboolean keep)
 {
-	int texture_index = GL_TextureForName(identifier);
+	int texture_index = Image_FindImage(identifier);
 	if (texture_index >= 0) return texture_index;
 
-	tex_scale_down = r_tex_scale_down.value == qtrue;
+	tex_scale_down = r_tex_scale_down.value == true;
 	
 	texture_index = GL_GetTextureIndex();
 
-	gltexture_t& texture = gltextures[texture_index];
+	gltexture_t &texture = gltextures[texture_index];
 	// Fill in the source data.
 	strcpy(texture.identifier, identifier);
 	texture.original_width			= width;
 	texture.original_height			= height;
-	texture.stretch_to_power_of_two	= stretch_to_power_of_two != qfalse;
+	texture.stretch_to_power_of_two	= stretch_to_power_of_two != false;
 	texture.bpp                     = bpp;
+	texture.keep					= keep;
+	texture.texnum					= texture_index;
 
 	// Fill in the texture description.
 	switch(texture.bpp)
@@ -3153,7 +2791,7 @@ int GL_LoadImages (const char *identifier, int width, int height, byte *data, qb
 	// Allocate the RAM.
 	std::size_t buffer_size = GL_GetTexSize(texture.format, texture.width, texture.height, 0);
 
-	Con_DPrintf("Loading: %s [%dx%d](%0.2f KB)\n",texture.identifier,texture.width,texture.height, (float) buffer_size/1024);
+	//Con_DPrintf("Loading: %s [%dx%d](%0.2f KB)\n",texture.identifier,texture.width,texture.height, (float) buffer_size/1024);
 
 	texture.ram	= static_cast<texel*>(memalign(16, buffer_size));
 
@@ -3216,7 +2854,7 @@ int GL_LoadTexture8Pal32 (char *identifier, int width, int height, byte *data, b
 		trans[i*4+3] = gammatable[pal[data[i]*4+3]];
 	}
 
-    int index = GL_LoadImages (identifier, width, height, trans, qtrue, GU_LINEAR, 0, 4);
+    int index = GL_LoadImages (identifier, width, height, trans, true, GU_LINEAR, 0, 4, true);
 	free(trans);
 	return index;
 }
@@ -3238,7 +2876,7 @@ int GL_LoadTexture8Pal24 (char *identifier, int width, int height, byte *data, b
 		trans[i*4+3] = 255;
 	}
 
-    int index = GL_LoadImages (identifier, width, height, trans, qtrue, GU_LINEAR, 0, 4);
+    int index = GL_LoadImages (identifier, width, height, trans, true, GU_LINEAR, 0, 4, true);
 	free(trans);
 	return index;
 }
@@ -3280,23 +2918,24 @@ void GL_Upload4(int texture_index, const byte *data, int width, int height)
 
 int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, byte *data, int filter, qboolean swizzled)
 {
-	int texture_index = GL_TextureForName(identifier);
+	int texture_index = Image_FindImage(identifier);
 	if (texture_index >= 0) return texture_index;
 
 	texture_index = GL_GetTextureIndex();
-	gltexture_t& texture = gltextures[texture_index];
+	gltexture_t &texture = gltextures[texture_index];
 
 	// Fill in the source data.
 	strcpy(texture.identifier, identifier);
 	texture.original_width = texture.width = width;
 	texture.original_height = texture.height = height;
-	texture.stretch_to_power_of_two = qfalse;
+	texture.stretch_to_power_of_two = false;
 	texture.swizzle = swizzled;
 
 	// Fill in the texture description.
 	texture.format = GU_PSM_T4;
 	texture.filter = filter;
 	texture.mipmaps = 0; // mipmap_level;
+	texture.texnum	= texture_index;
 
 
 	Con_DPrintf("Loading: %s [%dx%d](%0.2f KB)\n", texture.identifier, texture.width, texture.height, (float)(texture.width*texture.height) / 1024);
@@ -3328,10 +2967,10 @@ int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int hei
 
 int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int height, byte *data, const byte *pal, int filter, int inpal_bpp, const byte * palhint)
 {
-	int texture_index = GL_TextureForName(identifier);
+	int texture_index = Image_FindImage(identifier);
 	if (texture_index >= 0) return texture_index;
 
-	tex_scale_down = r_tex_scale_down.value == qtrue;
+	tex_scale_down = r_tex_scale_down.value == true;
 	int new_width = width;
 	int new_height = height;
 	if (tex_scale_down == true)
@@ -3369,7 +3008,7 @@ int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int 
 
 	free(unswizzled_data);
 
-	int id = GL_LoadTexture4(identifier, new_width, new_height, clut4data, filter, qtrue);
+	int id = GL_LoadTexture4(identifier, new_width, new_height, clut4data, filter, true);
 
 	free(clut4data);
 	free(resamp_data);
