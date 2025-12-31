@@ -78,10 +78,10 @@ struct
 	byte			data[MAX_DATAGRAM];
 } packetBuffer;
 
-extern int m_return_state;
-extern int m_state;
-extern qboolean m_return_onerror;
-extern char m_return_reason[32];
+int m_return_state;
+//extern int m_state;
+qboolean m_return_onerror;
+char m_return_reason[32];
 
 
 #ifdef DEBUG
@@ -1349,7 +1349,7 @@ ErrorReturn2:
 	if (m_return_onerror)
 	{
 		key_dest = key_menu;
-		m_state = m_return_state;
+		//m_state = m_return_state;
 		m_return_onerror = false;
 	}
 	return NULL;
