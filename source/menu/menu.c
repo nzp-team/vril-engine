@@ -16,25 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
+#include "../nzportable_def.h"
 #include "menu_defs.h"
-
-// Platform specific character representing
-// which button is default bound to "enter"
-// a menu
-extern char         enter_char;
-
-// Loading screens
-extern image_t      loadingScreen;
-extern char*        loadname2;
-extern char*        loadnamespec;
-extern qboolean     loadscreeninit;
+#include "menu_dummy.h"
 
 // =============
 // Custom maps
 // =============
 #define             MAX_CUSTOMMAPS 64
 
-image_t             menu_custom;
 image_t             menu_cuthum[MAX_CUSTOMMAPS];
 achievement_list_t  achievement_list[MAX_ACHIEVEMENTS];
 
@@ -66,6 +56,28 @@ int     current_custom_map_page;
 int     custom_map_pages;
 int     multiplier;
 char    user_levels[256][MAX_QPATH];
+
+image_t 	menu_background;
+float       menu_changetime;
+float       menu_starttime;
+
+// Constant menu images
+image_t      menu_bk;
+image_t      menu_ndu;
+image_t      menu_wh;
+image_t      menu_wh2;
+image_t      menu_ch;
+image_t		 menu_custom;
+
+char*        game_build_date;
+
+// play after drawing a frame, so caching 
+// won't disrupt the sound
+qboolean	        m_entersound;
+qboolean	        m_recursiveDraw;
+
+// Current menu state
+int m_state;
 
 //=============================================================================
 /* Menu Subsystem */
@@ -128,6 +140,13 @@ void Menu_Draw (void)
 	else
 	{
 		m_recursiveDraw = false;
+	}
+
+	// Menu Background Changing
+	if (cl.time > menu_changetime) {
+		menu_background = Menu_PickBackground();
+		menu_changetime = cl.time + 7;
+		menu_starttime = cl.time;
 	}
 
 	switch (m_state)
@@ -203,7 +222,7 @@ void Menu_Draw (void)
 }
 
 
-void M_Keydown (int key)
+void Menu_Keydown (int key)
 {
 	switch (m_state)
 	{

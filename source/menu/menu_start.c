@@ -16,7 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
+#include "../nzportable_def.h"
 #include "menu_defs.h"
+#include "menu_dummy.h"
 
 //=============================================================================
 /* START SCREEN */
@@ -38,6 +40,9 @@ void Menu_Start_Set ()
 	loadingScreen = 0;
 }
 
+// TODO - make this a platform global
+char *enter_char = "A";
+
 /*
 ===============
 Menu_Start_Draw
@@ -55,7 +60,7 @@ void Menu_Start_Draw ()
 	// Draw Background;
 	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
-	Draw_ColoredStringCentered(vid.height - (vid.height/(vid.height>>4), start_string, 255, 0, 0, 255, menu_scale_factor);
+	Draw_ColoredStringCentered(vid.height - (vid.height/(vid.height>>4)), start_string, 255, 0, 0, 255, menu_scale_factor);
 }
 
 /*

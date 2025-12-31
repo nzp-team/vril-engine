@@ -32,13 +32,13 @@ Host_Quit_f
 ==================
 */
 
-extern void M_Menu_Quit_f (void);
+extern void Menu_Quit_Set (void);
 
 void Host_Quit_f (void)
 {
 	if (key_dest != key_console && cls.state != ca_dedicated)
 	{
-		M_Menu_Quit_f ();
+		Menu_Quit_Set ();
 		return;
 	}
 	CL_Disconnect ();
