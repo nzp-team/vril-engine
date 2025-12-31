@@ -16,7 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
+#include "../nzportable_def.h"
 #include "menu_defs.h"
+#include "menu_dummy.h"
 
 //=============================================================================
 /* MAIN MENU */
@@ -58,7 +60,7 @@ void Menu_Main_Draw (void)
 	else
 		Menu_DrawButton(1, "SOLO", MENU_BUTTON_ACTIVE, BUTTON_DESELECTED, "");
 
-	Menu_DrawButton(2, "COOPERATIVE (Coming Soon!)", MENU_BUTTON_INACTIVE, "");
+	Menu_DrawButton(2, "COOPERATIVE (Coming Soon!)", MENU_BUTTON_INACTIVE, BUTTON_DESELECTED, "");
 
 	Menu_DrawDivider(3);
 
@@ -67,7 +69,7 @@ void Menu_Main_Draw (void)
 	else
 		Menu_DrawButton(4, "CONFIGURATION", MENU_BUTTON_ACTIVE, BUTTON_DESELECTED, "");;
 
-	Menu_DrawButton(5, "ACHIEVEMENTS", MENU_BUTTON_INACTIVE, "");
+	Menu_DrawButton(5, "ACHIEVEMENTS", MENU_BUTTON_INACTIVE, BUTTON_DESELECTED, "");
 
 	Menu_DrawDivider(6);
 
@@ -129,19 +131,19 @@ void Menu_Main_Key (int key)
 		switch (m_main_cursor)
 		{
 		case 0:
-			M_Menu_SinglePlayer_f ();
+			Menu_SinglePlayer_Set ();
 			break;
 
 		case 1:
-			M_Menu_Options_f ();
+			Menu_Options_Set ();
 			break;
 
 		case 2:
-			M_Menu_Credits_f ();
+			Menu_Credits_Set ();
 			break;
 
 		case 3:
-			M_Menu_Quit_f ();
+			Menu_Quit_Set ();
 			break;
 		}
 	}

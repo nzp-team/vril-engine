@@ -845,8 +845,7 @@ Host_Init
 ====================
 */
 #include "cl_slist.h"
-
-void M_Start_Menu_f (void);
+void Menu_Start_Set (void);
 void Host_Init (quakeparms_t *parms)
 {
 
@@ -915,7 +914,7 @@ void Host_Init (quakeparms_t *parms)
 #ifdef __WII__
 	VIDEO_SetBlack(false);
 #endif
-	M_Start_Menu_f();
+	Menu_Start_Set();
 	Sys_Printf ("========Nazi Zombies Portable Initialized=========\n");	
 }
 

@@ -832,7 +832,7 @@ void Key_Event (int key, qboolean down)
 		break;
 	case key_menu:
 	case key_menu_pause:
-		M_Keydown (key);
+		Menu_Keydown (key);
 		break;
 
 	case key_game:

@@ -16,13 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
+#include "../nzportable_def.h"
 #include "menu_defs.h"
+#include "menu_dummy.h"
 
 //=============================================================================
 /* PAUSE MENU */
 
 int M_Paused_Cusor;
 #define MAX_PAUSED_ITEMS 5
+
+// Waypoint saving in pause screen
+extern cvar_t waypoint_mode;
 
 /*
 ===============
@@ -46,6 +51,9 @@ Menu_Paused_Draw
 */
 void Menu_Paused_Draw ()
 {
+    // TODO!!
+
+
 	// Fill black to make everything easier to see
 	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
 
@@ -96,20 +104,20 @@ void Menu_Paused_Key (int key)
 	{
 		case K_ESCAPE:
 		case K_AUX2:
-			S_LocalSound ("sounds/menu/enter.wav");
+			Menu_StartSound(MENU_SND_ENTER);
 			Cbuf_AddText("togglemenu\n");
 			break;
 
 		case K_DOWNARROW:
-			S_LocalSound ("sounds/menu/navigate.wav");
-			if (++M_Paused_Cusor >= Max_Paused_Iteams)
+			Menu_StartSound(MENU_SND_NAVIGATE);
+			if (++M_Paused_Cusor >= MAX_PAUSED_ITEMS)
 				M_Paused_Cusor = 0;
 			break;
 
 		case K_UPARROW:
-			S_LocalSound ("sounds/menu/navigate.wav");
+			Menu_StartSound(MENU_SND_NAVIGATE);
 			if (--M_Paused_Cusor < 0)
-				M_Paused_Cusor = Max_Paused_Iteams - 1;
+				M_Paused_Cusor = MAX_PAUSED_ITEMS - 1;
 			break;
 
 		case K_ENTER:
@@ -123,10 +131,10 @@ void Menu_Paused_Key (int key)
 				m_state = m_none;
 				break;
 			case 1:
-				M_Menu_Restart_f();
+				Menu_Restart_Set();
 				break;
 			case 2:
-				M_Menu_Options_f();
+				Menu_Options_Set();
 				key_dest = key_menu_pause;
 				break;
 			case 3:
@@ -139,7 +147,7 @@ void Menu_Paused_Key (int key)
 				key_dest = key_menu_pause;
 				break;
 			case 4:
-				M_Menu_Exit_f();
+				Menu_Exit_Set();
 				break;
 			}
 		}

@@ -16,7 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
+#include "../nzportable_def.h"
 #include "menu_defs.h"
+#include "menu_dummy.h"
+
+float   menu_scale_factor;
 
 /*
 ===============
@@ -64,14 +68,26 @@ void Menu_StartSound (int type)
     switch (type) {
         case MENU_SND_NAVIGATE:
             S_LocalSound ("sounds/menu/navigate.wav");
+            break;
         case MENU_SND_ENTER:
             S_LocalSound ("sounds/menu/enter.wav");
+            break;
         case MENU_SND_BEEP:
             S_LocalSound ("sounds/misc/talk2.wav");
-        case default:
+            break;
+        default:
             Con_Printf("Unsupported menu sound\n");
+            break;
     }
 }
+
+image_t Menu_PickBackground ()
+{
+    // TODO
+
+    return menu_bk;
+}
+
 
 /*
 ======================
@@ -80,7 +96,7 @@ Menu_DrawCustomBackground
 */
 void Menu_DrawCustomBackground ()
 {
-    float elapsed_background_time = time - menu_starttime;
+    float elapsed_background_time = cl.time - menu_starttime;
 
 	int big_bar_height = vid.height/(vid.height>>4);
 	int small_bar_height = vid.height/(vid.height>>8);
@@ -129,7 +145,7 @@ void Menu_DrawTitle (char *title_name)
 	int x_pos = (vid.width/(vid.width/vid.width>>6))/menu_scale_factor;
 	int y_pos = (vid.height/(vid.height>>6))/menu_scale_factor;
 
-	Draw_ColoredString (x_pos, y_pos, 255, 255, 255, menu_scale_factor*2);
+	Draw_ColoredString (x_pos, y_pos, title_name, 255, 255, 255, 255, menu_scale_factor*2);
 }
 
 /*
@@ -139,7 +155,7 @@ Menu_DrawButton
 */
 void Menu_DrawButton (int order, char* button_name, int button_active, int button_selected, char* button_summary)
 {
-	
+	// TODO
 }
 
 /*

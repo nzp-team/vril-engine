@@ -95,7 +95,7 @@ void Con_ToggleConsole_f (void)
 		else
 		{
 			console_enabled = false;
-			M_Menu_Main_f ();
+			Menu_Main_Set ();
 		}
 	}
 	else
