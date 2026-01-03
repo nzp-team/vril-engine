@@ -38,7 +38,6 @@ void Menu_Paused_Set ()
 {
 	key_dest = key_menu_pause;
 	m_state = m_paused_menu;
-	m_entersound = true;
 	loadingScreen = 0;
 	loadscreeninit = false;
 	M_Paused_Cusor = 0;
@@ -122,8 +121,6 @@ void Menu_Paused_Key (int key)
 
 		case K_ENTER:
 		case K_AUX1:
-			m_entersound = true;
-
 			switch (M_Paused_Cusor)
 			{
 			case 0:
