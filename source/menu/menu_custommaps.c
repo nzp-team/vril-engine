@@ -55,7 +55,7 @@ int     user_maps_num = 0;
 int     current_custom_map_page;
 int     custom_map_pages;
 int     multiplier;
-int     num_custom_images;
+int     num_custom_images = 0;
 char    user_levels[256][MAX_QPATH];
 
 /*
@@ -201,7 +201,7 @@ void Menu_Preload_Custom_Images(void)
 	for (int i = 0; i < user_maps_num; i++) {
 		if (custom_maps[i].map_use_thumbnail == 1) {
 			// custom map is loaded and has a menu image
-			menu_usermap_image[i] = Image_LoadImage(custom_maps[i].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+			menu_usermap_image[i] = Image_LoadImage(custom_maps[i].map_thumbnail_path, IMAGE_PNG | IMAGE_TGA | IMAGE_JPG, 0, false, false);
 			if (menu_usermap_image[i] > -1) {
 				num_custom_images++;
 			}
