@@ -90,7 +90,13 @@ COMMON_OBJS =	system.o \
 				keys.c \
 				mathlib.c \
 				matrixlib.c \
-				platform/ctr/menu.c \
+				menu/menu.c \
+				menu/menu_custommaps.c \
+				menu/menu_helper.c \
+				menu/menu_main.c \
+				menu/menu_pause.c \
+				menu/menu_start.c \
+				menu/menu_stubs.c \
 				platform/ctr/net_dgrm.c \
 				platform/ctr/net_udpctr.c \
 				net_loop.c \
@@ -208,6 +214,7 @@ $(BUILD):
 	@mkdir -p $(BUILD)/platform/ctr
 	@mkdir -p $(BUILD)/platform/ctr/gl
 	@mkdir -p $(BUILD)/render
+	@mkdir -p $(BUILD)/menu
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile.ctr
 	@mkdir -p $(BUILD)/3ds
 	@mkdir -p $(BUILD)/3ds/bin/
