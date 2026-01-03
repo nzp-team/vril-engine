@@ -35,7 +35,6 @@ void Menu_Main_Set (void)
 {
 	key_dest = key_menu;
 	m_state = m_main;
-	m_entersound = true;
 }
 
 /*
@@ -46,7 +45,7 @@ Menu_Main_Draw
 void Menu_Main_Draw (void)
 {
 	// Background
-	Menu_DrawCustomBackground();
+	Menu_DrawCustomBackground ();
 
 	// Header
 	Menu_DrawTitle ("MAIN MENU");
@@ -60,46 +59,30 @@ void Menu_Main_Draw (void)
 	else
 		Menu_DrawButton(1, "SOLO", MENU_BUTTON_ACTIVE, BUTTON_DESELECTED, "");
 
-	Menu_DrawButton(2, "COOPERATIVE (Coming Soon!)", MENU_BUTTON_INACTIVE, BUTTON_DESELECTED, "");
+	Menu_DrawButton(2, "COOPERATIVE", MENU_BUTTON_INACTIVE, BUTTON_DESELECTED, "");
 
 	Menu_DrawDivider(3);
 
 	if (m_main_cursor == 1)
-		Menu_DrawButton(4, "CONFIGURATION", MENU_BUTTON_ACTIVE, BUTTON_SELECTED, "Tweak Game Related Options");
+		Menu_DrawButton(3.25, "CONFIGURATION", MENU_BUTTON_ACTIVE, BUTTON_SELECTED, "Tweak Game Related Options");
 	else
-		Menu_DrawButton(4, "CONFIGURATION", MENU_BUTTON_ACTIVE, BUTTON_DESELECTED, "");;
+		Menu_DrawButton(3.25, "CONFIGURATION", MENU_BUTTON_ACTIVE, BUTTON_DESELECTED, "");;
 
-	Menu_DrawButton(5, "ACHIEVEMENTS", MENU_BUTTON_INACTIVE, BUTTON_DESELECTED, "");
+	Menu_DrawButton(4.25, "ACHIEVEMENTS", MENU_BUTTON_INACTIVE, BUTTON_DESELECTED, "");
 
-	Menu_DrawDivider(6);
+	Menu_DrawDivider(5.25);
 
 	if (m_main_cursor == 2)
-		Menu_DrawButton(7, "CREDITS", MENU_BUTTON_ACTIVE, BUTTON_SELECTED, "NZ:P Team + Special Thanks");
+		Menu_DrawButton(5.50, "CREDITS", MENU_BUTTON_ACTIVE, BUTTON_SELECTED, "NZ:P Team + Special Thanks");
 	else
-		Menu_DrawButton(7, "CREDITS", MENU_BUTTON_ACTIVE, BUTTON_DESELECTED, "");
+		Menu_DrawButton(5.50, "CREDITS", MENU_BUTTON_ACTIVE, BUTTON_DESELECTED, "");
 
-	Menu_DrawDivider(8);
+	Menu_DrawDivider(6.50);
 
 	if (m_main_cursor == 3)
-		Menu_DrawButton(9, "QUIT GAME", MENU_BUTTON_ACTIVE, BUTTON_SELECTED, "Return to Home Screen");
+		Menu_DrawButton(6.75, "QUIT GAME", MENU_BUTTON_ACTIVE, BUTTON_SELECTED, "Return to Home Screen");
 	else
-		Menu_DrawButton(9, "QUIT GAME", MENU_BUTTON_ACTIVE, BUTTON_DESELECTED, "");
-
-	// Descriptions
-	switch(m_main_cursor) {
-		case 0: // Solo
-			Draw_ColoredString(5, 220, "Take on the Hordes by yourself.", 255, 255, 255, 255, 1);
-			break;
-		case 1: // Settings
-			Draw_ColoredString(5, 220, "Adjust your Settings to Optimize your Experience.", 255, 255, 255, 255, 1);
-			break;
-		case 2: // Credits
-			Draw_ColoredString(5, 220, "See who made NZ:P possible.", 255, 255, 255, 255, 1);
-			break;
-		case 3: // Exit
-			Draw_ColoredString(5, 220, "Return to Home Menu.", 255, 255, 255, 255, 1);
-			break;
-	}
+		Menu_DrawButton(6.75, "QUIT GAME", MENU_BUTTON_ACTIVE, BUTTON_DESELECTED, "");
 }
 
 /*
@@ -126,7 +109,6 @@ void Menu_Main_Key (int key)
 
 	case K_ENTER:
 	case K_AUX1:
-		m_entersound = true;
 		Menu_StartSound(MENU_SND_ENTER);
 		switch (m_main_cursor)
 		{
