@@ -90,6 +90,9 @@ void Menu_StartSound (int type)
 
 image_t Menu_PickBackground ()
 {
+	// No custom images
+	if (num_custom_images == 0) return menu_bk;
+
 	int i = (rand() % num_custom_images);
 
 	if (menu_usermap_image[i] <= 0)	return menu_bk;
@@ -107,7 +110,7 @@ void Menu_DrawCustomBackground ()
 {
     float elapsed_background_time = menu_time - menu_starttime;
 
-	int big_bar_height = vid.height/10;
+	int big_bar_height = vid.height/9;
 	int small_bar_height = vid.height/64;
 
 	// 
@@ -124,15 +127,20 @@ void Menu_DrawCustomBackground ()
 	//
 	// Fade new images in/out
 	//
-	float alpha = 0;
+	float alphaf = 0;
 
-	if (elapsed_background_time < 1.0) {
-        alpha = 1.0f - sin((elapsed_background_time / 1.0f) * (M_PI / 2));  // Opacity from 1 -> 0
+	if (elapsed_background_time < 1.0f) {
+        alphaf = 1.0f - (float)sin((elapsed_background_time / 1.0f) * ((float)M_PI / 2));  // Opacity from 1 -> 0
     } else if (elapsed_background_time < 6.0f) {
-        alpha = 0.0f;
+        alphaf = 0.0f;
     } else if (elapsed_background_time < 7.0f) {
-        alpha = sin(((elapsed_background_time - 6.0f) / 1.0f) * (M_PI / 2));  // Opacity from 0 -> 1
+        alphaf = (float)sin(((elapsed_background_time - 6.0f) / 1.0f) * ((float)M_PI / 2));  // Opacity from 0 -> 1
     }
+
+	if (alphaf < 0.0f) alphaf = 0.0f;
+	if (alphaf > 1.0f) alphaf = 1.0f;
+
+	float alpha = (alphaf * 255);
 
 	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, alpha);
 
@@ -140,7 +148,7 @@ void Menu_DrawCustomBackground ()
 
 	// Top Bars
 	Draw_FillByColor(0, 0, vid.width, big_bar_height, 0, 0, 0, 228);
-	Draw_FillByColor(0, big_bar_height + small_bar_height, vid.width, small_bar_height, 130, 130, 130, 255);
+	Draw_FillByColor(0, big_bar_height, vid.width, small_bar_height, 130, 130, 130, 255);
 
 	// Bottom Bars
 	Draw_FillByColor(0, (vid.height - big_bar_height), vid.width, big_bar_height, 0, 0, 0, 228);
