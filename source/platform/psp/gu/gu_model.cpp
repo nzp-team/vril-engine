@@ -2045,15 +2045,23 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][2] =
 			pheader->gl_texturenum[i][3] = is_viewmodel ? Image_LoadImage (model2, IMAGE_TGA | IMAGE_PCX, GU_LINEAR, false, false) : loadpcxas4bpp(model2, GU_LINEAR);
 
-			if (pheader->gl_texturenum[i][0] < 0)// did not find a matching TGA...
+			if (pheader->gl_texturenum[i][0] < 0)//try again for external tga model textures
 			{
-				sprintf (name, "%s_%i", loadmodel->name, i);
-				pheader->gl_texturenum[i][0] =
-				pheader->gl_texturenum[i][1] =
+				pheader->gl_texturenum[i][0] = 
+				pheader->gl_texturenum[i][1] = 
 				pheader->gl_texturenum[i][2] =
-				pheader->gl_texturenum[i][3] = is_viewmodel
-					? GL_LoadTexture (name, pheader->skinwidth,pheader->skinheight, (byte *)(pskintype), true, GU_LINEAR, 0)
-					: GL_LoadTexture8to4(name, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1), (byte*)d_8to24table, GU_LINEAR, 4, NULL);
+				pheader->gl_texturenum[i][3] = Image_LoadImage (model2, IMAGE_TGA, GU_LINEAR, false, false);
+
+				if (pheader->gl_texturenum[i][0] < 0)// did not find a matching TGA...
+				{
+					sprintf (name, "%s_%i", loadmodel->name, i);
+					pheader->gl_texturenum[i][0] =
+					pheader->gl_texturenum[i][1] =
+					pheader->gl_texturenum[i][2] =
+					pheader->gl_texturenum[i][3] = is_viewmodel
+						? GL_LoadTexture (name, pheader->skinwidth,pheader->skinheight, (byte *)(pskintype), true, GU_LINEAR, 0)
+						: GL_LoadTexture8to4(name, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1), (byte*)d_8to24table, GU_LINEAR, 4, NULL);
+				}
 			}
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 		}
