@@ -30,13 +30,9 @@ Menu_Start_Set
 */
 void Menu_Start_Set ()
 {
-    // TODO - Achievements WIP
-	//Load_Achivements();
-
-	Menu_LoadPics();
+	Menu_LoadPics ();
 	key_dest = key_menu;
 	m_state = m_start;
-	m_entersound = true;
 	loadingScreen = 0;
 }
 
@@ -60,7 +56,7 @@ void Menu_Start_Draw ()
 	// Draw Background;
 	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
-	Draw_ColoredStringCentered(vid.height - (vid.height/(vid.height>>4)), start_string, 255, 0, 0, 255, menu_scale_factor);
+	Draw_ColoredStringCentered(vid.height - (vid.height/14), start_string, 255, 0, 0, 255, menu_scale_factor);
 }
 
 /*
