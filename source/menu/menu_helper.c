@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "menu_dummy.h"
 
 float   menu_scale_factor;
+float	CHAR_WIDTH;
+float	CHAR_HEIGHT;
 
 /*
 ===============
@@ -41,6 +43,9 @@ void Menu_DictateScaleFactor(void)
 #else
 	menu_scale_factor = 1.0f;
 #endif // __NSPIRE__, __PSP__, __vita__, __3DS__
+
+	CHAR_WIDTH = 8*menu_scale_factor;
+	CHAR_HEIGHT = 8*menu_scale_factor;
 }
 
 /*
@@ -56,6 +61,8 @@ void Menu_LoadPics ()
 	menu_wh2 	= Image_LoadImage("gfx/menu/nzp_warehouse2", IMAGE_PNG, 0, false, false);
 	menu_ch 	= Image_LoadImage("gfx/menu/christmas_special", IMAGE_PNG, 0, false, false);
 	menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_PNG, 0, false, false);
+
+	Menu_Preload_Custom_Images ();
 }
 
 /*
@@ -83,9 +90,11 @@ void Menu_StartSound (int type)
 
 image_t Menu_PickBackground ()
 {
-    // TODO
+	int i = (rand() % num_custom_images);
 
-    return menu_bk;
+	if (menu_usermap_image[i] <= 0)	return menu_bk;
+
+    return (image_t)menu_usermap_image[i];
 }
 
 
@@ -96,18 +105,21 @@ Menu_DrawCustomBackground
 */
 void Menu_DrawCustomBackground ()
 {
-    float elapsed_background_time = cl.time - menu_starttime;
+    float elapsed_background_time = menu_time - menu_starttime;
 
-	int big_bar_height = vid.height/(vid.height>>4);
-	int small_bar_height = vid.height/(vid.height>>8);
+	int big_bar_height = vid.height/10;
+	int small_bar_height = vid.height/64;
 
 	// 
 	// Slight background pan
 	//
-	float x_pos = 0 + (((vid.width * 1.05) - vid.width) * (elapsed_background_time/7));
 
-	Draw_StretchPic(x_pos, 0, menu_background, vid.width, vid.height);
-	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 178);
+	// TODO
+
+	//float x_pos = 0 + (((vid.width * 1.05) - vid.width) * (elapsed_background_time/7));
+
+	Draw_StretchPic(0, 0, menu_background, vid.width, vid.height);
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 84);
 
 	//
 	// Fade new images in/out
@@ -124,15 +136,15 @@ void Menu_DrawCustomBackground ()
 
 	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, alpha);
 
-	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 178);
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 84);
 
 	// Top Bars
 	Draw_FillByColor(0, 0, vid.width, big_bar_height, 0, 0, 0, 228);
-	Draw_FillByColor(0, (vid.height - big_bar_height) - small_bar_height, vid.width, small_bar_height, 52, 52, 52, 255);
+	Draw_FillByColor(0, big_bar_height + small_bar_height, vid.width, small_bar_height, 130, 130, 130, 255);
 
 	// Bottom Bars
-	Draw_FillByColor(0, vid.height-(big_bar_height), vid.width, big_bar_height, 0, 0, 0, 228);
-	Draw_FillByColor(0, (vid.height - big_bar_height) + small_bar_height, vid.width, small_bar_height, 52, 52, 52, 255);
+	Draw_FillByColor(0, (vid.height - big_bar_height), vid.width, big_bar_height, 0, 0, 0, 228);
+	Draw_FillByColor(0, (vid.height - big_bar_height) - small_bar_height, vid.width, small_bar_height, 130, 130, 130, 255);
 }
 
 /*
@@ -142,8 +154,8 @@ Menu_DrawTitle
 */
 void Menu_DrawTitle (char *title_name)
 {
-	int x_pos = (vid.width/(vid.width/vid.width>>6))/menu_scale_factor;
-	int y_pos = (vid.height/(vid.height>>6))/menu_scale_factor;
+	int x_pos = vid.width/64;
+	int y_pos = vid.height/24;
 
 	Draw_ColoredString (x_pos, y_pos, title_name, 255, 255, 255, 255, menu_scale_factor*2);
 }
@@ -155,7 +167,42 @@ Menu_DrawButton
 */
 void Menu_DrawButton (int order, char* button_name, int button_active, int button_selected, char* button_summary)
 {
-	// TODO
+	int x_pos = (vid.width/3) - getTextWidth(button_name, menu_scale_factor); 
+	int y_pos = (vid.height/8) + (order*15);
+
+	int border_width = (vid.height/144);
+	int x_length = (vid.width/3) + border_width;
+	int border_height_offset = (vid.height/96);
+
+	// Inactive (grey) menu button
+	// Non-selectable
+	if (button_active == MENU_BUTTON_INACTIVE) {
+		Draw_ColoredString (x_pos, y_pos, button_name, 128, 128, 128, 255, menu_scale_factor);
+	} else if (button_active == MENU_BUTTON_ACTIVE) {
+		// Active menu buttons
+		// Selected
+		if (button_selected == BUTTON_SELECTED) {
+			// Make button red and add a box around it
+
+			// Draw selection box
+			// Done in 3 parts
+			// Top
+			Draw_FillByColor (0, y_pos - border_height_offset, x_length, border_width, 255, 0, 0, 255);
+			// Bottom
+			Draw_FillByColor (0, (y_pos + (border_height_offset*2)) + (CHAR_HEIGHT/2), x_length, border_width, 255, 0, 0, 255);
+			// Side
+			Draw_FillByColor (x_length, (y_pos - (CHAR_HEIGHT/2)) + (border_height_offset), border_width, (border_height_offset) + CHAR_HEIGHT + border_width, 255, 0, 0, 255);
+
+			// Draw button string
+			Draw_ColoredString (x_pos, y_pos, button_name, 255, 0, 0, 255, menu_scale_factor);
+
+			// Draw the bottom screen text for selected button 
+			Draw_ColoredStringCentered (vid.height - (vid.height/14), button_summary, 255, 255, 255, 255, menu_scale_factor);
+		} else if (button_selected == BUTTON_DESELECTED) {
+			// Unselected button
+			Draw_ColoredString (x_pos, y_pos, button_name, 255, 255, 255, 255, menu_scale_factor);
+		}
+	}
 }
 
 /*
@@ -165,9 +212,15 @@ Menu_DrawBuildDate
 */
 void Menu_DrawBuildDate ()
 {
-	int y_pos = (vid.height/(vid.height>>8))/menu_scale_factor;
+	char* welcome_text = "Welcome, player  ";
 
-	Draw_ColoredString((vid.width - getTextWidth(game_build_date, menu_scale_factor)), y_pos, game_build_date, 255, 255, 255, 255, 1);
+	int y_pos = vid.height/64;
+	int y_offset = vid.height/24;
+
+	// Build date/information
+	Draw_ColoredString((vid.width - getTextWidth(game_build_date, menu_scale_factor)), y_pos, game_build_date, 255, 255, 255, 255, menu_scale_factor);
+	// Welcome text
+	Draw_ColoredString((vid.width - getTextWidth(welcome_text, menu_scale_factor)), y_pos + y_offset, welcome_text, 255, 255, 0, 255, menu_scale_factor);
 }
 
 /*
@@ -177,7 +230,9 @@ Menu_DrawDivider
 */
 void Menu_DrawDivider (int order)
 {
-	int y_pos;
+	int y_pos = ((vid.height/8) + (order*15)) - (CHAR_HEIGHT/2);
+	int x_length = (vid.width/3);
+	int y_length = (vid.height/144);
 
-	Draw_FillByColor(0, 113, 160, 2, 130, 130, 130, 255);
+	Draw_FillByColor(0, y_pos, x_length, y_length, 130, 130, 130, 255);
 }

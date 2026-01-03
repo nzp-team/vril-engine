@@ -20,43 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "menu_defs.h"
 #include "menu_dummy.h"
 
-// =============
-// Custom maps
-// =============
-#define             MAX_CUSTOMMAPS 64
-
-image_t             menu_cuthum[MAX_CUSTOMMAPS];
-achievement_list_t  achievement_list[MAX_ACHIEVEMENTS];
-
-typedef struct
-{
-	int 		occupied;
-	int 	 	map_allow_game_settings;
-	int 	 	map_use_thumbnail;
-	char* 		map_name;
-	char* 		map_name_pretty;
-	char* 		map_desc_1;
-	char* 		map_desc_2;
-	char* 		map_desc_3;
-	char* 		map_desc_4;
-	char* 		map_desc_5;
-	char* 		map_desc_6;
-	char* 		map_desc_7;
-	char* 		map_desc_8;
-	char* 		map_author;
-	char* 		map_thumbnail_path;
-} usermap_t;
-
-usermap_t   custom_maps[50];
-
-int	    m_map_cursor;
-int	    MAP_ITEMS;
-int     user_maps_num = 0;
-int     current_custom_map_page;
-int     custom_map_pages;
-int     multiplier;
-char    user_levels[256][MAX_QPATH];
-
 image_t 	menu_background;
 float       menu_changetime;
 float       menu_starttime;
@@ -71,13 +34,13 @@ image_t		 menu_custom;
 
 char*        game_build_date;
 
-// play after drawing a frame, so caching 
-// won't disrupt the sound
-qboolean	        m_entersound;
-qboolean	        m_recursiveDraw;
+qboolean	 m_recursiveDraw;
 
 // Current menu state
 int m_state;
+
+// Menu time keeping
+float menu_time;
 
 //=============================================================================
 /* Menu Subsystem */
@@ -92,6 +55,14 @@ void Menu_Init (void)
 	//Cmd_AddCommand ("menu_keys", Menu_Keys_Set);
 	//Cmd_AddCommand ("menu_video", Menu_Video_Set);
 	//Cmd_AddCommand ("menu_quit", Menu_Quit_Set);
+
+	Menu_DictateScaleFactor ();
+	// TODO - Achievements WIP
+	//Load_Achivements();
+
+	Menu_Map_Finder();
+
+	menu_changetime = 0;
 
 	// Snag the game version
 	long length;
@@ -111,8 +82,6 @@ void Menu_Init (void)
 	} else {
 		game_build_date = "version.txt not found.";
 	}
-
-	//Map_Finder();
 }
 
 
@@ -120,6 +89,8 @@ void Menu_Draw (void)
 {
 	if (m_state == m_none || (key_dest != key_menu && key_dest != key_menu_pause))
 		return;
+
+	menu_time = Sys_FloatTime ();
 
 	if (!m_recursiveDraw)
 	{
@@ -143,10 +114,10 @@ void Menu_Draw (void)
 	}
 
 	// Menu Background Changing
-	if (cl.time > menu_changetime) {
+	if (menu_time > menu_changetime) {
 		menu_background = Menu_PickBackground();
-		menu_changetime = cl.time + 7;
-		menu_starttime = cl.time;
+		menu_changetime = menu_time + 7;
+		menu_starttime = menu_time;
 	}
 
 	switch (m_state)
@@ -208,12 +179,6 @@ void Menu_Draw (void)
 
 	default:
 		Con_Printf("Cannot identify menu for case %d\n", m_state);
-	}
-
-	if (m_entersound)
-	{
-		Menu_StartSound (MENU_SND_ENTER);
-		m_entersound = false;
 	}
 
 	VID_UnlockBuffer ();
@@ -293,8 +258,6 @@ Menu_ToggleMenu_f
 */
 void Menu_ToggleMenu_f (void)
 {
-	m_entersound = true;
-
 	if (key_dest == key_menu || key_dest == key_menu_pause) {
 		if (m_state != m_main && m_state != m_paused_menu) {
 			Menu_Main_Set ();

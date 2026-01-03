@@ -3,6 +3,8 @@
 // ===========
 extern int m_state;
 
+extern float menu_time;
+
 #define	m_none			0
 #define	m_start			1
 #define	m_main			2
@@ -26,9 +28,6 @@ extern int m_state;
 #define	m_search		20
 #define	m_slist			21
 
-// play after drawing a frame, so caching 
-// won't disrupt the sound
-extern qboolean	        m_entersound;
 extern qboolean	        m_recursiveDraw;
 
 extern float            menu_scale_factor;
@@ -65,6 +64,12 @@ extern char*        game_build_date;
 extern image_t      loadingScreen;
 extern qboolean     loadscreeninit;
 
+// Custom maps
+#define             MAX_CUSTOMMAPS 64
+extern int          user_maps_num;
+extern int          num_custom_images;
+extern image_t      menu_usermap_image[MAX_CUSTOMMAPS];
+
 /*
 ===========================================================================
 ===========================================================================
@@ -73,6 +78,7 @@ FUNCTION DEFINES
 ===========================================================================
 */
 
+void Menu_DictateScaleFactor(void);
 void Menu_LoadPics (void);
 void Menu_StartSound (int type);
 image_t Menu_PickBackground ();
@@ -81,3 +87,6 @@ void Menu_DrawTitle (char *title_name);
 void Menu_DrawButton (int order, char* button_name, int button_active, int button_selected, char* button_summary);
 void Menu_DrawBuildDate ();
 void Menu_DrawDivider (int order);
+
+void Menu_Map_Finder (void);
+void Menu_Preload_Custom_Images (void);

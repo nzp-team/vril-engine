@@ -1594,7 +1594,7 @@ void SCR_UpdateScreen (void)
 	SCR_CheckDrawUseString ();
 	HUD_Draw ();
 	SCR_DrawConsole ();
-	M_Draw ();
+	Menu_Draw ();
 
 	if(scr_loadscreen.value) {
 		SCR_DrawLoadScreen();
