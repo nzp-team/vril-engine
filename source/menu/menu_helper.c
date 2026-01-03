@@ -167,8 +167,11 @@ Menu_DrawButton
 */
 void Menu_DrawButton (int order, char* button_name, int button_active, int button_selected, char* button_summary)
 {
+	// y factor for vertical menu ordering
+	int y_factor = (vid.height/16);
+
 	int x_pos = (vid.width/3) - getTextWidth(button_name, menu_scale_factor); 
-	int y_pos = (vid.height/8) + (order*15);
+	int y_pos = (vid.height/8) + (order*y_factor);
 
 	int border_width = (vid.height/144);
 	int x_length = (vid.width/3) + border_width;
@@ -230,7 +233,10 @@ Menu_DrawDivider
 */
 void Menu_DrawDivider (int order)
 {
-	int y_pos = ((vid.height/8) + (order*15)) - (CHAR_HEIGHT/2);
+	// y factor for vertical menu ordering
+	int y_factor = (vid.height/16);
+	
+	int y_pos = ((vid.height/8) + (order*y_factor)) - (CHAR_HEIGHT/2);
 	int x_length = (vid.width/3);
 	int y_length = (vid.height/144);
 
