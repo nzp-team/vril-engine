@@ -18,7 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "../nzportable_def.h"
 #include "menu_defs.h"
-#include "menu_dummy.h"
 
 //=============================================================================
 /* MAIN MENU */
@@ -53,36 +52,26 @@ void Menu_Main_Draw (void)
 	// Version String
 	Menu_DrawBuildDate();
 
-	// Solo
-	if (m_main_cursor == 0)
-		Menu_DrawButton(1, "SOLO", MENU_BUTTON_ACTIVE, BUTTON_SELECTED, "Play Solo.");
-	else
-		Menu_DrawButton(1, "SOLO", MENU_BUTTON_ACTIVE, BUTTON_DESELECTED, "");
-
-	Menu_DrawButton(2, "COOPERATIVE", MENU_BUTTON_INACTIVE, BUTTON_DESELECTED, "");
+	Menu_DrawButton(1, 1, "SOLO", MENU_BUTTON_ACTIVE, "Play Solo.");
+	Menu_DrawButton(2, 0, "COOPERATIVE", MENU_BUTTON_INACTIVE, "");
 
 	Menu_DrawDivider(3);
 
-	if (m_main_cursor == 1)
-		Menu_DrawButton(3.25, "CONFIGURATION", MENU_BUTTON_ACTIVE, BUTTON_SELECTED, "Tweak Game Related Options");
-	else
-		Menu_DrawButton(3.25, "CONFIGURATION", MENU_BUTTON_ACTIVE, BUTTON_DESELECTED, "");;
-
-	Menu_DrawButton(4.25, "ACHIEVEMENTS", MENU_BUTTON_INACTIVE, BUTTON_DESELECTED, "");
+	Menu_DrawButton(3.25, 2, "CONFIGURATION", MENU_BUTTON_ACTIVE, "Tweak Game Related Options");
+	Menu_DrawButton(4.25, 0, "ACHIEVEMENTS", MENU_BUTTON_INACTIVE, "");
 
 	Menu_DrawDivider(5.25);
 
-	if (m_main_cursor == 2)
-		Menu_DrawButton(5.50, "CREDITS", MENU_BUTTON_ACTIVE, BUTTON_SELECTED, "NZ:P Team + Special Thanks");
-	else
-		Menu_DrawButton(5.50, "CREDITS", MENU_BUTTON_ACTIVE, BUTTON_DESELECTED, "");
+	Menu_DrawButton(5.50, 3, "CREDITS", MENU_BUTTON_ACTIVE, "NZ:P Team + Special Thanks");
 
 	Menu_DrawDivider(6.50);
 
-	if (m_main_cursor == 3)
-		Menu_DrawButton(6.75, "QUIT GAME", MENU_BUTTON_ACTIVE, BUTTON_SELECTED, "Return to Home Screen");
-	else
-		Menu_DrawButton(6.75, "QUIT GAME", MENU_BUTTON_ACTIVE, BUTTON_DESELECTED, "");
+	Menu_DrawButton(6.75, 4, "QUIT GAME", MENU_BUTTON_ACTIVE, "Return to Home Screen");
+
+	Menu_DrawSocialBadge (1, MENU_SOC_YOUTUBE);
+	Menu_DrawSocialBadge (2, MENU_SOC_BLUESKY);
+	Menu_DrawSocialBadge (3, MENU_SOC_PATREON);
+	Menu_DrawSocialBadge (4, MENU_SOC_DOCS);
 }
 
 /*
@@ -112,21 +101,22 @@ void Menu_Main_Key (int key)
 		Menu_StartSound(MENU_SND_ENTER);
 		switch (m_main_cursor)
 		{
-		case 0:
-			Menu_SinglePlayer_Set ();
-			break;
+			case 0:
+				menu_is_solo = true;
+				Menu_StockMaps_Set ();
+				break;
 
-		case 1:
-			Menu_Options_Set ();
-			break;
+			case 1:
+				Menu_Options_Set ();
+				break;
 
-		case 2:
-			Menu_Credits_Set ();
-			break;
+			case 2:
+				Menu_Credits_Set ();
+				break;
 
-		case 3:
-			Menu_Quit_Set ();
-			break;
+			case 3:
+				Menu_Quit_Set ();
+				break;
 		}
 	}
 }

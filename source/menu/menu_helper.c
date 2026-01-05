@@ -18,7 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "../nzportable_def.h"
 #include "menu_defs.h"
-#include "menu_dummy.h"
 
 float   menu_scale_factor;
 float	CHAR_WIDTH;
@@ -62,6 +61,8 @@ void Menu_LoadPics ()
 	menu_ch 	= Image_LoadImage("gfx/menu/christmas_special", IMAGE_PNG, 0, false, false);
 	menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_PNG, 0, false, false);
 
+	menu_social = Image_LoadImage("gfx/menu/social", IMAGE_TGA, 0, false, false);
+
 	Menu_Preload_Custom_Images ();
 }
 
@@ -95,6 +96,7 @@ image_t Menu_PickBackground ()
 
 	int i = (rand() % num_custom_images);
 
+	// Sometimes custom map images are invalid
 	if (menu_usermap_image[i] <= 0)	return menu_bk;
 
     return (image_t)menu_usermap_image[i];
@@ -155,6 +157,40 @@ void Menu_DrawCustomBackground ()
 	Draw_FillByColor(0, (vid.height - big_bar_height) - small_bar_height, vid.width, small_bar_height, 130, 130, 130, 255);
 }
 
+void Menu_DrawSocialBadge (int order, int which)
+{
+	int y_factor = (vid.height/6);
+	int y_pos = (vid.height/2) + (order*y_factor);
+	int x_pos = vid.width - (vid.width/6);
+	float s = 0;
+	float t = 0;
+
+	switch (which) {
+		case MENU_SOC_DOCS:
+			s = 0;
+			t = 0;
+			break;
+
+		case MENU_SOC_YOUTUBE:
+			s = 0.5;
+			t = 0;
+			break;
+
+		case MENU_SOC_BLUESKY:
+			s = 0;
+			t = 0.5;
+			break;
+
+		case MENU_SOC_PATREON:
+			s = 0.5;
+			t = 0.5;
+			break;
+	}
+
+	Draw_SubPic (x_pos, y_pos, menu_social, s, t, 255, 255, 255, 255);
+
+}
+
 /*
 ======================
 Menu_DrawTitle
@@ -168,12 +204,51 @@ void Menu_DrawTitle (char *title_name)
 	Draw_ColoredString (x_pos, y_pos, title_name, 255, 255, 255, 255, menu_scale_factor*2);
 }
 
+qboolean Menu_IsHovered (int button_number)
+{
+	switch (m_state) {
+		case m_main:
+			if (button_number == (m_main_cursor+1)) {
+				return true;
+			}
+			break;
+		case m_stockmaps:
+			if (button_number == (m_stockmaps_cursor+1)) {
+				return true;
+			}
+			break;
+	}
+
+	return false;
+}
+
+/*
+======================
+Menu_DrawSelectionBox
+======================
+*/
+void Menu_DrawSelectionBox (int x_pos, int y_pos)
+{
+	int border_width = (vid.height/144);
+	int x_length = (vid.width/3) + border_width;
+	int border_height_offset = (vid.height/96);
+
+	// Draw selection box
+	// Done in 3 parts
+	// Top
+	Draw_FillByColor (0, y_pos - border_height_offset, x_length, border_width, 255, 0, 0, 255);
+	// Bottom
+	Draw_FillByColor (0, (y_pos + (border_height_offset*2)) + (CHAR_HEIGHT/2), x_length, border_width, 255, 0, 0, 255);
+	// Side
+	Draw_FillByColor (x_length, (y_pos - (CHAR_HEIGHT/2)) + (border_height_offset), border_width, (border_height_offset) + CHAR_HEIGHT + border_width, 255, 0, 0, 255);
+}
+
 /*
 ======================
 Menu_DrawButton
 ======================
 */
-void Menu_DrawButton (int order, char* button_name, int button_active, int button_selected, char* button_summary)
+void Menu_DrawButton (int order, int button_number, char* button_name, int button_active, char* button_summary)
 {
 	// y factor for vertical menu ordering
 	int y_factor = (vid.height/16);
@@ -181,36 +256,25 @@ void Menu_DrawButton (int order, char* button_name, int button_active, int butto
 	int x_pos = (vid.width/3) - getTextWidth(button_name, menu_scale_factor); 
 	int y_pos = (vid.height/8) + (order*y_factor);
 
-	int border_width = (vid.height/144);
-	int x_length = (vid.width/3) + border_width;
-	int border_height_offset = (vid.height/96);
-
 	// Inactive (grey) menu button
 	// Non-selectable
 	if (button_active == MENU_BUTTON_INACTIVE) {
 		Draw_ColoredString (x_pos, y_pos, button_name, 128, 128, 128, 255, menu_scale_factor);
 	} else if (button_active == MENU_BUTTON_ACTIVE) {
 		// Active menu buttons
-		// Selected
-		if (button_selected == BUTTON_SELECTED) {
+		// Hovering over button
+		if (Menu_IsHovered(button_number)) {
 			// Make button red and add a box around it
-
-			// Draw selection box
-			// Done in 3 parts
-			// Top
-			Draw_FillByColor (0, y_pos - border_height_offset, x_length, border_width, 255, 0, 0, 255);
-			// Bottom
-			Draw_FillByColor (0, (y_pos + (border_height_offset*2)) + (CHAR_HEIGHT/2), x_length, border_width, 255, 0, 0, 255);
-			// Side
-			Draw_FillByColor (x_length, (y_pos - (CHAR_HEIGHT/2)) + (border_height_offset), border_width, (border_height_offset) + CHAR_HEIGHT + border_width, 255, 0, 0, 255);
-
 			// Draw button string
 			Draw_ColoredString (x_pos, y_pos, button_name, 255, 0, 0, 255, menu_scale_factor);
 
+			// Draw selection box
+			Menu_DrawSelectionBox (x_pos, y_pos);
+
 			// Draw the bottom screen text for selected button 
 			Draw_ColoredStringCentered (vid.height - (vid.height/14), button_summary, 255, 255, 255, 255, menu_scale_factor);
-		} else if (button_selected == BUTTON_DESELECTED) {
-			// Unselected button
+		} else {
+			// Not hovering over button
 			Draw_ColoredString (x_pos, y_pos, button_name, 255, 255, 255, 255, menu_scale_factor);
 		}
 	}
@@ -249,4 +313,16 @@ void Menu_DrawDivider (int order)
 	int y_length = (vid.height/144);
 
 	Draw_FillByColor(0, y_pos, x_length, y_length, 130, 130, 130, 255);
+}
+
+/*
+======================
+Menu_DrawMapPanel
+======================
+*/
+void Menu_DrawMapPanel ()
+{
+	//TODO
+
+	//Draw_FillByColor();
 }
