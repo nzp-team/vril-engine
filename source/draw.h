@@ -32,6 +32,7 @@ void Draw_ColoredStretchPic (int x, int y,  int texnum, int x_value, int y_value
 void Draw_ColoredString (int x, int y, char *text, float r, float g, float b, float a, float scale);
 void Draw_ColoredStringCentered(int y, char *text, float r, float g, float b, float a, float scale);
 void Draw_TransPic (int x, int y,  int texnum);
+void Draw_SubPic (int x, int y, int pic, float s, float t, float r, float g , float b, float a);
 void Draw_ConsoleBackground (int lines);
 void Draw_AlphaPic (int x, int y,  int texnum, float alpha);
 #ifdef __PSP__
