@@ -18,7 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "../nzportable_def.h"
 #include "menu_defs.h"
-#include "menu_dummy.h"
 // needed for Map_Finder()
 #include <sys/dirent.h>
 

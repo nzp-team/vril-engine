@@ -18,7 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "../nzportable_def.h"
 #include "menu_defs.h"
-#include "menu_dummy.h"
 
 //=============================================================================
 /* START SCREEN */
@@ -71,7 +70,7 @@ void Menu_Start_Key (int key)
 		case K_ENTER:
 		case K_AUX1:
             Menu_StartSound(MENU_SND_ENTER);
-			Cbuf_AddText("togglemenu\n");
+			Menu_Main_Set();
 			break;
 	}
 }
