@@ -18,29 +18,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "../nzportable_def.h"
 #include "menu_defs.h"
-#include "menu_dummy.h"
-
-image_t 	menu_background;
-float       menu_changetime;
-float       menu_starttime;
-
-// Constant menu images
-image_t      menu_bk;
-image_t      menu_ndu;
-image_t      menu_wh;
-image_t      menu_wh2;
-image_t      menu_ch;
-image_t		 menu_custom;
-
-char*        game_build_date;
-
-qboolean	 m_recursiveDraw;
-
-// Current menu state
-int m_state;
 
 // Menu time keeping
-float menu_time;
+float 			menu_time;
+image_t			menu_background;
+float			menu_changetime;
+float			menu_starttime;
+
+// Constant menu images
+image_t			menu_bk;
+image_t			menu_ndu;
+image_t			menu_wh;
+image_t			menu_wh2;
+image_t			menu_ch;
+image_t			menu_custom;
+image_t			menu_social;
+
+char*			game_build_date;
+
+qboolean		m_recursiveDraw;
+
+// Current menu state
+int 			m_state;
+
+qboolean		menu_is_solo;
 
 //=============================================================================
 /* Menu Subsystem */
@@ -137,8 +138,8 @@ void Menu_Draw (void)
 		Menu_Main_Draw ();
 		break;
 
-	case m_singleplayer:
-		Menu_SinglePlayer_Draw ();
+	case m_stockmaps:
+		Menu_StockMaps_Draw ();
 		break;
 
 	case m_options:
@@ -206,8 +207,8 @@ void Menu_Keydown (int key)
 		Menu_Main_Key (key);
 		return;
 
-	case m_singleplayer:
-		Menu_SinglePlayer_Key (key);
+	case m_stockmaps:
+		Menu_StockMaps_Key (key);
 		return;
 
 	case m_options:
