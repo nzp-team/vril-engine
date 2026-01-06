@@ -2667,8 +2667,8 @@ void PF_precache_sound (void)
 	G_INT(OFS_RETURN) = G_INT(OFS_PARM0);
 	PR_CheckEmptyString (s);
 
-	// shpuld: if parm0 address == temp string address, allocate a new string.
-	// trying to precache temp string creates breaks potential future precaches.
+	// shpuld: if parm0 address == temp string address then we're trying to precache temp string.
+	// trying to precache temp string potentially breaks future precaches, so copy contents to zone.
 	if (G_STRING(OFS_PARM0) == pr_string_temp) {
 		char * newstr = Z_Malloc(strlen(s) + 1);
 		strcpy(newstr, s);
