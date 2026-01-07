@@ -69,12 +69,12 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     container:
-      image: vitasdk/vitasdk:latest
+      image: gnuton/vitasdk-docker:20251220
     steps:
       - uses: actions/checkout@v2
       - name: Install Packages and update VitaSDK
         run: |
-          apk add bash build-base zip git curl
+          apt update && apt install -y build-essential
       - name: Build
         working-directory: ./
         run: |
