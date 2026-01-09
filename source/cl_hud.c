@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef __PSP__
 #include <pspmath.h>
-void Save_Achivements (void);
 #endif // __PSP__
 
 image_t		sb_round[5];
