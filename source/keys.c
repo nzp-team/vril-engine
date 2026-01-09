@@ -9,7 +9,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
 
 See the GNU General Public License for more details.
 
@@ -136,9 +136,6 @@ keyname_t keynames[] =
 
 	{NULL,0}
 };
-
-char	consoleInput[MAXCMDLINE];
-qboolean consoleOskDone = false;
 
 /*
 ==============================================================================
@@ -274,7 +271,7 @@ void Key_Console (int key)
 		con_backscroll = 0;
 		return;
 	}
-
+	
 	if (key < 32 || key > 127)
 		return;	// non printable
 
@@ -351,7 +348,7 @@ the K_* names are matched up.
 int Key_StringToKeynum (char *str)
 {
 	keyname_t	*kn;
-
+	
 	if (!str || !str[0])
 		return -1;
 	if (!str[1])
@@ -376,9 +373,9 @@ FIXME: handle quote special (general escape sequence?)
 */
 char *Key_KeynumToString (int keynum)
 {
-	keyname_t	*kn;
+	keyname_t	*kn;	
 	static	char	tinystr[2];
-
+	
 	if (keynum == -1)
 		return "<KEY NOT FOUND>";
 	if (keynum > 32 && keynum < 127)
@@ -387,7 +384,7 @@ char *Key_KeynumToString (int keynum)
 		tinystr[1] = 0;
 		return tinystr;
 	}
-
+	
 	for (kn=keynames ; kn->name ; kn++)
 		if (keynum == kn->keynum)
 			return kn->name;
@@ -405,7 +402,7 @@ void Key_SetBinding (int keynum, char *binding)
 {
 	char	*new;
 	int		l;
-
+			
 	if (keynum == -1)
 		return;
 
@@ -414,15 +411,14 @@ void Key_SetBinding (int keynum, char *binding)
 		Z_Free (keybindings[keynum]);
 		keybindings[keynum] = NULL;
 	}
-
+			
 // allocate memory for new binding
-	l = Q_strlen (binding);
+	l = Q_strlen (binding);	
 	new = Z_Malloc (l+1);
 	Q_strcpy (new, binding);
 	new[l] = 0;
-	keybindings[keynum] = new;
+	keybindings[keynum] = new;	
 }
-
 
 /*
 ===================
@@ -464,7 +460,7 @@ void Key_Unbind_f (void)
 		Con_Printf ("unbind <key> : remove commands from a key\n");
 		return;
 	}
-
+	
 	b = Key_StringToKeynum (Cmd_Argv(1));
 	if (b==-1) {
 		Con_Printf ("\"%s\" isn't a valid key\n", Cmd_Argv(1));
@@ -477,7 +473,7 @@ void Key_Unbind_f (void)
 void Key_Unbindall_f (void)
 {
 	int		i;
-
+	
 	for (i=0 ; i<256 ; i++)
 		if (keybindings[i])
 			Key_SetBinding (i, "");
@@ -493,7 +489,7 @@ void Key_Bind_f (void)
 {
 	int			i, c, b;
 	char		cmd[1024];
-
+	
 	c = Cmd_Argc();
 
 	if (c != 2 && c != 3) {
@@ -513,7 +509,7 @@ void Key_Bind_f (void)
 			Con_Printf ("\"%s\" is not bound\n", Cmd_Argv(1) );
 		return;
 	}
-
+	
 // copy the rest of the command line
 	cmd[0] = 0;		// start out with a null string
 	for (i=2 ; i< c ; i++) {
@@ -524,6 +520,7 @@ void Key_Bind_f (void)
 
 	Key_SetBinding (b, cmd);
 }
+
 /*
 ===================
 Key_Binddt_f
@@ -747,9 +744,9 @@ void Key_Event (int key, qboolean down)
 		if (key != K_RIGHTFACE && key_repeats[key] > 1) {
 			return;	// ignore most autorepeats
 		}
-
+			
 		if (key >= 200 && !keybindings[key])
-			Con_Printf ("%s is unbound, hit START to set.\n", Key_KeynumToString (key) );
+			Con_Printf ("%s is unbound, hit F4 to set.\n", Key_KeynumToString (key) );
 	}
 
 //
@@ -804,19 +801,19 @@ void Key_Event (int key, qboolean down)
 			lastkey = 0;
 		}
 
-			kb = keybindings[key];
-			if (kb)
+		kb = keybindings[key];
+		if (kb)
+		{
+			if (kb[0] == '+')
+			{	// button commands add keynum as a parm
+				sprintf (cmd, "%s %i\n", kb, key);
+				Cbuf_AddText (cmd);
+			}
+			else
 			{
-				if (kb[0] == '+')
-				{	// button commands add keynum as a parm
-					sprintf (cmd, "%s %i\n", kb, key);
-					Cbuf_AddText (cmd);
-				}
-				else
-				{
-					Cbuf_AddText (kb);
-					Cbuf_AddText ("\n");
-				}
+				Cbuf_AddText (kb);
+				Cbuf_AddText ("\n");
+			}
 		}
 		return;
 	}

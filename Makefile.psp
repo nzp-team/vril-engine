@@ -60,7 +60,17 @@ COMMON_OBJS = \
 	source/keys.o \
 	source/mathlib.o \
 	source/matrixlib.o \
-	source/platform/psp/menu.o \
+	source/menu/menu.o \
+	source/menu/menu_custommaps.o \
+	source/menu/menu_helper.o \
+	source/menu/menu_main.o \
+	source/menu/menu_stockmaps.o \
+	source/menu/menu_lobby.o \
+	source/menu/menu_pause.o \
+	source/menu/menu_start.o \
+	source/menu/menu_stubs.o \
+	source/menu/menu_loadscreen.o \
+	source/platform/psp/platform_menu.o \
 	source/platform/psp/net_dgrm.o \
 	source/net_loop.o \
 	source/platform/psp/net_main.o \
