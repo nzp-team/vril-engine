@@ -107,6 +107,7 @@ void GL_UnloadTextures (void)
 		GL_FreeTextures(i);
 	}
 }
+
 //=============================================================================
 /* Support Routines */
 
@@ -513,7 +514,7 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	gltexture_t *glt = &gltextures[pic];
-	GL_Bind (glt->texnum);
+	GL_Bind (pic);
 
 	glBegin (GL_QUADS);
 	glTexCoord2f (0, 0);
@@ -536,9 +537,11 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 Draw_SubPic
 =============
 */
-void Draw_SubPic (int x, int y, int pic, float s, float t, float coord_size, float scale, float r, float g , float b, float a)
+void Draw_SubPic (int x, int y, int pic, float s, float t, float r, float g , float b, float a)
 {
 	if (pic < 0) return;
+
+	float size = 4;
 
 	glDisable(GL_ALPHA_TEST);
 	glEnable(GL_BLEND);
@@ -547,21 +550,18 @@ void Draw_SubPic (int x, int y, int pic, float s, float t, float coord_size, flo
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	gltexture_t *glt = &gltextures[pic];
-	GL_Bind (glt->texnum);
+	GL_Bind (pic);
 
 	glBegin (GL_QUADS);
 	glTexCoord2f (s, t);
 	glVertex2f (x, y);
-	glTexCoord2f (s+coord_size, t);
-	glVertex2f (x+(glt->width*scale), y);
-	glTexCoord2f (s+coord_size, t+coord_size);
-	glVertex2f (x+(glt->width*scale), y+(glt->height*scale));
-	glTexCoord2f (s, t+coord_size);
-	glVertex2f (x, y+(glt->height*scale));
+	glTexCoord2f (s, t);
+	glVertex2f (x+(glt->width/size), y);
+	glTexCoord2f (s, t);
+	glVertex2f (x+(glt->width/size), y+(glt->height/size));
+	glTexCoord2f (s, t);
+	glVertex2f (x, y+(glt->height/size));
 	glEnd ();
-
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	glDisable(GL_BLEND);
 	glColor4f(1.0f,1.0f,1.0f,1.0f);

@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //=============================================================================
 /* MAIN MENU */
 
-int	menu_main_cursor;
+int	m_main_cursor;
 #define	MAIN_ITEMS	4
 
 /*
@@ -32,7 +32,6 @@ Menu_Main_Set
 */
 void Menu_Main_Set (void)
 {
-	Menu_LoadPics();
 	key_dest = key_menu;
 	m_state = m_main;
 }
@@ -48,7 +47,7 @@ void Menu_Main_Draw (void)
 	Menu_DrawCustomBackground ();
 
 	// Header
-	Menu_DrawTitle ("MAIN MENU", MENU_COLOR_WHITE);
+	Menu_DrawTitle ("MAIN MENU");
 
 	// Version String
 	Menu_DrawBuildDate();
@@ -87,20 +86,20 @@ void Menu_Main_Key (int key)
 
 	case K_DOWNARROW:
 		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (++menu_main_cursor >= MAIN_ITEMS)
-			menu_main_cursor = 0;
+		if (++m_main_cursor >= MAIN_ITEMS)
+			m_main_cursor = 0;
 		break;
 
 	case K_UPARROW:
 		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (--menu_main_cursor < 0)
-			menu_main_cursor = MAIN_ITEMS - 1;
+		if (--m_main_cursor < 0)
+			m_main_cursor = MAIN_ITEMS - 1;
 		break;
 
 	case K_ENTER:
 	case K_AUX1:
 		Menu_StartSound(MENU_SND_ENTER);
-		switch (menu_main_cursor)
+		switch (m_main_cursor)
 		{
 			case 0:
 				menu_is_solo = true;

@@ -27,6 +27,11 @@ float			menu_starttime;
 
 // Constant menu images
 image_t			menu_bk;
+image_t			menu_ndu;
+image_t			menu_wh;
+image_t			menu_wh2;
+image_t			menu_ch;
+image_t			menu_custom;
 image_t			menu_social;
 
 char*			game_build_date;
@@ -37,13 +42,6 @@ qboolean		m_recursiveDraw;
 int 			m_state;
 
 qboolean		menu_is_solo;
-
-int 			big_bar_height;
-int 			small_bar_height;
-
-int 			num_stock_maps;
-
-int				current_selected_bsp;
 
 //=============================================================================
 /* Menu Subsystem */
@@ -59,10 +57,11 @@ void Menu_Init (void)
 	//Cmd_AddCommand ("menu_video", Menu_Video_Set);
 	//Cmd_AddCommand ("menu_quit", Menu_Quit_Set);
 
+	Menu_DictateScaleFactor ();
 	// TODO - Achievements WIP
 	//Load_Achivements();
 
-	Platform_Menu_MapFinder();
+	Menu_Map_Finder();
 
 	menu_changetime = 0;
 
@@ -115,10 +114,6 @@ void Menu_Draw (void)
 		m_recursiveDraw = false;
 	}
 
-	printf("menu time: %f\n", menu_time);
-	printf("menu_changetime: %f\n", menu_changetime);
-	printf("menu_starttime: %f\n", menu_starttime);
-
 	// Menu Background Changing
 	if (menu_time > menu_changetime) {
 		menu_background = Menu_PickBackground();
@@ -147,14 +142,6 @@ void Menu_Draw (void)
 		Menu_StockMaps_Draw ();
 		break;
 
-	case m_lobby:
-		Menu_Lobby_Draw ();
-		break;
-
-	case m_gamesettings:
-		Menu_GameSettings_Draw ();
-		break;
-
 	case m_options:
 		Menu_Options_Draw ();
 		break;
@@ -181,6 +168,10 @@ void Menu_Draw (void)
 
 	case m_exit:
 		Menu_Exit_Draw ();
+		break;
+
+	case m_gameoptions:
+		Menu_GameOptions_Draw ();
 		break;
 
 	case m_custommaps:
@@ -218,14 +209,6 @@ void Menu_Keydown (int key)
 
 	case m_stockmaps:
 		Menu_StockMaps_Key (key);
-		return;
-
-	case m_lobby:
-		Menu_Lobby_Key (key);
-		return;
-
-	case m_gamesettings:
-		Menu_GameSettings_Key (key);
 		return;
 
 	case m_options:

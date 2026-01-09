@@ -1202,6 +1202,178 @@ void M_SinglePlayer_Key (int key)
 	}
 }
 
+//=============================================================================
+/* ACHIEVEMENT MENU */
+
+int m_achievement_cursor;
+int m_achievement_selected;
+int m_achievement_scroll[2];
+int total_unlocked_achievements;
+int total_locked_achievements;
+
+
+achievement_list_t achievement_list[MAX_ACHIEVEMENTS];
+int achievement_locked;
+
+void Achievement_Init (void)
+{
+	achievement_list[0].img = Image_LoadImage("gfx/achievement/ready", IMAGE_TGA, 0, true, false);
+	achievement_list[0].unlocked = 0;
+	achievement_list[0].progress = 0;
+	strcpy(achievement_list[0].name, "Ready..");
+	strcpy(achievement_list[0].description, "Reach round 5");
+
+	achievement_list[1].img = Image_LoadImage("gfx/achievement/steady", IMAGE_TGA, 0, true, false);
+	achievement_list[1].unlocked = 0;
+	achievement_list[1].progress = 0;
+	strcpy(achievement_list[1].name, "Steady..");
+	strcpy(achievement_list[1].description, "Reach round 10");
+
+	achievement_list[2].img = Image_LoadImage("gfx/achievement/go_hell_no", IMAGE_TGA, 0, true, false);
+	achievement_list[2].unlocked = 0;
+	achievement_list[2].progress = 0;
+	strcpy(achievement_list[2].name, "Go? Hell No...");
+	strcpy(achievement_list[2].description, "Reach round 15");
+
+	achievement_list[3].img = Image_LoadImage("gfx/achievement/where_legs_go", IMAGE_TGA, 0, true, false);
+	achievement_list[3].unlocked = 0;
+	achievement_list[3].progress = 0;
+	strcpy(achievement_list[3].name, "Where Did Legs Go?");
+	strcpy(achievement_list[3].description, "Turn a zombie into a crawler");
+
+	achievement_list[4].img = Image_LoadImage("gfx/achievement/the_f_bomb", IMAGE_TGA, 0, true, false);
+	achievement_list[4].unlocked = 0;
+	achievement_list[4].progress = 0;
+	strcpy(achievement_list[4].name, "The F Bomb");
+	strcpy(achievement_list[4].description, "Use the Nuke power-up to kill a single Zombie");
+
+	/*achievement_list[3].img = Draw_CachePic("gfx/achievement/beast");
+	achievement_list[3].unlocked = 0;
+	achievement_list[3].progress = 0;
+	strcpy(achievement_list[3].name, "Beast");
+	strcpy(achievement_list[3].description, "Survive round after round 5 with knife and grenades only");
+
+	achievement_list[4].img = Draw_CachePic("gfx/achievement/survival");
+	achievement_list[4].unlocked = 0;
+	achievement_list[4].progress = 0;
+	strcpy(achievement_list[4].name, "Survival Expert");
+	strcpy(achievement_list[4].description, "Use pistol and knife only to reach round 10");
+
+	achievement_list[5].img = Draw_CachePic("gfx/achievement/boomstick");
+	achievement_list[5].unlocked = 0;
+	achievement_list[5].progress = 0;
+	strcpy(achievement_list[5].name, "Boomstick");
+	strcpy(achievement_list[5].description, "3 for 1 with shotgun blast");
+
+	achievement_list[6].img = Draw_CachePic("gfx/achievement/boom_headshots");
+	achievement_list[6].unlocked = 0;
+	achievement_list[6].progress = 0;
+	strcpy(achievement_list[6].name, "Boom Headshots");
+	strcpy(achievement_list[6].description, "Get 10 headshots");
+
+	achievement_list[7].img = Draw_CachePic("gfx/achievement/where_did");
+	achievement_list[7].unlocked = 0;
+	achievement_list[7].progress = 0;
+	strcpy(achievement_list[7].name, "Where Did Legs Go?");
+	strcpy(achievement_list[7].description, "Make a crawler zombie");
+
+	achievement_list[8].img = Draw_CachePic("gfx/achievement/keep_the_change");
+	achievement_list[8].unlocked = 0;
+	achievement_list[8].progress = 0;
+	strcpy(achievement_list[8].name, "Keep The Change");
+	strcpy(achievement_list[8].description, "Purchase everything");
+
+	achievement_list[9].img = Draw_CachePic("gfx/achievement/big_thanks");
+	achievement_list[9].unlocked = 0;
+	achievement_list[9].progress = 0;
+	strcpy(achievement_list[9].name, "Big Thanks To Explosion");
+	strcpy(achievement_list[9].description, "Get 10 kills with one grenade");
+
+	achievement_list[10].img = Draw_CachePic("gfx/achievement/warmed-up");
+	achievement_list[10].unlocked = 0;
+	achievement_list[10].progress = 0;
+	strcpy(achievement_list[10].name, "Getting Warmed-Up");
+	strcpy(achievement_list[10].description, "Achieve 10 achievements");
+
+	achievement_list[11].img = Draw_CachePic("gfx/achievement/mysterybox_maniac");
+	achievement_list[11].unlocked = 0;
+	achievement_list[11].progress = 0;
+	strcpy(achievement_list[11].name, "Mysterybox Maniac");
+	strcpy(achievement_list[11].description, "use mysterybox 20 times");
+
+	achievement_list[12].img = Draw_CachePic("gfx/achievement/instant_help");
+	achievement_list[12].unlocked = 0;
+	achievement_list[12].progress = 0;
+	strcpy(achievement_list[12].name, "Instant Help");
+	strcpy(achievement_list[12].description, "Kill 100 zombies with insta-kill");
+
+	achievement_list[13].img = Draw_CachePic("gfx/achievement/blow_the_bank");
+	achievement_list[13].unlocked = 0;
+	achievement_list[13].progress = 0;
+	strcpy(achievement_list[13].name, "Blow The Bank");
+	strcpy(achievement_list[13].description, "earn 1,000,000");
+
+	achievement_list[14].img = Draw_CachePic("gfx/achievement/ammo_cost");
+	achievement_list[14].unlocked = 0;
+	achievement_list[14].progress = 0;
+	strcpy(achievement_list[14].name, "Ammo Cost Too Much");
+	strcpy(achievement_list[14].description, "After round 5, don't fire a bullet for whole round");
+
+	achievement_list[15].img = Draw_CachePic("gfx/achievement/the_f_bomb");
+	achievement_list[15].unlocked = 0;
+	achievement_list[15].progress = 0;
+	strcpy(achievement_list[15].name, "The F Bomb");
+	strcpy(achievement_list[15].description, "Only nuke one zombie");
+
+	achievement_list[16].img = Draw_CachePic("gfx/achievement/why_are");
+	achievement_list[16].unlocked = 0;
+	achievement_list[16].progress = 0;
+	strcpy(achievement_list[16].name, "Why Are We Waiting?");
+	strcpy(achievement_list[16].description, "Stand still for 2 minutes");
+
+	achievement_list[17].img = Draw_CachePic("gfx/achievement/never_missed");
+	achievement_list[17].unlocked = 0;
+	achievement_list[17].progress = 0;
+	strcpy(achievement_list[17].name, "Never Missed A Shot");
+	strcpy(achievement_list[17].description, "Make it to round 5 without missing a shot");
+
+	achievement_list[18].img = Draw_CachePic("gfx/achievement/300_bastards_less");
+	achievement_list[18].unlocked = 0;
+	achievement_list[18].progress = 0;
+	strcpy(achievement_list[18].name, "300 Bastards less");
+	strcpy(achievement_list[18].description, "Kill 300 zombies");
+
+	achievement_list[19].img = Draw_CachePic("gfx/achievement/music_fan");
+	achievement_list[19].unlocked = 0;
+	achievement_list[19].progress = 0;
+	strcpy(achievement_list[19].name, "Music Fan");
+	strcpy(achievement_list[19].description, "Turn on radio 20 times");
+
+	achievement_list[20].img = Draw_CachePic("gfx/achievement/one_clip");
+	achievement_list[20].unlocked = 0;
+	achievement_list[20].progress = 0;
+	strcpy(achievement_list[20].name, "One Clip");
+	strcpy(achievement_list[20].description, "Complete a round with mg42 without reloading");
+
+	achievement_list[21].img = Draw_CachePic("gfx/achievement/one_20_20");
+	achievement_list[21].unlocked = 0;
+	achievement_list[21].progress = 0;
+	strcpy(achievement_list[21].name, "One Clip, 20 Bullets, 20 Headshots");
+	strcpy(achievement_list[21].description, "Score 20 headshots, with 20 bullets, and don't reload");
+
+	achievement_list[22].img = Draw_CachePic("gfx/achievement/and_stay_out");
+	achievement_list[22].unlocked = 0;
+	achievement_list[22].progress = 0;
+	strcpy(achievement_list[22].name, "And Stay out");
+	strcpy(achievement_list[22].description, "Don't let zombies in for 2 rounds");*/
+
+	achievement_locked = Image_LoadImage("gfx/achievement/achievement_locked", IMAGE_TGA, 0, true, false);
+
+	m_achievement_scroll[0] = 0;
+	m_achievement_scroll[1] = 0;
+}
+
+
 void Load_Achivements (void)
 {
 	int achievement_file;
