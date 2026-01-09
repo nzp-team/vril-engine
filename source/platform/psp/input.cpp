@@ -60,7 +60,8 @@ namespace quake
 }
 
 // Quake globals.
-extern "C" int bind_grab;
+// INPUT TODO
+int bind_grab = 0;
 
 using namespace quake;
 using namespace quake::input;
