@@ -55,7 +55,6 @@ void tex_filebase (char *in, char *out)
   mem fix by Crow_bar.
 =================================================================
 */
-#pragma pack(1)
 typedef struct
 {
     char	manufacturer;
@@ -178,7 +177,7 @@ byte* LoadSTBI_Image(FILE *f)
 byte* Image_LoadPixels(char* filename, int image_format)
 {
 	FILE	*f;
-	char name[256];
+	char name[MAX_QPATH];
 
 	if (image_format & IMAGE_PCX) {
 		snprintf (name, sizeof(name), "%s.pcx", filename);
@@ -215,7 +214,7 @@ image_t Image_LoadImage(char* filename, int image_format, int filter, bool keep,
 {
 	int texture_index;
 	byte *data;
-	char texname[32] = {0};
+	char texname[64] = {0};
 
 	if (filename == NULL) return -1;
 
