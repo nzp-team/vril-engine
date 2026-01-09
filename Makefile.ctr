@@ -94,9 +94,14 @@ COMMON_OBJS =	system.o \
 				menu/menu_custommaps.c \
 				menu/menu_helper.c \
 				menu/menu_main.c \
+				menu/menu_stockmaps.c \
+				menu/menu_lobby.c \
+				menu/menu_gamesettings.c \
 				menu/menu_pause.c \
 				menu/menu_start.c \
 				menu/menu_stubs.c \
+				menu/menu_loadscreen.c \
+				platform/ctr/platform_menu.c \
 				platform/ctr/net_dgrm.c \
 				platform/ctr/net_udpctr.c \
 				net_loop.c \

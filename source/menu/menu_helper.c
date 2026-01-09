@@ -19,9 +19,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../nzportable_def.h"
 #include "menu_defs.h"
 
-float   menu_scale_factor;
-float	CHAR_WIDTH;
-float	CHAR_HEIGHT;
+float   		menu_scale_factor;
+float			CHAR_WIDTH;
+float			CHAR_HEIGHT;
+
+StockMaps		stock_maps[4];
+
+StockMaps stock_maps[4] = {
+	[0] = { .bsp_name = "ndu", .array_index = 0 },
+	[1] = { .bsp_name = "nzp_warehouse", .array_index = 0 },
+	[2] = { .bsp_name = "nzp_warehouse2", .array_index = 0 },
+	[3] = { .bsp_name = "christmas_special", .array_index = 0 }
+};
 
 /*
 ===============
@@ -45,6 +54,9 @@ void Menu_DictateScaleFactor(void)
 
 	CHAR_WIDTH = 8*menu_scale_factor;
 	CHAR_HEIGHT = 8*menu_scale_factor;
+
+	big_bar_height = vid.height/9;
+	small_bar_height = vid.height/64;
 }
 
 /*
@@ -54,13 +66,7 @@ Menu_LoadPics
 */
 void Menu_LoadPics ()
 {
-	menu_bk 	= Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
-	menu_ndu 	= Image_LoadImage("gfx/menu/nacht_der_untoten", IMAGE_PNG, 0, false, false);
-	menu_wh 	= Image_LoadImage("gfx/menu/nzp_warehouse", IMAGE_PNG, 0, false, false);
-	menu_wh2 	= Image_LoadImage("gfx/menu/nzp_warehouse2", IMAGE_PNG, 0, false, false);
-	menu_ch 	= Image_LoadImage("gfx/menu/christmas_special", IMAGE_PNG, 0, false, false);
-	menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_PNG, 0, false, false);
-
+	menu_bk 	= Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, false, false);
 	menu_social = Image_LoadImage("gfx/menu/social", IMAGE_TGA, 0, false, false);
 
 	Menu_Preload_Custom_Images ();
@@ -102,6 +108,67 @@ image_t Menu_PickBackground ()
     return (image_t)menu_usermap_image[i];
 }
 
+void Menu_InitStockMaps (void)
+{
+	num_stock_maps = sizeof(stock_maps)/sizeof(stock_maps[0]);
+
+	for (int i = 0; i < num_stock_maps; i++) {
+		for (int j = 0; j < num_user_maps; j++) {
+			if(!strcmp(stock_maps[i].bsp_name, custom_maps[j].map_name)) {
+				stock_maps[i].array_index = j;
+			}
+		}
+	}
+}
+
+int UserMapSupportsCustomGameLookup (char *bsp_name)
+{
+	for (int i = 0; i < num_user_maps; i++) {
+		if (!strcmp(bsp_name, custom_maps[i].map_name)) {
+			return custom_maps[i].map_allow_game_settings;
+		}
+	}
+
+	return 0;
+}
+
+void Map_SetDefaultValues (void)
+{
+	Cvar_SetValue("sv_gamemode", 0);
+	Cvar_SetValue("sv_difficulty", 0);
+	Cvar_SetValue("sv_startround", 0);
+	Cvar_SetValue("sv_magic", 1);
+	Cvar_SetValue("sv_headshotonly", 0);
+	Cvar_SetValue("sv_maxai", 24);
+	Cvar_SetValue("sv_fastrounds", 0);
+}
+
+void Menu_LoadMap (char *selected_map, int sv_gamemode, int sv_difficulty, int sv_startround, int sv_magic, int sv_headshotonly, int sv_headshotonly, int sv_fastrounds)
+{
+	int i;
+
+	for (i = 0; i < num_user_maps; i++) {
+		if (!strcmp(selected_map, custom_maps[i].map_name)) 
+			break;
+	}
+
+	map_loadname = current_selected_bsp;
+    map_loadname_pretty = custom_maps[i].map_name_pretty;
+	Cvar_SetValue("sv_gamemode", sv_gamemode);
+	Cvar_SetValue("sv_difficulty", sv_difficulty);
+	Cvar_SetValue("sv_startround", sv_startround);
+	Cvar_SetValue("sv_magic", sv_magic);
+	Cvar_SetValue("sv_headshotonly", sv_headshotonly);
+	Cvar_SetValue("sv_maxai", sv_maxai);
+	Cvar_SetValue("sv_fastrounds", sv_fastrounds);
+
+	key_dest = key_game;
+	if (sv.active)
+		Cbuf_AddText ("disconnect\n");
+	Cbuf_AddText ("maxplayers 1\n");
+	Cbuf_AddText (va("map %s\n", map_loadname));
+	loadingScreen = 1;
+}
 
 /*
 ======================
@@ -112,8 +179,7 @@ void Menu_DrawCustomBackground ()
 {
     float elapsed_background_time = menu_time - menu_starttime;
 
-	int big_bar_height = vid.height/9;
-	int small_bar_height = vid.height/64;
+	// TODO
 
 	// 
 	// Slight background pan
@@ -159,9 +225,9 @@ void Menu_DrawCustomBackground ()
 
 void Menu_DrawSocialBadge (int order, int which)
 {
-	int y_factor = (vid.height/6);
-	int y_pos = (vid.height/2) + (order*y_factor);
-	int x_pos = vid.width - (vid.width/6);
+	int y_factor = (vid.height/16);
+	int y_pos = (vid.height/2) + (vid.width/36) + (order*y_factor);
+	int x_pos = vid.width - (vid.width/20);
 	float s = 0;
 	float t = 0;
 
@@ -187,8 +253,7 @@ void Menu_DrawSocialBadge (int order, int which)
 			break;
 	}
 
-	Draw_SubPic (x_pos, y_pos, menu_social, s, t, 255, 255, 255, 255);
-
+	Draw_SubPic (x_pos, y_pos, menu_social, s, t, 0.5, 0.25, 255, 255, 255, 255);
 }
 
 /*
@@ -196,24 +261,36 @@ void Menu_DrawSocialBadge (int order, int which)
 Menu_DrawTitle
 ======================
 */
-void Menu_DrawTitle (char *title_name)
+void Menu_DrawTitle (char *title_name, int color)
 {
 	int x_pos = vid.width/64;
 	int y_pos = vid.height/24;
 
-	Draw_ColoredString (x_pos, y_pos, title_name, 255, 255, 255, 255, menu_scale_factor*2);
+	switch (color) {
+		case MENU_COLOR_WHITE:
+			Draw_ColoredString (x_pos, y_pos, title_name, 255, 255, 255, 255, menu_scale_factor*2);
+			break;
+		case MENU_COLOR_YELLOW:
+			Draw_ColoredString (x_pos, y_pos, title_name, 255, 255, 0, 255, menu_scale_factor*2);
+			break;
+	}
 }
 
 qboolean Menu_IsHovered (int button_number)
 {
 	switch (m_state) {
 		case m_main:
-			if (button_number == (m_main_cursor+1)) {
+			if (button_number == (menu_main_cursor+1)) {
 				return true;
 			}
 			break;
 		case m_stockmaps:
-			if (button_number == (m_stockmaps_cursor+1)) {
+			if (button_number == (menu_stockmaps_cursor+1)) {
+				return true;
+			}
+			break;
+		case m_lobby:
+			if (button_number == (menu_lobby_cursor+1)) {
 				return true;
 			}
 			break;
@@ -245,6 +322,25 @@ void Menu_DrawSelectionBox (int x_pos, int y_pos)
 
 /*
 ======================
+Menu_DrawMapBorder
+======================
+*/
+void Menu_DrawMapBorder (int x_pos, int y_pos, int image_width, int image_height)
+{
+	int border_side_width = (vid.width/144)/2;
+
+	// Top
+	Draw_FillByColor (x_pos, y_pos, image_width+border_side_width, small_bar_height/2, 130, 130, 130, 255);
+	// Left Side
+	Draw_FillByColor (x_pos, y_pos, border_side_width, image_height, 130, 130, 130, 255);
+	// Right Side
+	Draw_FillByColor (x_pos+image_width, y_pos, border_side_width, image_height, 130, 130, 130, 255);
+	// Bottom
+	Draw_FillByColor (x_pos, y_pos+image_height, image_width+border_side_width, small_bar_height/2, 130, 130, 130, 255);
+}
+
+/*
+======================
 Menu_DrawButton
 ======================
 */
@@ -272,10 +368,66 @@ void Menu_DrawButton (int order, int button_number, char* button_name, int butto
 			Menu_DrawSelectionBox (x_pos, y_pos);
 
 			// Draw the bottom screen text for selected button 
-			Draw_ColoredStringCentered (vid.height - (vid.height/14), button_summary, 255, 255, 255, 255, menu_scale_factor);
+			Draw_ColoredStringCentered (vid.height - (vid.height/12), button_summary, 255, 255, 255, 255, menu_scale_factor);
 		} else {
 			// Not hovering over button
 			Draw_ColoredString (x_pos, y_pos, button_name, 255, 255, 255, 255, menu_scale_factor);
+		}
+	}
+}
+
+/*
+======================
+Menu_DrawMapButton
+======================
+*/
+void Menu_DrawMapButton (int order, int button_number, int usermap_index, char* bsp_name)
+{
+	int i;
+	int index = 0;
+	char *button_name;
+	int y_factor = (vid.height/24);
+
+	int image_width = (vid.width/3);
+	int image_height = (vid.height/3);
+
+	int x_pos = ((vid.width/3)+(vid.width/36)) + (image_width/2);
+	int y_pos = (vid.height/5)-(vid.height/24);
+
+	// if this is a stock map
+	if (usermap_index < 0) {
+		for (i = 0; i < num_stock_maps; i++) {
+			if (stock_maps[i].bsp_name == bsp_name) {
+				index = stock_maps[i].array_index;
+			}
+		}
+	} else {
+		index = usermap_index;
+	}
+
+	button_name = custom_maps[index].map_name_pretty;
+	if (!button_name) {
+		button_name = custom_maps[index].map_name;
+	}
+
+	// Draw the selectable button
+	Menu_DrawButton (order, button_number, button_name, MENU_BUTTON_ACTIVE, button_name);
+
+	if (Menu_IsHovered(button_number)) {
+		// Draw map thumbnail picture
+		Draw_StretchPic (x_pos, y_pos, menu_usermap_image[index], image_width, image_height);
+
+		// Draw border around map image
+		Menu_DrawMapBorder (x_pos, y_pos, image_width, image_height);
+
+		// Draw map description
+		for (int j = 0; j < 8; j++) {
+			Draw_ColoredString (x_pos - ((vid.width/42)*2), (y_pos + image_height + (small_bar_height*2)) + j*y_factor, custom_maps[index].map_desc[j], 255, 255, 255, 255, menu_scale_factor);
+		}
+
+		// Draw map author
+		if (custom_maps[index].map_author != NULL) {
+			Draw_ColoredStringCentered (vid.height - (vid.height/24), custom_maps[index].map_author, 255, 255, 0, 255, menu_scale_factor);
 		}
 	}
 }
@@ -322,7 +474,11 @@ Menu_DrawMapPanel
 */
 void Menu_DrawMapPanel ()
 {
-	//TODO
+	int x_pos = (vid.width/3) + (vid.width/36);
+	int y_pos = big_bar_height + small_bar_height;
 
-	//Draw_FillByColor();
+	// Big box
+	Draw_FillByColor(x_pos, y_pos, vid.width - x_pos, vid.height - (y_pos*2), 0, 0, 0, 120);
+	// Yellow bar
+	Draw_FillByColor(x_pos, y_pos, (vid.width/136), vid.height - (y_pos*2), 255, 255, 0, 200);
 }

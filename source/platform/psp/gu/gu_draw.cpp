@@ -671,6 +671,59 @@ void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, in
 
 /*
 =============
+Draw_SubPic
+=============
+*/
+void Draw_SubPic (int x, int y, int pic, float s, float t, float r, float g , float b, float a)
+{
+	if (pic < 0) return;
+
+	sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
+
+	const gltexture_t &glt = gltextures[pic];
+	GL_Bind (glt.texnum);
+
+	float size = 4;
+
+	struct vertex
+	{
+		unsigned short	u, v;
+		short			x, y, z;
+	};
+
+	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
+
+	vertices[0].u		= s;
+	vertices[0].v		= t;
+
+	vertices[0].x		= x;
+	vertices[0].y		= y;
+	vertices[0].z		= 0;
+
+	vertices[1].u 		= s;
+	vertices[1].v 		= t;
+
+	vertices[1].x		= x + glt.original_width/size;
+	vertices[1].y		= y + glt.original_height/size;
+	vertices[1].z		= 0;
+
+	sceGuColor(GU_RGBA(
+		static_cast<unsigned int>(r),
+		static_cast<unsigned int>(g),
+		static_cast<unsigned int>(b),
+		static_cast<unsigned int>(a)));
+
+	sceGuDrawArray(
+		GU_SPRITES,
+		GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D,
+		2, 0, vertices);
+
+    sceGuColor(0xffffffff);
+	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
+}
+
+/*
+=============
 Draw_TransPic
 =============
 */

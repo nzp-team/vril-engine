@@ -21,139 +21,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/dirent.h>
 #include <3ds.h>
 #include "circle_pad_pro.h"
-extern cvar_t	r_wateralpha;
-extern cvar_t	r_vsync;
-extern cvar_t	in_disable_analog;
-extern cvar_t	in_anub_mode;
-extern cvar_t	crosshair;
-extern cvar_t	r_dithering;
-//extern cvar_t	r_retro;
-extern cvar_t	waypoint_mode;
-// extern cvar_t   in_anub_mode;
 
-extern int loadingScreen;
-extern char* loadname2;
-extern char* loadnamespec;
-extern qboolean loadscreeninit;
+extern cvar_t	    in_anub_mode;
+extern cvar_t	    waypoint_mode;
 
-char* game_build_date;
+	void M_Menu_Keys_f (void);
+void M_Menu_Video_f (void);
+	void M_Keys_Draw (void);
+void M_Video_Draw (void);
+	void M_Keys_Key (int key);
+void M_Video_Key (int key);
 
-// Backgrounds
-int menu_bk;
-
-// Map screens
-int menu_ndu;
-int menu_wh;
-int menu_wh2;
-//qpic_t *menu_kn;
-int menu_ch;
-//qpic_t *menu_wn;
-int menu_custom;
-#define MAX_CUSTOMMAPS 64
-int menu_cuthum[MAX_CUSTOMMAPS];
-
-achievement_list_t achievement_list[MAX_ACHIEVEMENTS];
-
-void (*vid_menudrawfn)(void);
-void (*vid_menukeyfn)(int key);
-
-enum 
-{
-	m_none, 
-	m_start,
-	m_main, 
-	m_paused_menu, 
-	m_singleplayer, 
-	m_load, 
-	m_save, 
-	m_custommaps, 
-	m_setup, 
-	m_net, 
-	m_options, 
-	m_video, 
-	m_keys, 
-	m_help, 
-	m_quit, 
-	m_restart,
-	m_credits,
-	m_exit,
-	m_serialconfig, 
-	m_modemconfig, 
-	m_lanconfig, 
-	m_gameoptions, 
-	m_search, 
-	m_slist,
-} m_state;
-
-void M_Start_Menu_f (void);
-void M_Paused_Menu_f (void);
-void M_Menu_Restart_f(void);
-void M_Menu_Main_f (void);
-	void M_Menu_SinglePlayer_f (void);
-		void M_Menu_CustomMaps_f (void);
-	void M_Menu_Options_f (void);
-		void M_Menu_Keys_f (void);
-		void M_Menu_Video_f (void);
-	void M_Menu_Credits_f (void);
-	void M_Menu_Quit_f (void);
-void M_Menu_GameOptions_f (void);
-
-void M_Main_Draw (void);
-	void M_SinglePlayer_Draw (void);
-		void M_Menu_CustomMaps_Draw (void);
-	void M_Options_Draw (void);
-		void M_Keys_Draw (void);
-		void M_Video_Draw (void);
-	void M_Menu_Credits_Draw (void);
-	void M_Quit_Draw (void);
-
-void M_Main_Key (int key);
-	void M_SinglePlayer_Key (int key);
-		void M_Menu_CustomMaps_Key (int key);
-	void M_Options_Key (int key);
-		void M_Keys_Key (int key);
-		void M_Video_Key (int key);
-	void M_Menu_Credits_Key (int key);
-	void M_Quit_Key (int key);
-void M_GameOptions_Key (int key);
-void M_Menu_Exit_f(void);
-
-qboolean	m_entersound;		// play after drawing a frame, so caching
-								// won't disrupt the sound
-qboolean	m_recursiveDraw;
-
-int			m_return_state;
-qboolean	m_return_onerror;
-char		m_return_reason [32];
-
-typedef struct
-{
-	int 		occupied;
-	int 	 	map_allow_game_settings;
-	int 	 	map_use_thumbnail;
-	char* 		map_name;
-	char* 		map_name_pretty;
-	char* 		map_desc_1;
-	char* 		map_desc_2;
-	char* 		map_desc_3;
-	char* 		map_desc_4;
-	char* 		map_desc_5;
-	char* 		map_desc_6;
-	char* 		map_desc_7;
-	char* 		map_desc_8;
-	char* 		map_author;
-	char* 		map_thumbnail_path;
-} usermap_t;
-
-usermap_t custom_maps[50];
-
-int	m_map_cursor;
-int	MAP_ITEMS;
-int user_maps_num = 0;
-int current_custom_map_page;
-int custom_map_pages;
-int multiplier;
-char  user_levels[256][MAX_QPATH];
+char enter_char = 'A';
 
 /*
 ================
@@ -161,7 +40,7 @@ M_DrawCharacter
 
 Draws one solid graphics character
 ================
-*/
+
 void M_DrawCharacter (int cx, int line, int num)
 {
 	Draw_Character ( cx + ((vid.width - 320)>>1), line, num);
@@ -187,370 +66,12 @@ void M_PrintWhite (int cx, int cy, char *str)
 	}
 }
 
-byte identityTable[256];
-byte translationTable[256];
-
-void M_BuildTranslationTable(int top, int bottom)
-{
-	int		j;
-	byte	*dest, *source;
-
-	for (j = 0; j < 256; j++)
-		identityTable[j] = j;
-	dest = translationTable;
-	source = identityTable;
-	memcpy (dest, source, 256);
-
-	if (top < 128)	// the artists made some backwards ranges.  sigh.
-		memcpy (dest + TOP_RANGE, source + top, 16);
-	else
-		for (j=0 ; j<16 ; j++)
-			dest[TOP_RANGE+j] = source[top+15-j];
-
-	if (bottom < 128)
-		memcpy (dest + BOTTOM_RANGE, source + bottom, 16);
-	else
-		for (j=0 ; j<16 ; j++)
-			dest[BOTTOM_RANGE+j] = source[bottom+15-j];
-}
-
 void M_DrawTextBox (int x, int y, int width, int lines)
 {
 
 }
-
-//=============================================================================
-
-void M_Load_Menu_Pics ()
-{
-	menu_bk 	= Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
-	menu_ndu 	= Image_LoadImage("gfx/menu/nacht_der_untoten", IMAGE_PNG, 0, false, false);
-	//menu_kn 	= Draw_CachePic("gfx/menu/kino_der_toten");
-	menu_wh 	= Image_LoadImage("gfx/menu/nzp_warehouse", IMAGE_PNG, 0, false, false);
-	menu_wh2 	= Image_LoadImage("gfx/menu/nzp_warehouse2", IMAGE_PNG, 0, false, false);
-	//menu_wn 	= Draw_CachePic("gfx/menu/wahnsinn");
-	menu_ch 	= Image_LoadImage("gfx/menu/christmas_special", IMAGE_PNG, 0, false, false);
-	menu_custom = Image_LoadImage("gfx/menu/custom", IMAGE_PNG, 0, false, false);
-
-	// Precache all menu pics 
-	for (int i = 0; i < 15; i++) {
-		if (custom_maps[i].occupied == false)
-			continue;
-		
-		if (custom_maps[i].map_use_thumbnail == 1) {
-				menu_cuthum[i] = Image_LoadImage(custom_maps[i + multiplier].map_thumbnail_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
-			}
-	}
-}
-
-void M_Start_Menu_f ()
-{
-	//Load_Achivements();
-	M_Load_Menu_Pics();
-	key_dest = key_menu;
-	m_state = m_start;
-	m_entersound = true;
-	//loadingScreen = 0;
-}
-
-static void M_Start_Menu_Draw ()
-{
-	// Background
-	//menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
-	Draw_StretchPic(0, 0, menu_bk, 400, 240);
-
-	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
-
-	Draw_ColoredStringCentered(vid.height - 64, "Press A to Start", 255, 0, 0, 255, 1);
-}
-
-void M_Start_Key (int key)
-{
-	switch (key)
-	{
-		case K_RIGHTFACE:
-			S_LocalSound ("sounds/menu/enter.wav");
-			//Cbuf_AddText("cd playstring tensioned_by_the_damned 1\n");
-			Cbuf_AddText("togglemenu\n");
-			break;
-	}
-}
-
-
-int m_save_demonum;
-
-/*
-================
-M_ToggleMenu_f
-================
 */
-void M_ToggleMenu_f (void)
-{
-	m_entersound = true;
 
-	if (key_dest == key_menu || key_dest == key_menu_pause)
-	{
-		if (m_state != m_main && m_state != m_paused_menu)
-		{
-			M_Menu_Main_f ();
-			return;
-		}
-		key_dest = key_game;
-		m_state = m_none;
-		return;
-	}
-	if (key_dest == key_console)
-	{
-		Con_ToggleConsole_f ();
-	}
-	else if (sv.active && (svs.maxclients > 1 || key_dest == key_game))
-	{
-		M_Paused_Menu_f();
-	}
-	else
-	{
-		M_Menu_Main_f ();
-	}
-}
-
-
-int M_Paused_Cusor;
-#define Max_Paused_Iteams 5
-
-void M_Paused_Menu_f ()
-{
-	key_dest = key_menu_pause;
-	m_state = m_paused_menu;
-	m_entersound = true;
-	loadingScreen = 0;
-	loadscreeninit = false;
-	M_Paused_Cusor = 0;
-}
-
-static void M_Paused_Menu_Draw ()
-{
-	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
-
-	// Header
-	Draw_ColoredString(10, 10, "PAUSED", 255, 255, 255, 255, 2);
-
-	if (M_Paused_Cusor == 0)
-		Draw_ColoredString(10, 135, "Resume", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(10, 135, "Resume", 255, 255, 255, 255, 1);
-
-	if (M_Paused_Cusor == 1)
-		Draw_ColoredString(10, 145, "Restart", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(10, 145, "Restart", 255, 255, 255, 255, 1);
-
-	if (M_Paused_Cusor == 2)
-		Draw_ColoredString(10, 155, "Settings", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(10, 155, "Settings", 255, 255, 255, 255, 1);
-
-	if (waypoint_mode.value) {
-		if (M_Paused_Cusor == 3)
-			Draw_ColoredString(10, 165, "Save Waypoints", 255, 0, 0, 255, 1);
-		else
-			Draw_ColoredString(10, 165, "Save Waypoints", 255, 255, 255, 255, 1);
-	} else {
-		if (M_Paused_Cusor == 3)
-			Draw_ColoredString(10, 165, "Achievements", 255, 0, 0, 255, 1);
-		else
-			Draw_ColoredString(10, 165, "Achievements", 255, 255, 255, 255, 1);
-	}
-
-	if (M_Paused_Cusor == 4)
-		Draw_ColoredString(10, 175, "Main Menu", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(10, 175, "Main Menu", 255, 255, 255, 255, 1);
-}
-
-static void M_Paused_Menu_Key (int key)
-{
-	switch (key)
-	{
-		case K_ESCAPE:
-		case K_AUX2:
-			S_LocalSound ("sounds/menu/enter.wav");
-			Cbuf_AddText("togglemenu\n");
-			break;
-
-		case K_DOWNARROW:
-			S_LocalSound ("sounds/menu/navigate.wav");
-			if (++M_Paused_Cusor >= Max_Paused_Iteams)
-				M_Paused_Cusor = 0;
-			break;
-
-		case K_UPARROW:
-			S_LocalSound ("sounds/menu/navigate.wav");
-			if (--M_Paused_Cusor < 0)
-				M_Paused_Cusor = Max_Paused_Iteams - 1;
-			break;
-
-		case K_ENTER:
-		case K_RIGHTFACE:
-			m_entersound = true;
-
-			switch (M_Paused_Cusor)
-			{
-			case 0:
-				key_dest = key_game;
-				m_state = m_none;
-				break;
-			case 1:
-				M_Menu_Restart_f();
-				break;
-			case 2:
-				M_Menu_Options_f();
-				key_dest = key_menu_pause;
-				break;
-			case 3:
-				if (waypoint_mode.value) {
-					Cbuf_AddText("impulse 101\n");
-				}
-				/*else
-					M_Menu_Achievement_f();
-				*/ // naievil -- fixme: do not have achievements
-				key_dest = key_menu_pause;
-				break;
-			case 4:
-				M_Menu_Exit_f();
-				break;
-			}
-		}
-}
-
-
-//=============================================================================
-/* MAIN MENU */
-
-int	m_main_cursor;
-#define	MAIN_ITEMS	4
-
-
-void M_Menu_Main_f (void)
-{
-	M_Load_Menu_Pics();
-	
-	key_dest = key_menu;
-	m_state = m_main;
-	m_entersound = true;
-}
-
-void M_Main_Draw (void)
-{
-	// Background
-	//menu_bk = Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, true, false);
-	Draw_StretchPic(0, 0, menu_bk, 400, 240);
-
-	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 400, 240, 0, 0, 0, 102);
-
-	// Version String
-	Draw_ColoredString((vid.width - getTextWidth(game_build_date, 1)) + 4, 5, game_build_date, 255, 255, 255, 255, 1);
-
-	// Header
-	Draw_ColoredString(5, 5, "MAIN MENU", 255, 255, 255, 255, 2);
-
-	// Solo
-	if (m_main_cursor == 0)
-		Draw_ColoredString(5, 40, "Solo", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(5, 40, "Solo", 255, 255, 255, 255, 1);
-
-
-	// Co-Op (Unfinished, so non-selectable)
-	Draw_ColoredString(5, 50, "Co-Op (Coming Soon!)", 128, 128, 128, 255, 1);
-
-	// Divider
-	Draw_FillByColor(5, 63, 160, 2, 130, 130, 130, 255);
-
-	if (m_main_cursor == 1)
-		Draw_ColoredString(5, 70, "Settings", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(5, 70, "Settings", 255, 255, 255, 255, 1);
-
-	Draw_ColoredString(5, 80, "Achievements", 128, 128, 128, 255, 1);
-
-	// Divider
-	Draw_FillByColor(5, 93, 160, 2, 130, 130, 130, 255);
-
-	if (m_main_cursor == 2)
-		Draw_ColoredString(5, 100, "Credits", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(5, 100, "Credits", 255, 255, 255, 255, 1);
-
-	// Divider
-	Draw_FillByColor(5, 113, 160, 2, 130, 130, 130, 255);
-
-	if (m_main_cursor == 3)
-		Draw_ColoredString(5, 120, "Exit", 255, 0, 0, 255, 1);
-	else
-		Draw_ColoredString(5, 120, "Exit", 255, 255, 255, 255, 1);
-
-	// Descriptions
-	switch(m_main_cursor) {
-		case 0: // Solo
-			Draw_ColoredString(5, 220, "Take on the Hordes by yourself.", 255, 255, 255, 255, 1);
-			break;
-		case 1: // Settings
-			Draw_ColoredString(5, 220, "Adjust your Settings to Optimize your Experience.", 255, 255, 255, 255, 1);
-			break;
-		case 2: // Credits
-			Draw_ColoredString(5, 220, "See who made NZ:P possible.", 255, 255, 255, 255, 1);
-			break;
-		case 3: // Exit
-			Draw_ColoredString(5, 220, "Return to Home Menu.", 255, 255, 255, 255, 1);
-			break;
-	}
-}
-
-
-void M_Main_Key (int key)
-{
-	switch (key)
-	{
-
-	case K_DOWNARROW:
-		S_LocalSound ("sounds/menu/navigate.wav");
-		if (++m_main_cursor >= MAIN_ITEMS)
-			m_main_cursor = 0;
-		break;
-
-	case K_UPARROW:
-		S_LocalSound ("sounds/menu/navigate.wav");
-		if (--m_main_cursor < 0)
-			m_main_cursor = MAIN_ITEMS - 1;
-		break;
-
-	case K_ENTER:
-	case K_RIGHTFACE:
-		m_entersound = true;
-
-		switch (m_main_cursor)
-		{
-		case 0:
-			M_Menu_SinglePlayer_f ();
-			break;
-
-		case 1:
-			M_Menu_Options_f ();
-			break;
-
-		case 2:
-			M_Menu_Credits_f ();
-			break;
-
-		case 3:
-			M_Menu_Quit_f ();
-			break;
-		}
-	}
-}
 
 //=============================================================================
 /* CREDITS MENU */
@@ -1464,8 +985,7 @@ void M_Options_Draw (void)
 	M_Print (16, 128, "Swap C-Nub and C-Stick");
 	M_DrawCheckbox (220, 128, in_anub_mode.value);
 
-	if (vid_menudrawfn)
-		M_Print (16, 136, "         Video Options");
+	//M_Print (16, 136, "         Video Options");
 
 // cursor
 	M_DrawCharacter (200, 32 + options_cursor*8, 12+((int)(realtime*4)&1));
@@ -1492,9 +1012,6 @@ void M_Options_Key (int k)
 			break;
 		case 2:
 			Cbuf_AddText ("exec default.cfg\n");
-			break;
-		case 13:
-			M_Menu_Video_f ();
 			break;
 		default:
 			M_AdjustSliders (1);
@@ -1532,7 +1049,7 @@ void M_Options_Key (int k)
 			M_Menu_Main_f ();
 		break;
 	}
-	if (options_cursor == 13 && vid_menudrawfn == NULL)
+	if (options_cursor == 13)
 	{
 		if (k == K_UPARROW)
 			options_cursor = 12;
@@ -1745,13 +1262,13 @@ void M_Menu_Video_f (void)
 
 void M_Video_Draw (void)
 {
-	(*vid_menudrawfn) ();
+
 }
 
 
 void M_Video_Key (int key)
 {
-	(*vid_menukeyfn) (key);
+
 }
 
 //=============================================================================
@@ -2204,203 +1721,4 @@ void M_GameOptions_Key (int key)
 	}
 }
 
-//=============================================================================
-/* Menu Subsystem */
 
-
-void M_Init (void)
-{
-	Cmd_AddCommand ("togglemenu", M_ToggleMenu_f);
-
-	Cmd_AddCommand ("menu_main", M_Menu_Main_f);
-	Cmd_AddCommand ("menu_singleplayer", M_Menu_SinglePlayer_f);
-	Cmd_AddCommand ("menu_options", M_Menu_Options_f);
-	Cmd_AddCommand ("menu_keys", M_Menu_Keys_f);
-	Cmd_AddCommand ("menu_video", M_Menu_Video_f);
-	Cmd_AddCommand ("menu_quit", M_Menu_Quit_f);
-
-	// Snag the game version
-	long length;
-	FILE* f = fopen(va("%s/version.txt", com_gamedir), "rb");
-
-	if (f)
-	{
-		fseek (f, 0, SEEK_END);
-		length = ftell (f);
-		fseek (f, 0, SEEK_SET);
-		game_build_date = malloc(length);
-
-		if (game_build_date)
-			fread (game_build_date, 1, length, f);
-
-		fclose (f);
-	} else {
-		game_build_date = "version.txt not found.";
-	}
-
-	Map_Finder();
-}
-
-
-void M_Draw (void)
-{
-	if (m_state == m_none || (key_dest != key_menu && key_dest != key_menu_pause))
-		return;
-
-	if (!m_recursiveDraw)
-	{
-		scr_copyeverything = 1;
-
-		if (scr_con_current)
-		{
-			Draw_ConsoleBackground (vid.height);
-			VID_UnlockBuffer ();
-			S_ExtraUpdate ();
-			VID_LockBuffer ();
-		}
-		else
-			Draw_FadeScreen ();
-
-		scr_fullupdate = 0;
-	}
-	else
-	{
-		m_recursiveDraw = false;
-	}
-
-	switch (m_state)
-	{
-	case m_none:
-		break;
-
-	case m_start:
-		M_Start_Menu_Draw();
-		break;
-
-	case m_paused_menu:
-		M_Paused_Menu_Draw();
-		break;
-
-	case m_main:
-		M_Main_Draw ();
-		break;
-
-	case m_singleplayer:
-		M_SinglePlayer_Draw ();
-		break;
-
-	case m_options:
-		M_Options_Draw ();
-		break;
-
-	case m_keys:
-		M_Keys_Draw ();
-		break;
-
-	case m_video:
-		M_Video_Draw ();
-		break;
-
-	case m_quit:
-		M_Quit_Draw ();
-		break;
-
-	case m_restart:
-		M_Restart_Draw ();
-		break;
-
-	case m_credits:
-		M_Credits_Draw ();
-		break;
-
-	case m_exit:
-		M_Exit_Draw ();
-		break;
-
-	case m_gameoptions:
-		M_GameOptions_Draw ();
-		break;
-
-	case m_custommaps:
-		M_Menu_CustomMaps_Draw ();
-		return;
-
-	default:
-		Con_Printf("Cannot identify menu for case %d\n", m_state);
-	}
-
-	if (m_entersound)
-	{
-		S_LocalSound ("sounds/menu/enter.wav");
-		m_entersound = false;
-	}
-
-	VID_UnlockBuffer ();
-	S_ExtraUpdate ();
-	VID_LockBuffer ();
-}
-
-
-void M_Keydown (int key)
-{
-	switch (m_state)
-	{
-	case m_none:
-		return;
-
-	case m_start:
-		M_Start_Key (key);
-		break;
-
-	case m_paused_menu:
-		M_Paused_Menu_Key (key);
-		break;
-
-	case m_main:
-		M_Main_Key (key);
-		return;
-
-	case m_singleplayer:
-		M_SinglePlayer_Key (key);
-		return;
-
-	case m_options:
-		M_Options_Key (key);
-		return;
-
-	case m_keys:
-		M_Keys_Key (key);
-		return;
-
-	case m_restart:
-		M_Restart_Key (key);
-		return;
-
-	case m_credits:
-		M_Credits_Key (key);
-		return;
-
-	case m_video:
-		M_Video_Key (key);
-		return;
-
-	case m_quit:
-		M_Quit_Key (key);
-		return;
-
-	case m_exit:
-		M_Exit_Key (key);
-		return;
-
-	case m_gameoptions:
-		M_GameOptions_Key (key);
-		return;
-
-	case m_custommaps:
-		M_Menu_CustomMaps_Key (key);
-		return;
-
-	default:
-		Con_Printf("Cannot identify menu for case %d\n", m_state);
-	}
-}

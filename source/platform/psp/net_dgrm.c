@@ -50,10 +50,12 @@ struct
 	byte			data[MAX_DATAGRAM];
 } packetBuffer;
 
-extern int m_return_state;
+//TODO these were extern from
+// the old menu
+int m_return_state;
 extern int m_state;
-extern qboolean m_return_onerror;
-extern char m_return_reason[32];
+qboolean m_return_onerror;
+char m_return_reason[32];
 
 
 #ifdef DEBUG
