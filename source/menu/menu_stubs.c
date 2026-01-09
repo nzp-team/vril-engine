@@ -36,10 +36,6 @@ void Menu_GameOptions_Set ()
 {
 
 }
-void Menu_CustomMaps_Set ()
-{
-
-}
 
 /////////////////////////////
 /////////////////////////////
@@ -77,10 +73,6 @@ void Menu_Exit_Draw ()
 
 }
 void Menu_GameOptions_Draw ()
-{
-
-}
-void Menu_CustomMaps_Draw ()
 {
 
 }
@@ -124,8 +116,22 @@ void Menu_GameOptions_Key (int key)
 {
 
 }
-void Menu_CustomMaps_Key (int key)
-{
 
+////////////////////////////////////
+//
+//////////////////////////////////
+
+void M_OSK_Draw (void)
+{
+	// TODO: Implement.
 }
 
+void Con_OSK_Key (int key)
+{
+    // TODO: Implement.
+}
+
+void Con_OSK_f (char *input, char *output, int outlen)
+{
+    // TODO: Implement.
+}
