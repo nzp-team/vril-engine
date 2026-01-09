@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //=============================================================================
 /* STOCK MAPS MENU */
 
-int	m_stockmaps_cursor;
+int	menu_stockmaps_cursor;
 #define	STOCKMAPS_ITEMS 7
 
 /*
@@ -43,8 +43,9 @@ Menu_SinglePlayer_Draw
 */
 void Menu_StockMaps_Draw (void)
 {
-    char* header_text;
-    char* back_text;
+    int     i;
+    char*   header_text;
+    char*   back_text;
 
     // Background
 	Menu_DrawCustomBackground ();
@@ -58,10 +59,21 @@ void Menu_StockMaps_Draw (void)
     }
 
     // Header
-	Menu_DrawTitle(header_text);
-
+	Menu_DrawTitle(header_text, MENU_COLOR_WHITE);
+    // Map panel makes the background darker
     Menu_DrawMapPanel();
 
+    for (i = 0; i < num_stock_maps; i++) {
+        Menu_DrawMapButton (i+1, i+1, -1, stock_maps[i].bsp_name);
+    }
+
+    Menu_DrawDivider(i + 1.25);
+
+    Menu_DrawButton(i + 1.5, i+1, "USER MAPS", MENU_BUTTON_ACTIVE, "View User-Created Maps.");
+
+    Menu_DrawButton(i + 2.5, i+2, "RANDOM", MENU_BUTTON_ACTIVE, "Feeling indecisive? Try rolling the dice.");
+
+    Menu_DrawButton(i + 7.5, i+3, "BACK", MENU_BUTTON_ACTIVE, back_text);
 }
 
 /*
@@ -76,49 +88,49 @@ void Menu_StockMaps_Key (int key)
 
 	case K_DOWNARROW:
 		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (++m_stockmaps_cursor >= STOCKMAPS_ITEMS)
-			m_stockmaps_cursor = 0;
+		if (++menu_stockmaps_cursor >= STOCKMAPS_ITEMS)
+			menu_stockmaps_cursor = 0;
 		break;
 
 	case K_UPARROW:
 		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (--m_stockmaps_cursor < 0)
-			m_stockmaps_cursor = STOCKMAPS_ITEMS - 1;
+		if (--menu_stockmaps_cursor < 0)
+			menu_stockmaps_cursor = STOCKMAPS_ITEMS - 1;
 		break;
 
 	case K_ENTER:
 	case K_AUX1:
 		Menu_StartSound(MENU_SND_ENTER);
-		switch (m_stockmaps_cursor)
+		switch (menu_stockmaps_cursor)
 		{
             case 0:
-                map_loadname = "ndu";
-                map_loadname_pretty = "Nacht der Untoten";
+                Map_SetDefaultValues();
+                current_selected_bsp = stock_maps[menu_stockmaps_cursor].bsp_name;
                 Menu_Lobby_Set();
                 break;
             case 1:
-                map_loadname = "nzp_warehouse";
-                map_loadname_pretty = "Warehouse (Classic)";
+                Map_SetDefaultValues();
+                current_selected_bsp = stock_maps[menu_stockmaps_cursor].bsp_name;
                 Menu_Lobby_Set();
                 break;
             case 2:
-                map_loadname = "nzp_warehouse2";
-                map_loadname_pretty = "Warehouse";
+                Map_SetDefaultValues();
+                current_selected_bsp = stock_maps[menu_stockmaps_cursor].bsp_name;
                 Menu_Lobby_Set();
                 break;
             case 3:
-                map_loadname = "christmas_special";
-                map_loadname_pretty = "Christmas Special";
+                Map_SetDefaultValues();
+                current_selected_bsp = stock_maps[menu_stockmaps_cursor].bsp_name;
                 Menu_Lobby_Set();
                 break;
             case 4:
                 // Custom map menu
-                //Menu_CustomMaps_Set();
+                Menu_CustomMaps_Set();
 				break;
             case 5:
                 // Random map
                 //Menu_ChooseRandomMap();
-                //Menu_Lobby_Set();
+                Menu_Lobby_Set();
                 break;
             case 6:
                 if (menu_is_solo) {
