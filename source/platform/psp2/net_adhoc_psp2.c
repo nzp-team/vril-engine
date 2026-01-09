@@ -164,29 +164,33 @@ int AdHoc_Connect (int socket, struct qsockaddr *addr)
 
 //=============================================================================
 
-static SceNetAdhocPdpStat gPdpStat;
-SceNetAdhocPdpStat *findPdpStat(int socket, SceNetAdhocPdpStat *pdpStat)
+// TODO: 
+// Replace all instances of "struct SceNetAdhocPdpStat" 
+// to "SceNetAdhocPdpStat" when the Vita Headers are updated 
+// in the docker container -Fancy2209
+static struct SceNetAdhocPdpStat gPdpStat;
+struct SceNetAdhocPdpStat *findPdpStat(int socket, struct SceNetAdhocPdpStat *pdpStat)
 {
 	if(socket == pdpStat->id) {
-		memcpy(&gPdpStat, pdpStat, sizeof(SceNetAdhocPdpStat));
+		memcpy(&gPdpStat, pdpStat, sizeof(struct SceNetAdhocPdpStat));
 		return &gPdpStat;
 	}
 		if(pdpStat->next) return findPdpStat(socket, pdpStat->next);
-		return (SceNetAdhocPdpStat *)-1;
+		return (struct SceNetAdhocPdpStat *)-1;
 }
 
 int AdHoc_CheckNewConnections (void)
 {
 	Log("AdHoc_CheckNewConnections");
-	SceNetAdhocPdpStat pdpStat[20];
-	int len = sizeof(SceNetAdhocPdpStat) * 20;
+	struct SceNetAdhocPdpStat pdpStat[20];
+	int len = sizeof(struct SceNetAdhocPdpStat) * 20;
 	
 	if (net_acceptsocket == -1) return -1;
 	
 	int err = sceNetAdhocGetPdpStat(&len, pdpStat);
 	if(err < 0) return -1;
 	
-	SceNetAdhocPdpStat *tempPdp = findPdpStat(net_acceptsocket, pdpStat);
+	struct SceNetAdhocPdpStat *tempPdp = findPdpStat(net_acceptsocket, pdpStat);
 	if (tempPdp < 0) return -1;
 	else if (tempPdp->rcv_sb_cc > 0) return net_acceptsocket;
 
@@ -298,13 +302,13 @@ int AdHoc_StringToAddr (char *string, struct qsockaddr *addr)
 int AdHoc_GetSocketAddr (int socket, struct qsockaddr *addr)
 {
 	Log("AdHoc_GetSocketAddr");
-	SceNetAdhocPdpStat pdpStat[20];
-	int len = sizeof(SceNetAdhocPdpStat) * 20;
+	struct SceNetAdhocPdpStat pdpStat[20];
+	int len = sizeof(struct SceNetAdhocPdpStat) * 20;
 
 	int err = sceNetAdhocGetPdpStat(&len, pdpStat);
 	if(err<0) return -1;
 
-	SceNetAdhocPdpStat *tempPdp = findPdpStat(socket, pdpStat);
+	struct SceNetAdhocPdpStat *tempPdp = findPdpStat(socket, pdpStat);
 	if(tempPdp < 0) return -1;
 
 	memcpy(((struct sockaddr_adhoc *)addr)->mac, &tempPdp->laddr, 6);
