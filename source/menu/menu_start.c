@@ -29,9 +29,7 @@ Menu_Start_Set
 */
 void Menu_Start_Set ()
 {
-	Menu_LoadPics();
-	Menu_DictateScaleFactor();
-	Menu_InitStockMaps();
+	Menu_LoadPics ();
 	key_dest = key_menu;
 	m_state = m_start;
 	loadingScreen = 0;
