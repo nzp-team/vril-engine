@@ -25,14 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 int	menu_gamesettings_cursor;
 #define GAMESETTINGS_ITEMS 8
 
-char*   menu_set_gamemode;
-char*   menu_set_difficulty;
-char*   menu_set_startround;
-char*   menu_set_magic;
-char*   menu_set_headshotsonly;
-char*   menu_set_hordesize;
-char*   menu_set_fastrounds;
-
 void Menu_GameSettings_Set (void)
 {
     key_dest = key_menu;

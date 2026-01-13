@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int	menu_lobby_cursor;
 int support_gamesettings;
-#define LOBBY_ITEMS 2
+int LOBBY_ITEMS;
 
 float menu_lobby_countdown = 0;
 float menu_lobby_last;
@@ -122,6 +122,8 @@ void Menu_Lobby_SetStrings (void)
 
 void Menu_Lobby_Draw (void)
 {
+    char game_starting[32] = "";
+
     // Background
 	Menu_DrawCustomBackground ();
     // Title
@@ -130,6 +132,8 @@ void Menu_Lobby_Draw (void)
     Menu_DrawMapPanel();
 
     support_gamesettings = UserMapSupportsCustomGameLookup (current_selected_bsp);
+
+    LOBBY_ITEMS = LOBBY_ITEMS + support_gamesettings;
 
     if (menu_lobby_countdown == 0) {
         Menu_DrawButton (1, 1, "START GAME", MENU_BUTTON_ACTIVE, "Face the Horde!");
@@ -157,22 +161,21 @@ void Menu_Lobby_Draw (void)
 
     Menu_DrawLobbyInfo (current_selected_bsp, gamemode, difficulty, startround, magic, headshotonly, fastrounds, hordesize);
 
-    /*
-    float lobby_delta = menu_loby_countdown - time;
+    float lobby_delta = menu_lobby_countdown - (float)Sys_FloatTime();
+    sprintf(game_starting, "Game Starting In..  %i", (int)lobby_delta);
     if (lobby_delta > 0) {
-        sui_text([150, 5], MENU_TEXT_SMALL, sprintf("Game Starting In.. %d", lobby_delta), [1, 1, 1], 1, 0);
-	    sui_fill([150, 20], [75 * (lobby_delta/6), 6], [0.2, 0.2 * (lobby_delta/6), 0.2 * (lobby_delta/6)], 1, 0);
+        Draw_ColoredString(vid.width - vid.width/4 - getTextWidth(game_starting, menu_scale_factor), vid.height - vid.height/5, game_starting, 255, 255, 255, 255, menu_scale_factor);
+        Draw_FillByColor(vid.width - (vid.width/3 * (lobby_delta/6)), vid.height - vid.height/13, (vid.width/12)*(lobby_delta/6), vid.height/36, 130, 130, 130, 130);
 
-        if (menu_loby_last != floor(lobby_delta)) {
-            Menu_PlaySound(MENU_SND_BEEP);
-            menu_loby_last = floor(lobby_delta);
+        if (menu_lobby_last != (float)floor(lobby_delta)) {
+            Menu_StartSound(MENU_SND_BEEP);
+            menu_lobby_last = (float)floor(lobby_delta);
         }
-    } else if (lobby_delta < 0 && menu_loby_countdown != 0) {
+    } else if (lobby_delta < 0 && menu_lobby_countdown != 0) {
         // Start a match!
-        Menu_LoadMap(current_selected_bsp, gamemode, difficulty, startround, magic, headshotonly, fastrounds);
+        Menu_LoadMap(current_selected_bsp);
         Menu_Lobby_StopCountdown();
     }
-    */
 }
 
 void Menu_Lobby_Key (int key)
@@ -215,9 +218,6 @@ void Menu_Lobby_Key (int key)
                         Menu_Lobby_StopCountdown();
                         Menu_StockMaps_Set();
                         break;
-                    } else {
-                        menu_lobby_cursor=0;
-                        break;
                     }
             }
         } else {
@@ -238,9 +238,6 @@ void Menu_Lobby_Key (int key)
                     if (support_gamesettings) {
                         Menu_Lobby_StopCountdown();
                         Menu_StockMaps_Set();
-                        break;
-                    } else {
-                        menu_lobby_cursor=0;
                         break;
                     }
             }
