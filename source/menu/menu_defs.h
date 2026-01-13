@@ -101,7 +101,7 @@ extern int              num_custom_images;
 extern int     			custom_map_pages;
 
 // Currently selected map
-extern int				current_selected_bsp;
+extern char*			current_selected_bsp;
 extern char* 		    map_loadname;
 extern char* 		    map_loadname_pretty;
 
@@ -123,13 +123,23 @@ extern StockMaps        stock_maps[4];
 extern int 			    num_stock_maps;
 
 // Game mode setting
-extern char*   menu_set_gamemode;
-extern char*   menu_set_difficulty;
-extern char*   menu_set_startround;
-extern char*   menu_set_magic;
-extern char*   menu_set_headshotsonly;
-extern char*   menu_set_hordesize;
-extern char*   menu_set_fastrounds;
+extern char*   gamemode;
+extern char*   difficulty;
+extern char*   startround;
+extern char*   magic;
+extern char*   headshotonly;
+extern char*   hordesize;
+extern char*   fastrounds;
+
+// We need gamemode cvar values
+extern cvar_t sv_gamemode;
+extern cvar_t sv_difficulty;
+extern cvar_t sv_startround;
+extern cvar_t sv_magic;
+extern cvar_t sv_headshotonly;
+extern cvar_t sv_maxai;
+extern cvar_t sv_fastrounds;
+
 
 /*
 ===========================================================================
@@ -146,11 +156,12 @@ image_t Menu_PickBackground ();
 void Menu_InitStockMaps (void);
 int UserMapSupportsCustomGameLookup (char *bsp_name);
 void Map_SetDefaultValues (void);
-void Menu_LoadMap (char *selected_map, int sv_gamemode, int sv_difficulty, int sv_startround, int sv_magic, int sv_headshotonly, int sv_headshotonly, int sv_fastrounds);
+void Menu_LoadMap (char *selected_map);
 void Menu_DrawCustomBackground ();
 void Menu_DrawTitle (char *title_name, int color);
 void Menu_DrawButton (int order, int button_number, char* button_name, int button_active, char* button_summary);
 void Menu_DrawMapButton (int order, int button_number, int usermap_index, char* bsp_name);
+void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficulty, char* info_startround, char* info_magic, char* info_headshotonly, char* info_fastrounds, char* info_hordesize);
 void Menu_DrawBuildDate ();
 void Menu_DrawDivider (int order);
 void Menu_DrawSocialBadge (int order, int which);
