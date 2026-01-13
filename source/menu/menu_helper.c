@@ -300,6 +300,10 @@ qboolean Menu_IsHovered (int button_number)
 				return true;
 			}
 			break;
+		case m_gamesettings:
+			if (button_number == (menu_gamesettings_cursor+1)) {
+				return true;
+			}
 	}
 
 	return false;
@@ -510,7 +514,7 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 	Draw_FillByColor (left_column_x - getTextWidth("Fast Rounds", menu_scale_factor), left_column_y + (y_offset*2) + (y_newline*3), getTextWidth("Fast Rounds", menu_scale_factor), (small_bar_height/3), 130, 130, 130, 255);
 
 	// Map Name (Pretty)
-	Draw_ColoredString (image_x_pos, image_y_pos + image_height + small_bar_height, custom_maps[i].map_name_pretty, 255, 255, 0, 255, menu_scale_factor);
+	Draw_ColoredString (image_x_pos, image_y_pos + image_height - (small_bar_height/2) - (vid.height/48), custom_maps[i].map_name_pretty, 255, 255, 0, 255, menu_scale_factor);
 }
 
 /*
