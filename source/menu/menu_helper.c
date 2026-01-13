@@ -722,6 +722,81 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 
 /*
 ======================
+Menu_DrawLobbyInfo
+======================
+*/
+void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficulty, char* info_startround, char* info_magic, char* info_headshotonly, char* info_fastrounds, char* info_hordesize)
+{
+	int texnum;
+	int	i;
+
+	int image_width = (vid.width/4);
+	int image_height = (vid.height/4);
+
+	int image_x_pos = ((vid.width)-(vid.width/3.5) - image_width/2);
+	int image_y_pos = (vid.height) - (big_bar_height + small_bar_height) - (image_height) - (vid.height/24);
+
+	int left_column_x = (vid.width/3) + (vid.width/3);
+	int left_column_y = (vid.height/6);
+
+	int y_offset = CHAR_HEIGHT;
+	int y_newline = (vid.height/10);
+	int x_newline = (vid.width/4);
+
+	texnum = Menu_GetMapImage (bsp_name);
+
+	for (i = 0; i < num_user_maps; i++) {
+		if (!strcmp(bsp_name, custom_maps[i].map_name)) 
+			break;
+	}
+
+	// Draw map thumbnail picture
+	Draw_StretchPic (image_x_pos, image_y_pos, texnum, image_width, image_height);
+
+	// Draw border around map image
+	Menu_DrawMapBorder (image_x_pos, image_y_pos, image_width, image_height);
+
+	// Game Mode
+	Draw_ColoredString (left_column_x - getTextWidth("Game Mode", menu_scale_factor), left_column_y, "Game Mode", 255, 255, 255, 255, menu_scale_factor);
+	Draw_ColoredString (left_column_x - getTextWidth(info_gamemode, menu_scale_factor) + (getTextWidth("Game Mode", menu_scale_factor)/96), left_column_y + y_offset, info_gamemode, 255, 255, 0, 255, menu_scale_factor);
+	Draw_FillByColor (left_column_x - getTextWidth("Game Mode", menu_scale_factor), left_column_y + (y_offset*2), getTextWidth("Game Mode", menu_scale_factor), (small_bar_height/3), 130, 130, 130, 255);
+
+	// Difficulty
+	Draw_ColoredString (left_column_x - getTextWidth("Difficulty", menu_scale_factor) + x_newline, left_column_y, "Difficulty", 255, 255, 255, 255, menu_scale_factor);
+	Draw_ColoredString (left_column_x - getTextWidth(info_difficulty, menu_scale_factor) + (getTextWidth("Difficulty", menu_scale_factor)/96) + x_newline, left_column_y + y_offset, info_difficulty, 255, 255, 0, 255, menu_scale_factor);
+	Draw_FillByColor (left_column_x - getTextWidth("Difficulty", menu_scale_factor) + x_newline, left_column_y + (y_offset*2), getTextWidth("Difficulty", menu_scale_factor), (small_bar_height/3), 130, 130, 130, 255);
+
+	// Start Round
+	Draw_ColoredString (left_column_x - getTextWidth("Start Round", menu_scale_factor), left_column_y + y_newline, "Start Round", 255, 255, 255, 255, menu_scale_factor);
+	Draw_ColoredString (left_column_x - getTextWidth(info_startround, menu_scale_factor) + (getTextWidth("Start Round", menu_scale_factor)/96), left_column_y + y_offset + y_newline, info_startround, 255, 255, 0, 255, menu_scale_factor);
+	Draw_FillByColor (left_column_x - getTextWidth("Start Round", menu_scale_factor), left_column_y + (y_offset*2) + y_newline, getTextWidth("Start Round", menu_scale_factor), (small_bar_height/3), 130, 130, 130, 255);
+
+	// Magic
+	Draw_ColoredString (left_column_x - getTextWidth("Magic", menu_scale_factor) + x_newline, left_column_y + y_newline, "Magic", 255, 255, 255, 255, menu_scale_factor);
+	Draw_ColoredString (left_column_x - getTextWidth(info_magic, menu_scale_factor) + (getTextWidth("Magic", menu_scale_factor)/96) + x_newline, left_column_y + y_offset + y_newline, info_magic, 255, 255, 0, 255, menu_scale_factor);
+	Draw_FillByColor (left_column_x - getTextWidth("Magic", menu_scale_factor) + x_newline, left_column_y + (y_offset*2) + y_newline, getTextWidth("Magic", menu_scale_factor), (small_bar_height/3), 130, 130, 130, 255);
+
+	// Headshots Only
+	Draw_ColoredString (left_column_x - getTextWidth("Headshots Only", menu_scale_factor), left_column_y + (y_newline*2), "Headshots Only", 255, 255, 255, 255, menu_scale_factor);
+	Draw_ColoredString (left_column_x - getTextWidth(info_headshotonly, menu_scale_factor) + (getTextWidth("Headshots Only", menu_scale_factor)/96), left_column_y + y_offset + (y_newline*2), info_headshotonly, 255, 255, 0, 255, menu_scale_factor);
+	Draw_FillByColor (left_column_x - getTextWidth("Headshots Only", menu_scale_factor), left_column_y + (y_offset*2) + (y_newline*2), getTextWidth("Headshots Only", menu_scale_factor), (small_bar_height/3), 130, 130, 130, 255);
+
+	// Horde Size
+	Draw_ColoredString (left_column_x - getTextWidth("Horde Size", menu_scale_factor) + x_newline, left_column_y + (y_newline*2), "Horde Size", 255, 255, 255, 255, menu_scale_factor);
+	Draw_ColoredString (left_column_x - getTextWidth(info_hordesize, menu_scale_factor) + (getTextWidth("Horde Size", menu_scale_factor)/96) + x_newline, left_column_y + y_offset + (y_newline*2), info_hordesize, 255, 255, 0, 255, menu_scale_factor);
+	Draw_FillByColor (left_column_x - getTextWidth("Horde Size", menu_scale_factor) + x_newline, left_column_y + (y_offset*2) + (y_newline*2), getTextWidth("Horde Size", menu_scale_factor), (small_bar_height/3), 130, 130, 130, 255);
+
+	// Fast Rounds
+	Draw_ColoredString (left_column_x - getTextWidth("Fast Rounds", menu_scale_factor), left_column_y + (y_newline*3), "Fast Rounds", 255, 255, 255, 255, menu_scale_factor);
+	Draw_ColoredString (left_column_x - getTextWidth(info_fastrounds, menu_scale_factor) + (getTextWidth("Fast Rounds", menu_scale_factor)/96), left_column_y + y_offset + (y_newline*3), info_fastrounds, 255, 255, 0, 255, menu_scale_factor);
+	Draw_FillByColor (left_column_x - getTextWidth("Fast Rounds", menu_scale_factor), left_column_y + (y_offset*2) + (y_newline*3), getTextWidth("Fast Rounds", menu_scale_factor), (small_bar_height/3), 130, 130, 130, 255);
+
+	// Map Name (Pretty)
+	Draw_ColoredString (image_x_pos, image_y_pos + image_height + small_bar_height, custom_maps[i].map_name_pretty, 255, 255, 0, 255, menu_scale_factor);
+}
+
+/*
+======================
 Menu_DrawBuildDate
 ======================
 */
