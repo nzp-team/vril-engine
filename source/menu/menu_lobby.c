@@ -49,6 +49,77 @@ void Menu_Lobby_Set (void)
 	m_state = m_lobby;
 }
 
+void Menu_Lobby_SetStrings (void)
+{
+    switch ((int)sv_gamemode.value) {
+        case 0:
+            gamemode = "CLASSIC";
+            break;
+        case 1:
+            gamemode = "GRIEF";
+            break;
+        case 2:
+            gamemode = "GUN GAME";
+            break;
+        case 3:
+            gamemode = "HARDCORE";
+            break;
+        case 4:
+            gamemode = "WILD WEST";
+            break;
+        case 5:
+            gamemode = "STICKS & STONES";
+            break;
+        case 6:
+            gamemode = "FEVER";
+            break;
+        default:
+            gamemode = "???";
+            break;
+    }
+
+    switch ((int)sv_difficulty.value) {
+        case 0:
+            difficulty = "EASY";
+            break;
+        case 1:
+            difficulty = "NORMAL";
+            break;
+        case 2:
+            difficulty = "HARD";
+            break;
+        case 3:
+            difficulty = "NIGHTMARE";
+            break;
+        default:
+            difficulty = "???";
+            break;
+    }
+
+    sprintf (startround, "%i", (int)sv_startround.value);
+    if ((int)sv_startround.value == 0) startround = "1";
+
+    if ((int)sv_magic.value == 1) { 
+        magic = "ENABLED";
+    } else {
+        magic = "DISABLED";
+    }
+    
+    if ((int)sv_headshotonly.value == 1) {
+        headshotonly = "ENABLED";
+    } else {
+        headshotonly = "DISABLED";
+    }
+
+    if ((int)sv_fastrounds.value == 1) {
+        fastrounds = "ENABLED";
+    } else {
+        fastrounds = "DISABLED";
+    }
+
+    sprintf(hordesize, "%i", (int)sv_maxai.value);
+}
+
 void Menu_Lobby_Draw (void)
 {
     // Background
@@ -58,7 +129,7 @@ void Menu_Lobby_Draw (void)
     // Map panel makes the background darker
     Menu_DrawMapPanel();
 
-    support_gamesettings = UserMapSupportsCustomGameLookup (map_loadname);
+    support_gamesettings = UserMapSupportsCustomGameLookup (current_selected_bsp);
 
     if (menu_lobby_countdown == 0) {
         Menu_DrawButton (1, 1, "START GAME", MENU_BUTTON_ACTIVE, "Face the Horde!");
@@ -82,6 +153,11 @@ void Menu_Lobby_Draw (void)
         Menu_DrawButton(11.5, 2+support_gamesettings, "BACK", MENU_BUTTON_ACTIVE, "Return to Map Selection.");
     }
 
+    Menu_Lobby_SetStrings ();
+
+    Menu_DrawLobbyInfo (current_selected_bsp, gamemode, difficulty, startround, magic, headshotonly, fastrounds, hordesize);
+
+    /*
     float lobby_delta = menu_loby_countdown - time;
     if (lobby_delta > 0) {
         sui_text([150, 5], MENU_TEXT_SMALL, sprintf("Game Starting In.. %d", lobby_delta), [1, 1, 1], 1, 0);
@@ -93,9 +169,10 @@ void Menu_Lobby_Draw (void)
         }
     } else if (lobby_delta < 0 && menu_loby_countdown != 0) {
         // Start a match!
-        Menu_LoadMap(current_selected_bsp, int sv_gamemode, int sv_difficulty, int sv_startround, int sv_magic, int sv_headshotonly, int sv_headshotonly, int sv_fastrounds);
+        Menu_LoadMap(current_selected_bsp, gamemode, difficulty, startround, magic, headshotonly, fastrounds);
         Menu_Lobby_StopCountdown();
     }
+    */
 }
 
 void Menu_Lobby_Key (int key)
