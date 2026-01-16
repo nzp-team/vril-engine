@@ -509,6 +509,17 @@ void Menu_DrawGreyButton (int order, char* button_name)
 	Menu_DrawString (x_pos, y_pos, button_name, 128, 128, 128, 255, menu_text_scale_factor, UI_ANCHOR_TOPLEFT, UI_FLIPTEXTPOS);
 }
 
+void Menu_DrawOptionButton(int order, char* selection_name)
+{
+	// y factor for vertical menu ordering
+	int y_factor = (vid.height/16);
+
+	int x_pos = (vid.width/3) + getTextWidth(selection_name, menu_scale_factor) - (vid.width/24); 
+	int y_pos = (vid.height/8) + (order*y_factor);
+
+	Draw_ColoredString(x_pos, y_pos, selection_name, 255, 255, 255, 255, menu_scale_factor);
+}
+
 /*
 ======================
 Menu_DrawMapButton
