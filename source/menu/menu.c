@@ -122,9 +122,9 @@ void Menu_Draw (void)
 		m_recursiveDraw = false;
 	}
 
-	printf("menu time: %f\n", menu_time);
-	printf("menu_changetime: %f\n", menu_changetime);
-	printf("menu_starttime: %f\n", menu_starttime);
+	//printf("menu time: %f\n", menu_time);
+	//printf("menu_changetime: %f\n", menu_changetime);
+	//printf("menu_starttime: %f\n", menu_starttime);
 
 	// Menu Background Changing
 	if (menu_time > menu_changetime) {
