@@ -160,6 +160,7 @@ void Menu_LoadMap (char *selected_map);
 void Menu_DrawCustomBackground ();
 void Menu_DrawTitle (char *title_name, int color);
 void Menu_DrawButton (int order, int button_number, char* button_name, int button_active, char* button_summary);
+void Menu_DrawOptionButton(int order, char* selection_name);
 void Menu_DrawMapButton (int order, int button_number, int usermap_index, char* bsp_name);
 void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficulty, char* info_startround, char* info_magic, char* info_headshotonly, char* info_fastrounds, char* info_hordesize);
 void Menu_DrawBuildDate ();

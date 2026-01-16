@@ -143,7 +143,7 @@ void Menu_Paused_Key (int key)
 				key_dest = key_menu_pause;
 				break;
 			case 4:
-				Menu_Exit_Set();
+				Menu_Main_Set();
 				break;
 			}
 		}
