@@ -26,7 +26,7 @@ int			loadingScreen;
 image_t     lscreen_image;
 double      loadingtimechange;
 int         loadingdot;
-char        *lodinglinetext;
+char        *loadinglinetext;
 
 qboolean 	loadscreeninit;
 
@@ -40,11 +40,10 @@ char* 		map_loadname_pretty;
 SCR_DrawLoadScreen
 ==============
 */
-
-// 47 character limit
-
 void SCR_DrawLoadScreen (void)
 {
+	// TODO
+	return;
 
 	if (developer.value) {
 		return;
@@ -56,11 +55,13 @@ void SCR_DrawLoadScreen (void)
 	if (loadingScreen) {
 		Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 255);
 		if (!loadscreeninit) {
-			lscreen_image = Image_LoadImage(va("gfx/lscreen/%s", map_loadname), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+			lscreen_image = Image_LoadImage(va("gfx/lscreen/%s", map_loadname), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, true, false);
 
 			if (lscreen_image < 0 || lscreen_image < 0) {
-				lscreen_image = Image_LoadImage("gfx/lscreen/lscreen", IMAGE_PNG, 0, false, false);
+				lscreen_image = Image_LoadImage("gfx/lscreen/lscreen", IMAGE_PNG, 0, true, false);
 			}
+
+			loadinglinetext = malloc(128*sizeof(char));
 
 			loadscreeninit = true;
 		}
@@ -68,7 +69,7 @@ void SCR_DrawLoadScreen (void)
 		Draw_StretchPic(0, 0, lscreen_image, vid.width, vid.height);
 
 		Draw_FillByColor(0, 0, vid.width, big_bar_height, 0, 0, 0, 175);
-		Draw_FillByColor(0, (vid.height - big_bar_height), vid.width, big_bar_height, 0, 0, 0, 175);
+		Draw_FillByColor(0, (vid.height + big_bar_height), vid.width, big_bar_height, 0, 0, 0, 175);
 
 		if (map_loadname_pretty != NULL) {
 			Menu_DrawTitle(map_loadname_pretty, MENU_COLOR_YELLOW);
@@ -77,11 +78,11 @@ void SCR_DrawLoadScreen (void)
 
 	if (loadingtimechange < Sys_FloatTime ())
 	{
-        lodinglinetext = Platform_ReturnLoadingText();
+        loadinglinetext = Platform_ReturnLoadingText();
         loadingtimechange = Sys_FloatTime () + 5;
 	}
 
 	if (key_dest == key_game) {
-		Draw_ColoredStringCentered((vid.height - (vid.height/24)), lodinglinetext, 255, 255, 255, 255, menu_scale_factor);
+		Draw_ColoredStringCentered((vid.height - (vid.height/24)), loadinglinetext, 255, 255, 255, 255, menu_scale_factor);
 	}
 }
