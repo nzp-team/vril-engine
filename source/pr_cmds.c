@@ -2650,6 +2650,19 @@ void PR_CheckEmptyString (char *s)
 		PR_RunError ("Bad string");
 }
 
+char* PR_CopyToZoneIfTempString (char *s)
+{
+	// shpuld: if parm0 address == temp string address then we're trying to precache temp string.
+	// trying to precache temp string potentially breaks future precaches, so copy contents to zone.
+	if (s == pr_string_temp)
+	{
+		char * newstr = Z_Malloc(strlen(s) + 1);
+		strcpy(newstr, s);
+		return newstr;
+	}
+	return s;
+}
+
 void PF_precache_file (void)
 {	// precache_file is only used to copy files with qcc, it does nothing
 	G_INT(OFS_RETURN) = G_INT(OFS_PARM0);
@@ -2666,19 +2679,12 @@ void PF_precache_sound (void)
 	s = G_STRING(OFS_PARM0);
 	G_INT(OFS_RETURN) = G_INT(OFS_PARM0);
 	PR_CheckEmptyString (s);
-
-	// shpuld: if parm0 address == temp string address then we're trying to precache temp string.
-	// trying to precache temp string potentially breaks future precaches, so copy contents to zone.
-	if (G_STRING(OFS_PARM0) == pr_string_temp) {
-		char * newstr = Z_Malloc(strlen(s) + 1);
-		strcpy(newstr, s);
-		s = newstr;
-	}
-
+	
 	for (i=0 ; i<MAX_SOUNDS ; i++)
 	{
 		if (!sv.sound_precache[i])
 		{
+			s = PR_CopyToZoneIfTempString(s);
 			sv.sound_precache[i] = s;
 			return;
 		}
@@ -2699,11 +2705,12 @@ void PF_precache_model (void)
 	s = G_STRING(OFS_PARM0);
 	G_INT(OFS_RETURN) = G_INT(OFS_PARM0);
 	PR_CheckEmptyString (s);
-
+	
 	for (i=0 ; i<MAX_MODELS ; i++)
 	{
 		if (!sv.model_precache[i])
 		{
+			s = PR_CopyToZoneIfTempString(s);
 			sv.model_precache[i] = s;
 			sv.models[i] = Mod_ForName (s, true);
 			return;
