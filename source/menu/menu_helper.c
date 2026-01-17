@@ -23,13 +23,17 @@ float   		menu_scale_factor;
 float			CHAR_WIDTH;
 float			CHAR_HEIGHT;
 
-StockMaps		stock_maps[4];
+StockMaps		stock_maps[8];
 
-StockMaps stock_maps[4] = {
+StockMaps stock_maps[8] = {
 	[0] = { .bsp_name = "ndu", .array_index = 0 },
-	[1] = { .bsp_name = "nzp_warehouse", .array_index = 0 },
-	[2] = { .bsp_name = "nzp_warehouse2", .array_index = 0 },
-	[3] = { .bsp_name = "christmas_special", .array_index = 0 }
+	[1] = { .bsp_name = "nzp_warehouse2", .array_index = 0 },
+	[2] = { .bsp_name = "nzp_xmas2", .array_index = 0 },
+	[3] = { .bsp_name = "nzp_warehouse", .array_index = 0 },
+	[4] = { .bsp_name = "christmas_special", .array_index = 0 },
+	[5] = { .bsp_name = "lexi_house", .array_index = 0 },
+	[6] = { .bsp_name = "lexi_temple", .array_index = 0 },
+	[7] = { .bsp_name = "lexi_overlook", .array_index = 0 }
 };
 
 /*

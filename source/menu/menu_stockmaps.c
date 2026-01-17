@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 /* STOCK MAPS MENU */
 
 int	menu_stockmaps_cursor;
-#define	STOCKMAPS_ITEMS 7
+#define	STOCKMAPS_ITEMS 11
 
 /*
 =======================
@@ -70,10 +70,9 @@ void Menu_StockMaps_Draw (void)
     Menu_DrawDivider(i + 1.25);
 
     Menu_DrawButton(i + 1.5, i+1, "USER MAPS", MENU_BUTTON_ACTIVE, "View User-Created Maps.");
-
     Menu_DrawButton(i + 2.5, i+2, "RANDOM", MENU_BUTTON_ACTIVE, "Feeling indecisive? Try rolling the dice.");
 
-    Menu_DrawButton(i + 7.5, i+3, "BACK", MENU_BUTTON_ACTIVE, back_text);
+    Menu_DrawButton(i + 3.5, i+3, "BACK", MENU_BUTTON_ACTIVE, back_text);
 }
 
 /*
@@ -124,15 +123,35 @@ void Menu_StockMaps_Key (int key)
                 Menu_Lobby_Set();
                 break;
             case 4:
+                Map_SetDefaultValues();
+                current_selected_bsp = stock_maps[menu_stockmaps_cursor].bsp_name;
+                Menu_Lobby_Set();
+                break;
+            case 5:
+                Map_SetDefaultValues();
+                current_selected_bsp = stock_maps[menu_stockmaps_cursor].bsp_name;
+                Menu_Lobby_Set();
+                break;
+            case 6:
+                Map_SetDefaultValues();
+                current_selected_bsp = stock_maps[menu_stockmaps_cursor].bsp_name;
+                Menu_Lobby_Set();
+                break;
+            case 7:
+                Map_SetDefaultValues();
+                current_selected_bsp = stock_maps[menu_stockmaps_cursor].bsp_name;
+                Menu_Lobby_Set();
+                break;
+            case 8:
                 // Custom map menu
                 Menu_CustomMaps_Set();
 				break;
-            case 5:
+            case 9:
                 // Random map
                 //Menu_ChooseRandomMap();
                 Menu_Lobby_Set();
                 break;
-            case 6:
+            case 10:
                 if (menu_is_solo) {
                     Menu_Main_Set();
                 }

@@ -127,7 +127,7 @@ typedef struct
     int array_index;
 } StockMaps;
 
-extern StockMaps        stock_maps[4];
+extern StockMaps        stock_maps[8];
 extern int 			    num_stock_maps;
 
 // We need gamemode cvar values
