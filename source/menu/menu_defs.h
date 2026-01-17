@@ -59,6 +59,9 @@ extern float            menu_scale_factor;
 #define					MENU_COLOR_WHITE		0
 #define					MENU_COLOR_YELLOW		1
 
+#define					MENU_SLIDER_RIGHT		1
+#define					MENU_SLIDER_LEFT		-1
+
 // Platform specific character representing
 // which button is default bound to "enter"
 // a menu
@@ -113,6 +116,11 @@ extern qboolean		    menu_is_solo;
 extern int 			    big_bar_height;
 extern int 			    small_bar_height;
 
+// Width and height of a character
+// set by platform scale
+extern float			CHAR_WIDTH;
+extern float			CHAR_HEIGHT;
+
 typedef struct
 {
     char* bsp_name;
@@ -121,15 +129,6 @@ typedef struct
 
 extern StockMaps        stock_maps[4];
 extern int 			    num_stock_maps;
-
-// Game mode setting
-extern char*   gamemode;
-extern char*   difficulty;
-extern char*   startround;
-extern char*   magic;
-extern char*   headshotonly;
-extern char*   hordesize;
-extern char*   fastrounds;
 
 // We need gamemode cvar values
 extern cvar_t sv_gamemode;
@@ -161,6 +160,7 @@ void Menu_DrawCustomBackground ();
 void Menu_DrawTitle (char *title_name, int color);
 void Menu_DrawButton (int order, int button_number, char* button_name, int button_active, char* button_summary);
 void Menu_DrawOptionButton(int order, char* selection_name);
+void Menu_DrawOptionSlider(int order, int max_option_value, cvar_t option);
 void Menu_DrawMapButton (int order, int button_number, int usermap_index, char* bsp_name);
 void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficulty, char* info_startround, char* info_magic, char* info_headshotonly, char* info_fastrounds, char* info_hordesize);
 void Menu_DrawBuildDate ();

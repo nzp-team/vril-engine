@@ -44,14 +44,6 @@ int 			small_bar_height;
 int 			num_stock_maps;
 char*			current_selected_bsp;
 
-char*			gamemode;
-char*			difficulty;
-char*			startround;
-char*			magic;
-char*			headshotonly;
-char*			fastrounds;
-char*			hordesize;
-
 //=============================================================================
 /* Menu Subsystem */
 

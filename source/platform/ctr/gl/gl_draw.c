@@ -97,7 +97,7 @@ void GL_FreeTextures (int texnum)
 	glt->keep = false;
 	glt->used = false;
 
-	numgltextures--;
+	//numgltextures--;
 	current_gl_id = -1;
 }
 

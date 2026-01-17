@@ -22,12 +22,42 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //=============================================================================
 /* LOBBY MENU */
 
-int	menu_lobby_cursor;
-int support_gamesettings;
-int LOBBY_ITEMS;
+int	            menu_lobby_cursor;
+int             support_gamesettings;
+int             LOBBY_ITEMS;
 
-float menu_lobby_countdown = 0;
-float menu_lobby_last;
+float           menu_lobby_countdown = 0;
+float           menu_lobby_last;
+
+char*			gamemode;
+char*			difficulty;
+char*			startround;
+char*			magic;
+char*			headshotonly;
+char*			fastrounds;
+char*			hordesize;
+
+void Menu_Lobby_AllocStrings (void)
+{
+    gamemode = malloc(16*sizeof(char));
+    difficulty = malloc(12*sizeof(char));
+    startround = malloc(16*sizeof(char));
+    magic = malloc(16*sizeof(char));
+    headshotonly = malloc(16*sizeof(char));
+    fastrounds = malloc(16*sizeof(char));
+    hordesize = malloc(16*sizeof(char));
+}
+
+void Menu_Lobby_FreeStrings (void)
+{
+    free(gamemode);
+    free(difficulty);
+    free(startround);
+    free(magic);
+    free(headshotonly);
+    free(fastrounds);
+    free(hordesize);
+}
 
 void Menu_Lobby_StartCountdown (void)
 {
@@ -45,6 +75,9 @@ void Menu_Lobby_StopCountdown (void)
 
 void Menu_Lobby_Set (void)
 {
+    Menu_Lobby_AllocStrings();
+    LOBBY_ITEMS = 2;
+
     key_dest = key_menu;
 	m_state = m_lobby;
 }
@@ -133,7 +166,9 @@ void Menu_Lobby_Draw (void)
 
     support_gamesettings = UserMapSupportsCustomGameLookup (current_selected_bsp);
 
+    LOBBY_ITEMS = 2;
     LOBBY_ITEMS = LOBBY_ITEMS + support_gamesettings;
+    if (LOBBY_ITEMS > 3) LOBBY_ITEMS = 3;
 
     if (menu_lobby_countdown == 0) {
         Menu_DrawButton (1, 1, "START GAME", MENU_BUTTON_ACTIVE, "Face the Horde!");
@@ -164,8 +199,10 @@ void Menu_Lobby_Draw (void)
     float lobby_delta = menu_lobby_countdown - (float)Sys_FloatTime();
     sprintf(game_starting, "Game Starting In..  %i", (int)lobby_delta);
     if (lobby_delta > 0) {
-        Draw_ColoredString(vid.width - vid.width/4 - getTextWidth(game_starting, menu_scale_factor), vid.height - vid.height/5, game_starting, 255, 255, 255, 255, menu_scale_factor);
-        Draw_FillByColor(vid.width - (vid.width/3 * (lobby_delta/6)), vid.height - vid.height/13, (vid.width/12)*(lobby_delta/6), vid.height/36, 130, 130, 130, 130);
+        int x_pos = (vid.width/2) + (vid.width/28);
+        int y_pos = (vid.height - (vid.height/2)) + (vid.height/20);
+        Draw_ColoredString(x_pos, y_pos, game_starting, 255, 255, 255, 255, menu_scale_factor);
+        Draw_FillByColor(x_pos, y_pos + (CHAR_HEIGHT), (vid.width/4)*(lobby_delta/(vid.width/60)), vid.height/36, 180, 130*(lobby_delta/(vid.width/60)), 130, 180);
 
         if (menu_lobby_last != (float)floor(lobby_delta)) {
             Menu_StartSound(MENU_SND_BEEP);
@@ -175,6 +212,7 @@ void Menu_Lobby_Draw (void)
         // Start a match!
         Menu_LoadMap(current_selected_bsp);
         Menu_Lobby_StopCountdown();
+        //Menu_Lobby_FreeStrings();
     }
 }
 
