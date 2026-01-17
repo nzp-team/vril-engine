@@ -188,6 +188,7 @@ void IN_Commands (void)
 
 	// Use a different key mapping depending on where inputs are going to go.
 	const ButtonToKeyMap* buttonToKeyMap = 0;
+	static const ButtonToKeyMap* lastKeyMap = 0; 
 	switch (key_dest)
 	{
 	case key_game:
@@ -248,10 +249,29 @@ void IN_Commands (void)
 				Key_Event(key, state);
 			}
 		}
+
+		// shpuld: Following block is to emit key-up signal when keymap changes and button changes its key.
+		// first check if keymap changed
+		if (lastKeyMap && (lastKeyMap != buttonToKeyMap))
+		{
+			// was the button held down previously
+			if (lastPad.Buttons & buttonMask)
+			{
+				int key = (*buttonToKeyMap)[button];
+				int key_in_previous = (*lastKeyMap)[button];
+				// did the current button actually change its key
+				if (key_in_previous != key)
+				{
+					// Emit Key_Event with down=false
+					Key_Event(key_in_previous, false);
+				}
+			}
+		}
 	}
 
 	// Remember the pad state for next time.
 	lastPad = pad;
+	lastKeyMap = buttonToKeyMap;
 }
 
 float IN_CalcInput(int axis, float speed, float tolerance, float acceleration) {
