@@ -29,6 +29,8 @@ int             LOBBY_ITEMS;
 float           menu_lobby_countdown = 0;
 float           menu_lobby_last;
 
+char*           game_starting;
+
 char*			gamemode;
 char*			difficulty;
 char*			startround;
@@ -39,6 +41,8 @@ char*			hordesize;
 
 void Menu_Lobby_AllocStrings (void)
 {
+    game_starting = malloc(64*sizeof(char));
+
     gamemode = malloc(16*sizeof(char));
     difficulty = malloc(12*sizeof(char));
     startround = malloc(16*sizeof(char));
@@ -50,6 +54,7 @@ void Menu_Lobby_AllocStrings (void)
 
 void Menu_Lobby_FreeStrings (void)
 {
+    free(game_starting);
     free(gamemode);
     free(difficulty);
     free(startround);
@@ -71,15 +76,6 @@ void Menu_Lobby_StopCountdown (void)
     Menu_StartSound(MENU_SND_ENTER);
     menu_lobby_countdown = 0;
     menu_lobby_last = 0;
-}
-
-void Menu_Lobby_Set (void)
-{
-    Menu_Lobby_AllocStrings();
-    LOBBY_ITEMS = 2;
-
-    key_dest = key_menu;
-	m_state = m_lobby;
 }
 
 void Menu_Lobby_SetStrings (void)
@@ -153,10 +149,18 @@ void Menu_Lobby_SetStrings (void)
     sprintf(hordesize, "%i", (int)sv_maxai.value);
 }
 
+void Menu_Lobby_Set (void)
+{
+    Menu_Lobby_AllocStrings();
+    Menu_Lobby_SetStrings();
+    LOBBY_ITEMS = 2;
+
+    key_dest = key_menu;
+	m_state = m_lobby;
+}
+
 void Menu_Lobby_Draw (void)
 {
-    char game_starting[32] = "";
-
     // Background
 	Menu_DrawCustomBackground ();
     // Title
@@ -191,8 +195,6 @@ void Menu_Lobby_Draw (void)
             
         Menu_DrawButton(11.5, 2+support_gamesettings, "BACK", MENU_BUTTON_ACTIVE, "Return to Map Selection.");
     }
-
-    Menu_Lobby_SetStrings ();
 
     Menu_DrawLobbyInfo (current_selected_bsp, gamemode, difficulty, startround, magic, headshotonly, fastrounds, hordesize);
 
