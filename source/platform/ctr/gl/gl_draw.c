@@ -71,6 +71,16 @@ void GL_Bind (int texnum)
         return;
     }
 
+	if (r_retro.value) {
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	} else {
+		if (texnum != char_texture) {
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		}
+	}
+
     if (current_gl_id != glt->gl_id) {
         glBindTexture(GL_TEXTURE_2D, glt->gl_id);
         current_gl_id = glt->gl_id;
