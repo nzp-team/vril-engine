@@ -9,26 +9,29 @@ extern int m_state;
 #define	m_none			0
 #define	m_start			1
 #define	m_main			2
-#define	m_paused_menu	3
+#define	m_paused		3
 #define	m_stockmaps 	4
 #define	m_custommaps	5
 #define m_lobby			6
 #define m_gamesettings	7
 #define	m_setup			8
 #define	m_net			9
-#define	m_options		10
+#define m_configuration 10
 #define	m_video			11
-#define	m_keys			12
-#define	m_quit			13
-#define	m_restart		14
-#define	m_credits		15
-#define	m_exit			16
-#define	m_serialconfig	17
-#define	m_modemconfig	18
-#define	m_lanconfig		19
-#define	m_gameoptions	20
-#define	m_search		21
-#define	m_slist			22
+#define m_audio			12
+#define m_accessibility 13
+#define m_controls		14
+#define	m_keys			15
+#define	m_quit			16
+#define	m_restart		17
+#define	m_credits		18
+#define	m_exit			19
+#define	m_serialconfig	20
+#define	m_modemconfig	21
+#define	m_lanconfig		22
+#define	m_gameoptions	23
+#define	m_search		24
+#define	m_slist			25
 ///////////////////////////
 ///////////////////////////
 ///////////////////////////
@@ -36,8 +39,18 @@ extern int m_state;
 // Menu page cursor management
 extern int	            menu_main_cursor;
 extern int              menu_stockmaps_cursor;
+extern int				menu_custommaps_cursor;
 extern int				menu_lobby_cursor;
 extern int				menu_gamesettings_cursor;
+extern int				menu_configuration_cursor;
+extern int				menu_video_cursor;
+extern int				menu_audio_cursor;
+extern int				menu_controls_cursor;
+extern int				menu_accessibility_cursor;
+extern int				menu_paused_cursor;
+extern int				menu_quit_cursor;
+
+extern int				key_quit;
 
 extern qboolean	        m_recursiveDraw;
 
@@ -151,8 +164,10 @@ FUNCTION DEFINES
 void Menu_DictateScaleFactor(void);
 void Menu_LoadPics (void);
 void Menu_StartSound (int type);
-image_t Menu_PickBackground ();
+image_t Menu_PickBackground (void);
+void Menu_DrawTextCentered (int x, int y, char* text, int r, int g, int b, int a);
 void Menu_InitStockMaps (void);
+qboolean Menu_IsStockMap (char *bsp_name);
 int UserMapSupportsCustomGameLookup (char *bsp_name);
 void Map_SetDefaultValues (void);
 void Menu_LoadMap (char *selected_map);
@@ -160,7 +175,7 @@ void Menu_DrawCustomBackground ();
 void Menu_DrawTitle (char *title_name, int color);
 void Menu_DrawButton (int order, int button_number, char* button_name, int button_active, char* button_summary);
 void Menu_DrawOptionButton(int order, char* selection_name);
-void Menu_DrawOptionSlider(int order, int max_option_value, cvar_t option);
+void Menu_DrawOptionSlider(int order, int max_option_value, cvar_t option, qboolean zero_to_one, qboolean draw_option_string);
 void Menu_DrawMapButton (int order, int button_number, int usermap_index, char* bsp_name);
 void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficulty, char* info_startround, char* info_magic, char* info_headshotonly, char* info_fastrounds, char* info_hordesize);
 void Menu_DrawBuildDate ();
@@ -172,49 +187,57 @@ void Menu_Preload_Custom_Images (void);
 void Menu_Start_Set(void);
 void Menu_StockMaps_Set (void);
 void Menu_Paused_Set(void);
-void Menu_Options_Set(void);
 void Menu_Keys_Set(void);
 void Menu_Video_Set(void);
-void Menu_Quit_Set(void);
+void Menu_Quit_Set(qboolean restart);
 void Menu_Restart_Set(void);
 void Menu_Credits_Set(void);
 void Menu_Exit_Set(void);
 void Menu_GameOptions_Set(void);
 void Menu_CustomMaps_Set(void);
 void Menu_Lobby_Set(void);
-void Menu_GameSettings_Set (void);
+void Menu_GameSettings_Set(void);
+void Menu_Configuration_Set(void);
+void Menu_Video_Set (void);
+void Menu_Audio_Set (void);
+void Menu_Controls_Set (void);
+void Menu_Accessibility_Set (void);
 
 void Menu_Start_Draw(void);
 void Menu_Paused_Draw(void);
 void Menu_Main_Draw(void);
 void Menu_StockMaps_Draw(void);
-void Menu_Options_Draw(void);
 void Menu_Keys_Draw(void);
 void Menu_Video_Draw(void);
 void Menu_Quit_Draw(void);
-void Menu_Restart_Draw(void);
 void Menu_Credits_Draw(void);
-void Menu_Exit_Draw(void);
 void Menu_GameOptions_Draw(void);
 void Menu_CustomMaps_Draw(void);
 void Menu_Lobby_Draw(void);
 void Menu_GameSettings_Draw (void);
+void Menu_Configuration_Draw (void);
+void Menu_Video_Draw (void);
+void Menu_Audio_Draw (void);
+void Menu_Controls_Draw (void);
+void Menu_Accessibility_Draw (void);
 
 void Menu_Start_Key(int key);
 void Menu_Paused_Key(int key);
 void Menu_Main_Key(int key);
 void Menu_StockMaps_Key(int key);
-void Menu_Options_Key(int key);
 void Menu_Keys_Key(int key);
 void Menu_Restart_Key(int key);
 void Menu_Credits_Key(int key);
 void Menu_Video_Key(int key);
 void Menu_Quit_Key(int key);
-void Menu_Exit_Key(int key);
-void Menu_GameOptions_Key(int key);
 void Menu_CustomMaps_Key(int key);
 void Menu_Lobby_Key(int key);
 void Menu_GameSettings_Key (int key);
+void Menu_Configuration_Key (int key);
+void Menu_Video_Key (int key);
+void Menu_Audio_Key (int key);
+void Menu_Controls_Key (int key);
+void Menu_Accessibility_Key (int key);
 
 // Platform specifics
 void Platform_Menu_MapFinder(void);
