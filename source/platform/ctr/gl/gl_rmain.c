@@ -98,6 +98,8 @@ cvar_t	gl_reporttjunctions = {"gl_reporttjunctions","0"};
 cvar_t	gl_doubleeyes = {"gl_doubleeys", "1"};
 
 //QMB
+//cypress
+cvar_t 	r_runqmbparticles 	= {"r_runqmbparticles",  "1",true};
 cvar_t  r_explosiontype     = {"r_explosiontype",    "0",true};
 cvar_t	r_laserpoint		= {"r_laserpoint",       "0",true};
 cvar_t	r_part_explosions	= {"r_part_explosions",  "1",true};
@@ -115,11 +117,14 @@ cvar_t	r_part_flies		= {"r_part_flies",       "1",true};
 cvar_t	r_part_muzzleflash  = {"r_part_muzzleflash", "1",true};
 cvar_t	r_flametype	        = {"r_flametype",        "2",true};
 //Shpuld
-cvar_t  r_model_brightness  = { "r_model_brightness", "1", true};   // Toggle high brightness model lighting
+cvar_t  r_model_brightness  = { "r_model_brightness", "1",true};   // Toggle high brightness model lighting
 
 cvar_t	r_farclip	        = {"r_farclip",              "4096"};        //far cliping for q3 models
 
 cvar_t	r_flatlightstyles = {"r_flatlightstyles", "0", false};
+
+cvar_t	r_retro   	        = {"r_retro",			"1",true}; // dr_mabuse1981: "retro filter".
+cvar_t	r_dithering = {"r_dithering","1",true};
 
 extern	cvar_t	gl_ztrick;
 extern 	cvar_t 	scr_fov_viewmodel;

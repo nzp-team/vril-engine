@@ -274,6 +274,9 @@ extern  cvar_t	r_decal_sparks;
 extern  cvar_t	r_decal_explosions;
 extern  cvar_t  r_coronas;
 extern  cvar_t  r_model_brightness;
+extern 	cvar_t 	r_runqmbparticles;
+extern  cvar_t	r_retro; // dr_mabuse1981: "retro filter" (makes textures drawn with GL_NEAREST).
+extern 	cvar_t	r_dithering;
 
 extern	cvar_t	gl_clear;
 extern	cvar_t	gl_cull;
