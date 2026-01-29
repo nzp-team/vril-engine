@@ -99,7 +99,7 @@ void Menu_StartSound (int type)
     }
 }
 
-image_t Menu_PickBackground ()
+image_t Menu_PickBackground (void)
 {
 	// No custom images
 	if (num_custom_images == 0) return menu_bk;
@@ -110,6 +110,13 @@ image_t Menu_PickBackground ()
 	if (menu_usermap_image[i] <= 0)	return menu_bk;
 
     return (image_t)menu_usermap_image[i];
+}
+
+void Menu_DrawTextCentered (int x, int y, char* text, int r, int g, int b, int a)
+{
+	int x_pos = x - (getTextWidth(text, menu_scale_factor)/2);
+
+	Draw_ColoredString (x_pos, y, text, r, g, b, a, menu_scale_factor);
 }
 
 void Menu_InitStockMaps (void)
@@ -123,6 +130,17 @@ void Menu_InitStockMaps (void)
 			}
 		}
 	}
+}
+
+qboolean Menu_IsStockMap (char *bsp_name)
+{
+	for (int i = 0; i < num_stock_maps; i++) {
+		if (!strcmp(stock_maps[i].bsp_name, bsp_name)) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 int UserMapSupportsCustomGameLookup (char *bsp_name)
@@ -198,31 +216,35 @@ void Menu_DrawCustomBackground ()
 	// TODO
 
 	//float x_pos = 0 + (((vid.width * 1.05) - vid.width) * (elapsed_background_time/7));
+	if (key_dest != key_menu_pause) {
+		Draw_StretchPic(0, 0, menu_background, vid.width, vid.height);
+	}
 
-	Draw_StretchPic(0, 0, menu_background, vid.width, vid.height);
-	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 84);
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 50);
 
-	//
-	// Fade new images in/out
-	//
-	float alphaf = 0;
+	if (key_dest != key_menu_pause) {
+		//
+		// Fade new images in/out
+		//
+		float alphaf = 0;
 
-	if (elapsed_background_time < 1.0f) {
-        alphaf = 1.0f - (float)sin((elapsed_background_time / 1.0f) * ((float)M_PI / 2));  // Opacity from 1 -> 0
-    } else if (elapsed_background_time < 6.0f) {
-        alphaf = 0.0f;
-    } else if (elapsed_background_time < 7.0f) {
-        alphaf = (float)sin(((elapsed_background_time - 6.0f) / 1.0f) * ((float)M_PI / 2));  // Opacity from 0 -> 1
-    }
+		if (elapsed_background_time < 1.0f) {
+			alphaf = 1.0f - (float)sin((elapsed_background_time / 1.0f) * ((float)M_PI / 2));  // Opacity from 1 -> 0
+		} else if (elapsed_background_time < 6.0f) {
+			alphaf = 0.0f;
+		} else if (elapsed_background_time < 7.0f) {
+			alphaf = (float)sin(((elapsed_background_time - 6.0f) / 1.0f) * ((float)M_PI / 2));  // Opacity from 0 -> 1
+		}
 
-	if (alphaf < 0.0f) alphaf = 0.0f;
-	if (alphaf > 1.0f) alphaf = 1.0f;
+		if (alphaf < 0.0f) alphaf = 0.0f;
+		if (alphaf > 1.0f) alphaf = 1.0f;
 
-	float alpha = (alphaf * 255);
+		float alpha = (alphaf * 255);
 
-	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, alpha);
+		Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, alpha);
+	}
 
-	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 84);
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 50);
 
 	// Top Bars
 	Draw_FillByColor(0, 0, vid.width, big_bar_height, 0, 0, 0, 228);
@@ -299,6 +321,11 @@ qboolean Menu_IsHovered (int button_number)
 				return true;
 			}
 			break;
+		case m_custommaps:
+			if (button_number == (menu_custommaps_cursor+1)) {
+				return true;
+			}
+			break;
 		case m_lobby:
 			if (button_number == (menu_lobby_cursor+1)) {
 				return true;
@@ -308,6 +335,45 @@ qboolean Menu_IsHovered (int button_number)
 			if (button_number == (menu_gamesettings_cursor+1)) {
 				return true;
 			}
+			break;
+		case m_paused:
+			if (button_number == (menu_paused_cursor+1)) {
+				return true;
+			}
+			break;
+		case m_quit:
+			if (button_number == (menu_quit_cursor+1)) {
+				return true;
+			}
+			break;
+		case m_configuration:
+			if (button_number == (menu_configuration_cursor+1)) {
+				return true;
+			}
+			break;
+		case m_video:
+			if (button_number == (menu_video_cursor+1)) {
+				return true;
+			}
+			break;
+		case m_audio:
+			if (button_number == (menu_audio_cursor+1)) {
+				return true;
+			}
+			break;
+		case m_controls:
+			if (button_number == (menu_controls_cursor+1)) {
+				return true;
+			}
+			break;
+		case m_accessibility:
+			if (button_number == (menu_accessibility_cursor+1)) {
+				return true;
+			}
+			break;
+		default:
+			return false;
+			break;
 	}
 
 	return false;
@@ -401,7 +467,7 @@ void Menu_DrawOptionButton(int order, char* selection_name)
 	Draw_ColoredString(x_pos, y_pos, selection_name, 255, 255, 255, 255, menu_scale_factor);
 }
 
-void Menu_DrawOptionSlider(int order, int max_option_value, cvar_t option)
+void Menu_DrawOptionSlider(int order, int max_option_value, cvar_t option, qboolean zero_to_one, qboolean draw_option_string)
 {
 	// y factor for vertical menu ordering
 	int y_factor = (vid.height/16);
@@ -416,6 +482,12 @@ void Menu_DrawOptionSlider(int order, int max_option_value, cvar_t option)
 	char option_string[16] = "";
 	sprintf(option_string, "%d", (int)option.value);
 
+	if (zero_to_one) {
+		if (!strcmp(option_string, "0")) {
+			strcpy(option_string, "1");
+		}
+	}
+
 	float current_option = option.value;
 	if (current_option == 0) current_option = 1;
 
@@ -425,7 +497,9 @@ void Menu_DrawOptionSlider(int order, int max_option_value, cvar_t option)
 	// Selection box
 	Draw_FillByColor((x_pos+(option_pos*slider_box_width)) - slider_width, y_pos-(vid.height/64), slider_width, slider_box_height+((vid.height/64)*2), 255, 255, 255, 255);
 	// Cvar value string
-	Draw_ColoredString(x_pos + slider_box_width + (vid.width/96), y_pos, option_string, 255, 255, 255, 255, menu_scale_factor);
+	if (draw_option_string) {
+		Draw_ColoredString(x_pos + slider_box_width + (vid.width/96), y_pos, option_string, 255, 255, 255, 255, menu_scale_factor);
+	}
 }
 
 /*
@@ -474,7 +548,7 @@ void Menu_DrawMapButton (int order, int button_number, int usermap_index, char* 
 
 		// Draw map description
 		for (int j = 0; j < 8; j++) {
-			Draw_ColoredString (x_pos - ((vid.width/42)*2), (y_pos + image_height + (small_bar_height*2)) + j*y_factor, custom_maps[index].map_desc[j], 255, 255, 255, 255, menu_scale_factor);
+			Menu_DrawTextCentered (x_pos + (vid.width/6), (y_pos + image_height + (small_bar_height*2)) + j*y_factor, custom_maps[index].map_desc[j], 255, 255, 255, 255);
 		}
 
 		// Draw map author
@@ -494,18 +568,20 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 	int texnum;
 	int	i;
 
-	int image_width = (vid.width/4);
-	int image_height = (vid.height/4);
+	int image_width = (vid.width/3.5);
+	int image_height = (vid.height/3.5);
 
 	int image_x_pos = (vid.width/2) + (vid.width/28);
 	int image_y_pos = (vid.height) - (big_bar_height + small_bar_height) - (image_height) - (vid.height/96);
 
-	int left_column_x = (vid.width/3) + (vid.width/8);
+	int left_column_x = (vid.width/3) + (vid.width/5);
 	int left_column_y = (vid.height/6);
 
 	int y_offset = CHAR_HEIGHT;
 	int y_newline = (vid.height/10);
 	int x_newline = (vid.width/4);
+
+	int line_x = (vid.width/3) + (vid.width/8.5);
 
 	texnum = Menu_GetMapImage (bsp_name);
 
@@ -521,42 +597,42 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 	Menu_DrawMapBorder (image_x_pos, image_y_pos, image_width, image_height);
 
 	// Game Mode
-	Draw_ColoredString (left_column_x, left_column_y, "Game Mode", 255, 255, 255, 255, menu_scale_factor);
-	Draw_ColoredString (left_column_x, left_column_y + y_offset, info_gamemode, 255, 255, 0, 255, menu_scale_factor);
-	Draw_FillByColor (left_column_x, left_column_y + (y_offset*2), (vid.width/5), (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawTextCentered (left_column_x, left_column_y, "Game Mode", 255, 255, 255, 255);
+	Menu_DrawTextCentered (left_column_x, left_column_y + y_offset, info_gamemode, 255, 255, 0, 255);
+	Draw_FillByColor (line_x, left_column_y + (y_offset*2), (vid.width/6), (small_bar_height/3), 130, 130, 130, 255);
 
 	// Difficulty
-	Draw_ColoredString (left_column_x + x_newline, left_column_y, "Difficulty", 255, 255, 255, 255, menu_scale_factor);
-	Draw_ColoredString (left_column_x + x_newline, left_column_y + y_offset, info_difficulty, 255, 255, 0, 255, menu_scale_factor);
-	Draw_FillByColor (left_column_x + x_newline, left_column_y + (y_offset*2), (vid.width/5), (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawTextCentered (left_column_x + x_newline, left_column_y, "Difficulty", 255, 255, 255, 255);
+	Menu_DrawTextCentered (left_column_x + x_newline, left_column_y + y_offset, info_difficulty, 255, 255, 0, 255);
+	Draw_FillByColor (line_x + x_newline, left_column_y + (y_offset*2), (vid.width/6), (small_bar_height/3), 130, 130, 130, 255);
 
 	// Start Round
-	Draw_ColoredString (left_column_x, left_column_y + y_newline, "Start Round", 255, 255, 255, 255, menu_scale_factor);
-	Draw_ColoredString (left_column_x, left_column_y + y_offset + y_newline, info_startround, 255, 255, 0, 255, menu_scale_factor);
-	Draw_FillByColor (left_column_x , left_column_y + (y_offset*2) + y_newline, (vid.width/5), (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawTextCentered (left_column_x, left_column_y + y_newline, "Start Round", 255, 255, 255, 255);
+	Menu_DrawTextCentered (left_column_x, left_column_y + y_offset + y_newline, info_startround, 255, 255, 0, 255);
+	Draw_FillByColor (line_x , left_column_y + (y_offset*2) + y_newline, (vid.width/6), (small_bar_height/3), 130, 130, 130, 255);
 
 	// Magic
-	Draw_ColoredString (left_column_x + x_newline, left_column_y + y_newline, "Magic", 255, 255, 255, 255, menu_scale_factor);
-	Draw_ColoredString (left_column_x + x_newline, left_column_y + y_offset + y_newline, info_magic, 255, 255, 0, 255, menu_scale_factor);
-	Draw_FillByColor (left_column_x + x_newline, left_column_y + (y_offset*2) + y_newline, (vid.width/5), (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawTextCentered (left_column_x + x_newline, left_column_y + y_newline, "Magic", 255, 255, 255, 255);
+	Menu_DrawTextCentered (left_column_x + x_newline, left_column_y + y_offset + y_newline, info_magic, 255, 255, 0, 255);
+	Draw_FillByColor (line_x + x_newline, left_column_y + (y_offset*2) + y_newline, (vid.width/6), (small_bar_height/3), 130, 130, 130, 255);
 
 	// Headshots Only
-	Draw_ColoredString (left_column_x, left_column_y + (y_newline*2), "Headshots Only", 255, 255, 255, 255, menu_scale_factor);
-	Draw_ColoredString (left_column_x, left_column_y + y_offset + (y_newline*2), info_headshotonly, 255, 255, 0, 255, menu_scale_factor);
-	Draw_FillByColor (left_column_x, left_column_y + (y_offset*2) + (y_newline*2), (vid.width/5), (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawTextCentered (left_column_x, left_column_y + (y_newline*2), "Headshots Only", 255, 255, 255, 255);
+	Menu_DrawTextCentered (left_column_x, left_column_y + y_offset + (y_newline*2), info_headshotonly, 255, 255, 0, 255);
+	Draw_FillByColor (line_x, left_column_y + (y_offset*2) + (y_newline*2), (vid.width/6), (small_bar_height/3), 130, 130, 130, 255);
 
 	// Horde Size
-	Draw_ColoredString (left_column_x + x_newline, left_column_y + (y_newline*2), "Horde Size", 255, 255, 255, 255, menu_scale_factor);
-	Draw_ColoredString (left_column_x + x_newline, left_column_y + y_offset + (y_newline*2), info_hordesize, 255, 255, 0, 255, menu_scale_factor);
-	Draw_FillByColor (left_column_x + x_newline, left_column_y + (y_offset*2) + (y_newline*2), (vid.width/5), (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawTextCentered (left_column_x + x_newline, left_column_y + (y_newline*2), "Horde Size", 255, 255, 255, 255);
+	Menu_DrawTextCentered (left_column_x + x_newline, left_column_y + y_offset + (y_newline*2), info_hordesize, 255, 255, 0, 255);
+	Draw_FillByColor (line_x + x_newline, left_column_y + (y_offset*2) + (y_newline*2), (vid.width/6), (small_bar_height/3), 130, 130, 130, 255);
 
 	// Fast Rounds
-	Draw_ColoredString (left_column_x, left_column_y + (y_newline*3), "Fast Rounds", 255, 255, 255, 255, menu_scale_factor);
-	Draw_ColoredString (left_column_x, left_column_y + y_offset + (y_newline*3), info_fastrounds, 255, 255, 0, 255, menu_scale_factor);
-	Draw_FillByColor (left_column_x, left_column_y + (y_offset*2) + (y_newline*3), (vid.width/5), (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawTextCentered (left_column_x, left_column_y + (y_newline*3), "Fast Rounds", 255, 255, 255, 255);
+	Menu_DrawTextCentered (left_column_x, left_column_y + y_offset + (y_newline*3), info_fastrounds, 255, 255, 0, 255);
+	Draw_FillByColor (line_x, left_column_y + (y_offset*2) + (y_newline*3), (vid.width/6), (small_bar_height/3), 130, 130, 130, 255);
 
 	// Map Name (Pretty)
-	Draw_ColoredString (image_x_pos, image_y_pos + image_height - (small_bar_height/2) - (vid.height/32), custom_maps[i].map_name_pretty, 255, 255, 0, 255, menu_scale_factor);
+	Menu_DrawTextCentered (image_x_pos + (image_width/2), image_y_pos + image_height - (small_bar_height) - (vid.height/32), custom_maps[i].map_name_pretty, 255, 255, 0, 255);
 }
 
 /*

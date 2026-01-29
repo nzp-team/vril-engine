@@ -134,7 +134,7 @@ void Menu_Draw (void)
 		Menu_Start_Draw();
 		break;
 
-	case m_paused_menu:
+	case m_paused:
 		Menu_Paused_Draw();
 		break;
 
@@ -146,6 +146,10 @@ void Menu_Draw (void)
 		Menu_StockMaps_Draw ();
 		break;
 
+	case m_custommaps:
+		Menu_CustomMaps_Draw ();
+		return;
+
 	case m_lobby:
 		Menu_Lobby_Draw ();
 		break;
@@ -154,37 +158,37 @@ void Menu_Draw (void)
 		Menu_GameSettings_Draw ();
 		break;
 
-	case m_options:
-		Menu_Options_Draw ();
-		break;
-
-	case m_keys:
-		Menu_Keys_Draw ();
+	case m_configuration:
+		Menu_Configuration_Draw ();
 		break;
 
 	case m_video:
 		Menu_Video_Draw ();
 		break;
 
-	case m_quit:
-		Menu_Quit_Draw ();
+	case m_audio:
+		Menu_Audio_Draw ();
 		break;
 
-	case m_restart:
-		Menu_Restart_Draw ();
+	case m_controls:
+		Menu_Controls_Draw ();
+		break;
+
+	case m_accessibility:
+		Menu_Accessibility_Draw ();
+		break;
+
+	case m_keys:
+		Menu_Keys_Draw ();
+		break;
+
+	case m_quit:
+		Menu_Quit_Draw ();
 		break;
 
 	case m_credits:
 		Menu_Credits_Draw ();
 		break;
-
-	case m_exit:
-		Menu_Exit_Draw ();
-		break;
-
-	case m_custommaps:
-		Menu_CustomMaps_Draw ();
-		return;
 
 	default:
 		Con_Printf("Cannot identify menu for case %d\n", m_state);
@@ -207,7 +211,7 @@ void Menu_Keydown (int key)
 		Menu_Start_Key (key);
 		break;
 
-	case m_paused_menu:
+	case m_paused:
 		Menu_Paused_Key (key);
 		break;
 
@@ -219,6 +223,10 @@ void Menu_Keydown (int key)
 		Menu_StockMaps_Key (key);
 		return;
 
+	case m_custommaps:
+		Menu_CustomMaps_Key (key);
+		return;
+
 	case m_lobby:
 		Menu_Lobby_Key (key);
 		return;
@@ -227,40 +235,36 @@ void Menu_Keydown (int key)
 		Menu_GameSettings_Key (key);
 		return;
 
-	case m_options:
-		Menu_Options_Key (key);
+	case m_configuration:
+		Menu_Configuration_Key (key);
 		return;
+
+	case m_video:
+		Menu_Video_Key (key);
+		break;
+
+	case m_audio:
+		Menu_Audio_Key (key);
+		break;
+
+	case m_controls:
+		Menu_Controls_Key (key);
+		break;
+
+	case m_accessibility:
+		Menu_Accessibility_Key (key);
+		break;
 
 	case m_keys:
 		Menu_Keys_Key (key);
-		return;
-
-	case m_restart:
-		Menu_Restart_Key (key);
 		return;
 
 	case m_credits:
 		Menu_Credits_Key (key);
 		return;
 
-	case m_video:
-		Menu_Video_Key (key);
-		return;
-
 	case m_quit:
 		Menu_Quit_Key (key);
-		return;
-
-	case m_exit:
-		Menu_Exit_Key (key);
-		return;
-
-	case m_gameoptions:
-		Menu_GameOptions_Key (key);
-		return;
-
-	case m_custommaps:
-		Menu_CustomMaps_Key (key);
 		return;
 
 	default:
@@ -276,7 +280,7 @@ Menu_ToggleMenu_f
 void Menu_ToggleMenu_f (void)
 {
 	if (key_dest == key_menu || key_dest == key_menu_pause) {
-		if (m_state != m_main && m_state != m_paused_menu) {
+		if (m_state != m_main && m_state != m_paused) {
 			Menu_Main_Set ();
 			return;
 		}
