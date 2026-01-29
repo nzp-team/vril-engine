@@ -44,8 +44,9 @@ void Menu_Audio_ApplySliders (int dir)
 		case 0:
 			double current_volume = (double)volume.value;
 			if (dir == MENU_SLIDER_LEFT) {
+				if (current_volume == 0) return;
 				current_volume -= 0.1;
-				if (current_volume < 0.1) current_volume = 0;
+				if (current_volume < 0) current_volume = 0;
 				Cvar_SetValue ("volume", (float)current_volume);
 			} else if (dir == MENU_SLIDER_RIGHT) {
 				current_volume += 0.1;
@@ -56,8 +57,9 @@ void Menu_Audio_ApplySliders (int dir)
 		case 1:
 			double current_bgmvolume = (double)bgmvolume.value;
 			if (dir == MENU_SLIDER_LEFT) {
+				if (current_bgmvolume == 0) return;
 				current_bgmvolume -= 0.1;
-				if (current_bgmvolume < 0.1) current_bgmvolume = 0;
+				if (current_bgmvolume < 0) current_bgmvolume = 0;
 				Cvar_SetValue ("bgmvolume", (float)current_bgmvolume);
 			} else if (dir == MENU_SLIDER_RIGHT) {
 				current_bgmvolume += 0.1;
