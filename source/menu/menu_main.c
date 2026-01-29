@@ -35,6 +35,7 @@ void Menu_Main_Set (void)
 	Menu_LoadPics();
 	key_dest = key_menu;
 	m_state = m_main;
+	menu_main_cursor = 0;
 }
 
 /*
@@ -108,7 +109,7 @@ void Menu_Main_Key (int key)
 				break;
 
 			case 1:
-				Menu_Options_Set ();
+				Menu_Configuration_Set ();
 				break;
 
 			case 2:
@@ -116,7 +117,7 @@ void Menu_Main_Key (int key)
 				break;
 
 			case 3:
-				Menu_Quit_Set ();
+				Menu_Quit_Set (false);
 				break;
 		}
 	}
