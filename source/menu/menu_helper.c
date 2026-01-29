@@ -489,8 +489,6 @@ void Menu_DrawOptionSlider(int order, int max_option_value, cvar_t option, qbool
 	}
 
 	float current_option = option.value;
-	if (current_option == 0) current_option = 1;
-
 	float option_pos = current_option/max_option_value;
 	// Slider box
 	Draw_FillByColor(x_pos, y_pos, slider_box_width, slider_box_height, 255, 160, 160, 255);
