@@ -23,7 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 /* AUDIO MENU */
 
 int	menu_audio_cursor;
-#define	AUDIO_ITEMS	4
+#define	AUDIO_ITEMS	3
+
+extern cvar_t volume;
+extern cvar_t bgmvolume;
 
 /*
 ===============
@@ -33,6 +36,36 @@ Menu_Audio_Set
 void Menu_Audio_Set (void)
 {
 	m_state = m_audio;
+}
+
+void Menu_Audio_ApplySliders (int dir)
+{
+	switch (menu_audio_cursor) {
+		case 0:
+			double current_volume = (double)volume.value;
+			if (dir == MENU_SLIDER_LEFT) {
+				current_volume -= 0.1;
+				if (current_volume < 0.1) current_volume = 0;
+				Cvar_SetValue ("volume", (float)current_volume);
+			} else if (dir == MENU_SLIDER_RIGHT) {
+				current_volume += 0.1;
+				if (current_volume > 1) current_volume = 1;
+				Cvar_SetValue ("volume", (float)current_volume);
+			}
+			break;
+		case 1:
+			double current_bgmvolume = (double)bgmvolume.value;
+			if (dir == MENU_SLIDER_LEFT) {
+				current_bgmvolume -= 0.1;
+				if (current_bgmvolume < 0.1) current_bgmvolume = 0;
+				Cvar_SetValue ("bgmvolume", (float)current_bgmvolume);
+			} else if (dir == MENU_SLIDER_RIGHT) {
+				current_bgmvolume += 0.1;
+				if (current_bgmvolume > 1) current_bgmvolume = 1;
+				Cvar_SetValue ("bgmvolume", (float)current_bgmvolume);
+			}
+			break;
+	}
 }
 
 /*
@@ -48,7 +81,14 @@ void Menu_Audio_Draw (void)
 	// Header
 	Menu_DrawTitle ("AUDIO OPTIONS", MENU_COLOR_WHITE);
 
-	Menu_DrawButton(11.5, 5, "BACK", MENU_BUTTON_ACTIVE, "Return to Main Menu.");
+	// Master Volume
+	Menu_DrawButton(1, 1, "MASTER VOLUME", MENU_BUTTON_ACTIVE, "Volume for all Audio.");
+	Menu_DrawOptionSlider (1, 1, volume, false, false);
+	// Music Volume
+	Menu_DrawButton(2, 2, "MUSIC VOLUME", MENU_BUTTON_ACTIVE, "Volume for Background Music.");
+	Menu_DrawOptionSlider (2, 1, bgmvolume, false, false);
+
+	Menu_DrawButton(11.5, 3, "BACK", MENU_BUTTON_ACTIVE, "Return to Main Menu.");
 }
 
 /*
@@ -73,22 +113,22 @@ void Menu_Audio_Key (int key)
 			menu_audio_cursor = AUDIO_ITEMS - 1;
 		break;
 
+	case K_RIGHTARROW:
+        Menu_Audio_ApplySliders(MENU_SLIDER_RIGHT);
+        break;
+
+    case K_LEFTARROW:
+        Menu_Audio_ApplySliders(MENU_SLIDER_LEFT);
+        break;
+
 	case K_ENTER:
 	case K_AUX1:
 		Menu_StartSound(MENU_SND_ENTER);
 		switch (menu_audio_cursor)
 		{
-			case 0:
-				break;
-			case 1:
-				break;
 			case 2:
+				Menu_Configuration_Set();
 				break;
-			case 3:
-				break;
-            case 4:
-                Menu_Configuration_Set();
-                break;
 		}
 	}
 }
