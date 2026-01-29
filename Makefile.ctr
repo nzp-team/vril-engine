@@ -97,6 +97,12 @@ COMMON_OBJS =	system.o \
 				menu/menu_stockmaps.c \
 				menu/menu_lobby.c \
 				menu/menu_gamesettings.c \
+				menu/menu_configuration.c \
+				menu/menu_quit.c \
+				menu/menu_video.c \
+				menu/menu_audio.c \
+				menu/menu_controls.c \
+				menu/menu_accessibility.c \
 				menu/menu_pause.c \
 				menu/menu_start.c \
 				menu/menu_stubs.c \
