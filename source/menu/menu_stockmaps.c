@@ -48,7 +48,7 @@ void Menu_StockMaps_Draw (void)
     char*   back_text;
 
     // Background
-	Menu_DrawCustomBackground ();
+	Menu_DrawCustomBackground();
 
     if (menu_is_solo) {
         header_text = "SELECT MAP: SOLO";
@@ -64,15 +64,15 @@ void Menu_StockMaps_Draw (void)
     Menu_DrawMapPanel();
 
     for (i = 0; i < num_stock_maps; i++) {
-        Menu_DrawMapButton (i+1, i+1, -1, stock_maps[i].bsp_name);
+        Menu_DrawMapButton(i+1, i+1, -1, stock_maps[i].bsp_name);
     }
 
-    Menu_DrawDivider(i + 1.25);
+    Menu_DrawDivider(i+1.25);
 
-    Menu_DrawButton(i + 1.5, i+1, "USER MAPS", MENU_BUTTON_ACTIVE, "View User-Created Maps.");
-    Menu_DrawButton(i + 2.5, i+2, "RANDOM", MENU_BUTTON_ACTIVE, "Feeling indecisive? Try rolling the dice.");
+    Menu_DrawButton(i+1.5, i+1, "USER MAPS", MENU_BUTTON_ACTIVE, "View User-Created Maps.");
+    Menu_DrawButton(i+2.5, i+2, "RANDOM", MENU_BUTTON_ACTIVE, "Feeling indecisive? Try rolling the dice.");
 
-    Menu_DrawButton(i + 3.5, i+3, "BACK", MENU_BUTTON_ACTIVE, back_text);
+    Menu_DrawButton(i+3.5, i+3, "BACK", MENU_BUTTON_ACTIVE, back_text);
 }
 
 /*
@@ -103,40 +103,12 @@ void Menu_StockMaps_Key (int key)
 		switch (menu_stockmaps_cursor)
 		{
             case 0:
-                Map_SetDefaultValues();
-                current_selected_bsp = stock_maps[menu_stockmaps_cursor].bsp_name;
-                Menu_Lobby_Set();
-                break;
             case 1:
-                Map_SetDefaultValues();
-                current_selected_bsp = stock_maps[menu_stockmaps_cursor].bsp_name;
-                Menu_Lobby_Set();
-                break;
             case 2:
-                Map_SetDefaultValues();
-                current_selected_bsp = stock_maps[menu_stockmaps_cursor].bsp_name;
-                Menu_Lobby_Set();
-                break;
             case 3:
-                Map_SetDefaultValues();
-                current_selected_bsp = stock_maps[menu_stockmaps_cursor].bsp_name;
-                Menu_Lobby_Set();
-                break;
             case 4:
-                Map_SetDefaultValues();
-                current_selected_bsp = stock_maps[menu_stockmaps_cursor].bsp_name;
-                Menu_Lobby_Set();
-                break;
             case 5:
-                Map_SetDefaultValues();
-                current_selected_bsp = stock_maps[menu_stockmaps_cursor].bsp_name;
-                Menu_Lobby_Set();
-                break;
             case 6:
-                Map_SetDefaultValues();
-                current_selected_bsp = stock_maps[menu_stockmaps_cursor].bsp_name;
-                Menu_Lobby_Set();
-                break;
             case 7:
                 Map_SetDefaultValues();
                 current_selected_bsp = stock_maps[menu_stockmaps_cursor].bsp_name;

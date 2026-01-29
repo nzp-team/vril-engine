@@ -86,11 +86,10 @@ void Menu_GameSettings_SetStrings (void)
             gamemode_description = "Classic Round-Based Zombies.";
             gamemode_string = "CLASSIC";
             break;
-        /*
+        
         case 1:
-            gamemode_description = "Compete in Teams to outlive your opponents.";
-            gamemode_string = "GRIEF";
-        */
+            Cvar_SetValue ("sv_gamemode", 2);
+            break;
         case 2:
             gamemode_description = "Race to earn Score to cycle through Weaponry."; 
             gamemode_string = "GUN GAME";
@@ -278,7 +277,7 @@ void Menu_GameSettings_Draw (void)
 
     // Start Round slider
     Menu_DrawButton(3, 3, "START ROUND", MENU_BUTTON_ACTIVE, startround_string);
-    Menu_DrawOptionSlider(3, 50, sv_startround);
+    Menu_DrawOptionSlider(3, 50, sv_startround, true, true);
 
     // Magic button
     Menu_DrawButton(4, 4, "MAGIC", MENU_BUTTON_ACTIVE, "Whether to allow Perks, Power-Ups, and the Mystery Box.");
@@ -290,7 +289,7 @@ void Menu_GameSettings_Draw (void)
 
     // Horde Size slider
     Menu_DrawButton(6, 6, "HORDE SIZE", MENU_BUTTON_ACTIVE, "Maximum Zombies that can Active at once.");
-    Menu_DrawOptionSlider(6, 64, sv_maxai);
+    Menu_DrawOptionSlider(6, 64, sv_maxai, false, true);
 
     // Fast Rounds button
     Menu_DrawButton(7, 7, "FAST ROUNDS", MENU_BUTTON_ACTIVE, "Minimize Time between Rounds.");

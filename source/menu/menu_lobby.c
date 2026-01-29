@@ -159,6 +159,15 @@ void Menu_Lobby_Set (void)
 	m_state = m_lobby;
 }
 
+void Menu_Lobby_SetBack (void)
+{
+    if (Menu_IsStockMap(current_selected_bsp)) {
+        Menu_StockMaps_Set();
+    } else {
+        Menu_CustomMaps_Set();
+    }
+}
+
 void Menu_Lobby_Draw (void)
 {
     // Background
@@ -250,13 +259,13 @@ void Menu_Lobby_Key (int key)
                         break;
                     } else {
                         Menu_Lobby_StopCountdown();
-                        Menu_StockMaps_Set();
+                        Menu_Lobby_SetBack();
                         break;
                     }
                 case 2:
                     if (support_gamesettings) {
                         Menu_Lobby_StopCountdown();
-                        Menu_StockMaps_Set();
+                        Menu_Lobby_SetBack();
                         break;
                     }
             }
@@ -271,13 +280,13 @@ void Menu_Lobby_Key (int key)
                         break;
                     } else {
                         Menu_Lobby_StopCountdown();
-                        Menu_StockMaps_Set();
+                        Menu_Lobby_SetBack();
                         break;
                     }
                 case 2:
                     if (support_gamesettings) {
                         Menu_Lobby_StopCountdown();
-                        Menu_StockMaps_Set();
+                        Menu_Lobby_SetBack();
                         break;
                     }
             }
