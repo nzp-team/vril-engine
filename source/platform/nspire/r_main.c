@@ -149,6 +149,10 @@ cvar_t	r_numedges = {"r_numedges", "0"};
 cvar_t	r_aliastransbase = {"r_aliastransbase", "200"};
 cvar_t	r_aliastransadj = {"r_aliastransadj", "100"};
 
+cvar_t r_retro = {"r_retro", "1"};
+cvar_t r_dithering = {"r_dithering", "1"};
+cvar_t r_runqmbparticles = {"r_runqmbparticles", "1"};
+
 extern cvar_t	scr_fov;
 
 void CreatePassages (void);

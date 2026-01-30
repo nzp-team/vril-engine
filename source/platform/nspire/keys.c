@@ -742,11 +742,11 @@ void Key_Event (int key, qboolean down)
 			Key_Message (key);
 			break;
 		case key_menu:
-			M_Keydown (key);
+			Menu_Keydown (key);
 			break;
 		case key_game:
 		case key_console:
-			M_ToggleMenu_f ();
+			Menu_ToggleMenu_f ();
 			break;
 		default:
 			Sys_Error ("Bad key_dest");
@@ -786,7 +786,7 @@ void Key_Event (int key, qboolean down)
 //
 	if (cls.demoplayback && down && consolekeys[key] && key_dest == key_game)
 	{
-		M_ToggleMenu_f ();
+		Menu_ToggleMenu_f ();
 		return;
 	}
 
@@ -850,7 +850,7 @@ void Key_Event (int key, qboolean down)
 		Key_Message (key);
 		break;
 	case key_menu:
-		M_Keydown (key);
+		Menu_Keydown (key);
 		break;
 
 	case key_game:
