@@ -195,3 +195,6 @@ void D_DeleteSurfaceCache (void);
 void D_InitCaches (void *buffer, int size);
 void R_SetVrect (vrect_t *pvrect, vrect_t *pvrectin, int lineadj);
 
+extern cvar_t r_retro;
+extern cvar_t r_dithering;
+extern cvar_t r_runqmbparticles;

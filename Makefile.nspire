@@ -58,7 +58,24 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/keys.c \
 		source/mathlib.c \
 		source/matrixlib.c \
-		source/platform/nspire/menu.c \
+		source/menu/menu.c \
+		source/menu/menu_custommaps.c \
+		source/menu/menu_helper.c \
+		source/menu/menu_main.c \
+		source/menu/menu_stockmaps.c \
+		source/menu/menu_lobby.c \
+		source/menu/menu_gamesettings.c \
+		source/menu/menu_configuration.c \
+		source/menu/menu_quit.c \
+		source/menu/menu_video.c \
+		source/menu/menu_audio.c \
+		source/menu/menu_controls.c \
+		source/menu/menu_accessibility.c \
+		source/menu/menu_pause.c \
+		source/menu/menu_start.c \
+		source/menu/menu_stubs.c \
+		source/menu/menu_loadscreen.c \
+		source/platform/nspire/platform_menu.c \
 		source/platform/nspire/cpu/cpu_main.c \
 		source/platform/nspire/cpu/cpu_model.c \
 		source/net_loop.c \
