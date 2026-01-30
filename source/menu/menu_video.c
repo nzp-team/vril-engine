@@ -91,9 +91,9 @@ void Menu_Video_SetStrings (void)
     }
 
     if ((int)r_retro.value == 1) {
-        retro_string = "ENABLED";
+        retro_string = "LINEAR";
     } else {
-        retro_string = "DISABLED";
+        retro_string = "NEAREST";
     }
 
     if ((int)r_dithering.value == 1) {
