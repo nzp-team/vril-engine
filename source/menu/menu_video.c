@@ -241,7 +241,7 @@ void Menu_Video_Draw (void)
     Menu_DrawOptionButton (5, particles_string);
 
     // Retro (texture filtering)
-    Menu_DrawButton (6, 6, "TEXTURE FILTERING", MENU_BUTTON_ACTIVE, "Toggle Texture filtering.");
+    Menu_DrawButton (6, 6, "TEXTURE FILTERING", MENU_BUTTON_ACTIVE, "Choose 3D Environment Filtering Mode.");
     Menu_DrawOptionButton (6, retro_string);
 
     // Dithering 
