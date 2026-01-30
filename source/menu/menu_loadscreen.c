@@ -42,9 +42,6 @@ SCR_DrawLoadScreen
 */
 void SCR_DrawLoadScreen (void)
 {
-	// TODO
-	return;
-
 	if (developer.value) {
 		return;
 	}
@@ -55,15 +52,15 @@ void SCR_DrawLoadScreen (void)
 	if (loadingScreen) {
 		Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 255);
 		if (!loadscreeninit) {
-			lscreen_image = Image_LoadImage(va("gfx/lscreen/%s", map_loadname), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, true, false);
-
-			if (lscreen_image < 0 || lscreen_image < 0) {
-				lscreen_image = Image_LoadImage("gfx/lscreen/lscreen", IMAGE_PNG, 0, true, false);
-			}
-
-			loadinglinetext = malloc(128*sizeof(char));
+			loadinglinetext = malloc(256*sizeof(char));
 
 			loadscreeninit = true;
+		}
+
+		lscreen_image = Image_LoadImage(va("gfx/lscreen/%s", map_loadname), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+
+		if (lscreen_image < 0 || lscreen_image < 0) {
+			lscreen_image = Image_LoadImage("gfx/lscreen/lscreen", IMAGE_PNG, 0, true, false);
 		}
 
 		Draw_StretchPic(0, 0, lscreen_image, vid.width, vid.height);
@@ -74,15 +71,15 @@ void SCR_DrawLoadScreen (void)
 		if (map_loadname_pretty != NULL) {
 			Menu_DrawTitle(map_loadname_pretty, MENU_COLOR_YELLOW);
 		}
-	}
 
-	if (loadingtimechange < Sys_FloatTime ())
-	{
-        loadinglinetext = Platform_ReturnLoadingText();
-        loadingtimechange = Sys_FloatTime () + 5;
-	}
+		if (loadingtimechange < Sys_FloatTime ())
+		{
+			loadinglinetext = Platform_ReturnLoadingText();
+			loadingtimechange = Sys_FloatTime () + 5;
+		}
 
-	if (key_dest == key_game) {
-		Draw_ColoredStringCentered((vid.height - (vid.height/24)), loadinglinetext, 255, 255, 255, 255, menu_scale_factor);
+		if (key_dest == key_game) {
+			Draw_ColoredStringCentered((vid.height - (vid.height/24)), loadinglinetext, 255, 255, 255, 255, menu_scale_factor);
+		}
 	}
 }
