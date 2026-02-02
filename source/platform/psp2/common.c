@@ -1955,16 +1955,3 @@ char *strltrim(char *s) {
 	memmove(s, t, strlen(t) + 1);	/* +1 so that '\0' is moved too */
 	return s;
 }
-
-// Lower string
-char* strtolower(char* s) {
-	assert(s != NULL);
-
-	char* p = s;
-	while (*p != '\0') {
-		*p = tolower(*p);
-		p++;
-	}
-
-	return s;
-}
