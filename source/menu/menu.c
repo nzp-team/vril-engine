@@ -51,17 +51,9 @@ void Menu_Init (void)
 {
 	Cmd_AddCommand ("togglemenu", Menu_ToggleMenu_f);
 
-	Cmd_AddCommand ("menu_main", Menu_Main_Set);
-	//Cmd_AddCommand ("menu_singleplayer", Menu_SinglePlayer_Set);
-	//Cmd_AddCommand ("menu_options", Menu_Options_Set);
-	//Cmd_AddCommand ("menu_keys", Menu_Keys_Set);
-	//Cmd_AddCommand ("menu_video", Menu_Video_Set);
-	//Cmd_AddCommand ("menu_quit", Menu_Quit_Set);
-
 	// TODO - Achievements WIP
-	//Load_Achivements();
-
-	Platform_Menu_MapFinder();
+	//Menu_Achievements_Set();
+	Menu_CustomMaps_MapFinder();
 
 	menu_changetime = 0;
 
@@ -69,16 +61,17 @@ void Menu_Init (void)
 	long length;
 	FILE* f = fopen(va("%s/version.txt", com_gamedir), "rb");
 
-	if (f)
-	{
+	if (f) {
 		fseek (f, 0, SEEK_END);
 		length = ftell (f);
 		fseek (f, 0, SEEK_SET);
-		game_build_date = malloc(length);
+		game_build_date = malloc(length*sizeof(char));
 
-		if (game_build_date)
+		if (game_build_date) {
 			fread (game_build_date, 1, length, f);
-
+			strip_newline (game_build_date);
+		}
+		
 		fclose (f);
 	} else {
 		game_build_date = "version.txt not found.";
@@ -128,10 +121,6 @@ void Menu_Draw (void)
 	switch (m_state)
 	{
 	case m_none:
-		break;
-
-	case m_start:
-		Menu_Start_Draw();
 		break;
 
 	case m_paused:
@@ -207,17 +196,13 @@ void Menu_Keydown (int key)
 	case m_none:
 		return;
 
-	case m_start:
-		Menu_Start_Key (key);
-		break;
+	case m_main:
+		Menu_Main_Key (key);
+		return;
 
 	case m_paused:
 		Menu_Paused_Key (key);
 		break;
-
-	case m_main:
-		Menu_Main_Key (key);
-		return;
 
 	case m_stockmaps:
 		Menu_StockMaps_Key (key);
@@ -281,7 +266,7 @@ void Menu_ToggleMenu_f (void)
 {
 	if (key_dest == key_menu || key_dest == key_menu_pause) {
 		if (m_state != m_main && m_state != m_paused) {
-			Menu_Main_Set ();
+			Menu_Main_Set (false);
 			return;
 		}
 		key_dest = key_game;
@@ -293,6 +278,6 @@ void Menu_ToggleMenu_f (void)
 	} else if (sv.active && (svs.maxclients > 1 || key_dest == key_game)) {
 		Menu_Paused_Set();
 	} else {
-		Menu_Main_Set ();
+		Menu_Main_Set (false);
 	}
 }
