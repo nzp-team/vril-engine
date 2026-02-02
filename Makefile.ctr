@@ -104,7 +104,6 @@ COMMON_OBJS =	system.o \
 				menu/menu_controls.c \
 				menu/menu_accessibility.c \
 				menu/menu_pause.c \
-				menu/menu_start.c \
 				menu/menu_stubs.c \
 				menu/menu_loadscreen.c \
 				platform/ctr/platform_menu.c \
