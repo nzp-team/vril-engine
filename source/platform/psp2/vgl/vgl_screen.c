@@ -445,28 +445,6 @@ int Random_Int (int max_int)
 	else
 		return (int)(f - 0.5f) + 1;
 }
-/*
-==============
-SCR_DrawLoadScreen
-==============
-*/
-
-/*
-	Creds to the following people from the 2020
-	Loading Screen Hint Submission/Contest:
-
-	* BCDeshiG
-	* Derped_Crusader
-	* Aidan
-	* yasen
-	* greg
-	* Asher
-	* Bernerd
-	* Omar Alejandro
-	* TheSmashers
-*/
-
-// 47 character limit
 
 double loadingtimechange;
 int loadingdot;
@@ -717,47 +695,6 @@ char *ReturnLoadingtex (void)
     }
     return "wut wut";
 }
-
-void SCR_DrawLoadScreen (void)
-{
-	if (developer.value) {
-		return;
-	}
-	if (!con_forcedup) {
-	    return;
-	}
-
-	if (loadingScreen) {
-		Draw_FillByColor(0, 0, vid.width, 240, 0, 0, 0, 255);
-		if (!loadscreeninit) {
-			lscreen = Image_LoadImage(va("gfx/lscreen/%s", loadname2), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
-
-			if (lscreen < 0) {
-				lscreen = Image_LoadImage("gfx/lscreen/lscreen", IMAGE_PNG, 0, false, false);
-			}
-
-			loadscreeninit = true;
-		}
-
-		Draw_StretchPic(0, 0, lscreen, 960, 544);
-
-		Draw_FillByColor(0, 0, vid.width, 24, 0, 0, 0, 175);
-		Draw_FillByColor(0, 216, vid.width, 24, 0, 0, 0, 175);
-
-		Draw_ColoredString(2, 4, loadnamespec, 255, 255, 0, 255, 2);
-	}
-
-	if (loadingtimechange < Sys_FloatTime ())
-	{
-        lodinglinetext = ReturnLoadingtex();
-        loadingtimechange = Sys_FloatTime () + 5;
-	}
-
-	if (key_dest == key_game) {
-		Draw_ColoredStringCentered(vid.height-(vid.height/10), lodinglinetext, 255, 255, 255, 255, 1);
-	}
-}
-
 
 /*
 ==================
@@ -1723,7 +1660,7 @@ void SCR_UpdateScreen (void)
 	M_Draw ();
 
 	if(scr_loadscreen.value) {
-		SCR_DrawLoadScreen();
+		Menu_DrawLoadScreen();
 	}
 
 	Draw_LoadingFill();
