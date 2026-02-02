@@ -33,6 +33,7 @@ Menu_Configuration_Set
 void Menu_Configuration_Set (void)
 {
 	m_state = m_configuration;
+	menu_configuration_cursor = 0;
 }
 
 /*
@@ -43,7 +44,7 @@ Menu_Configuration_Draw
 void Menu_Configuration_Draw (void)
 {
 	// Background
-	Menu_DrawCustomBackground ();
+	Menu_DrawCustomBackground (true);
 
 	// Header
 	Menu_DrawTitle ("CONFIGURATION", MENU_COLOR_WHITE);
@@ -106,7 +107,7 @@ void Menu_Configuration_Key (int key)
                 if (key_dest == key_menu_pause) {
                     Menu_Paused_Set();
                 } else {
-                    Menu_Main_Set();
+                    Menu_Main_Set(false);
                 }
                 break;
 		}

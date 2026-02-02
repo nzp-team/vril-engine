@@ -99,7 +99,7 @@ extern qboolean         loadscreeninit;
 // Custom maps
 typedef struct
 {
-	int 		occupied;
+	qboolean 	occupied;
 	int 	 	map_allow_game_settings;
 	int 	 	map_use_thumbnail;
 	char* 		map_name;
@@ -161,6 +161,7 @@ FUNCTION DEFINES
 ===========================================================================
 */
 
+void strip_newline(char *s);
 void Menu_DictateScaleFactor(void);
 void Menu_LoadPics (void);
 void Menu_StartSound (int type);
@@ -168,10 +169,11 @@ image_t Menu_PickBackground (void);
 void Menu_DrawTextCentered (int x, int y, char* text, int r, int g, int b, int a);
 void Menu_InitStockMaps (void);
 qboolean Menu_IsStockMap (char *bsp_name);
+void Menu_CustomMaps_MapFinder (void);
 int UserMapSupportsCustomGameLookup (char *bsp_name);
 void Map_SetDefaultValues (void);
 void Menu_LoadMap (char *selected_map);
-void Menu_DrawCustomBackground ();
+void Menu_DrawCustomBackground (qboolean draw_images);
 void Menu_DrawTitle (char *title_name, int color);
 void Menu_DrawButton (int order, int button_number, char* button_name, int button_active, char* button_summary);
 void Menu_DrawOptionButton(int order, char* selection_name);
@@ -184,7 +186,6 @@ void Menu_DrawSocialBadge (int order, int which);
 void Menu_DrawMapPanel (void);
 void Menu_Preload_Custom_Images (void);
 
-void Menu_Start_Set(void);
 void Menu_StockMaps_Set (void);
 void Menu_Paused_Set(void);
 void Menu_Keys_Set(void);
@@ -203,7 +204,7 @@ void Menu_Audio_Set (void);
 void Menu_Controls_Set (void);
 void Menu_Accessibility_Set (void);
 
-void Menu_Start_Draw(void);
+void Menu_Main_Draw(void);
 void Menu_Paused_Draw(void);
 void Menu_Main_Draw(void);
 void Menu_StockMaps_Draw(void);
@@ -221,7 +222,7 @@ void Menu_Audio_Draw (void);
 void Menu_Controls_Draw (void);
 void Menu_Accessibility_Draw (void);
 
-void Menu_Start_Key(int key);
+void Menu_Main_Key(int key);
 void Menu_Paused_Key(int key);
 void Menu_Main_Key(int key);
 void Menu_StockMaps_Key(int key);

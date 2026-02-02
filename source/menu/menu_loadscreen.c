@@ -37,10 +37,10 @@ char* 		map_loadname_pretty;
 
 /*
 ==============
-SCR_DrawLoadScreen
+Menu_DrawLoadScreen
 ==============
 */
-void SCR_DrawLoadScreen (void)
+void Menu_DrawLoadScreen (void)
 {
 	if (developer.value) {
 		return;
@@ -66,7 +66,7 @@ void SCR_DrawLoadScreen (void)
 		Draw_StretchPic(0, 0, lscreen_image, vid.width, vid.height);
 
 		Draw_FillByColor(0, 0, vid.width, big_bar_height, 0, 0, 0, 175);
-		Draw_FillByColor(0, (vid.height + big_bar_height), vid.width, big_bar_height, 0, 0, 0, 175);
+		Draw_FillByColor(0, vid.height - big_bar_height/2, vid.width, big_bar_height/2, 0, 0, 0, 175);
 
 		if (map_loadname_pretty != NULL) {
 			Menu_DrawTitle(map_loadname_pretty, MENU_COLOR_YELLOW);

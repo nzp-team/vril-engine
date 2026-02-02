@@ -259,7 +259,7 @@ void Menu_GameSettings_ApplyFastRounds (void)
 void Menu_GameSettings_Draw (void)
 {
     // Background
-	Menu_DrawCustomBackground ();
+	Menu_DrawCustomBackground (true);
     // Title
     Menu_DrawTitle("GAME SETTINGS", MENU_COLOR_WHITE);
     // Map panel makes the background darker

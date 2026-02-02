@@ -39,6 +39,7 @@ void Menu_Paused_Set ()
 	m_state = m_paused;
 	loadingScreen = 0;
 	loadscreeninit = false;
+	menu_paused_cursor = 0;
 }
 
 /*
@@ -49,7 +50,7 @@ Menu_Paused_Draw
 void Menu_Paused_Draw ()
 {
     // Background
-	Menu_DrawCustomBackground ();
+	Menu_DrawCustomBackground (true);
 
 	// Header
 	Menu_DrawTitle ("PAUSED", MENU_COLOR_WHITE);

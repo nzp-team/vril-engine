@@ -171,7 +171,7 @@ void Menu_Lobby_SetBack (void)
 void Menu_Lobby_Draw (void)
 {
     // Background
-	Menu_DrawCustomBackground ();
+	Menu_DrawCustomBackground (true);
     // Title
     Menu_DrawTitle("PRE-GAME", MENU_COLOR_WHITE);
     // Map panel makes the background darker
@@ -213,7 +213,10 @@ void Menu_Lobby_Draw (void)
         int x_pos = (vid.width/2) + (vid.width/28);
         int y_pos = (vid.height - (vid.height/2)) + (vid.height/20);
         Draw_ColoredString(x_pos, y_pos, game_starting, 255, 255, 255, 255, menu_scale_factor);
-        Draw_FillByColor(x_pos, y_pos + (CHAR_HEIGHT), (vid.width/4)*(lobby_delta/(vid.width/60)), vid.height/36, 180, 130*(lobby_delta/(vid.width/60)), 130, 180);
+
+        // Countdown bar
+        Draw_FillByColor(x_pos + ((vid.width/3.5)/2), y_pos + (int)(small_bar_height*1.5) + (vid.height/36), ((float)(vid.width/3.5)*(lobby_delta/(vid.width/60))/2), vid.height/36, 136, 136*(lobby_delta/(vid.width/60)), 136*(lobby_delta/(vid.width/60)), 160);
+        Draw_FillByColor(x_pos + ((vid.width/3.5)/2), y_pos + (int)(small_bar_height*1.5) + (vid.height/36), -((float)(vid.width/3.5)*(lobby_delta/(vid.width/60))/2), vid.height/36, 136, 136*(lobby_delta/(vid.width/60)), 136*(lobby_delta/(vid.width/60)), 160);
 
         if (menu_lobby_last != (float)floor(lobby_delta)) {
             Menu_StartSound(MENU_SND_BEEP);
