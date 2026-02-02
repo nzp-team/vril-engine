@@ -52,7 +52,7 @@ void Menu_Quit_Draw (void)
     int y_pos = (vid.height/3);
 
     // Background
-	Menu_DrawCustomBackground ();
+	Menu_DrawCustomBackground (true);
 
     if (previous_menu == m_paused) {
         // Header
@@ -106,25 +106,34 @@ void Menu_Quit_Key (int key)
 			menu_quit_cursor = QUIT_ITEMS - 1;
 		break;
 
+    case K_ENTER:
 	case K_AUX1:
         Menu_StartSound(MENU_SND_ENTER);
         if (previous_menu == m_paused) {
             switch (menu_quit_cursor) {
                 case 0:
                     if (is_restart) {
-                        //Menu_LoadMap(current_selected_bsp);
                         key_dest = key_game;
                         m_state = m_none;
                         // Perform Soft Restart
                         PR_ExecuteProgram (pr_global_struct->Soft_Restart);
                     } else {
-                        Menu_Main_Set();
+                        // Exit match and go back to main menu
+                        Menu_Main_Set(false);
                     }
                     break;
                 case 1:
                     Menu_Paused_Set();
                     break;
             }
+        } else if (previous_menu == m_main) {
+            case 0:
+                key_dest = key_console;
+		        Host_Quit_f ();
+                break;
+            case 1:
+                Menu_Main_Set(false);
+                break;
         }
 	}
 }

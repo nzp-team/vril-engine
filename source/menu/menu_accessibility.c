@@ -32,7 +32,7 @@ Menu_Accessibility_Set
 */
 void Menu_Accessibility_Set (void)
 {
-	m_state = m_controls;
+	m_state = m_accessibility;
 }
 
 /*
@@ -43,7 +43,7 @@ Menu_Accessibility_Draw
 void Menu_Accessibility_Draw (void)
 {
 	// Background
-	Menu_DrawCustomBackground ();
+	Menu_DrawCustomBackground (true);
 
 	// Header
 	Menu_DrawTitle ("ACCESSIBILITY OPTIONS", MENU_COLOR_WHITE);
@@ -87,9 +87,9 @@ void Menu_Accessibility_Key (int key)
 			case 3:
 				break;
             case 4:
+				Menu_Configuration_Set();
                 break;
             case 5:
-                Menu_Configuration_Set();
                 break;
 		}
 	}
