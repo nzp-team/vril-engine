@@ -428,11 +428,17 @@ void Sys_Quit (void)
 	sceKernelExitGame();
 }
 
-double Sys_FloatTime (void)
+double Sys_FloatTime(void)
 {
-	u64 ticks;
-	sceRtcGetCurrentTick(&ticks);
-	return ticks * 0.000001;
+    static u64 initial_tick = 0;
+    u64 ticks;
+
+    sceRtcGetCurrentTick(&ticks);
+
+    if (!initial_tick)
+        initial_tick = ticks;
+
+    return (double)(ticks - initial_tick) / 1000000.0;
 }
 
 char *Sys_ConsoleInput (void)
