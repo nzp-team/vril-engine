@@ -30,11 +30,18 @@ int	menu_main_cursor;
 Menu_Main_Set
 ===============
 */
-void Menu_Main_Set (void)
+void Menu_Main_Set (qboolean init)
 {
 	Menu_LoadPics();
+
+	if (init) {
+		Menu_DictateScaleFactor();
+		Menu_InitStockMaps();
+	}
+	
 	key_dest = key_menu;
 	m_state = m_main;
+	loadingScreen = 0;
 	menu_main_cursor = 0;
 }
 
@@ -46,7 +53,7 @@ Menu_Main_Draw
 void Menu_Main_Draw (void)
 {
 	// Background
-	Menu_DrawCustomBackground ();
+	Menu_DrawCustomBackground (true);
 
 	// Header
 	Menu_DrawTitle ("MAIN MENU", MENU_COLOR_WHITE);

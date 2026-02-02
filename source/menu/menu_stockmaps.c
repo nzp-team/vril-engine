@@ -48,7 +48,7 @@ void Menu_StockMaps_Draw (void)
     char*   back_text;
 
     // Background
-	Menu_DrawCustomBackground();
+	Menu_DrawCustomBackground(true);
 
     if (menu_is_solo) {
         header_text = "SELECT MAP: SOLO";
@@ -125,7 +125,7 @@ void Menu_StockMaps_Key (int key)
                 break;
             case 10:
                 if (menu_is_solo) {
-                    Menu_Main_Set();
+                    Menu_Main_Set(false);
                 }
                 break;
 		}

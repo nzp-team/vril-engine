@@ -137,12 +137,12 @@ void Menu_Video_ApplySliders (int dir)
             double current_gamma = (double)v_gamma.value;
             if (dir == MENU_SLIDER_LEFT) {
                 if (current_gamma == 0) return;
-                current_gamma -= 0.1;
-                if (current_gamma < 0) current_gamma = 0;
+                current_gamma += 0.1;
+                if (current_gamma > 0) current_gamma = 1;
                 Cvar_SetValue ("gamma", current_gamma);
             } else if (dir == MENU_SLIDER_RIGHT) {
-                current_gamma += 0.1;
-                if (current_gamma > 1) current_gamma = 1;
+                current_gamma -= 0.1;
+                if (current_gamma < 1) current_gamma = 0;
                 Cvar_SetValue ("gamma", (float)current_gamma);
             }
             break;
@@ -205,7 +205,7 @@ Menu_Video_Draw
 void Menu_Video_Draw (void)
 {
 	// Background
-	Menu_DrawCustomBackground ();
+	Menu_DrawCustomBackground (true);
 
 	// Header
 	Menu_DrawTitle ("VIDEO OPTIONS", MENU_COLOR_WHITE);

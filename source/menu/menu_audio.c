@@ -78,7 +78,7 @@ Menu_Audio_Draw
 void Menu_Audio_Draw (void)
 {
 	// Background
-	Menu_DrawCustomBackground ();
+	Menu_DrawCustomBackground (true);
 
 	// Header
 	Menu_DrawTitle ("AUDIO OPTIONS", MENU_COLOR_WHITE);

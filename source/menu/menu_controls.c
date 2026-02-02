@@ -64,7 +64,7 @@ Menu_Controls_Draw
 void Menu_Controls_Draw (void)
 {
 	// Background
-	Menu_DrawCustomBackground ();
+	Menu_DrawCustomBackground (true);
 
 	CONTROLS_ITEMS = 6;
 
