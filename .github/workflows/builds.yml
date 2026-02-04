@@ -105,7 +105,7 @@ jobs:
       - name: Run All
         run: |
           cd ./testing
-          ./run_tests.sh --platform psp --test all --content "$(pwd)/validate" --mode fat
+          ./run_tests.sh --platform psp --test all --content "$(pwd)/validate" --mode fat --binary /psp-nzp-eboot/EBOOT.PBP
   Pull-Request-Test-PSP2000:
     if: github.event_name == 'pull_request'
     name: PSP-2000 Pull Request Tests
@@ -127,7 +127,7 @@ jobs:
       - name: Run All
         run: |
           cd ./testing
-          ./run_tests.sh --platform psp --test all --content "$(pwd)/validate" --mode slim
+          ./run_tests.sh --platform psp --test all --content "$(pwd)/validate" --mode slim --binary /psp-nzp-eboot/EBOOT.PBP
   Unify-and-Release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
