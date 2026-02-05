@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "../nzportable_def.h"
 #include "menu_defs.h"
+#include <assert.h>
 
 float   		menu_scale_factor;
 float			CHAR_WIDTH;
@@ -39,6 +40,34 @@ StockMaps stock_maps[8] = {
 void strip_newline(char *s)
 {
     s[strcspn(s, "\r\n")] = '\0';
+}
+
+// Lower string
+char* strtolower(char* s) 
+{
+	assert(s != NULL);
+
+	char* p = s;
+	while (*p != '\0') {
+		*p = tolower(*p);
+		p++;
+	}
+
+	return s;
+}
+
+// Upper string
+char* strtoupper(char* s) 
+{
+	assert(s != NULL);
+
+	char* p = s;
+	while (*p != '\0') {
+		*p = toupper(*p);
+		p++;
+	}
+
+	return s;
 }
 
 /*
@@ -482,6 +511,7 @@ void Menu_DrawMapButton (int order, menu_t *current_menu, menu_button_t *current
 	int i;
 	int index = 0;
 	char *button_name;
+	char *final_name;
 	int y_factor = (vid.height/24);
 
 	int image_width = (vid.width/3);
@@ -506,8 +536,10 @@ void Menu_DrawMapButton (int order, menu_t *current_menu, menu_button_t *current
 		button_name = custom_maps[index].map_name;
 	}
 
+	final_name = strtoupper(button_name);
+
 	// Draw the selectable button
-	Menu_DrawButton (order, current_menu, current_button, button_name, button_name);
+	Menu_DrawButton (order, current_menu, current_button, final_name, button_name);
 
 	if (Menu_IsButtonHovered(current_menu, current_button)) {
 		// Draw map thumbnail picture
