@@ -170,7 +170,6 @@ void Menu_CustomMaps_MapFinder (void)
 
 	// Open the directory
 	while (Dir_Read(dir, d_name, sizeof(d_name))) {
-
 		if ((!strcmp(COM_FileExtension(d_name),"bsp")) || (!strcmp(COM_FileExtension(d_name),"BSP"))) {
 			// definitions for map setting values
 			char settings_line[MAX_QPATH];
@@ -252,7 +251,6 @@ void Menu_CustomMaps_MapFinder (void)
 			num_user_maps++;
 		}
 	}
-
 	Dir_Close(dir); // Close the handle (pointer)
 	custom_map_pages = (int)ceil((double)(num_user_maps)/8);
 }
