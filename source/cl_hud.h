@@ -46,7 +46,6 @@ typedef struct achievement_list_s
     int         progress;
 } achievement_list_t;
 
-void Achievement_Init (void);
 extern achievement_list_t achievement_list[MAX_ACHIEVEMENTS];
 extern int achievement_locked;
 extern char player_name[16];

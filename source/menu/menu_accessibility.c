@@ -25,6 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 int	menu_accessibility_cursor;
 #define	ACCESSIBILITY_ITEMS	6
 
+menu_t 			accessibility_menu;
+menu_button_t 	accessibility_menu_buttons[ACCESSIBILITY_ITEMS];
+
 /*
 ===============
 Menu_Accessibility_Set
@@ -48,7 +51,7 @@ void Menu_Accessibility_Draw (void)
 	// Header
 	Menu_DrawTitle ("ACCESSIBILITY OPTIONS", MENU_COLOR_WHITE);
 
-	Menu_DrawButton(11.5, 5, "BACK", MENU_BUTTON_ACTIVE, "Return to Main Menu.");
+	Menu_DrawButton(11.5, &accessibility_menu, &accessibility_menu_buttons[0], "BACK", "Return to Main Menu.");
 }
 
 /*

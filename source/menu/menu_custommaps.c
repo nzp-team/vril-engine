@@ -32,26 +32,31 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/dirent.h>
 #endif
 
+void Menu_CustomMaps_BuildMenuItems (void);
+
 #define MAX_CUSTOMMAP_ITEMS		11
+
+menu_t          custommaps_menu;
+menu_button_t   custommaps_menu_buttons[MAX_CUSTOMMAP_ITEMS];
 
 image_t             	menu_usermap_image[MAX_CUSTOMMAPS];
 achievement_list_t  	achievement_list[MAX_ACHIEVEMENTS];
 usermap_t           	custom_maps[MAX_CUSTOMMAPS];
-
-int		menu_custommaps_cursor;
-int		CUSTOMMAPS_ITEMS;
 
 int		user_maps_page;
 int     num_user_maps = 0;
 int     num_custom_images = 0;
 int     custom_map_pages = 0;
 
-char 	game_directory[MAX_OSPATH];
-char	settings_path[MAX_OSPATH+MAX_QPATH];
-
 #define MAX_SETTINGS_LINES 12
 #define MAX_MAP_PER_PAGE 8
 #define MAP_DESC_LINES 8
+
+int 	maps_on_page;
+int 	maps_start_position;
+
+char 	game_directory[MAX_OSPATH];
+char	settings_path[MAX_OSPATH*2];
 
 typedef struct GlobalDir {
 #ifdef __PSP__
@@ -191,7 +196,7 @@ void Menu_CustomMaps_MapFinder (void)
 			snprintf(custom_maps[num_user_maps].map_name, MAX_QPATH, "%s", map_name);
 
 			// Set setting path to read 
-			snprintf(settings_path, MAX_OSPATH+MAX_QPATH, "%s/maps/%s.txt", com_gamedir, map_name);
+			snprintf(settings_path, MAX_OSPATH*2, "%s/maps/%s.txt", com_gamedir, map_name);
 			// Open map settings file and load into custom_maps
 			FILE *settings_file;
 			settings_file = fopen(settings_path, "r");
@@ -243,177 +248,13 @@ void Menu_CustomMaps_MapFinder (void)
 			} else {
 				custom_maps[num_user_maps].map_thumbnail_path[0] = '\0';
 			}
-			// Increment custom_maps position
+			// Increment total custom maps amount
 			num_user_maps++;
 		}
 	}
 
 	Dir_Close(dir); // Close the handle (pointer)
 	custom_map_pages = (int)ceil((double)(num_user_maps)/8);
-	printf("maps: %i", num_user_maps);
-}
-
-void Menu_CustomMaps_Set ()
-{
-	key_dest = key_menu;
-	m_state = m_custommaps;
-
-	user_maps_page = 0;
-}
-
-void Menu_CustomMaps_NextPage (void)
-{
-    Menu_StartSound(MENU_SND_ENTER);
-	menu_custommaps_cursor = 0;
-    user_maps_page++;
-}
-
-void Menu_CustomMaps_PrevPage (void)
-{
-    Menu_StartSound(MENU_SND_ENTER);
-	menu_custommaps_cursor = 0;
-    user_maps_page--;
-}
-
-void Menu_CustomMaps_IncreaseItems (void)
-{
-	if (CUSTOMMAPS_ITEMS < MAX_CUSTOMMAP_ITEMS) {
-		CUSTOMMAPS_ITEMS++;
-	}
-}
-
-void Menu_CustomMaps_DecreaseItems (void)
-{
-	if (CUSTOMMAPS_ITEMS > MAX_CUSTOMMAP_ITEMS) {
-		CUSTOMMAPS_ITEMS--;
-	}
-}
-
-int maps_on_page = MAX_MAP_PER_PAGE; // default to 8, all that will fit on the UI.
-void Menu_CustomMaps_Draw (void)
-{
-	int     i;
-    char*   header_text;
-
-    // Background
-	Menu_DrawCustomBackground(true);
-
-    if (menu_is_solo) {
-        header_text = "SELECT MAP: SOLO";
-    } else {
-        header_text = "SELECT MAP: COOP";
-    }
-
-    // Header
-	Menu_DrawTitle(header_text, MENU_COLOR_WHITE);
-    // Map panel makes the background darker
-    Menu_DrawMapPanel();
-
-	// calculate the amount of usermaps we can display on this page.
-	int maps_start_position = user_maps_page * MAX_MAP_PER_PAGE;
-
-	// Not all 8 slots can be filled..
-	if (MAX_MAP_PER_PAGE > num_user_maps - maps_start_position) {
-		// So set how many maps will be on the last page
-		maps_on_page = num_user_maps - maps_start_position;
-	}
-
-	printf("user_maps_page: %i\n", user_maps_page);
-
-	printf("start pos: %i maps_on_page: %i\n", maps_start_position, maps_on_page);
-
-	for (i = maps_start_position; i < maps_start_position + maps_on_page; i++) {
-		int menu_position = (i + 1) - (user_maps_page * MAX_MAP_PER_PAGE);
-		Menu_DrawMapButton(menu_position, menu_position, i, custom_maps[i].map_name);
-	}
-
-	int current_registry_position = ((i + 1) - (user_maps_page * maps_on_page)) - 1;
-	printf("current_registry_position: %i\n", current_registry_position);
-
-	CUSTOMMAPS_ITEMS = maps_on_page+1;
-
-	printf("custommap items prev: %i\n", CUSTOMMAPS_ITEMS);
-
-	Menu_DrawDivider(9.25);
-
-	if (maps_on_page + maps_start_position < num_user_maps) {
-		Menu_CustomMaps_IncreaseItems();
-		Menu_DrawButton(9.5, CUSTOMMAPS_ITEMS-2, "NEXT PAGE", MENU_BUTTON_ACTIVE, "Advance to next User Map page.");
-	} else {
-		Menu_CustomMaps_DecreaseItems();
-		Menu_DrawButton(9.5, -1, "NEXT PAGE", MENU_BUTTON_INACTIVE, "");
-	}
-
-	if (user_maps_page != 0) {
-		Menu_CustomMaps_IncreaseItems();
-		Menu_DrawButton(10.5, CUSTOMMAPS_ITEMS-1, "PREVIOUS PAGE", MENU_BUTTON_ACTIVE, "Return to last User Map page.");
-	} else {
-		Menu_CustomMaps_DecreaseItems();
-		Menu_DrawButton(10.5, -1, "PREVIOUS PAGE", MENU_BUTTON_INACTIVE, "");
-	}
-
-	printf("custommap items fut: %i\n", CUSTOMMAPS_ITEMS);
-
-    Menu_DrawButton(11.5, CUSTOMMAPS_ITEMS, "BACK", MENU_BUTTON_ACTIVE, "Return to Stock Map selection.");
-}
-
-void Menu_CustomMaps_Key (int key)
-{
-	switch (key)
-	{
-
-	case K_DOWNARROW:
-		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (++menu_custommaps_cursor >= CUSTOMMAPS_ITEMS)
-			menu_custommaps_cursor = 0;
-		break;
-
-	case K_UPARROW:
-		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (--menu_custommaps_cursor < 0)
-			menu_custommaps_cursor = CUSTOMMAPS_ITEMS - 1;
-		break;
-
-	case K_ENTER:
-	case K_AUX1:
-		Menu_StartSound(MENU_SND_ENTER);
-
-		if (CUSTOMMAPS_ITEMS < 11) {
-			if (menu_custommaps_cursor == (CUSTOMMAPS_ITEMS-3)) {
-				Map_SetDefaultValues();
-				current_selected_bsp = custom_maps[menu_custommaps_cursor].map_name;
-				Menu_Lobby_Set();
-			}
-			if (maps_on_page < MAX_MAP_PER_PAGE) {
-				if (menu_custommaps_cursor == (CUSTOMMAPS_ITEMS-2)) {
-					Menu_CustomMaps_PrevPage();
-				}
-			} else {
-				if (menu_custommaps_cursor == (CUSTOMMAPS_ITEMS-2)) {
-					Menu_CustomMaps_NextPage();
-				}
-			}
-			
-			if (menu_custommaps_cursor == (CUSTOMMAPS_ITEMS-1)) {
-				Menu_StockMaps_Set();
-			}
-		} else {
-			if (menu_custommaps_cursor == (CUSTOMMAPS_ITEMS-4)) {
-				Map_SetDefaultValues();
-				current_selected_bsp = custom_maps[menu_custommaps_cursor].map_name;
-				Menu_Lobby_Set();
-			}
-			if (menu_custommaps_cursor == (CUSTOMMAPS_ITEMS-3)) {
-					Menu_CustomMaps_NextPage();
-				}
-			if (menu_custommaps_cursor == (CUSTOMMAPS_ITEMS-2)) {
-					Menu_CustomMaps_PrevPage();
-				}
-			if (menu_custommaps_cursor == (CUSTOMMAPS_ITEMS-1)) {
-				Menu_StockMaps_Set();
-			}
-		}
-	}
 }
 
 /*
@@ -431,11 +272,143 @@ void Menu_Preload_Custom_Images(void)
 			int menu_image = Image_LoadImage(custom_maps[i].map_thumbnail_path, IMAGE_PNG | IMAGE_TGA | IMAGE_JPG, 1, false, false);
 			if (menu_image > 0) {
 				menu_usermap_image[i] = menu_image;
-			}
-			
-			if (menu_usermap_image[i] > 0) {
 				num_custom_images++;
 			}
 		}
 	}
+}
+
+void Menu_CustomMaps_NextPage (void)
+{
+    Menu_StartSound(MENU_SND_ENTER);
+
+    user_maps_page++;
+	Menu_CustomMaps_BuildMenuItems();
+	custommaps_menu.cursor = 0;
+}
+
+void Menu_CustomMaps_PrevPage (void)
+{
+    Menu_StartSound(MENU_SND_ENTER);
+
+    user_maps_page--;
+	Menu_CustomMaps_BuildMenuItems();
+	custommaps_menu.cursor = 0;
+}
+
+void Menu_CustomMaps_StartMap (void)
+{
+	int map_index = maps_start_position + custommaps_menu.cursor;
+
+	Map_SetDefaultValues();
+	current_selected_bsp = custom_maps[map_index].map_name;
+	Menu_Lobby_Set();
+}
+
+void Menu_CustomMaps_DecideMapsOnPage (void)
+{
+	// calculate the amount of usermaps we can display on this page.
+	maps_start_position = user_maps_page * MAX_MAP_PER_PAGE;
+	// default to 8, all that will fit on the UI.
+	maps_on_page = MAX_MAP_PER_PAGE;
+
+	// Not all 8 slots can be filled..
+	if (MAX_MAP_PER_PAGE > num_user_maps - maps_start_position) {
+		// So set how many maps will be on the last page
+		maps_on_page = num_user_maps - maps_start_position;
+	}
+}
+
+void Menu_CustomMaps_BuildMenuItems (void)
+{
+	int custommap_items = 0;
+	int	button_index = 0;
+
+	Menu_CustomMaps_DecideMapsOnPage();
+
+	// Populate the custom map buttons
+	for (int i = maps_start_position; i < maps_start_position + maps_on_page; i++) {
+		custommaps_menu_buttons[custommap_items] = (menu_button_t){ true, button_index, Menu_CustomMaps_StartMap };
+		custommap_items++;
+		button_index++;
+	}
+	// If the are enough maps for another page
+	// then set the button values
+	if (maps_on_page + maps_start_position < num_user_maps) {
+		custommaps_menu_buttons[button_index] = (menu_button_t){ true, custommap_items, Menu_CustomMaps_NextPage }; custommap_items++;
+	} else {
+		custommaps_menu_buttons[button_index] = (menu_button_t){ false, -1, NULL };
+	}
+	// Add a previous page button
+	// if user is not on the first page
+	if (user_maps_page != 0) {
+		custommaps_menu_buttons[button_index+1] = (menu_button_t){ true, custommap_items, Menu_CustomMaps_PrevPage }; custommap_items++;
+	} else {
+		custommaps_menu_buttons[button_index+1] = (menu_button_t){ false, -1, NULL };
+	}
+	
+	// Back button
+	custommaps_menu_buttons[button_index+2] = (menu_button_t){ true, custommap_items, Menu_StockMaps_Set }; custommap_items++;
+
+	custommaps_menu = (menu_t) {
+		custommaps_menu_buttons,
+		MAX_CUSTOMMAP_ITEMS,
+		0
+	};
+}
+
+void Menu_CustomMaps_Set (void)
+{
+	user_maps_page = 0;
+	Menu_CustomMaps_BuildMenuItems();
+	key_dest = key_menu;
+	m_state = m_custommaps;
+}
+
+void Menu_CustomMaps_Draw (void)
+{
+	int     i;
+	int 	custommap_items = 0;
+    char*   header_text;
+
+    // Background
+	Menu_DrawCustomBackground(true);
+
+    if (menu_is_solo) {
+        header_text = "SELECT MAP: SOLO";
+    } else {
+        header_text = "SELECT MAP: COOP";
+    }
+
+    // Header
+	Menu_DrawTitle(header_text, MENU_COLOR_WHITE);
+    // Map panel makes the background darker
+    Menu_DrawMapPanel();
+
+	for (i = maps_start_position; i < maps_start_position + maps_on_page; i++) {
+		int menu_position = (i + 1) - (user_maps_page * MAX_MAP_PER_PAGE);
+		Menu_DrawMapButton(menu_position, &custommaps_menu, &custommaps_menu_buttons[custommap_items], i, custom_maps[i].map_name);
+		custommap_items++;
+	}
+
+	Menu_DrawDivider(9.25);
+
+	if (maps_on_page + maps_start_position < num_user_maps) {
+		Menu_DrawButton(9.5, &custommaps_menu, &custommaps_menu_buttons[custommap_items], "NEXT PAGE", "Advance to next User Map page.");
+	} else {
+		Menu_DrawButton(9.5, &custommaps_menu, &custommaps_menu_buttons[custommap_items], "NEXT PAGE", "");
+	}
+
+	if (user_maps_page != 0) {
+		Menu_DrawButton(10.5, &custommaps_menu, &custommaps_menu_buttons[custommap_items+1], "PREVIOUS PAGE", "Return to last User Map page.");
+	} else {
+		Menu_DrawButton(10.5, &custommaps_menu, &custommaps_menu_buttons[custommap_items+1], "PREVIOUS PAGE", "");
+	}
+
+    Menu_DrawButton(11.5, &custommaps_menu, &custommaps_menu_buttons[custommap_items+2], "BACK", "Return to Stock Map selection.");
+}
+
+void Menu_CustomMaps_Key (int key)
+{
+	Menu_KeyInput(key, &custommaps_menu);
 }

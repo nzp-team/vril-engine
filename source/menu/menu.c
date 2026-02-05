@@ -123,8 +123,8 @@ void Menu_Draw (void)
 	case m_none:
 		break;
 
-	case m_paused:
-		Menu_Paused_Draw();
+	case m_pause:
+		Menu_Pause_Draw();
 		break;
 
 	case m_main:
@@ -200,8 +200,8 @@ void Menu_Keydown (int key)
 		Menu_Main_Key (key);
 		return;
 
-	case m_paused:
-		Menu_Paused_Key (key);
+	case m_pause:
+		Menu_Pause_Key (key);
 		break;
 
 	case m_stockmaps:
@@ -265,7 +265,7 @@ Menu_ToggleMenu_f
 void Menu_ToggleMenu_f (void)
 {
 	if (key_dest == key_menu || key_dest == key_menu_pause) {
-		if (m_state != m_main && m_state != m_paused) {
+		if (m_state != m_main && m_state != m_pause) {
 			Menu_Main_Set (false);
 			return;
 		}
@@ -276,7 +276,7 @@ void Menu_ToggleMenu_f (void)
 	if (key_dest == key_console) {
 		Con_ToggleConsole_f ();
 	} else if (sv.active && (svs.maxclients > 1 || key_dest == key_game)) {
-		Menu_Paused_Set();
+		Menu_Pause_Set();
 	} else {
 		Menu_Main_Set (false);
 	}

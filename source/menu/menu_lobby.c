@@ -24,7 +24,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int	            menu_lobby_cursor;
 int             support_gamesettings;
-int             LOBBY_ITEMS;
+
+#define         MAX_LOBBY_ITEMS 3
+
+menu_t          lobby_menu;
+menu_button_t   lobby_menu_buttons[MAX_LOBBY_ITEMS];
 
 float           menu_lobby_countdown = 0;
 float           menu_lobby_last;
@@ -62,20 +66,6 @@ void Menu_Lobby_FreeStrings (void)
     free(headshotonly);
     free(fastrounds);
     free(hordesize);
-}
-
-void Menu_Lobby_StartCountdown (void)
-{
-    Menu_StartSound(MENU_SND_ENTER);
-    menu_lobby_countdown = Sys_FloatTime() + 6;
-    menu_lobby_last = 0;
-}
-
-void Menu_Lobby_StopCountdown (void)
-{
-    Menu_StartSound(MENU_SND_ENTER);
-    menu_lobby_countdown = 0;
-    menu_lobby_last = 0;
 }
 
 void Menu_Lobby_SetStrings (void)
@@ -149,23 +139,64 @@ void Menu_Lobby_SetStrings (void)
     sprintf(hordesize, "%i", (int)sv_maxai.value);
 }
 
-void Menu_Lobby_Set (void)
+void Menu_Lobby_StopCountdown (void)
 {
-    Menu_Lobby_AllocStrings();
-    Menu_Lobby_SetStrings();
-    LOBBY_ITEMS = 2;
+    menu_lobby_countdown = 0;
+    menu_lobby_last = 0;
+}
 
-    key_dest = key_menu;
-	m_state = m_lobby;
+void Menu_Lobby_SetCountdown (void)
+{
+    Menu_StartSound(MENU_SND_ENTER);
+
+    if (menu_lobby_countdown == 0) {    
+        menu_lobby_countdown = Sys_FloatTime() + 6;
+        menu_lobby_last = 0;
+    } else {
+        Menu_Lobby_StopCountdown();
+    } 
 }
 
 void Menu_Lobby_SetBack (void)
 {
+    Menu_Lobby_StopCountdown();
+
     if (Menu_IsStockMap(current_selected_bsp)) {
         Menu_StockMaps_Set();
     } else {
         Menu_CustomMaps_Set();
     }
+}
+
+void Menu_Lobby_BuildMenuItems (void)
+{
+    int lobby_items = 0;
+    support_gamesettings = UserMapSupportsCustomGameLookup (current_selected_bsp);
+
+	lobby_menu_buttons[0] = (menu_button_t){ true, lobby_items++, Menu_Lobby_SetCountdown };
+    if (support_gamesettings) {
+        // Make gamesettings a selectable button
+        lobby_menu_buttons[1] = (menu_button_t){ true, lobby_items++, Menu_GameSettings_Set };
+    } else {
+        lobby_menu_buttons[1] = (menu_button_t){ false, -1, NULL };
+    }
+	lobby_menu_buttons[2] = (menu_button_t){ true, lobby_items, Menu_Lobby_SetBack };
+
+	lobby_menu = (menu_t) {
+		lobby_menu_buttons,
+		MAX_LOBBY_ITEMS,
+		0
+	};
+}
+
+void Menu_Lobby_Set (void)
+{
+    Menu_Lobby_BuildMenuItems();
+    Menu_Lobby_AllocStrings();
+    Menu_Lobby_SetStrings();
+
+    key_dest = key_menu;
+	m_state = m_lobby;
 }
 
 void Menu_Lobby_Draw (void)
@@ -177,32 +208,26 @@ void Menu_Lobby_Draw (void)
     // Map panel makes the background darker
     Menu_DrawMapPanel();
 
-    support_gamesettings = UserMapSupportsCustomGameLookup (current_selected_bsp);
-
-    LOBBY_ITEMS = 2;
-    LOBBY_ITEMS = LOBBY_ITEMS + support_gamesettings;
-    if (LOBBY_ITEMS > 3) LOBBY_ITEMS = 3;
-
     if (menu_lobby_countdown == 0) {
-        Menu_DrawButton (1, 1, "START GAME", MENU_BUTTON_ACTIVE, "Face the Horde!");
+        Menu_DrawButton (1, &lobby_menu, &lobby_menu_buttons[0], "START GAME", "Face the Horde!");
 
         if (support_gamesettings) {
-            Menu_DrawButton(2, 2, "GAME SETTINGS", MENU_BUTTON_ACTIVE, "Adjust Gameplay Options.");
+            Menu_DrawButton(2, &lobby_menu, &lobby_menu_buttons[1], "GAME SETTINGS", "Adjust Gameplay Options.");
         } else {
-            Menu_DrawButton(2, -1, "NOT SUPPORTED", MENU_BUTTON_INACTIVE, "");
+            Menu_DrawButton(2, &lobby_menu, &lobby_menu_buttons[1], "NOT SUPPORTED", "");
         }
         
-        Menu_DrawButton (11.5, 2+support_gamesettings, "BACK", MENU_BUTTON_ACTIVE, "Return to Map Selection.");
+        Menu_DrawButton (11.5, &lobby_menu, &lobby_menu_buttons[2], "BACK", "Return to Map Selection.");
     } else {
-        Menu_DrawButton (1, 1, "CANCEL", MENU_BUTTON_ACTIVE, "..Take it back!");
+        Menu_DrawButton (1, &lobby_menu, &lobby_menu_buttons[0], "CANCEL", "..Take it back!");
 
         if (support_gamesettings) {
-            Menu_DrawButton(2, 2, "GAME SETTINGS", MENU_BUTTON_ACTIVE, "");
+            Menu_DrawButton(2, &lobby_menu, &lobby_menu_buttons[1], "GAME SETTINGS", "");
         } else {
-            Menu_DrawButton(2, -1, "NOT SUPPORTED", MENU_BUTTON_INACTIVE, "");
+            Menu_DrawButton(2, &lobby_menu, &lobby_menu_buttons[1], "NOT SUPPORTED", "");
         }
             
-        Menu_DrawButton(11.5, 2+support_gamesettings, "BACK", MENU_BUTTON_ACTIVE, "Return to Map Selection.");
+        Menu_DrawButton(11.5, &lobby_menu, &lobby_menu_buttons[2], "BACK", "Return to Map Selection.");
     }
 
     Menu_DrawLobbyInfo (current_selected_bsp, gamemode, difficulty, startround, magic, headshotonly, fastrounds, hordesize);
@@ -215,8 +240,8 @@ void Menu_Lobby_Draw (void)
         Draw_ColoredString(x_pos, y_pos, game_starting, 255, 255, 255, 255, menu_scale_factor);
 
         // Countdown bar
-        Draw_FillByColor(x_pos + ((vid.width/3.5)/2), y_pos + (int)(small_bar_height*1.5) + (vid.height/36), ((float)(vid.width/3.5)*(lobby_delta/(vid.width/60))/2), vid.height/36, 136, 136*(lobby_delta/(vid.width/60)), 136*(lobby_delta/(vid.width/60)), 160);
-        Draw_FillByColor(x_pos + ((vid.width/3.5)/2), y_pos + (int)(small_bar_height*1.5) + (vid.height/36), -((float)(vid.width/3.5)*(lobby_delta/(vid.width/60))/2), vid.height/36, 136, 136*(lobby_delta/(vid.width/60)), 136*(lobby_delta/(vid.width/60)), 160);
+        Draw_FillByColor(x_pos + ((vid.width/3.5)/2), y_pos + (int)(small_bar_height*1.5) + (vid.height/36), ((float)(vid.width/3.5)*(lobby_delta/(vid.width/60))/2), vid.height/36, 136, 136*(lobby_delta/(vid.width/60)), 136*(lobby_delta/(vid.width/60)), 230);
+        Draw_FillByColor(x_pos + ((vid.width/3.5)/2), y_pos + (int)(small_bar_height*1.5) + (vid.height/36), -((float)(vid.width/3.5)*(lobby_delta/(vid.width/60))/2), vid.height/36, 136, 136*(lobby_delta/(vid.width/60)), 136*(lobby_delta/(vid.width/60)), 230);
 
         if (menu_lobby_last != (float)floor(lobby_delta)) {
             Menu_StartSound(MENU_SND_BEEP);
@@ -232,67 +257,5 @@ void Menu_Lobby_Draw (void)
 
 void Menu_Lobby_Key (int key)
 {
-    switch (key)
-	{
-
-	case K_DOWNARROW:
-		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (++menu_lobby_cursor >= LOBBY_ITEMS)
-			menu_lobby_cursor = 0;
-		break;
-
-	case K_UPARROW:
-		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (--menu_lobby_cursor < 0)
-			menu_lobby_cursor = LOBBY_ITEMS - 1;
-		break;
-
-	case K_ENTER:
-	case K_AUX1:
-		Menu_StartSound(MENU_SND_ENTER);
-        if (menu_lobby_countdown == 0) {
-            switch (menu_lobby_cursor)
-            {
-                case 0:
-                    Menu_Lobby_StartCountdown();
-                    break;
-                case 1:
-                    if (support_gamesettings) {
-                        Menu_GameSettings_Set();
-                        break;
-                    } else {
-                        Menu_Lobby_StopCountdown();
-                        Menu_Lobby_SetBack();
-                        break;
-                    }
-                case 2:
-                    if (support_gamesettings) {
-                        Menu_Lobby_StopCountdown();
-                        Menu_Lobby_SetBack();
-                        break;
-                    }
-            }
-        } else {
-            switch (menu_lobby_cursor) {
-                case 0:
-                    Menu_Lobby_StopCountdown();
-                    break;
-                case 1:
-                    if (support_gamesettings) {
-                        Menu_GameSettings_Set();
-                        break;
-                    } else {
-                        Menu_Lobby_StopCountdown();
-                        Menu_Lobby_SetBack();
-                        break;
-                    }
-                case 2:
-                    if (support_gamesettings) {
-                        Menu_Lobby_StopCountdown();
-                        Menu_Lobby_SetBack();
-                        break;
-                    }
-            }
-        }
-	}
+    Menu_KeyInput(key, &lobby_menu);
 }

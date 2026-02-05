@@ -22,8 +22,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //=============================================================================
 /* MAIN MENU */
 
-int	menu_main_cursor;
-#define	MAIN_ITEMS	4
+#define			MAIN_ITEMS	6
+
+menu_t 			main_menu;
+menu_button_t 	main_menu_buttons[MAIN_ITEMS];
+
+void 			Menu_Solo(void)			{ menu_is_solo = true; Menu_StockMaps_Set(); }
+void 			Menu_Quit(void)         { Menu_Quit_Set(false); }
+
+void Menu_Main_BuildMenuItems (void)
+{
+	main_menu_buttons[0] = (menu_button_t){ true, 0, Menu_Solo };
+	main_menu_buttons[1] = (menu_button_t){ false, -1, NULL };
+	main_menu_buttons[2] = (menu_button_t){ true, 1, Menu_Configuration_Set };
+	main_menu_buttons[3] = (menu_button_t){ false, -1, NULL };
+	main_menu_buttons[4] = (menu_button_t){ true, 2, Menu_Credits_Set };
+	main_menu_buttons[5] = (menu_button_t){ true, 3, Menu_Quit };
+
+	main_menu = (menu_t) {
+		main_menu_buttons,
+		MAIN_ITEMS,
+		0
+	};
+}
 
 /*
 ===============
@@ -33,16 +54,16 @@ Menu_Main_Set
 void Menu_Main_Set (qboolean init)
 {
 	Menu_LoadPics();
+	Menu_Main_BuildMenuItems();
 
 	if (init) {
 		Menu_DictateScaleFactor();
 		Menu_InitStockMaps();
 	}
-	
+
 	key_dest = key_menu;
 	m_state = m_main;
 	loadingScreen = 0;
-	menu_main_cursor = 0;
 }
 
 /*
@@ -61,21 +82,21 @@ void Menu_Main_Draw (void)
 	// Version String
 	Menu_DrawBuildDate();
 
-	Menu_DrawButton(1, 1, "SOLO", MENU_BUTTON_ACTIVE, "Play Solo.");
-	Menu_DrawButton(2, 0, "COOPERATIVE", MENU_BUTTON_INACTIVE, "");
+	Menu_DrawButton(1, &main_menu, &main_menu_buttons[0], "SOLO", "Play Solo.");
+	Menu_DrawButton(2, &main_menu, &main_menu_buttons[1], "COOPERATIVE", "");
 
 	Menu_DrawDivider(3);
 
-	Menu_DrawButton(3.25, 2, "CONFIGURATION", MENU_BUTTON_ACTIVE, "Tweak Game Related Options");
-	Menu_DrawButton(4.25, 0, "ACHIEVEMENTS", MENU_BUTTON_INACTIVE, "");
+	Menu_DrawButton(3.25, &main_menu, &main_menu_buttons[2], "CONFIGURATION", "Tweak Game Related Options");
+	Menu_DrawButton(4.25, &main_menu, &main_menu_buttons[3], "ACHIEVEMENTS", "");
 
 	Menu_DrawDivider(5.25);
 
-	Menu_DrawButton(5.50, 3, "CREDITS", MENU_BUTTON_ACTIVE, "NZ:P Team + Special Thanks");
+	Menu_DrawButton(5.50, &main_menu, &main_menu_buttons[4], "CREDITS", "NZ:P Team + Special Thanks");
 
 	Menu_DrawDivider(6.50);
 
-	Menu_DrawButton(6.75, 4, "QUIT GAME", MENU_BUTTON_ACTIVE, "Return to Home Screen");
+	Menu_DrawButton(6.75, &main_menu, &main_menu_buttons[5], "QUIT GAME", "Return to Home Screen");
 
 	Menu_DrawSocialBadge (1, MENU_SOC_YOUTUBE);
 	Menu_DrawSocialBadge (2, MENU_SOC_BLUESKY);
@@ -90,42 +111,5 @@ Menu_Main_Key
 */
 void Menu_Main_Key (int key)
 {
-	switch (key)
-	{
-
-	case K_DOWNARROW:
-		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (++menu_main_cursor >= MAIN_ITEMS)
-			menu_main_cursor = 0;
-		break;
-
-	case K_UPARROW:
-		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (--menu_main_cursor < 0)
-			menu_main_cursor = MAIN_ITEMS - 1;
-		break;
-
-	case K_ENTER:
-	case K_AUX1:
-		Menu_StartSound(MENU_SND_ENTER);
-		switch (menu_main_cursor)
-		{
-			case 0:
-				menu_is_solo = true;
-				Menu_StockMaps_Set ();
-				break;
-
-			case 1:
-				Menu_Configuration_Set ();
-				break;
-
-			case 2:
-				Menu_Credits_Set ();
-				break;
-
-			case 3:
-				Menu_Quit_Set (false);
-				break;
-		}
-	}
+	Menu_KeyInput(key, &main_menu);
 }

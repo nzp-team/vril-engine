@@ -22,8 +22,35 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //=============================================================================
 /* CONFIGURATION MENU */
 
-int	menu_configuration_cursor;
 #define	CONFIGURATION_ITEMS	6
+
+menu_t 			configuration_menu;
+menu_button_t 	configuration_buttons[CONFIGURATION_ITEMS];
+
+void Menu_Configuration_Back (void) 
+{
+	if (key_dest == key_menu_pause) {
+		Menu_Pause_Set();
+	} else {
+		Menu_Main_Set(false);
+	}
+}
+
+void Menu_Configuration_BuildMenuItems (void)
+{
+    configuration_buttons[0] = (menu_button_t){ true, 0, Menu_Video_Set };
+    configuration_buttons[1] = (menu_button_t){ true, 1, Menu_Audio_Set };
+    configuration_buttons[2] = (menu_button_t){ true, 2, Menu_Controls_Set };
+    configuration_buttons[3] = (menu_button_t){ true, 3, Menu_Accessibility_Set };
+    configuration_buttons[4] = (menu_button_t){ true, 4, Con_ToggleConsole_f };
+    configuration_buttons[5] = (menu_button_t){ true, 5, Menu_Configuration_Back };
+
+	configuration_menu = (menu_t) {
+		configuration_buttons,
+		CONFIGURATION_ITEMS,
+		0
+	};
+}
 
 /*
 ===============
@@ -32,8 +59,8 @@ Menu_Configuration_Set
 */
 void Menu_Configuration_Set (void)
 {
+	Menu_Configuration_BuildMenuItems();
 	m_state = m_configuration;
-	menu_configuration_cursor = 0;
 }
 
 /*
@@ -49,16 +76,16 @@ void Menu_Configuration_Draw (void)
 	// Header
 	Menu_DrawTitle ("CONFIGURATION", MENU_COLOR_WHITE);
 
-	Menu_DrawButton(1, 1, "VIDEO", MENU_BUTTON_ACTIVE, "Visual Fidelity options.");
-	Menu_DrawButton(2, 2, "AUDIO", MENU_BUTTON_ACTIVE, "Volume sliders.");
-	Menu_DrawButton(3, 3, "CONTROLS", MENU_BUTTON_ACTIVE, "Control Options and Bindings.");
-    Menu_DrawButton(4, 4, "ACCESSIBILITY", MENU_BUTTON_ACTIVE, "Content, Interface, and Readability options.");
+	Menu_DrawButton(1, &configuration_menu, &configuration_buttons[0], "VIDEO", "Visual Fidelity options.");
+	Menu_DrawButton(2, &configuration_menu, &configuration_buttons[1], "AUDIO", "Volume sliders.");
+	Menu_DrawButton(3, &configuration_menu, &configuration_buttons[2], "CONTROLS", "Control Options and Bindings.");
+    Menu_DrawButton(4, &configuration_menu, &configuration_buttons[3], "ACCESSIBILITY", "Content, Interface, and Readability options.");
 
 	Menu_DrawDivider(5);
 
-    Menu_DrawButton(5.25, 5, "OPEN CONSOLE", MENU_BUTTON_ACTIVE, "Access the Developer Console.");
+    Menu_DrawButton(5.25, &configuration_menu, &configuration_buttons[4], "OPEN CONSOLE", "Access the Developer Console.");
 
-	Menu_DrawButton(11.5, 6, "BACK", MENU_BUTTON_ACTIVE, "Return to Main Menu.");
+	Menu_DrawButton(11.5, &configuration_menu, &configuration_buttons[5], "BACK", "Return to Main Menu.");
 }
 
 /*
@@ -68,48 +95,5 @@ Menu_Configuration_Key
 */
 void Menu_Configuration_Key (int key)
 {
-	switch (key)
-	{
-
-	case K_DOWNARROW:
-		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (++menu_configuration_cursor >= CONFIGURATION_ITEMS)
-			menu_configuration_cursor = 0;
-		break;
-
-	case K_UPARROW:
-		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (--menu_configuration_cursor < 0)
-			menu_configuration_cursor = CONFIGURATION_ITEMS - 1;
-		break;
-
-	case K_ENTER:
-	case K_AUX1:
-		Menu_StartSound(MENU_SND_ENTER);
-		switch (menu_configuration_cursor)
-		{
-			case 0:
-				Menu_Video_Set ();
-				break;
-			case 1:
-				Menu_Audio_Set ();
-				break;
-			case 2:
-				Menu_Controls_Set ();
-				break;
-			case 3:
-				Menu_Accessibility_Set ();
-				break;
-            case 4:
-                Con_ToggleConsole_f ();
-                break;
-            case 5:
-                if (key_dest == key_menu_pause) {
-                    Menu_Paused_Set();
-                } else {
-                    Menu_Main_Set(false);
-                }
-                break;
-		}
-	}
+	Menu_KeyInput(key, &configuration_menu);
 }
