@@ -161,18 +161,20 @@ void Menu_Video_ApplyDithering (void)
 
 void Menu_Video_BuildMenuItems (void)
 {
-    video_menu_buttons[0] = (menu_button_t){ true, 0, Menu_Video_ApplyShowFPS };
-    video_menu_buttons[1] = (menu_button_t){ true, 1, NULL };
-    video_menu_buttons[2] = (menu_button_t){ true, 2, NULL };
-    video_menu_buttons[3] = (menu_button_t){ true, 3, NULL };
-    video_menu_buttons[4] = (menu_button_t){ true, 4, Menu_Video_ApplyParticles };
-    video_menu_buttons[5] = (menu_button_t){ true, 5, Menu_Video_ApplyTextureFiltering };
+    int video_items = 0;
+
+    video_menu_buttons[0] = (menu_button_t){ true, video_items++, Menu_Video_ApplyShowFPS };
+    video_menu_buttons[1] = (menu_button_t){ true, video_items++, NULL };
+    video_menu_buttons[2] = (menu_button_t){ true, video_items++, NULL };
+    video_menu_buttons[3] = (menu_button_t){ true, video_items++, NULL };
+    video_menu_buttons[4] = (menu_button_t){ true, video_items++, Menu_Video_ApplyParticles };
+    video_menu_buttons[5] = (menu_button_t){ true, video_items++, Menu_Video_ApplyTextureFiltering };
     if (platform_supports_dithering) {
-        video_menu_buttons[6] = (menu_button_t){ true, 6, Menu_Video_ApplyDithering };
+        video_menu_buttons[6] = (menu_button_t){ true, video_items++, Menu_Video_ApplyDithering };
     } else {
         video_menu_buttons[6] = (menu_button_t){ false, -1, NULL };
     }
-    video_menu_buttons[7] = (menu_button_t){ true, 7, Menu_Configuration_Set };
+    video_menu_buttons[7] = (menu_button_t){ true, video_items++, Menu_Configuration_Set };
 
 	video_menu = (menu_t) {
 		video_menu_buttons,
@@ -269,7 +271,6 @@ void Menu_Video_Draw (void)
 
     // Dithering 
     if (platform_supports_dithering) {
-
         Menu_DrawButton (7, &video_menu, &video_menu_buttons[6], "DITHERING", "Toggle Decrease in Color Banding");
         Menu_DrawOptionButton (7, dithering_string);
     }
