@@ -174,6 +174,7 @@ FUNCTION DEFINES
 */
 
 void strip_newline(char *s);
+char* strtolower(char* s);
 void Menu_DictateScaleFactor(void);
 void Menu_LoadPics (void);
 void Menu_StartSound (int type);

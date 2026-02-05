@@ -18,7 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "../nzportable_def.h"
 #include "menu_defs.h"
-#include <assert.h>
 #ifdef __NSPIRE__
 #include <libndls.h>
 #include <dirent.h>
@@ -125,19 +124,6 @@ void Dir_Close(GlobalDir *d)
 #endif
 
     free(d);
-}
-
-// Lower string
-char* strtolower(char* s) {
-	assert(s != NULL);
-
-	char* p = s;
-	while (*p != '\0') {
-		*p = tolower(*p);
-		p++;
-	}
-
-	return s;
 }
 
 void Menu_CustomMaps_AllocStrings (void)
