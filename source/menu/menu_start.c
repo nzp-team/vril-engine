@@ -29,12 +29,7 @@ Menu_Start_Set
 */
 void Menu_Start_Set ()
 {
-	Menu_LoadPics();
-	Menu_DictateScaleFactor();
-	Menu_InitStockMaps();
-	key_dest = key_menu;
-	m_state = m_start;
-	loadingScreen = 0;
+	
 }
 
 // TODO - make this a platform global
@@ -49,15 +44,10 @@ void Menu_Start_Draw ()
 {
     char start_string[24];
 
+	Menu_DrawCustomBackground (true);
+
     snprintf(start_string, sizeof(start_string), "Press %s to Start", enter_char);
-
-    // Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 255);
-
-	// Draw Background;
-	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
-
-	Draw_ColoredStringCentered(vid.height - (vid.height/14), start_string, 255, 0, 0, 255, menu_scale_factor);
+	Draw_ColoredStringCentered(vid.height - (vid.height/12), start_string, 255, 0, 0, 255, menu_scale_factor);
 }
 
 /*

@@ -9,7 +9,7 @@ extern int m_state;
 #define	m_none			0
 #define	m_start			1
 #define	m_main			2
-#define	m_paused		3
+#define	m_pause		3
 #define	m_stockmaps 	4
 #define	m_custommaps	5
 #define m_lobby			6
@@ -36,18 +36,30 @@ extern int m_state;
 ///////////////////////////
 ///////////////////////////
 
+#define MAX_MENU_BUTTONS 11
+
+typedef struct menu_button_s {
+	qboolean		enabled;
+	int				button_index;
+	void			(*on_activate)(void);
+} menu_button_t;
+
+typedef struct menu_s {
+    menu_button_t	*button;
+	int				num_total_buttons;
+    int				cursor;
+} menu_t;
+
 // Menu page cursor management
 extern int	            menu_main_cursor;
 extern int              menu_stockmaps_cursor;
 extern int				menu_custommaps_cursor;
 extern int				menu_lobby_cursor;
-extern int				menu_gamesettings_cursor;
 extern int				menu_configuration_cursor;
 extern int				menu_video_cursor;
 extern int				menu_audio_cursor;
 extern int				menu_controls_cursor;
 extern int				menu_accessibility_cursor;
-extern int				menu_paused_cursor;
 extern int				menu_quit_cursor;
 
 extern int				key_quit;
@@ -175,19 +187,23 @@ void Map_SetDefaultValues (void);
 void Menu_LoadMap (char *selected_map);
 void Menu_DrawCustomBackground (qboolean draw_images);
 void Menu_DrawTitle (char *title_name, int color);
-void Menu_DrawButton (int order, int button_number, char* button_name, int button_active, char* button_summary);
+void Menu_DrawButton (int order, menu_t *current_menu, menu_button_t *current_button, char* button_name, char* button_summary);
+void Menu_DrawMapButton (int order, menu_t *current_menu, menu_button_t *current_button, int usermap_index, char* bsp_name);
 void Menu_DrawOptionButton(int order, char* selection_name);
 void Menu_DrawOptionSlider(int order, int max_option_value, cvar_t option, qboolean zero_to_one, qboolean draw_option_string);
-void Menu_DrawMapButton (int order, int button_number, int usermap_index, char* bsp_name);
 void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficulty, char* info_startround, char* info_magic, char* info_headshotonly, char* info_fastrounds, char* info_hordesize);
 void Menu_DrawBuildDate ();
 void Menu_DrawDivider (int order);
 void Menu_DrawSocialBadge (int order, int which);
 void Menu_DrawMapPanel (void);
 void Menu_Preload_Custom_Images (void);
+void Menu_IncreaseCursor (menu_t *current_menu);
+void Menu_DecreaseCursor (menu_t *current_menu);
+void Menu_ButtonPress (menu_t *current_menu);
+void Menu_KeyInput (int key, menu_t *current_menu);
 
 void Menu_StockMaps_Set (void);
-void Menu_Paused_Set(void);
+void Menu_Pause_Set(void);
 void Menu_Keys_Set(void);
 void Menu_Video_Set(void);
 void Menu_Quit_Set(qboolean restart);
@@ -205,7 +221,7 @@ void Menu_Controls_Set (void);
 void Menu_Accessibility_Set (void);
 
 void Menu_Main_Draw(void);
-void Menu_Paused_Draw(void);
+void Menu_Pause_Draw(void);
 void Menu_Main_Draw(void);
 void Menu_StockMaps_Draw(void);
 void Menu_Keys_Draw(void);
@@ -223,7 +239,7 @@ void Menu_Controls_Draw (void);
 void Menu_Accessibility_Draw (void);
 
 void Menu_Main_Key(int key);
-void Menu_Paused_Key(int key);
+void Menu_Pause_Key(int key);
 void Menu_Main_Key(int key);
 void Menu_StockMaps_Key(int key);
 void Menu_Keys_Key(int key);
@@ -243,9 +259,3 @@ void Menu_Accessibility_Key (int key);
 // Platform specifics
 void Platform_Menu_MapFinder(void);
 char *Platform_ReturnLoadingText (void);
-
-#ifdef __PSP__
-void Achievement_Init (void);
-void Load_Achivements (void);
-void Save_Achivements (void);
-#endif //__PSP__

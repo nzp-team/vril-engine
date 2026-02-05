@@ -22,8 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //=============================================================================
 /* VIDEO MENU */
 
-int	menu_video_cursor;
-int	VIDEO_ITEMS	= 7;
+#define	MAX_VIDEO_ITEMS	8
+
+menu_t          video_menu;
+menu_button_t   video_menu_buttons[MAX_VIDEO_ITEMS];
 
 char* fps_string;
 char* particles_string;
@@ -40,26 +42,6 @@ extern cvar_t r_runqmbparticles;
 extern cvar_t r_retro;
 extern cvar_t r_dithering;
 
-void Menu_Video_AllocStrings (void);
-
-
-/*
-===============
-Menu_Video_Set
-===============
-*/
-void Menu_Video_Set (void)
-{
-#ifdef RENDERER_SUPPORTS_DITHERING
-    platform_supports_dithering = true;
-#else
-    platform_supports_dithering = false;
-#endif
-
-    Menu_Video_AllocStrings();
-	m_state = m_video;
-}
-
 void Menu_Video_AllocStrings (void)
 {
     fps_string = malloc(16*sizeof(char));
@@ -74,6 +56,147 @@ void Menu_Video_FreeStrings (void)
     free(particles_string);
     free(retro_string);
     free(dithering_string);
+}
+
+void Menu_Video_ApplySliders (int dir)
+{
+    switch (video_menu.cursor) {
+        // Max FPS
+        case 1:
+            float current_maxfps = cl_maxfps.value;
+            if (dir == MENU_SLIDER_LEFT) {
+                if (current_maxfps == 5) break;
+                current_maxfps -= 5;   
+            } else if (dir == MENU_SLIDER_RIGHT) {
+                if (current_maxfps == 60) break;
+                current_maxfps += 5;
+            }
+            if (current_maxfps < 5) current_maxfps = 5;
+            if (current_maxfps > 60) current_maxfps = 60;
+
+            Cvar_SetValue ("cl_maxfps", current_maxfps);
+            break;
+        // Field of View
+        case 2:
+            float current_fov = scr_fov.value;
+            if (dir == MENU_SLIDER_LEFT) {
+                if (current_fov == 50) break;
+                current_fov -= 5;        
+            } else if (dir == MENU_SLIDER_RIGHT) {
+                if (current_fov == 160) break;
+                current_fov += 5;
+            }
+            if (current_fov < 50) current_fov = 50;
+            if (current_fov > 160) current_fov = 160;
+
+            Cvar_SetValue ("fov", current_fov);
+            break;
+        // Gamma
+        case 3:
+            float current_gamma = v_gamma.value;
+            if (dir == MENU_SLIDER_LEFT) {
+                if (current_gamma == 0.0f) break;
+                current_gamma -= 0.1f;
+            }
+            else if (dir == MENU_SLIDER_RIGHT) {
+                if (current_gamma == 1.0f) break;
+                current_gamma += 0.1f;
+            }
+            
+            if (current_gamma < 0.0f) current_gamma = 0.0f;
+            if (current_gamma > 1.0f) current_gamma = 1.0f;
+            
+            Cvar_SetValue("gamma", current_gamma);
+            break;
+    }
+}
+
+void Menu_Video_ApplyShowFPS (void)
+{
+    float current_showfps = show_fps.value;
+
+    current_showfps += 1;
+    if (current_showfps > 1) {
+        current_showfps = 0;
+    }
+
+    Cvar_SetValue ("show_fps", current_showfps);
+}
+
+void Menu_Video_ApplyParticles (void)
+{
+    float current_particles = r_runqmbparticles.value;
+
+    current_particles += 1;
+    if (current_particles > 1) {
+        current_particles = 0;
+    }
+
+    Cvar_SetValue ("r_runqmbparticles", current_particles);
+}
+
+void Menu_Video_ApplyTextureFiltering (void)
+{
+    float current_filter = r_retro.value;
+
+    current_filter += 1;
+    if (current_filter > 1) {
+        current_filter = 0;
+    }
+
+    Cvar_SetValue ("r_retro", current_filter);
+}
+
+void Menu_Video_ApplyDithering (void)
+{
+    float current_dithering = r_dithering.value;
+
+    current_dithering += 1;
+    if (current_dithering > 1) {
+        current_dithering = 0;
+    }
+
+    Cvar_SetValue ("r_dithering", current_dithering);
+}
+
+void Menu_Video_BuildMenuItems (void)
+{
+    video_menu_buttons[0] = (menu_button_t){ true, 0, Menu_Video_ApplyShowFPS };
+    video_menu_buttons[1] = (menu_button_t){ true, 1, NULL };
+    video_menu_buttons[2] = (menu_button_t){ true, 2, NULL };
+    video_menu_buttons[3] = (menu_button_t){ true, 3, NULL };
+    video_menu_buttons[4] = (menu_button_t){ true, 4, Menu_Video_ApplyParticles };
+    video_menu_buttons[5] = (menu_button_t){ true, 5, Menu_Video_ApplyTextureFiltering };
+    if (platform_supports_dithering) {
+        video_menu_buttons[6] = (menu_button_t){ true, 6, Menu_Video_ApplyDithering };
+    } else {
+        video_menu_buttons[6] = (menu_button_t){ false, -1, NULL };
+    }
+    video_menu_buttons[7] = (menu_button_t){ true, 7, Menu_Configuration_Set };
+
+	video_menu = (menu_t) {
+		video_menu_buttons,
+        MAX_VIDEO_ITEMS,
+		0
+	};
+}
+
+/*
+===============
+Menu_Video_Set
+===============
+*/
+void Menu_Video_Set (void)
+{
+#ifdef RENDERER_SUPPORTS_DITHERING
+    platform_supports_dithering = true;
+#else
+    platform_supports_dithering = false;
+#endif
+
+    Menu_Video_BuildMenuItems();
+    Menu_Video_AllocStrings();
+	m_state = m_video;
 }
 
 void Menu_Video_SetStrings (void)
@@ -103,100 +226,6 @@ void Menu_Video_SetStrings (void)
     }
 }
 
-void Menu_Video_ApplySliders (int dir)
-{
-    switch (menu_video_cursor) {
-        // Max FPS
-        case 1:
-            float current_maxfps = cl_maxfps.value;
-            if (dir == MENU_SLIDER_LEFT) {
-                current_maxfps -= 5;
-                if (current_maxfps < 5) current_maxfps = 5;
-                Cvar_SetValue ("cl_maxfps", current_maxfps);
-            } else if (dir == MENU_SLIDER_RIGHT) {
-                current_maxfps += 5;
-                if (current_maxfps > 60) current_maxfps = 60;
-                Cvar_SetValue ("cl_maxfps", current_maxfps);
-            }
-            break;
-        // Field of View
-        case 2:
-            float current_fov = scr_fov.value;
-            if (dir == MENU_SLIDER_LEFT) {
-                current_fov -= 5;
-                if (current_fov < 50) current_fov = 50;
-                Cvar_SetValue ("fov", current_fov);
-            } else if (dir == MENU_SLIDER_RIGHT) {
-                current_fov += 5;
-                if (current_fov > 160) current_fov = 160;
-                Cvar_SetValue ("fov", current_fov);
-            }
-            break;
-        // Gamma
-        case 3:
-            double current_gamma = (double)v_gamma.value;
-            if (dir == MENU_SLIDER_LEFT) {
-                if (current_gamma == 0) return;
-                current_gamma += 0.1;
-                if (current_gamma > 0) current_gamma = 1;
-                Cvar_SetValue ("gamma", current_gamma);
-            } else if (dir == MENU_SLIDER_RIGHT) {
-                current_gamma -= 0.1;
-                if (current_gamma < 1) current_gamma = 0;
-                Cvar_SetValue ("gamma", (float)current_gamma);
-            }
-            break;
-    }
-}
-
-void Menu_Video_ApplyShowFPS (void)
-{
-    float current_showfps = show_fps.value;
-
-    current_showfps += 1;
-    if (current_showfps > 1) {
-        current_showfps = 0;
-    }
-
-    Cvar_SetValue ("show_fps", current_showfps);
-}
-
-void Menu_Video_ApplyParticles (void)
-{
-    float current_particles = r_runqmbparticles.value;
-
-    current_particles += 1;
-    if (current_particles > 1) {
-        current_particles = 0;
-    }
-
-    Cvar_SetValue ("r_runqmbparticles", current_particles);
-}
-
-void Menu_Video_ApplyRetro (void)
-{
-    float current_retro = r_retro.value;
-
-    current_retro += 1;
-    if (current_retro > 1) {
-        current_retro = 0;
-    }
-
-    Cvar_SetValue ("r_retro", current_retro);
-}
-
-void Menu_Video_ApplyDithering (void)
-{
-    float current_dithering = r_dithering.value;
-
-    current_dithering += 1;
-    if (current_dithering > 1) {
-        current_dithering = 0;
-    }
-
-    Cvar_SetValue ("r_dithering", current_dithering);
-}
-
 /*
 ===============
 Menu_Video_Draw
@@ -214,43 +243,38 @@ void Menu_Video_Draw (void)
     // Set value strings
     Menu_Video_SetStrings();
 
-    if (platform_supports_dithering) {
-        if (VIDEO_ITEMS < 8) {
-            VIDEO_ITEMS++;
-        }
-    }
-
     // Show FPS
-    Menu_DrawButton (1, 1, "SHOW FPS", MENU_BUTTON_ACTIVE, "Toggles display of FPS Values.");
+    Menu_DrawButton (1, &video_menu, &video_menu_buttons[0], "SHOW FPS", "Toggles display of FPS Values."); ;
     Menu_DrawOptionButton (1, fps_string);
 
     // Max FPS
-    Menu_DrawButton (2, 2, "MAX FPS", MENU_BUTTON_ACTIVE, "Sets the max FPS Value.");
+    Menu_DrawButton (2, &video_menu, &video_menu_buttons[1], "MAX FPS", "Sets the max FPS Value.");
     Menu_DrawOptionSlider (2, 60, cl_maxfps, true, true);
 
     // Field of View
-    Menu_DrawButton (3, 3, "FIELD OF VIEW", MENU_BUTTON_ACTIVE, "Change Camera Field of View");
+    Menu_DrawButton (3, &video_menu, &video_menu_buttons[2], "FIELD OF VIEW", "Change Camera Field of View");
     Menu_DrawOptionSlider (3, 160, scr_fov, false, true);
 
     // Gamma
-    Menu_DrawButton (4, 4, "GAMMA", MENU_BUTTON_ACTIVE, "Adjust game Black Level.");
+    Menu_DrawButton (4, &video_menu, &video_menu_buttons[3], "GAMMA", "Adjust game Black Level.");
     Menu_DrawOptionSlider (4, 1, v_gamma, false, false);
 
     // Particles 
-    Menu_DrawButton (5, 5, "PARTICLES", MENU_BUTTON_ACTIVE, "Trade Particle Effects for Performance.");
+    Menu_DrawButton (5, &video_menu, &video_menu_buttons[4], "PARTICLES", "Trade Particle Effects for Performance.");
     Menu_DrawOptionButton (5, particles_string);
 
     // Retro (texture filtering)
-    Menu_DrawButton (6, 6, "TEXTURE FILTERING", MENU_BUTTON_ACTIVE, "Choose 3D Environment Filtering Mode.");
+    Menu_DrawButton (6, &video_menu, &video_menu_buttons[5], "TEXTURE FILTERING", "Choose 3D Environment Filtering Mode.");
     Menu_DrawOptionButton (6, retro_string);
 
     // Dithering 
     if (platform_supports_dithering) {
-        Menu_DrawButton (7, 7, "DITHERING", MENU_BUTTON_ACTIVE, "Toggle Decrease in Color Banding");
+
+        Menu_DrawButton (7, &video_menu, &video_menu_buttons[6], "DITHERING", "Toggle Decrease in Color Banding");
         Menu_DrawOptionButton (7, dithering_string);
     }
 
-	Menu_DrawButton(11.5, VIDEO_ITEMS, "BACK", MENU_BUTTON_ACTIVE, "Return to Main Menu.");
+	Menu_DrawButton(11.5, &video_menu, &video_menu_buttons[7], "BACK", "Return to Main Menu.");
 }
 
 /*
@@ -260,53 +284,14 @@ Menu_Video_Key
 */
 void Menu_Video_Key (int key)
 {
-	switch (key)
-	{
+    switch (key) {
+        case K_LEFTARROW:
+            Menu_Video_ApplySliders(MENU_SLIDER_LEFT);
+            break;
+        case K_RIGHTARROW:
+            Menu_Video_ApplySliders(MENU_SLIDER_RIGHT);
+            break;
+    }
 
-	case K_DOWNARROW:
-		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (++menu_video_cursor >= VIDEO_ITEMS)
-			menu_video_cursor = 0;
-		break;
-
-	case K_UPARROW:
-		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (--menu_video_cursor < 0)
-			menu_video_cursor = VIDEO_ITEMS - 1;
-		break;
-
-    case K_RIGHTARROW:
-        Menu_Video_ApplySliders(MENU_SLIDER_RIGHT);
-        break;
-
-    case K_LEFTARROW:
-        Menu_Video_ApplySliders(MENU_SLIDER_LEFT);
-        break;
-
-	case K_ENTER:
-	case K_AUX1:
-		Menu_StartSound(MENU_SND_ENTER);
-		switch (menu_video_cursor)
-		{
-			case 0:
-                Menu_Video_ApplyShowFPS();
-				break;
-            case 4:
-                Menu_Video_ApplyParticles();
-                break;
-            case 5:
-                Menu_Video_ApplyRetro();
-                break;
-            case 6:
-                if (VIDEO_ITEMS == 8) {
-                    Menu_Video_ApplyDithering();
-                } else {
-                    Menu_Configuration_Set();
-                }
-                break;
-            case 7:
-                Menu_Configuration_Set();
-                break;
-		}
-	}
+	Menu_KeyInput(key, &video_menu);
 }
