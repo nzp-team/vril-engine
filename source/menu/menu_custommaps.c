@@ -310,9 +310,14 @@ void Menu_CustomMaps_BuildMenuItems (void)
 
 	Menu_CustomMaps_DecideMapsOnPage();
 
+	// Zero out any unused buttons
+	for (int i = 0; i < MAX_CUSTOMMAP_ITEMS; i++) {
+		custommaps_menu_buttons[i] = (menu_button_t){ false, -1, NULL };
+	}
+
 	// Populate the custom map buttons
 	for (int i = maps_start_position; i < maps_start_position + maps_on_page; i++) {
-		custommaps_menu_buttons[custommap_items] = (menu_button_t){ true, button_index, Menu_CustomMaps_StartMap };
+		custommaps_menu_buttons[custommap_items] = (menu_button_t){ true, custommap_items, Menu_CustomMaps_StartMap };
 		custommap_items++;
 		button_index++;
 	}
