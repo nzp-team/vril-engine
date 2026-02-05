@@ -1064,7 +1064,7 @@ void SCR_UpdateScreen (void)
 	Menu_Draw ();
 
 	if(scr_loadscreen.value) {
-		SCR_DrawLoadScreen();
+		Menu_DrawLoadScreen();
 	}
 
 	//Draw_LoadingFill();

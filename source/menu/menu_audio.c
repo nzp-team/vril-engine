@@ -28,6 +28,9 @@ int	menu_audio_cursor;
 extern cvar_t volume;
 extern cvar_t bgmvolume;
 
+menu_t 			audio_menu;
+menu_button_t 	audio_menu_buttons[AUDIO_ITEMS];
+
 /*
 ===============
 Menu_Audio_Set
@@ -42,30 +45,32 @@ void Menu_Audio_ApplySliders (int dir)
 {
 	switch (menu_audio_cursor) {
 		case 0:
-			double current_volume = (double)volume.value;
+			float current_volume = volume.value;
 			if (dir == MENU_SLIDER_LEFT) {
-				if (current_volume == 0) return;
-				current_volume -= 0.1;
-				if (current_volume < 0) current_volume = 0;
-				Cvar_SetValue ("volume", (float)current_volume);
+				if (current_volume == 0) break;
+				current_volume -= 0.1f;
 			} else if (dir == MENU_SLIDER_RIGHT) {
-				current_volume += 0.1;
-				if (current_volume > 1) current_volume = 1;
-				Cvar_SetValue ("volume", (float)current_volume);
+				if (current_volume == 1) break;
+				current_volume += 0.1f;
 			}
+			if (current_volume < 0) current_volume = 0;
+			if (current_volume > 1) current_volume = 1;
+
+			Cvar_SetValue ("volume", current_volume);
 			break;
 		case 1:
-			double current_bgmvolume = (double)bgmvolume.value;
+			float current_bgmvolume = bgmvolume.value;
 			if (dir == MENU_SLIDER_LEFT) {
-				if (current_bgmvolume == 0) return;
-				current_bgmvolume -= 0.1;
-				if (current_bgmvolume < 0) current_bgmvolume = 0;
-				Cvar_SetValue ("bgmvolume", (float)current_bgmvolume);
+				if (current_bgmvolume == 0) break;
+				current_bgmvolume -= 0.1f;
 			} else if (dir == MENU_SLIDER_RIGHT) {
-				current_bgmvolume += 0.1;
-				if (current_bgmvolume > 1) current_bgmvolume = 1;
-				Cvar_SetValue ("bgmvolume", (float)current_bgmvolume);
+				if (current_bgmvolume == 1) break;
+				current_bgmvolume += 0.1f;
 			}
+			if (current_bgmvolume < 0) current_bgmvolume = 0;
+			if (current_bgmvolume > 1) current_bgmvolume = 1;
+
+			Cvar_SetValue ("bgmvolume", current_bgmvolume);
 			break;
 	}
 }
@@ -84,13 +89,13 @@ void Menu_Audio_Draw (void)
 	Menu_DrawTitle ("AUDIO OPTIONS", MENU_COLOR_WHITE);
 
 	// Master Volume
-	Menu_DrawButton(1, 1, "MASTER VOLUME", MENU_BUTTON_ACTIVE, "Volume for all Audio.");
+	Menu_DrawButton(1, &audio_menu, &audio_menu_buttons[0], "MASTER VOLUME", "Volume for all Audio.");
 	Menu_DrawOptionSlider (1, 1, volume, false, false);
 	// Music Volume
-	Menu_DrawButton(2, 2, "MUSIC VOLUME", MENU_BUTTON_ACTIVE, "Volume for Background Music.");
+	Menu_DrawButton(2, &audio_menu, &audio_menu_buttons[1], "MUSIC VOLUME", "Volume for Background Music.");
 	Menu_DrawOptionSlider (2, 1, bgmvolume, false, false);
 
-	Menu_DrawButton(11.5, 3, "BACK", MENU_BUTTON_ACTIVE, "Return to Main Menu.");
+	Menu_DrawButton(11.5, &audio_menu, &audio_menu_buttons[2], "BACK", "Return to Main Menu.");
 }
 
 /*

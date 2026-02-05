@@ -36,6 +36,11 @@ StockMaps stock_maps[8] = {
 	[7] = { .bsp_name = "lexi_overlook", .array_index = 0 }
 };
 
+void strip_newline(char *s)
+{
+    s[strcspn(s, "\r\n")] = '\0';
+}
+
 /*
 ===============
 Menu_DictateScaleFactor
@@ -105,9 +110,6 @@ image_t Menu_PickBackground (void)
 	if (num_custom_images == 0) return menu_bk;
 
 	int i = (rand() % num_custom_images);
-
-	// Sometimes custom map images are invalid
-	if (menu_usermap_image[i] <= 0)	return menu_bk;
 
     return (image_t)menu_usermap_image[i];
 }
@@ -203,7 +205,7 @@ void Menu_LoadMap (char *selected_map)
 Menu_DrawCustomBackground
 ======================
 */
-void Menu_DrawCustomBackground ()
+void Menu_DrawCustomBackground (qboolean draw_images)
 {
     float elapsed_background_time = menu_time - menu_starttime;
 
@@ -215,16 +217,16 @@ void Menu_DrawCustomBackground ()
 
 	// TODO
 
-	//float x_pos = 0 + (((vid.width * 1.05) - vid.width) * (elapsed_background_time/7));
-	if (key_dest != key_menu_pause) {
-		Draw_StretchPic(0, 0, menu_background, vid.width, vid.height);
-	}
+	// Only draw background images if in active
+	// menu and not in a game
+	if (draw_images && key_dest != key_menu_pause) {
+		float time = (float)((vid.width * 1.05) - vid.width) * (elapsed_background_time/7);
 
-	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 50);
+		Draw_MenuPanningPic(0, 0, menu_background, vid.width, vid.height, time);
+		Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 50);
 
-	if (key_dest != key_menu_pause) {
 		//
-		// Fade new images in/out
+		// Fade new image in/out
 		//
 		float alphaf = 0;
 
@@ -242,9 +244,8 @@ void Menu_DrawCustomBackground ()
 		float alpha = (alphaf * 255);
 
 		Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, alpha);
+		Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 50);
 	}
-
-	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 50);
 
 	// Top Bars
 	Draw_FillByColor(0, 0, vid.width, big_bar_height, 0, 0, 0, 228);
@@ -308,72 +309,84 @@ void Menu_DrawTitle (char *title_name, int color)
 	}
 }
 
-qboolean Menu_IsHovered (int button_number)
+int Menu_GetActiveMenuButtons (menu_t *current_menu)
 {
-	switch (m_state) {
-		case m_main:
-			if (button_number == (menu_main_cursor+1)) {
-				return true;
+	int num_active_buttons = 0;
+
+	for (int i = 0; i < current_menu->num_total_buttons; i++) {
+		if (current_menu->button[i].enabled) {
+			num_active_buttons++;
+		}
+	}
+
+	return num_active_buttons;
+}
+
+void Menu_IncreaseCursor (menu_t *current_menu)
+{
+	int current_active_buttons = Menu_GetActiveMenuButtons(current_menu);
+
+	Menu_StartSound(MENU_SND_NAVIGATE);
+
+	if (--current_menu->cursor < 0) {
+		current_menu->cursor = current_active_buttons-1;
+	}
+}
+
+void Menu_DecreaseCursor (menu_t *current_menu)
+{
+	int current_active_buttons = Menu_GetActiveMenuButtons(current_menu);
+
+	Menu_StartSound(MENU_SND_NAVIGATE);
+
+	if (++current_menu->cursor >= current_active_buttons) {
+		current_menu->cursor = 0;
+	}
+}
+
+void Menu_ButtonPress (menu_t *current_menu)
+{
+	int current_cursor_index = 0;
+
+	for (int i = 0; i < current_menu->num_total_buttons; i++) {
+		if (!current_menu->button[i].enabled) {
+			current_cursor_index--;
+		}
+
+		if (current_menu->cursor == i+current_cursor_index) {
+			Menu_StartSound(MENU_SND_ENTER);
+
+			if (current_menu->button[i].on_activate != NULL) {
+				current_menu->button[i].on_activate();
+				break;
 			}
-			break;
-		case m_stockmaps:
-			if (button_number == (menu_stockmaps_cursor+1)) {
-				return true;
-			}
-			break;
-		case m_custommaps:
-			if (button_number == (menu_custommaps_cursor+1)) {
-				return true;
-			}
-			break;
-		case m_lobby:
-			if (button_number == (menu_lobby_cursor+1)) {
-				return true;
-			}
-			break;
-		case m_gamesettings:
-			if (button_number == (menu_gamesettings_cursor+1)) {
-				return true;
-			}
-			break;
-		case m_paused:
-			if (button_number == (menu_paused_cursor+1)) {
-				return true;
-			}
-			break;
-		case m_quit:
-			if (button_number == (menu_quit_cursor+1)) {
-				return true;
-			}
-			break;
-		case m_configuration:
-			if (button_number == (menu_configuration_cursor+1)) {
-				return true;
-			}
-			break;
-		case m_video:
-			if (button_number == (menu_video_cursor+1)) {
-				return true;
-			}
-			break;
-		case m_audio:
-			if (button_number == (menu_audio_cursor+1)) {
-				return true;
-			}
-			break;
-		case m_controls:
-			if (button_number == (menu_controls_cursor+1)) {
-				return true;
-			}
-			break;
-		case m_accessibility:
-			if (button_number == (menu_accessibility_cursor+1)) {
-				return true;
-			}
-			break;
-		default:
-			return false;
-			break;
+		}
+	}
+}
+
+void Menu_KeyInput (int key, menu_t *current_menu)
+{
+	switch (key)
+	{
+	case K_DOWNARROW:
+		Menu_DecreaseCursor(current_menu);
+		break;
+
+	case K_UPARROW:
+		Menu_IncreaseCursor(current_menu);
+		break;
+
+	case K_ENTER:
+	case K_AUX1:
+		Menu_ButtonPress(current_menu);
+		break;
+	}
+}
+
+qboolean Menu_IsButtonHovered (menu_t *current_menu, menu_button_t *current_button)
+{
+	if (current_button->button_index == current_menu->cursor) {
+		return true;
 	}
 
 	return false;
@@ -391,13 +404,15 @@ void Menu_DrawSelectionBox (int x_pos, int y_pos)
 	int border_height_offset = (vid.height/96);
 
 	// Draw selection box
-	// Done in 3 parts
-	// Top
+	// Done in 4 parts
+	// Back(ground)
 	Draw_FillByColor (0, y_pos - border_height_offset, x_length, border_width, 255, 0, 0, 255);
+	// Top
+	Draw_FillByColor (0, y_pos - border_height_offset, x_length, (border_height_offset*2) + CHAR_HEIGHT + border_width, 0, 0, 0, 86);
 	// Bottom
 	Draw_FillByColor (0, (y_pos + (border_height_offset*2)) + (CHAR_HEIGHT/2), x_length, border_width, 255, 0, 0, 255);
 	// Side
-	Draw_FillByColor (x_length, (y_pos - (CHAR_HEIGHT/2)) + (border_height_offset), border_width, (border_height_offset) + CHAR_HEIGHT + border_width, 255, 0, 0, 255);
+	Draw_FillByColor (x_length, (y_pos - (CHAR_HEIGHT/2)) + (border_height_offset), border_width, border_height_offset + CHAR_HEIGHT + border_width, 255, 0, 0, 255);
 }
 
 /*
@@ -424,7 +439,7 @@ void Menu_DrawMapBorder (int x_pos, int y_pos, int image_width, int image_height
 Menu_DrawButton
 ======================
 */
-void Menu_DrawButton (int order, int button_number, char* button_name, int button_active, char* button_summary)
+void Menu_DrawButton (int order, menu_t *current_menu, menu_button_t *current_button, char* button_name, char* button_summary)
 {
 	// y factor for vertical menu ordering
 	int y_factor = (vid.height/16);
@@ -434,24 +449,81 @@ void Menu_DrawButton (int order, int button_number, char* button_name, int butto
 
 	// Inactive (grey) menu button
 	// Non-selectable
-	if (button_active == MENU_BUTTON_INACTIVE) {
+	if (!current_button->enabled) {
 		Draw_ColoredString (x_pos, y_pos, button_name, 128, 128, 128, 255, menu_scale_factor);
-	} else if (button_active == MENU_BUTTON_ACTIVE) {
+	} else {
 		// Active menu buttons
 		// Hovering over button
-		if (Menu_IsHovered(button_number)) {
+		if (Menu_IsButtonHovered(current_menu, current_button)) {
 			// Make button red and add a box around it
-			// Draw button string
-			Draw_ColoredString (x_pos, y_pos, button_name, 255, 0, 0, 255, menu_scale_factor);
 
 			// Draw selection box
 			Menu_DrawSelectionBox (x_pos, y_pos);
+
+			// Draw button string
+			Draw_ColoredString (x_pos, y_pos, button_name, 255, 0, 0, 255, menu_scale_factor);
 
 			// Draw the bottom screen text for selected button 
 			Draw_ColoredStringCentered (vid.height - (vid.height/12), button_summary, 255, 255, 255, 255, menu_scale_factor);
 		} else {
 			// Not hovering over button
 			Draw_ColoredString (x_pos, y_pos, button_name, 255, 255, 255, 255, menu_scale_factor);
+		}
+	}
+}
+
+/*
+======================
+Menu_DrawMapButton
+======================
+*/
+void Menu_DrawMapButton (int order, menu_t *current_menu, menu_button_t *current_button, int usermap_index, char* bsp_name)
+{
+	int i;
+	int index = 0;
+	char *button_name;
+	int y_factor = (vid.height/24);
+
+	int image_width = (vid.width/3);
+	int image_height = (vid.height/3);
+
+	int x_pos = ((vid.width/3)+(vid.width/36)) + (image_width/2);
+	int y_pos = (vid.height/5)-(vid.height/24);
+
+	// if this is a stock map
+	if (usermap_index < 0) {
+		for (i = 0; i < num_stock_maps; i++) {
+			if (stock_maps[i].bsp_name == bsp_name) {
+				index = stock_maps[i].array_index;
+			}
+		}
+	} else {
+		index = usermap_index;
+	}
+
+	button_name = custom_maps[index].map_name_pretty;
+	if (!button_name) {
+		button_name = custom_maps[index].map_name;
+	}
+
+	// Draw the selectable button
+	Menu_DrawButton (order, current_menu, current_button, button_name, button_name);
+
+	if (Menu_IsButtonHovered(current_menu, current_button)) {
+		// Draw map thumbnail picture
+		Draw_StretchPic (x_pos, y_pos, menu_usermap_image[index], image_width, image_height);
+
+		// Draw border around map image
+		Menu_DrawMapBorder (x_pos, y_pos, image_width, image_height);
+
+		// Draw map description
+		for (int j = 0; j < 8; j++) {
+			Menu_DrawTextCentered (x_pos + (vid.width/6), (y_pos + image_height + (small_bar_height*2)) + j*y_factor, custom_maps[index].map_desc[j], 255, 255, 255, 255);
+		}
+
+		// Draw map author
+		if (custom_maps[index].map_author != NULL) {
+			Draw_ColoredStringCentered (vid.height - (vid.height/24), custom_maps[index].map_author, 255, 255, 0, 255, menu_scale_factor);
 		}
 	}
 }
@@ -497,62 +569,6 @@ void Menu_DrawOptionSlider(int order, int max_option_value, cvar_t option, qbool
 	// Cvar value string
 	if (draw_option_string) {
 		Draw_ColoredString(x_pos + slider_box_width + (vid.width/96), y_pos, option_string, 255, 255, 255, 255, menu_scale_factor);
-	}
-}
-
-/*
-======================
-Menu_DrawMapButton
-======================
-*/
-void Menu_DrawMapButton (int order, int button_number, int usermap_index, char* bsp_name)
-{
-	int i;
-	int index = 0;
-	char *button_name;
-	int y_factor = (vid.height/24);
-
-	int image_width = (vid.width/3);
-	int image_height = (vid.height/3);
-
-	int x_pos = ((vid.width/3)+(vid.width/36)) + (image_width/2);
-	int y_pos = (vid.height/5)-(vid.height/24);
-
-	// if this is a stock map
-	if (usermap_index < 0) {
-		for (i = 0; i < num_stock_maps; i++) {
-			if (stock_maps[i].bsp_name == bsp_name) {
-				index = stock_maps[i].array_index;
-			}
-		}
-	} else {
-		index = usermap_index;
-	}
-
-	button_name = custom_maps[index].map_name_pretty;
-	if (!button_name) {
-		button_name = custom_maps[index].map_name;
-	}
-
-	// Draw the selectable button
-	Menu_DrawButton (order, button_number, button_name, MENU_BUTTON_ACTIVE, button_name);
-
-	if (Menu_IsHovered(button_number)) {
-		// Draw map thumbnail picture
-		Draw_StretchPic (x_pos, y_pos, menu_usermap_image[index], image_width, image_height);
-
-		// Draw border around map image
-		Menu_DrawMapBorder (x_pos, y_pos, image_width, image_height);
-
-		// Draw map description
-		for (int j = 0; j < 8; j++) {
-			Menu_DrawTextCentered (x_pos + (vid.width/6), (y_pos + image_height + (small_bar_height*2)) + j*y_factor, custom_maps[index].map_desc[j], 255, 255, 255, 255);
-		}
-
-		// Draw map author
-		if (custom_maps[index].map_author != NULL) {
-			Draw_ColoredStringCentered (vid.height - (vid.height/24), custom_maps[index].map_author, 255, 255, 0, 255, menu_scale_factor);
-		}
 	}
 }
 

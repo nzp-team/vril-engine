@@ -22,20 +22,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //=============================================================================
 /* GAME SETTINGS MENU */
 
-int	menu_gamesettings_cursor;
-#define GAMESETTINGS_ITEMS 8
+#define         GAMESETTINGS_ITEMS 8
 
-char* gamemode_description;
-char* gamemode_string;
+menu_t          gamesettings_menu;
+menu_button_t   gamesettings_menu_buttons[GAMESETTINGS_ITEMS];
 
-char* difficulty_description;
-char* difficulty_string;
+char*           gamemode_description;
+char*           gamemode_string;
 
-char* startround_string;
-char* magic_string;
-char* headshot_string;
-char* fast_string;
-char* hordesize_string;
+char*           difficulty_description;
+char*           difficulty_string;
+
+char*           startround_string;
+char*           magic_string;
+char*           headshot_string;
+char*           fast_string;
+char*           hordesize_string;
 
 void Menu_GameSettings_AllocStrings (void)
 {
@@ -69,14 +71,6 @@ void Menu_GameSettings_FreeStrings (void)
     free(hordesize_string);
 
     free(startround_string); 
-}
-
-void Menu_GameSettings_Set (void)
-{
-    Menu_GameSettings_AllocStrings();
-
-    key_dest = key_menu;
-	m_state = m_gamesettings;
 }
 
 void Menu_GameSettings_SetStrings (void)
@@ -160,39 +154,36 @@ void Menu_GameSettings_SetStrings (void)
 
 void Menu_GameSettings_ApplySliders (int dir)
 {
-    switch (menu_gamesettings_cursor) {
+    switch (gamesettings_menu.cursor) {
         // Starting Round
         case 2:
             float current_startround = sv_startround.value;
             if (dir == MENU_SLIDER_LEFT) {
+                if (current_startround == 0) break;
                 current_startround -= 5;
-                if (current_startround < 1) current_startround = 1;
-
-                Cvar_SetValue("sv_startround", current_startround);
             } else if (dir == MENU_SLIDER_RIGHT) {
-                if (current_startround == 1) current_startround = 0;
-                current_startround += 5;
-                if (current_startround > 50) current_startround = 50;
-
-                Cvar_SetValue("sv_startround", current_startround);
+                if (current_startround == 50) break;
+                current_startround += 5;      
             }
+            if (current_startround < 1) current_startround = 1;
+            if (current_startround > 50) current_startround = 50;
+
+            Cvar_SetValue("sv_startround", current_startround);
             break;
         // Horde Size
         case 5:
             float current_hordesize = sv_maxai.value;
             if (dir == MENU_SLIDER_LEFT) {
+                if (current_hordesize == 2) break;
                 current_hordesize -= 2;
-                if (current_hordesize < 2) current_hordesize = 2;
-
-                Cvar_SetValue("sv_maxai", current_hordesize);
             } else if (dir == MENU_SLIDER_RIGHT) {
+                if (current_hordesize == 64) break;
                 current_hordesize += 2;
-                if (current_hordesize > 64) current_hordesize = 64;
-
-                Cvar_SetValue("sv_maxai", current_hordesize);
             }
-            break;
-        default:
+            if (current_hordesize < 2) current_hordesize = 2;
+            if (current_hordesize > 64) current_hordesize = 64;
+
+            Cvar_SetValue("sv_maxai", current_hordesize);
             break;
     }
 }
@@ -256,6 +247,33 @@ void Menu_GameSettings_ApplyFastRounds (void)
     Cvar_SetValue("sv_fastrounds", current_fastrounds);
 }
 
+void Menu_GameSettings_BuildMenuItems (void)
+{
+	gamesettings_menu_buttons[0] = (menu_button_t){ true, 0, Menu_GameSettings_ApplyGameMode };
+	gamesettings_menu_buttons[1] = (menu_button_t){ true, 1, Menu_GameSettings_ApplyDifficulty };
+    gamesettings_menu_buttons[2] = (menu_button_t){ true, 2, NULL };
+    gamesettings_menu_buttons[3] = (menu_button_t){ true, 3, Menu_GameSettings_ApplyMagic };
+	gamesettings_menu_buttons[4] = (menu_button_t){ true, 4, Menu_GameSettings_ApplyHeadShotsOnly };
+	gamesettings_menu_buttons[5] = (menu_button_t){ true, 5, NULL };
+    gamesettings_menu_buttons[6] = (menu_button_t){ true, 6, Menu_GameSettings_ApplyFastRounds };
+	gamesettings_menu_buttons[7] = (menu_button_t){ true, 7, Menu_Lobby_Set };
+
+	gamesettings_menu = (menu_t) {
+		gamesettings_menu_buttons,
+		GAMESETTINGS_ITEMS,
+		0
+	};
+}
+
+void Menu_GameSettings_Set (void)
+{
+    Menu_GameSettings_BuildMenuItems();
+    Menu_GameSettings_AllocStrings();
+
+    key_dest = key_menu;
+	m_state = m_gamesettings;
+}
+
 void Menu_GameSettings_Draw (void)
 {
     // Background
@@ -268,85 +286,48 @@ void Menu_GameSettings_Draw (void)
     Menu_GameSettings_SetStrings();
 
     // Game Mode button
-    Menu_DrawButton(1, 1, "GAME MODE", MENU_BUTTON_ACTIVE, gamemode_description);
+    Menu_DrawButton(1, &gamesettings_menu, &gamesettings_menu_buttons[0], "GAME MODE", gamemode_description);
     Menu_DrawOptionButton(1, gamemode_string);
 
     // Difficulty button
-    Menu_DrawButton(2, 2, "DIFFICULTY", MENU_BUTTON_ACTIVE, difficulty_description);
+    Menu_DrawButton(2, &gamesettings_menu, &gamesettings_menu_buttons[1], "DIFFICULTY", difficulty_description);
     Menu_DrawOptionButton(2, difficulty_string); 
 
     // Start Round slider
-    Menu_DrawButton(3, 3, "START ROUND", MENU_BUTTON_ACTIVE, startround_string);
+    Menu_DrawButton(3, &gamesettings_menu, &gamesettings_menu_buttons[2], "START ROUND", startround_string);
     Menu_DrawOptionSlider(3, 50, sv_startround, true, true);
 
     // Magic button
-    Menu_DrawButton(4, 4, "MAGIC", MENU_BUTTON_ACTIVE, "Whether to allow Perks, Power-Ups, and the Mystery Box.");
+    Menu_DrawButton(4, &gamesettings_menu, &gamesettings_menu_buttons[3], "MAGIC", "Whether to allow Perks, Power-Ups, and the Mystery Box.");
     Menu_DrawOptionButton(4, magic_string);
 
     // Headshots Only button
-    Menu_DrawButton(5, 5, "HEADSHOTS ONLY", MENU_BUTTON_ACTIVE, "Headshots are the only means of Death. Explosives don't work, either.");
+    Menu_DrawButton(5, &gamesettings_menu, &gamesettings_menu_buttons[4], "HEADSHOTS ONLY", "Headshots are the only means of Death. Explosives don't work, either.");
     Menu_DrawOptionButton(5, headshot_string);
 
     // Horde Size slider
-    Menu_DrawButton(6, 6, "HORDE SIZE", MENU_BUTTON_ACTIVE, "Maximum Zombies that can Active at once.");
+    Menu_DrawButton(6, &gamesettings_menu, &gamesettings_menu_buttons[5], "HORDE SIZE", "Maximum Zombies that can Active at once.");
     Menu_DrawOptionSlider(6, 64, sv_maxai, false, true);
 
     // Fast Rounds button
-    Menu_DrawButton(7, 7, "FAST ROUNDS", MENU_BUTTON_ACTIVE, "Minimize Time between Rounds.");
+    Menu_DrawButton(7, &gamesettings_menu, &gamesettings_menu_buttons[6], "FAST ROUNDS", "Minimize Time between Rounds.");
     Menu_DrawOptionButton(7, fast_string);
 
     // Back button
-    Menu_DrawButton(11.5, 8, "BACK", MENU_BUTTON_ACTIVE, "Return to Pre-Game Menu.");
+    Menu_DrawButton(11.5, &gamesettings_menu, &gamesettings_menu_buttons[7], "BACK", "Return to Pre-Game Menu.");
 }
 
 void Menu_GameSettings_Key (int key)
 {
-    switch (key)
-	{
+    switch (key) {
+        case K_RIGHTARROW:
+            Menu_GameSettings_ApplySliders(MENU_SLIDER_RIGHT);
+            break;
 
-	case K_DOWNARROW:
-		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (++menu_gamesettings_cursor >= GAMESETTINGS_ITEMS)
-			menu_gamesettings_cursor = 0;
-		break;
-
-	case K_UPARROW:
-		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (--menu_gamesettings_cursor < 0)
-			menu_gamesettings_cursor = GAMESETTINGS_ITEMS - 1;
-		break;
-
-    case K_RIGHTARROW:
-        Menu_GameSettings_ApplySliders(MENU_SLIDER_RIGHT);
-        break;
-
-    case K_LEFTARROW:
-        Menu_GameSettings_ApplySliders(MENU_SLIDER_LEFT);
-        break;
-
-    case K_ENTER:
-	case K_AUX1:
-		Menu_StartSound(MENU_SND_ENTER);
-        switch (menu_gamesettings_cursor)
-        {
-            case 0:
-                Menu_GameSettings_ApplyGameMode();
-                break;
-            case 1:
-                Menu_GameSettings_ApplyDifficulty();
-                break;
-            case 3:
-                Menu_GameSettings_ApplyMagic();
-                break;
-            case 4:
-                Menu_GameSettings_ApplyHeadShotsOnly();
-                break;
-            case 6:
-                Menu_GameSettings_ApplyFastRounds();
-                break;
-            case 7:
-                Menu_Lobby_Set();
-                break;
-        }
+        case K_LEFTARROW:
+            Menu_GameSettings_ApplySliders(MENU_SLIDER_LEFT);
+            break;
     }
+
+    Menu_KeyInput(key, &gamesettings_menu);
 }

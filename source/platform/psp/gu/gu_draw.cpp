@@ -671,10 +671,44 @@ void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, in
 
 /*
 =============
+Draw_MenuPanningPic
+=============
+*/
+void Draw_MenuPanningPic (int x, int y, int pic, int x_value, int y_value, float time)
+{
+	const gltexture_t &glt = gltextures[pic];
+	GL_Bind (glt.texnum);
+
+	struct vertex
+	{
+		unsigned short			u, v;
+		short			x, y, z;
+	};
+
+
+	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
+	vertices[0].u = 0;
+	vertices[0].v = 0;
+	vertices[0].x = x;
+	vertices[0].y = y;
+	vertices[0].z = 0;
+
+	vertices[1].u = glt.width;
+	vertices[1].v = glt.height;
+	
+	vertices[1].x = x + x_value;
+	vertices[1].y = y + y_value;
+	vertices[1].z = 0;
+
+	sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D, 2, 0, vertices);
+}
+
+/*
+=============
 Draw_SubPic
 =============
 */
-void Draw_SubPic (int x, int y, int pic, float s, float t, float r, float g , float b, float a)
+void Draw_SubPic (int x, int y, int pic, float s, float t, float coord_size, float scale, float r, float g , float b, float a)
 {
 	if (pic < 0) return;
 
@@ -682,8 +716,6 @@ void Draw_SubPic (int x, int y, int pic, float s, float t, float r, float g , fl
 
 	const gltexture_t &glt = gltextures[pic];
 	GL_Bind (glt.texnum);
-
-	float size = 4;
 
 	struct vertex
 	{
@@ -700,11 +732,11 @@ void Draw_SubPic (int x, int y, int pic, float s, float t, float r, float g , fl
 	vertices[0].y		= y;
 	vertices[0].z		= 0;
 
-	vertices[1].u 		= s;
-	vertices[1].v 		= t;
+	vertices[1].u 		= s+coord_size;
+	vertices[1].v 		= t+coord_size;
 
-	vertices[1].x		= x + glt.original_width/size;
-	vertices[1].y		= y + glt.original_height/size;
+	vertices[1].x		= x + glt.original_width;
+	vertices[1].y		= y + glt.original_height;
 	vertices[1].z		= 0;
 
 	sceGuColor(GU_RGBA(

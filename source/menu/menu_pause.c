@@ -22,32 +22,60 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //=============================================================================
 /* PAUSE MENU */
 
-int menu_paused_cursor;
-#define PAUSED_ITEMS 4
+#define PAUSE_ITEMS 4
+
+menu_t 			pause_menu;
+menu_button_t 	pause_menu_buttons[PAUSE_ITEMS];
 
 // Waypoint saving in pause screen
 extern cvar_t waypoint_mode;
 
-/*
-===============
-Menu_Paused_Set
-===============
-*/
-void Menu_Paused_Set ()
+void Menu_Pause_Resume(void) { key_dest = key_game; m_state = m_none; };
+void Menu_Pause_Configuration(void) { Menu_Configuration_Set(); key_dest = key_menu_pause; };
+void Menu_Pause_DecideQuit(void) 
+{ 
+	if (pause_menu.cursor == 3) {
+		Menu_Quit_Set(false);
+	} else {
+		Menu_Quit_Set(true);
+	}
+}
+
+void Menu_Pause_BuildMenuItems (void)
 {
-	key_dest = key_menu_pause;
-	m_state = m_paused;
-	loadingScreen = 0;
-	loadscreeninit = false;
-	menu_paused_cursor = 0;
+	pause_menu_buttons[0] = (menu_button_t){ true, 0, Menu_Pause_Resume };
+	pause_menu_buttons[1] = (menu_button_t){ true, 1, Menu_Pause_DecideQuit };
+	pause_menu_buttons[2] = (menu_button_t){ true, 2, Menu_Pause_Configuration };
+	pause_menu_buttons[3] = (menu_button_t){ true, 3, Menu_Pause_DecideQuit };
+
+	pause_menu = (menu_t) {
+		pause_menu_buttons,
+		PAUSE_ITEMS,
+		0
+	};
 }
 
 /*
 ===============
-Menu_Paused_Draw
+Menu_Pause_Set
 ===============
 */
-void Menu_Paused_Draw ()
+void Menu_Pause_Set (void)
+{
+	Menu_Pause_BuildMenuItems();
+
+	loadingScreen = 0;
+	loadscreeninit = false;
+	key_dest = key_menu_pause;
+	m_state = m_pause;
+}
+
+/*
+===============
+Menu_Pause_Draw
+===============
+*/
+void Menu_Pause_Draw (void)
 {
     // Background
 	Menu_DrawCustomBackground (true);
@@ -56,60 +84,21 @@ void Menu_Paused_Draw ()
 	Menu_DrawTitle ("PAUSED", MENU_COLOR_WHITE);
 
 	// Resume
-    Menu_DrawButton (1, 1, "RESUME CARNAGE", MENU_BUTTON_ACTIVE, "Return to Game.");
+    Menu_DrawButton (1, &pause_menu, &pause_menu_buttons[0], "RESUME CARNAGE", "Return to Game.");
 	// Restart
-    Menu_DrawButton (2, 2, "RESTART LEVEL", MENU_BUTTON_ACTIVE, "Tough luck? Give things another go.");
+    Menu_DrawButton (2, &pause_menu, &pause_menu_buttons[1], "RESTART LEVEL", "Tough luck? Give things another go.");
 	// Options
-    Menu_DrawButton (3, 3, "OPTIONS", MENU_BUTTON_ACTIVE, "Tweak Game related Options.");
+    Menu_DrawButton (3, &pause_menu, &pause_menu_buttons[2], "OPTIONS", "Tweak Game related Options.");
 	// End game
-    Menu_DrawButton (4, 4, "END GAME", MENU_BUTTON_ACTIVE, "Return to Main Menu.");
+    Menu_DrawButton (4, &pause_menu, &pause_menu_buttons[3], "END GAME", "Return to Main Menu.");
 }
 
 /*
 ===============
-Menu_Paused_Key
+Menu_Pause_Key
 ===============
 */
-void Menu_Paused_Key (int key)
+void Menu_Pause_Key (int key)
 {
-	switch (key)
-	{
-		case K_ESCAPE:
-		case K_AUX2:
-			Menu_StartSound(MENU_SND_ENTER);
-			Cbuf_AddText("togglemenu\n");
-			break;
-
-		case K_DOWNARROW:
-			Menu_StartSound(MENU_SND_NAVIGATE);
-			if (++menu_paused_cursor >= PAUSED_ITEMS)
-				menu_paused_cursor = 0;
-			break;
-
-		case K_UPARROW:
-			Menu_StartSound(MENU_SND_NAVIGATE);
-			if (--menu_paused_cursor < 0)
-				menu_paused_cursor = PAUSED_ITEMS - 1;
-			break;
-
-		case K_ENTER:
-		case K_AUX1:
-			switch (menu_paused_cursor)
-			{
-			case 0:
-				key_dest = key_game;
-				m_state = m_none;
-				break;
-			case 1:
-				Menu_Quit_Set(true);
-				break;
-			case 2:
-				Menu_Configuration_Set();
-				key_dest = key_menu_pause;
-				break;
-			case 3:
-				Menu_Quit_Set(false);
-				break;
-			}
-		}
+	Menu_KeyInput(key, &pause_menu);
 }
