@@ -37,8 +37,8 @@ StockMaps 		stock_maps[8] = {
 	[0] = { .bsp_name = "ndu", .category = MAP_CATEGORY_WAW, .array_index = 0 },
 	[1] = { .bsp_name = "nzp_warehouse2", .category = MAP_CATEGORY_NZP, .array_index = 0 },
 	[2] = { .bsp_name = "nzp_xmas2", .category = MAP_CATEGORY_NZP, .array_index = 0 },
-	[3] = { .bsp_name = "MAP_CATEGORY_NZPBETA", .category = MAP_CATEGORY_WAW, .array_index = 0 },
-	[4] = { .bsp_name = "MAP_CATEGORY_NZPBETA", .category = MAP_CATEGORY_WAW, .array_index = 0 },
+	[3] = { .bsp_name = "nzp_warehouse", .category = MAP_CATEGORY_NZPBETA, .array_index = 0 },
+	[4] = { .bsp_name = "christmas_special", .category = MAP_CATEGORY_NZPBETA, .array_index = 0 },
 	[5] = { .bsp_name = "lexi_house", .category = MAP_CATEGORY_BLACKOPSDS, .array_index = 0 },
 	[6] = { .bsp_name = "lexi_temple", .category = MAP_CATEGORY_BLACKOPSDS, .array_index = 0 },
 	[7] = { .bsp_name = "lexi_overlook", .category = MAP_CATEGORY_BLACKOPSDS, .array_index = 0 }
@@ -649,12 +649,12 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 		float t_coord_size = 0.5f;
 		float s = 0;
 		float t = 0;
-		float scale = (0.25f*menu_scale_factor);
+		float scale = (0.175f*menu_scale_factor);
 		// Get width/height of the menu badges image
 		// hard-coded until there's a global way to 
 		// get image dimensions
-		int	menu_badges_height = (72/4);
-		int menu_badges_width = (72/4);
+		int	menu_badges_height = (72*scale);
+		int menu_badges_width = (72*scale);
 
 		switch(map_category) {
 			case MAP_CATEGORY_NZPBETA: s = 0; t = 0; badge_name = "NZ:P BETA (2011)"; break;
@@ -664,7 +664,7 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 			case MAP_CATEGORY_USER: s = 0.5; t = 0; badge_name = "USERMAP"; break;
 		}
 
-		Draw_ColoredString(x_pos + (vid.width/144) + menu_badges_width, y_pos + image_height - CHAR_HEIGHT, badge_name, 255, 255, 0, 255, menu_scale_factor);
+		Draw_ColoredString(x_pos + ((vid.width/144)*1.5) + menu_badges_width, y_pos + image_height - (menu_badges_height/2) - (CHAR_HEIGHT/2), badge_name, 255, 255, 0, 255, menu_scale_factor);
 		Menu_DrawSubPic(x_pos + (vid.width/144), y_pos + image_height - menu_badges_height, menu_badges, s, t, s_coord_size, t_coord_size, scale, 255, 255, 255, 255);
 
 		// Draw map description
