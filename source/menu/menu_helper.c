@@ -649,7 +649,7 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 		float t_coord_size = 0.5f;
 		float s = 0;
 		float t = 0;
-		float scale = 0.25f;
+		float scale = (0.25f*menu_scale_factor);
 		// Get width/height of the menu badges image
 		// hard-coded until there's a global way to 
 		// get image dimensions
