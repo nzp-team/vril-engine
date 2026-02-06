@@ -68,7 +68,6 @@ COMMON_OBJS = \
 	source/menu/menu_lobby.o \
 	source/menu/menu_gamesettings.o \
 	source/menu/menu_configuration.o \
-	source/menu/menu_quit.o \
 	source/menu/menu_video.o \
 	source/menu/menu_audio.o \
 	source/menu/menu_controls.o \

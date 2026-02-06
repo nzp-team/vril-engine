@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 key up events are sent even if in console mode
 
 */
-
+void Menu_KeyInput (int key);
 
 #define		MAXCMDLINE	256
 char	key_lines[32][MAXCMDLINE];
@@ -742,7 +742,7 @@ void Key_Event (int key, qboolean down)
 			Key_Message (key);
 			break;
 		case key_menu:
-			Menu_Keydown (key);
+			Menu_KeyInput (key);
 			break;
 		case key_game:
 		case key_console:
@@ -850,7 +850,7 @@ void Key_Event (int key, qboolean down)
 		Key_Message (key);
 		break;
 	case key_menu:
-		Menu_Keydown (key);
+		Menu_KeyInput (key);
 		break;
 
 	case key_game:

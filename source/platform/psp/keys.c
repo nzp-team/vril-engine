@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 key up events are sent even if in console mode
 
 */
-
+void Menu_KeyInput (int key);
 
 #define      HISTORY_FILE_NAME   "nzp/nzp_log.txt"
 
@@ -883,7 +883,7 @@ void Key_Event (int key, qboolean down)
 			break;
 		case key_menu:
 		case key_menu_pause:
-			Menu_Keydown (key);
+			Menu_KeyInput (key);
 			break;
 		case key_game:
 		case key_console:
@@ -993,7 +993,7 @@ void Key_Event (int key, qboolean down)
 		break;
 	case key_menu:
 	case key_menu_pause:
-		Menu_Keydown (key);
+		Menu_KeyInput (key);
 		break;
 
 	case key_game:
