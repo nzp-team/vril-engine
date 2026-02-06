@@ -614,11 +614,15 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, char* b
 		button_name = custom_maps[index].map_name;
 	}
 
-	final_name = strtoupper(button_name);
-	button_name = strtolower(button_name);
+	// Don't modify map_name_pretty memory location
+	// create a copy for uppercase drawing
+	final_name = malloc(MAX_QPATH);
+	strcpy(final_name, button_name);
+	strtoupper(final_name);
 
 	// Draw the selectable button
 	Menu_DrawButton (order, button_index, final_name, button_name, on_activate);
+	free (final_name);
 
 	if (Menu_IsButtonHovered(button_index)) {
 		// Draw map thumbnail picture
