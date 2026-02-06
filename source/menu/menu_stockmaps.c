@@ -80,7 +80,7 @@ void Menu_StockMaps_Draw (void)
     Menu_DrawMapPanel();
 
     for (i = 0; i < num_stock_maps; i++) {
-        Menu_DrawMapButton(i+1, i, -1, stock_maps[i].bsp_name, Menu_StockMaps_SetMap);
+        Menu_DrawMapButton(i+1, i, -1, stock_maps[i].category, stock_maps[i].bsp_name, Menu_StockMaps_SetMap);
     }
 
     Menu_DrawDivider(i+1.25);
