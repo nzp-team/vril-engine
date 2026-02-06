@@ -95,6 +95,7 @@ extern float            menu_starttime;
 // Constant menu images
 extern image_t          menu_bk;
 extern image_t          menu_social;
+extern image_t			menu_badges;
 
 // Build date string
 extern char*            game_build_date;
@@ -145,12 +146,20 @@ extern float			CHAR_HEIGHT;
 // stockmaps loaded
 typedef struct
 {
-    char* bsp_name;
-    int array_index;
+    char* 	bsp_name;
+	int		category;
+    int 	array_index;
 } StockMaps;
 
 extern StockMaps        stock_maps[8];
 extern int 			    num_stock_maps;
+
+// Different categories for maps
+#define MAP_CATEGORY_USER       0
+#define MAP_CATEGORY_WAW        1
+#define MAP_CATEGORY_NZP        2
+#define MAP_CATEGORY_NZPBETA    3
+#define MAP_CATEGORY_BLACKOPSDS 4
 
 // We need gamemode cvar values
 extern cvar_t 			sv_gamemode;
@@ -187,7 +196,7 @@ void Menu_DrawCustomBackground (qboolean draw_images);
 void Menu_DrawTitle (char *title_name, int color);
 void Menu_DrawButton (int order, int button_index, char* button_name, char* button_summary, void *on_activate);
 void Menu_DrawGreyButton (int order, char* button_name);
-void Menu_DrawMapButton (int order, int button_index, int usermap_index, char* bsp_name, void *on_activate);
+void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map_category, char* bsp_name, void *on_activate);
 void Menu_DrawOptionButton(int order, char* selection_name);
 void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, int max_option_value, cvar_t option, char* _option_string, qboolean zero_to_one, qboolean draw_option_string, float increment_amount);
 void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficulty, char* info_startround, char* info_magic, char* info_headshotonly, char* info_fastrounds, char* info_hordesize);

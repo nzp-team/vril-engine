@@ -34,14 +34,14 @@ int 			num_stock_maps;
 char*			current_selected_bsp;
 
 StockMaps 		stock_maps[8] = {
-	[0] = { .bsp_name = "ndu", .array_index = 0 },
-	[1] = { .bsp_name = "nzp_warehouse2", .array_index = 0 },
-	[2] = { .bsp_name = "nzp_xmas2", .array_index = 0 },
-	[3] = { .bsp_name = "nzp_warehouse", .array_index = 0 },
-	[4] = { .bsp_name = "christmas_special", .array_index = 0 },
-	[5] = { .bsp_name = "lexi_house", .array_index = 0 },
-	[6] = { .bsp_name = "lexi_temple", .array_index = 0 },
-	[7] = { .bsp_name = "lexi_overlook", .array_index = 0 }
+	[0] = { .bsp_name = "ndu", .category = MAP_CATEGORY_WAW, .array_index = 0 },
+	[1] = { .bsp_name = "nzp_warehouse2", .category = MAP_CATEGORY_NZP, .array_index = 0 },
+	[2] = { .bsp_name = "nzp_xmas2", .category = MAP_CATEGORY_NZP, .array_index = 0 },
+	[3] = { .bsp_name = "MAP_CATEGORY_NZPBETA", .category = MAP_CATEGORY_WAW, .array_index = 0 },
+	[4] = { .bsp_name = "MAP_CATEGORY_NZPBETA", .category = MAP_CATEGORY_WAW, .array_index = 0 },
+	[5] = { .bsp_name = "lexi_house", .category = MAP_CATEGORY_BLACKOPSDS, .array_index = 0 },
+	[6] = { .bsp_name = "lexi_temple", .category = MAP_CATEGORY_BLACKOPSDS, .array_index = 0 },
+	[7] = { .bsp_name = "lexi_overlook", .category = MAP_CATEGORY_BLACKOPSDS, .array_index = 0 }
 };
 
 void strip_newline(char *s)
@@ -113,6 +113,7 @@ void Menu_LoadPics ()
 {
 	menu_bk 	= Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, false, false);
 	menu_social = Image_LoadImage("gfx/menu/social", IMAGE_TGA, 0, false, false);
+	menu_badges = Image_LoadImage("gfx/menu/map_badges", IMAGE_TGA, 0, false, false);
 
 	Menu_Preload_Custom_Images ();
 }
@@ -434,11 +435,20 @@ void Menu_DrawCustomBackground (qboolean draw_images)
 	Draw_FillByColor(0, (vid.height - big_bar_height) - small_bar_height, vid.width, small_bar_height, 130, 130, 130, 255);
 }
 
+void Menu_DrawSubPic (int x, int y, int pic, float s, float t, float s_coord_size, float t_coord_size, float scale, float r, float g , float b, float a)
+{
+	if (pic > 0) {
+		Draw_SubPic(x, y, pic, s, t, s_coord_size, t_coord_size, scale, r, g, b, a);
+	}
+}
+
 void Menu_DrawSocialBadge (int order, int which)
 {
 	int y_factor = (vid.height/16);
 	int y_pos = (vid.height/2) + (vid.width/36) + (order*y_factor);
 	int x_pos = vid.width - (vid.width/20);
+	float coord_size = 0.5f;
+	float scale = 0.25f;
 	float s = 0;
 	float t = 0;
 
@@ -464,7 +474,7 @@ void Menu_DrawSocialBadge (int order, int which)
 			break;
 	}
 
-	Draw_SubPic (x_pos, y_pos, menu_social, s, t, 0.5, 0.25, 255, 255, 255, 255);
+	Menu_DrawSubPic (x_pos, y_pos, menu_social, s, t, coord_size, coord_size, scale, 255, 255, 255, 255);
 }
 
 /*
@@ -584,7 +594,7 @@ void Menu_DrawGreyButton (int order, char* button_name)
 Menu_DrawMapButton
 ======================
 */
-void Menu_DrawMapButton (int order, int button_index, int usermap_index, char* bsp_name, void *on_activate)
+void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map_category, char* bsp_name, void *on_activate)
 {
 	int i;
 	int index = 0;
@@ -622,7 +632,9 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, char* b
 
 	// Draw the selectable button
 	Menu_DrawButton (order, button_index, final_name, button_name, on_activate);
-	free (final_name);
+	if (final_name != NULL) {
+		free (final_name);
+	}
 
 	if (Menu_IsButtonHovered(button_index)) {
 		// Draw map thumbnail picture
@@ -630,6 +642,30 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, char* b
 
 		// Draw border around map image
 		Menu_DrawMapBorder (x_pos, y_pos, image_width, image_height);
+
+		// Draw Map Badge
+		char *badge_name = NULL;
+		float s_coord_size = 0.25f;
+		float t_coord_size = 0.5f;
+		float s = 0;
+		float t = 0;
+		float scale = 0.25f;
+		// Get width/height of the menu badges image
+		// hard-coded until there's a global way to 
+		// get image dimensions
+		int	menu_badges_height = (72/4);
+		int menu_badges_width = (72/4);
+
+		switch(map_category) {
+			case MAP_CATEGORY_NZPBETA: s = 0; t = 0; badge_name = "NZ:P BETA (2011)"; break;
+			case MAP_CATEGORY_WAW: s = 0.25; t = 0; badge_name = "WORLD AT WAR"; break;
+			case MAP_CATEGORY_NZP: s = 0; t = 0.5; badge_name = "NZ:P ORIGINAL"; break;
+			case MAP_CATEGORY_BLACKOPSDS: s = 0.25; t = 0.5; badge_name = "BLACK OPS (DS)"; break;
+			case MAP_CATEGORY_USER: s = 0.5; t = 0; badge_name = "USERMAP"; break;
+		}
+
+		Draw_ColoredString(x_pos + (vid.width/144) + menu_badges_width, y_pos + image_height - CHAR_HEIGHT, badge_name, 255, 255, 0, 255, menu_scale_factor);
+		Menu_DrawSubPic(x_pos + (vid.width/144), y_pos + image_height - menu_badges_height, menu_badges, s, t, s_coord_size, t_coord_size, scale, 255, 255, 255, 255);
 
 		// Draw map description
 		for (int j = 0; j < 8; j++) {

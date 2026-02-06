@@ -708,7 +708,7 @@ void Draw_MenuPanningPic (int x, int y, int pic, int x_value, int y_value, float
 Draw_SubPic
 =============
 */
-void Draw_SubPic (int x, int y, int pic, float s, float t, float coord_size, float scale, float r, float g , float b, float a)
+void Draw_SubPic (int x, int y, int pic, float s, float t, float s_coord_size, float t_coord_size, float scale, float r, float g , float b, float a)
 {
 	if (pic < 0) return;
 
@@ -723,6 +723,8 @@ void Draw_SubPic (int x, int y, int pic, float s, float t, float coord_size, flo
 		short			x, y, z;
 	};
 
+	float width_scale = scale * (s_coord_size / t_coord_size);
+
 	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
 
 	vertices[0].u = (s * glt.width);
@@ -732,10 +734,10 @@ void Draw_SubPic (int x, int y, int pic, float s, float t, float coord_size, flo
 	vertices[0].y = y;
 	vertices[0].z = 0;
 
-	vertices[1].u = ((s + coord_size) * glt.width);
-	vertices[1].v = ((t + coord_size) * glt.height);
+	vertices[1].u = ((s + s_coord_size) * glt.width);
+	vertices[1].v = ((t + t_coord_size) * glt.height);
 
-	vertices[1].x = x + (glt.original_width  * scale);
+	vertices[1].x = x + (glt.original_width * width_scale);
 	vertices[1].y = y + (glt.original_height * scale);
 	vertices[1].z = 0;
 

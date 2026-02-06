@@ -479,7 +479,7 @@ void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, in
 		glTexCoord2f (0, 1);
 		glVertex2f (x, y+y_value);
 		glEnd ();
-
+		glDisable(GL_ALPHA_TEST);
 		glColor4f(1,1,1,1);
 	}
 }
@@ -506,7 +506,7 @@ void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
 		glTexCoord2f (0, 1);
 		glVertex2f (x, y+y_value);
 		glEnd ();
-
+		glDisable(GL_ALPHA_TEST);
 		glColor4f(1,1,1,1);
 	}
 }
@@ -536,7 +536,7 @@ void Draw_MenuPanningPic (int x, int y, int pic, int x_value, int y_value, float
 		glTexCoord2f (0, 1);
 		glVertex2f (x, y+y_value);
 		glEnd ();
-
+		glDisable(GL_ALPHA_TEST);
 		glColor4f(1,1,1,1);
 	}
 }
@@ -570,7 +570,7 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 		glEnd ();
 
 		glDisable(GL_BLEND);
-		//glDisable(GL_ALPHA_TEST);
+		glDisable(GL_ALPHA_TEST);
 		glColor4f(1,1,1,1);
 	}
 }
@@ -580,7 +580,7 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 Draw_SubPic
 =============
 */
-void Draw_SubPic (int x, int y, int pic, float s, float t, float coord_size, float scale, float r, float g , float b, float a)
+void Draw_SubPic (int x, int y, int pic, float s, float t, float s_coord_size, float t_coord_size, float scale, float r, float g , float b, float a)
 {
 	if (pic > 0) {
 		glDisable(GL_ALPHA_TEST);
@@ -592,21 +592,32 @@ void Draw_SubPic (int x, int y, int pic, float s, float t, float coord_size, flo
 		gltexture_t *glt = &gltextures[pic];
 		GL_Bind (glt->texnum);
 
+		float width_scale = scale * (s_coord_size / t_coord_size);
+
+		float u_scale = (float)glt->original_width / (float)glt->width;
+		float v_scale = (float)glt->original_height / (float)glt->height;
+
+		float u0 = s * u_scale;
+		float v0 = t * v_scale;
+		float u1 = (s + s_coord_size) * u_scale;
+		float v1 = (t + t_coord_size) * v_scale;
+
 		glBegin (GL_QUADS);
-		glTexCoord2f (s, t);
+		glTexCoord2f (u0, v0);
 		glVertex2f (x, y);
-		glTexCoord2f (s+coord_size, t);
-		glVertex2f (x+(glt->width*scale), y);
-		glTexCoord2f (s+coord_size, t+coord_size);
-		glVertex2f (x+(glt->width*scale), y+(glt->height*scale));
-		glTexCoord2f (s, t+coord_size);
-		glVertex2f (x, y+(glt->height*scale));
+		glTexCoord2f (u1, v0);
+		glVertex2f (x+(glt->original_width*width_scale), y);
+		glTexCoord2f (u1, v1);
+		glVertex2f (x+(glt->original_width*width_scale), y+(glt->original_height*scale));
+		glTexCoord2f (u0, v1);
+		glVertex2f (x, y+(glt->original_height*scale));
 		glEnd ();
 
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		glDisable(GL_BLEND);
+		glEnable(GL_ALPHA_TEST);
 		glColor4f(1.0f,1.0f,1.0f,1.0f);
 	}
 }

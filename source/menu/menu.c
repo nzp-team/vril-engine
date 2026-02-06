@@ -31,6 +31,7 @@ float			menu_starttime;
 // Constant menu images
 image_t			menu_bk;
 image_t			menu_social;
+image_t			menu_badges;
 
 char*			game_build_date;
 
