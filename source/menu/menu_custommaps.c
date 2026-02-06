@@ -323,7 +323,7 @@ void Menu_CustomMaps_Draw (void)
 			if (custom_maps[i].map_name == stock_maps[i].bsp_name) continue;
 		}
 		int menu_position = (i + 1) - (user_maps_page * MAX_MAP_PER_PAGE);
-		Menu_DrawMapButton(menu_position, custommap_items, i, custom_maps[i].map_name, Menu_CustomMaps_StartMap);
+		Menu_DrawMapButton(menu_position, custommap_items, i, MAP_CATEGORY_USER, custom_maps[i].map_name, Menu_CustomMaps_StartMap);
 		custommap_items++;
 	}
 
