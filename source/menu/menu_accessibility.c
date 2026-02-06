@@ -22,12 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //=============================================================================
 /* ACCESSIBILITY MENU */
 
-int	menu_accessibility_cursor;
-#define	ACCESSIBILITY_ITEMS	6
-
-menu_t 			accessibility_menu;
-menu_button_t 	accessibility_menu_buttons[ACCESSIBILITY_ITEMS];
-
 /*
 ===============
 Menu_Accessibility_Set
@@ -35,6 +29,7 @@ Menu_Accessibility_Set
 */
 void Menu_Accessibility_Set (void)
 {
+	Menu_ResetMenuButtons();
 	m_state = m_accessibility;
 }
 
@@ -51,49 +46,5 @@ void Menu_Accessibility_Draw (void)
 	// Header
 	Menu_DrawTitle ("ACCESSIBILITY OPTIONS", MENU_COLOR_WHITE);
 
-	Menu_DrawButton(11.5, &accessibility_menu, &accessibility_menu_buttons[0], "BACK", "Return to Main Menu.");
-}
-
-/*
-===============
-Menu_Accessibility_Key
-===============
-*/
-void Menu_Accessibility_Key (int key)
-{
-	switch (key)
-	{
-
-	case K_DOWNARROW:
-		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (++menu_accessibility_cursor >= ACCESSIBILITY_ITEMS)
-			menu_accessibility_cursor = 0;
-		break;
-
-	case K_UPARROW:
-		Menu_StartSound(MENU_SND_NAVIGATE);
-		if (--menu_accessibility_cursor < 0)
-			menu_accessibility_cursor = ACCESSIBILITY_ITEMS - 1;
-		break;
-
-	case K_ENTER:
-	case K_AUX1:
-		Menu_StartSound(MENU_SND_ENTER);
-		switch (menu_accessibility_cursor)
-		{
-			case 0:
-				break;
-			case 1:
-				break;
-			case 2:
-				break;
-			case 3:
-				break;
-            case 4:
-				Menu_Configuration_Set();
-                break;
-            case 5:
-                break;
-		}
-	}
+	Menu_DrawButton(11.5, 0, "BACK", "Return to Main Menu.", Menu_Configuration_Set);
 }

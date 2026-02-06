@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../nzportable_def.h"
 #include "menu_defs.h"
 
+menu_t			current_menu;
+menu_button_t	current_menu_buttons[MAX_MENU_BUTTONS];
+
 // Menu time keeping
 float 			menu_time;
 image_t			menu_background;
@@ -36,19 +39,31 @@ qboolean		m_recursiveDraw;
 // Current menu state
 int 			m_state;
 
-qboolean		menu_is_solo;
-
-int 			big_bar_height;
-int 			small_bar_height;
-
-int 			num_stock_maps;
-char*			current_selected_bsp;
-
 //=============================================================================
 /* Menu Subsystem */
 
+void Menu_ResetMenuButtons (void)
+{
+	for (int i = 0; i < MAX_MENU_BUTTONS; i++) {
+		current_menu_buttons[i] = (menu_button_t){ 
+			.enabled = false,
+			.index = -1,
+			.name = "",
+			.on_activate = NULL 
+		};
+	}
+
+	current_menu = (menu_t) {
+		.button = current_menu_buttons,
+		.cursor = 0,
+		.slider_pressed = 0
+	};
+}
+
 void Menu_Init (void)
 {
+	Menu_ResetMenuButtons();
+
 	Cmd_AddCommand ("togglemenu", Menu_ToggleMenu_f);
 
 	// TODO - Achievements WIP
@@ -84,8 +99,6 @@ void Menu_Draw (void)
 	if (m_state == m_none || (key_dest != key_menu && key_dest != key_menu_pause))
 		return;
 
-	menu_time = Sys_FloatTime ();
-
 	if (!m_recursiveDraw)
 	{
 		scr_copyeverything = 1;
@@ -107,15 +120,16 @@ void Menu_Draw (void)
 		m_recursiveDraw = false;
 	}
 
-	//printf("menu time: %f\n", menu_time);
-	//printf("menu_changetime: %f\n", menu_changetime);
-	//printf("menu_starttime: %f\n", menu_starttime);
+	if (key_dest == key_menu) {
+		menu_time = Sys_FloatTime ();
 
-	// Menu Background Changing
-	if (menu_time > menu_changetime) {
-		menu_background = Menu_PickBackground();
-		menu_changetime = menu_time + 7;
-		menu_starttime = menu_time;
+		// Menu Background Changing
+		// no reason to run this in pause menu or in-game
+		if (menu_time > menu_changetime) {
+			menu_background = Menu_PickBackground();
+			menu_changetime = menu_time + 7;
+			menu_starttime = menu_time;
+		}
 	}
 
 	switch (m_state)
@@ -171,10 +185,6 @@ void Menu_Draw (void)
 		Menu_Keys_Draw ();
 		break;
 
-	case m_quit:
-		Menu_Quit_Draw ();
-		break;
-
 	case m_credits:
 		Menu_Credits_Draw ();
 		break;
@@ -186,75 +196,6 @@ void Menu_Draw (void)
 	VID_UnlockBuffer ();
 	S_ExtraUpdate ();
 	VID_LockBuffer ();
-}
-
-
-void Menu_Keydown (int key)
-{
-	switch (m_state)
-	{
-	case m_none:
-		return;
-
-	case m_main:
-		Menu_Main_Key (key);
-		return;
-
-	case m_pause:
-		Menu_Pause_Key (key);
-		break;
-
-	case m_stockmaps:
-		Menu_StockMaps_Key (key);
-		return;
-
-	case m_custommaps:
-		Menu_CustomMaps_Key (key);
-		return;
-
-	case m_lobby:
-		Menu_Lobby_Key (key);
-		return;
-
-	case m_gamesettings:
-		Menu_GameSettings_Key (key);
-		return;
-
-	case m_configuration:
-		Menu_Configuration_Key (key);
-		return;
-
-	case m_video:
-		Menu_Video_Key (key);
-		break;
-
-	case m_audio:
-		Menu_Audio_Key (key);
-		break;
-
-	case m_controls:
-		Menu_Controls_Key (key);
-		break;
-
-	case m_accessibility:
-		Menu_Accessibility_Key (key);
-		break;
-
-	case m_keys:
-		Menu_Keys_Key (key);
-		return;
-
-	case m_credits:
-		Menu_Credits_Key (key);
-		return;
-
-	case m_quit:
-		Menu_Quit_Key (key);
-		return;
-
-	default:
-		Con_Printf("Cannot identify menu for case %d\n", m_state);
-	}
 }
 
 /*

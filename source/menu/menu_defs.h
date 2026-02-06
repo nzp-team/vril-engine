@@ -40,29 +40,23 @@ extern int m_state;
 
 typedef struct menu_button_s {
 	qboolean		enabled;
-	int				button_index;
+	int				index;
+	char			*name;
 	void			(*on_activate)(void);
 } menu_button_t;
 
 typedef struct menu_s {
     menu_button_t	*button;
-	int				num_total_buttons;
     int				cursor;
+	int				slider_pressed;
 } menu_t;
 
-// Menu page cursor management
-extern int	            menu_main_cursor;
-extern int              menu_stockmaps_cursor;
-extern int				menu_custommaps_cursor;
-extern int				menu_lobby_cursor;
-extern int				menu_configuration_cursor;
-extern int				menu_video_cursor;
-extern int				menu_audio_cursor;
-extern int				menu_controls_cursor;
-extern int				menu_accessibility_cursor;
-extern int				menu_quit_cursor;
-
-extern int				key_quit;
+// Curent menu state and buttons are stored here
+// when m_state is flipped, the respective menu "Set"
+// function will clear the structs. They are then rebuilt
+// during the drawing process.
+extern menu_t			current_menu;
+extern menu_button_t	current_menu_buttons[MAX_MENU_BUTTONS];
 
 extern qboolean	        m_recursiveDraw;
 
@@ -102,6 +96,7 @@ extern float            menu_starttime;
 extern image_t          menu_bk;
 extern image_t          menu_social;
 
+// Build date string
 extern char*            game_build_date;
 
 // Loading screens
@@ -133,10 +128,10 @@ extern char*			current_selected_bsp;
 extern char* 		    map_loadname;
 extern char* 		    map_loadname_pretty;
 
-// True if in single-player menu
+// True if last menu was a single-player menu
 extern qboolean		    menu_is_solo;
 
-// bar heights are constant and used
+// Bar heights are constant and used
 // in multiple calculations
 extern int 			    big_bar_height;
 extern int 			    small_bar_height;
@@ -146,6 +141,8 @@ extern int 			    small_bar_height;
 extern float			CHAR_WIDTH;
 extern float			CHAR_HEIGHT;
 
+// Stock map struct which holds the current
+// stockmaps loaded
 typedef struct
 {
     char* bsp_name;
@@ -156,13 +153,13 @@ extern StockMaps        stock_maps[8];
 extern int 			    num_stock_maps;
 
 // We need gamemode cvar values
-extern cvar_t sv_gamemode;
-extern cvar_t sv_difficulty;
-extern cvar_t sv_startround;
-extern cvar_t sv_magic;
-extern cvar_t sv_headshotonly;
-extern cvar_t sv_maxai;
-extern cvar_t sv_fastrounds;
+extern cvar_t 			sv_gamemode;
+extern cvar_t 			sv_difficulty;
+extern cvar_t 			sv_startround;
+extern cvar_t 			sv_magic;
+extern cvar_t 			sv_headshotonly;
+extern cvar_t 			sv_maxai;
+extern cvar_t 			sv_fastrounds;
 
 
 /*
@@ -183,31 +180,32 @@ void Menu_DrawTextCentered (int x, int y, char* text, int r, int g, int b, int a
 void Menu_InitStockMaps (void);
 qboolean Menu_IsStockMap (char *bsp_name);
 void Menu_CustomMaps_MapFinder (void);
-int UserMapSupportsCustomGameLookup (char *bsp_name);
+int Menu_UserMapSupportsGameSettings (char *bsp_name);
 void Map_SetDefaultValues (void);
 void Menu_LoadMap (char *selected_map);
 void Menu_DrawCustomBackground (qboolean draw_images);
 void Menu_DrawTitle (char *title_name, int color);
-void Menu_DrawButton (int order, menu_t *current_menu, menu_button_t *current_button, char* button_name, char* button_summary);
-void Menu_DrawMapButton (int order, menu_t *current_menu, menu_button_t *current_button, int usermap_index, char* bsp_name);
+void Menu_DrawButton (int order, int button_index, char* button_name, char* button_summary, void *on_activate);
+void Menu_DrawGreyButton (int order, char* button_name);
+void Menu_DrawMapButton (int order, int button_index, int usermap_index, char* bsp_name, void *on_activate);
 void Menu_DrawOptionButton(int order, char* selection_name);
-void Menu_DrawOptionSlider(int order, int max_option_value, cvar_t option, qboolean zero_to_one, qboolean draw_option_string);
+void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, int max_option_value, cvar_t option, char* _option_string, qboolean zero_to_one, qboolean draw_option_string, float increment_amount);
 void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficulty, char* info_startround, char* info_magic, char* info_headshotonly, char* info_fastrounds, char* info_hordesize);
 void Menu_DrawBuildDate ();
 void Menu_DrawDivider (int order);
 void Menu_DrawSocialBadge (int order, int which);
 void Menu_DrawMapPanel (void);
 void Menu_Preload_Custom_Images (void);
-void Menu_IncreaseCursor (menu_t *current_menu);
-void Menu_DecreaseCursor (menu_t *current_menu);
-void Menu_ButtonPress (menu_t *current_menu);
-void Menu_KeyInput (int key, menu_t *current_menu);
+void Menu_DrawLoadingFill(void);
+void Menu_DrawSubMenu (char *line_one, char *line_two);
+
+void Menu_ResetMenuButtons (void);
+void Menu_KeyInput (int key);
 
 void Menu_StockMaps_Set (void);
 void Menu_Pause_Set(void);
 void Menu_Keys_Set(void);
 void Menu_Video_Set(void);
-void Menu_Quit_Set(qboolean restart);
 void Menu_Restart_Set(void);
 void Menu_Credits_Set(void);
 void Menu_Exit_Set(void);
@@ -227,7 +225,6 @@ void Menu_Main_Draw(void);
 void Menu_StockMaps_Draw(void);
 void Menu_Keys_Draw(void);
 void Menu_Video_Draw(void);
-void Menu_Quit_Draw(void);
 void Menu_Credits_Draw(void);
 void Menu_GameOptions_Draw(void);
 void Menu_CustomMaps_Draw(void);
@@ -238,24 +235,6 @@ void Menu_Video_Draw (void);
 void Menu_Audio_Draw (void);
 void Menu_Controls_Draw (void);
 void Menu_Accessibility_Draw (void);
-
-void Menu_Main_Key(int key);
-void Menu_Pause_Key(int key);
-void Menu_Main_Key(int key);
-void Menu_StockMaps_Key(int key);
-void Menu_Keys_Key(int key);
-void Menu_Restart_Key(int key);
-void Menu_Credits_Key(int key);
-void Menu_Video_Key(int key);
-void Menu_Quit_Key(int key);
-void Menu_CustomMaps_Key(int key);
-void Menu_Lobby_Key(int key);
-void Menu_GameSettings_Key (int key);
-void Menu_Configuration_Key (int key);
-void Menu_Video_Key (int key);
-void Menu_Audio_Key (int key);
-void Menu_Controls_Key (int key);
-void Menu_Accessibility_Key (int key);
 
 // Platform specifics
 void Platform_Menu_MapFinder(void);
