@@ -31,13 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/dirent.h>
 #endif
 
-void Menu_CustomMaps_BuildMenuItems (void);
-
-#define MAX_CUSTOMMAP_ITEMS		11
-
-menu_t          custommaps_menu;
-menu_button_t   custommaps_menu_buttons[MAX_CUSTOMMAP_ITEMS];
-
 image_t             	menu_usermap_image[MAX_CUSTOMMAPS];
 achievement_list_t  	achievement_list[MAX_ACHIEVEMENTS];
 usermap_t           	custom_maps[MAX_CUSTOMMAPS];
@@ -47,12 +40,13 @@ int     num_user_maps = 0;
 int     num_custom_images = 0;
 int     custom_map_pages = 0;
 
+// needs to be global so 
+// we can grab the index
+int maps_start_position = 0;
+
 #define MAX_SETTINGS_LINES 12
 #define MAX_MAP_PER_PAGE 8
 #define MAP_DESC_LINES 8
-
-int 	maps_on_page;
-int 	maps_start_position;
 
 char 	game_directory[MAX_OSPATH];
 char	settings_path[MAX_OSPATH*2];
@@ -262,94 +256,33 @@ void Menu_Preload_Custom_Images(void)
 	}
 }
 
-void Menu_CustomMaps_NextPage (void)
-{
-    Menu_StartSound(MENU_SND_ENTER);
-
-    user_maps_page++;
-	Menu_CustomMaps_BuildMenuItems();
-	custommaps_menu.cursor = 0;
-}
-
-void Menu_CustomMaps_PrevPage (void)
-{
-    Menu_StartSound(MENU_SND_ENTER);
-
-    user_maps_page--;
-	Menu_CustomMaps_BuildMenuItems();
-	custommaps_menu.cursor = 0;
-}
-
 void Menu_CustomMaps_StartMap (void)
 {
-	int map_index = maps_start_position + custommaps_menu.cursor;
+	int map_index = maps_start_position + current_menu.cursor;
 
 	Map_SetDefaultValues();
 	current_selected_bsp = custom_maps[map_index].map_name;
 	Menu_Lobby_Set();
 }
 
-void Menu_CustomMaps_DecideMapsOnPage (void)
+void Menu_CustomMaps_NextPage (void)
 {
-	// calculate the amount of usermaps we can display on this page.
-	maps_start_position = user_maps_page * MAX_MAP_PER_PAGE;
-	// default to 8, all that will fit on the UI.
-	maps_on_page = MAX_MAP_PER_PAGE;
-
-	// Not all 8 slots can be filled..
-	if (MAX_MAP_PER_PAGE > num_user_maps - maps_start_position) {
-		// So set how many maps will be on the last page
-		maps_on_page = num_user_maps - maps_start_position;
-	}
+	Menu_ResetMenuButtons();
+    Menu_StartSound(MENU_SND_ENTER);
+    user_maps_page++;
 }
 
-void Menu_CustomMaps_BuildMenuItems (void)
+void Menu_CustomMaps_PrevPage (void)
 {
-	int custommap_items = 0;
-	int	button_index = 0;
-
-	Menu_CustomMaps_DecideMapsOnPage();
-
-	// Zero out any unused buttons
-	for (int i = 0; i < MAX_CUSTOMMAP_ITEMS; i++) {
-		custommaps_menu_buttons[i] = (menu_button_t){ false, -1, NULL };
-	}
-
-	// Populate the custom map buttons
-	for (int i = maps_start_position; i < maps_start_position + maps_on_page; i++) {
-		custommaps_menu_buttons[custommap_items] = (menu_button_t){ true, custommap_items, Menu_CustomMaps_StartMap };
-		custommap_items++;
-		button_index++;
-	}
-	// If the are enough maps for another page
-	// then set the button values
-	if (maps_on_page + maps_start_position < num_user_maps) {
-		custommaps_menu_buttons[button_index] = (menu_button_t){ true, custommap_items, Menu_CustomMaps_NextPage }; custommap_items++;
-	} else {
-		custommaps_menu_buttons[button_index] = (menu_button_t){ false, -1, NULL };
-	}
-	// Add a previous page button
-	// if user is not on the first page
-	if (user_maps_page != 0) {
-		custommaps_menu_buttons[button_index+1] = (menu_button_t){ true, custommap_items, Menu_CustomMaps_PrevPage }; custommap_items++;
-	} else {
-		custommaps_menu_buttons[button_index+1] = (menu_button_t){ false, -1, NULL };
-	}
-	
-	// Back button
-	custommaps_menu_buttons[button_index+2] = (menu_button_t){ true, custommap_items, Menu_StockMaps_Set }; custommap_items++;
-
-	custommaps_menu = (menu_t) {
-		custommaps_menu_buttons,
-		MAX_CUSTOMMAP_ITEMS,
-		0
-	};
+	Menu_ResetMenuButtons();
+    Menu_StartSound(MENU_SND_ENTER);
+    user_maps_page--;
 }
 
 void Menu_CustomMaps_Set (void)
 {
+	Menu_ResetMenuButtons();
 	user_maps_page = 0;
-	Menu_CustomMaps_BuildMenuItems();
 	key_dest = key_menu;
 	m_state = m_custommaps;
 }
@@ -369,35 +302,44 @@ void Menu_CustomMaps_Draw (void)
         header_text = "SELECT MAP: COOP";
     }
 
-    // Header
+	// Header
 	Menu_DrawTitle(header_text, MENU_COLOR_WHITE);
     // Map panel makes the background darker
     Menu_DrawMapPanel();
 
+	// calculate the amount of usermaps we can display on this page.
+	maps_start_position = user_maps_page * MAX_MAP_PER_PAGE;
+	// default to 8, all that will fit on the UI.
+	int maps_on_page = MAX_MAP_PER_PAGE;
+
+	// Not all 8 slots can be filled..
+	if (MAX_MAP_PER_PAGE > num_user_maps - maps_start_position) {
+		// So set how many maps will be on the last page
+		maps_on_page = num_user_maps - maps_start_position;
+	}
+
 	for (i = maps_start_position; i < maps_start_position + maps_on_page; i++) {
+		for (int j = 0; j < num_stock_maps; j++) {
+			if (custom_maps[i].map_name == stock_maps[i].bsp_name) continue;
+		}
 		int menu_position = (i + 1) - (user_maps_page * MAX_MAP_PER_PAGE);
-		Menu_DrawMapButton(menu_position, &custommaps_menu, &custommaps_menu_buttons[custommap_items], i, custom_maps[i].map_name);
+		Menu_DrawMapButton(menu_position, custommap_items, i, custom_maps[i].map_name, Menu_CustomMaps_StartMap);
 		custommap_items++;
 	}
 
 	Menu_DrawDivider(9.25);
 
 	if (maps_on_page + maps_start_position < num_user_maps) {
-		Menu_DrawButton(9.5, &custommaps_menu, &custommaps_menu_buttons[custommap_items], "NEXT PAGE", "Advance to next User Map page.");
+		Menu_DrawButton(9.5, custommap_items++, "NEXT PAGE", "Advance to next User Map page.", Menu_CustomMaps_NextPage);
 	} else {
-		Menu_DrawButton(9.5, &custommaps_menu, &custommaps_menu_buttons[custommap_items], "NEXT PAGE", "");
+		Menu_DrawGreyButton(9.5, "NEXT PAGE");
 	}
 
 	if (user_maps_page != 0) {
-		Menu_DrawButton(10.5, &custommaps_menu, &custommaps_menu_buttons[custommap_items+1], "PREVIOUS PAGE", "Return to last User Map page.");
+		Menu_DrawButton(10.5, custommap_items++, "PREVIOUS PAGE", "Return to last User Map page.", Menu_CustomMaps_PrevPage);
 	} else {
-		Menu_DrawButton(10.5, &custommaps_menu, &custommaps_menu_buttons[custommap_items+1], "PREVIOUS PAGE", "");
+		Menu_DrawGreyButton(10.5, "PREVIOUS PAGE");
 	}
 
-    Menu_DrawButton(11.5, &custommaps_menu, &custommaps_menu_buttons[custommap_items+2], "BACK", "Return to Stock Map selection.");
-}
-
-void Menu_CustomMaps_Key (int key)
-{
-	Menu_KeyInput(key, &custommaps_menu);
+    Menu_DrawButton(11.5, custommap_items, "BACK", "Return to Stock Map selection.", Menu_StockMaps_Set);
 }

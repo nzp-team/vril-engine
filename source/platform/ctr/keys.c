@@ -53,6 +53,8 @@ typedef struct
 	int		keynum;
 } keyname_t;
 
+void Menu_KeyInput (int key);
+
 keyname_t keynames[] =
 {
 	#ifdef __3DS__
@@ -806,7 +808,7 @@ void Key_Event (int key, qboolean down)
 			break;
 		case key_menu:
 		case key_menu_pause:
-			Menu_Keydown (key);
+			Menu_KeyInput (key);
 			break;
 		case key_game:
 		case key_console:
@@ -916,7 +918,7 @@ void Key_Event (int key, qboolean down)
 		break;
 	case key_menu:
 	case key_menu_pause:
-		Menu_Keydown (key);
+		Menu_KeyInput (key);
 		break;
 
 	case key_game:

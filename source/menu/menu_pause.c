@@ -22,37 +22,38 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //=============================================================================
 /* PAUSE MENU */
 
-#define PAUSE_ITEMS 4
-
-menu_t 			pause_menu;
-menu_button_t 	pause_menu_buttons[PAUSE_ITEMS];
-
 // Waypoint saving in pause screen
-extern cvar_t waypoint_mode;
+extern cvar_t 	waypoint_mode;
+int 			menu_paus_submenu;
 
-void Menu_Pause_Resume(void) { key_dest = key_game; m_state = m_none; };
-void Menu_Pause_Configuration(void) { Menu_Configuration_Set(); key_dest = key_menu_pause; };
-void Menu_Pause_DecideQuit(void) 
-{ 
-	if (pause_menu.cursor == 3) {
-		Menu_Quit_Set(false);
-	} else {
-		Menu_Quit_Set(true);
-	}
+void Menu_Resume(void) { key_dest = key_game; m_state = m_none; };
+void Menu_Configuration(void) { Menu_Configuration_Set(); key_dest = key_menu_pause; };
+void Menu_Pause_EnterSubMenu(void)
+{
+	menu_paus_submenu = current_menu.cursor;
+	Menu_ResetMenuButtons();
+    Menu_StartSound(MENU_SND_ENTER);
 }
 
-void Menu_Pause_BuildMenuItems (void)
+void Menu_Pause_Yes(void)
 {
-	pause_menu_buttons[0] = (menu_button_t){ true, 0, Menu_Pause_Resume };
-	pause_menu_buttons[1] = (menu_button_t){ true, 1, Menu_Pause_DecideQuit };
-	pause_menu_buttons[2] = (menu_button_t){ true, 2, Menu_Pause_Configuration };
-	pause_menu_buttons[3] = (menu_button_t){ true, 3, Menu_Pause_DecideQuit };
+    if (menu_paus_submenu == 1) {
+		menu_paus_submenu = 0;
+		key_dest = key_game;
+		m_state = m_none;
+		// Perform Soft Restart
+		PR_ExecuteProgram (pr_global_struct->Soft_Restart);
+	} else if (menu_paus_submenu == 3) {
+		menu_paus_submenu = 0;
+		Menu_Main_Set(false);
+	}
 
-	pause_menu = (menu_t) {
-		pause_menu_buttons,
-		PAUSE_ITEMS,
-		0
-	};
+    Menu_Pause_EnterSubMenu();
+}
+
+void Menu_Pause_No (void)
+{
+    Menu_Pause_Set();
 }
 
 /*
@@ -62,8 +63,10 @@ Menu_Pause_Set
 */
 void Menu_Pause_Set (void)
 {
-	Menu_Pause_BuildMenuItems();
+	Menu_ResetMenuButtons();
+	Menu_StartSound(MENU_SND_ENTER);
 
+	menu_paus_submenu = 0;
 	loadingScreen = 0;
 	loadscreeninit = false;
 	key_dest = key_menu_pause;
@@ -83,22 +86,30 @@ void Menu_Pause_Draw (void)
 	// Header
 	Menu_DrawTitle ("PAUSED", MENU_COLOR_WHITE);
 
-	// Resume
-    Menu_DrawButton (1, &pause_menu, &pause_menu_buttons[0], "RESUME CARNAGE", "Return to Game.");
-	// Restart
-    Menu_DrawButton (2, &pause_menu, &pause_menu_buttons[1], "RESTART LEVEL", "Tough luck? Give things another go.");
-	// Options
-    Menu_DrawButton (3, &pause_menu, &pause_menu_buttons[2], "OPTIONS", "Tweak Game related Options.");
-	// End game
-    Menu_DrawButton (4, &pause_menu, &pause_menu_buttons[3], "END GAME", "Return to Main Menu.");
-}
+	if (menu_paus_submenu == 0) {
+		// Resume
+		Menu_DrawButton (1, 0, "RESUME CARNAGE", "Return to Game.", Menu_Resume);
+		// Restart
+		Menu_DrawButton (2, 1, "RESTART LEVEL", "Tough luck? Give things another go.", Menu_Pause_EnterSubMenu);
+		// Options
+		Menu_DrawButton (3, 2, "OPTIONS", "Tweak Game related Options.", Menu_Configuration);
+		// End game
+		Menu_DrawButton (4, 3, "END GAME", "Return to Main Menu.", Menu_Pause_EnterSubMenu);
+	} else {
+		Menu_DrawGreyButton (1,"RESUME CARNAGE");
+		Menu_DrawGreyButton (2, "RESTART LEVEL");
+		Menu_DrawGreyButton (3, "OPTIONS");
+		Menu_DrawGreyButton (4, "END GAME");
 
-/*
-===============
-Menu_Pause_Key
-===============
-*/
-void Menu_Pause_Key (int key)
-{
-	Menu_KeyInput(key, &pause_menu);
+		// Draw Sub Menu
+		if (menu_paus_submenu == 1) {
+			Menu_DrawSubMenu("Are you sure you want to restart?", "You will lose any progress that you have made.");
+		} else if (menu_paus_submenu == 3) {
+			Menu_DrawSubMenu("Are you sure you want to quit?", "You will lose any progress that you have made.");
+		}
+    
+		Menu_DrawButton (6.5, 0, "GET ME OUTTA HERE!", "", Menu_Pause_Yes);
+		Menu_DrawButton (7.5, 1, "I WILL PERSEVERE", "", Menu_Pause_No);
+	}
+	
 }

@@ -22,13 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //=============================================================================
 /* LOBBY MENU */
 
-int	            menu_lobby_cursor;
 int             support_gamesettings;
-
-#define         MAX_LOBBY_ITEMS 3
-
-menu_t          lobby_menu;
-menu_button_t   lobby_menu_buttons[MAX_LOBBY_ITEMS];
 
 float           menu_lobby_countdown = 0;
 float           menu_lobby_last;
@@ -141,12 +135,14 @@ void Menu_Lobby_SetStrings (void)
 
 void Menu_Lobby_StopCountdown (void)
 {
+    Menu_ResetMenuButtons();
     menu_lobby_countdown = 0;
     menu_lobby_last = 0;
 }
 
 void Menu_Lobby_SetCountdown (void)
 {
+    Menu_ResetMenuButtons();
     Menu_StartSound(MENU_SND_ENTER);
 
     if (menu_lobby_countdown == 0) {    
@@ -168,32 +164,13 @@ void Menu_Lobby_SetBack (void)
     }
 }
 
-void Menu_Lobby_BuildMenuItems (void)
-{
-    int lobby_items = 0;
-    support_gamesettings = UserMapSupportsCustomGameLookup (current_selected_bsp);
-
-	lobby_menu_buttons[0] = (menu_button_t){ true, lobby_items++, Menu_Lobby_SetCountdown };
-    if (support_gamesettings) {
-        // Make gamesettings a selectable button
-        lobby_menu_buttons[1] = (menu_button_t){ true, lobby_items++, Menu_GameSettings_Set };
-    } else {
-        lobby_menu_buttons[1] = (menu_button_t){ false, -1, NULL };
-    }
-	lobby_menu_buttons[2] = (menu_button_t){ true, lobby_items, Menu_Lobby_SetBack };
-
-	lobby_menu = (menu_t) {
-		lobby_menu_buttons,
-		MAX_LOBBY_ITEMS,
-		0
-	};
-}
-
 void Menu_Lobby_Set (void)
 {
-    Menu_Lobby_BuildMenuItems();
+    Menu_ResetMenuButtons();
     Menu_Lobby_AllocStrings();
     Menu_Lobby_SetStrings();
+
+    support_gamesettings = Menu_UserMapSupportsGameSettings(current_selected_bsp);
 
     key_dest = key_menu;
 	m_state = m_lobby;
@@ -209,26 +186,18 @@ void Menu_Lobby_Draw (void)
     Menu_DrawMapPanel();
 
     if (menu_lobby_countdown == 0) {
-        Menu_DrawButton (1, &lobby_menu, &lobby_menu_buttons[0], "START GAME", "Face the Horde!");
-
-        if (support_gamesettings) {
-            Menu_DrawButton(2, &lobby_menu, &lobby_menu_buttons[1], "GAME SETTINGS", "Adjust Gameplay Options.");
-        } else {
-            Menu_DrawButton(2, &lobby_menu, &lobby_menu_buttons[1], "NOT SUPPORTED", "");
-        }
-        
-        Menu_DrawButton (11.5, &lobby_menu, &lobby_menu_buttons[2], "BACK", "Return to Map Selection.");
+        Menu_DrawButton (1, 0, "START GAME", "Face the Horde!", Menu_Lobby_SetCountdown);    
     } else {
-        Menu_DrawButton (1, &lobby_menu, &lobby_menu_buttons[0], "CANCEL", "..Take it back!");
-
-        if (support_gamesettings) {
-            Menu_DrawButton(2, &lobby_menu, &lobby_menu_buttons[1], "GAME SETTINGS", "");
-        } else {
-            Menu_DrawButton(2, &lobby_menu, &lobby_menu_buttons[1], "NOT SUPPORTED", "");
-        }
-            
-        Menu_DrawButton(11.5, &lobby_menu, &lobby_menu_buttons[2], "BACK", "Return to Map Selection.");
+        Menu_DrawButton (1, 0, "CANCEL", "..Take it back!", Menu_Lobby_StopCountdown);
     }
+
+    if (support_gamesettings) {
+        Menu_DrawButton(2, 1, "GAME SETTINGS", "Adjust Gameplay Options.", Menu_GameSettings_Set);
+    } else {
+        Menu_DrawGreyButton(2, "NOT SUPPORTED");
+    }
+
+    Menu_DrawButton (11.5, 2, "BACK", "Return to Map Selection.", Menu_Lobby_SetBack);
 
     Menu_DrawLobbyInfo (current_selected_bsp, gamemode, difficulty, startround, magic, headshotonly, fastrounds, hordesize);
 
@@ -253,9 +222,4 @@ void Menu_Lobby_Draw (void)
         Menu_Lobby_StopCountdown();
         //Menu_Lobby_FreeStrings();
     }
-}
-
-void Menu_Lobby_Key (int key)
-{
-    Menu_KeyInput(key, &lobby_menu);
 }

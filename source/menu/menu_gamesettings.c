@@ -22,11 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //=============================================================================
 /* GAME SETTINGS MENU */
 
-#define         GAMESETTINGS_ITEMS 8
-
-menu_t          gamesettings_menu;
-menu_button_t   gamesettings_menu_buttons[GAMESETTINGS_ITEMS];
-
 char*           gamemode_description;
 char*           gamemode_string;
 
@@ -152,42 +147,6 @@ void Menu_GameSettings_SetStrings (void)
     sprintf(hordesize_string, "%d", (int)sv_maxai.value);
 }
 
-void Menu_GameSettings_ApplySliders (int dir)
-{
-    switch (gamesettings_menu.cursor) {
-        // Starting Round
-        case 2:
-            float current_startround = sv_startround.value;
-            if (dir == MENU_SLIDER_LEFT) {
-                if (current_startround == 0) break;
-                current_startround -= 5;
-            } else if (dir == MENU_SLIDER_RIGHT) {
-                if (current_startround == 50) break;
-                current_startround += 5;      
-            }
-            if (current_startround < 1) current_startround = 1;
-            if (current_startround > 50) current_startround = 50;
-
-            Cvar_SetValue("sv_startround", current_startround);
-            break;
-        // Horde Size
-        case 5:
-            float current_hordesize = sv_maxai.value;
-            if (dir == MENU_SLIDER_LEFT) {
-                if (current_hordesize == 2) break;
-                current_hordesize -= 2;
-            } else if (dir == MENU_SLIDER_RIGHT) {
-                if (current_hordesize == 64) break;
-                current_hordesize += 2;
-            }
-            if (current_hordesize < 2) current_hordesize = 2;
-            if (current_hordesize > 64) current_hordesize = 64;
-
-            Cvar_SetValue("sv_maxai", current_hordesize);
-            break;
-    }
-}
-
 void Menu_GameSettings_ApplyGameMode (void)
 {
     float current_gamemode = sv_gamemode.value;
@@ -247,27 +206,9 @@ void Menu_GameSettings_ApplyFastRounds (void)
     Cvar_SetValue("sv_fastrounds", current_fastrounds);
 }
 
-void Menu_GameSettings_BuildMenuItems (void)
-{
-	gamesettings_menu_buttons[0] = (menu_button_t){ true, 0, Menu_GameSettings_ApplyGameMode };
-	gamesettings_menu_buttons[1] = (menu_button_t){ true, 1, Menu_GameSettings_ApplyDifficulty };
-    gamesettings_menu_buttons[2] = (menu_button_t){ true, 2, NULL };
-    gamesettings_menu_buttons[3] = (menu_button_t){ true, 3, Menu_GameSettings_ApplyMagic };
-	gamesettings_menu_buttons[4] = (menu_button_t){ true, 4, Menu_GameSettings_ApplyHeadShotsOnly };
-	gamesettings_menu_buttons[5] = (menu_button_t){ true, 5, NULL };
-    gamesettings_menu_buttons[6] = (menu_button_t){ true, 6, Menu_GameSettings_ApplyFastRounds };
-	gamesettings_menu_buttons[7] = (menu_button_t){ true, 7, Menu_Lobby_Set };
-
-	gamesettings_menu = (menu_t) {
-		gamesettings_menu_buttons,
-		GAMESETTINGS_ITEMS,
-		0
-	};
-}
-
 void Menu_GameSettings_Set (void)
 {
-    Menu_GameSettings_BuildMenuItems();
+    Menu_ResetMenuButtons();
     Menu_GameSettings_AllocStrings();
 
     key_dest = key_menu;
@@ -286,48 +227,33 @@ void Menu_GameSettings_Draw (void)
     Menu_GameSettings_SetStrings();
 
     // Game Mode button
-    Menu_DrawButton(1, &gamesettings_menu, &gamesettings_menu_buttons[0], "GAME MODE", gamemode_description);
+    Menu_DrawButton(1, 0, "GAME MODE", gamemode_description, Menu_GameSettings_ApplyGameMode);
     Menu_DrawOptionButton(1, gamemode_string);
 
     // Difficulty button
-    Menu_DrawButton(2, &gamesettings_menu, &gamesettings_menu_buttons[1], "DIFFICULTY", difficulty_description);
+    Menu_DrawButton(2, 1, "DIFFICULTY", difficulty_description, Menu_GameSettings_ApplyDifficulty);
     Menu_DrawOptionButton(2, difficulty_string); 
 
     // Start Round slider
-    Menu_DrawButton(3, &gamesettings_menu, &gamesettings_menu_buttons[2], "START ROUND", startround_string);
-    Menu_DrawOptionSlider(3, 50, sv_startround, true, true);
+    Menu_DrawButton(3, 2, "START ROUND", startround_string, NULL);
+    Menu_DrawOptionSlider(3, 2, 0, 50, sv_startround, "sv_startround", true, true, 5.0f);
 
     // Magic button
-    Menu_DrawButton(4, &gamesettings_menu, &gamesettings_menu_buttons[3], "MAGIC", "Whether to allow Perks, Power-Ups, and the Mystery Box.");
+    Menu_DrawButton(4, 3, "MAGIC", "Whether to allow Perks, Power-Ups, and the Mystery Box.", Menu_GameSettings_ApplyMagic);
     Menu_DrawOptionButton(4, magic_string);
 
     // Headshots Only button
-    Menu_DrawButton(5, &gamesettings_menu, &gamesettings_menu_buttons[4], "HEADSHOTS ONLY", "Headshots are the only means of Death. Explosives don't work, either.");
+    Menu_DrawButton(5, 4, "HEADSHOTS ONLY", "Headshots are the only means of Death. Explosives don't work, either.", Menu_GameSettings_ApplyHeadShotsOnly);
     Menu_DrawOptionButton(5, headshot_string);
 
     // Horde Size slider
-    Menu_DrawButton(6, &gamesettings_menu, &gamesettings_menu_buttons[5], "HORDE SIZE", "Maximum Zombies that can Active at once.");
-    Menu_DrawOptionSlider(6, 64, sv_maxai, false, true);
+    Menu_DrawButton(6, 5, "HORDE SIZE", "Maximum Zombies that can Active at once.", NULL);
+    Menu_DrawOptionSlider(6, 5, 2, 64, sv_maxai, "sv_maxai", false, true, 2.0f);
 
     // Fast Rounds button
-    Menu_DrawButton(7, &gamesettings_menu, &gamesettings_menu_buttons[6], "FAST ROUNDS", "Minimize Time between Rounds.");
+    Menu_DrawButton(7, 6, "FAST ROUNDS", "Minimize Time between Rounds.", Menu_GameSettings_ApplyFastRounds);
     Menu_DrawOptionButton(7, fast_string);
 
     // Back button
-    Menu_DrawButton(11.5, &gamesettings_menu, &gamesettings_menu_buttons[7], "BACK", "Return to Pre-Game Menu.");
-}
-
-void Menu_GameSettings_Key (int key)
-{
-    switch (key) {
-        case K_RIGHTARROW:
-            Menu_GameSettings_ApplySliders(MENU_SLIDER_RIGHT);
-            break;
-
-        case K_LEFTARROW:
-            Menu_GameSettings_ApplySliders(MENU_SLIDER_LEFT);
-            break;
-    }
-
-    Menu_KeyInput(key, &gamesettings_menu);
+    Menu_DrawButton(11.5, 7, "BACK", "Return to Pre-Game Menu.", Menu_Lobby_Set);
 }
