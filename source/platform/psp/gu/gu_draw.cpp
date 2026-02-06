@@ -725,19 +725,19 @@ void Draw_SubPic (int x, int y, int pic, float s, float t, float coord_size, flo
 
 	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
 
-	vertices[0].u		= s;
-	vertices[0].v		= t;
+	vertices[0].u = (s * glt.width);
+	vertices[0].v = (t * glt.height);
 
-	vertices[0].x		= x;
-	vertices[0].y		= y;
-	vertices[0].z		= 0;
+	vertices[0].x = x;
+	vertices[0].y = y;
+	vertices[0].z = 0;
 
-	vertices[1].u 		= s+coord_size;
-	vertices[1].v 		= t+coord_size;
+	vertices[1].u = ((s + coord_size) * glt.width);
+	vertices[1].v = ((t + coord_size) * glt.height);
 
-	vertices[1].x		= x + glt.original_width;
-	vertices[1].y		= y + glt.original_height;
-	vertices[1].z		= 0;
+	vertices[1].x = x + (glt.original_width  * scale);
+	vertices[1].y = y + (glt.original_height * scale);
+	vertices[1].z = 0;
 
 	sceGuColor(GU_RGBA(
 		static_cast<unsigned int>(r),
