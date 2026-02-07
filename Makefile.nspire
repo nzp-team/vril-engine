@@ -21,7 +21,7 @@ endif
 GCCFLAGS += -Wno-missing-field-initializers
 
 VRILFLAGS := -DNO_SOUND_PROCESSING -DSOFTWARE_RENDERER -DFILE_SPECIAL_SUFFIX="\".tns\"" -DPLATFORM_DIRECTORY="nspire" -DPLATFORM_RENDERER="cpu" -DMAX_AI_COUNT=5
-GCCFLAGS += $(VRILFLAGS) -O2 -DOLD_SCREEN_API -fomit-frame-pointer -D__NSPIRE__
+GCCFLAGS += $(VRILFLAGS) -O2 -DOLD_SCREEN_API -fomit-frame-pointer -D__NSPIRE__ -DPLATFORM_GAMEFILES_IN_PAK
 
 COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/chase.c \
@@ -71,7 +71,6 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/menu/menu_controls.c \
 		source/menu/menu_accessibility.c \
 		source/menu/menu_pause.c \
-		source/menu/menu_start.c \
 		source/menu/menu_stubs.c \
 		source/menu/menu_loadscreen.c \
 		source/platform/nspire/platform_menu.c \

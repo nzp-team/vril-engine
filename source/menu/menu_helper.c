@@ -620,7 +620,7 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 	}
 
 	button_name = custom_maps[index].map_name_pretty;
-	if (!button_name) {
+	if (button_name == NULL) {
 		button_name = custom_maps[index].map_name;
 	}
 
