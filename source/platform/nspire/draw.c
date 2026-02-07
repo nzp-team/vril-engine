@@ -636,7 +636,7 @@ Draw_StretchPic
 void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
 {
 	// naievil -- TODO: implement stretching?
-	//Draw_Pic(x, y, pic);
+	Draw_Pic(x, y, pic);
 }
 
 /*
@@ -676,10 +676,10 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 
 void Draw_MenuPanningPic (int x, int y, int pic, int x_value, int y_value, float time)
 {
-	//Draw_TransPic (x, y, pic);
+	Draw_TransPic (x, y, pic);
 }
 
-void Draw_SubPic (int x, int y, int pic, float s, float t, float coord_size, float scale, float r, float g , float b, float a)
+void Draw_SubPic (int x, int y, int pic, float s, float t, float s_coord_size, float t_coord_size, float scale, float r, float g , float b, float a)
 {
 	//Draw_TransPic (x, y, pic);
 }
