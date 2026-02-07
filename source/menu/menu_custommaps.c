@@ -48,16 +48,95 @@ int maps_start_position = 0;
 #define MAX_MAP_PER_PAGE 8
 #define MAP_DESC_LINES 8
 
-char 	game_directory[MAX_OSPATH];
-char	settings_path[MAX_OSPATH*2];
+#ifdef PLATFORM_GAMEFILES_IN_PAK
+typedef struct {
+    char id[4];          // "PACK"
+    int  dirofs;         // offset to directory
+    int  dirlen;         // length of directory
+} pakheader_t;
+
+typedef struct {
+    char name[56];       // file path (e.g. "maps/ndu.bsp")
+    int  filepos;        // offset to file data
+    int  filelen;        // length of file data
+} pakentry_t;
+
+typedef struct {
+    FILE *fp;
+    pakentry_t *entries;
+    int num_entries;
+    int index;
+} PakDir;
+
+PakDir *Pak_Open(const char *pakpath)
+{
+    pakheader_t hdr;
+    PakDir *p = malloc(sizeof(PakDir));
+    if (!p) return NULL;
+
+    memset(p, 0, sizeof(*p));
+
+    p->fp = fopen(pakpath, "rb");
+    if (!p->fp) {
+        free(p);
+        return NULL;
+    }
+
+    fread(&hdr, sizeof(hdr), 1, p->fp);
+    if (memcmp(hdr.id, "PACK", 4) != 0) {
+        fclose(p->fp);
+        free(p);
+        return NULL;
+    }
+
+    p->num_entries = hdr.dirlen / sizeof(pakentry_t);
+    p->entries = malloc(hdr.dirlen);
+
+    fseek(p->fp, hdr.dirofs, SEEK_SET);
+    fread(p->entries, sizeof(pakentry_t), p->num_entries, p->fp);
+
+    p->index = 0;
+    return p;
+}
+
+void Pak_Close(PakDir *p)
+{
+    if (!p) return;
+    fclose(p->fp);
+    free(p->entries);
+    free(p);
+}
+
+int Pak_ReadMap(PakDir *p, char *out_name, size_t out_size)
+{
+    while (p->index < p->num_entries) {
+        pakentry_t *e = &p->entries[p->index++];
+        
+        if (strncmp(e->name, "maps/", 5) != 0) {
+			continue;
+		}
+
+        if ((!strcmp(COM_FileExtension(e->name),"bsp")) || 
+			(!strcmp(COM_FileExtension(e->name),"BSP"))) {
+
+			// strip "maps/"
+			const char *filename = e->name + 5;
+			strlcpy(out_name, filename, out_size);
+			return 1;
+		}
+    }
+    return 0;
+}
+
+#endif
 
 typedef struct GlobalDir {
 #ifdef __PSP__
-    SceUID dir;
+    SceUID 		dir;
     SceIoDirent dirent;
 #else
-    DIR *dir;
-	struct 	dirent *dp;
+    DIR 		*dir;
+	struct 		dirent *dp;
 #endif
 } GlobalDir;
 
@@ -132,17 +211,89 @@ void Menu_CustomMaps_AllocStrings (void)
 	}
 }
 
+void Menu_CustomMaps_AddMap (char *map_name)
+{
+	// definitions for map setting values
+	char settings_line[MAX_QPATH];
+	char settings_path[MAX_OSPATH*2];
+	int total_settings_lines = 0;
+
+	// We found a map
+	// Explicitly clear fields to be safe
+	memset(&custom_maps[num_user_maps], 0, sizeof(usermap_t));
+	// Allocate space for strings
+	Menu_CustomMaps_AllocStrings();
+	// Copy over the map name
+	snprintf(custom_maps[num_user_maps].map_name, MAX_QPATH, "%s", map_name);
+
+	// Map is occupied
+	custom_maps[num_user_maps].occupied = true;
+
+	// Set setting path to read 
+	snprintf(settings_path, MAX_OSPATH*2, "maps/%s.txt", map_name);
+
+	// Open map settings file and load into custom_maps
+	FILE *settings_file;
+	if(COM_FOpenFile(settings_path, &settings_file) != -1) {
+		while ((fgets(settings_line, sizeof(settings_line), settings_file) != NULL) && total_settings_lines < MAX_SETTINGS_LINES) {
+			strip_newline (settings_line);
+			switch (total_settings_lines) {
+				// Map Name
+				case 0:
+					snprintf(custom_maps[num_user_maps].map_name_pretty, MAX_QPATH, "%s", settings_line);
+					break;
+				// Map desc lines
+				case 1 ... 8:
+					snprintf(custom_maps[num_user_maps].map_desc[total_settings_lines-1], MAX_QPATH, "%s", settings_line);
+					break;
+				case 9:
+					snprintf(custom_maps[num_user_maps].map_author, MAX_QPATH, "%s", settings_line);
+					break;
+				// Map uses thumbnail value
+				case 10:			
+					custom_maps[num_user_maps].map_use_thumbnail = atoi(settings_line);
+					break;
+				// Game settings allowed value
+				case 11:
+					custom_maps[num_user_maps].map_allow_game_settings = atoi(settings_line);
+					break;
+				default:
+					Con_DPrintf("Menu_CustomMaps_MapFinder: map %s has incorrect setting file formatting\n", map_name);
+					break;
+				}
+			total_settings_lines++;
+		}
+		fclose(settings_file);
+	} else {
+		// No settings file
+		// set the pretty map name for menu drawing
+		// and zero out the rest of memory
+		snprintf(custom_maps[num_user_maps].map_name_pretty, MAX_QPATH, "%s", map_name);
+		for (int i = 0; i < MAP_DESC_LINES; i++) {
+			custom_maps[num_user_maps].map_desc[i][0] = '\0';
+		}
+		custom_maps[num_user_maps].map_author[0] = '\0';
+		custom_maps[num_user_maps].map_use_thumbnail = 0;
+		custom_maps[num_user_maps].map_allow_game_settings = 0;
+	}
+	// Set the thumbnail path for loadscreens
+	if (custom_maps[num_user_maps].map_use_thumbnail) {
+		snprintf(custom_maps[num_user_maps].map_thumbnail_path, MAX_OSPATH+MAX_QPATH, "gfx/menu/custom/%s", map_name);
+	} else {
+		custom_maps[num_user_maps].map_thumbnail_path[0] = '\0';
+	}
+	// Increment total custom maps amount
+	num_user_maps++;
+}
+
 void Menu_CustomMaps_MapFinder (void)
 {
-#ifdef __NSPIRE__
-	return;
-#endif
-	GlobalDir *dir = Dir_Open (va("%s/maps", com_gamedir));
 	char 	d_name[MAX_QPATH];
 	char	map_name[MAX_QPATH];
-	
-	// Set the directory
-	snprintf(game_directory, MAX_OSPATH, va("%s/maps", com_gamedir));
+
+#ifndef PLATFORM_GAMEFILES_IN_PAK
+	// File structure is loose folders
+	GlobalDir *dir = Dir_Open (va("%s/maps", com_gamedir));
 
 	if (!dir) {
 		Sys_Error ("MapFinder was unable to open game directory");
@@ -150,88 +301,40 @@ void Menu_CustomMaps_MapFinder (void)
 
 	// Open the directory
 	while (Dir_Read(dir, d_name, sizeof(d_name))) {
-		if ((!strcmp(COM_FileExtension(d_name),"bsp")) || (!strcmp(COM_FileExtension(d_name),"BSP"))) {
-			// definitions for map setting values
-			char settings_line[MAX_QPATH];
-			int total_settings_lines = 0;
-
+		if ((!strcmp(COM_FileExtension(d_name),"bsp")) || 
+			(!strcmp(COM_FileExtension(d_name),"BSP"))) {
 			// Max amount of custom maps is reached
 			if (num_user_maps >= MAX_CUSTOMMAPS) {
 				Sys_Error("Too many custom maps (max %d)\n", MAX_CUSTOMMAPS);
 				break;
 			}
 
-			// We found a map
-			// Allocate space for strings
-			memset(&custom_maps[num_user_maps], 0, sizeof(usermap_t));
-			Menu_CustomMaps_AllocStrings();
-
-			// Map is occupied
-			custom_maps[num_user_maps].occupied = true;
-
 			// Set map name
 			COM_StripExtension(d_name, map_name);
 			strtolower(map_name);
-			snprintf(custom_maps[num_user_maps].map_name, MAX_QPATH, "%s", map_name);
 
-			// Set setting path to read 
-			snprintf(settings_path, MAX_OSPATH*2, "%s/maps/%s.txt", com_gamedir, map_name);
-			// Open map settings file and load into custom_maps
-			FILE *settings_file;
-			settings_file = fopen(settings_path, "r");
-			if (settings_file != NULL) {
-				while ((fgets(settings_line, sizeof(settings_line), settings_file) != NULL) && total_settings_lines < MAX_SETTINGS_LINES) {
-					strip_newline (settings_line);
-					switch (total_settings_lines) {
-						// Map Name
-						case 0:
-							snprintf(custom_maps[num_user_maps].map_name_pretty, MAX_QPATH, "%s", settings_line);
-							break;
-						// Map desc lines
-						case 1 ... 8:
-							snprintf(custom_maps[num_user_maps].map_desc[total_settings_lines-1], MAX_QPATH, "%s", settings_line);
-							break;
-						case 9:
-							snprintf(custom_maps[num_user_maps].map_author, MAX_QPATH, "%s", settings_line);
-							break;
-						// Map uses thumbnail value
-						case 10:			
-							custom_maps[num_user_maps].map_use_thumbnail = atoi(settings_line);
-							break;
-						// Game settings allowed value
-						case 11:
-							custom_maps[num_user_maps].map_allow_game_settings = atoi(settings_line);
-							break;
-						default:
-							Con_DPrintf("Menu_CustomMaps_MapFinder: map %s has incorrect setting file formatting\n", map_name);
-							break;
-						}
-					total_settings_lines++;
-				}
-				fclose(settings_file);
-			} else {
-				// No settings file
-				// set the pretty map name for menu drawing
-				// and zero out the rest of memory
-				snprintf(custom_maps[num_user_maps].map_name_pretty, MAX_QPATH, "%s", map_name);
-				for (int i = 0; i < MAP_DESC_LINES; i++) {
-					custom_maps[num_user_maps].map_desc[i] = "";
-				}
-				custom_maps[num_user_maps].map_author = "";
-				custom_maps[num_user_maps].map_use_thumbnail = 0;
-				custom_maps[num_user_maps].map_allow_game_settings = 0;
-			}
-			// Set the thumbnail path for loadscreens
-			if (custom_maps[num_user_maps].map_use_thumbnail) {
-				snprintf(custom_maps[num_user_maps].map_thumbnail_path, MAX_OSPATH+MAX_QPATH, "gfx/menu/custom/%s", map_name);
-			} else {
-				custom_maps[num_user_maps].map_thumbnail_path[0] = '\0';
-			}
-			// Increment total custom maps amount
-			num_user_maps++;
+			// Add the map to our custom_maps[] struct
+			Menu_CustomMaps_AddMap(map_name);
 		}
 	}
 	Dir_Close(dir); // Close the handle (pointer)
+#else
+	// Parse the pak file and find maps
+	char pakfile[MAX_OSPATH];
+	snprintf (pakfile, MAX_OSPATH+MAX_QPATH, "%s/%snzp.pak%s", com_gamedir, FILE_SPECIAL_PREFIX, FILE_SPECIAL_SUFFIX);
+	//snprintf (pakfile, MAX_OSPATH+MAX_QPATH, "%s/nzp.pak", com_gamedir);
+
+	PakDir *pak = Pak_Open(pakfile);
+    if (pak) {
+        while (Pak_ReadMap(pak, d_name, sizeof(d_name))) {
+			COM_StripExtension(d_name, map_name);
+			strtolower(map_name);
+
+            Menu_CustomMaps_AddMap(map_name);
+        }
+        Pak_Close(pak);
+    }
+#endif
 	custom_map_pages = (int)ceil((double)(num_user_maps)/8);
 }
 
