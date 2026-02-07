@@ -61,18 +61,9 @@ void Menu_ResetMenuButtons (void)
 	};
 }
 
-void Menu_Init (void)
+void Menu_SetVersionString (void)
 {
-	Menu_ResetMenuButtons();
-
-	Cmd_AddCommand ("togglemenu", Menu_ToggleMenu_f);
-
-	// TODO - Achievements WIP
-	//Menu_Achievements_Set();
-	Menu_CustomMaps_MapFinder();
-
-	menu_changetime = 0;
-
+#ifndef PLATFORM_GAMEFILES_IN_PAK
 	// Snag the game version
 	long length;
 	FILE* f = fopen(va("%s/version.txt", com_gamedir), "rb");
@@ -92,6 +83,44 @@ void Menu_Init (void)
 	} else {
 		game_build_date = "version.txt not found.";
 	}
+#else
+/*
+	FILE *f = NULL;
+	int length = COM_FOpenFile("version.txt", &f);
+
+	if (f && length > 0)
+	{
+		char line[256];
+		int remaining = length;
+		game_build_date = malloc(sizeof(line));
+
+		while (remaining > 0 && fgets(line, sizeof(line), f))
+		{
+			int len = strlen(line);
+			remaining -= len;
+
+			game_build_date = line;
+		}
+
+		fclose(f);
+	}
+*/
+#endif
+}
+
+void Menu_Init (void)
+{
+	Menu_ResetMenuButtons();
+
+	Menu_SetVersionString();
+
+	Cmd_AddCommand ("togglemenu", Menu_ToggleMenu_f);
+
+	// TODO - Achievements WIP
+	//Menu_Achievements_Set();
+	Menu_CustomMaps_MapFinder();
+
+	menu_changetime = 0;
 }
 
 
