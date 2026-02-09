@@ -37,7 +37,7 @@ void Menu_Main_Set (qboolean init)
 {
 	Menu_LoadPics();
 	Menu_ResetMenuButtons();
-	Menu_StartSound(MENU_SND_ENTER);
+	Menu_SetSound(MENU_SND_ENTER);
 
 	if (init) {
 		Menu_DictateScaleFactor();

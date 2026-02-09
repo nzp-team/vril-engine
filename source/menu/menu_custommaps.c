@@ -371,14 +371,14 @@ void Menu_CustomMaps_StartMap (void)
 void Menu_CustomMaps_NextPage (void)
 {
 	Menu_ResetMenuButtons();
-    Menu_StartSound(MENU_SND_ENTER);
+    Menu_SetSound(MENU_SND_ENTER);
     user_maps_page++;
 }
 
 void Menu_CustomMaps_PrevPage (void)
 {
 	Menu_ResetMenuButtons();
-    Menu_StartSound(MENU_SND_ENTER);
+    Menu_SetSound(MENU_SND_ENTER);
     user_maps_page--;
 }
 

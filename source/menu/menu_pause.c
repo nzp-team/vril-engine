@@ -32,7 +32,7 @@ void Menu_Pause_EnterSubMenu(void)
 {
 	menu_paus_submenu = current_menu.cursor;
 	Menu_ResetMenuButtons();
-    Menu_StartSound(MENU_SND_ENTER);
+    Menu_SetSound(MENU_SND_ENTER);
 }
 
 void Menu_Pause_Yes(void)
@@ -45,6 +45,7 @@ void Menu_Pause_Yes(void)
 		PR_ExecuteProgram (pr_global_struct->Soft_Restart);
 	} else if (menu_paus_submenu == 3) {
 		menu_paus_submenu = 0;
+		Cbuf_AddText("disconnect\n");
 		Menu_Main_Set(false);
 	}
 
@@ -64,7 +65,7 @@ Menu_Pause_Set
 void Menu_Pause_Set (void)
 {
 	Menu_ResetMenuButtons();
-	Menu_StartSound(MENU_SND_ENTER);
+	Menu_SetSound(MENU_SND_ENTER);
 
 	menu_paus_submenu = 0;
 	loadingScreen = 0;

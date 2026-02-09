@@ -1,15 +1,29 @@
-///////////////////////////
-///////////////////////////
-///////////////////////////
+/*
+Copyright (C) 2025-2026 NZ:P Team
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+
+See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+*/
 // ===========
 // Menu state
 // ===========
-extern int m_state;
-
+extern int 				m_state;
 #define	m_none			0
 #define	m_start			1
 #define	m_main			2
-#define	m_pause		3
+#define	m_pause			3
 #define	m_stockmaps 	4
 #define	m_custommaps	5
 #define m_lobby			6
@@ -51,6 +65,25 @@ typedef struct menu_s {
 	int				slider_pressed;
 } menu_t;
 
+// Definitions for dynamic menu scaling.
+// menu is based on a resolution of 640x360 (16:9)
+// since that's the standard for compatibility
+// across all aspect ratios and resolutions.
+// then we appropriately scale per device
+#define	STD_UI_WIDTH							640
+#define	STD_UI_HEIGHT 							360
+
+#define UI_ANCHOR_CENTER        				0
+#define UI_ANCHOR_TOPLEFT       				1
+#define UI_ANCHOR_TOPRIGHT      				2
+#define UI_ANCHOR_BOTTOMLEFT    				3
+#define UI_ANCHOR_BOTTOMRIGHT   				4
+
+#define UI_FLIPTEXTPOS							1
+
+extern float            menu_text_scale_factor;
+
+
 // Curent menu state and buttons are stored here
 // when m_state is flipped, the respective menu "Set"
 // function will clear the structs. They are then rebuilt
@@ -59,9 +92,6 @@ extern menu_t			current_menu;
 extern menu_button_t	current_menu_buttons[MAX_MENU_BUTTONS];
 
 extern qboolean	        m_recursiveDraw;
-
-// Menu scale factor set per platform
-extern float            menu_scale_factor;
 
 #define                 MENU_SND_NAVIGATE   	0
 #define                 MENU_SND_ENTER      	1
@@ -170,7 +200,6 @@ extern cvar_t 			sv_headshotonly;
 extern cvar_t 			sv_maxai;
 extern cvar_t 			sv_fastrounds;
 
-
 /*
 ===========================================================================
 ===========================================================================
@@ -179,11 +208,28 @@ FUNCTION DEFINES
 ===========================================================================
 */
 
+void UI_Align (int *x, int *y, int width, int height, int UI_ANCHOR);
+float UI_X(float x);
+float UI_Y(float y);
+float UI_W(float w);
+float UI_H(float h);
 void strip_newline(char *s);
 char* strtolower(char* s);
+char* strtoupper(char* s);
+void Menu_SetSound (int type);
+void Menu_InitUIScale (void);
+int Menu_GetActiveMenuButtons (void);
+void Menu_IncreaseCursor (void);
+void Menu_DecreaseCursor (void);
+void Menu_ButtonPress (void);
+void Menu_IncrementSlider (int dir);
+qboolean Menu_IsButtonHovered (int button_index);
+void Menu_ResetMenuButtons (void);
+void Menu_KeyInput (int key);
+
 void Menu_DictateScaleFactor(void);
 void Menu_LoadPics (void);
-void Menu_StartSound (int type);
+void Menu_SetSound (int type);
 image_t Menu_PickBackground (void);
 void Menu_DrawTextCentered (int x, int y, char* text, int r, int g, int b, int a);
 void Menu_InitStockMaps (void);
@@ -208,9 +254,6 @@ void Menu_Preload_Custom_Images (void);
 void Menu_DrawLoadingFill(void);
 void Menu_DrawSubMenu (char *line_one, char *line_two);
 
-void Menu_ResetMenuButtons (void);
-void Menu_KeyInput (int key);
-
 void Menu_StockMaps_Set (void);
 void Menu_Pause_Set(void);
 void Menu_Keys_Set(void);
@@ -227,23 +270,6 @@ void Menu_Video_Set (void);
 void Menu_Audio_Set (void);
 void Menu_Controls_Set (void);
 void Menu_Accessibility_Set (void);
-
-void Menu_Main_Draw(void);
-void Menu_Pause_Draw(void);
-void Menu_Main_Draw(void);
-void Menu_StockMaps_Draw(void);
-void Menu_Keys_Draw(void);
-void Menu_Video_Draw(void);
-void Menu_Credits_Draw(void);
-void Menu_GameOptions_Draw(void);
-void Menu_CustomMaps_Draw(void);
-void Menu_Lobby_Draw(void);
-void Menu_GameSettings_Draw (void);
-void Menu_Configuration_Draw (void);
-void Menu_Video_Draw (void);
-void Menu_Audio_Draw (void);
-void Menu_Controls_Draw (void);
-void Menu_Accessibility_Draw (void);
 
 // Platform specifics
 void Platform_Menu_MapFinder(void);
