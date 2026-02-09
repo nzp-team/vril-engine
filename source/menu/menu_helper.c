@@ -18,9 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "../nzportable_def.h"
 #include "menu_defs.h"
-#include <assert.h>
 
-float   		menu_scale_factor;
+float   		menu_text_scale_factor;
 
 qboolean		menu_is_solo;
 
@@ -32,77 +31,6 @@ int 			small_bar_height;
 
 int 			num_stock_maps;
 char*			current_selected_bsp;
-
-StockMaps 		stock_maps[8] = {
-	[0] = { .bsp_name = "ndu", .category = MAP_CATEGORY_WAW, .array_index = 0 },
-	[1] = { .bsp_name = "nzp_warehouse2", .category = MAP_CATEGORY_NZP, .array_index = 0 },
-	[2] = { .bsp_name = "nzp_xmas2", .category = MAP_CATEGORY_NZP, .array_index = 0 },
-	[3] = { .bsp_name = "nzp_warehouse", .category = MAP_CATEGORY_NZPBETA, .array_index = 0 },
-	[4] = { .bsp_name = "christmas_special", .category = MAP_CATEGORY_NZPBETA, .array_index = 0 },
-	[5] = { .bsp_name = "lexi_house", .category = MAP_CATEGORY_BLACKOPSDS, .array_index = 0 },
-	[6] = { .bsp_name = "lexi_temple", .category = MAP_CATEGORY_BLACKOPSDS, .array_index = 0 },
-	[7] = { .bsp_name = "lexi_overlook", .category = MAP_CATEGORY_BLACKOPSDS, .array_index = 0 }
-};
-
-void strip_newline(char *s)
-{
-    s[strcspn(s, "\r\n")] = '\0';
-}
-
-// Lower string
-char* strtolower(char* s) 
-{
-	assert(s != NULL);
-
-	char* p = s;
-	while (*p != '\0') {
-		*p = tolower(*p);
-		p++;
-	}
-
-	return s;
-}
-
-// Upper string
-char* strtoupper(char* s) 
-{
-	assert(s != NULL);
-
-	char* p = s;
-	while (*p != '\0') {
-		*p = toupper(*p);
-		p++;
-	}
-
-	return s;
-}
-
-/*
-===============
-Menu_DictateScaleFactor
-===============
-*/
-void Menu_DictateScaleFactor(void)
-{
-	// Platform-dictated text scale.
-#ifdef __NSPIRE__
-	menu_scale_factor = 1.0f;
-#elif __PSP__
-	menu_scale_factor = 1.0f;
-#elif __vita__
-	menu_scale_factor = 2.0f;
-#elif __3DS__
-	menu_scale_factor = 1.0f;
-#else
-	menu_scale_factor = 1.0f;
-#endif // __NSPIRE__, __PSP__, __vita__, __3DS__
-
-	CHAR_WIDTH = 8*menu_scale_factor;
-	CHAR_HEIGHT = 8*menu_scale_factor;
-
-	big_bar_height = vid.height/9;
-	small_bar_height = vid.height/64;
-}
 
 /*
 ======================
@@ -119,26 +47,30 @@ void Menu_LoadPics ()
 }
 
 /*
-======================
-Menu_StartSound
-======================
+===============
+Menu_DictateScaleFactor
+===============
 */
-void Menu_StartSound (int type)
+void Menu_DictateScaleFactor(void)
 {
-    switch (type) {
-        case MENU_SND_NAVIGATE:
-            S_LocalSound ("sounds/menu/navigate.wav");
-            break;
-        case MENU_SND_ENTER:
-            S_LocalSound ("sounds/menu/enter.wav");
-            break;
-        case MENU_SND_BEEP:
-            S_LocalSound ("sounds/misc/talk2.wav");
-            break;
-        default:
-            Con_Printf("Unsupported menu sound\n");
-            break;
-    }
+	// Platform-dictated text scale.
+#ifdef __NSPIRE__
+	menu_text_scale_factor = 1.0f;
+#elif __PSP__
+	menu_text_scale_factor = 1.0f;
+#elif __vita__
+	menu_text_scale_factor = 2.0f;
+#elif __3DS__
+	menu_text_scale_factor = 1.0f;
+#else
+	menu_text_scale_factor = 1.0f;
+#endif // __NSPIRE__, __PSP__, __vita__, __3DS__
+
+	CHAR_WIDTH = 8*menu_text_scale_factor;
+	CHAR_HEIGHT = 8*menu_text_scale_factor;
+
+	big_bar_height = STD_UI_HEIGHT/9;
+	small_bar_height = STD_UI_HEIGHT/64;
 }
 
 image_t Menu_PickBackground (void)
@@ -149,13 +81,6 @@ image_t Menu_PickBackground (void)
 	int i = (rand() % num_custom_images);
 
     return (image_t)menu_usermap_image[i];
-}
-
-void Menu_DrawTextCentered (int x, int y, char* text, int r, int g, int b, int a)
-{
-	int x_pos = x - (getTextWidth(text, menu_scale_factor)/2);
-
-	Draw_ColoredString (x_pos, y, text, r, g, b, a, menu_scale_factor);
 }
 
 void Menu_InitStockMaps (void)
@@ -220,6 +145,7 @@ void Map_SetDefaultValues (void)
 void Menu_LoadMap (char *selected_map)
 {
 	int i;
+	char map_command[32];
 
 	for (i = 0; i < num_user_maps; i++) {
 		if (!strcmp(selected_map, custom_maps[i].map_name)) 
@@ -230,109 +156,12 @@ void Menu_LoadMap (char *selected_map)
     map_loadname_pretty = custom_maps[i].map_name_pretty;
 
 	key_dest = key_game;
-	if (sv.active)
+	if (sv.active) {
 		Cbuf_AddText ("disconnect\n");
-	Cbuf_AddText ("maxplayers 1\n");
-	Cbuf_AddText (va("map %s\n", map_loadname));
+	}
+	snprintf (map_command, sizeof(map_command), "map %s\n", map_loadname);
+	Cbuf_AddText (map_command);
 	loadingScreen = 1;
-}
-
-int Menu_GetActiveMenuButtons (void)
-{
-	int num_active_buttons = 0;
-
-	for (int i = 0; i < MAX_MENU_BUTTONS; i++) {
-		if (current_menu.button[i].enabled) {
-			num_active_buttons++;
-		}
-	}
-
-	return num_active_buttons;
-}
-
-void Menu_IncreaseCursor (void)
-{
-	int current_active_buttons = Menu_GetActiveMenuButtons();
-
-	Menu_StartSound(MENU_SND_NAVIGATE);
-
-	if (--current_menu.cursor < 0) {
-		current_menu.cursor = current_active_buttons-1;
-	}
-}
-
-void Menu_DecreaseCursor (void)
-{
-	int current_active_buttons = Menu_GetActiveMenuButtons();
-
-	Menu_StartSound(MENU_SND_NAVIGATE);
-
-	if (++current_menu.cursor >= current_active_buttons) {
-		current_menu.cursor = 0;
-	}
-}
-
-void Menu_ButtonPress (void)
-{
-	for (int i = 0; i < MAX_MENU_BUTTONS; i++) {
-		if (!current_menu.button[i].enabled) {
-			break;
-		}
-
-		if (current_menu.cursor == i) {
-			if (current_menu.button[i].on_activate != NULL) {
-				Menu_StartSound(MENU_SND_ENTER);
-				current_menu.button[i].on_activate();
-				break;
-			}
-		}
-	}
-}
-
-void Menu_IncrementSlider (int dir)
-{
-	for (int i = 0; i < MAX_MENU_BUTTONS; i++) {
-		if (!current_menu.button[i].enabled) {
-			break;
-		}
-
-		if (current_menu.cursor == i) {
-			Menu_StartSound(MENU_SND_NAVIGATE);
-			if (dir == K_LEFTARROW) {
-				current_menu.slider_pressed = -1;
-			} else if (dir == K_RIGHTARROW) {
-				current_menu.slider_pressed = 1;
-			}
-			break;
-		}
-	}
-}
-
-void Menu_KeyInput (int key)
-{
-	switch (key)
-	{
-	case K_DOWNARROW:
-		Menu_DecreaseCursor();
-		break;
-
-	case K_UPARROW:
-		Menu_IncreaseCursor();
-		break;
-
-	case K_LEFTARROW:
-		Menu_IncrementSlider(key);
-		break;
-
-	case K_RIGHTARROW:
-		Menu_IncrementSlider(key);
-		break;
-
-	case K_ENTER:
-	case K_AUX1:
-		Menu_ButtonPress();
-		break;
-	}
 }
 
 void Menu_SetOptionCvar (cvar_t option, char *option_string, int min_option_value, int max_option_value, int increment_amount)
@@ -353,15 +182,6 @@ void Menu_SetOptionCvar (cvar_t option, char *option_string, int min_option_valu
 	current_menu.slider_pressed = 0;
 }
 
-qboolean Menu_IsButtonHovered (int button_index)
-{
-	if (button_index == current_menu.cursor) {
-		return true;
-	}
-
-	return false;
-}
-
 void Menu_BuildMenuButtons (int button_index, char *button_name, void *on_activate)
 {
 	// Button is currently inactive,
@@ -377,6 +197,210 @@ void Menu_BuildMenuButtons (int button_index, char *button_name, void *on_activa
 		// unless menu state is undergoing a change
 		return;
 	}
+}
+
+void Menu_DrawFill (int x, int y, int width, int height, int r, int g, int b, int a, int UI_ANCHOR)
+{
+	UI_Align (&x, &y, width, height, UI_ANCHOR);
+
+	float x_value = UI_X((float)x);
+	float y_value = UI_Y((float)y);
+	float width_value = UI_W((float)width);
+	float height_value = UI_H((float)height);
+
+	Draw_FillByColor ((int)x_value, (int)y_value, (int)width_value, (int)height_value, r, g, b, a);
+}
+
+void Menu_DrawString (int x, int y, char* string, int r, int g, int b, int a, float scale, int UI_ANCHOR, int FLIP_TEXT_POS)
+{
+	UI_Align (&x, &y, 0, 0, UI_ANCHOR);
+
+	float x_value = UI_X((float)x);
+	float y_value = UI_Y((float)y);
+
+	if (FLIP_TEXT_POS) {
+		x_value = x_value - getTextWidth(string, menu_text_scale_factor);
+	}
+
+	Draw_ColoredString ((int)x_value, (int)y_value, string, r, g, b, a, scale);
+}
+
+void Menu_DrawStringCentered (int x, int y, char* text, int r, int g, int b, int a)
+{
+	UI_Align (&x, &y, 0, 0, UI_ANCHOR_TOPLEFT);
+
+	float x_value = UI_X((float)x);
+	float y_value = UI_Y((float)y);
+
+	x_value = x_value - (getTextWidth(text, menu_text_scale_factor)/2);
+
+	Draw_ColoredString (x, y, text, r, g, b, a, menu_text_scale_factor);
+}
+
+void Menu_DrawPic (int x, int y, int index, int width, int height, int UI_ANCHOR)
+{
+	float x_value = UI_X((float)x);
+	float y_value = UI_Y((float)y);
+	float width_value = UI_W((float)width);
+	float height_value = UI_H((float)height);
+
+	Draw_StretchPic((int)x_value, (int)y_value, index, (int)width_value, (int)height_value);
+}
+
+void Menu_DrawSubPic (int x, int y, int pic, float s, float t, float s_coord_size, float t_coord_size, float scale, float r, float g , float b, float a)
+{
+	if (pic > 0) {
+		Draw_SubPic(x, y, pic, s, t, s_coord_size, t_coord_size, scale, r, g, b, a);
+	}
+}
+
+/*
+======================
+Menu_DrawDivider
+======================
+*/
+void Menu_DrawDivider (int order)
+{
+	int y_factor = (STD_UI_HEIGHT/16);
+	int y_pos = ((STD_UI_HEIGHT/8) + (order*y_factor)) - (CHAR_HEIGHT/2);
+	int x_length = STD_UI_WIDTH/3;
+	int y_length = STD_UI_HEIGHT/144;
+
+	Menu_DrawFill(0, y_pos, x_length, y_length, 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
+}
+
+void Menu_DrawSocialBadge (int order, int which)
+{
+	int y_factor = (vid.height/16);
+	int y_pos = (vid.height/2) + (vid.width/36) + (order*y_factor);
+	int x_pos = vid.width - (vid.width/20);
+	float coord_size = 0.5f;
+	float scale = 0.25f;
+	float s = 0;
+	float t = 0;
+
+	switch (which) {
+		case MENU_SOC_DOCS:
+			s = 0;
+			t = 0;
+			break;
+
+		case MENU_SOC_YOUTUBE:
+			s = 0.5;
+			t = 0;
+			break;
+
+		case MENU_SOC_BLUESKY:
+			s = 0;
+			t = 0.5;
+			break;
+
+		case MENU_SOC_PATREON:
+			s = 0.5;
+			t = 0.5;
+			break;
+	}
+
+	Menu_DrawSubPic (x_pos, y_pos, menu_social, s, t, coord_size, coord_size, scale, 255, 255, 255, 255);
+}
+
+/*
+======================
+Menu_DrawTitle
+======================
+*/
+void Menu_DrawTitle (char *title_name, int color)
+{
+	int x_pos = vid.width/64;
+	int y_pos = vid.height/24;
+
+	switch (color) {
+		case MENU_COLOR_WHITE:
+			Draw_ColoredString (x_pos, y_pos, title_name, 255, 255, 255, 255, menu_text_scale_factor*2);
+			break;
+		case MENU_COLOR_YELLOW:
+			Draw_ColoredString (x_pos, y_pos, title_name, 255, 255, 0, 255, menu_text_scale_factor*2);
+			break;
+	}
+}
+
+/*
+======================
+Menu_DrawSelectionBox
+======================
+*/
+void Menu_DrawSelectionBox (int x_pos, int y_pos, int UI_ANCHOR)
+{
+	int horizontal_border_height = (STD_UI_HEIGHT/144);
+	int vertical_border_width = (STD_UI_WIDTH/256);
+	int border_height = (horizontal_border_height*2) + (CHAR_HEIGHT);
+	int border_width = (STD_UI_WIDTH/3) + vertical_border_width;
+
+	// Draw selection box
+	// Done in 4 parts
+	// Back(ground)
+	Menu_DrawFill (0, y_pos - horizontal_border_height, border_width, border_height + (horizontal_border_height*2), 0, 0, 0, 86, UI_ANCHOR);
+	// Top
+	Menu_DrawFill (0, y_pos - (horizontal_border_height*2), border_width, horizontal_border_height, 255, 0, 0, 255, UI_ANCHOR);
+	// Bottom
+	Menu_DrawFill (0, y_pos + border_height, border_width, horizontal_border_height, 255, 0, 0, 255, UI_ANCHOR);
+	// Side
+	Menu_DrawFill (border_width, y_pos - (horizontal_border_height*2), vertical_border_width, border_height + (horizontal_border_height*3), 255, 0, 0, 255, UI_ANCHOR);
+}
+
+/*
+======================
+Menu_DrawMapBorder
+======================
+*/
+void Menu_DrawMapBorder (int x_pos, int y_pos, int image_width, int image_height, int UI_ANCHOR)
+{
+	int border_side_width = (STD_UI_WIDTH/144)/2;
+
+	// Top
+	Menu_DrawFill (x_pos, y_pos, image_width+border_side_width, small_bar_height/2, 130, 130, 130, 255, UI_ANCHOR);
+	// Left Side
+	Menu_DrawFill (x_pos, y_pos, border_side_width, image_height, 130, 130, 130, 255, UI_ANCHOR);
+	// Right Side
+	Menu_DrawFill (x_pos+image_width, y_pos, border_side_width, image_height, 130, 130, 130, 255, UI_ANCHOR);
+	// Bottom
+	Menu_DrawFill (x_pos, y_pos+image_height, image_width+border_side_width, small_bar_height/2, 130, 130, 130, 255, UI_ANCHOR);
+}
+
+
+/*
+======================
+Menu_DrawMapPanel
+======================
+*/
+void Menu_DrawMapPanel (void)
+{
+	int x_pos = (STD_UI_WIDTH/3);
+	int y_pos = big_bar_height + small_bar_height;
+
+	// Big box
+	Menu_DrawFill(x_pos, y_pos, STD_UI_WIDTH - x_pos, STD_UI_HEIGHT - (y_pos*2), 0, 0, 0, 120, UI_ANCHOR_TOPRIGHT);
+	// Yellow bar
+	Menu_DrawFill(x_pos, y_pos, (STD_UI_WIDTH/136), STD_UI_HEIGHT - (y_pos*2), 255, 255, 0, 200, UI_ANCHOR_TOPRIGHT);
+}
+
+void Menu_DrawSubMenu (char *line_one, char *line_two)
+{
+	int y_pos = (vid.height/3);
+
+	// Dark red background
+    Menu_DrawFill (0, 0, vid.width, vid.height, 255, 0, 0, 20, UI_ANCHOR_TOPLEFT);
+    // Black background box
+    Menu_DrawFill (0, vid.height/3, vid.width, vid.height/3, 0, 0, 0, 255, UI_ANCHOR_TOPLEFT);
+    // Top yellow line
+    Menu_DrawFill (0, (vid.height/3)-small_bar_height, vid.width, small_bar_height, 255, 255, 0, 255, UI_ANCHOR_TOPLEFT);
+    // Bottom yellow line
+    Menu_DrawFill (0, vid.height-(vid.height/3), vid.width, small_bar_height, 255, 255, 0, 255, UI_ANCHOR_TOPLEFT);
+
+	// Quit/Restart Text
+    Menu_DrawStringCentered (vid.width/2, y_pos+CHAR_HEIGHT, line_one, 255, 255, 255, 255);
+    // Lose progress text
+    Menu_DrawStringCentered (vid.width/2, y_pos+(CHAR_HEIGHT*2), line_two, 255, 255, 255, 255);
 }
 
 /*
@@ -427,116 +451,12 @@ void Menu_DrawCustomBackground (qboolean draw_images)
 	}
 
 	// Top Bars
-	Draw_FillByColor(0, 0, vid.width, big_bar_height, 0, 0, 0, 228);
-	Draw_FillByColor(0, big_bar_height, vid.width, small_bar_height, 130, 130, 130, 255);
+	Menu_DrawFill(0, 0, STD_UI_WIDTH, big_bar_height, 0, 0, 0, 228, UI_ANCHOR_TOPLEFT);
+	Menu_DrawFill(0, big_bar_height, STD_UI_WIDTH, small_bar_height, 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
 
 	// Bottom Bars
-	Draw_FillByColor(0, (vid.height - big_bar_height), vid.width, big_bar_height, 0, 0, 0, 228);
-	Draw_FillByColor(0, (vid.height - big_bar_height) - small_bar_height, vid.width, small_bar_height, 130, 130, 130, 255);
-}
-
-void Menu_DrawSubPic (int x, int y, int pic, float s, float t, float s_coord_size, float t_coord_size, float scale, float r, float g , float b, float a)
-{
-	if (pic > 0) {
-		Draw_SubPic(x, y, pic, s, t, s_coord_size, t_coord_size, scale, r, g, b, a);
-	}
-}
-
-void Menu_DrawSocialBadge (int order, int which)
-{
-	int y_factor = (vid.height/16);
-	int y_pos = (vid.height/2) + (vid.width/36) + (order*y_factor);
-	int x_pos = vid.width - (vid.width/20);
-	float coord_size = 0.5f;
-	float scale = 0.25f;
-	float s = 0;
-	float t = 0;
-
-	switch (which) {
-		case MENU_SOC_DOCS:
-			s = 0;
-			t = 0;
-			break;
-
-		case MENU_SOC_YOUTUBE:
-			s = 0.5;
-			t = 0;
-			break;
-
-		case MENU_SOC_BLUESKY:
-			s = 0;
-			t = 0.5;
-			break;
-
-		case MENU_SOC_PATREON:
-			s = 0.5;
-			t = 0.5;
-			break;
-	}
-
-	Menu_DrawSubPic (x_pos, y_pos, menu_social, s, t, coord_size, coord_size, scale, 255, 255, 255, 255);
-}
-
-/*
-======================
-Menu_DrawTitle
-======================
-*/
-void Menu_DrawTitle (char *title_name, int color)
-{
-	int x_pos = vid.width/64;
-	int y_pos = vid.height/24;
-
-	switch (color) {
-		case MENU_COLOR_WHITE:
-			Draw_ColoredString (x_pos, y_pos, title_name, 255, 255, 255, 255, menu_scale_factor*2);
-			break;
-		case MENU_COLOR_YELLOW:
-			Draw_ColoredString (x_pos, y_pos, title_name, 255, 255, 0, 255, menu_scale_factor*2);
-			break;
-	}
-}
-
-/*
-======================
-Menu_DrawSelectionBox
-======================
-*/
-void Menu_DrawSelectionBox (int x_pos, int y_pos)
-{
-	int border_width = (vid.height/144);
-	int x_length = (vid.width/3) + border_width;
-	int border_height_offset = (vid.height/96);
-
-	// Draw selection box
-	// Done in 4 parts
-	// Back(ground)
-	Draw_FillByColor (0, y_pos - border_height_offset, x_length, border_width, 255, 0, 0, 255);
-	// Top
-	Draw_FillByColor (0, y_pos - border_height_offset, x_length, (border_height_offset*2) + CHAR_HEIGHT + border_width, 0, 0, 0, 86);
-	// Bottom
-	Draw_FillByColor (0, (y_pos + (border_height_offset*2)) + (CHAR_HEIGHT/2), x_length, border_width, 255, 0, 0, 255);
-	// Side
-	Draw_FillByColor (x_length, (y_pos - (CHAR_HEIGHT/2)) + (border_height_offset), border_width, border_height_offset + CHAR_HEIGHT + border_width, 255, 0, 0, 255);
-}
-
-/*
-======================
-Menu_DrawMapBorder
-======================
-*/
-void Menu_DrawMapBorder (int x_pos, int y_pos, int image_width, int image_height)
-{
-	int border_side_width = (vid.width/144)/2;
-
-	// Top
-	Draw_FillByColor (x_pos, y_pos, image_width+border_side_width, small_bar_height/2, 130, 130, 130, 255);
-	// Left Side
-	Draw_FillByColor (x_pos, y_pos, border_side_width, image_height, 130, 130, 130, 255);
-	// Right Side
-	Draw_FillByColor (x_pos+image_width, y_pos, border_side_width, image_height, 130, 130, 130, 255);
-	// Bottom
-	Draw_FillByColor (x_pos, y_pos+image_height, image_width+border_side_width, small_bar_height/2, 130, 130, 130, 255);
+	Menu_DrawFill(0, (STD_UI_HEIGHT - big_bar_height), STD_UI_WIDTH, big_bar_height, 0, 0, 0, 228, UI_ANCHOR_TOPLEFT);
+	Menu_DrawFill(0, (STD_UI_HEIGHT - big_bar_height) - small_bar_height, STD_UI_WIDTH, small_bar_height, 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
 }
 
 /*
@@ -546,9 +466,9 @@ Menu_DrawButton
 */
 void Menu_DrawButton (int order, int button_index, char* button_name, char* button_summary, void *on_activate)
 {
-	int y_factor = (vid.height/16);
-	int x_pos = (vid.width/3) - getTextWidth(button_name, menu_scale_factor); 
-	int y_pos = (vid.height/8) + (order*y_factor);
+	int y_factor = (STD_UI_HEIGHT/16);
+	int x_pos = (STD_UI_WIDTH/3);
+	int y_pos = (STD_UI_HEIGHT/8) + (order*y_factor);
 
 	// Button is currently inactive,
 	// so set its' attributes
@@ -562,16 +482,16 @@ void Menu_DrawButton (int order, int button_index, char* button_name, char* butt
 		// Make button red and add a box around it
 
 		// Draw selection box
-		Menu_DrawSelectionBox (x_pos, y_pos);
+		Menu_DrawSelectionBox (x_pos, y_pos, UI_ANCHOR_TOPLEFT);
 
 		// Draw button string
-		Draw_ColoredString (x_pos, y_pos, button_name, 255, 0, 0, 255, menu_scale_factor);
+		Menu_DrawString (x_pos, y_pos, button_name, 255, 0, 0, 255, menu_text_scale_factor, UI_ANCHOR_TOPLEFT, UI_FLIPTEXTPOS);
 
 		// Draw the bottom screen text for selected button 
-		Draw_ColoredStringCentered (vid.height - (vid.height/12), button_summary, 255, 255, 255, 255, menu_scale_factor);
+		Draw_ColoredStringCentered (vid.height - (vid.height/12), button_summary, 255, 255, 255, 255, menu_text_scale_factor);
 	} else {
 		// Not hovering over button
-		Draw_ColoredString (x_pos, y_pos, button_name, 255, 255, 255, 255, menu_scale_factor);
+		Menu_DrawString (x_pos, y_pos, button_name, 255, 255, 255, 255, menu_text_scale_factor, UI_ANCHOR_TOPLEFT, UI_FLIPTEXTPOS);
 	}
 }
 
@@ -582,11 +502,11 @@ Menu_DrawGreyButton
 */
 void Menu_DrawGreyButton (int order, char* button_name)
 {
-	int y_factor = (vid.height/16);
-	int x_pos = (vid.width/3) - getTextWidth(button_name, menu_scale_factor); 
-	int y_pos = (vid.height/8) + (order*y_factor);
+	int y_factor = (STD_UI_HEIGHT/16);
+	int x_pos = (STD_UI_WIDTH/3); 
+	int y_pos = (STD_UI_HEIGHT/8) + (order*y_factor);
 
-	Draw_ColoredString (x_pos, y_pos, button_name, 128, 128, 128, 255, menu_scale_factor);
+	Menu_DrawString (x_pos, y_pos, button_name, 128, 128, 128, 255, menu_text_scale_factor, UI_ANCHOR_TOPLEFT, UI_FLIPTEXTPOS);
 }
 
 /*
@@ -600,13 +520,13 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 	int index = 0;
 	char *button_name;
 	char *final_name;
-	int desc_y_factor = (vid.height/24);
+	int desc_y_factor = (STD_UI_HEIGHT/24);
 
-	int image_width = (vid.width/3);
-	int image_height = (vid.height/3);
+	int image_width = (STD_UI_WIDTH/3);
+	int image_height = (STD_UI_HEIGHT/3);
 
-	int x_pos = ((vid.width/3)+(vid.width/36)) + (image_width/2);
-	int y_pos = (vid.height/5)-(vid.height/24);
+	int x_pos = ((STD_UI_WIDTH/3)+(STD_UI_WIDTH/36)) + (image_width/2);
+	int y_pos = (STD_UI_HEIGHT/5)-(STD_UI_HEIGHT/24);
 
 	// if this is a stock map
 	if (usermap_index < 0) {
@@ -638,10 +558,10 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 
 	if (Menu_IsButtonHovered(button_index)) {
 		// Draw map thumbnail picture
-		Draw_StretchPic (x_pos, y_pos, menu_usermap_image[index], image_width, image_height);
+		Menu_DrawPic (x_pos, y_pos, menu_usermap_image[index], image_width, image_height, UI_ANCHOR_TOPRIGHT);
 
 		// Draw border around map image
-		Menu_DrawMapBorder (x_pos, y_pos, image_width, image_height);
+		Menu_DrawMapBorder (x_pos, y_pos, image_width, image_height, UI_ANCHOR_TOPRIGHT);
 
 		// Draw Map Badge
 		char *badge_name = NULL;
@@ -649,7 +569,7 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 		float t_coord_size = 0.5f;
 		float s = 0;
 		float t = 0;
-		float scale = (0.175f*menu_scale_factor);
+		float scale = (0.175f*menu_text_scale_factor);
 		// Get width/height of the menu badges image
 		// hard-coded until there's a global way to 
 		// get image dimensions
@@ -664,39 +584,39 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 			case MAP_CATEGORY_USER: s = 0.5; t = 0; badge_name = "USERMAP"; break;
 		}
 
-		Draw_ColoredString(x_pos + ((vid.width/144)*1.5) + menu_badges_width, y_pos + image_height - (menu_badges_height/2) - (CHAR_HEIGHT/2), badge_name, 255, 255, 0, 255, menu_scale_factor);
-		Menu_DrawSubPic(x_pos + (vid.width/144), y_pos + image_height - menu_badges_height, menu_badges, s, t, s_coord_size, t_coord_size, scale, 255, 255, 255, 255);
+		Menu_DrawString(x_pos + ((STD_UI_WIDTH/144)*1.5) + menu_badges_width, y_pos + image_height - (menu_badges_height/2) - (CHAR_HEIGHT/2), badge_name, 255, 255, 0, 255, menu_text_scale_factor, UI_ANCHOR_TOPRIGHT, 0);
+		Menu_DrawSubPic(x_pos + (STD_UI_WIDTH/144), y_pos + image_height - menu_badges_height, menu_badges, s, t, s_coord_size, t_coord_size, scale, 255, 255, 255, 255);
 
 		// Draw map description
 		for (int j = 0; j < 8; j++) {
-			Menu_DrawTextCentered (x_pos + (vid.width/6), (y_pos + image_height + (small_bar_height*2)) + j*desc_y_factor, custom_maps[index].map_desc[j], 255, 255, 255, 255);
+			Menu_DrawStringCentered (x_pos + (STD_UI_WIDTH/6), (y_pos + image_height + (small_bar_height*2)) + j*desc_y_factor, custom_maps[index].map_desc[j], 255, 255, 255, 255);
 		}
 
 		// Draw map author
 		if (custom_maps[index].map_author != NULL) {
-			Draw_ColoredStringCentered (vid.height - (vid.height/24), custom_maps[index].map_author, 255, 255, 0, 255, menu_scale_factor);
+			Draw_ColoredStringCentered (STD_UI_HEIGHT - (STD_UI_HEIGHT/24), custom_maps[index].map_author, 255, 255, 0, 255, menu_text_scale_factor);
 		}
 	}
 }
 
 void Menu_DrawOptionButton(int order, char* selection_name)
 {
-	int y_factor = (vid.height/16);
-	int x_pos = (vid.width/3) + (vid.width/16); 
-	int y_pos = (vid.height/8) + (order*y_factor);
+	int y_factor = (STD_UI_WIDTH/16);
+	int x_pos = (STD_UI_WIDTH/3) + (STD_UI_WIDTH/16); 
+	int y_pos = (STD_UI_HEIGHT/8) + (order*y_factor);
 
-	Draw_ColoredString(x_pos, y_pos, selection_name, 255, 255, 255, 255, menu_scale_factor);
+	Draw_ColoredString(x_pos, y_pos, selection_name, 255, 255, 255, 255, menu_text_scale_factor);
 }
 
 void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, int max_option_value, cvar_t option, char* _option_string, qboolean zero_to_one, qboolean draw_option_string, float increment_amount)
 {
-	int y_factor = (vid.height/16);
-	int x_pos = (vid.width/3) + (vid.width/16); 
-	int y_pos = (vid.height/8) + (order*y_factor);
-	int slider_box_width = (vid.width/4);
-	int slider_box_height = (vid.height/48);
+	int y_factor = (STD_UI_HEIGHT/16);
+	int x_pos = (STD_UI_WIDTH/3) + (STD_UI_WIDTH/16); 
+	int y_pos = (STD_UI_HEIGHT/8) + (order*y_factor);
+	int slider_box_width = (STD_UI_WIDTH/4);
+	int slider_box_height = (STD_UI_HEIGHT/48);
 
-	int slider_width = (vid.width/128);
+	int slider_width = (STD_UI_WIDTH/128);
 
 	if (Menu_IsButtonHovered(button_index)) {
 		Menu_SetOptionCvar(option, _option_string, min_option_value, max_option_value, increment_amount);
@@ -714,32 +634,13 @@ void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, in
 	float current_option = option.value;
 	float option_pos = (current_option - min_option_value)/(max_option_value - min_option_value);
 	// Slider box
-	Draw_FillByColor(x_pos, y_pos, slider_box_width, slider_box_height, 255, 160, 160, 255);
+	Menu_DrawFill(x_pos, y_pos, slider_box_width, slider_box_height, 255, 160, 160, 255, UI_ANCHOR_TOPLEFT);
 	// Selection box
-	Draw_FillByColor((x_pos+(option_pos*slider_box_width)) - slider_width, y_pos-(vid.height/64), slider_width, slider_box_height+((vid.height/64)*2), 255, 255, 255, 255);
+	Menu_DrawFill((x_pos+(option_pos*slider_box_width)) - slider_width, y_pos-(STD_UI_HEIGHT/64), slider_width, slider_box_height+((STD_UI_HEIGHT/64)*2), 255, 255, 255, 255, UI_ANCHOR_TOPLEFT);
 	// Cvar value string
 	if (draw_option_string) {
-		Draw_ColoredString(x_pos + slider_box_width + (vid.width/96), y_pos, option_string, 255, 255, 255, 255, menu_scale_factor);
+		Draw_ColoredString(x_pos + slider_box_width + (STD_UI_WIDTH/96), y_pos, option_string, 255, 255, 255, 255, menu_text_scale_factor);
 	}
-}
-
-void Menu_DrawSubMenu (char *line_one, char *line_two)
-{
-	int y_pos = (vid.height/3);
-
-	// Dark red background
-    Draw_FillByColor (0, 0, vid.width, vid.height, 255, 0, 0, 20);
-    // Black background box
-    Draw_FillByColor (0, vid.height/3, vid.width, vid.height/3, 0, 0, 0, 255);
-    // Top yellow line
-    Draw_FillByColor (0, (vid.height/3)-small_bar_height, vid.width, small_bar_height, 255, 255, 0, 255);
-    // Bottom yellow line
-    Draw_FillByColor (0, vid.height-(vid.height/3), vid.width, small_bar_height, 255, 255, 0, 255);
-
-	// Quit/Restart Text
-    Menu_DrawTextCentered (vid.width/2, y_pos+CHAR_HEIGHT, line_one, 255, 255, 255, 255);
-    // Lose progress text
-    Menu_DrawTextCentered (vid.width/2, y_pos+(CHAR_HEIGHT*2), line_two, 255, 255, 255, 255);
 }
 
 /*
@@ -752,20 +653,20 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 	int texnum;
 	int	i;
 
-	int image_width = (vid.width/3.5);
-	int image_height = (vid.height/3.5);
+	int image_width = (STD_UI_WIDTH/3.5);
+	int image_height = (STD_UI_HEIGHT/3.5);
 
-	int image_x_pos = (vid.width/2) + (vid.width/28);
-	int image_y_pos = (vid.height) - (big_bar_height + small_bar_height) - (image_height) - (vid.height/96);
+	int image_x_pos = (STD_UI_WIDTH/2) + (STD_UI_WIDTH/28);
+	int image_y_pos = (STD_UI_HEIGHT) - (big_bar_height + small_bar_height) - (image_height) - (STD_UI_HEIGHT/96);
 
-	int left_column_x = (vid.width/3) + (vid.width/5);
-	int left_column_y = (vid.height/6);
+	int left_column_x = (STD_UI_WIDTH/3) + (STD_UI_WIDTH/5);
+	int left_column_y = (STD_UI_HEIGHT/6);
 
 	int y_offset = CHAR_HEIGHT;
-	int y_newline = (vid.height/10);
-	int x_newline = (vid.width/4);
+	int y_newline = (STD_UI_HEIGHT/10);
+	int x_newline = (STD_UI_WIDTH/4);
 
-	int line_x = (vid.width/3) + (vid.width/8.5);
+	int line_x = (STD_UI_WIDTH/3) + (STD_UI_WIDTH/8.5);
 
 	texnum = Menu_GetMapImage (bsp_name);
 
@@ -778,45 +679,45 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 	Draw_StretchPic (image_x_pos, image_y_pos, texnum, image_width, image_height);
 
 	// Draw border around map image
-	Menu_DrawMapBorder (image_x_pos, image_y_pos, image_width, image_height);
+	Menu_DrawMapBorder (image_x_pos, image_y_pos, image_width, image_height, UI_ANCHOR_TOPRIGHT);
 
 	// Game Mode
-	Menu_DrawTextCentered (left_column_x, left_column_y, "Game Mode", 255, 255, 255, 255);
-	Menu_DrawTextCentered (left_column_x, left_column_y + y_offset, info_gamemode, 255, 255, 0, 255);
-	Draw_FillByColor (line_x, left_column_y + (y_offset*2), (vid.width/6), (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawStringCentered (left_column_x, left_column_y, "Game Mode", 255, 255, 255, 255);
+	Menu_DrawStringCentered (left_column_x, left_column_y + y_offset, info_gamemode, 255, 255, 0, 255);
+	Menu_DrawFill (line_x, left_column_y + (y_offset*2), (STD_UI_WIDTH/6), (small_bar_height/3), 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
 
 	// Difficulty
-	Menu_DrawTextCentered (left_column_x + x_newline, left_column_y, "Difficulty", 255, 255, 255, 255);
-	Menu_DrawTextCentered (left_column_x + x_newline, left_column_y + y_offset, info_difficulty, 255, 255, 0, 255);
-	Draw_FillByColor (line_x + x_newline, left_column_y + (y_offset*2), (vid.width/6), (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y, "Difficulty", 255, 255, 255, 255);
+	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y + y_offset, info_difficulty, 255, 255, 0, 255);
+	Menu_DrawFill (line_x + x_newline, left_column_y + (y_offset*2), (STD_UI_WIDTH/6), (small_bar_height/3), 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
 
 	// Start Round
-	Menu_DrawTextCentered (left_column_x, left_column_y + y_newline, "Start Round", 255, 255, 255, 255);
-	Menu_DrawTextCentered (left_column_x, left_column_y + y_offset + y_newline, info_startround, 255, 255, 0, 255);
-	Draw_FillByColor (line_x , left_column_y + (y_offset*2) + y_newline, (vid.width/6), (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawStringCentered (left_column_x, left_column_y + y_newline, "Start Round", 255, 255, 255, 255);
+	Menu_DrawStringCentered (left_column_x, left_column_y + y_offset + y_newline, info_startround, 255, 255, 0, 255);
+	Menu_DrawFill (line_x , left_column_y + (y_offset*2) + y_newline, (STD_UI_WIDTH/6), (small_bar_height/3), 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
 
 	// Magic
-	Menu_DrawTextCentered (left_column_x + x_newline, left_column_y + y_newline, "Magic", 255, 255, 255, 255);
-	Menu_DrawTextCentered (left_column_x + x_newline, left_column_y + y_offset + y_newline, info_magic, 255, 255, 0, 255);
-	Draw_FillByColor (line_x + x_newline, left_column_y + (y_offset*2) + y_newline, (vid.width/6), (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y + y_newline, "Magic", 255, 255, 255, 255);
+	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y + y_offset + y_newline, info_magic, 255, 255, 0, 255);
+	Menu_DrawFill (line_x + x_newline, left_column_y + (y_offset*2) + y_newline, (STD_UI_WIDTH/6), (small_bar_height/3), 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
 
 	// Headshots Only
-	Menu_DrawTextCentered (left_column_x, left_column_y + (y_newline*2), "Headshots Only", 255, 255, 255, 255);
-	Menu_DrawTextCentered (left_column_x, left_column_y + y_offset + (y_newline*2), info_headshotonly, 255, 255, 0, 255);
-	Draw_FillByColor (line_x, left_column_y + (y_offset*2) + (y_newline*2), (vid.width/6), (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawStringCentered (left_column_x, left_column_y + (y_newline*2), "Headshots Only", 255, 255, 255, 255);
+	Menu_DrawStringCentered (left_column_x, left_column_y + y_offset + (y_newline*2), info_headshotonly, 255, 255, 0, 255);
+	Menu_DrawFill (line_x, left_column_y + (y_offset*2) + (y_newline*2), (STD_UI_WIDTH/6), (small_bar_height/3), 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
 
 	// Horde Size
-	Menu_DrawTextCentered (left_column_x + x_newline, left_column_y + (y_newline*2), "Horde Size", 255, 255, 255, 255);
-	Menu_DrawTextCentered (left_column_x + x_newline, left_column_y + y_offset + (y_newline*2), info_hordesize, 255, 255, 0, 255);
-	Draw_FillByColor (line_x + x_newline, left_column_y + (y_offset*2) + (y_newline*2), (vid.width/6), (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y + (y_newline*2), "Horde Size", 255, 255, 255, 255);
+	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y + y_offset + (y_newline*2), info_hordesize, 255, 255, 0, 255);
+	Menu_DrawFill (line_x + x_newline, left_column_y + (y_offset*2) + (y_newline*2), (STD_UI_WIDTH/6), (small_bar_height/3), 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
 
 	// Fast Rounds
-	Menu_DrawTextCentered (left_column_x, left_column_y + (y_newline*3), "Fast Rounds", 255, 255, 255, 255);
-	Menu_DrawTextCentered (left_column_x, left_column_y + y_offset + (y_newline*3), info_fastrounds, 255, 255, 0, 255);
-	Draw_FillByColor (line_x, left_column_y + (y_offset*2) + (y_newline*3), (vid.width/6), (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawStringCentered (left_column_x, left_column_y + (y_newline*3), "Fast Rounds", 255, 255, 255, 255);
+	Menu_DrawStringCentered (left_column_x, left_column_y + y_offset + (y_newline*3), info_fastrounds, 255, 255, 0, 255);
+	Menu_DrawFill (line_x, left_column_y + (y_offset*2) + (y_newline*3), (STD_UI_WIDTH/6), (small_bar_height/3), 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
 
 	// Map Name (Pretty)
-	Menu_DrawTextCentered (image_x_pos + (image_width/2), image_y_pos + image_height - (small_bar_height) - (vid.height/32), custom_maps[i].map_name_pretty, 255, 255, 0, 255);
+	Menu_DrawStringCentered (image_x_pos + (image_width/2), image_y_pos + image_height - (small_bar_height) - (STD_UI_HEIGHT/32), custom_maps[i].map_name_pretty, 255, 255, 0, 255);
 }
 
 /*
@@ -832,38 +733,7 @@ void Menu_DrawBuildDate (void)
 	int y_offset = vid.height/24;
 
 	// Build date/information
-	Draw_ColoredString((vid.width - getTextWidth(game_build_date, menu_scale_factor)), y_pos, game_build_date, 255, 255, 255, 255, menu_scale_factor);
+	Menu_DrawString(STD_UI_WIDTH, y_pos, game_build_date, 255, 255, 255, 255, menu_text_scale_factor, UI_ANCHOR_TOPLEFT, UI_FLIPTEXTPOS);
 	// Welcome text
-	Draw_ColoredString((vid.width - getTextWidth(welcome_text, menu_scale_factor)), y_pos + y_offset, welcome_text, 255, 255, 0, 255, menu_scale_factor);
-}
-
-/*
-======================
-Menu_DrawDivider
-======================
-*/
-void Menu_DrawDivider (int order)
-{
-	int y_factor = (vid.height/16);
-	int y_pos = ((vid.height/8) + (order*y_factor)) - (CHAR_HEIGHT/2);
-	int x_length = (vid.width/3);
-	int y_length = (vid.height/144);
-
-	Draw_FillByColor(0, y_pos, x_length, y_length, 130, 130, 130, 255);
-}
-
-/*
-======================
-Menu_DrawMapPanel
-======================
-*/
-void Menu_DrawMapPanel (void)
-{
-	int x_pos = (vid.width/3) + (vid.width/36);
-	int y_pos = big_bar_height + small_bar_height;
-
-	// Big box
-	Draw_FillByColor(x_pos, y_pos, vid.width - x_pos, vid.height - (y_pos*2), 0, 0, 0, 120);
-	// Yellow bar
-	Draw_FillByColor(x_pos, y_pos, (vid.width/136), vid.height - (y_pos*2), 255, 255, 0, 200);
+	Menu_DrawString(STD_UI_WIDTH, y_pos + y_offset, welcome_text, 255, 255, 0, 255, menu_text_scale_factor, UI_ANCHOR_TOPLEFT, UI_FLIPTEXTPOS);
 }

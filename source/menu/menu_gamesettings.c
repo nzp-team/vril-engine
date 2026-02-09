@@ -37,10 +37,10 @@ char*           hordesize_string;
 void Menu_GameSettings_AllocStrings (void)
 {
     gamemode_description = malloc(128*sizeof(char));
-    gamemode_string = malloc(16*sizeof(char));
+    gamemode_string = malloc(32*sizeof(char));
 
     difficulty_description = malloc(128*sizeof(char));
-    difficulty_string = malloc(16*sizeof(char));
+    difficulty_string = malloc(32*sizeof(char));
 
     startround_string = malloc(16*sizeof(char));
     magic_string = malloc(16*sizeof(char));

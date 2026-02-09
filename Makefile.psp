@@ -60,6 +60,7 @@ COMMON_OBJS = \
 	source/keys.o \
 	source/mathlib.o \
 	source/matrixlib.o \
+	source/menu/menu_sys.o \
 	source/menu/menu.o \
 	source/menu/menu_custommaps.o \
 	source/menu/menu_helper.o \

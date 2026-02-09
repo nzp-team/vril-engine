@@ -19,6 +19,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../nzportable_def.h"
 #include "menu_defs.h"
 
+void Menu_Main_Draw(void);
+void Menu_Pause_Draw(void);
+void Menu_Main_Draw(void);
+void Menu_StockMaps_Draw(void);
+void Menu_Keys_Draw(void);
+void Menu_Video_Draw(void);
+void Menu_Credits_Draw(void);
+void Menu_GameOptions_Draw(void);
+void Menu_CustomMaps_Draw(void);
+void Menu_Lobby_Draw(void);
+void Menu_GameSettings_Draw (void);
+void Menu_Configuration_Draw (void);
+void Menu_Video_Draw (void);
+void Menu_Audio_Draw (void);
+void Menu_Controls_Draw (void);
+void Menu_Accessibility_Draw (void);
+
 menu_t			current_menu;
 menu_button_t	current_menu_buttons[MAX_MENU_BUTTONS];
 
@@ -72,6 +89,7 @@ void Menu_SetVersionString (void)
 		fseek (f, 0, SEEK_END);
 		length = ftell (f);
 		fseek (f, 0, SEEK_SET);
+
 		game_build_date = malloc(length*sizeof(char));
 
 		if (game_build_date) {
@@ -81,35 +99,36 @@ void Menu_SetVersionString (void)
 		
 		fclose (f);
 	} else {
+		game_build_date = malloc(24*sizeof(char));
 		game_build_date = "version.txt not found.";
 	}
 #else
-/*
 	FILE *f = NULL;
+	char version_text_path[32];
 	int length = COM_FOpenFile("version.txt", &f);
-
-	if (f && length > 0)
-	{
-		char line[256];
-		int remaining = length;
+	if (length != -1) {
+		char line[32];
 		game_build_date = malloc(sizeof(line));
 
-		while (remaining > 0 && fgets(line, sizeof(line), f))
-		{
-			int len = strlen(line);
-			remaining -= len;
-
-			game_build_date = line;
+		if (game_build_date) {
+			while (fgets(line, sizeof(line), f) != NULL) {
+				strip_newline (line);
+				game_build_date = line;
+			}
 		}
-
 		fclose(f);
+	} else {
+		game_build_date = malloc(24*sizeof(char));
+		game_build_date = "version.txt not found.";
 	}
-*/
+
 #endif
 }
 
 void Menu_Init (void)
 {
+	Menu_InitUIScale();
+
 	Menu_ResetMenuButtons();
 
 	Menu_SetVersionString();

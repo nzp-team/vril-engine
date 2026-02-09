@@ -79,7 +79,7 @@ void Menu_DrawLoadScreen (void)
 		}
 
 		if (key_dest == key_game) {
-			Draw_ColoredStringCentered((vid.height - (vid.height/24)), loadinglinetext, 255, 255, 255, 255, menu_scale_factor);
+			Draw_ColoredStringCentered((vid.height - (vid.height/24)), loadinglinetext, 255, 255, 255, 255, menu_text_scale_factor);
 		}
 	}
 }

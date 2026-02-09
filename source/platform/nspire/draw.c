@@ -162,6 +162,7 @@ void InitKerningMap(void)
 	}
 
 	// naievil -- Cannot use fopen because it is in a pak
+	
     byte *data;
     data = COM_LoadTempFile("gfx/kerning_map.txt");
     if (!data) {
@@ -691,6 +692,8 @@ Draw_TransPic
 */
 void Draw_TransPic (int x, int y, int pic)
 {
+	return;
+
 	byte	*dest, *source, tbyte;
 	unsigned short	*pusdest;
 	int				v, u;
@@ -772,6 +775,8 @@ Draw_AdvancedPic
 */
 void Draw_AdvancedPic (int x, int y, int pic, unsigned char alpha, unsigned char palette_hack)
 {
+	return;
+
 	byte	*dest, *source, tbyte;
 	unsigned short	*pusdest;
 	int				v, u;

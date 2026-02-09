@@ -90,6 +90,7 @@ COMMON_OBJS =	system.o \
 				keys.c \
 				mathlib.c \
 				matrixlib.c \
+				menu/menu_sys.c \
 				menu/menu.c \
 				menu/menu_custommaps.c \
 				menu/menu_helper.c \
