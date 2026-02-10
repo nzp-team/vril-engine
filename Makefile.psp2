@@ -31,7 +31,23 @@ COMMON_OBJS =	\
 	source/keys.o \
 	source/mathlib.o \
 	source/matrixlib.o \
-	source/platform/psp2/menu.o \
+	source/menu/menu_sys.o \
+	source/menu/menu.o \
+	source/menu/menu_custommaps.o \
+	source/menu/menu_helper.o \
+	source/menu/menu_main.o \
+	source/menu/menu_stockmaps.o \
+	source/menu/menu_lobby.o \
+	source/menu/menu_gamesettings.o \
+	source/menu/menu_configuration.o \
+	source/menu/menu_video.o \
+	source/menu/menu_audio.o \
+	source/menu/menu_controls.o \
+	source/menu/menu_accessibility.o \
+	source/menu/menu_pause.o \
+	source/menu/menu_stubs.o \
+	source/menu/menu_loadscreen.o \
+	source/platform/psp2/platform_menu.o \
 	source/platform/psp2/net_dgrm.o \
 	source/net_loop.o \
 	source/platform/psp2/net_main.o \
@@ -103,7 +119,8 @@ CFLAGS  = -fsigned-char -Wl,-q -O3 -g -fno-optimize-sibling-calls \
 	-ffast-math -mtune=cortex-a9 -mfpu=neon \
 	-DGLQUAKE -DHAVE_OGGVORBIS -DHAVE_MPG123 -DHAVE_LIBSPEEXDSP \
 	-DUSE_AUDIO_RESAMPLER -DHAVE_STRLCAT -DGIT_VERSION=\"$(GIT_VERSION)\" \
-	-DPLATFORM_DIRECTORY="psp2" -DPLATFORM_RENDERER="vgl" -DMAX_AI_COUNT=24
+	-DPLATFORM_DIRECTORY="psp2" -DPLATFORM_RENDERER="vgl" -DMAX_AI_COUNT=24 \
+	-D__PSP2__
 
 ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror

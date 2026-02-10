@@ -54,6 +54,8 @@ char*			game_build_date;
 
 qboolean		m_recursiveDraw;
 
+qboolean 		loading_init;
+
 // Current menu state
 int 			m_state;
 
@@ -76,6 +78,18 @@ void Menu_ResetMenuButtons (void)
 		.cursor = 0,
 		.slider_pressed = 0
 	};
+}
+
+char *loading_string;
+void Menu_DrawInitLoadScreen (void)
+{
+	if (loading_init == true) {
+		loading_string = "please wait...";
+
+		Menu_DrawFill (0, 0, STD_UI_WIDTH, STD_UI_WIDTH, 0, 0, 0, 255, UI_ANCHOR_TOPLEFT);
+
+		Menu_DrawString ((STD_UI_WIDTH/2), STD_UI_HEIGHT/2, loading_string, 255, 255, 255, 255, menu_text_scale_factor*2, UI_ANCHOR_TOPLEFT, 0);
+	}
 }
 
 void Menu_SetVersionString (void)
@@ -103,6 +117,7 @@ void Menu_SetVersionString (void)
 		game_build_date = "version.txt not found.";
 	}
 #else
+/*
 	FILE *f = NULL;
 	char version_text_path[32];
 	int length = COM_FOpenFile("version.txt", &f);
@@ -118,15 +133,19 @@ void Menu_SetVersionString (void)
 		}
 		fclose(f);
 	} else {
+	*/
 		game_build_date = malloc(24*sizeof(char));
 		game_build_date = "version.txt not found.";
-	}
+	//}
 
 #endif
 }
 
 void Menu_Init (void)
 {
+	loading_string = malloc(16*(sizeof(char)));
+	loading_init = true;
+
 	Menu_InitUIScale();
 
 	Menu_ResetMenuButtons();
@@ -140,11 +159,17 @@ void Menu_Init (void)
 	Menu_CustomMaps_MapFinder();
 
 	menu_changetime = 0;
+
+	loading_init = false;
 }
 
 
 void Menu_Draw (void)
 {
+	if (loading_init == true) {
+		Menu_DrawInitLoadScreen();
+	}
+
 	if (m_state == m_none || (key_dest != key_menu && key_dest != key_menu_pause))
 		return;
 

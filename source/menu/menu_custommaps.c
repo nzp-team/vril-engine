@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspkernel.h>
 #include <psputility.h>
 #include <pspiofilemgr.h>
+#elif __PSP2__
+#include <dirent.h>
 #else
 #include <sys/dirent.h>
 #endif
@@ -359,7 +361,7 @@ void Menu_Preload_Custom_Images(void)
 	}
 }
 
-void Menu_CustomMaps_StartMap (void)
+void Menu_CustomMaps_SetMap (void)
 {
 	int map_index = maps_start_position + current_menu.cursor;
 
@@ -423,7 +425,7 @@ void Menu_CustomMaps_Draw (void)
 
 	for (i = maps_start_position; i < maps_start_position + maps_on_page; i++) {
 		int menu_position = (i + 1) - (user_maps_page * MAX_MAP_PER_PAGE);
-		Menu_DrawMapButton(menu_position, custommap_items, i, MAP_CATEGORY_USER, custom_maps[i].map_name, Menu_CustomMaps_StartMap);
+		Menu_DrawMapButton(menu_position, custommap_items, i, MAP_CATEGORY_USER, custom_maps[i].map_name, Menu_CustomMaps_SetMap);
 		custommap_items++;
 	}
 

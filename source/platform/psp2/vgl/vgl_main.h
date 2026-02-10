@@ -332,6 +332,10 @@ extern	cvar_t	gl_doubleeyes;
 extern	cvar_t	gl_xflip;
 extern	cvar_t	gl_overbright;
 
+extern 	cvar_t 	r_runqmbparticles;
+extern  cvar_t	r_retro; // dr_mabuse1981: "retro filter" (makes textures drawn with GL_NEAREST).
+extern 	cvar_t	r_dithering;
+
 extern	int		gl_lightmap_format;
 extern	int		gl_solid_format;
 extern	int		gl_alpha_format;
