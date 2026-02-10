@@ -168,6 +168,11 @@ cvar_t gl_reporttjunctions = {"gl_reporttjunctions", "0", true};
 cvar_t gl_doubleeyes = {"gl_doubleeyes", "1", true};
 cvar_t gl_overbright = {"gl_overbright", "0", true};
 
+cvar_t 	r_runqmbparticles 	= {"r_runqmbparticles",  "1",true};
+cvar_t	r_retro   	        = {"r_retro",			"1",true}; // dr_mabuse1981: "retro filter".
+cvar_t	r_dithering 		= {"r_dithering","1",true};
+
+
 //Shpuld
 cvar_t  r_model_brightness  = { "r_model_brightness", "1", true};   // Toggle high brightness model lighting
 

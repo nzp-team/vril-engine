@@ -108,6 +108,7 @@ keyname_t keynames[] =
 	{"SELECT", K_SELECT }, // Select Button
 
 	// OTHER Buttons
+	{"AUX1", K_AUX1},
 	{"AUX9", K_AUX9},
 	{"AUX10", K_AUX10},
 	{"AUX11", K_AUX11},
@@ -636,11 +637,11 @@ void Key_Event (int key, bool down)
 			Key_Message (key);
 			break;
 		case key_menu:
-			M_Keydown (key);
+			Menu_KeyInput (key);
 			break;
 		case key_game:
 		case key_console:
-			M_ToggleMenu_f ();
+			Menu_ToggleMenu_f ();
 			break;
 		default:
 			Sys_Error ("Bad key_dest");
@@ -684,7 +685,7 @@ void Key_Event (int key, bool down)
 //
 	if (cls.demoplayback && down && consolekeys[key] && key_dest == key_game)
 	{
-		M_ToggleMenu_f ();
+		Menu_ToggleMenu_f ();
 		Sys_BigStackFree(1024, "Key_Event");
 		return;
 	}
@@ -731,7 +732,7 @@ void Key_Event (int key, bool down)
 		Key_Message (key);
 		break;
 	case key_menu:
-		M_Keydown (key);
+		Menu_KeyInput (key);
 		break;
 
 	case key_game:

@@ -807,6 +807,10 @@ void Draw_LoadingFill(void)
 		return;
 	}
 
+	if (loading_init == true) {
+		return;
+	}
+
 	int size       	= 8;
 	int max_step   	= 350;
     int x          	= (vid.width  / 2) - (max_step / 2);

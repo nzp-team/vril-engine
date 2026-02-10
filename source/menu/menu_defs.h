@@ -253,6 +253,8 @@ void Menu_DrawMapPanel (void);
 void Menu_Preload_Custom_Images (void);
 void Menu_DrawLoadingFill(void);
 void Menu_DrawSubMenu (char *line_one, char *line_two);
+void Menu_DrawFill (int x, int y, int width, int height, int r, int g, int b, int a, int UI_ANCHOR);
+void Menu_DrawString (int x, int y, char* string, int r, int g, int b, int a, float scale, int UI_ANCHOR, int FLIP_TEXT_POS);
 
 void Menu_StockMaps_Set (void);
 void Menu_Pause_Set(void);

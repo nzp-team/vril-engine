@@ -366,6 +366,40 @@ void DrawQuad(float x, float y, float w, float h, float u, float v, float uw, fl
 	GL_DrawPolygon(GL_TRIANGLE_FAN, 4);
 }
 
+void DrawSubQuad(int x, int y, int pic, float s, float t, float s_coord_size, float t_coord_size, float scale, float r, float g , float b, float a)
+{
+	gltexture_t *glt = &gltextures[pic];
+	GL_Bind (glt->texnum);
+
+	float width_scale = scale * (s_coord_size / t_coord_size);
+
+	float u_scale = (float)glt->original_width / (float)glt->width;
+	float v_scale = (float)glt->original_height / (float)glt->height;
+
+	float u0 = s * u_scale;
+	float v0 = t * v_scale;
+	float u1 = (s + s_coord_size) * u_scale;
+	float v1 = (t + t_coord_size) * v_scale;
+
+	gTexCoordBuffer[0] = gTexCoordBuffer[6] = u0;
+	gTexCoordBuffer[1] = gTexCoordBuffer[3] = v0;
+	gTexCoordBuffer[2] = gTexCoordBuffer[4] = u1;
+	gTexCoordBuffer[5] = gTexCoordBuffer[7] = v1;
+
+	gVertexBuffer[0] = gVertexBuffer[9] = x;
+	gVertexBuffer[1] = gVertexBuffer[4] = y;
+	gVertexBuffer[2] = gVertexBuffer[5] = x+(glt->original_width*width_scale);
+	gVertexBuffer[3] = gVertexBuffer[6] = x+(glt->original_width*width_scale);
+	gVertexBuffer[7] = gVertexBuffer[10] = y+(glt->original_height*scale);
+	gVertexBuffer[8] = gVertexBuffer[11] = y+(glt->original_height*scale);
+		
+	vglVertexAttribPointerMapped(0, gVertexBuffer);
+	vglVertexAttribPointerMapped(1, gTexCoordBuffer);
+	gVertexBuffer += 12;
+	gTexCoordBuffer += 8;
+	GL_DrawPolygon(GL_TRIANGLE_FAN, 4);
+}
+
 /*
 ================
 Draw_Character
@@ -631,16 +665,19 @@ Draw_ColoredStretchPic
 */
 void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, int r, int g, int b, int a)
 {
-	glEnable(GL_BLEND);
-	glDisable(GL_ALPHA_TEST);
-	Platform_Graphics_Color(r/255.0,g/255.0,b/255.0,a/255.0);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	GL_EnableState(GL_MODULATE);
+	if (pic > 0) {
 
-	GL_Bind (pic);
-	DrawQuad(x, y, x_value, y_value, 0, 0, 1, 1);
+		glEnable(GL_BLEND);
+		glDisable(GL_ALPHA_TEST);
+		Platform_Graphics_Color(r/255.0,g/255.0,b/255.0,a/255.0);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		GL_EnableState(GL_MODULATE);
 
-	Platform_Graphics_Color(1,1,1,1);
+		GL_Bind (pic);
+		DrawQuad(x, y, x_value, y_value, 0, 0, 1, 1);
+
+		Platform_Graphics_Color(1,1,1,1);
+	}
 }
 
 /*
@@ -650,13 +687,42 @@ Draw_StretchPic
 */
 void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
 {
-	glEnable(GL_ALPHA_TEST);
-	Platform_Graphics_Color(1,1,1,1);
+	if (pic > 0) {
+		glEnable(GL_ALPHA_TEST);
+		Platform_Graphics_Color(1,1,1,1);
 
-	GL_Bind (pic);
-	DrawQuad(x, y, x_value, y_value, 0, 0, 1, 1);
+		GL_Bind (pic);
+		DrawQuad(x, y, x_value, y_value, 0, 0, 1, 1);
 
-	Platform_Graphics_Color(1,1,1,1);
+		Platform_Graphics_Color(1,1,1,1);
+	}
+}
+
+/*
+=============
+Draw_MenuPanningPic
+=============
+*/
+void Draw_MenuPanningPic (int x, int y, int pic, int x_value, int y_value, float time)
+{
+	Draw_StretchPic (x, y, pic, x_value, y_value);
+}
+
+/*
+=============
+Draw_SubPic
+=============
+*/
+void Draw_SubPic (int x, int y, int pic, float s, float t, float s_coord_size, float t_coord_size, float scale, float r, float g , float b, float a)
+{
+	if (pic > 0) {
+		glEnable(GL_ALPHA_TEST);
+		Platform_Graphics_Color(1,1,1,1);
+
+		DrawSubQuad(x, y, pic, s, t, s_coord_size, t_coord_size, scale, r, g, b, a);
+
+		Platform_Graphics_Color(1,1,1,1);
+	}
 }
 
 /*
