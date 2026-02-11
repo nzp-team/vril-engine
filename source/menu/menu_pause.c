@@ -109,8 +109,8 @@ void Menu_Pause_Draw (void)
 			Menu_DrawSubMenu("Are you sure you want to quit?", "You will lose any progress that you have made.");
 		}
     
-		Menu_DrawButton (6.5, 0, "GET ME OUTTA HERE!", "", Menu_Pause_Yes);
-		Menu_DrawButton (7.5, 1, "I WILL PERSEVERE", "", Menu_Pause_No);
+		Menu_DrawButton (7.5, 0, "GET ME OUTTA HERE!", "", Menu_Pause_Yes);
+		Menu_DrawButton (8.5, 1, "I WILL PERSEVERE", "", Menu_Pause_No);
 	}
 	
 }

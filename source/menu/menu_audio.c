@@ -56,5 +56,5 @@ void Menu_Audio_Draw (void)
 	Menu_DrawButton(2, 1, "MUSIC VOLUME", "Volume for Background Music.", NULL);
 	Menu_DrawOptionSlider (2, 1, 0, 1, bgmvolume, "bgmvolume", false, false, 0.1f);
 
-	Menu_DrawButton(11.5, 2, "BACK", "Return to Main Menu.", Menu_Configuration_Set);
+	Menu_DrawButton(-1, 2, "BACK", "Return to Main Menu.", Menu_Configuration_Set);
 }

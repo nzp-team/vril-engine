@@ -346,14 +346,26 @@ void Menu_DrawSelectionBox (int x_pos, int y_pos)
 
 	// Draw selection box
 	// Done in 4 parts
-	// Back(ground)
-	Menu_DrawFill (0, y_pos - horizontal_border_height*4, border_width, border_height + (horizontal_border_height*4), 0, 0, 0, 120);
-	// Top
-	Menu_DrawFill (0, y_pos - (horizontal_border_height*4), border_width, horizontal_border_height, 255, 0, 0, 255);
-	// Bottom
-	Menu_DrawFill (0, y_pos + border_height, border_width, horizontal_border_height, 255, 0, 0, 255);
-	// Side
-	Menu_DrawFill (border_width, y_pos - (horizontal_border_height*4), vertical_border_width, border_height + (horizontal_border_height*4), 255, 0, 0, 255);
+	if (current_frame.point_y == UI_ANCHOR_TOP) {
+		// Back(ground)
+		Menu_DrawFill (0, y_pos - horizontal_border_height*4, border_width, border_height + (horizontal_border_height*4), 0, 0, 0, 120);
+		// Top
+		Menu_DrawFill (0, y_pos - (horizontal_border_height*4), border_width, horizontal_border_height, 255, 0, 0, 255);
+		// Bottom
+		Menu_DrawFill (0, y_pos + border_height, border_width, horizontal_border_height, 255, 0, 0, 255);
+		// Side
+		Menu_DrawFill (border_width, y_pos - (horizontal_border_height*4), vertical_border_width, border_height + (horizontal_border_height*4), 255, 0, 0, 255);
+	} else if (current_frame.point_y == UI_ANCHOR_BOTTOM) {
+		// Back(ground)
+		Menu_DrawFill (0, y_pos + horizontal_border_height*4, border_width, border_height + (horizontal_border_height*4), 0, 0, 0, 120);
+		// Top
+		Menu_DrawFill (0, y_pos + (horizontal_border_height*4), border_width, horizontal_border_height, 255, 0, 0, 255);
+		// Bottom
+		Menu_DrawFill (0, y_pos - border_height, border_width, horizontal_border_height, 255, 0, 0, 255);
+		// Side
+		Menu_DrawFill (border_width, y_pos + (horizontal_border_height*4), vertical_border_width, border_height + (horizontal_border_height*4), 255, 0, 0, 255);
+	}
+	
 }
 
 /*
@@ -494,15 +506,21 @@ void Menu_DrawButton (int order, int button_index, char* button_name, char* butt
 {
 	int y_factor = 15;
 	int x_pos = 140;
-	int y_pos = 30 + (order*y_factor);
+	int y_pos = 0;
+
+	if (order < 0) {
+		y_pos = big_bar_height + small_bar_height + ((order*-1)*y_factor);
+		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
+	} else {
+		y_pos = 30 + (order*y_factor);
+		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+	}
 
 	// Button is currently inactive,
 	// so set its' attributes
 	if (!current_menu.button[button_index].enabled) {
 		Menu_BuildMenuButtons (button_index, button_name, on_activate);
 	}
-
-	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 
 	// Active menu buttons
 	// Hovering over button
@@ -520,11 +538,13 @@ void Menu_DrawButton (int order, int button_index, char* button_name, char* butt
 		Menu_DrawStringCentered (0, 15, button_summary, 255, 255, 255, 255);
 	} else {
 		// Not hovering over button
-		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+		if (order < 0) {
+			UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
+		} else {
+			UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+		}
 		Menu_DrawString (x_pos, y_pos, button_name, 255, 255, 255, 255, menu_text_scale_factor, UI_FLIPTEXTPOS);
 	}
-
-	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 }
 
 /*
@@ -535,10 +555,16 @@ Menu_DrawGreyButton
 void Menu_DrawGreyButton (int order, char* button_name)
 {
 	int y_factor = 15;
-	int x_pos = 140; 
-	int y_pos = 30 + (order*y_factor);
+	int x_pos = 140;
+	int y_pos = 0;
 
-	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+	if (order < 0) {
+		y_pos = big_bar_height + small_bar_height + ((order*-1)*y_factor);
+		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
+	} else {
+		y_pos = 30 + (order*y_factor);
+		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+	}
 
 	Menu_DrawString (x_pos, y_pos, button_name, 128, 128, 128, 255, menu_text_scale_factor, UI_FLIPTEXTPOS);
 }

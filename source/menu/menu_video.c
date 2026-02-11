@@ -195,5 +195,5 @@ void Menu_Video_Draw (void)
         Menu_DrawOptionButton (7, dithering_string);
     }
 
-	Menu_DrawButton(11.5, video_items, "BACK", "Return to Main Menu.", Menu_Configuration_Set);
+	Menu_DrawButton(-1, video_items, "BACK", "Return to Main Menu.", Menu_Configuration_Set);
 }
