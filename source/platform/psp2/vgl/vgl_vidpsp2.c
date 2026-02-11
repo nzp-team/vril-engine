@@ -42,7 +42,7 @@ extern bool benchmark;
 unsigned short	d_8to16table[256];
 unsigned	d_8to24table[256];
 unsigned char d_15to8table[65536];
-cvar_t gl_fog = {"gl_fog", "1", true};
+cvar_t gl_fog = {"gl_fog", "0", false};
 extern int isKeyboard;
 
 int num_shades=32;

@@ -110,7 +110,7 @@ keyname_t keynames[] =
 	// OTHER Buttons
 	{"AUX1", K_AUX1},
 	{"AUX9", K_AUX9},
-	{"AUX10", K_AUX10},
+	{"AUX1", K_AUX1},
 	{"AUX11", K_AUX11},
 	{"AUX12", K_AUX12},
 	{"AUX13", K_AUX13},

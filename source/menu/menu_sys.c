@@ -279,6 +279,7 @@ void Menu_KeyInput (int key)
 
 	case K_ENTER:
 	case K_AUX1:
+	case K_CROSS:
 		Menu_ButtonPress();
 		break;
 	}

@@ -23,14 +23,6 @@ COMMON_OBJS =	\
 	source/cl_slist.o \
     source/cmd.o \
 	source/platform/psp2/common.o \
-	source/console.o \
-	source/crc.o \
-	source/cvar.o \
-	source/host.o \
-	source/host_cmd.o \
-	source/platform/psp2/keys.o \
-	source/mathlib.o \
-	source/matrixlib.o \
 	source/menu/menu_sys.o \
 	source/menu/menu.o \
 	source/menu/menu_custommaps.o \
@@ -47,7 +39,15 @@ COMMON_OBJS =	\
 	source/menu/menu_pause.o \
 	source/menu/menu_stubs.o \
 	source/menu/menu_loadscreen.o \
-	source/platform/psp2/platform_menu.o \
+	source/platform/psp/platform_menu.o \
+	source/console.o \
+	source/crc.o \
+	source/cvar.o \
+	source/host.o \
+	source/host_cmd.o \
+	source/platform/psp2/keys.o \
+	source/mathlib.o \
+	source/matrixlib.o \
 	source/platform/psp2/net_dgrm.o \
 	source/net_loop.o \
 	source/platform/psp2/net_main.o \
@@ -120,7 +120,7 @@ CFLAGS  = -fsigned-char -Wl,-q -O3 -g -fno-optimize-sibling-calls \
 	-DGLQUAKE -DHAVE_OGGVORBIS -DHAVE_MPG123 -DHAVE_LIBSPEEXDSP \
 	-DUSE_AUDIO_RESAMPLER -DHAVE_STRLCAT -DGIT_VERSION=\"$(GIT_VERSION)\" \
 	-DPLATFORM_DIRECTORY="psp2" -DPLATFORM_RENDERER="vgl" -DMAX_AI_COUNT=24 \
-	-D__PSP2__
+	-DENABLE_RAZOR_CAPTURE -D__PSP2__
 
 ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror
