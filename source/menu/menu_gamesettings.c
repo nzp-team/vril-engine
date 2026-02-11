@@ -255,5 +255,5 @@ void Menu_GameSettings_Draw (void)
     Menu_DrawOptionButton(7, fast_string);
 
     // Back button
-    Menu_DrawButton(11.5, 7, "BACK", "Return to Pre-Game Menu.", Menu_Lobby_Set);
+    Menu_DrawButton(-1, 7, "BACK", "Return to Pre-Game Menu.", Menu_Lobby_Set);
 }

@@ -197,7 +197,7 @@ void Menu_Lobby_Draw (void)
         Menu_DrawGreyButton(2, "NOT SUPPORTED");
     }
 
-    Menu_DrawButton (11.5, 2, "BACK", "Return to Map Selection.", Menu_Lobby_SetBack);
+    Menu_DrawButton (-1, 2, "BACK", "Return to Map Selection.", Menu_Lobby_SetBack);
 
     Menu_DrawLobbyInfo (current_selected_bsp, gamemode, difficulty, startround, magic, headshotonly, fastrounds, hordesize);
 

@@ -94,5 +94,5 @@ void Menu_Controls_Draw (void)
 	// Bindings
 	Menu_DrawButton (6, 5, "BINDINGS", "Change Input Bindings.", NULL);
 
-	Menu_DrawButton (11.5, 6, "BACK", "Return to Main Menu.", Menu_Configuration_Set);
+	Menu_DrawButton (-1, 6, "BACK", "Return to Main Menu.", Menu_Configuration_Set);
 }
