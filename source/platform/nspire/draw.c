@@ -692,6 +692,8 @@ Draw_TransPic
 */
 void Draw_TransPic (int x, int y, int pic)
 {
+	return;
+
 	byte	*dest, *source, tbyte;
 	unsigned short	*pusdest;
 	int				v, u;
@@ -931,6 +933,8 @@ Draw_TransPicTranslate
 */
 void Draw_TransPicTranslate (int x, int y, int pic, byte *translation)
 {
+	return;
+
 	byte	*dest, *source, tbyte;
 	unsigned short	*pusdest;
 	int				v, u;

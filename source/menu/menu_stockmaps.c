@@ -85,8 +85,8 @@ void Menu_StockMaps_Draw (void)
 
     Menu_DrawDivider(i+1.25);
 
-    Menu_DrawButton(-3, i, "USER MAPS", "View User-Created Maps.", Menu_CustomMaps_Set);
-    Menu_DrawButton(-2, i+1, "RANDOM", "Feeling indecisive? Try rolling the dice.", Menu_StockMaps_SetRandomMap);
+    Menu_DrawButton(i+1.5, i, "USER MAPS", "View User-Created Maps.", Menu_CustomMaps_Set);
+    Menu_DrawButton(i+2.5, i+1, "RANDOM", "Feeling indecisive? Try rolling the dice.", Menu_StockMaps_SetRandomMap);
 
     Menu_DrawButton(-1, i+2, "BACK", back_text, Menu_StockMaps_SetMainMenu);
 }

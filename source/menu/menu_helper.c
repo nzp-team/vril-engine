@@ -69,7 +69,7 @@ void Menu_DictateScaleFactor(void)
 	CHAR_WIDTH = 8*menu_text_scale_factor;
 	CHAR_HEIGHT = 8*menu_text_scale_factor;
 
-	big_bar_height = 30;
+	big_bar_height = 25;
 	small_bar_height = 2;
 }
 
@@ -279,7 +279,7 @@ void Menu_DrawSocialBadge (int order, int which)
 {
 	UI_SetAlignment (UI_ANCHOR_RIGHT, UI_ANCHOR_BOTTOM);
 
-	int y_factor = 15;
+	int y_factor = 16;
 	int y_pos = ((big_bar_height + small_bar_height) + 5) + (order*y_factor);
 	int x_pos = 20;
 	float coord_size = 0.5f;
@@ -320,7 +320,7 @@ Menu_DrawTitle
 void Menu_DrawTitle (char *title_name, int color)
 {
 	int x_pos = vid.width/64;
-	int y_pos = 10;
+	int y_pos = 5;
 
 	switch (color) {
 		case MENU_COLOR_WHITE:
@@ -509,7 +509,7 @@ void Menu_DrawButton (int order, int button_index, char* button_name, char* butt
 	int y_pos = 0;
 
 	if (order < 0) {
-		y_pos = big_bar_height + small_bar_height + ((order*-1)*y_factor);
+		y_pos = big_bar_height + ((order*-1)*y_factor);
 		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
 	} else {
 		y_pos = 30 + (order*y_factor);
@@ -535,7 +535,7 @@ void Menu_DrawButton (int order, int button_index, char* button_name, char* butt
 
 		// Draw the bottom screen text for selected button 
 		UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_BOTTOM);
-		Menu_DrawStringCentered (0, 15, button_summary, 255, 255, 255, 255);
+		Menu_DrawStringCentered (0, big_bar_height - CHAR_HEIGHT, button_summary, 255, 255, 255, 255);
 	} else {
 		// Not hovering over button
 		if (order < 0) {
@@ -559,7 +559,7 @@ void Menu_DrawGreyButton (int order, char* button_name)
 	int y_pos = 0;
 
 	if (order < 0) {
-		y_pos = big_bar_height + small_bar_height + ((order*-1)*y_factor);
+		y_pos = big_bar_height + ((order*-1)*y_factor);
 		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
 	} else {
 		y_pos = 30 + (order*y_factor);
@@ -585,7 +585,9 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 	int image_width = vid.width/3;
 	int image_height = vid.height/3;
 
-	int x_pos = 6;
+	int map_region_center = 150 + (((vid.width-150)/2)+2);
+
+	int x_pos = map_region_center - (image_width/2);
 	int y_pos = 40;
 
 	// if this is a stock map
@@ -618,7 +620,7 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 
 	if (Menu_IsButtonHovered(button_index)) {
 
-		UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_TOP);
+		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 		// Draw map thumbnail picture
 		Menu_DrawPic (x_pos, y_pos, menu_usermap_image[index], image_width, image_height);
 
@@ -652,16 +654,14 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 #ifndef MENU_HIDE_MAP_DESCRIPTIONS
 		// Draw map description
 		for (int j = 0; j < 8; j++) {
-			Menu_DrawStringCentered (x_pos + 80, (y_pos + image_height + small_bar_height + (CHAR_HEIGHT/2)) + j*desc_y_factor, custom_maps[index].map_desc[j], 255, 255, 255, 255);
+			Menu_DrawStringCentered (x_pos + (image_width/2), (y_pos + image_height + small_bar_height + (CHAR_HEIGHT/2)) + j*desc_y_factor, custom_maps[index].map_desc[j], 255, 255, 255, 255);
 		}
 #endif
-
 		// Draw map author
+		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
 		if (custom_maps[index].map_author != NULL) {
-			Menu_DrawStringCentered (0, vid.height - big_bar_height + (CHAR_HEIGHT/2), custom_maps[index].map_author, 255, 255, 0, 255);		
+			Menu_DrawStringCentered (vid.width/2, 0 + CHAR_HEIGHT, custom_maps[index].map_author, 255, 255, 0, 255);		
 		}
-
-		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 	}
 }
 
@@ -725,17 +725,18 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 	int image_width = vid.width/3;
 	int image_height = vid.height/3;
 
-	int image_x_pos = 5;
-	int image_y_pos = ((big_bar_height+small_bar_height)+CHAR_HEIGHT) + image_height;
+	int map_region_center = 150 + (((vid.width-150)/2)+2);
+	int image_x_pos = map_region_center - (image_width/2);
+	int image_y_pos = ((big_bar_height+small_bar_height)+(CHAR_HEIGHT)/2) + image_height;
 
-	int left_column_x = 35;
-	int left_column_y = 40;
+	int left_column_x = map_region_center - (image_width/2) + 20;
+	int left_column_y = 30;
 
 	int y_offset = 10;
 	int y_newline = 25;
-	int x_newline = 100;
+	int x_newline = image_width/1.5;
 
-	int line_x = 6;
+	int line_x = map_region_center - (image_width/2) - 8;
 
 	texnum = Menu_GetMapImage (bsp_name);
 
@@ -745,7 +746,7 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 	}
 
 	// Set anchor for game settings display
-	UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_TOP);
+	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 	// Game Mode
 	Menu_DrawStringCentered (left_column_x, left_column_y, "Game Mode", 255, 255, 255, 255);
 	Menu_DrawStringCentered (left_column_x, left_column_y + y_offset, info_gamemode, 255, 255, 0, 255);
@@ -782,7 +783,7 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 	Menu_DrawFill (line_x, left_column_y + (y_offset*2) + (y_newline*3), 55, (small_bar_height/2), 130, 130, 130, 255);
 
 	// Draw Map picture and name
-	UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_BOTTOM);
+	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
 	// Draw map thumbnail picture
 	Menu_DrawPic (image_x_pos, image_y_pos, texnum, image_width, image_height);
 	// Draw border around map image
