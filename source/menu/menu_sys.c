@@ -136,9 +136,13 @@ void UI_Align (int *x, int *y)
     }
 }
 
+// UI scaling helper functions
+// int casting is for NSPIRE platform
+// which uses unsigned ints for 
+// vid.width/vid.height
 int UI_X(int x)
 {
-    if (x == vid.width) return vid.width;
+    if (x == (int)vid.width) return (int)vid.width;
 
     //printf("x %i\n", x);
     int ret = (x * ui_scale);
@@ -148,7 +152,7 @@ int UI_X(int x)
 
 int UI_Y(int y)
 {
-    if (y == vid.height) return vid.height;
+    if (y == (int)vid.height) return (int)vid.height;
 
     //printf("y %i\n", y);
     int ret = (y * ui_scale);
@@ -158,7 +162,7 @@ int UI_Y(int y)
 
 int UI_W(int w)
 {
-    if (w == vid.width) return vid.width;
+    if (w == (int)vid.width) return (int)vid.width;
     //printf("w %i\n", w);
     int ret = (w * ui_scale);
     //printf("ret %i\n", ret);
@@ -167,7 +171,7 @@ int UI_W(int w)
 
 int UI_H(int h)
 {
-    if (h == vid.height) return vid.height;
+    if (h == (int)vid.height) return (int)vid.height;
     //printf("h %i\n", h);
     int ret = (h * ui_scale);
     //printf("ret %i\n", ret);
@@ -176,17 +180,11 @@ int UI_H(int h)
 
 void Menu_InitUIScale (void)
 {
-    // Set scale
-
-    printf("vid.width %i\n", vid.width);
-    printf("vid.height %i\n", vid.height);
-
 	current_frame.point_x = 0;
 	current_frame.point_y = 0;
 
+	// Set scale
 	ui_scale = vid.height/STD_UI_HEIGHT;
-
-    printf("ui_scale %i\n", ui_scale);
 }
 
 int Menu_GetActiveMenuButtons (void)
