@@ -70,7 +70,7 @@ void Menu_DictateScaleFactor(void)
 	CHAR_HEIGHT = 8*menu_text_scale_factor;
 
 	big_bar_height = 30;
-	small_bar_height = 4;
+	small_bar_height = 2;
 }
 
 image_t Menu_PickBackground (void)
@@ -345,13 +345,13 @@ void Menu_DrawSelectionBox (int x_pos, int y_pos)
 	// Draw selection box
 	// Done in 4 parts
 	// Back(ground)
-	Menu_DrawFill (0, y_pos - horizontal_border_height, border_width, border_height + (horizontal_border_height*2), 0, 0, 0, 86);
+	Menu_DrawFill (0, y_pos - horizontal_border_height*4, border_width, border_height + (horizontal_border_height*4), 0, 0, 0, 160);
 	// Top
-	Menu_DrawFill (0, y_pos - (horizontal_border_height*2), border_width, horizontal_border_height, 255, 0, 0, 255);
+	Menu_DrawFill (0, y_pos - (horizontal_border_height*4), border_width, horizontal_border_height, 255, 0, 0, 255);
 	// Bottom
 	Menu_DrawFill (0, y_pos + border_height, border_width, horizontal_border_height, 255, 0, 0, 255);
 	// Side
-	Menu_DrawFill (border_width, y_pos - (horizontal_border_height*2), vertical_border_width, border_height + (horizontal_border_height*3), 255, 0, 0, 255);
+	Menu_DrawFill (border_width, y_pos - (horizontal_border_height*4), vertical_border_width, border_height + (horizontal_border_height*4), 255, 0, 0, 255);
 }
 
 /*
@@ -385,9 +385,10 @@ void Menu_DrawMapPanel (void)
 	int y_pos = big_bar_height + small_bar_height;
 
 	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
-
+#ifndef MENU_DONT_DRAW_BACKGROUND_IMAGES
 	// Big box
 	Menu_DrawFill(x_pos, y_pos, (vid.width - x_pos), vid.height - (y_pos*2), 0, 0, 0, 120);
+#endif
 	// Yellow bar
 	Menu_DrawFill(x_pos, y_pos, 2, vid.height - (y_pos*2), 255, 255, 0, 200);
 }
@@ -397,20 +398,21 @@ void Menu_DrawSubMenu (char *line_one, char *line_two)
 	int y_pos = 150;
 
 	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
-
+#ifndef MENU_DONT_DRAW_BACKGROUND_IMAGES
 	// Dark red background
     Menu_DrawFill (0, 0, vid.width, vid.height, 255, 0, 0, 20);
+#endif
     // Black background box
-    Menu_DrawFill (0, vid.height/3, vid.width, vid.height/3, 0, 0, 0, 255);
+    Menu_DrawFill (0, y_pos, vid.width, 100, 0, 0, 0, 255);
     // Top yellow line
-    Menu_DrawFill (0, (vid.height/3)-small_bar_height, vid.width, small_bar_height, 255, 255, 0, 255);
+    Menu_DrawFill (0, y_pos-small_bar_height, vid.width, small_bar_height, 255, 255, 0, 255);
     // Bottom yellow line
-    Menu_DrawFill (0, vid.height-(vid.height/3), vid.width, small_bar_height, 255, 255, 0, 255);
+    Menu_DrawFill (0, vid.height-big_bar_height+small_bar_height, vid.width, small_bar_height, 255, 255, 0, 255);
 
 	UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_TOP);
 
 	// Quit/Restart Text
-    Menu_DrawStringCentered (0, y_pos+CHAR_HEIGHT, line_one, 255, 255, 255, 255);
+    Menu_DrawStringCentered (0, y_pos + CHAR_HEIGHT, line_one, 255, 255, 255, 255);
     // Lose progress text
     Menu_DrawStringCentered (0, y_pos+(CHAR_HEIGHT*2), line_two, 255, 255, 255, 255);
 }
@@ -431,6 +433,11 @@ void Menu_DrawCustomBackground (qboolean draw_images)
 	//
 
 	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+
+#ifdef MENU_DONT_DRAW_BACKGROUND_IMAGES
+	draw_images = false;
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 255, 255);
+#endif
 
 	// TODO
 
@@ -547,8 +554,8 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 	int image_width = vid.width/3;
 	int image_height = vid.height/3;
 
-	int x_pos = 8;
-	int y_pos = 45;
+	int x_pos = 6;
+	int y_pos = 40;
 
 	// if this is a stock map
 	if (usermap_index < 0) {
@@ -611,10 +618,12 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 		Menu_DrawString(x_pos + 4 + menu_badges_width, y_pos + image_height - (menu_badges_height/2) - (CHAR_HEIGHT/2), badge_name, 255, 255, 0, 255, menu_text_scale_factor, 0);
 		Menu_DrawSubPic(x_pos + 4, y_pos + image_height - menu_badges_height, menu_badges, s, t, s_coord_size, t_coord_size, scale, 255, 255, 255, 255);
 
+#ifndef MENU_HIDE_MAP_DESCRIPTIONS
 		// Draw map description
 		for (int j = 0; j < 8; j++) {
-			Menu_DrawStringCentered (x_pos + 80, (y_pos + image_height + (small_bar_height*2)) + j*desc_y_factor, custom_maps[index].map_desc[j], 255, 255, 255, 255);
+			Menu_DrawStringCentered (x_pos + 70, (y_pos + image_height + small_bar_height) + j*desc_y_factor, custom_maps[index].map_desc[j], 255, 255, 255, 255);
 		}
+#endif
 
 		// Draw map author
 		if (custom_maps[index].map_author != NULL) {
