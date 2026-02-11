@@ -277,9 +277,11 @@ void Menu_DrawDivider (int order)
 
 void Menu_DrawSocialBadge (int order, int which)
 {
+	UI_SetAlignment (UI_ANCHOR_RIGHT, UI_ANCHOR_BOTTOM);
+
 	int y_factor = 15;
-	int y_pos = (vid.height/2) + (vid.width/36) + (order*y_factor);
-	int x_pos = vid.width - (vid.width/20);
+	int y_pos = ((big_bar_height + small_bar_height) + 5) + (order*y_factor);
+	int x_pos = 20;
 	float coord_size = 0.5f;
 	float scale = 0.25f;
 	float s = 0;
@@ -364,13 +366,18 @@ void Menu_DrawMapBorder (int x_pos, int y_pos, int image_width, int image_height
 	int border_side_width = 2;
 
 	// Top
-	Menu_DrawFill (x_pos, y_pos, image_width+border_side_width, small_bar_height/2, 130, 130, 130, 255);
+	Menu_DrawFill (x_pos, y_pos, image_width+border_side_width, small_bar_height, 130, 130, 130, 255);
 	// Left Side
 	Menu_DrawFill (x_pos, y_pos, border_side_width, image_height, 130, 130, 130, 255);
 	// Right Side
 	Menu_DrawFill (x_pos+image_width, y_pos, border_side_width, image_height, 130, 130, 130, 255);
 	// Bottom
-	Menu_DrawFill (x_pos, y_pos+image_height, image_width+border_side_width, small_bar_height/2, 130, 130, 130, 255);
+	if (current_frame.point_y == UI_ANCHOR_TOP) {
+		Menu_DrawFill (x_pos, y_pos+image_height, image_width+border_side_width, small_bar_height, 130, 130, 130, 255);
+	} else if (current_frame.point_y == UI_ANCHOR_BOTTOM) {
+		Menu_DrawFill (x_pos, y_pos-image_height, image_width+border_side_width, small_bar_height, 130, 130, 130, 255);
+	}
+	
 }
 
 
@@ -630,7 +637,7 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 #ifndef MENU_HIDE_MAP_DESCRIPTIONS
 		// Draw map description
 		for (int j = 0; j < 8; j++) {
-			Menu_DrawStringCentered (x_pos + 70, (y_pos + image_height + small_bar_height) + j*desc_y_factor, custom_maps[index].map_desc[j], 255, 255, 255, 255);
+			Menu_DrawStringCentered (x_pos + 80, (y_pos + image_height + small_bar_height + (CHAR_HEIGHT/2)) + j*desc_y_factor, custom_maps[index].map_desc[j], 255, 255, 255, 255);
 		}
 #endif
 
@@ -646,21 +653,22 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 void Menu_DrawOptionButton(int order, char* selection_name)
 {
 	int y_factor = 15;
-	int x_pos = 20; 
-	int y_pos = 80 + (order*y_factor);
+	int x_pos = 165; 
+	int y_pos = 30 + (order*y_factor);
 
-	Draw_ColoredString(x_pos, y_pos, selection_name, 255, 255, 255, 255, menu_text_scale_factor);
+	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+	Menu_DrawString(x_pos, y_pos, selection_name, 255, 255, 255, 255, menu_text_scale_factor, 0);
 }
 
 void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, int max_option_value, cvar_t option, char* _option_string, qboolean zero_to_one, qboolean draw_option_string, float increment_amount)
 {
 	int y_factor = 15;
-	int x_pos = 20; 
-	int y_pos = 80 + (order*y_factor);
+	int x_pos = 165; 
+	int y_pos = 30 + (order*y_factor);
 	int slider_box_width = 100;
-	int slider_box_height = 12;
+	int slider_box_height = 4;
 
-	int slider_width = 6;
+	int slider_width = 2;
 
 	if (Menu_IsButtonHovered(button_index)) {
 		Menu_SetOptionCvar(option, _option_string, min_option_value, max_option_value, increment_amount);
@@ -675,17 +683,17 @@ void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, in
 		}
 	}
 
-	UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_TOP);
+	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 
 	float current_option = option.value;
 	float option_pos = (current_option - min_option_value)/(max_option_value - min_option_value);
 	// Slider box
 	Menu_DrawFill(x_pos, y_pos, slider_box_width, slider_box_height, 255, 160, 160, 255);
 	// Selection box
-	Menu_DrawFill((x_pos+(option_pos*slider_box_width)) - slider_width, y_pos-4, slider_width, slider_box_height+4, 255, 255, 255, 255);
+	Menu_DrawFill((x_pos+(option_pos*slider_box_width)) - slider_width, y_pos-2, slider_width, slider_box_height+4, 255, 255, 255, 255);
 	// Cvar value string
 	if (draw_option_string) {
-		Draw_ColoredString(x_pos + slider_box_width + 25, y_pos, option_string, 255, 255, 255, 255, menu_text_scale_factor);
+		Menu_DrawString(x_pos + slider_box_width + CHAR_WIDTH, y_pos - 2, option_string, 255, 255, 255, 255, menu_text_scale_factor, 0);
 	}
 }
 
@@ -699,20 +707,20 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 	int texnum;
 	int	i;
 
-	int image_width = 100;
-	int image_height = 160;
+	int image_width = vid.width/3;
+	int image_height = vid.height/3;
 
-	int image_x_pos = 100;
-	int image_y_pos = 150;
+	int image_x_pos = 5;
+	int image_y_pos = ((big_bar_height+small_bar_height)+CHAR_HEIGHT) + image_height;
 
-	int left_column_x = 50;
-	int left_column_y = 200;
+	int left_column_x = 35;
+	int left_column_y = 40;
 
-	int y_offset = CHAR_HEIGHT;
-	int y_newline = 15;
-	int x_newline = 120;
+	int y_offset = 10;
+	int y_newline = 25;
+	int x_newline = 100;
 
-	int line_x = 220;
+	int line_x = 6;
 
 	texnum = Menu_GetMapImage (bsp_name);
 
@@ -721,51 +729,51 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 			break;
 	}
 
-	// Draw map thumbnail picture
-	Draw_StretchPic (image_x_pos, image_y_pos, texnum, image_width, image_height);
-
-	// Draw border around map image
-	Menu_DrawMapBorder (image_x_pos, image_y_pos, image_width, image_height);
-
+	// Set anchor for game settings display
 	UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_TOP);
-
 	// Game Mode
 	Menu_DrawStringCentered (left_column_x, left_column_y, "Game Mode", 255, 255, 255, 255);
 	Menu_DrawStringCentered (left_column_x, left_column_y + y_offset, info_gamemode, 255, 255, 0, 255);
-	Menu_DrawFill (line_x, left_column_y + (y_offset*2), 80, (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawFill (line_x, left_column_y + (y_offset*2), 55, (small_bar_height/2), 130, 130, 130, 255);
 
 	// Difficulty
 	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y, "Difficulty", 255, 255, 255, 255);
 	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y + y_offset, info_difficulty, 255, 255, 0, 255);
-	Menu_DrawFill (line_x + x_newline, left_column_y + (y_offset*2), 80, (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawFill (line_x + x_newline, left_column_y + (y_offset*2), 55, (small_bar_height/2), 130, 130, 130, 255);
 
 	// Start Round
 	Menu_DrawStringCentered (left_column_x, left_column_y + y_newline, "Start Round", 255, 255, 255, 255);
 	Menu_DrawStringCentered (left_column_x, left_column_y + y_offset + y_newline, info_startround, 255, 255, 0, 255);
-	Menu_DrawFill (line_x , left_column_y + (y_offset*2) + y_newline, 80, (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawFill (line_x , left_column_y + (y_offset*2) + y_newline, 55, (small_bar_height/2), 130, 130, 130, 255);
 
 	// Magic
 	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y + y_newline, "Magic", 255, 255, 255, 255);
 	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y + y_offset + y_newline, info_magic, 255, 255, 0, 255);
-	Menu_DrawFill (line_x + x_newline, left_column_y + (y_offset*2) + y_newline, 80, (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawFill (line_x + x_newline, left_column_y + (y_offset*2) + y_newline, 55, (small_bar_height/2), 130, 130, 130, 255);
 
 	// Headshots Only
 	Menu_DrawStringCentered (left_column_x, left_column_y + (y_newline*2), "Headshots Only", 255, 255, 255, 255);
 	Menu_DrawStringCentered (left_column_x, left_column_y + y_offset + (y_newline*2), info_headshotonly, 255, 255, 0, 255);
-	Menu_DrawFill (line_x, left_column_y + (y_offset*2) + (y_newline*2), 80, (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawFill (line_x, left_column_y + (y_offset*2) + (y_newline*2), 55, (small_bar_height/2), 130, 130, 130, 255);
 
 	// Horde Size
 	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y + (y_newline*2), "Horde Size", 255, 255, 255, 255);
 	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y + y_offset + (y_newline*2), info_hordesize, 255, 255, 0, 255);
-	Menu_DrawFill (line_x + x_newline, left_column_y + (y_offset*2) + (y_newline*2), 80, (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawFill (line_x + x_newline, left_column_y + (y_offset*2) + (y_newline*2), 55, (small_bar_height/2), 130, 130, 130, 255);
 
 	// Fast Rounds
 	Menu_DrawStringCentered (left_column_x, left_column_y + (y_newline*3), "Fast Rounds", 255, 255, 255, 255);
 	Menu_DrawStringCentered (left_column_x, left_column_y + y_offset + (y_newline*3), info_fastrounds, 255, 255, 0, 255);
-	Menu_DrawFill (line_x, left_column_y + (y_offset*2) + (y_newline*3), 80, (small_bar_height/3), 130, 130, 130, 255);
+	Menu_DrawFill (line_x, left_column_y + (y_offset*2) + (y_newline*3), 55, (small_bar_height/2), 130, 130, 130, 255);
 
+	// Draw Map picture and name
+	UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_BOTTOM);
+	// Draw map thumbnail picture
+	Menu_DrawPic (image_x_pos, image_y_pos, texnum, image_width, image_height);
+	// Draw border around map image
+	Menu_DrawMapBorder (image_x_pos, image_y_pos, image_width, image_height);
 	// Map Name (Pretty)
-	Menu_DrawStringCentered (image_x_pos + (image_width/2), image_y_pos + image_height - (small_bar_height) - 8, custom_maps[i].map_name_pretty, 255, 255, 0, 255);
+	Menu_DrawStringCentered (image_x_pos + (image_width/2), image_y_pos - image_height + CHAR_HEIGHT, custom_maps[i].map_name_pretty, 255, 255, 0, 255);
 }
 
 /*
