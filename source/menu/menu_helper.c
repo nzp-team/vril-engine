@@ -345,7 +345,7 @@ void Menu_DrawSelectionBox (int x_pos, int y_pos)
 	// Draw selection box
 	// Done in 4 parts
 	// Back(ground)
-	Menu_DrawFill (0, y_pos - horizontal_border_height*4, border_width, border_height + (horizontal_border_height*4), 0, 0, 0, 160);
+	Menu_DrawFill (0, y_pos - horizontal_border_height*4, border_width, border_height + (horizontal_border_height*4), 0, 0, 0, 120);
 	// Top
 	Menu_DrawFill (0, y_pos - (horizontal_border_height*4), border_width, horizontal_border_height, 255, 0, 0, 255);
 	// Bottom
@@ -385,17 +385,15 @@ void Menu_DrawMapPanel (void)
 	int y_pos = big_bar_height + small_bar_height;
 
 	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
-#ifndef MENU_DONT_DRAW_BACKGROUND_IMAGES
 	// Big box
 	Menu_DrawFill(x_pos, y_pos, (vid.width - x_pos), vid.height - (y_pos*2), 0, 0, 0, 120);
-#endif
 	// Yellow bar
 	Menu_DrawFill(x_pos, y_pos, 2, vid.height - (y_pos*2), 255, 255, 0, 200);
 }
 
 void Menu_DrawSubMenu (char *line_one, char *line_two)
 {
-	int y_pos = 150;
+	int y_pos = 70;
 
 	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 #ifndef MENU_DONT_DRAW_BACKGROUND_IMAGES
@@ -407,7 +405,7 @@ void Menu_DrawSubMenu (char *line_one, char *line_two)
     // Top yellow line
     Menu_DrawFill (0, y_pos-small_bar_height, vid.width, small_bar_height, 255, 255, 0, 255);
     // Bottom yellow line
-    Menu_DrawFill (0, vid.height-big_bar_height+small_bar_height, vid.width, small_bar_height, 255, 255, 0, 255);
+    Menu_DrawFill (0, y_pos+100, vid.width, small_bar_height, 255, 255, 0, 255);
 
 	UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_TOP);
 

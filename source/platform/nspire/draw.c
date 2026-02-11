@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define PAL_STANDARD		0
 #define PAL_WHITETORED		1
 #define PAL_WHITETOYELLOW	2
-void Draw_AdvancedPic (int x, int y, int pic, unsigned char alpha, unsigned char palette_hack);
+void Draw_AdvancedPic (int x, int y, int pic, int alpha, unsigned char palette_hack);
 
 extern int numcachepics;
 
@@ -692,8 +692,6 @@ Draw_TransPic
 */
 void Draw_TransPic (int x, int y, int pic)
 {
-	return;
-
 	byte	*dest, *source, tbyte;
 	unsigned short	*pusdest;
 	int				v, u;
@@ -773,7 +771,7 @@ void Draw_TransPic (int x, int y, int pic)
 Draw_AdvancedPic
 =============
 */
-void Draw_AdvancedPic (int x, int y, int pic, unsigned char alpha, unsigned char palette_hack)
+void Draw_AdvancedPic (int x, int y, int pic, int alpha, unsigned char palette_hack)
 {
 	return;
 
@@ -797,7 +795,7 @@ void Draw_AdvancedPic (int x, int y, int pic, unsigned char alpha, unsigned char
 		dither_factor = 9;
 	else if (alpha < 64)
 		dither_factor = 6;
-	else if (alpha < 128)
+	else if (alpha < 80)
 		dither_factor = 3;
 	else
 		dither_factor = 0;
@@ -1277,7 +1275,7 @@ unsigned char convert_24_to_8(const unsigned char palette[768], const int rgb[3]
 byte findclosestpalmatch(byte r, byte g, byte b, byte a)
 {
 	// naievil -- force alpha
-	if (a == 0 || a < 128) {
+	if (a == 0 || a < 120) {
 		return 255;
 	}
 
