@@ -734,7 +734,7 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 
 	int y_offset = 10;
 	int y_newline = 25;
-	int x_newline = image_width/1.5;
+	int x_newline = image_width/1.33;
 
 	int line_x = map_region_center - (image_width/2) - 8;
 
