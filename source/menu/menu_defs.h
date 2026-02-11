@@ -52,6 +52,11 @@ extern int 				m_state;
 
 #define MAX_MENU_BUTTONS 11
 
+// Curent menu state and buttons are stored here
+// when m_state is flipped, the respective menu "Set"
+// function will clear the structs. They are then rebuilt
+// during the drawing process.
+
 typedef struct menu_button_s {
 	qboolean		enabled;
 	int				index;
@@ -65,31 +70,31 @@ typedef struct menu_s {
 	int				slider_pressed;
 } menu_t;
 
+extern menu_t			current_menu;
+extern menu_button_t	current_menu_buttons[MAX_MENU_BUTTONS];
+
 // Definitions for dynamic menu scaling.
-// menu is based on a resolution of 640x360 (16:9)
-// since that's the standard for compatibility
-// across all aspect ratios and resolutions.
-// then we appropriately scale per device
-#define	STD_UI_WIDTH							640
-#define	STD_UI_HEIGHT 							360
+// menu is based on a resolution of 320x240 (4:3)
+// and then we appropriately scale per device
+
+typedef struct menuframe_s {
+	int		point_x;
+	int		point_y;
+} menuframe_t;
+
+extern menuframe_t 		current_frame;
+
+#define	STD_UI_HEIGHT 							240
 
 #define UI_ANCHOR_CENTER        				0
-#define UI_ANCHOR_TOPLEFT       				1
-#define UI_ANCHOR_TOPRIGHT      				2
-#define UI_ANCHOR_BOTTOMLEFT    				3
-#define UI_ANCHOR_BOTTOMRIGHT   				4
+#define UI_ANCHOR_LEFT       					1
+#define UI_ANCHOR_RIGHT      					2
+#define UI_ANCHOR_TOP    						3
+#define UI_ANCHOR_BOTTOM  						4
 
 #define UI_FLIPTEXTPOS							1
 
 extern float            menu_text_scale_factor;
-
-
-// Curent menu state and buttons are stored here
-// when m_state is flipped, the respective menu "Set"
-// function will clear the structs. They are then rebuilt
-// during the drawing process.
-extern menu_t			current_menu;
-extern menu_button_t	current_menu_buttons[MAX_MENU_BUTTONS];
 
 extern qboolean	        m_recursiveDraw;
 
@@ -208,11 +213,12 @@ FUNCTION DEFINES
 ===========================================================================
 */
 
-void UI_Align (int *x, int *y, int width, int height, int UI_ANCHOR);
-float UI_X(float x);
-float UI_Y(float y);
-float UI_W(float w);
-float UI_H(float h);
+void UI_SetAlignment (int alignment_x, int alignment_y);
+void UI_Align (int *x, int *y);
+int UI_X(int x);
+int UI_Y(int y);
+int UI_W(int w);
+int UI_H(int h);
 void strip_newline(char *s);
 char* strtolower(char* s);
 char* strtoupper(char* s);
@@ -253,8 +259,8 @@ void Menu_DrawMapPanel (void);
 void Menu_Preload_Custom_Images (void);
 void Menu_DrawLoadingFill(void);
 void Menu_DrawSubMenu (char *line_one, char *line_two);
-void Menu_DrawFill (int x, int y, int width, int height, int r, int g, int b, int a, int UI_ANCHOR);
-void Menu_DrawString (int x, int y, char* string, int r, int g, int b, int a, float scale, int UI_ANCHOR, int FLIP_TEXT_POS);
+void Menu_DrawFill (int x, int y, int width, int height, int r, int g, int b, int a);
+void Menu_DrawString (int x, int y, char* string, int r, int g, int b, int a, float scale, int FLIP_TEXT_POS_START);
 
 void Menu_StockMaps_Set (void);
 void Menu_Pause_Set(void);

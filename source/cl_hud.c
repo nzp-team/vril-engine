@@ -266,10 +266,6 @@ void HUD_Init (void)
 	Cmd_AddCommand ("-showscores", HUD_Scoreboard_Up);
 #endif // __WII__
 
-#ifdef __PSP__
-	Achievement_Init();
-#endif // __PSP__
-
 	HUD_DictateScaleFactor();
 }
 
@@ -1541,10 +1537,6 @@ void HUD_Parse_Achievement (int ach)
 	achievement_time = Sys_FloatTime() + 10;
 	ach_pic = ach;
 	achievement_list[ach].unlocked = 1;
-
-#ifdef __PSP__
-	Save_Achivements();
-#endif // __PSP__
 
 #endif // __WII__
 }
