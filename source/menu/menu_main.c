@@ -95,8 +95,8 @@ void Menu_Main_Draw (void)
 		// Draw Sub Menu
     	Menu_DrawSubMenu("Are you sure you want to quit?", "You will lose any progress that you have made.");
 
-		Menu_DrawButton (6.5, 0, "GET ME OUTTA HERE!", "", Menu_Quit);
-		Menu_DrawButton (7.5, 1, "I WILL PERSEVERE", "", Menu_ExitSubMenu);
+		Menu_DrawButton (7.5, 0, "GET ME OUTTA HERE!", "", Menu_Quit);
+		Menu_DrawButton (8.5, 1, "I WILL PERSEVERE", "", Menu_ExitSubMenu);
 	}
 
 	Menu_DrawSocialBadge (1, MENU_SOC_YOUTUBE);
