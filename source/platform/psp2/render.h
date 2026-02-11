@@ -176,6 +176,10 @@ void R_TeleportSplash (vec3_t org);
 
 void R_PushDlights (void);
 
+extern cvar_t r_retro;
+extern cvar_t r_dithering;
+extern cvar_t r_runqmbparticles;
+
 
 //
 // surface cache related

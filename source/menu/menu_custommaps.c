@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspiofilemgr.h>
 #elif __PSP2__
 #include <dirent.h>
+#include <psp2/io/fcntl.h> 
 #else
 #include <sys/dirent.h>
 #endif

@@ -88,9 +88,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // the normal binding process
 //
 
-#define K_AUX1          241
 #define	K_AUX9			215
-#define	K_AUX10			216
+#define	K_AUX1			216
 #define	K_AUX11			217
 #define	K_AUX12			218
 #define	K_AUX13			219

@@ -120,11 +120,11 @@ viddef_t	vid;				// global video state
 
 vrect_t		scr_vrect;
 
-bool	scr_disabled_for_loading;
-bool	scr_drawloading;
+qboolean	scr_disabled_for_loading;
+qboolean	scr_drawloading;
 float		scr_disabled_time;
 
-bool	block_drawing;
+qboolean	block_drawing;
 
 void SCR_ScreenShot_f (void);
 

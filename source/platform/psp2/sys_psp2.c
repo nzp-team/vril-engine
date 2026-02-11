@@ -285,11 +285,23 @@ void Sys_Sleep(void)
 {
 }
 
+#include <psp2/rtc.h>
 double Sys_FloatTime(void)
 {
-	SceRtcTick ticks;
-	sceRtcGetCurrentTick(&ticks);
-	return ticks.tick * 0.000001;
+    static SceRtcTick initial_tick = { 0 };
+    static double tick_freq = 0.0;
+
+    SceRtcTick current_tick;
+
+    if (tick_freq == 0.0)
+        tick_freq = (double)sceRtcGetTickResolution(); // ticks per second
+
+    sceRtcGetCurrentTick(&current_tick);
+
+    if (initial_tick.tick == 0)
+        initial_tick = current_tick;
+
+    return (double)(current_tick.tick - initial_tick.tick) / tick_freq;
 }
 
 void Sys_HighFPPrecision(void)
