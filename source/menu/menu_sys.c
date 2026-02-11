@@ -20,8 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "menu_defs.h"
 #include <assert.h>
 
-float       ui_scale_x;
-float       ui_scale_y;
+menuframe_t 	current_frame;
+int       		ui_scale;
 
 qboolean    menu_sound_playing;
 
@@ -103,62 +103,73 @@ void Menu_SetSound (int type)
     }
 }
 
-void UI_Align (int *x, int *y, int width, int height, int UI_ANCHOR)
+void UI_SetAlignment (int alignment_x, int alignment_y)
 {
-    switch (UI_ANCHOR) {
+	current_frame.point_x = alignment_x;
+	current_frame.point_y = alignment_y;
+}
+
+void UI_Align (int *x, int *y)
+{
+    switch (current_frame.point_x) {
         case UI_ANCHOR_CENTER:
-            *x = (vid.width - width) * 0.5 + *x;
-            *y = (vid.height - height) * 0.5 + *y;
+            *x = (vid.width * 0.5) + *x;
             break;
-        case UI_ANCHOR_TOPLEFT:
+        case UI_ANCHOR_LEFT:
+			// no op
             break;
-        case UI_ANCHOR_TOPRIGHT:
-            *x = vid.width - *x - width;
+        case UI_ANCHOR_RIGHT:
+            *x = vid.width - *x;
             break;
-        case UI_ANCHOR_BOTTOMLEFT:
-            *y = vid.height - *y - height;
+    }
+
+	switch (current_frame.point_y) {
+        case UI_ANCHOR_CENTER:
+            *y = (vid.height * 0.5) + *y;
             break;
-        case UI_ANCHOR_BOTTOMRIGHT:
-            *x = vid.width - *x - width;
-            *y = vid.height - *y - height;
+        case UI_ANCHOR_TOP:
+			// no op
+            break;
+        case UI_ANCHOR_BOTTOM:
+            *y = vid.height - *y;
             break;
     }
 }
 
-float UI_X(float x)
+int UI_X(int x)
 {
-    if (x == (float)vid.width) return vid.width;
+    if (x == vid.width) return vid.width;
 
     //printf("x %i\n", x);
-    float ret = (x * ui_scale_x);
+    int ret = (x * ui_scale);
     //printf("ret %i\n", ret);
     return (ret);
 }
 
-float UI_Y(float y)
+int UI_Y(int y)
 {
-    if (y == (float)vid.height) return vid.height;
+    if (y == vid.height) return vid.height;
 
     //printf("y %i\n", y);
-    float ret = (y * ui_scale_y);
+    int ret = (y * ui_scale);
     //printf("ret %i\n", ret);
     return (ret);
 }
 
-float UI_W(float w)
+int UI_W(int w)
 {
-    if (w == (float)vid.width) return vid.width;
+    if (w == vid.width) return vid.width;
     //printf("w %i\n", w);
-    float ret = (w * ui_scale_x);
+    int ret = (w * ui_scale);
     //printf("ret %i\n", ret);
     return (ret);
 }
 
-float UI_H(float h)
+int UI_H(int h)
 {
-    if (h == (float)vid.height) return vid.height;
+    if (h == vid.height) return vid.height;
     //printf("h %i\n", h);
-    float ret = (h * ui_scale_y);
+    int ret = (h * ui_scale);
     //printf("ret %i\n", ret);
     return (ret);
 }
@@ -170,11 +181,12 @@ void Menu_InitUIScale (void)
     printf("vid.width %i\n", vid.width);
     printf("vid.height %i\n", vid.height);
 
-	ui_scale_x = (float)vid.width/STD_UI_WIDTH;
-	ui_scale_y = (float)vid.height/STD_UI_HEIGHT;
+	current_frame.point_x = 0;
+	current_frame.point_y = 0;
 
-    printf("ui_scale_x %f\n", ui_scale_x);
-    printf("ui_scale_y %f\n", ui_scale_y);
+	ui_scale = vid.height/STD_UI_HEIGHT;
+
+    printf("ui_scale %i\n", ui_scale);
 }
 
 int Menu_GetActiveMenuButtons (void)
@@ -279,7 +291,6 @@ void Menu_KeyInput (int key)
 
 	case K_ENTER:
 	case K_AUX1:
-	case K_CROSS:
 		Menu_ButtonPress();
 		break;
 	}

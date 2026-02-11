@@ -86,9 +86,9 @@ void Menu_DrawInitLoadScreen (void)
 	if (loading_init == true) {
 		loading_string = "please wait...";
 
-		Menu_DrawFill (0, 0, STD_UI_WIDTH, STD_UI_WIDTH, 0, 0, 0, 255, UI_ANCHOR_TOPLEFT);
+		Menu_DrawFill (0, 0, vid.width, vid.width, 0, 0, 0, 255);
 
-		Menu_DrawString ((STD_UI_WIDTH/2), STD_UI_HEIGHT/2, loading_string, 255, 255, 255, 255, menu_text_scale_factor*2, UI_ANCHOR_TOPLEFT, 0);
+		Menu_DrawString (0, STD_UI_HEIGHT/2, loading_string, 255, 255, 255, 255, menu_text_scale_factor*2, 0);
 	}
 }
 

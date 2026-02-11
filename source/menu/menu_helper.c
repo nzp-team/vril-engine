@@ -69,8 +69,8 @@ void Menu_DictateScaleFactor(void)
 	CHAR_WIDTH = 8*menu_text_scale_factor;
 	CHAR_HEIGHT = 8*menu_text_scale_factor;
 
-	big_bar_height = STD_UI_HEIGHT/9;
-	small_bar_height = STD_UI_HEIGHT/64;
+	big_bar_height = 30;
+	small_bar_height = 4;
 }
 
 image_t Menu_PickBackground (void)
@@ -199,56 +199,60 @@ void Menu_BuildMenuButtons (int button_index, char *button_name, void *on_activa
 	}
 }
 
-void Menu_DrawFill (int x, int y, int width, int height, int r, int g, int b, int a, int UI_ANCHOR)
+void Menu_DrawFill (int x, int y, int width, int height, int r, int g, int b, int a)
 {
-	UI_Align (&x, &y, width, height, UI_ANCHOR);
+	UI_Align (&x, &y);
 
-	float x_value = UI_X((float)x);
-	float y_value = UI_Y((float)y);
-	float width_value = UI_W((float)width);
-	float height_value = UI_H((float)height);
+	int x_value = UI_X(x);
+	int y_value = UI_Y(y);
+	int width_value = UI_W(width);
+	int height_value = UI_H(height);
 
-	Draw_FillByColor ((int)x_value, (int)y_value, (int)width_value, (int)height_value, r, g, b, a);
+	Draw_FillByColor (x_value, y_value, width_value, height_value, r, g, b, a);
 }
 
-void Menu_DrawString (int x, int y, char* string, int r, int g, int b, int a, float scale, int UI_ANCHOR, int FLIP_TEXT_POS)
+void Menu_DrawString (int x, int y, char* string, int r, int g, int b, int a, float scale, int FLIP_TEXT_POS_START)
 {
-	UI_Align (&x, &y, 0, 0, UI_ANCHOR);
+	UI_Align (&x, &y);
 
-	float x_value = UI_X((float)x);
-	float y_value = UI_Y((float)y);
+	int x_value = UI_X((float)x);
+	int y_value = UI_Y((float)y);
 
-	if (FLIP_TEXT_POS) {
-		x_value = x_value - getTextWidth(string, menu_text_scale_factor);
+	if (FLIP_TEXT_POS_START) {
+		x_value = x_value - getTextWidth(string, scale);
 	}
 
-	Draw_ColoredString ((int)x_value, (int)y_value, string, r, g, b, a, scale);
+	Draw_ColoredString (x_value, y_value, string, r, g, b, a, scale);
 }
 
 void Menu_DrawStringCentered (int x, int y, char* text, int r, int g, int b, int a)
 {
-	UI_Align (&x, &y, 0, 0, UI_ANCHOR_TOPLEFT);
+	UI_Align (&x, &y);
 
-	float x_value = UI_X((float)x);
-	float y_value = UI_Y((float)y);
+	int x_value = UI_X((float)x);
+	int y_value = UI_Y((float)y);
 
 	x_value = x_value - (getTextWidth(text, menu_text_scale_factor)/2);
 
-	Draw_ColoredString (x, y, text, r, g, b, a, menu_text_scale_factor);
+	Draw_ColoredString (x_value, y_value, text, r, g, b, a, menu_text_scale_factor);
 }
 
-void Menu_DrawPic (int x, int y, int index, int width, int height, int UI_ANCHOR)
+void Menu_DrawPic (int x, int y, int index, int width, int height)
 {
-	float x_value = UI_X((float)x);
-	float y_value = UI_Y((float)y);
-	float width_value = UI_W((float)width);
-	float height_value = UI_H((float)height);
+	UI_Align (&x, &y);
 
-	Draw_StretchPic((int)x_value, (int)y_value, index, (int)width_value, (int)height_value);
+	int x_value = UI_X((float)x);
+	int y_value = UI_Y((float)y);
+	int width_value = UI_W((float)width);
+	int height_value = UI_H((float)height);
+
+	Draw_StretchPic(x_value, y_value, index, width_value, height_value);
 }
 
 void Menu_DrawSubPic (int x, int y, int pic, float s, float t, float s_coord_size, float t_coord_size, float scale, float r, float g , float b, float a)
 {
+	UI_Align (&x, &y);
+
 	if (pic > 0) {
 		Draw_SubPic(x, y, pic, s, t, s_coord_size, t_coord_size, scale, r, g, b, a);
 	}
@@ -261,17 +265,19 @@ Menu_DrawDivider
 */
 void Menu_DrawDivider (int order)
 {
-	int y_factor = (STD_UI_HEIGHT/16);
-	int y_pos = ((STD_UI_HEIGHT/8) + (order*y_factor)) - (CHAR_HEIGHT/2);
-	int x_length = STD_UI_WIDTH/3;
-	int y_length = STD_UI_HEIGHT/144;
+	int y_factor = 15;
+	int y_pos = 30 + (order*y_factor) - (CHAR_HEIGHT/2);
+	int x_length = 140;
+	int y_length = 1;
 
-	Menu_DrawFill(0, y_pos, x_length, y_length, 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
+	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+
+	Menu_DrawFill(0, y_pos, x_length, y_length, 130, 130, 130, 255);
 }
 
 void Menu_DrawSocialBadge (int order, int which)
 {
-	int y_factor = (vid.height/16);
+	int y_factor = 15;
 	int y_pos = (vid.height/2) + (vid.width/36) + (order*y_factor);
 	int x_pos = vid.width - (vid.width/20);
 	float coord_size = 0.5f;
@@ -312,7 +318,7 @@ Menu_DrawTitle
 void Menu_DrawTitle (char *title_name, int color)
 {
 	int x_pos = vid.width/64;
-	int y_pos = vid.height/24;
+	int y_pos = 10;
 
 	switch (color) {
 		case MENU_COLOR_WHITE:
@@ -329,23 +335,23 @@ void Menu_DrawTitle (char *title_name, int color)
 Menu_DrawSelectionBox
 ======================
 */
-void Menu_DrawSelectionBox (int x_pos, int y_pos, int UI_ANCHOR)
+void Menu_DrawSelectionBox (int x_pos, int y_pos)
 {
-	int horizontal_border_height = (STD_UI_HEIGHT/144);
-	int vertical_border_width = (STD_UI_WIDTH/256);
+	int horizontal_border_height = 1;
+	int vertical_border_width = 1;
 	int border_height = (horizontal_border_height*2) + (CHAR_HEIGHT);
-	int border_width = (STD_UI_WIDTH/3) + vertical_border_width;
+	int border_width = 140 + vertical_border_width;
 
 	// Draw selection box
 	// Done in 4 parts
 	// Back(ground)
-	Menu_DrawFill (0, y_pos - horizontal_border_height, border_width, border_height + (horizontal_border_height*2), 0, 0, 0, 86, UI_ANCHOR);
+	Menu_DrawFill (0, y_pos - horizontal_border_height, border_width, border_height + (horizontal_border_height*2), 0, 0, 0, 86);
 	// Top
-	Menu_DrawFill (0, y_pos - (horizontal_border_height*2), border_width, horizontal_border_height, 255, 0, 0, 255, UI_ANCHOR);
+	Menu_DrawFill (0, y_pos - (horizontal_border_height*2), border_width, horizontal_border_height, 255, 0, 0, 255);
 	// Bottom
-	Menu_DrawFill (0, y_pos + border_height, border_width, horizontal_border_height, 255, 0, 0, 255, UI_ANCHOR);
+	Menu_DrawFill (0, y_pos + border_height, border_width, horizontal_border_height, 255, 0, 0, 255);
 	// Side
-	Menu_DrawFill (border_width, y_pos - (horizontal_border_height*2), vertical_border_width, border_height + (horizontal_border_height*3), 255, 0, 0, 255, UI_ANCHOR);
+	Menu_DrawFill (border_width, y_pos - (horizontal_border_height*2), vertical_border_width, border_height + (horizontal_border_height*3), 255, 0, 0, 255);
 }
 
 /*
@@ -353,18 +359,18 @@ void Menu_DrawSelectionBox (int x_pos, int y_pos, int UI_ANCHOR)
 Menu_DrawMapBorder
 ======================
 */
-void Menu_DrawMapBorder (int x_pos, int y_pos, int image_width, int image_height, int UI_ANCHOR)
+void Menu_DrawMapBorder (int x_pos, int y_pos, int image_width, int image_height)
 {
-	int border_side_width = (STD_UI_WIDTH/144)/2;
+	int border_side_width = 2;
 
 	// Top
-	Menu_DrawFill (x_pos, y_pos, image_width+border_side_width, small_bar_height/2, 130, 130, 130, 255, UI_ANCHOR);
+	Menu_DrawFill (x_pos, y_pos, image_width+border_side_width, small_bar_height/2, 130, 130, 130, 255);
 	// Left Side
-	Menu_DrawFill (x_pos, y_pos, border_side_width, image_height, 130, 130, 130, 255, UI_ANCHOR);
+	Menu_DrawFill (x_pos, y_pos, border_side_width, image_height, 130, 130, 130, 255);
 	// Right Side
-	Menu_DrawFill (x_pos+image_width, y_pos, border_side_width, image_height, 130, 130, 130, 255, UI_ANCHOR);
+	Menu_DrawFill (x_pos+image_width, y_pos, border_side_width, image_height, 130, 130, 130, 255);
 	// Bottom
-	Menu_DrawFill (x_pos, y_pos+image_height, image_width+border_side_width, small_bar_height/2, 130, 130, 130, 255, UI_ANCHOR);
+	Menu_DrawFill (x_pos, y_pos+image_height, image_width+border_side_width, small_bar_height/2, 130, 130, 130, 255);
 }
 
 
@@ -375,32 +381,38 @@ Menu_DrawMapPanel
 */
 void Menu_DrawMapPanel (void)
 {
-	int x_pos = (STD_UI_WIDTH/3);
+	int x_pos = 150;
 	int y_pos = big_bar_height + small_bar_height;
 
+	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+
 	// Big box
-	Menu_DrawFill(x_pos, y_pos, STD_UI_WIDTH - x_pos, STD_UI_HEIGHT - (y_pos*2), 0, 0, 0, 120, UI_ANCHOR_TOPRIGHT);
+	Menu_DrawFill(x_pos, y_pos, (vid.width - x_pos), vid.height - (y_pos*2), 0, 0, 0, 120);
 	// Yellow bar
-	Menu_DrawFill(x_pos, y_pos, (STD_UI_WIDTH/136), STD_UI_HEIGHT - (y_pos*2), 255, 255, 0, 200, UI_ANCHOR_TOPRIGHT);
+	Menu_DrawFill(x_pos, y_pos, 2, vid.height - (y_pos*2), 255, 255, 0, 200);
 }
 
 void Menu_DrawSubMenu (char *line_one, char *line_two)
 {
-	int y_pos = (vid.height/3);
+	int y_pos = 150;
+
+	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 
 	// Dark red background
-    Menu_DrawFill (0, 0, vid.width, vid.height, 255, 0, 0, 20, UI_ANCHOR_TOPLEFT);
+    Menu_DrawFill (0, 0, vid.width, vid.height, 255, 0, 0, 20);
     // Black background box
-    Menu_DrawFill (0, vid.height/3, vid.width, vid.height/3, 0, 0, 0, 255, UI_ANCHOR_TOPLEFT);
+    Menu_DrawFill (0, vid.height/3, vid.width, vid.height/3, 0, 0, 0, 255);
     // Top yellow line
-    Menu_DrawFill (0, (vid.height/3)-small_bar_height, vid.width, small_bar_height, 255, 255, 0, 255, UI_ANCHOR_TOPLEFT);
+    Menu_DrawFill (0, (vid.height/3)-small_bar_height, vid.width, small_bar_height, 255, 255, 0, 255);
     // Bottom yellow line
-    Menu_DrawFill (0, vid.height-(vid.height/3), vid.width, small_bar_height, 255, 255, 0, 255, UI_ANCHOR_TOPLEFT);
+    Menu_DrawFill (0, vid.height-(vid.height/3), vid.width, small_bar_height, 255, 255, 0, 255);
+
+	UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_TOP);
 
 	// Quit/Restart Text
-    Menu_DrawStringCentered (vid.width/2, y_pos+CHAR_HEIGHT, line_one, 255, 255, 255, 255);
+    Menu_DrawStringCentered (0, y_pos+CHAR_HEIGHT, line_one, 255, 255, 255, 255);
     // Lose progress text
-    Menu_DrawStringCentered (vid.width/2, y_pos+(CHAR_HEIGHT*2), line_two, 255, 255, 255, 255);
+    Menu_DrawStringCentered (0, y_pos+(CHAR_HEIGHT*2), line_two, 255, 255, 255, 255);
 }
 
 /*
@@ -417,6 +429,8 @@ void Menu_DrawCustomBackground (qboolean draw_images)
 	// 
 	// Slight background pan
 	//
+
+	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 
 	// TODO
 
@@ -451,12 +465,12 @@ void Menu_DrawCustomBackground (qboolean draw_images)
 	}
 
 	// Top Bars
-	Menu_DrawFill(0, 0, STD_UI_WIDTH, big_bar_height, 0, 0, 0, 228, UI_ANCHOR_TOPLEFT);
-	Menu_DrawFill(0, big_bar_height, STD_UI_WIDTH, small_bar_height, 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
+	Menu_DrawFill(0, 0, vid.width, big_bar_height, 0, 0, 0, 228);
+	Menu_DrawFill(0, big_bar_height, vid.width, small_bar_height, 130, 130, 130, 255);
 
 	// Bottom Bars
-	Menu_DrawFill(0, (STD_UI_HEIGHT - big_bar_height), STD_UI_WIDTH, big_bar_height, 0, 0, 0, 228, UI_ANCHOR_TOPLEFT);
-	Menu_DrawFill(0, (STD_UI_HEIGHT - big_bar_height) - small_bar_height, STD_UI_WIDTH, small_bar_height, 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
+	Menu_DrawFill(0, (vid.height - big_bar_height), vid.width, big_bar_height, 0, 0, 0, 228);
+	Menu_DrawFill(0, (vid.height - big_bar_height) - small_bar_height, vid.width, small_bar_height, 130, 130, 130, 255);
 }
 
 /*
@@ -466,9 +480,9 @@ Menu_DrawButton
 */
 void Menu_DrawButton (int order, int button_index, char* button_name, char* button_summary, void *on_activate)
 {
-	int y_factor = (STD_UI_HEIGHT/16);
-	int x_pos = (STD_UI_WIDTH/3);
-	int y_pos = (STD_UI_HEIGHT/8) + (order*y_factor);
+	int y_factor = 15;
+	int x_pos = 140;
+	int y_pos = 30 + (order*y_factor);
 
 	// Button is currently inactive,
 	// so set its' attributes
@@ -476,23 +490,29 @@ void Menu_DrawButton (int order, int button_index, char* button_name, char* butt
 		Menu_BuildMenuButtons (button_index, button_name, on_activate);
 	}
 
+	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+
 	// Active menu buttons
 	// Hovering over button
 	if (Menu_IsButtonHovered(button_index)) {
 		// Make button red and add a box around it
 
 		// Draw selection box
-		Menu_DrawSelectionBox (x_pos, y_pos, UI_ANCHOR_TOPLEFT);
+		Menu_DrawSelectionBox (x_pos, y_pos);
 
 		// Draw button string
-		Menu_DrawString (x_pos, y_pos, button_name, 255, 0, 0, 255, menu_text_scale_factor, UI_ANCHOR_TOPLEFT, UI_FLIPTEXTPOS);
+		Menu_DrawString (x_pos, y_pos, button_name, 255, 0, 0, 255, menu_text_scale_factor, UI_FLIPTEXTPOS);
 
 		// Draw the bottom screen text for selected button 
-		Draw_ColoredStringCentered (vid.height - (vid.height/12), button_summary, 255, 255, 255, 255, menu_text_scale_factor);
+		UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_BOTTOM);
+		Menu_DrawStringCentered (0, 15, button_summary, 255, 255, 255, 255);
 	} else {
 		// Not hovering over button
-		Menu_DrawString (x_pos, y_pos, button_name, 255, 255, 255, 255, menu_text_scale_factor, UI_ANCHOR_TOPLEFT, UI_FLIPTEXTPOS);
+		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+		Menu_DrawString (x_pos, y_pos, button_name, 255, 255, 255, 255, menu_text_scale_factor, UI_FLIPTEXTPOS);
 	}
+
+	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 }
 
 /*
@@ -502,11 +522,13 @@ Menu_DrawGreyButton
 */
 void Menu_DrawGreyButton (int order, char* button_name)
 {
-	int y_factor = (STD_UI_HEIGHT/16);
-	int x_pos = (STD_UI_WIDTH/3); 
-	int y_pos = (STD_UI_HEIGHT/8) + (order*y_factor);
+	int y_factor = 15;
+	int x_pos = 140; 
+	int y_pos = 30 + (order*y_factor);
 
-	Menu_DrawString (x_pos, y_pos, button_name, 128, 128, 128, 255, menu_text_scale_factor, UI_ANCHOR_TOPLEFT, UI_FLIPTEXTPOS);
+	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+
+	Menu_DrawString (x_pos, y_pos, button_name, 128, 128, 128, 255, menu_text_scale_factor, UI_FLIPTEXTPOS);
 }
 
 void Menu_DrawOptionButton(int order, char* selection_name)
@@ -531,13 +553,13 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 	int index = 0;
 	char *button_name;
 	char *final_name;
-	int desc_y_factor = (STD_UI_HEIGHT/24);
+	int desc_y_factor = 10;
 
-	int image_width = (STD_UI_WIDTH/3);
-	int image_height = (STD_UI_HEIGHT/3);
+	int image_width = vid.width/3;
+	int image_height = vid.height/3;
 
-	int x_pos = ((STD_UI_WIDTH/3)+(STD_UI_WIDTH/36)) + (image_width/2);
-	int y_pos = (STD_UI_HEIGHT/5)-(STD_UI_HEIGHT/24);
+	int x_pos = 8;
+	int y_pos = 45;
 
 	// if this is a stock map
 	if (usermap_index < 0) {
@@ -568,11 +590,13 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 	}
 
 	if (Menu_IsButtonHovered(button_index)) {
+
+		UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_TOP);
 		// Draw map thumbnail picture
-		Menu_DrawPic (x_pos, y_pos, menu_usermap_image[index], image_width, image_height, UI_ANCHOR_TOPRIGHT);
+		Menu_DrawPic (x_pos, y_pos, menu_usermap_image[index], image_width, image_height);
 
 		// Draw border around map image
-		Menu_DrawMapBorder (x_pos, y_pos, image_width, image_height, UI_ANCHOR_TOPRIGHT);
+		Menu_DrawMapBorder (x_pos, y_pos, image_width, image_height);
 
 		// Draw Map Badge
 		char *badge_name = NULL;
@@ -595,39 +619,41 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 			case MAP_CATEGORY_USER: s = 0.5; t = 0; badge_name = "USERMAP"; break;
 		}
 
-		Menu_DrawString(x_pos + ((STD_UI_WIDTH/144)*1.5) + menu_badges_width, y_pos + image_height - (menu_badges_height/2) - (CHAR_HEIGHT/2), badge_name, 255, 255, 0, 255, menu_text_scale_factor, UI_ANCHOR_TOPRIGHT, 0);
-		Menu_DrawSubPic(x_pos + (STD_UI_WIDTH/144), y_pos + image_height - menu_badges_height, menu_badges, s, t, s_coord_size, t_coord_size, scale, 255, 255, 255, 255);
+		Menu_DrawString(x_pos + 4 + menu_badges_width, y_pos + image_height - (menu_badges_height/2) - (CHAR_HEIGHT/2), badge_name, 255, 255, 0, 255, menu_text_scale_factor, 0);
+		Menu_DrawSubPic(x_pos + 4, y_pos + image_height - menu_badges_height, menu_badges, s, t, s_coord_size, t_coord_size, scale, 255, 255, 255, 255);
 
 		// Draw map description
 		for (int j = 0; j < 8; j++) {
-			Menu_DrawStringCentered (x_pos + (STD_UI_WIDTH/6), (y_pos + image_height + (small_bar_height*2)) + j*desc_y_factor, custom_maps[index].map_desc[j], 255, 255, 255, 255);
+			Menu_DrawStringCentered (x_pos + 80, (y_pos + image_height + (small_bar_height*2)) + j*desc_y_factor, custom_maps[index].map_desc[j], 255, 255, 255, 255);
 		}
 
 		// Draw map author
 		if (custom_maps[index].map_author != NULL) {
-			Draw_ColoredStringCentered (STD_UI_HEIGHT - (STD_UI_HEIGHT/24), custom_maps[index].map_author, 255, 255, 0, 255, menu_text_scale_factor);
+			Menu_DrawStringCentered (0, vid.height - big_bar_height + (CHAR_HEIGHT/2), custom_maps[index].map_author, 255, 255, 0, 255);		
 		}
+
+		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 	}
 }
 
 void Menu_DrawOptionButton(int order, char* selection_name)
 {
-	int y_factor = (STD_UI_WIDTH/16);
-	int x_pos = (STD_UI_WIDTH/3) + (STD_UI_WIDTH/16); 
-	int y_pos = (STD_UI_HEIGHT/8) + (order*y_factor);
+	int y_factor = 15;
+	int x_pos = 20; 
+	int y_pos = 80 + (order*y_factor);
 
 	Draw_ColoredString(x_pos, y_pos, selection_name, 255, 255, 255, 255, menu_text_scale_factor);
 }
 
 void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, int max_option_value, cvar_t option, char* _option_string, qboolean zero_to_one, qboolean draw_option_string, float increment_amount)
 {
-	int y_factor = (STD_UI_HEIGHT/16);
-	int x_pos = (STD_UI_WIDTH/3) + (STD_UI_WIDTH/16); 
-	int y_pos = (STD_UI_HEIGHT/8) + (order*y_factor);
-	int slider_box_width = (STD_UI_WIDTH/4);
-	int slider_box_height = (STD_UI_HEIGHT/48);
+	int y_factor = 15;
+	int x_pos = 20; 
+	int y_pos = 80 + (order*y_factor);
+	int slider_box_width = 100;
+	int slider_box_height = 12;
 
-	int slider_width = (STD_UI_WIDTH/128);
+	int slider_width = 6;
 
 	if (Menu_IsButtonHovered(button_index)) {
 		Menu_SetOptionCvar(option, _option_string, min_option_value, max_option_value, increment_amount);
@@ -642,15 +668,17 @@ void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, in
 		}
 	}
 
+	UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_TOP);
+
 	float current_option = option.value;
 	float option_pos = (current_option - min_option_value)/(max_option_value - min_option_value);
 	// Slider box
-	Menu_DrawFill(x_pos, y_pos, slider_box_width, slider_box_height, 255, 160, 160, 255, UI_ANCHOR_TOPLEFT);
+	Menu_DrawFill(x_pos, y_pos, slider_box_width, slider_box_height, 255, 160, 160, 255);
 	// Selection box
-	Menu_DrawFill((x_pos+(option_pos*slider_box_width)) - slider_width, y_pos-(STD_UI_HEIGHT/64), slider_width, slider_box_height+((STD_UI_HEIGHT/64)*2), 255, 255, 255, 255, UI_ANCHOR_TOPLEFT);
+	Menu_DrawFill((x_pos+(option_pos*slider_box_width)) - slider_width, y_pos-4, slider_width, slider_box_height+4, 255, 255, 255, 255);
 	// Cvar value string
 	if (draw_option_string) {
-		Draw_ColoredString(x_pos + slider_box_width + (STD_UI_WIDTH/96), y_pos, option_string, 255, 255, 255, 255, menu_text_scale_factor);
+		Draw_ColoredString(x_pos + slider_box_width + 25, y_pos, option_string, 255, 255, 255, 255, menu_text_scale_factor);
 	}
 }
 
@@ -664,20 +692,20 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 	int texnum;
 	int	i;
 
-	int image_width = (STD_UI_WIDTH/3.5);
-	int image_height = (STD_UI_HEIGHT/3.5);
+	int image_width = 100;
+	int image_height = 160;
 
-	int image_x_pos = (STD_UI_WIDTH/2) + (STD_UI_WIDTH/28);
-	int image_y_pos = (STD_UI_HEIGHT) - (big_bar_height + small_bar_height) - (image_height) - (STD_UI_HEIGHT/96);
+	int image_x_pos = 100;
+	int image_y_pos = 150;
 
-	int left_column_x = (STD_UI_WIDTH/3) + (STD_UI_WIDTH/5);
-	int left_column_y = (STD_UI_HEIGHT/6);
+	int left_column_x = 50;
+	int left_column_y = 200;
 
 	int y_offset = CHAR_HEIGHT;
-	int y_newline = (STD_UI_HEIGHT/10);
-	int x_newline = (STD_UI_WIDTH/4);
+	int y_newline = 15;
+	int x_newline = 120;
 
-	int line_x = (STD_UI_WIDTH/3) + (STD_UI_WIDTH/8.5);
+	int line_x = 220;
 
 	texnum = Menu_GetMapImage (bsp_name);
 
@@ -690,45 +718,47 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 	Draw_StretchPic (image_x_pos, image_y_pos, texnum, image_width, image_height);
 
 	// Draw border around map image
-	Menu_DrawMapBorder (image_x_pos, image_y_pos, image_width, image_height, UI_ANCHOR_TOPRIGHT);
+	Menu_DrawMapBorder (image_x_pos, image_y_pos, image_width, image_height);
+
+	UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_TOP);
 
 	// Game Mode
 	Menu_DrawStringCentered (left_column_x, left_column_y, "Game Mode", 255, 255, 255, 255);
 	Menu_DrawStringCentered (left_column_x, left_column_y + y_offset, info_gamemode, 255, 255, 0, 255);
-	Menu_DrawFill (line_x, left_column_y + (y_offset*2), (STD_UI_WIDTH/6), (small_bar_height/3), 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
+	Menu_DrawFill (line_x, left_column_y + (y_offset*2), 80, (small_bar_height/3), 130, 130, 130, 255);
 
 	// Difficulty
 	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y, "Difficulty", 255, 255, 255, 255);
 	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y + y_offset, info_difficulty, 255, 255, 0, 255);
-	Menu_DrawFill (line_x + x_newline, left_column_y + (y_offset*2), (STD_UI_WIDTH/6), (small_bar_height/3), 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
+	Menu_DrawFill (line_x + x_newline, left_column_y + (y_offset*2), 80, (small_bar_height/3), 130, 130, 130, 255);
 
 	// Start Round
 	Menu_DrawStringCentered (left_column_x, left_column_y + y_newline, "Start Round", 255, 255, 255, 255);
 	Menu_DrawStringCentered (left_column_x, left_column_y + y_offset + y_newline, info_startround, 255, 255, 0, 255);
-	Menu_DrawFill (line_x , left_column_y + (y_offset*2) + y_newline, (STD_UI_WIDTH/6), (small_bar_height/3), 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
+	Menu_DrawFill (line_x , left_column_y + (y_offset*2) + y_newline, 80, (small_bar_height/3), 130, 130, 130, 255);
 
 	// Magic
 	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y + y_newline, "Magic", 255, 255, 255, 255);
 	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y + y_offset + y_newline, info_magic, 255, 255, 0, 255);
-	Menu_DrawFill (line_x + x_newline, left_column_y + (y_offset*2) + y_newline, (STD_UI_WIDTH/6), (small_bar_height/3), 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
+	Menu_DrawFill (line_x + x_newline, left_column_y + (y_offset*2) + y_newline, 80, (small_bar_height/3), 130, 130, 130, 255);
 
 	// Headshots Only
 	Menu_DrawStringCentered (left_column_x, left_column_y + (y_newline*2), "Headshots Only", 255, 255, 255, 255);
 	Menu_DrawStringCentered (left_column_x, left_column_y + y_offset + (y_newline*2), info_headshotonly, 255, 255, 0, 255);
-	Menu_DrawFill (line_x, left_column_y + (y_offset*2) + (y_newline*2), (STD_UI_WIDTH/6), (small_bar_height/3), 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
+	Menu_DrawFill (line_x, left_column_y + (y_offset*2) + (y_newline*2), 80, (small_bar_height/3), 130, 130, 130, 255);
 
 	// Horde Size
 	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y + (y_newline*2), "Horde Size", 255, 255, 255, 255);
 	Menu_DrawStringCentered (left_column_x + x_newline, left_column_y + y_offset + (y_newline*2), info_hordesize, 255, 255, 0, 255);
-	Menu_DrawFill (line_x + x_newline, left_column_y + (y_offset*2) + (y_newline*2), (STD_UI_WIDTH/6), (small_bar_height/3), 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
+	Menu_DrawFill (line_x + x_newline, left_column_y + (y_offset*2) + (y_newline*2), 80, (small_bar_height/3), 130, 130, 130, 255);
 
 	// Fast Rounds
 	Menu_DrawStringCentered (left_column_x, left_column_y + (y_newline*3), "Fast Rounds", 255, 255, 255, 255);
 	Menu_DrawStringCentered (left_column_x, left_column_y + y_offset + (y_newline*3), info_fastrounds, 255, 255, 0, 255);
-	Menu_DrawFill (line_x, left_column_y + (y_offset*2) + (y_newline*3), (STD_UI_WIDTH/6), (small_bar_height/3), 130, 130, 130, 255, UI_ANCHOR_TOPLEFT);
+	Menu_DrawFill (line_x, left_column_y + (y_offset*2) + (y_newline*3), 80, (small_bar_height/3), 130, 130, 130, 255);
 
 	// Map Name (Pretty)
-	Menu_DrawStringCentered (image_x_pos + (image_width/2), image_y_pos + image_height - (small_bar_height) - (STD_UI_HEIGHT/32), custom_maps[i].map_name_pretty, 255, 255, 0, 255);
+	Menu_DrawStringCentered (image_x_pos + (image_width/2), image_y_pos + image_height - (small_bar_height) - 8, custom_maps[i].map_name_pretty, 255, 255, 0, 255);
 }
 
 /*
@@ -815,11 +845,13 @@ void Menu_DrawBuildDate (void)
 {
 	char* welcome_text = "Welcome, player  ";
 
-	int y_pos = vid.height/64;
-	int y_offset = vid.height/24;
+	int y_pos = 4;
+	int y_offset = 10;
+
+	UI_SetAlignment (UI_ANCHOR_RIGHT, UI_ANCHOR_TOP);
 
 	// Build date/information
-	Menu_DrawString(STD_UI_WIDTH, y_pos, game_build_date, 255, 255, 255, 255, menu_text_scale_factor, UI_ANCHOR_TOPLEFT, UI_FLIPTEXTPOS);
+	Menu_DrawString(0, y_pos, game_build_date, 255, 255, 255, 255, menu_text_scale_factor, UI_FLIPTEXTPOS);
 	// Welcome text
-	Menu_DrawString(STD_UI_WIDTH, y_pos + y_offset, welcome_text, 255, 255, 0, 255, menu_text_scale_factor, UI_ANCHOR_TOPLEFT, UI_FLIPTEXTPOS);
+	Menu_DrawString(0, y_pos + y_offset, welcome_text, 255, 255, 0, 255, menu_text_scale_factor, UI_FLIPTEXTPOS);
 }
