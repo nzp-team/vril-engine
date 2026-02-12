@@ -49,49 +49,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define K_START         142
 #define K_SELECT 		143
 
-// NSpire
-#define K_ONE           144
-#define K_TWO           145
-#define K_THREE         146
-#define K_FOUR          147
-#define K_FIVE          148
-#define K_SIX           149
-#define K_SEVEN         150
-#define K_EIGHT         151
-#define K_NINE          152
 // NSpire Extras
 #define K_CTRL          153
-#define K_DEL           154
 #define K_SHIFT         155
 #define K_VAR           156
 #define K_TAB           157
-// NSpire Keyboard
-#define K_A             158
-#define K_B             159
-#define K_C             160
-#define K_D             161
-#define K_E             162
-#define K_F             163
-#define K_G             164
-#define K_H             165
-#define K_I             166
-#define K_J             167
-#define K_K             168
-#define K_L             169
-#define K_M             170
-#define K_N             171
-#define K_O             172
-#define K_P             173
-#define K_Q             174
-#define K_R             175
-#define K_S             176
-#define K_T             177
-#define K_U             178
-#define K_V             179
-#define K_W             180
-#define K_X             181
-#define K_Y             182
-#define K_Z             183
+#define K_DELETE        158
 
 // Joystick buttons
 #define	K_JOY1			184
@@ -101,6 +64,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define K_PLUS          188
 #define K_MINUS         189
+
+#define K_SPACE         190
 
 // aux keys are for multi-buttoned joysticks to generate so they can use
 // the normal binding process

@@ -760,20 +760,6 @@ forward:
 		M_Menu_MultiPlayer_f ();
 		break;
 
-	case K_BACKSPACE:
-		if (setup_cursor == 0)
-		{
-			if (strlen(setup_hostname))
-				setup_hostname[strlen(setup_hostname)-1] = 0;
-		}
-
-		if (setup_cursor == 1)
-		{
-			if (strlen(setup_myname))
-				setup_myname[strlen(setup_myname)-1] = 0;
-		}
-		break;
-
 	default:
 		if (k < 32 || k > 127)
 			break;
@@ -1360,8 +1346,7 @@ void M_Keys_Key (int k)
 		bind_grab = true;
 		break;
 
-	case K_BACKSPACE:		// delete bindings
-	case K_DEL:				// delete bindings
+	case K_DELETE:				// delete bindings
 		S_LocalSound ("misc/menu2.wav");
 		M_UnbindCommand (bindnames[keys_cursor][0]);
 		break;
@@ -1829,14 +1814,6 @@ forward:
 			Cbuf_AddText ("connect\n");
 		break;
 
-	case K_BACKSPACE:
-		if (serialConfig_cursor == 4)
-		{
-			if (strlen(serialConfig_phone))
-				serialConfig_phone[strlen(serialConfig_phone)-1] = 0;
-		}
-		break;
-
 	default:
 		if (key < 32 || key > 127)
 			break;
@@ -1973,26 +1950,6 @@ void M_ModemConfig_Key (int key)
 			(*SetModemConfig) (0, va ("%c", modemConfig_dialing), modemConfig_clear, modemConfig_init, modemConfig_hangup);
 			m_entersound = true;
 			M_Menu_SerialConfig_f ();
-		}
-		break;
-
-	case K_BACKSPACE:
-		if (modemConfig_cursor == 1)
-		{
-			if (strlen(modemConfig_clear))
-				modemConfig_clear[strlen(modemConfig_clear)-1] = 0;
-		}
-
-		if (modemConfig_cursor == 2)
-		{
-			if (strlen(modemConfig_init))
-				modemConfig_init[strlen(modemConfig_init)-1] = 0;
-		}
-
-		if (modemConfig_cursor == 3)
-		{
-			if (strlen(modemConfig_hangup))
-				modemConfig_hangup[strlen(modemConfig_hangup)-1] = 0;
 		}
 		break;
 
@@ -2173,20 +2130,6 @@ void M_LanConfig_Key (int key)
 			break;
 		}
 
-		break;
-
-	case K_BACKSPACE:
-		if (lanConfig_cursor == 0)
-		{
-			if (strlen(lanConfig_portname))
-				lanConfig_portname[strlen(lanConfig_portname)-1] = 0;
-		}
-
-		if (lanConfig_cursor == 2)
-		{
-			if (strlen(lanConfig_joinname))
-				lanConfig_joinname[strlen(lanConfig_joinname)-1] = 0;
-		}
 		break;
 
 	default:
@@ -2801,10 +2744,6 @@ void M_ServerList_Key (int k)
 	{
 	case K_ESCAPE:
 		M_Menu_LanConfig_f ();
-		break;
-
-	case K_SPACE:
-		M_Menu_Search_f ();
 		break;
 
 	case K_UPARROW:
