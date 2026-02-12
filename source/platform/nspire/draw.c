@@ -647,7 +647,6 @@ Draw_StretchPic
 */
 void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
 {
-	// naievil -- TODO: implement stretching?
 	Draw_AdvancedStretchPic(x, y, pic, x_value, y_value);
 }
 

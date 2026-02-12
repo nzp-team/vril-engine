@@ -22,16 +22,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //=============================================================================
 /* LOADING SCREEN */
 
-int			loadingScreen;
-image_t     lscreen_image;
-double      loadingtimechange;
-int         loadingdot;
-char        *loadinglinetext;
+int				loadingScreen;
+double      	loadingtimechange;
+int         	loadingdot;
+char        	*loadinglinetext;
 
-qboolean 	loadscreeninit;
+qboolean 		loadscreeninit;
 
-char* 		map_loadname;
-char* 		map_loadname_pretty;
+char* 			map_loadname;
+char* 			map_loadname_pretty;
 
 //=============================================================================
 
@@ -49,18 +48,23 @@ void Menu_DrawLoadScreen (void)
 	    return;
 	}
 
+	char map_path[MAX_OSPATH];
+
 	if (loadingScreen) {
 		Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 255);
 		if (!loadscreeninit) {
+			if (loadinglinetext) {
+				free(loadinglinetext);
+			}
 			loadinglinetext = malloc(256*sizeof(char));
-
 			loadscreeninit = true;
 		}
 
-		lscreen_image = Image_LoadImage(va("gfx/lscreen/%s", map_loadname), IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
+		snprintf(map_path, MAX_OSPATH, "gfx/lscreen/%s", map_loadname);
+		lscreen_image = Image_LoadImage(map_path, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, false, false);
 
 		if (lscreen_image < 0 || lscreen_image < 0) {
-			lscreen_image = Image_LoadImage("gfx/lscreen/lscreen", IMAGE_PNG, 0, true, false);
+			lscreen_image = Image_LoadImage("gfx/lscreen/lscreen", IMAGE_PNG, 0, false, false);
 		}
 
 		Draw_StretchPic(0, 0, lscreen_image, vid.width, vid.height);
@@ -78,8 +82,9 @@ void Menu_DrawLoadScreen (void)
 			loadingtimechange = Sys_FloatTime () + 5;
 		}
 
+		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
 		if (key_dest == key_game) {
-			Draw_ColoredStringCentered((vid.height - (vid.height/24)), loadinglinetext, 255, 255, 255, 255, menu_text_scale_factor);
+			Menu_DrawStringCentered(vid.width/2, CHAR_HEIGHT+2, loadinglinetext, 255, 255, 255, 255);
 		}
 	}
 }
