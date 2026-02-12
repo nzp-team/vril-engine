@@ -323,13 +323,13 @@ psvita_buttons KeyTable[MAX_PSVITA_KEYS] =
 	{ SCE_CTRL_DOWN, K_DOWNARROW},
 	{ SCE_CTRL_LEFT, K_LEFTARROW },
 	{ SCE_CTRL_RIGHT, K_RIGHTARROW },
-	{ SCE_CTRL_LTRIGGER, K_LEFTTRIGGER },
-	{ SCE_CTRL_RTRIGGER, K_RIGHTTRIGGER },
+	{ SCE_CTRL_LTRIGGER, K_LTRIGGER },
+	{ SCE_CTRL_RTRIGGER, K_RTRIGGER },
 
-	{ SCE_CTRL_SQUARE, K_SQUARE },
-	{ SCE_CTRL_TRIANGLE, K_TRIANGLE },
-	{ SCE_CTRL_CROSS, K_CROSS },
-	{ SCE_CTRL_CIRCLE, K_CIRCLE }
+	{ SCE_CTRL_SQUARE, K_LEFTFACE },
+	{ SCE_CTRL_TRIANGLE, K_TOPFACE },
+	{ SCE_CTRL_CROSS, K_BOTTOMFACE },
+	{ SCE_CTRL_CIRCLE, K_RIGHTFACE }
 };
 
 void PSP2_KeyDown(int keys) {
@@ -398,8 +398,8 @@ void simulateKeyPress(char* text){
 	//We first delete the current text
 	int i;
 	for (i=0;i<100;i++){
-		Key_Event(K_BACKSPACE, true);
-		Key_Event(K_BACKSPACE, false);
+		Key_Event(K_DELETE, true);
+		Key_Event(K_DELETE, false);
 	}
 	
 	while (*text){

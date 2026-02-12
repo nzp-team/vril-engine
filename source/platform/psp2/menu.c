@@ -228,7 +228,7 @@ void M_Main_Key (int key)
 		break;
 
 	case K_ENTER:
-	case K_CROSS:
+	case K_BOTTOMFACE:
 		m_entersound = true;
 
 		switch (m_main_cursor)
@@ -306,7 +306,7 @@ void M_SinglePlayer_Key (int key)
 		break;
 
 	case K_ENTER:
-	case K_CROSS:
+	case K_BOTTOMFACE:
 		m_entersound = true;
 
 		switch (m_singleplayer_cursor)
@@ -350,7 +350,7 @@ void M_SinglePlayer_Key (int key)
 		break;
 
 	// b button
-	case K_CIRCLE:
+	case K_RIGHTFACE:
 		M_Menu_Main_f();
 		break;
 	}
@@ -420,7 +420,7 @@ void M_Menu_CustomMaps_Key (int key)
 		break;
 
 	case K_ENTER:
-	case K_CROSS:
+	case K_BOTTOMFACE:
 		m_entersound = true;
 
 		switch (m_maps_cursor)
@@ -573,7 +573,7 @@ void M_Menu_CustomMaps_Key (int key)
 		break;
 
 	// b button
-	case K_CIRCLE:
+	case K_RIGHTFACE:
 		M_Menu_SinglePlayer_f ();
 		break;
 	}
@@ -752,7 +752,7 @@ void M_Options_Key (int k)
 	switch (k)
 	{
 	case K_ENTER:
-	case K_CROSS:
+	case K_BOTTOMFACE:
 		m_entersound = true;
 		switch (options_cursor)
 		{
@@ -797,7 +797,7 @@ void M_Options_Key (int k)
 		M_AdjustSliders (1);
 		break;
 
-	case K_CIRCLE:
+	case K_RIGHTFACE:
 		M_Menu_Main_f();
 		break;
 	}
@@ -984,7 +984,7 @@ void M_Keys_Key (int k)
 		break;
 
 	case K_ENTER:		// go into bind mode
-	case K_CROSS:
+	case K_BOTTOMFACE:
 		M_FindKeysForCommand (bindnames[keys_cursor][0], keys);
 		S_LocalSound ("sounds/menu/navigate.wav");
 		if (keys[1] != -1)
@@ -992,8 +992,7 @@ void M_Keys_Key (int k)
 		bind_grab = true;
 		break;
 
-	case K_BACKSPACE:		// delete bindings
-	case K_DEL:				// delete bindings
+	case K_RIGHTFACE:		// delete bindings
 		S_LocalSound ("sounds/menu/navigate.wav");
 		M_UnbindCommand (bindnames[keys_cursor][0]);
 		break;
@@ -1103,11 +1102,11 @@ void M_Quit_Key (int key)
 	switch (key)
 	{
 
-	case K_CIRCLE:
+	case K_RIGHTFACE:
 		M_Menu_Main_f();
 		break;
 
-	case K_CROSS:
+	case K_BOTTOMFACE:
 		game_running = false;
 		break;
 	}
