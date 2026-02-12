@@ -1981,7 +1981,7 @@ void M_ServerList_Key (int key)
 {
 	int	slist_length;
 
-	if (!slist[0].server && key != K_ESCAPE && key != K_DEL)
+	if (!slist[0].server && key != K_ESCAPE && key != K_DELETE)
 		return;
 
 	switch (key)
@@ -2025,7 +2025,7 @@ void M_ServerList_Key (int key)
 		Cbuf_AddText (va("connect \"%s\"\n", slist[slist_cursor].server));
 		break;
 
-	case K_DEL:
+	case K_DELETE:
 		S_LocalSound ("sounds/menu/enter.wav");
 		if ((slist_length = SList_Length()) < MAX_SERVER_LIST)
 		{
@@ -3324,7 +3324,7 @@ void M_Keys_Key (int k)
 		}
 		break;
 
-	case K_DEL:				// delete bindings
+	case K_DELETE:				// delete bindings
 		S_LocalSound ("sounds/menu/enter.wav");
 		M_UnbindCommand (bindnames[keys_cursor][0]);
 		break;
@@ -3703,7 +3703,7 @@ void M_OSK_Key (int key)//blubswillrule: making console cursor wrap around
 			strcat(osk_buffer,selected_char);
 		}
 		break;
-	case K_DEL:
+	case K_DELETE:
 		if (strlen(osk_buffer) > 0) {
 			osk_buffer[strlen(osk_buffer)-1] = '\0';
 		}
