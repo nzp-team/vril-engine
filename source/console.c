@@ -628,12 +628,12 @@ void Con_DrawConsole (int lines, qboolean drawinput, float scale)
 		Con_DrawInput ();
 #endif // __WII__
 
-#ifndef __3DS__
+#ifdef PLATFORM_USES_OSK
 	Con_DrawOSK();	
-#endif // __PSP__, __3DS__, __WII__
+#endif
 }
 
-#ifndef __3DS__
+#ifdef PLATFORM_USES_OSK
 static qboolean	scr_osk_active = false;
 
 
@@ -652,7 +652,7 @@ void Con_DrawOSK(void) {
 		M_OSK_Draw();
 	}
 }
-#endif // __PSP__, __WII__
+#endif
 
 /*
 ==================
