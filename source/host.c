@@ -947,11 +947,6 @@ void Host_Shutdown(void)
 
 	Host_WriteConfiguration ();
 
-#ifdef __PSP__
-	if (con_initialized)
-		History_Shutdown ();
-#endif // __PSP__
-
 	CDAudio_Shutdown ();
 	NET_Shutdown ();
 	S_Shutdown();

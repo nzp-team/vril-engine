@@ -79,54 +79,26 @@ void IN_Init (void)
 	sceCtrlSetSamplingCycle(0);
 	sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
 
-	// Japanese users would prefer to have X as cancel and O as OK.
-   	//unsigned int okButton		= PSP_CTRL_CIRCLE;
-	//unsigned int cancelButton	= PSP_CTRL_CROSS;
-	unsigned int okButton		= PSP_CTRL_CROSS;
-	unsigned int cancelButton	= PSP_CTRL_CIRCLE;
-
-
 	// Build the button to Quake key maps.
 	// Common keys:
     buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_SELECT)]	= K_SELECT;
-	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_START)]	= K_ESCAPE;
-	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_HOME)]	= K_HOME;
-	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_NOTE)]	= K_NOTE;
-	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_SCREEN)]	= K_SCREEN;
+	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_START)]	= K_START;
 	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_UP)]		= K_UPARROW;
 	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_RIGHT)]	= K_RIGHTARROW;
 	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_DOWN)]	= K_DOWNARROW;
 	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_LEFT)]	= K_LEFTARROW;
+	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_LTRIGGER)]	= K_LTRIGGER;
+	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_RTRIGGER)]	= K_RTRIGGER;
+	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_TRIANGLE)]	= K_TOPFACE;
+	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_CIRCLE)]		= K_RIGHTFACE;
+	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_CROSS)]		= K_BOTTOMFACE;
+	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_SQUARE)]		= K_LEFTFACE;
 	memcpy_vfpu(buttonToConsoleKeyMap, buttonToGameKeyMap, sizeof(ButtonToKeyMap));
 	memcpy_vfpu(buttonToMessageKeyMap, buttonToGameKeyMap, sizeof(ButtonToKeyMap));
 	memcpy_vfpu(buttonToMenuKeyMap, buttonToGameKeyMap, sizeof(ButtonToKeyMap));
-
-	// Game keys:
-	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_LTRIGGER)]	= K_AUX1;
-	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_RTRIGGER)]	= K_AUX2;
-	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_TRIANGLE)]	= K_JOY1;
-	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_CIRCLE)]		= K_JOY2;
-	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_CROSS)]		= K_JOY3;
-	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_SQUARE)]		= K_JOY4;
-
-	// Console keys:
-	buttonToConsoleKeyMap[buttonMaskToShift(PSP_CTRL_LTRIGGER)]	= K_PGUP;
-	buttonToConsoleKeyMap[buttonMaskToShift(PSP_CTRL_RTRIGGER)]	= K_PGDN;
-	buttonToConsoleKeyMap[buttonMaskToShift(okButton)]			= K_ENTER;
-	buttonToConsoleKeyMap[buttonMaskToShift(cancelButton)]		= K_ESCAPE;
-	buttonToConsoleKeyMap[buttonMaskToShift(PSP_CTRL_TRIANGLE)]	= K_DEL;
-	buttonToConsoleKeyMap[buttonMaskToShift(PSP_CTRL_SQUARE)]	= K_INS;
-
+	
 	// Message keys:
 	memcpy_vfpu(buttonToMessageKeyMap, buttonToConsoleKeyMap, sizeof(ButtonToKeyMap));
-
-	// Menu keys:
-	buttonToMenuKeyMap[buttonMaskToShift(PSP_CTRL_SQUARE)]	= K_INS;
-	buttonToMenuKeyMap[buttonMaskToShift(cancelButton)]		= K_ESCAPE;
-	buttonToMenuKeyMap[buttonMaskToShift(okButton)]			= K_ENTER;
-	buttonToMenuKeyMap[buttonMaskToShift(PSP_CTRL_TRIANGLE)]	= K_DEL;
-	buttonToMenuKeyMap[buttonMaskToShift(PSP_CTRL_LTRIGGER)]	= K_AUX1;
-	buttonToMenuKeyMap[buttonMaskToShift(PSP_CTRL_RTRIGGER)]	= K_AUX2;
 }
 
 void IN_Shutdown (void)

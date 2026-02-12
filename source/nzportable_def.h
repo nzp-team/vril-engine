@@ -286,7 +286,7 @@ typedef struct
 #include "input.h"
 #include "world.h"
 
-#include PLATFORM_FILE(keys.h)
+#include "keys.h"
 
 #include "console.h"
 #include "view.h"
