@@ -56,6 +56,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define K_TAB           157
 #define K_DELETE        158
 
+// PSP2
+#define K_TOUCH         159
+
 // Joystick buttons
 #define	K_JOY1			184
 #define	K_JOY2			185
@@ -120,4 +123,4 @@ void Key_WriteBindings (FILE *f);
 void Key_WriteDTBindings (FILE *f);
 void Key_SetBinding (int keynum, char *binding);
 void Key_ClearStates (void);
-
+void Key_SendText(char *text);

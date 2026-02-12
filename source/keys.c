@@ -86,6 +86,8 @@ keyname_t keynames[] =
 	{"VAR", K_VAR},
 	{"TAB", K_TAB},
 	{"DELETE", K_DELETE},
+
+	{"TOUCH", K_TOUCH},
 	
 	{"SPACE", K_SPACE},
 
@@ -146,6 +148,16 @@ qboolean consoleOskDone = false;
 ==============================================================================
 */
 
+void Key_SendText(char *text)
+{
+	Cbuf_AddText(text);
+	Cbuf_AddText("\n");
+	Con_Printf("]%s\n", text);
+	edit_line = (edit_line + 1) & 31;
+	history_line = edit_line;
+	key_lines[edit_line][0] = ']';
+	key_linepos = 1;
+}
 
 /*
 ====================
@@ -636,6 +648,8 @@ void Key_Init (void)
 	consolekeys[K_TAB] = true;
 	consolekeys[K_SPACE] = true;
 	consolekeys[K_DELETE] = true;
+
+	consolekeys[K_TOUCH] = true;
 
 	consolekeys[K_JOY1] = true;
 	consolekeys[K_JOY2] = true;
