@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define PAL_WHITETORED		1
 #define PAL_WHITETOYELLOW	2
 void Draw_AdvancedPic (int x, int y, int pic, int alpha, unsigned char palette_hack);
+void Draw_AdvancedStretchPic (int x, int y, int pic, int width, int height);
 
 extern int numcachepics;
 
@@ -306,31 +307,22 @@ void Draw_Character (int x, int y, int num)
 
 /*
 ================
-Draw_CharacterRGBA
-
-This is the same as Draw_Character, but with RGBA color codes.
-- Cypress
-================
-*/
-
-/*
-================
 Draw_Character
 
-Draws one 8*8 graphics character with 0 being transparent.
+Draws one scaled graphics character with 0 being transparent.
 It can be clipped to the top of the screen to allow the console to be
 smoothly scrolled off.
 ================
 */
 
-void Draw_AdvancedCharacter(int x, int y, int num, int alpha, unsigned short color_hack) {
+void Draw_AdvancedCharacter(int x, int y, int num, int alpha, float scale, unsigned short color_hack) {
 	byte			*dest;
 	byte			*source;
-	unsigned short	*pusdest;
-	int				drawline;	
+	unsigned short	*pusdest;	
 	int				row, col;
 	int 			dither_factor;
 	int 			pixel_tracker;
+	int 			char_scale = (int)scale;
 
 	if (alpha < 16)
 		return;
@@ -347,7 +339,7 @@ void Draw_AdvancedCharacter(int x, int y, int num, int alpha, unsigned short col
 
 	num &= 255;
 	
-	if (y <= -8)
+	if (y <= -8 * char_scale)
 		return;			// totally off screen
 
 #ifdef PARANOID
@@ -361,21 +353,21 @@ void Draw_AdvancedCharacter(int x, int y, int num, int alpha, unsigned short col
 	col = num&15;
 	source = draw_chars + (row<<10) + (col<<3);
 
-	if (y < 0)
-	{	// clipped
-		drawline = 8 + y;
+	if (y < 0) {	// clipped
 		source -= 128*y;
 		y = 0;
 	}
-	else
-		drawline = 8;
-
 
 	if (r_pixbytes == 1)
 	{
 		dest = vid.conbuffer + y*vid.conrowbytes + x;
-	
-		while (drawline--)
+
+		// Computer the scale
+		int scaled_w = 8 * char_scale;
+		int scaled_h = 8 * char_scale;
+
+		// 
+		for (int dy = 0; dy < scaled_h; dy++)
 		{
 			pixel_tracker++;
 
@@ -386,27 +378,30 @@ void Draw_AdvancedCharacter(int x, int y, int num, int alpha, unsigned short col
 					continue;
 			}
 
-			// "Modern" (not 1996) GCC makes this almost as-fast
-			for(int i = 0; i < 8; i++) {
-				if (source[i]) {
+			int sy = dy / scale;
+			byte *src_row = source + sy * 128;
+			for (int dx = 0; dx < scaled_w; dx++)
+			{
+				int sx = dx / scale;
+				byte cur_char = src_row[sx];
+
+				// "Modern" (not 1996) GCC makes this almost as-fast
+				if (cur_char) {
 					switch(color_hack) {
 						case PAL_WHITETORED:
-							dest[i] = convert_white_to_red(source[i]); 
+							dest[dx] = convert_white_to_red(cur_char); 
 							break;
 						case PAL_WHITETOYELLOW:
-							dest[i] = convert_white_to_yellow(source[i]); 
+							dest[dx] = convert_white_to_yellow(cur_char); 
 							break;
 						default: 
-							dest[i] = source[i]; 
+							dest[dx] = cur_char; 
 							break;
 					}
-				}
-					
+				}	
 			}
-
-			source += 128;
 			dest += vid.conrowbytes;
-		}
+		}	
 	}
 	else
 	{
@@ -414,7 +409,11 @@ void Draw_AdvancedCharacter(int x, int y, int num, int alpha, unsigned short col
 		pusdest = (unsigned short *)
 				((byte *)vid.conbuffer + y*vid.conrowbytes + (x<<1));
 
-		while (drawline--)
+		// Computer the scale
+		int scaled_w = 8 * char_scale;
+		int scaled_h = 8 * char_scale;
+
+		for (int dy = 0; dy < scaled_h; dy++)
 		{
 			pixel_tracker++;
 
@@ -425,24 +424,28 @@ void Draw_AdvancedCharacter(int x, int y, int num, int alpha, unsigned short col
 					continue;
 			}
 
-			// "Modern" (not 1996) GCC makes this almost as-fast
-			for(int i = 0; i < 8; i++) {
-				if (source[i]) {
+			int sy = dy / scale;
+			byte *src_row = source + sy * 128;
+			for (int dx = 0; dx < scaled_w; dx++)
+			{
+				int sx = dx / scale;
+				byte cur_char = src_row[sx];
+
+				// "Modern" (not 1996) GCC makes this almost as-fast
+				if (cur_char) {
 					switch(color_hack) {
 						case PAL_WHITETORED:
-							pusdest[i] = d_8to16table[convert_white_to_red(source[i])];
+							pusdest[dx] = d_8to16table[convert_white_to_red(cur_char)]; 
 							break;
 						case PAL_WHITETOYELLOW:
-							pusdest[i] = d_8to16table[convert_white_to_yellow(source[i])];
+							pusdest[dx] = d_8to16table[convert_white_to_yellow(cur_char)]; 
 							break;
 						default: 
-							pusdest[i] = d_8to16table[source[i]]; 
+							pusdest[dx] = d_8to16table[cur_char]; 
 							break;
 					}
-				}		
+				}	
 			}
-
-			source += 128;
 			pusdest += (vid.conrowbytes >> 1);
 		}
 	}
@@ -505,12 +508,20 @@ unsigned char find_color_hack_from_rgb(byte r, byte g, byte b)
 	return color_hack;
 }
 
+/*
+================
+Draw_CharacterRGBA
+
+This is the same as Draw_Character, but with RGBA color codes.
+- Cypress
+================
+*/
 extern cvar_t scr_coloredtext;
 void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float a, float scale)
 {
 	unsigned char palette_hack = find_color_hack_from_rgb((byte) r, (byte) g, (byte) b);
 
-	Draw_AdvancedCharacter(x, y, num, 255, palette_hack);
+	Draw_AdvancedCharacter(x, y, num, 255, scale, palette_hack);
 }
 
 void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, float a, float scale) 
@@ -519,7 +530,7 @@ void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, floa
 
 	while (*str)
 	{
-		Draw_AdvancedCharacter (x, y, *str, 255, palette_hack);
+		Draw_AdvancedCharacter (x, y, *str, 255, scale, palette_hack);
 
 		// Hooray for variable-spacing!
 		if (*str == ' ')
@@ -637,7 +648,7 @@ Draw_StretchPic
 void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
 {
 	// naievil -- TODO: implement stretching?
-	Draw_Pic(x, y, pic);
+	Draw_AdvancedStretchPic(x, y, pic, x_value, y_value);
 }
 
 /*
@@ -692,8 +703,6 @@ Draw_TransPic
 */
 void Draw_TransPic (int x, int y, int pic)
 {
-	return;
-
 	byte	*dest, *source, tbyte;
 	unsigned short	*pusdest;
 	int				v, u;
@@ -768,6 +777,106 @@ void Draw_TransPic (int x, int y, int pic)
 	}
 }
 
+void Draw_AdvancedStretchPic (int x, int y, int pic, int width, int height)
+{
+	byte			*dest, *source, tbyte;
+	unsigned short	*pusdest;
+	int				v, u;
+	int				pixel_tracker;
+	int				du, dv;
+	int				src_u, src_v;
+	 
+	cachepic_t *tex = &cachepics[pic];
+
+	if (x < 0 || (unsigned)(x + width) > vid.width || y < 0 ||
+		 (unsigned)(y + height) > vid.height)
+	{
+		Sys_Error ("Draw_AdvancedPic: bad coordinates");
+	}
+
+	pixel_tracker = 0;
+		
+	source = tex->data;
+
+	if (r_pixbytes == 1)
+	{
+		dest = vid.buffer + y * vid.rowbytes + x;
+
+		int u_step = (tex->width  << 16) / width;
+		int v_step = (tex->height << 16) / height;
+
+		int v_acc = 0;
+		for (dv = 0; dv < height; dv++)
+		{
+			src_v = v_acc >> 16;
+			if (src_v >= tex->height) {
+				src_v = tex->height - 1;
+			}
+			source = tex->data + src_v * tex->width;
+
+			int u_acc = 0;
+			for (du = 0; du < width; du++)
+			{
+				pixel_tracker++;
+
+				src_u = u_acc >> 16;
+				if (src_u >= tex->width) {
+					src_u = tex->width - 1;
+				}
+				tbyte = source[src_u];
+
+				if (tbyte != TRANSPARENT_COLOR) {
+					dest[du] = tbyte;
+				}
+
+				u_acc += u_step;
+			}
+
+			dest += vid.rowbytes;
+			v_acc += v_step;
+		}
+	}
+	else
+	{
+		// FIXME: pretranslate at load time?
+		pusdest = (unsigned short *)vid.buffer + y * (vid.rowbytes >> 1) + x;
+
+		int u_step = (tex->width  << 16) / width;
+		int v_step = (tex->height << 16) / height;
+
+		int v_acc = 0;
+		for (dv = 0; dv < height; dv++)
+		{
+			src_v = v_acc >> 16;
+			if (src_v >= tex->height) {
+				src_v = tex->height - 1;
+			}
+			source = tex->data + src_v * tex->width;
+
+			int u_acc = 0;
+			for (du = 0; du < width; du++)
+			{
+				pixel_tracker++;
+
+				src_u = u_acc >> 16;
+				if (src_u >= tex->width) {
+					src_u = tex->width - 1;
+				}
+        		tbyte = source[src_u];
+
+				if (tbyte != TRANSPARENT_COLOR) {
+					pusdest[du] = tbyte;
+				}
+
+				u_acc += u_step;
+			}
+
+			pusdest += vid.rowbytes >> 1;
+			v_acc += v_step;
+		}
+	}
+}
+
 /*
 =============
 Draw_AdvancedPic
@@ -775,8 +884,6 @@ Draw_AdvancedPic
 */
 void Draw_AdvancedPic (int x, int y, int pic, int alpha, unsigned char palette_hack)
 {
-	return;
-
 	byte	*dest, *source, tbyte;
 	unsigned short	*pusdest;
 	int				v, u;
