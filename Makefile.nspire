@@ -55,7 +55,7 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/host.c \
 		source/host_cmd.c \
 		source/platform/nspire/in_nspire.c \
-		source/platform/nspire/keys.c \
+		source/keys.c \
 		source/mathlib.c \
 		source/matrixlib.c \
 		source/platform/nspire/menu.c \
