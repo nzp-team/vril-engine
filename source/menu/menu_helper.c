@@ -145,7 +145,7 @@ void Map_SetDefaultValues (void)
 void Menu_LoadMap (char *selected_map)
 {
 	int i;
-	char map_command[32];
+	char map_command[64];
 
 	for (i = 0; i < num_user_maps; i++) {
 		if (!strcmp(selected_map, custom_maps[i].map_name)) 
@@ -279,7 +279,7 @@ void Menu_DrawSocialBadge (int order, int which)
 {
 	UI_SetAlignment (UI_ANCHOR_RIGHT, UI_ANCHOR_BOTTOM);
 
-	int y_factor = 16;
+	int y_factor = 15;
 	int y_pos = ((big_bar_height + small_bar_height) + 5) + (order*y_factor);
 	int x_pos = 20;
 	float coord_size = 0.5f;

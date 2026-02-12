@@ -138,6 +138,7 @@ extern char*            game_build_date;
 // Loading screens
 extern int          	loadingScreen;
 extern qboolean         loadscreeninit;
+extern image_t 			lscreen_image;
 
 // Custom maps
 typedef struct
@@ -261,6 +262,7 @@ void Menu_DrawLoadingFill(void);
 void Menu_DrawSubMenu (char *line_one, char *line_two);
 void Menu_DrawFill (int x, int y, int width, int height, int r, int g, int b, int a);
 void Menu_DrawString (int x, int y, char* string, int r, int g, int b, int a, float scale, int FLIP_TEXT_POS_START);
+void Menu_DrawStringCentered (int x, int y, char* text, int r, int g, int b, int a);
 
 void Menu_StockMaps_Set (void);
 void Menu_Pause_Set(void);

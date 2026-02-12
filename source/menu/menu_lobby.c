@@ -204,13 +204,18 @@ void Menu_Lobby_Draw (void)
     float lobby_delta = menu_lobby_countdown - (float)Sys_FloatTime();
     sprintf(game_starting, "Game Starting In..  %i", (int)lobby_delta);
     if (lobby_delta > 0) {
-        int x_pos = (vid.width/2) + (vid.width/28);
-        int y_pos = (vid.height - (vid.height/2)) + (vid.height/20);
-        Draw_ColoredString(x_pos, y_pos, game_starting, 255, 255, 255, 255, menu_text_scale_factor);
+        int image_width = vid.width/3;
+        int image_height = vid.height/3;
+        int map_region_center = 150 + (((vid.width-150)/2)+2);
+        int x_pos = map_region_center;
+        int y_pos = big_bar_height + small_bar_height + image_height;
+
+        UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
+        Menu_DrawStringCentered(x_pos, y_pos, game_starting, 255, 255, 255, 255);
 
         // Countdown bar
-        Draw_FillByColor(x_pos + ((vid.width/3.5)/2), y_pos + (int)(small_bar_height*1.5) + (vid.height/36), ((float)(vid.width/3.5)*(lobby_delta/(vid.width/60))/2), vid.height/36, 136, 136*(lobby_delta/(vid.width/60)), 136*(lobby_delta/(vid.width/60)), 230);
-        Draw_FillByColor(x_pos + ((vid.width/3.5)/2), y_pos + (int)(small_bar_height*1.5) + (vid.height/36), -((float)(vid.width/3.5)*(lobby_delta/(vid.width/60))/2), vid.height/36, 136, 136*(lobby_delta/(vid.width/60)), 136*(lobby_delta/(vid.width/60)), 230);
+        Menu_DrawFill(x_pos, y_pos - (CHAR_HEIGHT+2), ((float)(image_width)*(lobby_delta/(vid.width/60))/2), vid.height/36, 136, 136*(lobby_delta/(vid.width/60)), 136*(lobby_delta/(vid.width/60)), 230);
+        Menu_DrawFill(x_pos, y_pos - (CHAR_HEIGHT+2), -((float)(image_width)*(lobby_delta/(vid.width/60))/2), vid.height/36, 136, 136*(lobby_delta/(vid.width/60)), 136*(lobby_delta/(vid.width/60)), 230);
 
         if (menu_lobby_last != (float)floor(lobby_delta)) {
             Menu_SetSound(MENU_SND_BEEP);

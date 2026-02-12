@@ -35,6 +35,9 @@ Menu_Main_Set
 */
 void Menu_Main_Set (qboolean init)
 {
+	loadingScreen = 0;
+	loadscreeninit = false;
+
 	Menu_LoadPics();
 	Menu_ResetMenuButtons();
 	Menu_SetSound(MENU_SND_ENTER);
