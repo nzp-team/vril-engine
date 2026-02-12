@@ -41,7 +41,7 @@ SOURCES		:=	source
 DATA		:=	data
 INCLUDES	:=	include
 EXEFS_SRC	:=	exefs_src
-DEFINES	:=	-DTYR_VERSION=0.62-nx -DUSE_SDL2 -D__NX__ -DDEBUG -DPLATFORM_DIRECTORY="nx" -DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=24
+DEFINES	:=	-DTYR_VERSION=0.62-nx -DUSE_SDL2 -D__NX__ -DDEBUG -DPLATFORM_DIRECTORY="nx" -DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=24 -DGLQUAKE
 #ROMFS	:=	romfs
 
 #---------------------------------------------------------------------------------
@@ -132,21 +132,22 @@ COMMON_OBJS =	system.o \
 				platform/nx/in_sdl.c \
 				platform/nx/cd_common.c \
 				platform/nx/cd_null.c \
-				platform/nx/gl/gl_textures.c \
-				platform/nx/gl/gl_draw.c \
+				platform/ctr/gl/gl_draw.c \
+				platform/ctr/gl/gl_decal.c \
+				platform/ctr/gl/gl_qmb.c \
 				render/r_fog.c \
-		    	platform/nx/gl/gl_fog.c \
+		    	platform/ctr/gl/gl_fog.c \
 				platform/nx/gl/gl_unimp.c \
-				platform/nx/gl/gl_mesh.c \
-				platform/nx/gl/gl_model.c \
+				platform/ctr/gl/gl_mesh.c \
+				platform/ctr/gl/gl_model.c \
 				render/r_entity_fragments.c \
 				render/r_light.c \
 				platform/nx/r_part.c \
-				platform/nx/gl/gl_rmain.c \
-				platform/nx/gl/gl_rmisc.c \
-				platform/nx/gl/gl_rsurf.c \
-				platform/nx/gl/gl_screen.c \
-				platform/nx/gl/gl_warp.c \
+				platform/ctr/gl/gl_rmain.c \
+				platform/ctr/gl/gl_rmisc.c \
+				platform/ctr/gl/gl_rsurf.c \
+				platform/ctr/gl/gl_screen.c \
+				platform/ctr/gl/gl_warp.c \
 				platform/nx/gl/vid_mode.c \
 				platform/nx/gl/vid_egl.c \
 				crypter.c
@@ -227,12 +228,16 @@ $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
 	@mkdir -p $(BUILD)/platform/nx
 	@mkdir -p $(BUILD)/platform/nx/gl
+	@mkdir -p $(BUILD)/platform/ctr/gl
 	@mkdir -p $(BUILD)/render
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile.nx
 	@mkdir -p $(BUILD)/nx
 	@mkdir -p $(BUILD)/nx/bin/
 	@mv $(BUILD)/*.o $(BUILD)/nx/
 	@mv $(BUILD)/*.d $(BUILD)/nx/
+	@mv $(BUILD)/*.d $(BUILD)/ctr/
+	@mv $(BUILD)/*.d $(BUILD)/ctr/gl
+	@mv $(BUILD)/*.d $(BUILD)platform/ctr/gl
 	@mv $(BUILD)/platform/nx $(BUILD)/nx/
 	@mv $(BUILD)/render $(BUILD)/nx/
 	@mv $(BUILD)/$(TARGET).lst $(BUILD)/nx/

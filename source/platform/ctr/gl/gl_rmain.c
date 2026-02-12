@@ -1594,7 +1594,7 @@ void R_SetupGL (void)
 	glViewport (glx + x, gly + y2, w, h);
     screenaspect = (float)r_refdef.vrect.width/r_refdef.vrect.height;
     
-    gluPerspective (r_refdef.fov_y,  screenaspect,  4,  4096);
+    MYgluPerspective (r_refdef.fov_y,  screenaspect,  4,  4096);
 
 	if (mirror)
 	{

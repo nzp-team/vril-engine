@@ -35,7 +35,7 @@ char *GetGrenadeButtonL();
 
 void SCR_BeginLoadingPlaque(void);
 void SCR_EndLoadingPlaque(void);
-int SCR_ModalMessage(const char *text);
+int SCR_ModalMessage(char *text);
 
 extern float scr_con_current;
 extern float scr_centertime_off;

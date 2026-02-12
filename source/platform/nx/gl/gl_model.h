@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
 
 See the GNU General Public License for more details.
 
@@ -18,19 +18,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#ifndef MODEL_H
-#define MODEL_H
+#ifndef __MODEL__
+#define __MODEL__
 
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-
-/* Use the GCC builtin ffsl function */
-#ifndef ffsl
-#define ffsl __builtin_ffsl
-#endif
-
-#include "modelgen.h"
+#include "../modelgen.h"
 #include "../../../spritegn.h"
 
 /*
@@ -41,6 +32,7 @@ m*_t structures are in-memory
 */
 
 // entity effects
+
 #define	EF_BLUELIGHT			1
 #define	EF_MUZZLEFLASH 			2
 #define	EF_BRIGHTLIGHT 			4
@@ -57,6 +49,7 @@ m*_t structures are in-memory
 #define EF_RAYRED	 			8196			// red trail for porter x2
 #define EF_RAYGREEN  			16384			// green trail for ray gun
 
+
 /*
 ==============================================================================
 
@@ -64,6 +57,7 @@ BRUSH MODELS
 
 ==============================================================================
 */
+
 
 //
 // in memory representation
@@ -100,6 +94,7 @@ typedef struct texture_s
 	struct texture_s *alternate_anims;	// bmodels in frmae 1 use these
 	unsigned	offsets[MIPLEVELS];		// four mip maps stored
 } texture_t;
+
 
 #define	SURF_PLANEBACK		2
 #define	SURF_DRAWSKY		4
@@ -187,9 +182,7 @@ typedef struct mnode_s
 	unsigned short		numsurfaces;
 } mnode_t;
 
-/* forward decls; can't include render.h/glquake.h */
-struct efrag_s;
-struct entity_s;
+
 
 typedef struct mleaf_s
 {
@@ -356,10 +349,31 @@ typedef enum {mod_brush, mod_sprite, mod_alias} modtype_t;
 #define	EF_TRACER2	64			// orange split trail + rotate
 #define	EF_TRACER3	128			// purple trail
 
+
+// some models are special
+typedef enum
+{
+	MOD_NORMAL,
+	MOD_PLAYER,
+	MOD_EYES,
+	MOD_FLAME,
+	MOD_THUNDERBOLT,
+	MOD_WEAPON,
+	MOD_LAVABALL,
+	MOD_SPIKE,
+	MOD_SHAMBLER,
+	MOD_SPR,
+	MOD_SPR32,
+//	MOD_GKEY,
+//	MOD_SKEY,
+} modhint_t;
+
 typedef struct model_s
 {
 	char		name[MAX_QPATH];
 	qboolean	needload;		// bmodels and sprites don't cache normally
+
+	modhint_t			modhint;
 
 	modtype_t	type;
 	int			numframes;

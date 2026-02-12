@@ -22,7 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // vid buffer
 
 #include "../../../nzportable_def.h"
+#ifdef __3DS__
 #include <3ds.h>
+#endif
 
 #define GL_COLOR_INDEX8_EXT     0x80E5
 
@@ -55,9 +57,8 @@ float 	loading_num_step;
 int 	loading_step;
 float 	loading_cur_step_bk;
 
-#define	MAX_GLTEXTURES	1024
 #define MAX_VRAM_TEX	256*256*4
-static gltexture_t	gltextures[MAX_GLTEXTURES];
+gltexture_t	gltextures[MAX_GLTEXTURES];
 static int	numgltextures = 0;
 static GLuint current_gl_id = 0;
 
@@ -223,12 +224,13 @@ void Draw_Init (void)
 
 	Cvar_RegisterVariable (&gl_max_size);
 	Cvar_RegisterVariable (&gl_picmip);
-
+#ifdef __3DS__
 	if (!new3ds_flag) {
 		//Cvar_SetValue("gl_picmip", 1);
 		Cvar_Set ("gl_max_size", "256");
 	}
-
+#endif
+	Cvar_Set ("gl_max_size", "512");
 	Cmd_AddCommand ("gl_texturemode", &Draw_TextureMode_f);
 
 	// now turn them into textures
@@ -1311,8 +1313,3 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 
 	return texture_index;
 }
-
-/****************************************/
-float gVertexBuffer[VERTEXARRAYSIZE];
-float gColorBuffer[VERTEXARRAYSIZE];
-float gTexCoordBuffer[VERTEXARRAYSIZE];

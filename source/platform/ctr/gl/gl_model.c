@@ -295,7 +295,7 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 //
 // allocate a new model
 //
-	COM_FileBase (mod->name, loadname);
+	COM_FileBase (mod->name, loadname, sizeof(loadname));
 	
 	loadmodel = mod;
 
@@ -557,7 +557,7 @@ void Mod_LoadLighting (lump_t *l)
 
 	// LordHavoc: check for a .lit file
 	strcpy(litfilename, loadmodel->name);
-	COM_StripExtension(litfilename, litfilename);
+	COM_StripExtension(litfilename, litfilename, sizeof(litfilename));
 	strcat(litfilename, ".lit");
 	data = (byte*) COM_LoadHunkFile (litfilename);
 	if (data)
@@ -1680,7 +1680,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 	{
 		if (pskintype->type == ALIAS_SKIN_SINGLE) {
 			Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
-			COM_StripExtension(loadmodel->name, model);
+			COM_StripExtension(loadmodel->name, model, sizeof(model));
 
 			// HACK HACK HACK
 			snprintf(model2, 128, "%s.mdl_%i", model, i);
@@ -1966,7 +1966,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	// HACK HACK HACK
 	snprintf(name, 128, "%s.spr_%i", loadmodel->name, framenum);
 
-	COM_StripExtension(loadmodel->name, sprite);
+	COM_StripExtension(loadmodel->name, sprite, sizeof(sprite));
 	snprintf(sprite2, 128, "%s.spr_%i", sprite, framenum);
 	pspriteframe->gl_texturenum = Image_LoadImage(sprite2, IMAGE_TGA, 0, false, false);
 

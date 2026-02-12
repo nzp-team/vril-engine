@@ -180,7 +180,7 @@ void R_ParticleExplosion(vec3_t org);
 void R_LavaSplash(vec3_t org);
 void R_TeleportSplash(vec3_t org);
 
-void R_EntityParticles(const entity_t *ent);
+void R_EntityParticles (entity_t *ent);
 void R_ParticleExplosion2(vec3_t org, int colorStart, int colorLength);
 
 void R_PushDlights(void);

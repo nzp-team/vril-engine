@@ -436,11 +436,3 @@ extern int argsort_comparator(const void *lhs, const void *rhs);
 // ----------------------------------------------------------------------------
 
 extern func_t	EndFrame;
-
-
-#ifdef __3DS__
-#define VERTEXARRAYSIZE 18360
-extern float gVertexBuffer[VERTEXARRAYSIZE];
-extern float gColorBuffer[VERTEXARRAYSIZE];
-extern float gTexCoordBuffer[VERTEXARRAYSIZE];
-#endif // __3DS__

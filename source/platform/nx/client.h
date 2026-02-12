@@ -74,6 +74,13 @@ typedef struct {
     int percent;  // 0-256
 } cshift_t;
 
+typedef enum
+{
+	lt_default, lt_muzzleflash, lt_explosion, lt_rocket,
+	lt_red, lt_blue, lt_redblue, lt_green, NUM_DLIGHTTYPES,
+	lt_explosion2, lt_explosion3, lt_rayred, lt_raygreen
+} dlighttype_t;
+
 #define CSHIFT_CONTENTS 0
 #define CSHIFT_DAMAGE 1
 #define CSHIFT_BONUS 2
@@ -190,6 +197,8 @@ typedef struct {
     qboolean onground;
     qboolean inwater;
 
+    double laser_point_time;
+
     int intermission;    // don't change view angle, full screen, etc
     int completed_time;  // latched at intermission start
 
@@ -302,6 +311,7 @@ dlight_t *CL_AllocDlight(int key);
 enum { DLIGHT_FLASH = 0, DLIGHT_BLUE = 1, DLIGHT_RED = 2, DLIGHT_PURPLE = 3 };
 
 void CL_DecayLights(void);
+void CL_NewDlight (int key, vec3_t origin, float radius, float time, int type);
 void CL_RunParticles(void);
 
 void CL_Init(void);
@@ -412,3 +422,4 @@ void CL_InitTEnts(void);
 void CL_ClearTEnts(void);
 void CL_SignonReply(void);
 
+qboolean TraceLineN (vec3_t start, vec3_t end, vec3_t impact, vec3_t normal);

@@ -24,15 +24,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../../../nzportable_def.h"
 #include <switch.h>
 
+int	texture_mode = GL_LINEAR;
+
 int vid_modenum = VID_MODE_NONE;
 
 static cvar_t vid_mode = {"vid_mode", "0"};
+cvar_t	      gl_ztrick = {"gl_ztrick","0"};
 
 unsigned short d_8to16table[256];
 unsigned d_8to24table[256];
 unsigned char d_15to8table[65536];
-
-viddef_t vid;
 
 qboolean VID_IsFullScreen(void) { return vid_modenum != 0; }
 
@@ -40,7 +41,7 @@ qboolean VID_CheckAdequateMem(int width, int height) { return true; }
 
 void (*VID_SetGammaRamp)(unsigned short ramp[3][256]) = NULL;
 
-float gldepthmin, gldepthmax;
+double gldepthmin, gldepthmax;
 qboolean gl_mtexable;
 
 /*
@@ -272,6 +273,7 @@ void VID_Init(unsigned char *palette) {
     VID_InitModeCvars();
 
     Cmd_AddCommand("vid_describemodes", VID_DescribeModes_f);
+    Cvar_RegisterVariable (&gl_ztrick);
 
     /* Init the default windowed mode */
     mode = modelist;
