@@ -81,48 +81,13 @@ keyname_t keynames[] =
 	{"START", K_START},
 	{"SELECT", K_SELECT},
 
-	{"ONE", K_ONE},
-	{"TWO", K_TWO},
-	{"THREE", K_THREE},
-	{"FOUR", K_FOUR},
-	{"FIVE", K_FIVE},
-	{"SIX", K_SIX},
-	{"SEVEN", K_SEVEN},
-	{"EIGHT", K_EIGHT},
-	{"NINE", K_NINE},
-
 	{"CTRL", K_CTRL},
-	{"DEL", K_DEL},
 	{"SHIFT", K_SHIFT},
 	{"VAR", K_VAR},
 	{"TAB", K_TAB},
-
-	{"A", K_A},
-	{"B", K_B},
-	{"C", K_C},
-	{"D", K_D},
-	{"E", K_E},
-	{"F", K_F},
-	{"G", K_G},
-	{"H", K_H},
-	{"I", K_I},
-	{"J", K_J},
-	{"K", K_K},
-	{"L", K_L},
-	{"M", K_M},
-	{"N", K_N},
-	{"O", K_O},
-	{"P", K_P},
-	{"Q", K_Q},
-	{"R", K_R},
-	{"S", K_S},
-	{"T", K_T},
-	{"U", K_U},
-	{"V", K_V},
-	{"W", K_W},
-	{"X", K_X},
-	{"Y", K_Y},
-	{"Z", K_Z},
+	{"DELETE", K_DELETE},
+	
+	{"SPACE", K_SPACE},
 
 	{"JOY1", K_JOY1},
 	{"JOY2", K_JOY2},
@@ -279,8 +244,9 @@ void Key_Console (int key)
 
 	if (key == K_LTRIGGER) {
 		con_backscroll += 2;
-		if (con_backscroll > con_totallines - (vid.height>>3) - 1)
-			con_backscroll = con_totallines - (vid.height>>3) - 1;
+		// Typecasting neccesary for Nspire
+		if (con_backscroll > con_totallines - ((int)vid.height>>3) - 1)
+			con_backscroll = con_totallines - ((int)vid.height>>3) - 1;
 		return;
 	}
 
@@ -663,48 +629,14 @@ void Key_Init (void)
 	consolekeys[K_SELECT] = true;
 	consolekeys[K_PLUS] = true;
 	consolekeys[K_MINUS] = true;
-#ifdef __NSPIRE__
-	consolekeys[K_ONE] = true;
-	consolekeys[K_TWO] = true;
-	consolekeys[K_THREE] = true;
-	consolekeys[K_FOUR] = true;
-	consolekeys[K_FIVE] = true;
-	consolekeys[K_SIX] = true;
-	consolekeys[K_SEVEN] = true;
-	consolekeys[K_EIGHT] = true;
-	consolekeys[K_NINE] = true;
+
 	consolekeys[K_CTRL] = true;
-	consolekeys[K_DEL] = true;
 	consolekeys[K_SHIFT] = true;
 	consolekeys[K_VAR] = true;
 	consolekeys[K_TAB] = true;
-	consolekeys[K_A] = true;
-	consolekeys[K_B] = true;
-	consolekeys[K_C] = true;
-	consolekeys[K_D] = true;
-	consolekeys[K_E] = true;
-	consolekeys[K_F] = true;
-	consolekeys[K_G] = true;
-	consolekeys[K_H] = true;
-	consolekeys[K_I] = true;
-	consolekeys[K_J] = true;
-	consolekeys[K_K] = true;
-	consolekeys[K_L] = true;
-	consolekeys[K_M] = true;
-	consolekeys[K_N] = true;
-	consolekeys[K_O] = true;
-	consolekeys[K_P] = true;
-	consolekeys[K_Q] = true;
-	consolekeys[K_R] = true;
-	consolekeys[K_S] = true;
-	consolekeys[K_T] = true;
-	consolekeys[K_U] = true;
-	consolekeys[K_V] = true;
-	consolekeys[K_W] = true;
-	consolekeys[K_X] = true;
-	consolekeys[K_Y] = true;
-	consolekeys[K_Z] = true;
-#endif
+	consolekeys[K_SPACE] = true;
+	consolekeys[K_DELETE] = true;
+
 	consolekeys[K_JOY1] = true;
 	consolekeys[K_JOY2] = true;
 	consolekeys[K_JOY3] = true;

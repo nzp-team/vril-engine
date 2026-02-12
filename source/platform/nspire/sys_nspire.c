@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef WIN32FORNSPIRE
 #include <os.h>
 //#include <nspireio2.h>
-#include <keys.h>
 #endif
 
 #include "../../nzportable_def.h"
@@ -345,7 +344,7 @@ int rgi_nspire_key_map_to_quake[ 128 ] = {
 	K_CTRL,
 	K_TAB,
 	K_SHIFT,
-	K_BACKSPACE,
+	K_DELETE,
 	'`',
 	'`',
 	'-',
