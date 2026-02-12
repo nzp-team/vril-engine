@@ -1725,7 +1725,7 @@ void M_Keys_Key (int k)
 		bind_grab = true;
 		break;
 
-	case K_DEL:				// delete bindings
+	case K_DELETE:				// delete bindings
 		S_LocalSound ("misc/menu2.wav");
 		M_UnbindCommand (bindnames[keys_cursor][0]);
 		break;
