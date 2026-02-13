@@ -478,7 +478,7 @@ static void M_Paused_Menu_Key (int key)
 				M_Paused_Cusor = Max_Paused_Iteams - 1;
 			break;
 
-		case K_ENTER:
+		case K_BOTTOMFACE:
 			m_entersound = true;
 
 			switch (M_Paused_Cusor)
@@ -615,7 +615,7 @@ void M_Main_Key (int key)
 				m_main_cursor = MAIN_ITEMS - 1;
 			break;
 
-		case K_ENTER:
+		case K_BOTTOMFACE:
 			m_entersound = true;
 
 			switch (m_main_cursor)
@@ -689,7 +689,7 @@ void M_Restart_Key (int key)
 
 	case 'Y':
 	case 'y':
-	case K_ENTER:
+	case K_BOTTOMFACE:
 		key_dest = key_game;
 		m_state = m_none;
 		// Cbuf_AddText ("restart\n"); // nai -- old, now do soft reset
@@ -758,6 +758,7 @@ void M_Exit_Key (int key)
 	case 'Y':
 	case 'y':
 	case K_ENTER:
+	case K_BOTTOMFACE:
 		Cbuf_AddText("disconnect\n");
 		CL_ClearState ();
 		M_Load_Menu_Pics();
@@ -977,7 +978,7 @@ void M_Map_Key (int key)
 				}
 			}
 			break;
-		case K_ENTER:
+		case K_BOTTOMFACE:
 			m_entersound = true;
 			if (m_map_cursor == 17) {
 				M_Menu_SinglePlayer_f ();
@@ -1138,7 +1139,7 @@ void M_SinglePlayer_Key (int key)
 				m_singleplayer_cursor = SINGLEPLAYER_ITEMS - 1;
 			break;
 
-		case K_ENTER:
+		case K_BOTTOMFACE:
 			m_entersound = true;
 
 			switch (m_singleplayer_cursor)
@@ -1551,6 +1552,7 @@ void M_Achievement_Key (int key)
 	switch (key)
 	{
 	case K_ESCAPE:
+	case K_RIGHTFACE:
 		if (key_dest == key_menu_pause)
 			M_Paused_Menu_f();
 		else
@@ -1591,6 +1593,7 @@ void M_Achievement_Key (int key)
         break;
 
 	case K_ENTER:
+	case K_BOTTOMFACE:
 		m_entersound = true;
 		switch (m_achievement_cursor)
 		{
@@ -2609,6 +2612,7 @@ void M_Screen_Key (int key)
 	switch (key)
 	{
 		case K_ESCAPE:
+		case K_RIGHTFACE:
 			if (key_dest == key_menu_pause)
 			{
 				M_Menu_Options_f ();
@@ -2619,6 +2623,7 @@ void M_Screen_Key (int key)
 			break;
 
 		case K_ENTER:
+		case K_BOTTOMFACE:
 			m_entersound = true;
 			switch (video_cursor)
 			{
@@ -2723,6 +2728,7 @@ void M_Audio_Key (int key)
 	switch (key)
 	{
 	case K_ESCAPE:
+	case K_RIGHTFACE:
 		if (key_dest == key_menu_pause)
         {
             M_Menu_Options_f ();
@@ -2733,6 +2739,7 @@ void M_Audio_Key (int key)
 		break;
 
 	case K_ENTER:
+	case K_BOTTOMFACE:
 		m_entersound = true;
 		switch (audio_cursor)
 		{
@@ -2904,6 +2911,7 @@ void M_Gameplay_Key (int key)
 	switch (key)
 	{
 	case K_ESCAPE:
+	case K_RIGHTFACE:
 		if (key_dest == key_menu_pause)
         {
             M_Menu_Options_f ();
@@ -2914,6 +2922,7 @@ void M_Gameplay_Key (int key)
 		break;
 
 	case K_ENTER:
+	case K_BOTTOMFACE:
 		m_entersound = true;
 		switch (gameplay_cursor)
 		{
@@ -3035,6 +3044,7 @@ void M_Options_Key (int k)
 	switch (k)
 	{
 	case K_ESCAPE:
+	case K_RIGHTFACE:
 		if (key_dest == key_menu_pause)
 			M_Paused_Menu_f();
 		else
@@ -3042,6 +3052,7 @@ void M_Options_Key (int k)
 		break;
 
 	case K_ENTER:
+	case K_BOTTOMFACE:
 		m_entersound = true;
 		switch (options_cursor)
 		{
@@ -3281,6 +3292,7 @@ void M_Keys_Key (int k)
 	switch (k)
 	{
 	case K_ESCAPE:
+	case K_RIGHTFACE:
 		if (key_dest == key_menu_pause)
 		{
 			M_Menu_Options_f ();
@@ -3307,6 +3319,7 @@ void M_Keys_Key (int k)
 		break;
 
 	case K_ENTER:
+	case K_BOTTOMFACE:
 		S_LocalSound ("sounds/menu/enter.wav");
 		if (keys_cursor != NUMCOMMANDS) { // go into bind mode
 			M_FindKeysForCommand (bindnames[keys_cursor][0], keys);
@@ -3385,6 +3398,7 @@ void M_Credits_Key (int key)
 	{
 		case K_ENTER:
         case K_ESCAPE:
+		case K_RIGHTFACE:
             M_Menu_Main_f ();
             break;
 	}
@@ -3500,6 +3514,7 @@ void M_Quit_Key (int key)
 	switch (key)
 	{
 	case K_ESCAPE:
+	case K_RIGHTFACE:
 	case 'n':
 	case 'N':
 		if (wasInMenus)
@@ -3517,6 +3532,7 @@ void M_Quit_Key (int key)
 	case 'Y':
 	case 'y':
 	case K_ENTER:
+	case K_BOTTOMFACE:
 		key_dest = key_console;
 		Host_Quit_f ();
 		break;
@@ -3690,6 +3706,7 @@ void M_OSK_Key (int key)//blubswillrule: making console cursor wrap around
 			osk_pos_y = MAX_Y;//0
 		break;
 	case K_ENTER:
+	case K_BOTTOMFACE:
 		if (max_len > strlen(osk_buffer)) {
 			char *selected_line = osk_text[osk_pos_y];
 			char selected_char[2];
@@ -3709,6 +3726,7 @@ void M_OSK_Key (int key)//blubswillrule: making console cursor wrap around
 		}
 		break;
 	case K_ESCAPE:
+	case K_START:
 		m_state = m_old_state;
 		break;
 	default:
@@ -3740,7 +3758,7 @@ void Con_OSK_Key (int key)////blubswillrule: making console cursor wrap around
 		if (osk_pos_y < 0)
 			osk_pos_y = MAX_Y;//0
 		break;
-	case K_ENTER:
+	case K_BOTTOMFACE:
 		if (max_len > strlen(osk_buffer)) {
 			char *selected_line = osk_text[osk_pos_y];
 			char selected_char[2];
@@ -3763,7 +3781,7 @@ void Con_OSK_Key (int key)////blubswillrule: making console cursor wrap around
 		strncpy(osk_out_buff,osk_buffer,max_len);
 		Con_SetOSKActive(false);
 		break;
-	case K_RIGHTFACE:
+	case K_START:
 		Con_SetOSKActive(false);
 		break;
 	default:
@@ -5248,4 +5266,3 @@ void M_ConfigureNetSubsystem(void)
 	if (IPXConfig || TCPIPConfig)
 		net_hostport = lanConfig_port;
 }
-

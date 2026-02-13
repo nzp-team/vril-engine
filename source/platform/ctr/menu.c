@@ -269,7 +269,7 @@ void M_Start_Key (int key)
 {
 	switch (key)
 	{
-		case K_ENTER:
+		case K_RIGHTFACE:
 			S_LocalSound ("sounds/menu/enter.wav");
 			//Cbuf_AddText("cd playstring tensioned_by_the_damned 1\n");
 			Cbuf_AddText("togglemenu\n");
@@ -392,6 +392,7 @@ static void M_Paused_Menu_Key (int key)
 			break;
 
 		case K_ENTER:
+		case K_RIGHTFACE:
 			m_entersound = true;
 
 			switch (M_Paused_Cusor)
@@ -527,6 +528,7 @@ void M_Main_Key (int key)
 		break;
 
 	case K_ENTER:
+	case K_RIGHTFACE:
 		m_entersound = true;
 
 		switch (m_main_cursor)
@@ -603,6 +605,8 @@ void M_Credits_Key (int key)
 	switch (key)
 	{
 		case K_ENTER:
+		case K_RIGHTFACE:
+        case K_AUX2:
             M_Menu_Main_f ();
             break;
 	}
@@ -648,6 +652,7 @@ void M_Restart_Key (int key)
 	case 'Y':
 	case 'y':
 	case K_ENTER:
+	case K_RIGHTFACE:
 		key_dest = key_game;
 		m_state = m_none;
 		// Cbuf_AddText ("restart\n"); // nai -- old, now do soft reset
@@ -716,6 +721,7 @@ void M_Exit_Key (int key)
 	case 'Y':
 	case 'y':
 	case K_ENTER:
+	case K_RIGHTFACE:
 		Cbuf_AddText("disconnect\n");
 		CL_ClearState ();
 		M_Menu_Main_f();
@@ -880,6 +886,7 @@ void M_SinglePlayer_Key (int key)
 		break;
 
 	case K_ENTER:
+	case K_RIGHTFACE:
 		m_entersound = true;
 
 		switch (m_singleplayer_cursor)
@@ -1260,6 +1267,7 @@ void M_Menu_CustomMaps_Key (int key)
 			}
 			break;
 		case K_ENTER:
+		case K_RIGHTFACE:
 			m_entersound = true;
 			if (m_map_cursor == 17) {
 				M_Menu_SinglePlayer_f ();
@@ -1469,6 +1477,7 @@ void M_Options_Key (int k)
 	switch (k)
 	{
 	case K_ENTER:
+	case K_RIGHTFACE:
 		m_entersound = true;
 		switch (options_cursor)
 		{
@@ -1708,6 +1717,7 @@ void M_Keys_Key (int k)
 		break;
 
 	case K_ENTER:		// go into bind mode
+	case K_RIGHTFACE:
 		M_FindKeysForCommand (bindnames[keys_cursor][0], keys);
 		S_LocalSound ("misc/menu2.wav");
 		if (keys[1] != -1)
@@ -1784,7 +1794,7 @@ void M_Quit_Key (int key)
 		M_Menu_Main_f();
 		break;
 
-	case K_ENTER:
+	case K_RIGHTFACE:
 		game_running = false;
 		break;
 	}

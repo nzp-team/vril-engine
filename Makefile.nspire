@@ -21,7 +21,7 @@ endif
 GCCFLAGS += -Wno-missing-field-initializers
 
 VRILFLAGS := -DNO_SOUND_PROCESSING -DSOFTWARE_RENDERER -DFILE_SPECIAL_SUFFIX="\".tns\"" -DPLATFORM_DIRECTORY="nspire" -DPLATFORM_RENDERER="cpu" -DMAX_AI_COUNT=5
-GCCFLAGS += $(VRILFLAGS) -O2 -DOLD_SCREEN_API -fomit-frame-pointer -D__NSPIRE__
+GCCFLAGS += $(VRILFLAGS) -O2 -DOLD_SCREEN_API -fomit-frame-pointer -D__NSPIRE__ -DPLATFORM_CONFIRM_IS_ENTER
 
 COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/chase.c \

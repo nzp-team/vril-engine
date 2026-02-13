@@ -228,6 +228,7 @@ void M_Main_Key (int key)
 		break;
 
 	case K_ENTER:
+	case K_BOTTOMFACE:
 		m_entersound = true;
 
 		switch (m_main_cursor)
@@ -305,6 +306,7 @@ void M_SinglePlayer_Key (int key)
 		break;
 
 	case K_ENTER:
+	case K_BOTTOMFACE:
 		m_entersound = true;
 
 		switch (m_singleplayer_cursor)
@@ -418,6 +420,7 @@ void M_Menu_CustomMaps_Key (int key)
 		break;
 
 	case K_ENTER:
+	case K_BOTTOMFACE:
 		m_entersound = true;
 
 		switch (m_maps_cursor)
@@ -749,6 +752,7 @@ void M_Options_Key (int k)
 	switch (k)
 	{
 	case K_ENTER:
+	case K_BOTTOMFACE:
 		m_entersound = true;
 		switch (options_cursor)
 		{
@@ -980,6 +984,7 @@ void M_Keys_Key (int k)
 		break;
 
 	case K_ENTER:		// go into bind mode
+	case K_BOTTOMFACE:
 		M_FindKeysForCommand (bindnames[keys_cursor][0], keys);
 		S_LocalSound ("sounds/menu/navigate.wav");
 		if (keys[1] != -1)
@@ -1101,7 +1106,7 @@ void M_Quit_Key (int key)
 		M_Menu_Main_f();
 		break;
 
-	case K_ENTER:
+	case K_BOTTOMFACE:
 		game_running = false;
 		break;
 	}
