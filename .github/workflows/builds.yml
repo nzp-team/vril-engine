@@ -88,7 +88,6 @@ jobs:
         run: |
           cd vitaGL
           sed -i 's/^CFLAGS[[:space:]]*= /&-DHAVE_FFP_SHADER_SUPPORT=1 /' Makefile
-          grep CFLAGS Makefile
       # Build vitaGL
       - name: Build vitaGL with HAVE_FFP_SHADER_SUPPORT=1
         run: |
