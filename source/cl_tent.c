@@ -138,7 +138,6 @@ void CL_ParseTEnt (void)
 	vec3_t	pos;
 	dlight_t	*dl;
 	//int		rnd;
-	int		colorStart, colorLength;
 
 	type = MSG_ReadByte ();
 	switch (type)
@@ -303,27 +302,6 @@ void CL_ParseTEnt (void)
         if (r_part_telesplash.value == 2 && !cl_q3teleport_mod)
 			cl_q3teleport_mod = Mod_ForName ("progs/telep.md3", true);
 		R_TeleportSplash (pos);
-		break;
-
-	case TE_EXPLOSION2:				// color mapped explosion
-		pos[0] = MSG_ReadCoord ();
-		pos[1] = MSG_ReadCoord ();
-		pos[2] = MSG_ReadCoord ();
-		colorStart = MSG_ReadByte ();
-		colorLength = MSG_ReadByte ();
-		R_ParticleExplosion2 (pos, colorStart, colorLength);
-
-		if (r_decal_explosions.value)
-		{
-			R_SpawnDecalStatic(pos, decal_burn, 100);
-		}
-
-		dl = CL_AllocDlight (0);
-		VectorCopy (pos, dl->origin);
-		dl->radius = 350;
-		dl->die = cl.time + 0.5;
-		dl->decay = 300;
-		S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 		break;
 
 	default:

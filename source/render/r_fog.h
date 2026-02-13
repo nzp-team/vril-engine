@@ -35,7 +35,7 @@ void Fog_SetColorForSkyE(void);
 
 // MARK: Platform-specific
 
-void Platform_Fog_Init(void);
-void Platform_Fog_Disable(void);
-void Platform_Fog_Enable(void);
-void Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, float green, float blue, float alpha);
+void Hyena_Fog_Init(void);
+void Hyena_Fog_Disable(void);
+void Hyena_Fog_Enable(void);
+void Hyena_Fog_Set(bool is_world_geometry, float start, float end, float red, float green, float blue, float alpha);

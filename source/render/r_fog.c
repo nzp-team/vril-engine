@@ -281,10 +281,10 @@ Fog_SetupFrame(bool is_world_geometry)
     if (e == 0)
         e = -1;
 
-    Platform_Fog_Set(is_world_geometry, s, e, c[0], c[1], c[2], c[3]);
+    Hyena_Fog_Set(is_world_geometry, s, e, c[0], c[1], c[2], c[3]);
 
     if (s == 0 || e < 0) {
-        Platform_Fog_Disable();
+        Hyena_Fog_Disable();
     }
 }
 
@@ -311,8 +311,8 @@ Fog_SetColorForSkyS(void)
         if (b > 1.0f)
             b = 1.0f;
 
-        Platform_Graphics_SetTextureMode(GFX_REPLACE);
-        Platform_Graphics_Color(r, g, b, a);
+        Hyena_Graphics_SetTextureMode(GFX_REPLACE);
+        Hyena_Graphics_SetColor(r, g, b, a);
     }
 }
 
@@ -325,8 +325,8 @@ void
 Fog_SetColorForSkyE(void)
 {
     if (r_refdef.fog_end > 0.0f && r_skyfog.value) {
-        Platform_Graphics_SetTextureMode(GFX_REPLACE);
-        Platform_Graphics_Color(1, 1, 1, 1);
+        Hyena_Graphics_SetTextureMode(GFX_REPLACE);
+        Hyena_Graphics_SetColor(1.0f, 1.0f, 1.0f, 1.0f);
     }
 }
 
@@ -371,7 +371,7 @@ void
 Fog_EnableGFog(void)
 {
     if (!(Fog_GetStart() == 0) || !(Fog_GetEnd() <= 0)) {
-        Platform_Fog_Enable();
+        Hyena_Fog_Enable();
     }
 }
 
@@ -382,7 +382,7 @@ void
 Fog_DisableGFog(void)
 {
     if (!(Fog_GetStart() == 0) || !(Fog_GetEnd() <= 0)) {
-        Platform_Fog_Disable();
+        Hyena_Fog_Disable();
     }
 }
 
@@ -405,5 +405,5 @@ Fog_Init(void)
     r_refdef.fog_blue  = 0.5;
     fade_time = 1;
 
-    Platform_Fog_Init();
+    Hyena_Fog_Init();
 }

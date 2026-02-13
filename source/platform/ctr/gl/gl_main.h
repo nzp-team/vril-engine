@@ -165,28 +165,6 @@ typedef enum {
 	pt_static, pt_grav, pt_slowgrav, pt_fire, pt_explode, pt_explode2, pt_blob, pt_blob2
 } ptype_t;
 
-typedef	byte	col_t[4];
-
-typedef struct particle_s
-{
-	struct	particle_s	*next;
-	vec3_t				org, endorg;
-	col_t				color;
-	float				growth;
-	vec3_t				vel;
-	float 				ramp;
-	ptype_t 			type;
-	float				rotangle;
-	float				rotspeed;
-	float				size;
-	float				start;
-	float				die;
-	byte				hit;
-	byte				texindex;
-	byte				bounces;
-} particle_t;
-
-
 //====================================================
 
 

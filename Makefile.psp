@@ -95,9 +95,8 @@ HARDWARE_VIDEO_ONLY_OBJS = \
     source/platform/psp/gu/gu_fullbright.o \
     source/platform/psp/gu/gu_hlmdl.o \
     source/platform/psp/gu/gu_draw.o \
-    source/platform/psp/gu/gu_QMB.o \
+    source/render/r_particles.o \
     source/platform/psp/gu/gu_decals_QMB.o \
-    source/platform/psp/gu/gu_part.o \
     source/platform/psp/gu/gu_main.o \
     source/platform/psp/gu/gu_mesh.o \
     source/platform/psp/gu/gu_mhex2.o \

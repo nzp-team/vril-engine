@@ -26,7 +26,7 @@
  * @brief Sets fogging mode. (Platform-specific, see `Fog_SetupFrame()`)
  */
 void
-Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, float green, float blue, float alpha)
+Hyena_Fog_Set(bool is_world_geometry, float start, float end, float red, float green, float blue, float alpha)
 {
     // If we have normal color fog for world geom + lightmap, then the resulting color when fully fogged is wrong.
     // If we have exactly 0.5 0.5 0.5 gray for world game and normal fog for lightmap, the end result of fully fogged
@@ -41,7 +41,7 @@ Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, floa
  * @brief Enables fogging mode. (Platform-specific, see `Fog_EnableGFog()`)
  */
 void
-Platform_Fog_Enable(void)
+Hyena_Fog_Enable(void)
 {
     sceGuEnable(GU_FOG);
 }
@@ -50,7 +50,7 @@ Platform_Fog_Enable(void)
  * @brief Disables fogging mode. (Platform-specific, see `Fog_DisableGFog()`)
  */
 void
-Platform_Fog_Disable(void)
+Hyena_Fog_Disable(void)
 {
     sceGuDisable(GU_FOG);
 }
@@ -59,6 +59,6 @@ Platform_Fog_Disable(void)
  * @brief Called at startup, inits graphics functions. (Platform-specific, see `Fog_Init()`)
  */
 void
-Platform_Fog_Init(void)
+Hyena_Fog_Init(void)
 {
 }

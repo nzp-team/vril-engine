@@ -114,7 +114,7 @@ COMMON_OBJS =	system.o \
 				platform/ctr/snd_ctr.c \
 				platform/ctr/in_ctr.c \
 				platform/ctr/cd_null.c \
-				platform/ctr/gl/gl_qmb.c \
+				render/r_particles.c \
 				platform/ctr/gl/gl_decal.c \
 				platform/ctr/gl/gl_draw.c \
 				render/r_fog.c \
@@ -129,7 +129,6 @@ COMMON_OBJS =	system.o \
 				platform/ctr/gl/gl_screen.c \
 				platform/ctr/gl/gl_warp.c \
 				platform/ctr/gl/gl_vidctr.c \
-				platform/ctr/r_part.c \
 				platform/ctr/touch_ctr.c \
 				crypter.c
 

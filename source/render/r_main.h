@@ -24,14 +24,30 @@
 #ifndef _RENDER_MAIN_H_
 #define _RENDER_MAIN_H_
 
+#include "r_types.h"
 #include "r_color_quantization.h"
 #include "r_entity_fragments.h"
 #include "r_light.h"
 #include "r_fog.h"
 
-#define GFX_REPLACE     0
-
-void Platform_Graphics_SetTextureMode(int texture_mode);
-void Platform_Graphics_Color(float red, float green, float blue, float alpha);
+void Hyena_Graphics_SetTextureMode(int texture_mode);
+void Hyena_Graphics_SetColor(float red, float green, float blue, float alpha);
+void Hyena_Graphics_EnableCapability(int capability);
+void Hyena_Graphics_DisableCapability(int capability);
+void Hyena_Graphics_DepthMask(bool value);
+void Hyena_Graphics_BeginVertices(int mode);
+void Hyena_Graphics_Translate(float x, float y, float z);
+void Hyena_Graphics_Scale(float x, float y, float z);
+void Hyena_Graphics_RotateXYZ(float x, float y, float z);
+void Hyena_Graphics_RotateZYX(float z, float y, float x);
+void Hyena_Graphics_FlushMatrices(void);
+vertex_t *Hyena_Graphics_AllocateMemoryForVertices(int num_vertices);
+void Hyena_Graphics_2DTextureCoord(vertex_t *vertex, float u, float v);
+void Hyena_Graphics_VertexXYZ(vertex_t *vertex, float x, float y, float z);
+void Hyena_Graphics_DrawVertices(vertex_t* vertices, int num_vertices, int texture_precision, int vertex_precision);
+void Hyena_Graphics_EndVertices(void);
+void Hyena_Graphics_SetShadeMode(int shade_mode);
+void Hyena_Graphics_SetBlendFunction(int source_blend, int dest_blend);
+void Hyena_Graphics_SetDepthRange(float near, float far);
 
 #endif // _RENDER_MAIN_H_

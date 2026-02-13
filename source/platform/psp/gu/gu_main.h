@@ -150,20 +150,6 @@ typedef enum {
 	pt_static, pt_grav, pt_slowgrav, pt_fire, pt_explode, pt_explode2, pt_blob, pt_blob2
 } ptype_t;
 
-// !!! if this is changed, it must be changed in d_ifacea.h too !!!
-typedef struct particle2_s
-{
-// driver-usable fields
-	vec3_t		org;
-	float		color;
-// drivers never touch the following fields
-	struct particle2_s	*next;
-	vec3_t		vel;
-	float		ramp;
-	float		die;
-	ptype_t		type;
-} particle2_t;
-
 //====================================================
 
 
@@ -393,16 +379,6 @@ void ShowErrorDialog(const unsigned int error);
 void ShowMessageDialog(const char *message, int enableYesno);
 #endif
 //====================================================
-
-typedef struct {
-	float s, t;
-	unsigned int color;
-	float x, y, z;
-} part_vertex;
-
-typedef struct {
-	part_vertex first, second;
-} psp_particle;
 
 
 psp_particle* D_CreateBuffer (int size);

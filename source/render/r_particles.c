@@ -1,6 +1,7 @@
 /*
 Copyright (C) 2002-2003, Dr Labman, A. Nourai
 Copyright (C) 2009, Crow_bar psp port
+Copyright (C) 2023 NZ:P Team
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -18,11 +19,14 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-// gl_rpart.c
+// r_particles.c -- Particle rendering built from QuakeMadeBetter
 
-#include "../../../nzportable_def.h"
+#ifdef __PSP__
+#include <pspgu.h>
+#endif // __PSP__
 
-//#define	DEFAULT_NUM_PARTICLES		8192
+#include "../nzportable_def.h"
+
 #define	ABSOLUTE_MIN_PARTICLES      64
 #define	ABSOLUTE_MAX_PARTICLES      6144
 
@@ -117,6 +121,23 @@ typedef	enum
 	pd_q3teleport
 } part_draw_t;
 
+typedef struct particle_s
+{
+	struct	particle_s	*next;
+	vec3_t				org, endorg;
+	col_t				color;
+	float				growth;
+	vec3_t				vel;
+	float				rotangle;
+	float				rotspeed;
+	float				size;
+	float				start;
+	float				die;
+	byte				hit;
+	byte				texindex;
+	byte				bounces;
+} particle_t;
+
 typedef	struct particle_type_s
 {
 	particle_t			*start;
@@ -141,6 +162,9 @@ typedef struct particle_texture_s
 	float	coords[MAX_PTEX_COMPONENTS][4];
 } particle_texture_t;
 
+static	float	sint[7] = {0.000000, 0.781832, 0.974928, 0.433884, -0.433884, -0.974928, -0.781832};
+static	float	cost[7] = {1.000000, 0.623490, -0.222521, -0.900969, -0.900969, -0.222521, 0.623490};
+
 static			particle_t			*particles, *free_particles;
 static			particle_type_t		particle_types[num_particletypes];//R00k
 static	int		particle_type_index[num_particletypes];
@@ -156,8 +180,15 @@ static	int		r_numparticles;
 static	vec3_t	zerodir = {22, 22, 22};
 static	int		particle_count = 0;
 static	float	particle_time;
-qboolean		qmb_initialized = qfalse;
+qboolean		qmb_initialized = false;
 int				particle_mode = 0;	// 0: classic (default), 1: QMB, 2: mixed
+
+cvar_t 	r_runqmbparticles = {"r_runqmbparticles", 	"1", qtrue};
+
+void R_ReadPointFile_f (void)
+{
+
+}
 
 qboolean OnChange_gl_particle_count (cvar_t *var, char *string)
 {
@@ -166,18 +197,18 @@ qboolean OnChange_gl_particle_count (cvar_t *var, char *string)
 	f = bound(ABSOLUTE_MIN_PARTICLES, (atoi(string)), ABSOLUTE_MAX_PARTICLES);
 	Cvar_SetValue("r_particle_count", f);
 
-	QMB_ClearParticles ();		// also re-allocc particles
+	R_ClearParticles ();		// also re-allocc particles
 
-	return qtrue;
+	return true;
 }
 
 extern cvar_t	cl_gun_offset;
-cvar_t	r_particle_count	= {"r_particle_count", "1024", qtrue};
-cvar_t	r_bounceparticles	= {"r_bounceparticles", "1",qtrue};
-cvar_t	r_decal_blood		= {"r_decal_blood", "1",qtrue};
-cvar_t	r_decal_bullets	    = {"r_decal_bullets","1",qtrue};
-cvar_t	r_decal_sparks		= {"r_decal_sparks","1",qtrue};
-cvar_t	r_decal_explosions	= {"r_decal_explosions","1",qtrue};
+cvar_t	r_particle_count	= {"r_particle_count", "1024", true};
+cvar_t	r_bounceparticles	= {"r_bounceparticles", "1",true};
+cvar_t	r_decal_blood		= {"r_decal_blood", "1",true};
+cvar_t	r_decal_bullets	    = {"r_decal_bullets","1",true};
+cvar_t	r_decal_sparks		= {"r_decal_sparks","1",true};
+cvar_t	r_decal_explosions	= {"r_decal_explosions","1",true};
 
 int	decals_enabled;
 
@@ -189,6 +220,8 @@ static byte *ColorForParticle (part_type_t type)
 {
 	static	col_t	color;
     int		lambda;
+
+	color[0] = color[1] = color[2] = 255;
 
 	switch (type)
 	{
@@ -301,11 +334,38 @@ static byte *ColorForParticle (part_type_t type)
 		break;
 
 	default:
-		 //assert (!"ColorForParticle: unexpected type");
+        Sys_Error("unexpected type");
 		break;
 	}
 
 	return color;
+}
+
+/*
+===============
+R_ParseParticleEffect
+
+Parse an effect out of the server message
+===============
+*/
+void R_ParseParticleEffect (void)
+{
+	vec3_t		org, dir;
+	int			i, count, msgcount, color;
+
+	for (i=0 ; i<3 ; i++)
+		org[i] = MSG_ReadCoord ();
+	for (i=0 ; i<3 ; i++)
+		dir[i] = MSG_ReadChar () * (1.0/16);
+	msgcount = MSG_ReadByte ();
+	color = MSG_ReadByte ();
+
+	if (msgcount == 255)
+		count = 1024;
+	else
+		count = msgcount;
+
+	R_RunParticleEffect (org, dir, color, count);
 }
 
 
@@ -341,18 +401,28 @@ void QMB_AllocParticles (void)
 
 	r_numparticles = bound(ABSOLUTE_MIN_PARTICLES, r_particle_count.value, ABSOLUTE_MAX_PARTICLES);
 
-	//if (particles)
-	//	Con_Printf("QMB_AllocParticles: internal error >particles<\n");
-
     if (r_numparticles < 1) {
     	Con_Printf("QMB_AllocParticles: internal error >num particles<\n");
     }
 
-	// can't alloc on Hunk, using native memory
 	particles = (particle_t *) malloc (r_numparticles * sizeof(particle_t));
 }
 
-void QMB_InitParticles (void)
+int QMB_TEMP_loadtextureimage(char* path)
+{
+#ifdef __PSP__
+    int temp_gltexture;
+    temp_gltexture = loadtextureimage(path, 0, 0, false, GU_LINEAR);
+    GL_MarkTextureAsPermanent(temp_gltexture);
+    return temp_gltexture;
+#elif __3DS__
+    return loadtextureimage(path, 0, 0, false, true);
+#else
+    Sys_Error("not implemented");
+#endif
+}
+
+void R_InitParticles (void)
 {
 	int	i, count = 0, particleimage;
     float	max_s, max_t; //For ADD_PARTICLE_TEXTURE
@@ -366,12 +436,15 @@ void QMB_InitParticles (void)
 	Cvar_RegisterVariable (&r_decal_sparks);
 	Cvar_RegisterVariable (&r_decal_explosions);
 	Cvar_RegisterVariable (&r_particle_count);
+	Cvar_RegisterVariable (&r_runqmbparticles);
 
 	loading_num_step = loading_num_step + 24;
-	
-	if (!(particleimage = loadtextureimage("textures/particles/particlefont", 0, 0, qfalse, qtrue)))
-	{
-		//Clear_LoadingFill ();
+
+    // FIXME: Replace these temp functions when loadtextureimage is unified.
+    particleimage = QMB_TEMP_loadtextureimage("textures/particles/particlefont");
+
+    if (particleimage == 0) {
+        Sys_Error("Failed to load textures/particles/particlefont");	
 		return;
 	}
 
@@ -397,9 +470,11 @@ void QMB_InitParticles (void)
 	
 	max_s = max_t = 128.0;
 
-	if (!(particleimage = loadtextureimage("textures/particles/flame", 0, 0, qfalse, qtrue)))
-	{
-		//Clear_LoadingFill ();
+    // FIXME: Replace these temp functions when loadtextureimage is unified.
+    particleimage = QMB_TEMP_loadtextureimage("textures/particles/flame");
+
+	if (particleimage == 0) {
+        Sys_Error("Failed to load textures/particles/flame");	
 		return;
 	}
 
@@ -409,20 +484,25 @@ void QMB_InitParticles (void)
 
 	max_s = max_t = 64.0;
 
-	if (!(particleimage = loadtextureimage("textures/particles/inferno", 0, 0, qfalse, qtrue)))
-	{
-		//Clear_LoadingFill ();
+    // FIXME: Replace these temp functions when loadtextureimage is unified.
+    particleimage = QMB_TEMP_loadtextureimage("textures/particles/inferno");
+
+	if (particleimage == 0) {
+        Sys_Error("Failed to load textures/particles/inferno");	
 		return;
 	}
+
     max_s = max_t = 256.0;
 	ADD_PARTICLE_TEXTURE(ptex_flame, particleimage, 0, 1, 0, 0, 256, 256);
 
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	if (!(particleimage = loadtextureimage("textures/particles/zing1", 0, 0, qfalse, qtrue)))
-	{
-        //Clear_LoadingFill ();
+    // FIXME: Replace these temp functions when loadtextureimage is unified.
+    particleimage = QMB_TEMP_loadtextureimage("textures/particles/zing1");
+
+	if (particleimage == 0) {
+        Sys_Error("Failed to load textures/particles/zing1");	
 		return;
 	}
 
@@ -432,33 +512,43 @@ void QMB_InitParticles (void)
     loading_cur_step++;
 	SCR_UpdateScreen ();
 	max_s = max_t = 128.0;
-	
-	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl0", 0, 0, qfalse, qtrue)))
-	{
-		//Clear_LoadingFill ();
+
+    // FIXME: Replace these temp functions when loadtextureimage is unified.
+    particleimage = QMB_TEMP_loadtextureimage("textures/mzfl/mzfl0");
+
+	if (particleimage == 0) {
+        Sys_Error("Failed to load textures/mzfl/mzfl0");	
 		return;
-	}
+	}	
+
 	//max_s = max_t = 256.0;
 	ADD_PARTICLE_TEXTURE(ptex_muzzleflash, particleimage, 0, 1, 0, 0, 128, 128);
 
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl1", 0, 0, qfalse, qtrue)))
-	{
-		//Clear_LoadingFill ();
+    // FIXME: Replace these temp functions when loadtextureimage is unified.
+    particleimage = QMB_TEMP_loadtextureimage("textures/mzfl/mzfl1");
+
+	if (particleimage == 0) {
+        Sys_Error("Failed to load textures/mzfl/mzfl1");	
 		return;
-	}
+	}	
+
 	//max_s = max_t = 256.0;
 	ADD_PARTICLE_TEXTURE(ptex_muzzleflash2, particleimage, 0, 1, 0, 0, 128, 128);
 
     loading_cur_step++;	
 	SCR_UpdateScreen ();
-	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl2", 0, 0, qfalse, qtrue)))
-	{
-        //Clear_LoadingFill ();
+
+    // FIXME: Replace these temp functions when loadtextureimage is unified.
+    particleimage = QMB_TEMP_loadtextureimage("textures/mzfl/mzfl2");
+
+	if (particleimage == 0) {
+        Sys_Error("Failed to load textures/mzfl/mzfl2");	
 		return;
-	}
+	}	
+
 	//max_s = max_t = 256.0;
 	ADD_PARTICLE_TEXTURE(ptex_muzzleflash3, particleimage, 0, 1, 0, 0, 128, 128);
 
@@ -466,11 +556,15 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 	
 	max_s = max_t = 64.0;
-	if (!(particleimage = loadtextureimage("textures/particles/bloodcloud", 0, 0, qfalse, qtrue)))
-	{
-        //Clear_LoadingFill ();
+
+    // FIXME: Replace these temp functions when loadtextureimage is unified.
+    particleimage = QMB_TEMP_loadtextureimage("textures/particles/bloodcloud");
+
+	if (particleimage == 0) {
+        Sys_Error("Failed to load textures/particles/bloodcloud");	
 		return;
-	}
+	}	
+
 	//max_s = max_t = 256.0;
 	ADD_PARTICLE_TEXTURE(ptex_bloodcloud, particleimage, 0, 1, 0, 0, 64, 64);
 
@@ -479,81 +573,79 @@ void QMB_InitParticles (void)
 
 	QMB_AllocParticles ();
 
-	ADD_PARTICLE_TYPE(p_spark, pd_spark, GL_SRC_ALPHA, GL_ONE, ptex_none, 255, -8, 0, pm_normal, 1.3);
-	ADD_PARTICLE_TYPE(p_gunblast, pd_spark, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_none, 255, 0, 0, pm_normal, 1.3);
-	ADD_PARTICLE_TYPE(p_sparkray, pd_sparkray, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_none,	255, -0, 0, pm_nophysics, 0);
-	ADD_PARTICLE_TYPE(p_fire, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_smoke, 204, 0, -2.95, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_spark, pd_spark, GFX_SRC_ALPHA, GFX_ONE, ptex_none, 255, -8, 0, pm_normal, 1.3);
+	ADD_PARTICLE_TYPE(p_gunblast, pd_spark, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_none, 255, 0, 0, pm_normal, 1.3);
+	ADD_PARTICLE_TYPE(p_sparkray, pd_sparkray, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_none,	255, -0, 0, pm_nophysics, 0);
+	ADD_PARTICLE_TYPE(p_fire, pd_billboard, GFX_SRC_ALPHA, GFX_ONE, ptex_smoke, 204, 0, -2.95, pm_die, 0);
 
     loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	ADD_PARTICLE_TYPE(p_fire2,	pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_smoke, 204, 0, -2.95, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_chunk, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 255, -16, 0, pm_bounce, 1.475);
-	ADD_PARTICLE_TYPE(p_shockwave, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 255, 0, -4.85, pm_nophysics, 0);
-	ADD_PARTICLE_TYPE(p_inferno_flame, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic,	153, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_fire2,	pd_billboard, GFX_SRC_ALPHA, GFX_ONE, ptex_smoke, 204, 0, -2.95, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_chunk, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_generic, 255, -16, 0, pm_bounce, 1.475);
+	ADD_PARTICLE_TYPE(p_shockwave, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_generic, 255, 0, -4.85, pm_nophysics, 0);
+	ADD_PARTICLE_TYPE(p_inferno_flame, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_generic,	153, 0, 0, pm_static, 0);
 
     loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	ADD_PARTICLE_TYPE(p_inferno_trail, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 204, 0, 0, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_trailpart, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 230, 0, 0, pm_static, 0);
-	ADD_PARTICLE_TYPE(p_smoke, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_smoke, 140, 3, 0, pm_normal, 0);
-	ADD_PARTICLE_TYPE(p_raysmoke, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_smoke, 140, 3, 0, pm_normal, 0);
-	ADD_PARTICLE_TYPE(p_dpfire, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_dpsmoke, 144, 0, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_inferno_trail, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_generic, 204, 0, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_trailpart, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_generic, 230, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_smoke, pd_billboard, GFX_SRC_ALPHA, GFX_ONE, ptex_smoke, 140, 3, 0, pm_normal, 0);
+	ADD_PARTICLE_TYPE(p_raysmoke, pd_billboard, GFX_SRC_ALPHA, GFX_ONE, ptex_smoke, 140, 3, 0, pm_normal, 0);
+	ADD_PARTICLE_TYPE(p_dpfire, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_dpsmoke, 144, 0, 0, pm_die, 0);
 
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	ADD_PARTICLE_TYPE(p_dpsmoke, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_dpsmoke, 85, 3, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_dpsmoke, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_dpsmoke, 85, 3, 0, pm_die, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
 	
-	ADD_PARTICLE_TYPE(p_dot, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 255, 0, 0, pm_static, 0);
-	ADD_PARTICLE_TYPE(p_blood1, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, ptex_blood1, 255, -20, 0, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_blood2, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_blood3, 255, -45, 0, pm_normal, 0.018);//disisgonnabethegibchunks
-	ADD_PARTICLE_TYPE(p_blood3, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_blood3, 255, -30, 0, pm_normal, 0);
+	ADD_PARTICLE_TYPE(p_dot, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_generic, 255, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_blood1, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_COLOR, ptex_blood1, 255, -20, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_blood2, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_blood3, 255, -45, 0, pm_normal, 0.018);//disisgonnabethegibchunks
+	ADD_PARTICLE_TYPE(p_blood3, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_blood3, 255, -30, 0, pm_normal, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
 	
-	ADD_PARTICLE_TYPE(p_flame, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 200, 10, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_flame, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_generic, 200, 10, 0, pm_die, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
 	
-	ADD_PARTICLE_TYPE(p_lavatrail, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_dpsmoke, 255, 3, 0, pm_normal, 0);//R00k
-	ADD_PARTICLE_TYPE(p_glow, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 204, 0, 0, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_alphatrail, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 100, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_lavatrail, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_dpsmoke, 255, 3, 0, pm_normal, 0);//R00k
+	ADD_PARTICLE_TYPE(p_glow, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_generic, 204, 0, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_alphatrail, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_generic, 100, 0, 0, pm_static, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
 	
-	ADD_PARTICLE_TYPE(p_torch_flame, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_flame, 255, 12, 0, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_streak, pd_hide, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_none, 255, -64, 0, pm_streak, 1.5);
-	ADD_PARTICLE_TYPE(p_streakwave, pd_hide, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_none, 255, 0, 0, pm_streakwave, 0);
-	ADD_PARTICLE_TYPE(p_streaktrail, pd_beam, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_none, 255, 0, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_torch_flame, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_flame, 255, 12, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_streak, pd_hide, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_none, 255, -64, 0, pm_streak, 1.5);
+	ADD_PARTICLE_TYPE(p_streakwave, pd_hide, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_none, 255, 0, 0, pm_streakwave, 0);
+	ADD_PARTICLE_TYPE(p_streaktrail, pd_beam, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_none, 255, 0, 0, pm_die, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
 	
-	ADD_PARTICLE_TYPE(p_lightningbeam, pd_beam, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_lightning, 255, 0, 0, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_muzzleflash, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_muzzleflash, 255, 0, 0, pm_static, 0);
-	ADD_PARTICLE_TYPE(p_muzzleflash2, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_muzzleflash2, 255, 0, 0, pm_static, 0);
-	ADD_PARTICLE_TYPE(p_muzzleflash3, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_muzzleflash3, 255, 0, 0, pm_static, 0);
-	ADD_PARTICLE_TYPE(p_rain, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 255, -16, 0, pm_rain, 0);
+	ADD_PARTICLE_TYPE(p_lightningbeam, pd_beam, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_lightning, 255, 0, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_muzzleflash, pd_billboard, GFX_SRC_ALPHA, GFX_ONE, ptex_muzzleflash, 255, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_muzzleflash2, pd_billboard, GFX_SRC_ALPHA, GFX_ONE, ptex_muzzleflash2, 255, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_muzzleflash3, pd_billboard, GFX_SRC_ALPHA, GFX_ONE, ptex_muzzleflash3, 255, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_rain, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_generic, 255, -16, 0, pm_rain, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
 	
-	//shpuldeditedthis(GI_ONE_MINUS_DST_ALPHA->GL_ONE_MINUS_SRC_ALPHA) (edited one right after this comment)
-	ADD_PARTICLE_TYPE(p_bloodcloud, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_bloodcloud, 255, -2, 0, pm_normal, 0);
+	ADD_PARTICLE_TYPE(p_bloodcloud, pd_billboard, GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA, ptex_bloodcloud, 255, -2, 0, pm_normal, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
 	
-	//old: ADD_PARTICLE_TYPE(p_q3flame, pd_q3flame, GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA, ptex_q3flame, 204, 0, 0, pm_static, -1);
-	ADD_PARTICLE_TYPE(p_q3flame, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_q3flame, 180, 0.66, 0, pm_nophysics, 0);
+	ADD_PARTICLE_TYPE(p_q3flame, pd_billboard, GFX_SRC_ALPHA, GFX_ONE, ptex_q3flame, 180, 0.66, 0, pm_nophysics, 0);
 
 	loading_cur_step++;
 	strcpy(loading_name, "particles");
@@ -561,7 +653,7 @@ void QMB_InitParticles (void)
 
 	Clear_LoadingFill ();
 
-	qmb_initialized = qtrue;
+	qmb_initialized = true;
 }
 
 #define	INIT_NEW_PARTICLE(_pt, _p, _color, _size, _time)	\
@@ -589,8 +681,6 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 
 	if (!qmb_initialized)
 		Sys_Error ("QMB particle added without initialization");
-
-	//assert (size > 0 && time > 0);
 
 	if (type < 0 || type >= num_particletypes) {
 		Sys_Error ("Invalid type (%d)", type);
@@ -812,7 +902,7 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 			break;
 
 		default:
-			//assert (!"AddParticle: unexpected type");
+            Sys_Error("unexpected type: (%d)", type);
 			break;
 		}
 	}
@@ -830,8 +920,6 @@ __inline static void AddParticleTrail (part_type_t type, vec3_t start, vec3_t en
 
 	if (!qmb_initialized)
 		Sys_Error ("QMB particle added without initialization");
-
-	//assert (size > 0 && time > 0);
 
 	if (type < 0 || type >= num_particletypes)
 		Sys_Error ("Invalid type (%d)", type);
@@ -873,7 +961,7 @@ __inline static void AddParticleTrail (part_type_t type, vec3_t start, vec3_t en
 		break;
 
 	default:
-		//assert (!"AddParticleTrail: unexpected type");
+        Sys_Error("unexpected type (%d)", type);
 		break;
 	}
 
@@ -959,7 +1047,7 @@ __inline static void AddParticleTrail (part_type_t type, vec3_t start, vec3_t en
 			break;
 
 		default:
-			//assert (!"AddParticleTrail: unexpected type");
+            Sys_Error("unexpected type (%d)", type);
 			break;
 		}
 
@@ -967,7 +1055,7 @@ __inline static void AddParticleTrail (part_type_t type, vec3_t start, vec3_t en
 	}
 }
 
-void QMB_ClearParticles (void)
+void R_ClearParticles (void)
 {
 	int	i;
 
@@ -1103,9 +1191,7 @@ inline static void QMB_UpdateParticles(void)
 							VectorCopy(stop, p->org);
 							VectorCopy(normal, p->vel);
 							CrossProduct(normal,p->vel,tangent);
-							#if 0 // naievil -- fixme
 							R_SpawnDecal(p->org, normal, tangent, decal_blood3, 12, 0);
-							#endif
 						}
 						p->die = 0;
 					}
@@ -1144,7 +1230,9 @@ inline static void QMB_UpdateParticles(void)
 							VectorCopy(stop, p->org);
 							VectorCopy(normal, p->vel);
 							CrossProduct(normal,p->vel,tangent);
-/*
+
+                            // TODO: Investigate blood decals
+#if 0
 							if ((pt->id == p_blood1)&&(r_decal_blood.value))
 							{
 								R_SpawnDecal(p->org, normal, tangent, decal_blood1, 12, 0);
@@ -1156,17 +1244,14 @@ inline static void QMB_UpdateParticles(void)
 									R_SpawnDecal(p->org, normal, tangent, decal_blood2, 12, 0);
 								}
 							}
-*/
-							#if 0// naievil -- fixme
+#endif
+
 							if ((pt->id == p_fire || pt->id == p_dpfire) && r_decal_explosions.value)
 							  R_SpawnDecal (p->org, normal, tangent, decal_burn, 32, 0);
 						    else if (pt->id == p_blood1 && r_decal_blood.value)
 							  R_SpawnDecal (p->org, normal, tangent, decal_blood1, 12, 0);
 						    else if (pt->id == p_blood2 && r_decal_blood.value)
 							  R_SpawnDecal (p->org, normal, tangent, decal_blood2, 12, 0);
-						    else if (pt->id == p_q3blood_trail && r_decal_blood.value)
-							  R_SpawnDecal (p->org, normal, tangent, decal_q3blood, 48, 0);
-							  #endif
 
 						}
 					}
@@ -1255,7 +1340,7 @@ inline static void QMB_UpdateParticles(void)
 				break;
 
 			default:
-				//assert (!"QMB_UpdateParticles: unexpected pt->move");
+                Sys_Error("unexpected pt->move (%d)", pt->move);
 				break;
 			}
 		}
@@ -1295,63 +1380,118 @@ void R_CalcBeamVerts (float *vert, vec3_t org1, vec3_t org2, float width)
 	vert[14] = org2[2] + width * right2[2];
 }
 
-// naievil -- hacky particle drawing...NOT OPTIMIZED -- from NX
 void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *coord) {
-	float            scale;
-    vec3_t            up, right, p_downleft, p_upleft, p_downright, p_upright;
-    GLubyte            color[4];
-
-    VectorScale (vup, 1.5, up);
-    VectorScale (vright, 1.5, right);
-
-    glEnable (GL_BLEND);
-    glDepthMask (GL_FALSE);
-    glBegin (GL_QUADS);
+	float   scale;
+    //vec3_t  up, right, p_downleft, p_upleft, p_downright, p_upright;
 
     scale = p->size;
-    color[0] = p->color[0];
-    color[1] = p->color[1];
-    color[2] = p->color[2];
-    color[3] = p->color[3];
-    glColor4ubv(color);
+    // VectorScale (vup, 1.5, up);
+    // VectorScale (vright, 1.5, right);
 
-    float subTexLeft = ptex->coords[p->texindex][0];
-    float subTexTop = ptex->coords[p->texindex][1];
-    float subTexRight = ptex->coords[p->texindex][2];
-    float subTexBottom = ptex->coords[p->texindex][3];
+    Hyena_Graphics_EnableCapability(GFX_BLEND);
+    Hyena_Graphics_BeginVertices(GFX_TRIANGLE_FAN);
 
-    glTexCoord2f(subTexLeft, subTexTop);
-    VectorMA(p->org, -scale * 0.5f, up, p_downleft);
-    VectorMA(p_downleft, -scale * 0.5f, right, p_downleft);
-    glVertex3fv (p_downleft);
+    Hyena_Graphics_Translate(p->org[0], p->org[1], p->org[2]);
+    Hyena_Graphics_Scale(scale, scale, scale);
+    Hyena_Graphics_RotateZYX(vpn[0] * (GFX_PI / 180.0f), vpn[1] * (GFX_PI / 180.0f), vpn[2] * (GFX_PI / 180.0f));
 
-    glTexCoord2f(subTexRight, subTexTop);
-    VectorMA (p_downleft, scale, up, p_upleft);
-    glVertex3fv (p_upleft);
+    // glEnable (GL_BLEND);
+    // glDepthMask (GL_FALSE);
+    // glBegin (GL_QUADS);
 
-    glTexCoord2f(subTexRight, subTexBottom);
-    VectorMA (p_upleft, scale, right, p_upright);
-    glVertex3fv (p_upright);
+    Hyena_Graphics_SetColor((float)p->color[0] / 255.0f, (float)p->color[1] / 255.0f, (float)p->color[2] / 255.0f, (float)p->color[3] / 255.0f);
 
-    glTexCoord2f(subTexLeft, subTexBottom);
-    VectorMA (p_downleft, scale, right, p_downright);
-    glVertex3fv (p_downright);
+    Hyena_Graphics_FlushMatrices();
 
-    glEnd ();
+	vertex_t *vertices = Hyena_Graphics_AllocateMemoryForVertices(4);
 
+    // =========
+    /*
+    	struct vertex                                       \
+	{                                                   \
+	  float u, v;                                       \
+	  float x, y, z;                                    \
+	};                                                  \
+	vertex* const df = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 4));\
+														\
+                    df[0].u = _ptex->coords[_p->texindex][0]; df[0].v = _ptex->coords[_p->texindex][3];\
+                    df[0].x = _coord[0][0]; df[0].y = _coord[0][1]; df[0].z = _coord[0][2];            \
 
-    glDepthMask (GL_TRUE);
-    glDisable (GL_BLEND);
-    glColor3f(1,1,1);
+	                df[1].u = _ptex->coords[_p->texindex][0]; df[1].v = _ptex->coords[_p->texindex][1];\
+	                df[1].x = _coord[1][0]; df[1].y = _coord[1][1]; df[1].z = _coord[1][2];            \
+
+	                df[2].u = _ptex->coords[_p->texindex][2]; df[2].v = _ptex->coords[_p->texindex][1];\
+	                df[2].x = _coord[2][0]; df[2].y = _coord[2][1]; df[2].z = _coord[2][2];            \
+
+	df[3].u = _ptex->coords[_p->texindex][2]; df[3].v = _ptex->coords[_p->texindex][3];\
+	                df[3].x = _coord[3][0]; df[3].y = _coord[3][1]; df[3].z = _coord[3][2];            \
+
+	sceGuDrawArray(GU_TRIANGLE_FAN, GU_TEXTURE_32BITF | GU_VERTEX_32BITF, 4, 0, df);   \
+														\
+	sceGumPopMatrix ();                                 \
+    sceGumUpdateMatrix();
+    */
+   // ==========
+    
+    //glColor4ubv(color);
+
+    Hyena_Graphics_2DTextureCoord(&vertices[0], ptex->coords[p->texindex][0], ptex->coords[p->texindex][3]);
+    Hyena_Graphics_VertexXYZ(&vertices[0], coord[0][0], coord[0][1], coord[0][2]);
+
+    Hyena_Graphics_2DTextureCoord(&vertices[1], ptex->coords[p->texindex][0], ptex->coords[p->texindex][1]);
+    Hyena_Graphics_VertexXYZ(&vertices[1], coord[1][0], coord[1][1], coord[1][2]);
+
+    Hyena_Graphics_2DTextureCoord(&vertices[2], ptex->coords[p->texindex][2], ptex->coords[p->texindex][1]);
+    Hyena_Graphics_VertexXYZ(&vertices[2], coord[2][0], coord[2][1], coord[2][2]);
+
+    Hyena_Graphics_2DTextureCoord(&vertices[3], ptex->coords[p->texindex][2], ptex->coords[p->texindex][3]);
+    Hyena_Graphics_VertexXYZ(&vertices[3], coord[3][0], coord[3][1], coord[3][2]);
+
+    // float subTexLeft = ptex->coords[p->texindex][0];
+    // float subTexTop = ptex->coords[p->texindex][1];
+    // float subTexRight = ptex->coords[p->texindex][2];
+    // float subTexBottom = ptex->coords[p->texindex][3];
+
+    // glTexCoord2f(subTexLeft, subTexTop);
+    // VectorMA(p->org, -scale * 0.5f, up, p_downleft);
+    // VectorMA(p_downleft, -scale * 0.5f, right, p_downleft);
+    // glVertex3fv (p_downleft);
+
+    // glTexCoord2f(subTexRight, subTexTop);
+    // VectorMA (p_downleft, scale, up, p_upleft);
+    // glVertex3fv (p_upleft);
+
+    // glTexCoord2f(subTexRight, subTexBottom);
+    // VectorMA (p_upleft, scale, right, p_upright);
+    // glVertex3fv (p_upright);
+
+    // glTexCoord2f(subTexLeft, subTexBottom);
+    // VectorMA (p_downleft, scale, right, p_downright);
+    // glVertex3fv (p_downright);
+
+	Hyena_Graphics_DrawVertices(vertices, 4, GFX_TEXTURE_32BITFLOAT, GFX_VERTEX_32BITFLOAT);
+    Hyena_Graphics_EndVertices();
+    Hyena_Graphics_FlushMatrices();
+    
+    //glEnd ();
+
+    Hyena_Graphics_DisableCapability(GFX_BLEND);
+    Hyena_Graphics_SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+    // glDepthMask (GL_TRUE);
+    // glDisable (GL_BLEND);
+    // glColor3f(1,1,1);
 }
 
-void QMB_DrawParticles (void)
+void R_DrawParticles (void)
 {
 	int		j, i;
-	vec3_t		up, right, billboard[4], velcoord[4];
+	vec3_t		up, right, billboard[4], velcoord[4], neworg;
 	particle_t		*p;
 	particle_type_t		*pt;
 	particle_texture_t	*ptex;
+
+	vec3_t	distance;
 
 	if (!qmb_initialized)
 		return;
@@ -1367,9 +1507,14 @@ void QMB_DrawParticles (void)
 	VectorNegate (billboard[3], billboard[1]);
 
    	//glDepthMask (GL_TRUE);
-	glEnable (GL_BLEND);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	glShadeModel (GL_SMOOTH);
+
+    Hyena_Graphics_EnableCapability(GFX_BLEND);
+    Hyena_Graphics_SetTextureMode(GFX_MODULATE);
+    Hyena_Graphics_SetShadeMode(GFX_SMOOTH);
+
+	// glEnable (GL_BLEND);
+	// glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	// glShadeModel (GL_SMOOTH);
 
 	for (i = 0 ; i < num_particletypes ; i++)
 	{
@@ -1380,11 +1525,13 @@ void QMB_DrawParticles (void)
 			continue;
 		}
 
-		glBlendFunc (pt->SrcBlend, pt->DstBlend);
+        Hyena_Graphics_SetBlendFunction(pt->SrcBlend, pt->DstBlend);
+		
+        //glBlendFunc (pt->SrcBlend, pt->DstBlend);
 
 		switch (pt->drawtype)
 		{
-			/*case pd_hide:
+			case pd_hide:
 				break;
 			case pd_beam:
 				ptex = &particle_textures[pt->texture];
@@ -1397,54 +1544,78 @@ void QMB_DrawParticles (void)
 					VectorSubtract(r_refdef.vieworg, p->org, distance);
 					if (VectorLength(distance) > r_farclip.value)
 						continue;
-					// Allocate the vertices.
-					struct vertex
-					{
-						float u, v;
-						float x, y, z;
-					};
 
-					struct vertex* const out = (struct vertex*)(malloc(sizeof(struct vertex) * 4));
+                    Hyena_Graphics_BeginVertices(GFX_TRIANGLE_FAN);
+                    Hyena_Graphics_SetColor((float) p->color[0] / 255.0f, (float) p->color[1] / 255.0f, (float) p->color[2] / 255.0f, (float) p->color[3] / 255.0f);
 
-					glColor4f(p->color[0]/255, p->color[1]/255, p->color[2]/255, p->color[3]/255);
-					R_CalcBeamVerts (varray_vertex, p->org, p->endorg, p->size / 3.0);
+					vertex_t *beam_vertices = Hyena_Graphics_AllocateMemoryForVertices(4);
+					// // Allocate the vertices.
+					// struct vertex
+					// {
+					// 	float u, v;
+					// 	float x, y, z;
+					// };
 
-					out[0].u = 1;
-					out[0].v = 0;
+					// struct vertex* const out = (struct vertex*)(malloc(sizeof(struct vertex) * 4));
 
-					out[0].x = varray_vertex[0];
-					out[0].y = varray_vertex[1];
-					out[0].z = varray_vertex[2];
+					// glColor4f(p->color[0]/255, p->color[1]/255, p->color[2]/255, p->color[3]/255);
 
-					out[1].u = 1;
-					out[1].v = 1;
+					R_CalcBeamVerts (varray_vertex, p->org, p->endorg, p->size / 3.0f);
 
-					out[1].x = varray_vertex[4];
-					out[1].y = varray_vertex[5];
-					out[1].z = varray_vertex[6];
+                    Hyena_Graphics_2DTextureCoord(&beam_vertices[0], 1, 0);
+                    Hyena_Graphics_VertexXYZ(&beam_vertices[0], varray_vertex[0], varray_vertex[1], varray_vertex[2]);
 
-					out[2].u = 0;
-					out[2].v = 1;
+                    Hyena_Graphics_2DTextureCoord(&beam_vertices[1], 1, 1);
+                    Hyena_Graphics_VertexXYZ(&beam_vertices[1], varray_vertex[4], varray_vertex[5], varray_vertex[6]);
 
-					out[2].x = varray_vertex[8];
-					out[2].y = varray_vertex[9];
-					out[2].z = varray_vertex[10];
+                    Hyena_Graphics_2DTextureCoord(&beam_vertices[2], 0, 1);
+                    Hyena_Graphics_VertexXYZ(&beam_vertices[2], varray_vertex[8], varray_vertex[9], varray_vertex[10]);
 
-					out[3].u = 0;
-					out[3].v = 0;
+                    Hyena_Graphics_2DTextureCoord(&beam_vertices[3], 0, 0);
+                    Hyena_Graphics_VertexXYZ(&beam_vertices[3], varray_vertex[12], varray_vertex[13], varray_vertex[14]);
 
-					out[3].x = varray_vertex[12];
-					out[3].y = varray_vertex[13];
-					out[3].z = varray_vertex[14];
+					Hyena_Graphics_DrawVertices(beam_vertices, 4, GFX_TEXTURE_32BITFLOAT, GFX_VERTEX_32BITFLOAT);
 
-					glBegin (GL_TRIANGLE_FAN);
-					glVertex4fv (out);
-					glEnd ();
-					glColor4f(1,1,1,1); //return to normal color
+                    Hyena_Graphics_EndVertices();
+                    Hyena_Graphics_SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+					// out[0].u = 1;
+					// out[0].v = 0;
+
+					// out[0].x = varray_vertex[0];
+					// out[0].y = varray_vertex[1];
+					// out[0].z = varray_vertex[2];
+
+					// out[1].u = 1;
+					// out[1].v = 1;
+
+					// out[1].x = varray_vertex[4];
+					// out[1].y = varray_vertex[5];
+					// out[1].z = varray_vertex[6];
+
+					// out[2].u = 0;
+					// out[2].v = 1;
+
+					// out[2].x = varray_vertex[8];
+					// out[2].y = varray_vertex[9];
+					// out[2].z = varray_vertex[10];
+
+					// out[3].u = 0;
+					// out[3].v = 0;
+
+					// out[3].x = varray_vertex[12];
+					// out[3].y = varray_vertex[13];
+					// out[3].z = varray_vertex[14];
+
+					// glBegin (GL_TRIANGLE_FAN);
+					// glVertex4fv (out);
+					// glEnd ();
+					// glColor4f(1,1,1,1); //return to normal color
 				}
 				break;
 			case pd_spark:
-				glDisable (GL_TEXTURE_2D);
+                Hyena_Graphics_DisableCapability(GFX_TEXTURE_2D);
+				//glDisable (GL_TEXTURE_2D);
 				for (p = pt->start ; p ; p = p->next)
 				{
 					if (particle_time < p->start || particle_time >= p->die)
@@ -1454,39 +1625,59 @@ void QMB_DrawParticles (void)
 					if (VectorLength(distance) > r_farclip.value)
 						continue;
 
-					struct vertex
-					{
-						vec3_t xyz;
-					};
+					// struct vertex
+					// {
+					// 	vec3_t xyz;
+					// };
 
-					struct vertex* const out = (struct vertex*)(malloc(sizeof(struct vertex) * 9));
+                    //vect3_t spark_vertices[9];
 
-					glColor4f(p->color[0]/255, p->color[1]/255, p->color[2]/255, p->color[3]/255);
+					// struct vertex* const out = (struct vertex*)(malloc(sizeof(struct vertex) * 9));
+					// vertex_t *spark_vertices = Hyena_Graphics_AllocateMemoryForVertices(9);
 
-					for (int gh=0 ; gh<3 ; gh++)
-						out[0].xyz[gh] = p->org[gh];
+                    Hyena_Graphics_SetColor(p->color[0] / 255.0f, p->color[1] / 255.0f, p->color[2] / 255.0f, p->color[3] / 255.0f);
 
-					glColor4f((p->color[0] >> 1)/255, (p->color[1] >> 1)/255, (p->color[2] >> 1)/255, (p->color[3] >> 1)/255);
+					Hyena_Graphics_BeginVertices(GFX_TRIANGLE_FAN);
 
-					int vt = 1;
+					// glColor4f(p->color[0]/255, p->color[1]/255, p->color[2]/255, p->color[3]/255);
+
+					Hyena_Graphics_VertexXYZ(&spark_vertices[0], p->org[0], p->org[1], p->org[2]);
+					// spark_vertices[0]->x = p->org[0];
+					// spark_vertices[0]->y = p->org[1];
+					// spark_vertices[0]->z = p->org[2];
+
+					//  glColor4f((p->color[0] >> 1)/255, (p->color[1] >> 1)/255, (p->color[2] >> 1)/255, (p->color[3] >> 1)/255);
+
+					Hyena_Graphics_SetColor((p->color[0] >> 1) / 255.0f, (p->color[1] >> 1) / 255.0f, (p->color[2] >> 1) / 255.0f, (p->color[3] >> 1) / 255.0f);
+
+					int current_spark_vertex = 1;
 
 					for (j=7; j>=0 ; j--)
 					{
-
-					  for (int k=0 ; k<3 ; k++)
-						out[vt].xyz[k] = p->org[k] - p->vel[k] / 8 + vright[k] * cost[1%7] * p->size + vup[k] * sint[j%7] * p->size;
-					  vt = vt + 1;
+					    //for (int k=0 ; k<3 ; k++)
+						Hyena_Graphics_VertexXYZ(&spark_vertices[current_spark_vertex], 
+						// 	p->org[0] - p->vel[0] / 8 + vright[0] * cost[1%7] * p->size + vup[0] * sint[j%7] * p->size,
+						// 	p->org[1] - p->vel[1] / 8 + vright[1] * cost[1%7] * p->size + vup[1] * sint[j%7] * p->size,
+						// 	p->org[2] - p->vel[2] / 8 + vright[2] * cost[1%7] * p->size + vup[2] * sint[j%7] * p->size
+						// );
+					    current_spark_vertex += 1;
 					}
 
-					glBegin (GL_TRIANGLE_FAN);
-					glVertex4fv (out);
-					glEnd ();
-					glColor4f(1,1,1,1); //return to normal color
+					Hyena_Graphics_DrawVertices(spark_vertices, 9, GFX_TEXTURE_NOTEXTURE, GFX_VERTEX_32BITFLOAT);
+					Hyena_Graphics_EndVertices();
+					Hyena_Graphics_SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+					// glBegin (GL_TRIANGLE_FAN);
+					// glVertex4fv (out);
+					// glEnd ();
+					// glColor4f(1,1,1,1); //return to normal color
 				}
-				glEnable (GL_TEXTURE_2D);
+				Hyena_Graphics_EnableCapability(GFX_TEXTURE_2D);
+				// glEnable (GL_TEXTURE_2D);
 				break;
 			case pd_sparkray:
-				glDisable (GL_TEXTURE_2D);
+				Hyena_Graphics_DisableCapability(GFX_TEXTURE_2D);
+				// glDisable (GL_TEXTURE_2D);
 				for (p = pt->start ; p ; p = p->next)
 				{
 					if (particle_time < p->start || particle_time >= p->die)
@@ -1505,38 +1696,63 @@ void QMB_DrawParticles (void)
 					//R00k added -end-
 					//glColor4ubv (p->color);
 
-					struct vertex
-		            {
-					 vec3_t xyz;
-		            };
+					// struct vertex
+		            // {
+					//  vec3_t xyz;
+		            // };
 
-		            struct vertex* const out = (struct vertex*)(malloc(sizeof(struct vertex) * 9));
+		            // struct vertex* const out = (struct vertex*)(malloc(sizeof(struct vertex) * 9));
 
-				    glColor4f(p->color[0]/255, p->color[1]/255, p->color[2]/255, p->color[3]/255);
+					// vertex_t *raygun_spark_vertices = Hyena_Graphics_AllocateMemoryForVertices(9);
 
-					for (int gh=0 ; gh<3 ; gh++)
-					  out[0].xyz[gh] = p->endorg[gh];
+					Hyena_Graphics_SetColor(p->color[0] / 255.0f, p->color[1] / 255.0f, p->color[2] / 255.0f, p->color[3] / 255.0f);
+
+				    //glColor4f(p->color[0]/255, p->color[1]/255, p->color[2]/255, p->color[3]/255);
+
+					Hyena_Graphics_VertexXYZ(&raygun_spark_vertices[0], p->endorg[0], p->endorg[1], p->endorg[2]);
+
+					// for (int gh=0 ; gh<3 ; gh++)
+					//   out[0].xyz[gh] = p->endorg[gh];
+
+					Hyena_Graphics_SetColor((p->color[0] >> 1) / 255.0f, (p->color[1] >> 1) / 255.0f, (p->color[2] >> 1) / 255.0f, (p->color[3] >> 1) / 255.0f);
 
 
-					glColor4f((p->color[0] >> 1)/255, (p->color[1] >> 1)/255, (p->color[2] >> 1)/255, (p->color[3] >> 1)/255);
+					int current_raygun_spark_vertex = 1;
 
-					int vt = 1;
-
-					for (j=7 ; j>=0 ; j--)
+					for (j=7; j>=0 ; j--)
 					{
-                      for (int k=0 ; k<3 ; k++)
-						out[vt].xyz[k] = neworg[k] + vright[k] * cost[j%7] * p->size + vup[k] * sint[j%7] * p->size;
-
-					  vt = vt + 1;
+					    //for (int k=0 ; k<3 ; k++)
+						Hyena_Graphics_VertexXYZ(&raygun_spark_vertices[current_raygun_spark_vertex], 
+						// 	p->org[0] - p->vel[0] / 8 + vright[0] * cost[1%7] * p->size + vup[0] * sint[j%7] * p->size,
+						// 	p->org[1] - p->vel[1] / 8 + vright[1] * cost[1%7] * p->size + vup[1] * sint[j%7] * p->size,
+						// 	p->org[2] - p->vel[2] / 8 + vright[2] * cost[1%7] * p->size + vup[2] * sint[j%7] * p->size
+						// );
+					    current_raygun_spark_vertex += 1;
 					}
-					glBegin (GL_TRIANGLE_FAN);
-					glVertex4fv (out);
-					glEnd ();
-					glColor4f(1,1,1,1); //return to normal color
+
+					Hyena_Graphics_DrawVertices(raygun_spark_vertices, 9, GFX_TEXTURE_NOTEXTURE, GFX_VERTEX_32BITFLOAT);
+					Hyena_Graphics_EndVertices();
+					Hyena_Graphics_SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+					// glColor4f((p->color[0] >> 1)/255, (p->color[1] >> 1)/255, (p->color[2] >> 1)/255, (p->color[3] >> 1)/255);
+
+					// int vt = 1;
+
+					// for (j=7 ; j>=0 ; j--)
+					// {
+                    //   for (int k=0 ; k<3 ; k++)
+					// 	out[vt].xyz[k] = neworg[k] + vright[k] * cost[j%7] * p->size + vup[k] * sint[j%7] * p->size;
+
+					//   vt = vt + 1;
+					// }
+					// glBegin (GL_TRIANGLE_FAN);
+					// glVertex4fv (out);
+					// glEnd ();
+					// glColor4f(1,1,1,1); //return to normal color
 
 				}
-				glEnable (GL_TEXTURE_2D);
-				break;*/
+				//glEnable (GL_TEXTURE_2D);
+				Hyena_Graphics_EnableCapability(GFX_TEXTURE_2D);
+				break;
 			case pd_billboard:
 				ptex = &particle_textures[pt->texture];
 				GL_Bind (ptex->texnum);
@@ -1556,12 +1772,14 @@ void QMB_DrawParticles (void)
 					}
 					
 					if(pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 || pt->texture == ptex_muzzleflash3)
-						glDepthRange (0, 0.3);
+                        Hyena_Graphics_SetDepthRange(0, 0.3f);
+						// glDepthRange (0, 0.3);
 					
 					DRAW_PARTICLE_BILLBOARD(ptex, p, billboard);
 					
 					if(pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 || pt->texture == ptex_muzzleflash3)
-						glDepthRange(0, 1);
+						Hyena_Graphics_SetDepthRange(0, 1.0f);
+                        //glDepthRange(0, 1);
 				}
 				break;
 
@@ -1582,117 +1800,25 @@ void QMB_DrawParticles (void)
 					VectorSubtract (right, up, velcoord[3]);
 					VectorNegate (velcoord[2], velcoord[0]);
 					VectorNegate (velcoord[3], velcoord[1]);
-					DRAW_PARTICLE_BILLBOARD(ptex, p, velcoord);
+					//DRAW_PARTICLE_BILLBOARD(ptex, p, velcoord);
 				}
 				break;
-
-			/*case pd_q3flame:
-				ptex = &particle_textures[pt->texture];
-				GL_Bind (ptex->texnum);
-				for (p = pt->start ; p ; p = p->next)
-				{
-					float	varray_vertex[16];
-					float	xhalf = p->size / 2.0, yhalf = p->size;
-				//	vec3_t	org, v, end, normal;
-
-					if (particle_time < p->start || particle_time >= p->die)
-						continue;
-
-					glDisable (GL_CULL_FACE);
-
-					for (j=0 ; j<2 ; j++)
-					{
-						glPushMatrix ();
-
-		                glTranslatef(p->org[0], p->org[1], p->org[2]);
-
-						//glRotatef (!j ? 45 : -45, 0, 0, 1);
-
-		                // naievil -- I don't know the equivalent of this
-		                //sceGumRotateZ(!j ? 45 : -45 * (M_PI / 180.0f));
-
-						glColor4f(p->color[0]/255, p->color[1]/255, p->color[2]/255, p->color[3]/255);
-
-				// sigh. The best would be if the flames were always orthogonal to their surfaces
-				// but I'm afraid it's impossible to get that work (w/o progs modification of course)
-						varray_vertex[0] = 0;
-						varray_vertex[1] = xhalf;
-						varray_vertex[2] = -yhalf;
-						varray_vertex[4] = 0;
-						varray_vertex[5] = xhalf;
-						varray_vertex[6] = yhalf;
-						varray_vertex[8] = 0;
-						varray_vertex[9] = -xhalf;
-						varray_vertex[10] = yhalf;
-						varray_vertex[12] = 0;
-						varray_vertex[13] = -xhalf;
-						varray_vertex[14] = -yhalf;
-
-	                    struct vertex
-			            {
-	                    float u, v;
-						float x, y, z;
-			            };
-
-						struct vertex* const out = (struct vertex*)(malloc(sizeof(struct vertex) * 4));
-
-						out[0].u = ptex->coords[p->texindex][0];
-						out[0].v = ptex->coords[p->texindex][3];
-						out[0].x = varray_vertex[0];
-	                    out[0].y = varray_vertex[1];
-	                    out[0].z = varray_vertex[2];
-
-
-						out[1].u = ptex->coords[p->texindex][0];
-						out[1].v = ptex->coords[p->texindex][1];
-						out[1].x = varray_vertex[4];
-	                    out[1].y = varray_vertex[5];
-	                    out[1].z = varray_vertex[6];
-
-
-						out[2].u = ptex->coords[p->texindex][2];
-						out[2].v = ptex->coords[p->texindex][1];
-						out[2].x = varray_vertex[8];
-	                    out[2].y = varray_vertex[9];
-	                    out[2].z = varray_vertex[10];
-
-
-						out[3].u = ptex->coords[p->texindex][2];
-						out[3].v = ptex->coords[p->texindex][3];
-						out[3].x = varray_vertex[12];
-	                    out[3].y = varray_vertex[13];
-	                    out[3].z = varray_vertex[14];
-
-						glBegin (GL_TRIANGLE_FAN);
-						glVertex4fv (out);
-						glEnd ();
-						glPopMatrix ();
-					}
-					glEnable (GL_CULL_FACE);
-	                glColor4f(1,1,1,1); //return to normal color
-				}
-				break;
-
-			case pd_q3gunshot:
-				for (p = pt->start ; p ; p = p->next)
-					QMB_Q3Gunshot (p->org, (int)p->texindex, (float)p->color[3] / 255.0);
-				break;
-
-			case pd_q3teleport:
-				for (p = pt->start ; p ; p = p->next)
-					QMB_Q3Teleport (p->org, (float)p->color[3] / 255.0);
-				break;*/
 			default:
-					//assert (!"QMB_DrawParticles: unexpected drawtype");
+                    Sys_Error("unexpected drawtype (%d)", pt->drawtype);
 					break;
 		}
 	}
 
+    Hyena_Graphics_DisableCapability(GFX_BLEND);
+    Hyena_Graphics_SetBlendFunction(GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA);
+    Hyena_Graphics_SetTextureMode(GFX_REPLACE);
+    Hyena_Graphics_SetShadeMode(GFX_SMOOTH);
+
 	//glDepthMask (GL_FALSE);
-	glDisable (GL_BLEND);
-	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	glShadeModel (GL_SMOOTH);
+	// glDisable (GL_BLEND);
+	// glBlendFunc (GFX_SRC_ALPHA, GFX_ONE_MINUS_SRC_ALPHA);
+	// glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	// glShadeModel (GL_SMOOTH);
 }
 
 void QMB_Shockwave_Splash(vec3_t org, int radius)
@@ -1714,7 +1840,7 @@ extern sfx_t		*cl_sfx_thunder;
 
 //R00k: revamped to coincide with classic particle style...
 
-void QMB_ParticleExplosion (vec3_t org)
+void R_ParticleExplosion (vec3_t org)
 {
 	if (r_explosiontype.value == 2)//no explosion what so ever
 		return;
@@ -1782,8 +1908,6 @@ __inline static void AddColoredParticle (part_type_t type, vec3_t org, int count
 	if (!qmb_initialized)
 		Sys_Error ("QMB particle added without initialization");
 
-	//assert (size > 0 && time > 0);
-
 	if (type < 0 || type >= num_particletypes)
 		Sys_Error ("Invalid type (%d)", type);
 
@@ -1813,7 +1937,7 @@ __inline static void AddColoredParticle (part_type_t type, vec3_t org, int count
 			break;
 
 		default:
-		//assert (!"AddColoredParticle: unexpected type");
+            Sys_Error("unexpected type (%d)", type);
 			break;
 		}
 	}
@@ -1919,8 +2043,37 @@ void QMB_Blood_Splat(part_type_t type, vec3_t org) //Shpuldified
 	}
 }
 
+#define RunParticleEffect(var, org, dir, color, count)		\
+	if (qmb_initialized && r_part_##var.value)				\
+		QMB_RunParticleEffect (org, dir, color, count);		\
+
+
+void R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
+{
+	if (color == 73 || color == 225)
+	{
+		RunParticleEffect(blood, org, dir, color, count);
+		return;
+	}
+
+	switch (count)
+	{
+		case 10:
+		case 20:
+		case 30:
+			RunParticleEffect(sparks, org, dir, color, count);
+			break;
+		default:
+			RunParticleEffect(gunshots, org, dir, color, count);
+	}
+}
+
 void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int col, int count)
 {
+
+	if (!r_runqmbparticles.value)
+		return;
+
 	col_t	color;
 	vec3_t	neworg, newdir;
 	int		i, j, particlecount;
@@ -2249,7 +2402,7 @@ void QMB_MuzzleFlash(vec3_t org)
 	}
 }
 
-void QMB_RocketTrail (vec3_t start, vec3_t end, trail_type_t type)
+void R_RocketTrail (vec3_t start, vec3_t end, trail_type_t type)
 {
 	col_t		color;
 
@@ -2390,7 +2543,7 @@ void QMB_RocketTrail (vec3_t start, vec3_t end, trail_type_t type)
 	}
 }
 
-void QMB_BlobExplosion (vec3_t org)
+void R_BlobExplosion (vec3_t org)
 {
 	float	theta;
 	col_t	color;
@@ -2443,7 +2596,7 @@ void QMB_BlobExplosion (vec3_t org)
 	}
 }
 
-void QMB_LavaSplash (vec3_t org)
+void R_LavaSplash (vec3_t org)
 {
 	int	i, j;
 	float	vel;
@@ -2464,7 +2617,7 @@ void QMB_LavaSplash (vec3_t org)
 	}
 }
 
-void QMB_TeleportSplash (vec3_t org)
+void R_TeleportSplash (vec3_t org)
 {
 	int		i, j, k;
 	vec3_t		neworg, angle;
@@ -2729,66 +2882,6 @@ void QMB_LightningBeam (vec3_t start, vec3_t end)
 	}
 }
 
-#if 0
-void R_DrawQ3Model (entity_t *ent);
-
-void QMB_Q3Gunshot (vec3_t org, int skinnum, float alpha)
-{
-	vec3_t		neworg, normal, v, newend;
-	entity_t	*ent;
-	extern model_t *cl_q3gunshot_mod;
-
-	if (!(ent = CL_NewTempEntity()))
-		return;
-
-	VectorCopy (org, ent->origin);
-	ent->model = cl_q3gunshot_mod;
-
-	VectorCopy (cl_entities[cl.viewentity].origin, neworg);
-	VectorSubtract (ent->origin, neworg, v);
-	VectorScale (v, 2, v);
-	VectorAdd (neworg, v, newend);
-
-	if (TraceLineN(neworg, newend, newend, normal))
-		vectoangles (normal, ent->angles);
-
-	ent->skinnum = skinnum;
-	ent->rendermode = TEX_ADDITIVE;
-	ent->renderamt = alpha;
-
-	R_DrawQ3Model (ent);
-}
-
-void QMB_Q3Teleport (vec3_t org, float alpha)
-{
-	entity_t	*ent;
-	extern model_t *cl_q3teleport_mod;
-
-	if (!(ent = CL_NewTempEntity()))
-		return;
-
-	VectorCopy (org, ent->origin);
-	ent->model = cl_q3teleport_mod;
-	ent->rendermode = TEX_ADDITIVE;
-	ent->renderamt = alpha;
-
-	R_DrawQ3Model (ent);
-}
-
-
-#else 
-void QMB_Q3Gunshot (vec3_t org, int skinnum, float alpha)
-{
-	Con_Printf("Q3 drawing is not enabled!\n");
-}
-
-void QMB_Q3Teleport (vec3_t org, float alpha)
-{
-	Con_Printf("Q3 drawing is not enabled!\n");
-}
-#endif
-
-
 #define NUMVERTEXNORMALS	162
 
 extern	float	r_avertexnormals[NUMVERTEXNORMALS][3];
@@ -2799,7 +2892,7 @@ extern vec3_t		avelocities[NUMVERTEXNORMALS];
 R_EntityParticles
 ===============
 */
-void QMB_EntityParticles (entity_t *ent)
+void R_EntityParticles (entity_t *ent)
 {
 
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"

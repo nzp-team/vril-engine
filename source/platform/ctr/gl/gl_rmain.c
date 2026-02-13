@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // r_main.c
 
 #include "../../../nzportable_def.h"
+#include <3ds.h>
 
 entity_t	r_worldentity;
 
@@ -1860,11 +1861,14 @@ void R_RenderView (void)
 
 // MARK: Vril Graphics Wrapper
 
-void Platform_Graphics_SetTextureMode(int texture_mode)
+void Hyena_Graphics_SetTextureMode(int texture_mode)
 {
 	switch(texture_mode) {
 		case GFX_REPLACE:
 			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+			break;
+		case GFX_MODULATE:
+			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 			break;
 		default:
 			Sys_Error("Received unknown texture mode [%d]\n", texture_mode);
@@ -1872,7 +1876,192 @@ void Platform_Graphics_SetTextureMode(int texture_mode)
 	}
 }
 
-void Platform_Graphics_Color(float red, float green, float blue, float alpha)
+void Hyena_Graphics_SetColor(float red, float green, float blue, float alpha)
 {
 	glColor4f(red, green, blue, alpha);
+}
+
+int Hyena_Graphics_ResolveCapability(int capability)
+{
+	int gl_capability = -1;
+
+	switch(capability) {
+		case GFX_BLEND:
+			gl_capability = GL_BLEND;
+			break;
+		case GFX_CULL_FACE:
+			gl_capability = GL_CULL_FACE;
+			break;
+		case GFX_TEXTURE_2D:
+			gl_capability = GL_TEXTURE_2D;
+			break;
+		default:
+			Sys_Error("Received unknown capability [%d]\n", capability);
+			break;
+	}
+
+	return gl_capability;
+}
+
+void Hyena_Graphics_EnableCapability(int capability)
+{
+	int gl_capability = Hyena_Graphics_ResolveCapability(capability);
+	glEnable(gl_capability);
+}
+
+void Hyena_Graphics_DisableCapability(int capability)
+{
+	int gl_capability = Hyena_Graphics_ResolveCapability(capability);
+	glDisable(gl_capability);
+}
+
+void Hyena_Graphics_DepthMask(bool value)
+{
+	//glDepthMask(value);
+}
+
+int Hyena_Graphics_ResolveVertexMode(int mode)
+{
+	int gl_mode = -1;
+
+	switch(mode) {
+		case GFX_TRIANGLE_FAN:
+			gl_mode = GL_TRIANGLE_FAN;
+			break;
+		default:
+			Sys_Error("Received mode capability [%d]\n", mode);
+			break;
+	}
+
+	return gl_mode;
+}
+
+void Hyena_Graphics_BeginVertices(int mode)
+{
+	int gl_mode = Hyena_Graphics_ResolveVertexMode(mode);
+	glPushMatrix();
+	//glBegin(gl_mode);
+}
+
+void Hyena_Graphics_Translate(float x, float y, float z)
+{
+	//glTranslatef(x, y, z);
+}
+
+void Hyena_Graphics_Scale(float x, float y, float z)
+{
+	//glScalef(x, y, z);
+}
+
+void Hyena_Graphics_RotateXYZ(float x, float y, float z)
+{
+	// glRotatef(x, 1, 0, 0);
+	// glRotatef(y, 0, 1, 0);
+	// glRotatef(z, 0, 0, 1);
+}
+
+void Hyena_Graphics_RotateZYX(float z, float y, float x)
+{
+	// glRotatef(z, 0, 0, 1);
+	// glRotatef(y, 0, 1, 0);
+	// glRotatef(x, 1, 0, 0);
+}
+
+void Hyena_Graphics_FlushMatrices(void)
+{
+	
+}
+
+vertex_t *Hyena_Graphics_AllocateMemoryForVertices(int num_vertices)
+{
+	return (vertex_t *)(vramAlloc(sizeof(vertex_t) * num_vertices));
+}
+
+void Hyena_Graphics_2DTextureCoord(vertex_t *vertex, float u, float v)
+{
+	vertex->uv.u = u;
+	vertex->uv.v = v;
+	//glTexCoord2fv(&vertex->uv.u);
+}
+
+void Hyena_Graphics_VertexXYZ(vertex_t *vertex, float x, float y, float z)
+{
+	vertex->xyz.x = x;
+	vertex->xyz.y = y;
+	vertex->xyz.z = z;
+	//glVertex3fv(&vertex->xyz.x);
+}
+
+void Hyena_Graphics_DrawVertices(vertex_t* vertices, int num_vertices, int texture_precision, int vertex_precision)
+{
+	// No need to actually send off in OpenGL, however we have some vertices to free!
+	vramFree(vertices);
+}
+
+void Hyena_Graphics_EndVertices(void)
+{
+	//glEnd();
+	glPopMatrix();
+}
+
+int Hyena_Graphics_ResolveShadeMode(int shade_mode)
+{
+	int gl_shade_mode = -1;
+
+	switch(shade_mode) {
+		case GFX_SMOOTH:
+			gl_shade_mode = GL_SMOOTH;
+			break;
+		case GFX_FLAT:
+			gl_shade_mode = GL_FLAT;
+			break;
+		default:
+			Sys_Error("Received shade mode [%d]\n", shade_mode);
+			break;
+	}
+
+	return gl_shade_mode;
+}
+
+void Hyena_Graphics_SetShadeMode(int shade_mode)
+{
+	int gl_shade_mode = Hyena_Graphics_ResolveShadeMode(shade_mode);
+	//glShadeModel(gl_shade_mode);
+}
+
+int Hyena_Graphics_ResolveBlendFunction(int blend_function)
+{
+	int gl_blend_function = -1;
+
+	switch(blend_function) {
+		case GFX_ONE_MINUS_SRC_ALPHA:
+			gl_blend_function = GL_ONE_MINUS_SRC_ALPHA;
+			break;
+		case GFX_ONE:
+			gl_blend_function = GL_ONE;
+			break;                
+		case GFX_ONE_MINUS_SRC_COLOR:
+			gl_blend_function = GL_ONE_MINUS_SRC_COLOR;
+			break;
+		case GFX_SRC_ALPHA:
+			gl_blend_function = GL_SRC_ALPHA;
+			break;
+		default:
+			Sys_Error("Received blend mode [%d]\n", blend_function);
+			break;
+	}
+
+	return gl_blend_function;
+}
+
+void Hyena_Graphics_SetBlendFunction(int source_blend, int dest_blend)
+{
+	int gl_source_blend = Hyena_Graphics_ResolveBlendFunction(source_blend);
+	int gl_dest_blend = Hyena_Graphics_ResolveBlendFunction(dest_blend);
+	//glBlendFunc(gl_source_blend, gl_dest_blend);
+}
+
+void Hyena_Graphics_SetDepthRange(float near, float far)
+{
+	//glDepthRange(near, far);
 }
