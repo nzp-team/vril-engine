@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -21,62 +21,59 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 // these are the key numbers that should be passed to Key_Event
 //
-#define	K_TAB			9
-#define	K_ENTER			13
-#define	K_ESCAPE		27
-#define	K_SPACE			32
 
-// normal keys should be passed as lowercased ascii
+// Generic keys
+#define	K_ENTER			128
+#define	K_ESCAPE		129
 
-#define	K_BACKSPACE		127
-#define	K_UPARROW		128
-#define	K_DOWNARROW		129
-#define	K_LEFTARROW		130
-#define	K_RIGHTARROW	131
+#define	K_UPARROW		130
+#define	K_DOWNARROW		131
+#define	K_LEFTARROW		132
+#define	K_RIGHTARROW	133
 
-#define	K_ALT			132
-#define	K_CTRL			133
-#define	K_SHIFT			134
-#define	K_F1			135
-#define	K_F2			136
-#define	K_F3			137
-#define	K_F4			138
-#define	K_F5			139
-#define	K_F6			140
-#define	K_F7			141
-#define	K_F8			142
-#define	K_F9			143
-#define	K_F10			144
-#define	K_F11			145
-#define	K_F12			146
-#define	K_INS			147
-#define	K_DEL			148
-#define	K_PGDN			149
-#define	K_PGUP			150
-#define	K_HOME			151
-#define	K_END			152
+// Platform specific keys
 
-#define K_PAUSE			255
+// Face buttons
+#define K_BOTTOMFACE    134
+#define K_LEFTFACE      135
+#define K_TOPFACE       136
+#define K_RIGHTFACE     137
 
-//
-// mouse buttons generate virtual keys
-//
-#define	K_MOUSE1		200
-#define	K_MOUSE2		201
-#define	K_MOUSE3		202
+// Triggers
+#define K_LTRIGGER      138
+#define K_RTRIGGER      139
+#define K_ZLTRIGGER     140
+#define K_ZRTRIGGER     141
 
-//
-// joystick buttons
-//
-#define	K_JOY1			203
-#define	K_JOY2			204
-#define	K_JOY3			205
-#define	K_JOY4			206
+// naievil -- this is for using the select button for a game key, which is important
+#define K_START         142
+#define K_SELECT 		143
 
-//
+// NSpire Extras
+#define K_CTRL          153
+#define K_SHIFT         155
+#define K_VAR           156
+#define K_TAB           157
+#define K_DELETE        158
+
+// PSP2
+#define K_TOUCH         159
+
+// Joystick buttons
+#define	K_JOY1			184
+#define	K_JOY2			185
+#define	K_JOY3			186
+#define	K_JOY4			187
+
+#define K_PLUS          188
+#define K_MINUS         189
+
+#define K_SPACE         190
+
 // aux keys are for multi-buttoned joysticks to generate so they can use
 // the normal binding process
-//
+// leaving these here in-case future platforms
+// may need to implement them
 #define	K_AUX1			207
 #define	K_AUX2			208
 #define	K_AUX3			209
@@ -110,28 +107,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	K_AUX31			237
 #define	K_AUX32			238
 
-// JACK: Intellimouse(c) Mouse Wheel Support
-
-#define K_MWHEELUP		239
-#define K_MWHEELDOWN	240
-
-// naievil -- this is for using the select button for a game key, which is important
-#define K_SELECT 		241
-
-
-
 typedef enum {key_game, key_console, key_message, key_menu, key_menu_pause} keydest_t;
 
-extern keydest_t	key_dest;
-extern char *keybindings[256];
-extern char *dtbindings[256];
-extern	int		key_repeats[256];
-extern	int		key_count;			// incremented every key event
-extern	int		key_lastpress;
+extern keydest_t	    key_dest;
+extern char             *keybindings[256];
+extern char             *dtbindings[256];
+extern	int		        key_repeats[256];
+extern	int		        key_count;			// incremented every key event
+extern	int		        key_lastpress;
+extern qboolean	        keydown[256];
 
 void Key_Event (int key, qboolean down);
 void Key_Init (void);
 void Key_WriteBindings (FILE *f);
-void Key_SetBinding (int keynum, char *binding);
 void Key_WriteDTBindings (FILE *f);
+void Key_SetBinding (int keynum, char *binding);
 void Key_ClearStates (void);
+void Key_SendText(char *text);

@@ -235,14 +235,14 @@ void Sys_Sleep (void)
 void Sys_DefaultConfig(void)
 {
 	// naievil -- fixme I didn't do this
-	Cbuf_AddText ("bind ABUTTON +right\n");
-	Cbuf_AddText ("bind BBUTTON +lookdown\n");
-	Cbuf_AddText ("bind XBUTTON +lookup\n");
-	Cbuf_AddText ("bind YBUTTON +left\n");
-	Cbuf_AddText ("bind LTRIGGER +jump\n");
+	Cbuf_AddText ("bind ABUTTON +moveright\n");
+	Cbuf_AddText ("bind BBUTTON +back\n");
+	Cbuf_AddText ("bind XBUTTON +forward\n");
+	Cbuf_AddText ("bind YBUTTON ++moveleft\n");
+	Cbuf_AddText ("bind LTRIGGER +aim\n");
 	Cbuf_AddText ("bind RTRIGGER +attack\n");
-	Cbuf_AddText ("bind PADUP \"impulse 10\"\n");
-	Cbuf_AddText ("bind PADDOWN \"impulse 12\"\n");
+	Cbuf_AddText ("bind UPARROW \"impulse 10\"\n");
+	Cbuf_AddText ("bind DOWNARROW \"impulse 12\"\n");
 	//Cbuf_AddText ("lookstrafe \"1.000000\"\n");
 	//Cbuf_AddText ("lookspring \"0.000000\"\n");
 }
@@ -251,7 +251,7 @@ void Sys_SetKeys(u32 keys, u32 state){
 	if( keys & KEY_SELECT)
 		Key_Event(K_SELECT, state);
 	if( keys & KEY_START)
-		Key_Event(K_ESCAPE, state);
+		Key_Event(K_START, state);
 	if( keys & KEY_DUP)
 		Key_Event(K_UPARROW, state);
 	if( keys & KEY_DDOWN)
@@ -261,21 +261,21 @@ void Sys_SetKeys(u32 keys, u32 state){
 	if( keys & KEY_DRIGHT)
 		Key_Event(K_RIGHTARROW, state);
 	if( keys & KEY_Y)
-		Key_Event(K_AUX4, state);
+		Key_Event(K_LEFTFACE, state);
 	if( keys & KEY_X)
-		Key_Event(K_AUX3, state);
+		Key_Event(K_TOPFACE, state);
 	if( keys & KEY_B)
-		Key_Event(K_AUX2, state);
+		Key_Event(K_BOTTOMFACE, state);
 	if( keys & KEY_A)
-		Key_Event(K_AUX1, state);
+		Key_Event(K_RIGHTFACE, state);
 	if( keys & KEY_L)
-		Key_Event(K_AUX5, state);
+		Key_Event(K_LTRIGGER, state);
 	if( keys & KEY_R)
-		Key_Event(K_AUX7, state);
+		Key_Event(K_RTRIGGER, state);
 	if( keys & KEY_ZL)
-		Key_Event(K_AUX6, state);
+		Key_Event(K_ZLTRIGGER, state);
 	if( keys & KEY_ZR)
-		Key_Event(K_AUX8, state);
+		Key_Event(K_ZRTRIGGER, state);
 }
 
 void Sys_SendKeyEvents (void)

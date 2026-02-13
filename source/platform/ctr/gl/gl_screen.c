@@ -291,13 +291,13 @@ int GetButtonIcon (char *buttonname)
 		if (!strncmp (b, buttonname, l) )
 		{
 			// naievil -- need to fix these
-			if (!strcmp(Key_KeynumToString(j), "PADUP"))
+			if (!strcmp(Key_KeynumToString(j), "UPARROW"))
 				return b_up;
-			else if (!strcmp(Key_KeynumToString(j), "PADDOWN"))
+			else if (!strcmp(Key_KeynumToString(j), "DOWNARROW"))
 				return b_down;
-			else if (!strcmp(Key_KeynumToString(j), "PADLEFT"))
+			else if (!strcmp(Key_KeynumToString(j), "LEFTARROW"))
 				return b_left;
-			else if (!strcmp(Key_KeynumToString(j), "PADRIGHT"))
+			else if (!strcmp(Key_KeynumToString(j), "RIGHTARROW"))
 				return b_right;
 			else if (!strcmp(Key_KeynumToString(j), "SELECT"))
 				return b_select;

@@ -66,10 +66,10 @@ void IN_ResetInputs(void)
 {
 	// Set default PSVITA controls
 	Cbuf_AddText("unbindall\n");
-	Cbuf_AddText("bind CROSS +jump\n"); // Cross
-	Cbuf_AddText("bind SQUARE +reload\n"); // Square
-	Cbuf_AddText("bind CIRCLE \"impulse 12\"\n"); // Circle
-	Cbuf_AddText("bind TRIANGLE \"impulse 10\"\n"); // Triangle
+	Cbuf_AddText("bind BOTTOMFACE +jump\n"); // Cross
+	Cbuf_AddText("bind LEFTFACE +reload\n"); // Square
+	Cbuf_AddText("bind RIGHTFACE \"impulse 12\"\n"); // Circle
+	Cbuf_AddText("bind TOPFACE \"impulse 10\"\n"); // Triangle
 	Cbuf_AddText("bind LTRIGGER +aim\n"); // Left Trigger
 	Cbuf_AddText("bind RTRIGGER +attack\n"); // Right Trigger
 	Cbuf_AddText("bind UPARROW +forward\n"); // Up

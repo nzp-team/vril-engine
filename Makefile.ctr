@@ -87,7 +87,7 @@ COMMON_OBJS =	system.o \
 				cvar.c \
 				host.c \
 				host_cmd.c \
-				platform/ctr/keys.c \
+				keys.c \
 				mathlib.c \
 				matrixlib.c \
 				platform/ctr/menu.c \

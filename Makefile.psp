@@ -57,7 +57,7 @@ COMMON_OBJS = \
 	source/cvar.o \
 	source/host.o \
 	source/host_cmd.o \
-	source/platform/psp/keys.o \
+	source/keys.o \
 	source/mathlib.o \
 	source/matrixlib.o \
 	source/platform/psp/menu.o \
@@ -120,7 +120,7 @@ LIBS		= $(GPROF_LIBS) $(GU_LIBS) $(AUDIO_LIBS) $(MISC_LIBS) $(STD_LIBS) $(NET_LI
 
 CFLAGS = -ffast-math -O3 -Ofast -G0 -Wall $(GPROF_FLAGS) -Did386="0" -DPSP $(MODE) $(HARDWARE_VIDEO_ONLY_FLAGS) \
 		-DSWIZZLE32 -DPSP_MP3_HWDECODE -DFULLBRIGHT -DHL_RENDER -Wno-strict-aliasing -DPSP_VFPU -DPLATFORM_DIRECTORY="psp" \
-		-DPLATFORM_RENDERER="gu" -DMAX_AI_COUNT=12
+		-DPLATFORM_RENDERER="gu" -DMAX_AI_COUNT=12 -DPLATFORM_USES_OSK
 
 ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror

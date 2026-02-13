@@ -394,7 +394,7 @@ void M_Start_Key (int key)
 {
 	switch (key)
 	{
-		case K_ESCAPE:
+		case K_START:
 			S_LocalSound ("sounds/menu/enter.wav");
 			Cbuf_AddText("cd playstring tensioned_by_the_damned 1\n");
 			Cbuf_AddText("togglemenu\n");
@@ -478,7 +478,7 @@ static void M_Paused_Menu_Key (int key)
 				M_Paused_Cusor = Max_Paused_Iteams - 1;
 			break;
 
-		case K_ENTER:
+		case K_BOTTOMFACE:
 			m_entersound = true;
 
 			switch (M_Paused_Cusor)
@@ -615,7 +615,7 @@ void M_Main_Key (int key)
 				m_main_cursor = MAIN_ITEMS - 1;
 			break;
 
-		case K_ENTER:
+		case K_BOTTOMFACE:
 			m_entersound = true;
 
 			switch (m_main_cursor)
@@ -689,7 +689,7 @@ void M_Restart_Key (int key)
 
 	case 'Y':
 	case 'y':
-	case K_ENTER:
+	case K_BOTTOMFACE:
 		key_dest = key_game;
 		m_state = m_none;
 		// Cbuf_AddText ("restart\n"); // nai -- old, now do soft reset
@@ -977,7 +977,7 @@ void M_Map_Key (int key)
 				}
 			}
 			break;
-		case K_ENTER:
+		case K_BOTTOMFACE:
 			m_entersound = true;
 			if (m_map_cursor == 17) {
 				M_Menu_SinglePlayer_f ();
@@ -1138,7 +1138,7 @@ void M_SinglePlayer_Key (int key)
 				m_singleplayer_cursor = SINGLEPLAYER_ITEMS - 1;
 			break;
 
-		case K_ENTER:
+		case K_BOTTOMFACE:
 			m_entersound = true;
 
 			switch (m_singleplayer_cursor)
@@ -1880,21 +1880,6 @@ void M_Setup_Key (int k)
 		S_LocalSound ("sounds/menu/navigate.wav");
 		break;
 
-	case K_INS:
-		offset = 1;
-		if (setup_cursor == 0+offset)
-		{
-			M_Menu_OSK_f(setup_hostname, setup_hostname, 16);
-			break;
-		}
-
-		if (setup_cursor == 1+offset)
-		{
-			M_Menu_OSK_f(setup_myname, setup_myname,16);
-			break;
-		}
-		break;
-
 	case K_ENTER:
 		offset = 1;
 		if (setup_cursor == 0+offset || setup_cursor == 1+offset || setup_cursor== 0)
@@ -1913,21 +1898,6 @@ void M_Setup_Key (int k)
 			Cvar_Set("hostname", setup_hostname);
 		m_entersound = true;
 		M_Menu_MultiPlayer_f ();
-		break;
-
-	case K_BACKSPACE:
-		offset = 1;
-		if (setup_cursor == 0+offset)
-		{
-			if (strlen(setup_hostname))
-				setup_hostname[strlen(setup_hostname)-1] = 0;
-		}
-
-		if (setup_cursor == 1+offset)
-		{
-			if (strlen(setup_myname))
-				setup_myname[strlen(setup_myname)-1] = 0;
-		}
 		break;
 
 	default:
@@ -2011,7 +1981,7 @@ void M_ServerList_Key (int key)
 {
 	int	slist_length;
 
-	if (!slist[0].server && key != K_ESCAPE && key != K_DEL)
+	if (!slist[0].server && key != K_ESCAPE && key != K_DELETE)
 		return;
 
 	switch (key)
@@ -2044,32 +2014,6 @@ void M_ServerList_Key (int key)
 			slist_cursor++;
 		break;
 
-	case K_HOME:
-		S_LocalSound ("sounds/menu/navigate.wav");
-		slist_cursor = 0;
-		break;
-
-	case K_END:
-		S_LocalSound ("sounds/menu/navigate.wav");
-		slist_cursor = SList_Length() - 1;
-		break;
-
-	case K_PGUP:
-		S_LocalSound ("sounds/menu/navigate.wav");
-		slist_cursor -= (slist_maxs - slist_mins);
-		if (slist_cursor < 0)
-			slist_cursor = 0;
-		break;
-
-	case K_PGDN:
-		S_LocalSound ("sounds/menu/navigate.wav");
-		slist_cursor += (slist_maxs - slist_mins);
-		if (slist_cursor >= MAX_SERVER_LIST)
-			slist_cursor = MAX_SERVER_LIST - 1;
-		while (!slist[slist_cursor].server)
-			slist_cursor--;
-		break;
-
 	case K_ENTER:
 		if (keydown[K_CTRL])
 		{
@@ -2081,13 +2025,7 @@ void M_ServerList_Key (int key)
 		Cbuf_AddText (va("connect \"%s\"\n", slist[slist_cursor].server));
 		break;
 
-	//case 'e':
-	//case 'E':
-	case K_INS:
-		M_Menu_SEdit_f ();
-		break;
-
-	case K_DEL:
+	case K_DELETE:
 		S_LocalSound ("sounds/menu/enter.wav");
 		if ((slist_length = SList_Length()) < MAX_SERVER_LIST)
 		{
@@ -2207,36 +2145,6 @@ void M_SEdit_Key (int key)
 	case K_DOWNARROW:
 		S_LocalSound ("sounds/menu/navigate.wav");
 		sedit_state = !sedit_state;
-		break;
-
-	case K_INS:
-        if (sedit_state == 0)
-		   M_Menu_OSK_f(slist_serv, slist_serv, 16);
-		else
-		   M_Menu_OSK_f(slist_desc, slist_desc, 16);
-		break;
-
-	case K_BACKSPACE:
-		if (sedit_state == 0)
-		{
-			if ((l = strlen(slist_serv)))
-				slist_serv[--l] = 0;
-			if (strlen(slist_serv) - 6 < slist_serv_min && slist_serv_min)
-			{
-				slist_serv_min--;
-				slist_serv_max--;
-			}
-		}
-		else
-		{
-			if ((l = strlen(slist_desc)))
-				slist_desc[--l] = 0;
-			if (strlen(slist_desc) - 6 < slist_desc_min && slist_desc_min)
-			{
-				slist_desc_min--;
-				slist_desc_max--;
-			}
-		}
 		break;
 
 	default:
@@ -3416,8 +3324,7 @@ void M_Keys_Key (int k)
 		}
 		break;
 
-	case K_BACKSPACE:		// delete bindings
-	case K_DEL:				// delete bindings
+	case K_DELETE:				// delete bindings
 		S_LocalSound ("sounds/menu/enter.wav");
 		M_UnbindCommand (bindnames[keys_cursor][0]);
 		break;
@@ -3796,15 +3703,10 @@ void M_OSK_Key (int key)//blubswillrule: making console cursor wrap around
 			strcat(osk_buffer,selected_char);
 		}
 		break;
-	case K_DEL:
+	case K_DELETE:
 		if (strlen(osk_buffer) > 0) {
 			osk_buffer[strlen(osk_buffer)-1] = '\0';
 		}
-		break;
-	case K_INS:
-		strncpy(osk_out_buff,osk_buffer,max_len);
-
-		m_state = m_old_state;
 		break;
 	case K_ESCAPE:
 		m_state = m_old_state;
@@ -3838,7 +3740,7 @@ void Con_OSK_Key (int key)////blubswillrule: making console cursor wrap around
 		if (osk_pos_y < 0)
 			osk_pos_y = MAX_Y;//0
 		break;
-	case K_ENTER:
+	case K_BOTTOMFACE:
 		if (max_len > strlen(osk_buffer)) {
 			char *selected_line = osk_text[osk_pos_y];
 			char selected_char[2];
@@ -3852,16 +3754,16 @@ void Con_OSK_Key (int key)////blubswillrule: making console cursor wrap around
 			strcat(osk_buffer,selected_char);
 		}
 		break;
-	case K_DEL:
+	case K_LEFTFACE:
 		if (strlen(osk_buffer) > 0) {
 			osk_buffer[strlen(osk_buffer)-1] = '\0';
 		}
 		break;
-	case K_INS:
+	case K_RIGHTFACE:
 		strncpy(osk_out_buff,osk_buffer,max_len);
 		Con_SetOSKActive(false);
 		break;
-	case K_ESCAPE:
+	case K_START:
 		Con_SetOSKActive(false);
 		break;
 	default:
@@ -4124,14 +4026,6 @@ forward:
 			Cbuf_AddText ("connect\n");
 		break;
 
-	case K_BACKSPACE:
-		if (serialConfig_cursor == 4)
-		{
-			if (strlen(serialConfig_phone))
-				serialConfig_phone[strlen(serialConfig_phone)-1] = 0;
-		}
-		break;
-
 	default:
 		if (key < 32 || key > 127)
 			break;
@@ -4276,26 +4170,6 @@ void M_ModemConfig_Key (int key)
 			(*SetModemConfig) (0, va ("%c", modemConfig_dialing), modemConfig_clear, modemConfig_init, modemConfig_hangup);
 			m_entersound = true;
 			M_Menu_SerialConfig_f ();
-		}
-		break;
-
-	case K_BACKSPACE:
-		if (modemConfig_cursor == 1)
-		{
-			if (strlen(modemConfig_clear))
-				modemConfig_clear[strlen(modemConfig_clear)-1] = 0;
-		}
-
-		if (modemConfig_cursor == 2)
-		{
-			if (strlen(modemConfig_init))
-				modemConfig_init[strlen(modemConfig_init)-1] = 0;
-		}
-
-		if (modemConfig_cursor == 3)
-		{
-			if (strlen(modemConfig_hangup))
-				modemConfig_hangup[strlen(modemConfig_hangup)-1] = 0;
 		}
 		break;
 
@@ -4452,20 +4326,6 @@ void M_LanConfig_Key (int key)
 			lanConfig_cursor = 0;
 		break;
 
-	case K_INS:
-		if (lanConfig_cursor == 0)
-		{
-			M_Menu_OSK_f(lanConfig_portname, lanConfig_portname, 6);
-			break;
-		}
-
-		if (lanConfig_cursor == 2)
-		{
-			M_Menu_OSK_f(lanConfig_joinname, lanConfig_joinname, 22);
-			break;
-		}
-		break;
-
 	case K_ENTER:
 		if (lanConfig_cursor == 0)
 			break;
@@ -4495,20 +4355,6 @@ void M_LanConfig_Key (int key)
 			break;
 		}
 
-		break;
-
-	case K_BACKSPACE:
-		if (lanConfig_cursor == 0)
-		{
-			if (strlen(lanConfig_portname))
-				lanConfig_portname[strlen(lanConfig_portname)-1] = 0;
-		}
-
-		if (lanConfig_cursor == 2)
-		{
-			if (strlen(lanConfig_joinname))
-				lanConfig_joinname[strlen(lanConfig_joinname)-1] = 0;
-		}
 		break;
 
 	default:
