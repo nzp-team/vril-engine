@@ -1143,12 +1143,15 @@ void R_MarkLeaves (void)
 =============================================================================
 */
 
-// returns a texture number and the position inside it
+/*
+========================
+AllocBlock -- returns a texture number and the position inside it
+========================
+*/
 int AllocBlock (int w, int h, int *x, int *y)
 {
 	int		i, j;
 	int		best, best2;
-	int		bestx;
 	int		texnum;
 
 	for (texnum=0 ; texnum<MAX_LIGHTMAPS ; texnum++)
@@ -1182,7 +1185,8 @@ int AllocBlock (int w, int h, int *x, int *y)
 		return texnum;
 	}
 
-	Sys_Error ("AllocBlock: full");
+	Sys_Error ("full");
+	return -1; //johnfitz -- shut up compiler
 }
 
 
@@ -1198,11 +1202,8 @@ BuildSurfaceDisplayList
 */
 void BuildSurfaceDisplayList (msurface_t *fa)
 {
-	int			i, lindex, lnumverts, s_axis, t_axis;
+	int			i, lindex, lnumverts;
 	medge_t		*pedges, *r_pedge;
-	mplane_t	*pplane;
-	int			vertpage, newverts, newpage, lastvert;
-	bool	visible;
 	float		*vec;
 	float		s, t;
 	glpoly_t	*poly;
@@ -1210,7 +1211,6 @@ void BuildSurfaceDisplayList (msurface_t *fa)
 // reconstruct the polygon
 	pedges = currentmodel->edges;
 	lnumverts = fa->numedges;
-	vertpage = 0;
 
 	//
 	// draw texture
@@ -1273,7 +1273,6 @@ void BuildSurfaceDisplayList (msurface_t *fa)
 		{
 			vec3_t v1, v2;
 			float *prev, *this, *next;
-			float f;
 
 			prev = poly->verts[(i + lnumverts - 1) % lnumverts];
 			this = poly->verts[i];
@@ -1285,10 +1284,10 @@ void BuildSurfaceDisplayList (msurface_t *fa)
 			VectorNormalize( v2 );
 
 			// skip co-linear points
-			#define COLINEAR_EPSILON 0.001
-			if ((fabs( v1[0] - v2[0] ) <= COLINEAR_EPSILON) &&
-				(fabs( v1[1] - v2[1] ) <= COLINEAR_EPSILON) && 
-				(fabs( v1[2] - v2[2] ) <= COLINEAR_EPSILON))
+			#define COLINEAR_EPSILON 0.001f
+			if ((fabsf( v1[0] - v2[0] ) <= COLINEAR_EPSILON) &&
+				(fabsf( v1[1] - v2[1] ) <= COLINEAR_EPSILON) && 
+				(fabsf( v1[2] - v2[2] ) <= COLINEAR_EPSILON))
 			{
 				int j;
 				for (j = i + 1; j < lnumverts; ++j)
@@ -1315,7 +1314,7 @@ GL_CreateSurfaceLightmap
 */
 void GL_CreateSurfaceLightmap (msurface_t *surf)
 {
-	int		smax, tmax, s; //, t, l, i;
+	int		smax, tmax;
 	byte	*base;
 
 	if (surf->flags & (SURF_DRAWSKY|SURF_DRAWTURB))
@@ -1343,7 +1342,6 @@ void GL_BuildLightmaps (void)
 {
 	int		i, j;
 	model_t	*m;
-	extern bool isPermedia;
 
 	memset (allocated, 0, sizeof(allocated));
 
@@ -1366,8 +1364,10 @@ void GL_BuildLightmaps (void)
 			GL_CreateSurfaceLightmap (m->surfaces + i);
 			if ( m->surfaces[i].flags & SURF_DRAWTURB )
 				continue;
+
 			if ( m->surfaces[i].flags & SURF_DRAWSKY )
 				continue;
+
 			BuildSurfaceDisplayList (m->surfaces + i);
 		}
 	}
@@ -1384,13 +1384,10 @@ void GL_BuildLightmaps (void)
 		lightmap_rectchange[i].t = BLOCK_HEIGHT;
 		lightmap_rectchange[i].w = 0;
 		lightmap_rectchange[i].h = 0;
-		
-		char lm_name[16];
-		sprintf(lm_name,"lightmap%d",i);
+
+		char lm_name[32];
+
+		snprintf(lm_name,sizeof(lm_name),"lightmap%i",i);
 		lightmap_index[i] = GL_LoadLMTexture (lm_name, BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+(i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes), false);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
-
 }
-
