@@ -25,7 +25,7 @@
  * @brief Sets fogging mode. (Platform-specific, see `Fog_SetupFrame()`)
  */
 void
-Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, float green, float blue, float alpha)
+Hyena_Fog_Set(bool is_world_geometry, float start, float end, float red, float green, float blue, float alpha)
 {
 	float color[4] = {red, green, blue, alpha};
 
@@ -38,7 +38,7 @@ Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, floa
  * @brief Enables fogging mode. (Platform-specific, see `Fog_EnableGFog()`)
  */
 void
-Platform_Fog_Enable(void)
+Hyena_Fog_Enable(void)
 {
     glEnable(GL_FOG);
 }
@@ -47,7 +47,7 @@ Platform_Fog_Enable(void)
  * @brief Disables fogging mode. (Platform-specific, see `Fog_DisableGFog()`)
  */
 void
-Platform_Fog_Disable(void)
+Hyena_Fog_Disable(void)
 {
     glDisable(GL_FOG);
 }
@@ -56,7 +56,7 @@ Platform_Fog_Disable(void)
  * @brief Called at startup, inits graphics functions. (Platform-specific, see `Fog_Init()`)
  */
 void
-Platform_Fog_Init(void)
+Hyena_Fog_Init(void)
 {
 	glFogi(GL_FOG_MODE, GL_LINEAR);
 }

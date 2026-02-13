@@ -296,9 +296,9 @@ typedef struct
 #include "crc.h"
 #include "cdaudio.h"
 
-#include RENDERER_FILE(main.h)
-
 #include "render/r_main.h"
+
+#include RENDERER_FILE(main.h)
 
 //=============================================================================
 

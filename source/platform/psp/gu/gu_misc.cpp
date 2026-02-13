@@ -260,8 +260,12 @@ R_Init
 ===============
 */
 void R_InitDecals (void);
+
+extern "C"
+{
 void R_ToggleDecals_f (void);
 void R_ToggleParticles_f (void);
+}
 
 model_t* Mod_FindName(char* name);
 
@@ -346,8 +350,6 @@ void R_Init (void)
 
 	//Shpuld
 	Cvar_RegisterVariable (&r_model_brightness);
-
-	Cvar_RegisterVariable (&r_runqmbparticles);
 
 	R_InitParticles ();
 	// R_InitParticleTexture ();
