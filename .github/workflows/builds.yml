@@ -75,16 +75,12 @@ jobs:
       - name: Install Packages and update VitaSDK
         run: |
           apt update && apt install -y build-essential
-      # Removes pre-installed VitaGL
-      - name: Remove preinstalled vitaGL
-        run: |
-          rm -rf $VITASDK/arm-vita-eabi/include/vitaGL*
-          rm -rf $VITASDK/arm-vita-eabi/lib/libvitaGL*
+      # Clone and rebuilt vitaGL with neccessary flags
       # Clone the commit we want to use
       # in this case it's the latest
       - name: Clone vitaGL
         run: |
-          git clone https://github.com/Rinnegatamente/vitaGL.git
+          git clone https://github.com/Rinnegatamante/vitaGL.git
           cd vitaGL
           git checkout fcace3ba28e8d6b00f705660450a4a61df1f329c
       # Build with neccessary compiler flag
@@ -92,8 +88,7 @@ jobs:
         run: |
           cd vitaGL
           make clean
-          make CFLAGS="-g -Wl,-q -O3 -ffast-math -mtune=cortex-a9 -mfpu=neon -Wno-incompatible-pointer-types 
-          -Wno-stringop-overflow -DHAVE_FFP_SHADER_SUPPORT=1"
+          make CFLAGS+=" -DHAVE_FFP_SHADER_SUPPORT=1"
           make install
       - name: Build
         working-directory: ./
