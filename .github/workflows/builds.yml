@@ -83,12 +83,16 @@ jobs:
           git clone https://github.com/Rinnegatamante/vitaGL.git
           cd vitaGL
           git checkout fcace3ba28e8d6b00f705660450a4a61df1f329c
-      # Build with neccessary compiler flag
+      # Build vitaGL
+      - name: Inject flag into vitaGL Makefile
+        run: |
+          cd vitaGL
+          sed -i 's/-DHAVE_FFP_SHADER_SUPPORT=1/' Makefile
+      # Build vitaGL
       - name: Build vitaGL with HAVE_FFP_SHADER_SUPPORT=1
         run: |
           cd vitaGL
           make clean
-          make CFLAGS+=" -DHAVE_FFP_SHADER_SUPPORT=1"
           make install
       - name: Build
         working-directory: ./
