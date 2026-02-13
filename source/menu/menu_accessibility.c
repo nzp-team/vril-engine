@@ -33,6 +33,7 @@ void Menu_Accessibility_Set (void)
 	m_state = m_accessibility;
 }
 
+<<<<<<<< HEAD:source/menu/menu_accessibility.c
 /*
 ===============
 Menu_Accessibility_Draw
@@ -42,6 +43,12 @@ void Menu_Accessibility_Draw (void)
 {
 	// Background
 	Menu_DrawCustomBackground (true);
+========
+//
+// menus
+//
+#include "../../menu/menu_globaldefs.h"
+>>>>>>>> 742e8b881d77df16a4a2132a8d07bb8fe765e8e8:source/platform/psp2/menu.h
 
 	// Header
 	Menu_DrawTitle ("ACCESSIBILITY OPTIONS", MENU_COLOR_WHITE);

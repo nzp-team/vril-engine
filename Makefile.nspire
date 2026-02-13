@@ -21,8 +21,7 @@ endif
 GCCFLAGS += -Wno-missing-field-initializers
 
 VRILFLAGS := -DNO_SOUND_PROCESSING -DSOFTWARE_RENDERER -DFILE_SPECIAL_SUFFIX="\".tns\"" -DPLATFORM_DIRECTORY="nspire" -DPLATFORM_RENDERER="cpu" -DMAX_AI_COUNT=5
-GCCFLAGS += $(VRILFLAGS) -O3 -DOLD_SCREEN_API -fomit-frame-pointer -D__NSPIRE__ -DPLATFORM_GAMEFILES_IN_PAK -DMENU_DONT_DRAW_BACKGROUND_IMAGES \
-			-DMENU_HIDE_MAP_DESCRIPTIONS -DENTER_IS_CONFIRM
+GCCFLAGS += $(VRILFLAGS) -O3 -DOLD_SCREEN_API -fomit-frame-pointer -D__NSPIRE__ -DPLATFORM_GAMEFILES_IN_PAK -DMENU_DONT_DRAW_BACKGROUND_IMAGES -DMENU_HIDE_MAP_DESCRIPTIONS
 
 COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/chase.c \
@@ -56,7 +55,7 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/host.c \
 		source/host_cmd.c \
 		source/platform/nspire/in_nspire.c \
-		source/keys.c \
+		source/platform/nspire/keys.c \
 		source/mathlib.c \
 		source/matrixlib.c \
 		source/menu/menu_sys.c \
