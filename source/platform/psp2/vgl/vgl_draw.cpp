@@ -102,12 +102,12 @@ static GLuint current_gl_id = 0;
 void GL_Bind (int texnum)
 {
 	if (texnum < 0) {
-        Con_DPrintf("GL_Bind: invalid texnum %d\n", texnum);
+        Con_DPrintf("GL_Bind: tried to bind an invalid texnum\n");
         return;
     }
     gltexture_t *glt = &gltextures[texnum];
     if (!glt->used) {
-        Con_DPrintf("GL_Bind: unused texnum %d\n", texnum);
+        Sys_Error("GL_Bind: Tried to bind unused texture %d\n", texnum);
         return;
     }
 
@@ -129,6 +129,7 @@ void GL_FreeTextures (int texnum)
 	glt->gl_id = -1;
 	glt->texnum = -1;
 	strcpy(glt->identifier, "");
+	glt->identifier[0] = '\0';
 	glt->width = 0;
 	glt->height = 0;
 	glt->original_width = 0;
@@ -158,10 +159,13 @@ int Image_FindImage (const char *identifier)
 	int		i;
 	gltexture_t	*glt;
 
-	for (i=0, glt=gltextures ; i<numgltextures ; i++, glt++) {
-		if (glt->used) {
-			if (!strcmp (identifier, glt->identifier)) {
-				return glt->texnum;
+	if (identifier[0]) {
+		for (i=0; i<MAX_GLTEXTURES; i++) {
+				glt = &gltextures[i];
+				if (glt->used == true) {
+					if (!strcmp (identifier, glt->identifier)) {
+						return glt->texnum;
+				}
 			}
 		}
 	}
@@ -1108,28 +1112,30 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 	int texture_index = -1;
 
 	if (update == false) {
-		// Out of textures?
-		if (numgltextures == MAX_GLTEXTURES)
-			Sys_Error ("GL_GetTextureIndex: Out of GL textures\n");
 
-		for (i=0, glt=gltextures; i < MAX_GLTEXTURES; i++, glt++) {
+		for (i=0, glt=gltextures; i<MAX_GLTEXTURES; i++, glt++) {
 			if (glt->used == false) {
 				texture_index = i;
 				break;
 			}
 		}
 
-		glt = &gltextures[texture_index];
+		if (numgltextures == MAX_GLTEXTURES) {
+			Sys_Error("GL_LoadTexture: Out of GL textures\n");
+		}
 
-		if (texture_index < 0)
+		if (texture_index < 0) {
 			Sys_Error("Could not find a free GL texture!\n");
+		}
+
+		glt = &gltextures[texture_index];
 
 		GLuint texID;
 		glGenTextures(1, &texID);
 
 		//Con_DPrintf("lm num %i lm name %s\n", texture_index, identifier);
-
-		strcpy(glt->identifier, identifier);
+		snprintf(glt->identifier, sizeof(glt->identifier), "%s", identifier);
+		//strcpy(glt->identifier, identifier);
 		glt->gl_id = texID;
 		glt->texnum = texture_index;
 		glt->width = width;
@@ -1138,17 +1144,22 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 		glt->original_height = height;
 		glt->bpp = 4;
 		glt->mipmap = false;
-		glt->keep = false;
+		glt->keep = true;
 		glt->used = true;
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		GL_Upload32 (glt->gl_id, (unsigned*)data, width, height, false, false);
+
+		numgltextures++;
 	} else if (update == true) {
 		texture_index = Image_FindImage(identifier);
 
-		if (texture_index < 0) Sys_Error("tried to upload inactive lightmap\n");
+		if (texture_index < 0) {
+			Sys_Error("tried to upload inactive lightmap\n");
+			return 0;
+		} 
 
 		glt = &gltextures[texture_index];
 

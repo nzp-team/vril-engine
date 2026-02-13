@@ -1007,22 +1007,22 @@ Image_FindImage
 ================
 */
 // See if the texture is already present.
-int Image_FindImage(const char *identifier) 
+int Image_FindImage (const char *identifier)
 {
-	// See if the texture is already present.
-	if (identifier[0])
-	{
-		for (int i = 0; i < MAX_GLTEXTURES; ++i)
-		{
-			if (gltextures[i].used == true)
-			{
-				if (!strcmp (identifier, gltextures[i].identifier))
-				{
-					return i;
+	int		i;
+	gltexture_t	*glt;
+
+	if (identifier[0]) {
+		for (i=0; i<MAX_GLTEXTURES; i++) {
+				glt = &gltextures[i];
+				if (glt->used == true) {
+					if (!strcmp (identifier, glt->identifier)) {
+						return glt->texnum;
 				}
 			}
 		}
 	}
+
 	return -1;
 }
 
