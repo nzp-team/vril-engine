@@ -90,8 +90,8 @@ void IN_Init (void)
 	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_LTRIGGER)]	= K_LTRIGGER;
 	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_RTRIGGER)]	= K_RTRIGGER;
 	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_TRIANGLE)]	= K_TOPFACE;
-	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_CIRCLE)]		= K_RIGHTFACE;
-	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_CROSS)]		= K_BOTTOMFACE;
+	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_CIRCLE)]		= K_ESCAPE;
+	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_CROSS)]		= K_ENTER;
 	buttonToGameKeyMap[buttonMaskToShift(PSP_CTRL_SQUARE)]		= K_LEFTFACE;
 	memcpy_vfpu(buttonToConsoleKeyMap, buttonToGameKeyMap, sizeof(ButtonToKeyMap));
 	memcpy_vfpu(buttonToMessageKeyMap, buttonToGameKeyMap, sizeof(ButtonToKeyMap));

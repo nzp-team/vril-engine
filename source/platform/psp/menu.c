@@ -478,7 +478,7 @@ static void M_Paused_Menu_Key (int key)
 				M_Paused_Cusor = Max_Paused_Iteams - 1;
 			break;
 
-		case K_BOTTOMFACE:
+		case K_ENTER:
 			m_entersound = true;
 
 			switch (M_Paused_Cusor)
@@ -615,7 +615,7 @@ void M_Main_Key (int key)
 				m_main_cursor = MAIN_ITEMS - 1;
 			break;
 
-		case K_BOTTOMFACE:
+		case K_ENTER:
 			m_entersound = true;
 
 			switch (m_main_cursor)
@@ -689,7 +689,7 @@ void M_Restart_Key (int key)
 
 	case 'Y':
 	case 'y':
-	case K_BOTTOMFACE:
+	case K_ENTER:
 		key_dest = key_game;
 		m_state = m_none;
 		// Cbuf_AddText ("restart\n"); // nai -- old, now do soft reset
@@ -977,7 +977,7 @@ void M_Map_Key (int key)
 				}
 			}
 			break;
-		case K_BOTTOMFACE:
+		case K_ENTER:
 			m_entersound = true;
 			if (m_map_cursor == 17) {
 				M_Menu_SinglePlayer_f ();
@@ -1138,7 +1138,7 @@ void M_SinglePlayer_Key (int key)
 				m_singleplayer_cursor = SINGLEPLAYER_ITEMS - 1;
 			break;
 
-		case K_BOTTOMFACE:
+		case K_ENTER:
 			m_entersound = true;
 
 			switch (m_singleplayer_cursor)
@@ -3740,7 +3740,7 @@ void Con_OSK_Key (int key)////blubswillrule: making console cursor wrap around
 		if (osk_pos_y < 0)
 			osk_pos_y = MAX_Y;//0
 		break;
-	case K_BOTTOMFACE:
+	case K_ENTER:
 		if (max_len > strlen(osk_buffer)) {
 			char *selected_line = osk_text[osk_pos_y];
 			char selected_char[2];
@@ -3754,16 +3754,16 @@ void Con_OSK_Key (int key)////blubswillrule: making console cursor wrap around
 			strcat(osk_buffer,selected_char);
 		}
 		break;
-	case K_LEFTFACE:
+	case K_TOPFACE:
 		if (strlen(osk_buffer) > 0) {
 			osk_buffer[strlen(osk_buffer)-1] = '\0';
 		}
 		break;
-	case K_RIGHTFACE:
+	case K_LEFTFACE:
 		strncpy(osk_out_buff,osk_buffer,max_len);
 		Con_SetOSKActive(false);
 		break;
-	case K_START:
+	case K_RIGHTFACE:
 		Con_SetOSKActive(false);
 		break;
 	default:

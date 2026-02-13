@@ -176,10 +176,15 @@ void Key_Console (int key)
 		Con_OSK_Key (key);
 	}
 
-	if (key == K_LEFTFACE) {
+	if (key == K_SELECT) {
 		consoleOskDone = false;
 		Con_SetOSKActive(true);
 		Con_OSK_f(key_lines[edit_line]+1, consoleInput, 72);
+		return;
+	}
+#elif __3DS__
+	if (key == K_SELECT) {
+		IN_SwitchKeyboard();
 		return;
 	}
 #endif
@@ -203,7 +208,7 @@ void Key_Console (int key)
 		return;
 	}
 
-	if (key == K_TAB || key == K_RIGHTARROW) {	
+	if (key == K_TAB) {	
 		// command completion
 		cmd = Cmd_CompleteCommand (key_lines[edit_line]+1);
 		if (!cmd)
@@ -269,7 +274,7 @@ void Key_Console (int key)
 		return;
 	}
 
-	if (key == K_RIGHTFACE) {
+	if (key == K_SELECT) {
 		console_enabled = false;
 		con_backscroll = 0;
 		return;
@@ -656,6 +661,8 @@ void Key_Init (void)
 	consolekeys[K_JOY3] = true;
 	consolekeys[K_JOY4] = true;
 
+	consolekeys[K_SELECT] = true;
+
 	for (i=0 ; i<256 ; i++)
 		keyshift[i] = i;
 	for (i='a' ; i<='z' ; i++)
@@ -750,6 +757,33 @@ void Key_Event (int key, qboolean down)
 
 		if (key >= 200 && !keybindings[key])
 			Con_Printf ("%s is unbound, hit START to set.\n", Key_KeynumToString (key) );
+	}
+
+	//
+	// handle escape specialy, so the user can never unbind it
+	//
+	if (key == K_ESCAPE)
+	{
+		if (!down)
+			return;
+		switch (key_dest)
+		{
+		case key_message:
+			Key_Message (key);
+			break;
+		case key_menu:
+		case key_menu_pause:
+			M_Keydown (key);
+			break;
+		case key_game:
+		case key_console:
+			console_enabled = false;
+			M_ToggleMenu_f ();
+			break;
+		default:
+			Sys_Error ("Bad key_dest");
+		}
+		return;
 	}
 
 //

@@ -265,9 +265,9 @@ void Sys_SetKeys(u32 keys, u32 state){
 	if( keys & KEY_X)
 		Key_Event(K_TOPFACE, state);
 	if( keys & KEY_B)
-		Key_Event(K_BOTTOMFACE, state);
+		Key_Event(K_ESCAPE, state);
 	if( keys & KEY_A)
-		Key_Event(K_RIGHTFACE, state);
+		Key_Event(K_ENTER, state);
 	if( keys & KEY_L)
 		Key_Event(K_LTRIGGER, state);
 	if( keys & KEY_R)
