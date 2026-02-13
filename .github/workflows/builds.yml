@@ -75,6 +75,25 @@ jobs:
       - name: Install Packages and update VitaSDK
         run: |
           apt update && apt install -y build-essential
+      # Clone and rebuilt vitaGL with neccessary flags
+      # Clone the commit we want to use
+      # in this case it's the latest as of this commit
+      - name: Clone vitaGL
+        run: |
+          git clone https://github.com/Rinnegatamante/vitaGL.git
+          cd vitaGL
+          git checkout fcace3ba28e8d6b00f705660450a4a61df1f329c
+      # Inject flag
+      - name: Inject flag into vitaGL Makefile
+        run: |
+          cd vitaGL
+          sed -i 's/^CFLAGS[[:space:]]*= /&-DHAVE_FFP_SHADER_SUPPORT=1 /' Makefile
+      # Build vitaGL
+      - name: Build vitaGL with HAVE_FFP_SHADER_SUPPORT=1
+        run: |
+          cd vitaGL
+          make clean
+          make install
       - name: Build
         working-directory: ./
         run: |
