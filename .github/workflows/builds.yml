@@ -77,13 +77,13 @@ jobs:
           apt update && apt install -y build-essential
       # Clone and rebuilt vitaGL with neccessary flags
       # Clone the commit we want to use
-      # in this case it's the latest
+      # in this case it's the latest as of this commit
       - name: Clone vitaGL
         run: |
           git clone https://github.com/Rinnegatamante/vitaGL.git
           cd vitaGL
           git checkout fcace3ba28e8d6b00f705660450a4a61df1f329c
-      # Build vitaGL
+      # Inject flag
       - name: Inject flag into vitaGL Makefile
         run: |
           cd vitaGL
