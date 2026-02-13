@@ -14,5 +14,6 @@ extern qboolean loading_init;
 // unimplemented
 
 // int bind_grab
+void Menu_FindKeysForCommand (char *command, int *twokeys);
 void M_OSK_Draw (void);
 void Con_OSK_Key (int key);

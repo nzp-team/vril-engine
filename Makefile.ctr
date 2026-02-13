@@ -30,7 +30,7 @@ CFLAGS	:=	-g -Wall -Wdouble-promotion -std=gnu99 -O3 -mword-relocations \
 			-fomit-frame-pointer -ffunction-sections \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM11 -D__3DS__ -DGLQUAKE -DPLATFORM_DIRECTORY="ctr" -DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=18
+CFLAGS	+=	$(INCLUDE) -DARM11 -D__3DS__ -DGLQUAKE -DPLATFORM_DIRECTORY="ctr" -DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=18 -DFACE_CONFIRM_IS_FLIPPED
 
 ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror

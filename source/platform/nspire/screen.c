@@ -383,8 +383,7 @@ void SCR_DrawUseString (void)
 	if (button_pic_x != 100)
 	{
 		int keys[2];
-		// TODO MENU
-		//M_FindKeysForCommand ("+use", keys);
+		Menu_FindKeysForCommand ("+use", keys);
 		if (keys[0] != -1)
 		{
 			Draw_CharacterRGBA (x + button_pic_x + 4, y, *Key_KeynumToString(keys[0]), 255, 255, 0, 255, 1);

@@ -45,7 +45,7 @@ COMMON_OBJS =	\
 	source/cvar.o \
 	source/host.o \
 	source/host_cmd.o \
-	source/platform/psp2/keys.o \
+	source/keys.o \
 	source/mathlib.o \
 	source/matrixlib.o \
 	source/platform/psp2/net_dgrm.o \

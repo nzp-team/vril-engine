@@ -624,41 +624,6 @@ void Draw_SubPic (int x, int y, int pic, float s, float t, float s_coord_size, f
 
 /*
 =============
-Draw_SubPic
-=============
-*/
-void Draw_SubPic (int x, int y, int pic, float s, float t, float r, float g , float b, float a)
-{
-	if (pic < 0) return;
-
-	float size = 4;
-
-	glDisable(GL_ALPHA_TEST);
-	glEnable(GL_BLEND);
-	glColor4f(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-	gltexture_t *glt = &gltextures[pic];
-	GL_Bind (pic);
-
-	glBegin (GL_QUADS);
-	glTexCoord2f (s, t);
-	glVertex2f (x, y);
-	glTexCoord2f (s, t);
-	glVertex2f (x+(glt->width/size), y);
-	glTexCoord2f (s, t);
-	glVertex2f (x+(glt->width/size), y+(glt->height/size));
-	glTexCoord2f (s, t);
-	glVertex2f (x, y+(glt->height/size));
-	glEnd ();
-
-	glDisable(GL_BLEND);
-	glColor4f(1.0f,1.0f,1.0f,1.0f);
-}
-
-/*
-=============
 Draw_TransPic
 =============
 */

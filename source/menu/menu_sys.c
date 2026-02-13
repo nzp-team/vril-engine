@@ -287,9 +287,63 @@ void Menu_KeyInput (int key)
 		Menu_IncrementSlider(key);
 		break;
 
+// Add platform-specific menu enter keys
+#ifdef ENTER_IS_CONFIRM
 	case K_ENTER:
-	case K_AUX1:
+	Menu_ButtonPress();
+		break;
+#elif FACE_CONFIRM_IS_FLIPPED
+	case K_RIGHTFACE:
 		Menu_ButtonPress();
 		break;
+#else
+	case K_BOTTOMFACE:
+		Menu_ButtonPress();
+		break;
+#endif
+	}
+}
+
+void Menu_FindKeysForCommand (char *command, int *twokeys)
+{
+	int		count;
+	int		j;
+	int		l;
+	char	*b;
+
+	twokeys[0] = twokeys[1] = -1;
+	l = strlen(command);
+	count = 0;
+
+	for (j=0 ; j<256 ; j++)
+	{
+		b = keybindings[j];
+		if (!b)
+			continue;
+		if (!strncmp (b, command, l) )
+		{
+			twokeys[count] = j;
+			count++;
+			if (count == 2)
+				break;
+		}
+	}
+}
+
+void Menu_UnbindCommand (char *command)
+{
+	int		j;
+	int		l;
+	char	*b;
+
+	l = strlen(command);
+
+	for (j=0 ; j<256 ; j++)
+	{
+		b = keybindings[j];
+		if (!b)
+			continue;
+		if (!strncmp (b, command, l) )
+			Key_SetBinding (j, "");
 	}
 }
