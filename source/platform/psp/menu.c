@@ -478,7 +478,7 @@ static void M_Paused_Menu_Key (int key)
 				M_Paused_Cusor = Max_Paused_Iteams - 1;
 			break;
 
-		case K_ENTER:
+		case K_BOTTOMFACE:
 			m_entersound = true;
 
 			switch (M_Paused_Cusor)
@@ -689,7 +689,7 @@ void M_Restart_Key (int key)
 
 	case 'Y':
 	case 'y':
-	case K_ENTER:
+	case K_BOTTOMFACE:
 		key_dest = key_game;
 		m_state = m_none;
 		// Cbuf_AddText ("restart\n"); // nai -- old, now do soft reset

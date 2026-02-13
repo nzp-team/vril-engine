@@ -235,11 +235,11 @@ void Sys_Sleep (void)
 void Sys_DefaultConfig(void)
 {
 	// naievil -- fixme I didn't do this
-	Cbuf_AddText ("bind ABUTTON +right\n");
-	Cbuf_AddText ("bind BBUTTON +lookdown\n");
-	Cbuf_AddText ("bind XBUTTON +lookup\n");
-	Cbuf_AddText ("bind YBUTTON +left\n");
-	Cbuf_AddText ("bind LTRIGGER +jump\n");
+	Cbuf_AddText ("bind ABUTTON +moveright\n");
+	Cbuf_AddText ("bind BBUTTON +back\n");
+	Cbuf_AddText ("bind XBUTTON +forward\n");
+	Cbuf_AddText ("bind YBUTTON ++moveleft\n");
+	Cbuf_AddText ("bind LTRIGGER +aim\n");
 	Cbuf_AddText ("bind RTRIGGER +attack\n");
 	Cbuf_AddText ("bind UPARROW \"impulse 10\"\n");
 	Cbuf_AddText ("bind DOWNARROW \"impulse 12\"\n");
