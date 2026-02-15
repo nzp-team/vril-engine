@@ -83,6 +83,10 @@ function run_mapboot_test()
 
         if [[ "${ffmpeg_failed}" -ne "0" ]]; then
             echo "[ERROR]: ffmpeg failed to calculate PSNR of content."
+            echo "         logs follow:"
+            echo "----------------------------------------------------"
+            cat /tmp/ffmpeg_log.txt
+            echo "----------------------------------------------------"
             any_map_failed="1"
         fi
 
