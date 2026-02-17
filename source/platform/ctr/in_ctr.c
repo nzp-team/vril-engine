@@ -108,7 +108,7 @@ void IN_Move (usercmd_t *cmd)
 			int tx = cur_touch.px - old_touch.px;
 			int ty = cur_touch.py - old_touch.py;
 
-			if(m_pitch.value < 0)
+			if(m_pitch.value > 0)
 				ty = -ty;
 
 			cl.viewangles[YAW]   -= abs(tx) > 1 ? tx * sensitivity.value * 0.33f : 0;
@@ -172,7 +172,7 @@ void IN_Move (usercmd_t *cmd)
 	cl.viewangles[YAW] -= yawScale * look_x * (float)host_frametime;
 
 	// Set the pitch.
-	const bool invertPitch = m_pitch.value < 0;
+	const bool invertPitch = m_pitch.value > 0;
 	const float pitchScale = yawScale * (invertPitch ? 1 : -1);
 
 	cl.viewangles[PITCH] += pitchScale * look_y * (float)host_frametime;

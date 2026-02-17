@@ -72,6 +72,7 @@ COMMON_OBJS = \
 	source/menu/menu_video.o \
 	source/menu/menu_audio.o \
 	source/menu/menu_controls.o \
+	source/menu/menu_bindings.o \
 	source/menu/menu_accessibility.o \
 	source/menu/menu_pause.o \
 	source/menu/menu_stubs.o \

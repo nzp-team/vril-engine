@@ -34,6 +34,7 @@ void Menu_Configuration_Draw (void);
 void Menu_Video_Draw (void);
 void Menu_Audio_Draw (void);
 void Menu_Controls_Draw (void);
+void Menu_Bindings_Draw (void);
 void Menu_Accessibility_Draw (void);
 
 menu_t			current_menu;
@@ -250,6 +251,10 @@ void Menu_Draw (void)
 
 	case m_controls:
 		Menu_Controls_Draw ();
+		break;
+
+	case m_bindings:
+		Menu_Bindings_Draw ();
 		break;
 
 	case m_accessibility:

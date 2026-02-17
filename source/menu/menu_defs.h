@@ -46,11 +46,12 @@ extern int 				m_state;
 #define	m_gameoptions	23
 #define	m_search		24
 #define	m_slist			25
+#define m_bindings		26
 ///////////////////////////
 ///////////////////////////
 ///////////////////////////
 
-#define MAX_MENU_BUTTONS 11
+#define MAX_MENU_BUTTONS 14
 
 // Curent menu state and buttons are stored here
 // when m_state is flipped, the respective menu "Set"
@@ -83,6 +84,7 @@ typedef struct menuframe_s {
 } menuframe_t;
 
 extern menuframe_t 		current_frame;
+extern int       		ui_scale;
 
 #define	STD_UI_HEIGHT 							240
 
@@ -279,6 +281,7 @@ void Menu_Configuration_Set(void);
 void Menu_Video_Set (void);
 void Menu_Audio_Set (void);
 void Menu_Controls_Set (void);
+void Menu_Bindings_Set (void);
 void Menu_Accessibility_Set (void);
 
 // Platform specifics

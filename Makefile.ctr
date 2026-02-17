@@ -102,6 +102,7 @@ COMMON_OBJS =	system.o \
 				menu/menu_video.c \
 				menu/menu_audio.c \
 				menu/menu_controls.c \
+				menu/menu_bindings.c \
 				menu/menu_accessibility.c \
 				menu/menu_pause.c \
 				menu/menu_stubs.c \

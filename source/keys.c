@@ -177,7 +177,6 @@ void Key_Console (int key)
 	}
 
 	if (key == K_SELECT) {
-		consoleOskDone = false;
 		Con_SetOSKActive(true);
 		Con_OSK_f(key_lines[edit_line]+1, consoleInput, 72);
 		return;
@@ -771,12 +770,12 @@ void Key_Event (int key, qboolean down)
 			break;
 		case key_menu:
 		case key_menu_pause:
-			M_Keydown (key);
+			Menu_KeyInput (key);
 			break;
 		case key_game:
 		case key_console:
 			console_enabled = false;
-			M_ToggleMenu_f ();
+			Menu_ToggleMenu_f ();
 			break;
 		default:
 			Sys_Error ("Bad key_dest");

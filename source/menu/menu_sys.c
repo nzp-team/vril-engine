@@ -288,11 +288,11 @@ void Menu_KeyInput (int key)
 		break;
 
 // Add platform-specific menu enter keys
-#ifdef ENTER_IS_CONFIRM
+#ifdef PLATFORM_ENTER_IS_CONFIRM
 	case K_ENTER:
-	Menu_ButtonPress();
+		Menu_ButtonPress();
 		break;
-#elif FACE_CONFIRM_IS_FLIPPED
+#elif PLATFORM_CONFIRM_FLIPPED
 	case K_RIGHTFACE:
 		Menu_ButtonPress();
 		break;

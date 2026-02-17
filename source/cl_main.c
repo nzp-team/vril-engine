@@ -48,7 +48,7 @@ cvar_t	cl_rocket2grenade = {"cl_r2g", "0"};
 cvar_t	cl_deadbodyfilter = {"cl_deadbodyfilter", "0"};
 cvar_t	cl_gibfilter = {"cl_gibfilter", "0"};
 
-cvar_t	m_pitch = {"m_pitch","0.022", true};
+cvar_t	m_pitch = {"m_pitch","0", true};
 cvar_t	m_yaw = {"m_yaw","0.022", true};
 cvar_t	m_forward = {"m_forward","1", true};
 cvar_t	m_side = {"m_side","0.8", true};
