@@ -51,7 +51,7 @@ extern int 				m_state;
 ///////////////////////////
 ///////////////////////////
 
-#define MAX_MENU_BUTTONS 14
+#define MAX_MENU_BUTTONS 11
 
 // Curent menu state and buttons are stored here
 // when m_state is flipped, the respective menu "Set"
