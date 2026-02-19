@@ -675,7 +675,7 @@ void Menu_DrawOptionButton(int order, char* selection_name)
 	Menu_DrawString(x_pos, y_pos, selection_name, 255, 255, 255, 255, menu_text_scale_factor, 0);
 }
 
-void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, int max_option_value, cvar_t option, char* _option_string, qboolean zero_to_one, qboolean draw_option_string, float increment_amount)
+void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, int max_option_value, cvar_t option, char* option_string, qboolean zero_to_one, qboolean draw_option_string, float increment_amount)
 {
 	int y_factor = 15;
 	int x_pos = 165; 
@@ -686,15 +686,15 @@ void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, in
 	int slider_width = 2;
 
 	if (Menu_IsButtonHovered(button_index)) {
-		Menu_SetOptionCvar(option, _option_string, min_option_value, max_option_value, increment_amount);
+		Menu_SetOptionCvar(option, option_string, min_option_value, max_option_value, increment_amount);
 	}
 
-	char option_string[16] = "";
-	sprintf(option_string, "%d", (int)option.value);
+	char _option_string[16] = "";
+	sprintf(_option_string, "%d", (int)option.value);
 
 	if (zero_to_one) {
-		if (!strcmp(option_string, "0")) {
-			strcpy(option_string, "1");
+		if (!strcmp(_option_string, "0")) {
+			strcpy(_option_string, "1");
 		}
 	}
 
@@ -708,7 +708,30 @@ void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, in
 	Menu_DrawFill((x_pos+(option_pos*slider_box_width)) - slider_width, y_pos-2, slider_width, slider_box_height+4, 255, 255, 255, 255);
 	// Cvar value string
 	if (draw_option_string) {
-		Menu_DrawString(x_pos + slider_box_width + CHAR_WIDTH, y_pos - 2, option_string, 255, 255, 255, 255, menu_text_scale_factor, 0);
+		Menu_DrawString(x_pos + slider_box_width + CHAR_WIDTH, y_pos - 2, _option_string, 255, 255, 255, 255, menu_text_scale_factor, 0);
+	}
+}
+
+void Menu_DrawOptionKey (int order, char *current_bind)
+{
+	int 	y_factor = 15;
+	int 	x_pos = 165; 
+	int 	y_pos = 28 + (order*y_factor);
+	char 	*b;
+
+	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+
+	int keynum = Key_StringToKeynum (current_bind);
+	if (keynum > 0) {
+		b = keybindings[keynum];
+
+		if (!b) {
+			return;
+		}
+
+		Menu_DrawPic (x_pos, y_pos, GetButtonIcon(b), 12, 12);
+	} else {
+		Menu_DrawString(x_pos, y_pos, current_bind, 255, 255, 0, 255, menu_text_scale_factor, 0);
 	}
 }
 

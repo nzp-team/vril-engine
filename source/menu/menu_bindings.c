@@ -23,7 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 /* BINDINGS MENU */
 
 int         current_bindings_page = 0;
+int         bindings_currentwatch = -1;
+
 qboolean    in_bind = false;
+char        *current_command;
 
 /*
 ===============
@@ -33,7 +36,50 @@ Menu_Bindings_Set
 void Menu_Bindings_Set (void)
 {
 	Menu_ResetMenuButtons();
+
+    if (!current_command) {
+        current_command = malloc(32*sizeof(char));
+    }
+
 	m_state = m_bindings;
+}
+
+void Menu_WaitForKeybind (int key)
+{
+    Menu_UnbindCommand(current_command);
+    Key_SetBinding(key, current_command);
+    current_command = "";
+    in_bind = false;
+    bindings_currentwatch = -1;
+}
+
+void Menu_Bindings_PrintBindForCommand (int order, char *command)
+{
+    char    *bind;
+    int     keys[2];
+
+    if (bindings_currentwatch == order) {
+        Menu_DrawOptionKey(order, "< >");
+        current_command = command;
+        return;
+    }
+
+    Menu_FindKeysForCommand(command, keys);
+
+    if (keys[0] != -1) {
+        bind = Key_KeynumToString(keys[0]);
+    } else {
+        bind = "UNBOUND";
+    }
+
+    Menu_DrawOptionKey(order, bind);
+}
+
+void Menu_Bindings_SetBindListen (void)
+{
+    Menu_SetSound(MENU_SND_ENTER);
+    in_bind = true;
+    bindings_currentwatch = current_menu.cursor+1;
 }
 
 void Menu_Bindings_NextPage (void)
@@ -72,26 +118,26 @@ void Menu_Bindings_Draw (void)
     if (current_bindings_page == 0) {
         bindings_index = 0;
 
-        Menu_DrawButton(1, bindings_index++, "JUMP", "", NULL);
-        //Menu_Bindings_PrintBindForCommand(1, "impulse 10");
+        Menu_DrawButton(1, bindings_index++, "JUMP", "", Menu_Bindings_SetBindListen);
+        Menu_Bindings_PrintBindForCommand(1, "+jump");
 
-        Menu_DrawButton(2, bindings_index++, "SPRINT", "", NULL);
-        //Menu_Bindings_PrintBindForCommand(2, "impulse 23");
+        Menu_DrawButton(2, bindings_index++, "SPRINT", "", Menu_Bindings_SetBindListen);
+        Menu_Bindings_PrintBindForCommand(2, "impulse 23");
 
-        Menu_DrawButton(3, bindings_index++, "CHANGE STANCE", "", NULL);
-        //Menu_Bindings_PrintBindForCommand(3, "impulse 30");
+        Menu_DrawButton(3, bindings_index++, "CHANGE STANCE", "", Menu_Bindings_SetBindListen);
+        Menu_Bindings_PrintBindForCommand(3, "impulse 30");
         
-        Menu_DrawButton(4, bindings_index++, "SWAP WEAPON", "", NULL);
-        //Menu_Bindings_PrintBindForCommand(4, "+switch");
+        Menu_DrawButton(4, bindings_index++, "SWAP WEAPON", "", Menu_Bindings_SetBindListen);
+        Menu_Bindings_PrintBindForCommand(4, "+switch");
         
-        Menu_DrawButton(5, bindings_index++, "INTERACT", "", NULL);
-        //Menu_Bindings_PrintBindForCommand(5, "+use");
+        Menu_DrawButton(5, bindings_index++, "INTERACT", "", Menu_Bindings_SetBindListen);
+        Menu_Bindings_PrintBindForCommand(5, "+use");
         
-        Menu_DrawButton(6, bindings_index++, "RELOAD", "", NULL);
-        //Menu_Bindings_PrintBindForCommand(6, "+reload");
+        Menu_DrawButton(6, bindings_index++, "RELOAD", "", Menu_Bindings_SetBindListen);
+        Menu_Bindings_PrintBindForCommand(6, "+reload");
         
-        Menu_DrawButton(7, bindings_index++, "MELEE", "", NULL);
-        //Menu_Bindings_PrintBindForCommand(7, "+knife");
+        Menu_DrawButton(7, bindings_index++, "MELEE", "", Menu_Bindings_SetBindListen);
+        Menu_Bindings_PrintBindForCommand(7, "+knife");
 
         Menu_DrawDivider(8.25);
 
@@ -101,17 +147,17 @@ void Menu_Bindings_Draw (void)
         // Page 2
         bindings_index = 0;
 
-        Menu_DrawButton(1, bindings_index++, "PRIMARY GRENADE", "", NULL);
-        //Menu_Bindings_PrintBindForCommand(8, "+grenade");
+        Menu_DrawButton(1, bindings_index++, "PRIMARY GRENADE", "", Menu_Bindings_SetBindListen);
+        Menu_Bindings_PrintBindForCommand(1, "+grenade");
         
-        Menu_DrawButton(2, bindings_index++, "SECONDARY GRENADE", "", NULL);
-        //Menu_Bindings_PrintBindForCommand(9, "impulse 33");
+        Menu_DrawButton(2, bindings_index++, "SECONDARY GRENADE", "", Menu_Bindings_SetBindListen);
+        Menu_Bindings_PrintBindForCommand(2, "impulse 33");
 
-        Menu_DrawButton(3, bindings_index++, "WEAPON FIRE", "", NULL);
-        //Menu_Bindings_PrintBindForCommand(10, "+attack");
+        Menu_DrawButton(3, bindings_index++, "AIM DOWN SIGHTS", "", Menu_Bindings_SetBindListen);
+        Menu_Bindings_PrintBindForCommand(3, "+aim");
 
-        Menu_DrawButton(4, bindings_index++, "AIM DOWN SIGHTS", "", NULL);
-        //Menu_Bindings_PrintBindForCommand(11, "+aim");
+        Menu_DrawButton(4, bindings_index++, "SHOOT WEAPON", "", Menu_Bindings_SetBindListen);
+        Menu_Bindings_PrintBindForCommand(4, "+attack");
 
         Menu_DrawDivider(5.25);
 

@@ -124,3 +124,4 @@ void Key_WriteDTBindings (FILE *f);
 void Key_SetBinding (int keynum, char *binding);
 void Key_ClearStates (void);
 void Key_SendText(char *text);
+int Key_StringToKeynum (char *str);

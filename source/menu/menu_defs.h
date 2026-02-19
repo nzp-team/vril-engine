@@ -100,6 +100,12 @@ extern float            menu_text_scale_factor;
 
 extern qboolean	        m_recursiveDraw;
 
+// set true if user is currently
+// binding a button
+extern qboolean			in_bind;
+// ammount of current bind options
+#define					NUM_BIND_COMMANDS		20
+
 #define                 MENU_SND_NAVIGATE   	0
 #define                 MENU_SND_ENTER      	1
 #define                 MENU_SND_BEEP       	2
@@ -235,6 +241,8 @@ void Menu_IncrementSlider (int dir);
 qboolean Menu_IsButtonHovered (int button_index);
 void Menu_ResetMenuButtons (void);
 void Menu_KeyInput (int key);
+void Menu_UnbindCommand (char *command);
+void Menu_WaitForKeybind (int key);
 
 void Menu_DictateScaleFactor(void);
 void Menu_LoadPics (void);
@@ -255,6 +263,7 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 void Menu_DrawOptionButton(int order, char* selection_name);
 void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, int max_option_value, cvar_t option, char* _option_string, qboolean zero_to_one, qboolean draw_option_string, float increment_amount);
 void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficulty, char* info_startround, char* info_magic, char* info_headshotonly, char* info_fastrounds, char* info_hordesize);
+void Menu_DrawOptionKey (int order, char *current_bind);
 void Menu_DrawBuildDate ();
 void Menu_DrawDivider (int order);
 void Menu_DrawSocialBadge (int order, int which);

@@ -269,6 +269,11 @@ qboolean Menu_IsButtonHovered (int button_index)
 
 void Menu_KeyInput (int key)
 {
+	if (in_bind) {
+		Menu_WaitForKeybind (key);
+		return;
+	}
+
 	switch (key)
 	{
 	case K_DOWNARROW:
