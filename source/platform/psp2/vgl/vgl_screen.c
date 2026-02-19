@@ -1011,22 +1011,23 @@ void Draw_Crosshair (void)
 	}
 }
 
-char	scr_usestring[64];
-char 	scr_usestring2[64];
-float	scr_usetime_off = 0.0f;
-int	button_pic_x;
-extern int 	b_circle;
-extern int 	b_square;
-extern int 	b_cross;
-extern int 	b_triangle;
-extern int 	b_left;
-extern int 	b_right;
-extern int 	b_up;
-extern int 	b_down;
-extern int 	b_lt;
-extern int 	b_rt;
-extern int 	b_start;
-extern int 	b_select;
+char			scr_usestring[64];
+char 			scr_usestring2[64];
+float			scr_usetime_off = 0.0f;
+int				button_pic_x;
+
+extern image_t 	b_rightface;
+extern image_t 	b_leftface;
+extern image_t 	b_bottomface;
+extern image_t 	b_topface;
+extern image_t 	b_left;
+extern image_t 	b_right;
+extern image_t 	b_up;
+extern image_t 	b_down;
+extern image_t 	b_lt;
+extern image_t 	b_rt;
+extern image_t 	b_start;
+extern image_t 	b_select;
 
 /*
 ==============
@@ -1060,21 +1061,21 @@ int GetButtonIcon (char *buttonname)
 				return b_right = Image_LoadImage ("gfx/butticons/dpadright", IMAGE_TGA, 0, true, false);
 			else if (!strcmp(Key_KeynumToString(j), "SELECT"))
 				return b_select = Image_LoadImage ("gfx/butticons/funcselect", IMAGE_TGA, 0, true, false);
-			else if (!strcmp(Key_KeynumToString(j), "TRIANGLE"))
-				return b_triangle = Image_LoadImage ("gfx/butticons/fbtntriangle", IMAGE_TGA, 0, true, false);
-			else if (!strcmp(Key_KeynumToString(j), "CIRCLE"))
-				return b_circle = Image_LoadImage ("gfx/butticons/fbtncircle", IMAGE_TGA, 0, true, false);
-			else if (!strcmp(Key_KeynumToString(j), "CROSS"))
-				return b_cross = Image_LoadImage ("gfx/butticons/fbtncross", IMAGE_TGA, 0, true, false);
-			else if (!strcmp(Key_KeynumToString(j), "SQUARE"))
-				return b_square = Image_LoadImage ("gfx/butticons/fbtnsquare", IMAGE_TGA, 0, true, false);
+			else if (!strcmp(Key_KeynumToString(j), "TOPFACE"))
+				return b_topface = Image_LoadImage ("gfx/butticons/fbtntriangle", IMAGE_TGA, 0, true, false);
+			else if (!strcmp(Key_KeynumToString(j), "RIGHTFACE"))
+				return b_rightface = Image_LoadImage ("gfx/butticons/fbtncircle", IMAGE_TGA, 0, true, false);
+			else if (!strcmp(Key_KeynumToString(j), "BOTTOMFACE"))
+				return b_bottomface = Image_LoadImage ("gfx/butticons/fbtncross", IMAGE_TGA, 0, true, false);
+			else if (!strcmp(Key_KeynumToString(j), "LEFTFACE"))
+				return b_leftface = Image_LoadImage ("gfx/butticons/fbtnsquare", IMAGE_TGA, 0, true, false);
 			else if (!strcmp(Key_KeynumToString(j), "LTRIGGER"))
 				return b_lt = Image_LoadImage ("gfx/butticons/backl1", IMAGE_TGA, 0, true, false);
 			else if (!strcmp(Key_KeynumToString(j), "RTRIGGER"))
 				return b_rt = Image_LoadImage ("gfx/butticons/backr1", IMAGE_TGA, 0, true, false);
 		}
 	}
-	return b_cross = Image_LoadImage ("gfx/butticons/fbtncross", IMAGE_TGA, 0, true, false);
+	return b_bottomface = Image_LoadImage ("gfx/butticons/fbtncross", IMAGE_TGA, 0, true, false);
 }
 
 char *GetUseButtonL ()

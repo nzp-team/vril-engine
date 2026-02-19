@@ -255,23 +255,24 @@ Press somthing printing
 ===============================================================================
 */
 
-char		scr_usestring[64];
-char 		scr_usestring2[64];
-float		scr_usetime_off = 0.0f;
-int			button_pic_x;
-extern int 	b_circle;
-extern int 	b_square;
-extern int 	b_cross;
-extern int 	b_triangle;
-extern int 	b_left;
-extern int 	b_right;
-extern int 	b_up;
-extern int 	b_down;
-extern int 	b_lt;
-extern int 	b_rt;
-extern int 	b_start;
-extern int 	b_select;
-extern int 	b_home;
+char			scr_usestring[64];
+char 			scr_usestring2[64];
+float			scr_usetime_off = 0.0f;
+int				button_pic_x;
+
+extern image_t 	b_rightface;
+extern image_t 	b_leftface;
+extern image_t 	b_bottomface;
+extern image_t 	b_topface;
+extern image_t 	b_left;
+extern image_t 	b_right;
+extern image_t 	b_up;
+extern image_t 	b_down;
+extern image_t 	b_lt;
+extern image_t 	b_rt;
+extern image_t 	b_start;
+extern image_t 	b_select;
+extern image_t 	b_home;
 
 /*
 ==============
@@ -307,21 +308,21 @@ int GetButtonIcon (char *buttonname)
 				return b_select;
 			else if (!strcmp(Key_KeynumToString(j), "HOME"))
 				return b_home;
-			else if (!strcmp(Key_KeynumToString(j), "TRIANGLE"))
-				return b_triangle;
-			else if (!strcmp(Key_KeynumToString(j), "CIRCLE"))
-				return b_circle;
-			else if (!strcmp(Key_KeynumToString(j), "CROSS"))
-				return b_cross;
-			else if (!strcmp(Key_KeynumToString(j), "SQUARE"))
-				return b_square;
+			else if (!strcmp(Key_KeynumToString(j), "TOPFACE"))
+				return b_topface;
+			else if (!strcmp(Key_KeynumToString(j), "RIGHTFACE"))
+				return b_rightface;
+			else if (!strcmp(Key_KeynumToString(j), "BOTTOMFACE"))
+				return b_bottomface;
+			else if (!strcmp(Key_KeynumToString(j), "LEFTFACE"))
+				return b_leftface;
 			else if (!strcmp(Key_KeynumToString(j), "LTRIGGER"))
 				return b_lt;
 			else if (!strcmp(Key_KeynumToString(j), "RTRIGGER"))
 				return b_rt;
 		}
 	}
-	return b_cross;
+	return b_bottomface;
 }
 
 char *GetUseButtonL ()

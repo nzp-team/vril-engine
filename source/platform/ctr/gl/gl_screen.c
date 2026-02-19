@@ -242,24 +242,25 @@ Press somthing printing
 ===============================================================================
 */
 
-char		scr_usestring[64];
-char 		scr_usestring2[64];
-float		scr_usetime_off = 0.0f;
-int			button_pic_x;
-extern int 		b_abutton;
-extern int 		b_bbutton;
-extern int 		b_ybutton;
-extern int 		b_xbutton;
-extern int 		b_left;
-extern int 		b_right;
-extern int 		b_up;
-extern int 		b_down;
-extern int 		b_lt;
-extern int 		b_rt;
-extern int 		b_start;
-extern int 		b_select;
-extern int		b_zlt;
-extern int 		b_zrt;
+char			scr_usestring[64];
+char 			scr_usestring2[64];
+float			scr_usetime_off = 0.0f;
+int				button_pic_x;
+
+extern image_t 	b_rightface;
+extern image_t 	b_leftface;
+extern image_t 	b_bottomface;
+extern image_t 	b_topface;
+extern image_t 	b_left;
+extern image_t 	b_right;
+extern image_t 	b_up;
+extern image_t 	b_down;
+extern image_t 	b_lt;
+extern image_t 	b_rt;
+extern image_t 	b_start;
+extern image_t 	b_select;
+extern image_t	b_zlt;
+extern image_t 	b_zrt;
 
 /*
 ==============
@@ -294,14 +295,14 @@ int GetButtonIcon (char *buttonname)
 				return b_right;
 			else if (!strcmp(Key_KeynumToString(j), "SELECT"))
 				return b_select;
-			else if (!strcmp(Key_KeynumToString(j), "ABUTTON"))
-				return b_abutton;
-			else if (!strcmp(Key_KeynumToString(j), "BBUTTON"))
-				return b_bbutton;
-			else if (!strcmp(Key_KeynumToString(j), "XBUTTON"))
-				return b_xbutton;
-			else if (!strcmp(Key_KeynumToString(j), "YBUTTON"))
-				return b_ybutton;
+			else if (!strcmp(Key_KeynumToString(j), "RIGHTFACE"))
+				return b_rightface;
+			else if (!strcmp(Key_KeynumToString(j), "BOTTOMFACE"))
+				return b_bottomface;
+			else if (!strcmp(Key_KeynumToString(j), "TOPFACE"))
+				return b_topface;
+			else if (!strcmp(Key_KeynumToString(j), "LEFTFACE"))
+				return b_leftface;
 			else if (!strcmp(Key_KeynumToString(j), "LTRIGGER"))
 				return b_lt;
 			else if (!strcmp(Key_KeynumToString(j), "RTRIGGER"))
@@ -312,7 +313,7 @@ int GetButtonIcon (char *buttonname)
 				return b_zrt;
 		}
 	}
-	return b_abutton;
+	return b_rightface;
 }
 
 char *GetUseButtonL ()

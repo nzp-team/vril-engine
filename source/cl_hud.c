@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspmath.h>
 #endif // __PSP__
 
+// HUD image defines
 image_t		sb_round[5];
 image_t		sb_round_num[10];
 image_t		sb_moneyback;
@@ -42,17 +43,29 @@ image_t 	mulepic;
 image_t		fragpic;
 image_t		bettypic;
 
-#if defined(__PSP__) || defined(__vita__)
-image_t 		b_circle;
-image_t 		b_square;
-image_t 		b_cross;
-image_t 		b_triangle;
-#elif __3DS__
-image_t 	b_abutton;
-image_t 	b_bbutton;
-image_t 	b_xbutton;
-image_t 	b_ybutton;
-#elif __WII__
+image_t     fx_blood_lu;
+image_t     fx_blood_ru;
+image_t     fx_blood_ld;
+image_t     fx_blood_rd;
+
+// Button image defines
+image_t 	b_rightface;
+image_t 	b_leftface;
+image_t 	b_bottomface;
+image_t 	b_topface;
+image_t 	b_left;
+image_t 	b_right;
+image_t 	b_up;
+image_t 	b_down;
+image_t 	b_lt;
+image_t 	b_rt;
+image_t 	b_zlt;
+image_t 	b_zrt;
+image_t 	b_start;
+image_t 	b_select;
+image_t 	b_home;
+
+#ifdef __WII__
 qpic_t 		*b_abutton;
 qpic_t 		*b_bbutton;
 qpic_t		*b_cbutton;
@@ -62,29 +75,7 @@ qpic_t 		*b_plus;
 qpic_t 		*b_one;
 qpic_t 		*b_two;
 qpic_t 		*b_home;
-#endif // __PSP__, __vita__, __3DS__, __WII__
-
-image_t 	b_left;
-image_t 	b_right;
-image_t 	b_up;
-image_t 	b_down;
-image_t 	b_lt;
-image_t 	b_rt;
-
-#ifdef __PSP__
-image_t 	b_home;
-#elif __3DS__
-image_t 	b_zlt;
-image_t 	b_zrt;
-#endif // __PSP__, __3DS__
-
-image_t 	b_start;
-image_t 	b_select;
-
-image_t     fx_blood_lu;
-image_t     fx_blood_ru;
-image_t     fx_blood_ld;
-image_t     fx_blood_rd;
+#endif // __WII__
 
 qboolean	sb_showscores;
 qboolean 	has_chaptertitle;
@@ -202,10 +193,10 @@ void HUD_Init (void)
 	bettypic = Image_LoadImage ("gfx/hud/betty", IMAGE_TGA, 0, true, false);
 
 #ifdef __PSP__
-	b_circle = Image_LoadImage ("gfx/butticons/circle", IMAGE_PNG, 0, true, false);
-	b_square = Image_LoadImage ("gfx/butticons/square", IMAGE_PNG, 0, true, false);
-	b_cross = Image_LoadImage ("gfx/butticons/cross", IMAGE_PNG, 0, true, false);
-	b_triangle = Image_LoadImage ("gfx/butticons/triangle", IMAGE_PNG, 0, true, false);
+	b_rightface = Image_LoadImage ("gfx/butticons/circle", IMAGE_PNG, 0, true, false);
+	b_leftface = Image_LoadImage ("gfx/butticons/square", IMAGE_PNG, 0, true, false);
+	b_bottomface = Image_LoadImage ("gfx/butticons/cross", IMAGE_PNG, 0, true, false);
+	b_topface = Image_LoadImage ("gfx/butticons/triangle", IMAGE_PNG, 0, true, false);
 	b_left = Image_LoadImage ("gfx/butticons/left", IMAGE_PNG, 0, true, false);
 	b_right = Image_LoadImage ("gfx/butticons/right", IMAGE_PNG, 0, true, false);
 	b_up = Image_LoadImage ("gfx/butticons/up", IMAGE_PNG, 0, true, false);
@@ -216,10 +207,10 @@ void HUD_Init (void)
 	b_select = Image_LoadImage ("gfx/butticons/select", IMAGE_PNG, 0, true, false);
 	b_home = Image_LoadImage ("gfx/butticons/home", IMAGE_PNG, 0, true, false);
 #elif __vita__
-	b_circle = Image_LoadImage ("gfx/butticons/fbtncircle", IMAGE_TGA, 0, true, false);
-	b_square = Image_LoadImage ("gfx/butticons/fbtnsquare", IMAGE_TGA, 0, true, false);
-	b_cross = Image_LoadImage ("gfx/butticons/fbtncross", IMAGE_TGA, 0, true, false);
-	b_triangle = Image_LoadImage ("gfx/butticons/fbtntriangle", IMAGE_TGA, 0, true, false);
+	b_rightface = Image_LoadImage ("gfx/butticons/fbtncircle", IMAGE_TGA, 0, true, false);
+	b_leftface = Image_LoadImage ("gfx/butticons/fbtnsquare", IMAGE_TGA, 0, true, false);
+	b_bottomface = Image_LoadImage ("gfx/butticons/fbtncross", IMAGE_TGA, 0, true, false);
+	b_topface = Image_LoadImage ("gfx/butticons/fbtntriangle", IMAGE_TGA, 0, true, false);
 	b_left = Image_LoadImage ("gfx/butticons/dpadleft", IMAGE_TGA, 0, true, false);
 	b_right = Image_LoadImage ("gfx/butticons/dpadright", IMAGE_TGA, 0, true, false);
 	b_up = Image_LoadImage ("gfx/butticons/dpadup", IMAGE_TGA, 0, true, false);
@@ -229,10 +220,10 @@ void HUD_Init (void)
 	b_start = Image_LoadImage ("gfx/butticons/funcstart", IMAGE_TGA, 0, true, false);
 	b_select = Image_LoadImage ("gfx/butticons/funcselect", IMAGE_TGA, 0, true, false);
 #elif __3DS__
-	b_abutton = Image_LoadImage ("gfx/butticons/facebt_a", IMAGE_TGA, 0, true, false);
-	b_bbutton = Image_LoadImage ("gfx/butticons/facebt_b", IMAGE_TGA, 0, true, false);
-	b_ybutton = Image_LoadImage ("gfx/butticons/facebt_y", IMAGE_TGA, 0, true, false);
-	b_xbutton = Image_LoadImage ("gfx/butticons/facebt_x", IMAGE_TGA, 0, true, false);
+	b_rightface = Image_LoadImage ("gfx/butticons/facebt_a", IMAGE_TGA, 0, true, false);
+	b_bottomface = Image_LoadImage ("gfx/butticons/facebt_b", IMAGE_TGA, 0, true, false);
+	b_leftface = Image_LoadImage ("gfx/butticons/facebt_y", IMAGE_TGA, 0, true, false);
+	b_topface = Image_LoadImage ("gfx/butticons/facebt_x", IMAGE_TGA, 0, true, false);
 	b_left = Image_LoadImage ("gfx/butticons/dir_left", IMAGE_TGA, 0, true, false);
 	b_right = Image_LoadImage ("gfx/butticons/dir_right", IMAGE_TGA, 0, true, false);
 	b_up = Image_LoadImage ("gfx/butticons/dir_up", IMAGE_TGA, 0, true, false);
