@@ -53,9 +53,6 @@ void Menu_DrawLoadScreen (void)
 	if (loadingScreen) {
 		Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 255);
 		if (!loadscreeninit) {
-			if (loadinglinetext) {
-				free(loadinglinetext);
-			}
 			loadinglinetext = malloc(256*sizeof(char));
 			loadscreeninit = true;
 		}

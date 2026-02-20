@@ -859,6 +859,7 @@ void Menu_DrawCreditContributor (int order, int sub_order, char *header)
 	Menu_DrawString(x_pos, y_pos, header, 255, 255, 255, 255, menu_text_scale_factor, 0);
 }
 
+#ifdef PLATFORM_USES_OSK
 //=============================================================================
 /* OSK IMPLEMENTATION */
 #define MAX_Y 8
@@ -1022,3 +1023,4 @@ void Menu_OSK_Draw (void)
 	// Current hovered char
 	Menu_DrawString (x_pos+(CHAR_WIDTH/2)+(((osk_pos_x*1.25))*(CHAR_WIDTH)), y_pos+(osk_pos_y*CHAR_HEIGHT), selected_char, 255, 0, 0, 255, menu_text_scale_factor, 0);
 }
+#endif
