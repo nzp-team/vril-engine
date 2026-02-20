@@ -212,6 +212,7 @@ void Menu_GameSettings_Set (void)
     Menu_GameSettings_AllocStrings();
 
     key_dest = key_menu;
+    m_previous_state = m_lobby;
 	m_state = m_gamesettings;
 }
 

@@ -30,6 +30,7 @@ Menu_Accessibility_Set
 void Menu_Accessibility_Set (void)
 {
 	Menu_ResetMenuButtons();
+	m_previous_state = m_state;
 	m_state = m_accessibility;
 }
 

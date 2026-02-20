@@ -60,6 +60,8 @@ image_t 		lscreen_image;
 
 // Current menu state
 int 			m_state;
+// Previous menu state
+int				m_previous_state;
 
 //=============================================================================
 /* Menu Subsystem */
@@ -148,17 +150,16 @@ void Menu_Init (void)
 	loading_string = malloc(16*(sizeof(char)));
 	loading_init = true;
 
-	Menu_InitUIScale();
+	Menu_InitUI();
 	Menu_DictateScaleFactor();
 	Menu_ResetMenuButtons();
-
-	Menu_InitStockMaps();
 
 	Menu_SetVersionString();
 
 	// TODO - Achievements WIP
 	//Menu_Achievements_Set();
 	Menu_CustomMaps_MapFinder();
+	Menu_InitStockMaps();
 
 	menu_changetime = 0;
 	loading_init = false;

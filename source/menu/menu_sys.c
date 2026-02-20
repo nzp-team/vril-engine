@@ -23,6 +23,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 menuframe_t 	current_frame;
 int       		ui_scale;
 
+int				MENU_KEY_CONFIRM = -1;
+int				MENU_KEY_BACK = -1;
+
 qboolean    menu_sound_playing;
 
 // Set stock map attributes
@@ -178,13 +181,25 @@ int UI_H(int h)
     return (ret);
 }
 
-void Menu_InitUIScale (void)
+void Menu_InitUI (void)
 {
 	current_frame.point_x = 0;
 	current_frame.point_y = 0;
 
 	// Set scale
 	ui_scale = vid.height/STD_UI_HEIGHT;
+
+// Add platform-specific menu enter keys
+#ifdef PLATFORM_ENTER_IS_CONFIRM
+	MENU_KEY_CONFIRM = K_ENTER;
+	MENU_KEY_BACK = K_ESCAPE;
+#elif PLATFORM_CONFIRM_FLIPPED
+	MENU_KEY_CONFIRM = K_RIGHTFACE;
+	MENU_KEY_BACK = K_BOTTOMFACE;
+#else
+	MENU_KEY_CONFIRM = K_BOTTOMFACE;
+	MENU_KEY_BACK = K_RIGHTFACE;
+#endif
 }
 
 int Menu_GetActiveMenuButtons (void)
@@ -236,6 +251,36 @@ void Menu_ButtonPress (void)
 				break;
 			}
 		}
+	}
+}
+
+void Menu_SetPreviousMenu (void)
+{
+	switch (m_previous_state) {
+		case m_main:
+			Menu_Main_Set();
+			return;
+		case m_stockmaps:
+			Menu_StockMaps_Set();
+			break;
+		case m_lobby:
+			Menu_Lobby_Set();
+			break;
+		case m_custommaps:
+			Menu_CustomMaps_Set();
+			break;
+		case m_pause:
+			Menu_Pause_Set();
+			break;
+		case m_configuration:
+			Menu_Configuration_Set();
+			break;
+		case m_controls:
+			Menu_Controls_Set();
+			break;
+		case m_accessibility:
+			Menu_Accessibility_Set();
+			break;
 	}
 }
 
@@ -291,21 +336,14 @@ void Menu_KeyInput (int key)
 	case K_RIGHTARROW:
 		Menu_IncrementSlider(key);
 		break;
+	}
 
-// Add platform-specific menu enter keys
-#ifdef PLATFORM_ENTER_IS_CONFIRM
-	case K_ENTER:
+	if(key == MENU_KEY_CONFIRM) {
 		Menu_ButtonPress();
-		break;
-#elif PLATFORM_CONFIRM_FLIPPED
-	case K_RIGHTFACE:
-		Menu_ButtonPress();
-		break;
-#else
-	case K_BOTTOMFACE:
-		Menu_ButtonPress();
-		break;
-#endif
+	}
+
+	if(key == MENU_KEY_BACK) {
+		Menu_SetPreviousMenu();
 	}
 }
 

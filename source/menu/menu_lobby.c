@@ -173,6 +173,9 @@ void Menu_Lobby_Set (void)
     support_gamesettings = Menu_UserMapSupportsGameSettings(current_selected_bsp);
 
     key_dest = key_menu;
+    if (m_state == m_stockmaps || m_state == m_custommaps) {
+        m_previous_state = m_state;
+    }
 	m_state = m_lobby;
 }
 

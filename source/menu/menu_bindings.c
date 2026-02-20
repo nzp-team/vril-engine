@@ -41,6 +41,7 @@ void Menu_Bindings_Set (void)
         current_command = malloc(32*sizeof(char));
     }
 
+    m_previous_state = m_state;
 	m_state = m_bindings;
 }
 

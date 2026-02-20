@@ -49,6 +49,7 @@ void Menu_StockMaps_Set (void)
 {
     Menu_ResetMenuButtons();
     key_dest = key_menu;
+    m_previous_state = m_main;
 	m_state = m_stockmaps;
 }
 

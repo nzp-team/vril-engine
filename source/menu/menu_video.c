@@ -116,6 +116,7 @@ void Menu_Video_Set (void)
 
     Menu_ResetMenuButtons();
     Menu_Video_AllocStrings();
+    m_previous_state = m_state;
 	m_state = m_video;
 }
 

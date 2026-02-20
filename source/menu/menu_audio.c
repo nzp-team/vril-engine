@@ -33,6 +33,7 @@ Menu_Audio_Set
 void Menu_Audio_Set (void)
 {
 	Menu_ResetMenuButtons();
+	m_previous_state = m_state;
 	m_state = m_audio;
 }
 

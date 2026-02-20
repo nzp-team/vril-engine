@@ -43,6 +43,7 @@ void Menu_Main_Set (void)
 	Menu_SetSound(MENU_SND_ENTER);
 
 	key_dest = key_menu;
+	m_previous_state = 0;
 	m_state = m_main;
 	loadingScreen = 0;
 }

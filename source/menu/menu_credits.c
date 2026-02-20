@@ -134,6 +134,7 @@ void Menu_Credits_Set (void)
 
     CREDITS_LENGTH = sizeof(credits)/sizeof(credits[0]);
 
+    m_previous_state = m_state;
 	m_state = m_credits;
 }
 

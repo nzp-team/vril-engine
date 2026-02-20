@@ -66,6 +66,7 @@ void Menu_Controls_Set (void)
 {
 	Menu_ResetMenuButtons();
 	Menu_Controls_AllocStrings();
+    m_previous_state = m_configuration;
 	m_state = m_controls;
 }
 

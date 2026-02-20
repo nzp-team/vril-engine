@@ -39,6 +39,11 @@ Menu_Configuration_Set
 void Menu_Configuration_Set (void)
 {
 	Menu_ResetMenuButtons();
+	if (key_dest == key_menu_pause) {
+		m_previous_state = m_pause;
+	} else {
+		m_previous_state = m_main;
+	}
 	m_state = m_configuration;
 }
 

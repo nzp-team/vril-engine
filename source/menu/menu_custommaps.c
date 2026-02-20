@@ -390,6 +390,7 @@ void Menu_CustomMaps_Set (void)
 	Menu_ResetMenuButtons();
 	user_maps_page = 0;
 	key_dest = key_menu;
+	m_previous_state = m_state;
 	m_state = m_custommaps;
 }
 

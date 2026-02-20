@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // Menu state
 // ===========
 extern int 				m_state;
+extern int				m_previous_state;
 #define	m_none			0
 #define	m_start			1
 #define	m_main			2
@@ -228,7 +229,7 @@ void strip_newline(char *s);
 char* strtolower(char* s);
 char* strtoupper(char* s);
 void Menu_SetSound (int type);
-void Menu_InitUIScale (void);
+void Menu_InitUI (void);
 int Menu_GetActiveMenuButtons (void);
 void Menu_IncreaseCursor (void);
 void Menu_DecreaseCursor (void);
