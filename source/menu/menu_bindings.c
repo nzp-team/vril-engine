@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2025 NZ:P Team
+Copyright (C) 2025-2026 NZ:P Team
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -96,6 +96,19 @@ void Menu_Bindings_PrevPage (void)
     Menu_ResetMenuButtons();
 }
 
+void Menu_Bindings_Apply (void)
+{
+    // TODO
+    // Neccessary??
+}
+
+void Menu_Bindings_PrevMenu (void)
+{
+    current_bindings_page = 0;
+    bindings_currentwatch = -1;
+    Menu_Controls_Set();
+}
+
 /*
 ===============
 Menu_Bindings_Draw
@@ -165,6 +178,6 @@ void Menu_Bindings_Draw (void)
         Menu_DrawButton(6.5, bindings_index++, "PREVIOUS PAGE", "Return to last Keybind page.", Menu_Bindings_PrevPage);
     }
 
-    Menu_DrawButton(-2, bindings_index++, "APPLY", "Save & Apply Settings.", NULL);
-	Menu_DrawButton (-1, bindings_index++, "BACK", "Return to Controls Options.", Menu_Controls_Set);
+    Menu_DrawButton(-2, bindings_index++, "APPLY", "Save & Apply Settings.", Menu_Bindings_Apply);
+	Menu_DrawButton (-1, bindings_index++, "BACK", "Return to Controls Options.", Menu_Bindings_PrevMenu);
 }
