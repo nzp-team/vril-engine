@@ -6,14 +6,10 @@ void Menu_ToggleMenu_f (void);
 void Menu_Main_Set (void);
 // Load screens
 void Menu_DrawLoadScreen (void);
-
 extern qboolean loading_init;
 
-
+void Menu_FindKeysForCommand (char *command, int *twokeys);
 
 // unimplemented
-
-// int bind_grab
-void Menu_FindKeysForCommand (char *command, int *twokeys);
 void M_OSK_Draw (void);
 void Con_OSK_Key (int key);
