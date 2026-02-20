@@ -46,7 +46,7 @@ void Menu_Pause_Yes(void)
 	} else if (menu_paus_submenu == 3) {
 		menu_paus_submenu = 0;
 		Cbuf_AddText("disconnect\n");
-		Menu_Main_Set(false);
+		Menu_Main_Set();
 	}
 
     Menu_Pause_EnterSubMenu();

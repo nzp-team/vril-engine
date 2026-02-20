@@ -3,7 +3,7 @@ void Menu_Init (void);
 void Menu_Draw (void);
 void Menu_KeyInput (int key);
 void Menu_ToggleMenu_f (void);
-void Menu_Main_Set (qboolean init);
+void Menu_Main_Set (void);
 // Load screens
 void Menu_DrawLoadScreen (void);
 

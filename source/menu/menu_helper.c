@@ -806,6 +806,7 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 	Menu_DrawFill (line_x, left_column_y + (y_offset*2) + (y_newline*3), 55, (small_bar_height/2), 130, 130, 130, 255);
 
 	// Draw Map picture and name
+	// Anchored to bottom of the screen
 	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
 	// Draw map thumbnail picture
 	Menu_DrawPic (image_x_pos, image_y_pos, texnum, image_width, image_height);

@@ -27,7 +27,7 @@ void Menu_Configuration_Back (void)
 	if (key_dest == key_menu_pause) {
 		Menu_Pause_Set();
 	} else {
-		Menu_Main_Set(false);
+		Menu_Main_Set();
 	}
 }
 

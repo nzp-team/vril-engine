@@ -33,7 +33,7 @@ void Menu_ExitSubMenu(void) { in_submenu = false; Menu_ResetMenuButtons(); }
 Menu_Main_Set
 ===============
 */
-void Menu_Main_Set (qboolean init)
+void Menu_Main_Set (void)
 {
 	loadingScreen = 0;
 	loadscreeninit = false;
@@ -41,11 +41,6 @@ void Menu_Main_Set (qboolean init)
 	Menu_LoadPics();
 	Menu_ResetMenuButtons();
 	Menu_SetSound(MENU_SND_ENTER);
-
-	if (init) {
-		Menu_DictateScaleFactor();
-		Menu_InitStockMaps();
-	}
 
 	key_dest = key_menu;
 	m_state = m_main;

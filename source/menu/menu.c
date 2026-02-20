@@ -148,20 +148,21 @@ void Menu_Init (void)
 	loading_init = true;
 
 	Menu_InitUIScale();
-
+	Menu_DictateScaleFactor();
 	Menu_ResetMenuButtons();
 
-	Menu_SetVersionString();
+	Menu_InitStockMaps();
 
-	Cmd_AddCommand ("togglemenu", Menu_ToggleMenu_f);
+	Menu_SetVersionString();
 
 	// TODO - Achievements WIP
 	//Menu_Achievements_Set();
 	Menu_CustomMaps_MapFinder();
 
 	menu_changetime = 0;
-
 	loading_init = false;
+
+	Cmd_AddCommand ("togglemenu", Menu_ToggleMenu_f);
 }
 
 
@@ -282,7 +283,7 @@ void Menu_ToggleMenu_f (void)
 {
 	if (key_dest == key_menu || key_dest == key_menu_pause) {
 		if (m_state != m_main && m_state != m_pause) {
-			Menu_Main_Set (false);
+			Menu_Main_Set ();
 			return;
 		}
 		key_dest = key_game;
@@ -294,6 +295,6 @@ void Menu_ToggleMenu_f (void)
 	} else if (sv.active && (svs.maxclients > 1 || key_dest == key_game)) {
 		Menu_Pause_Set();
 	} else {
-		Menu_Main_Set (false);
+		Menu_Main_Set ();
 	}
 }
