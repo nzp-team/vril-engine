@@ -183,6 +183,16 @@ extern int 			    small_bar_height;
 extern float			CHAR_WIDTH;
 extern float			CHAR_HEIGHT;
 
+// Menu specific key abstractions
+extern int				MENU_KEY_CONFIRM;
+extern int				MENU_KEY_BACK;
+extern int				MENU_KEY_DELETE;
+extern int				MENU_KEY_SAVE_INPUT;
+
+// Holds the button images for the
+// osk prompt
+extern image_t 			osk_button[4];
+
 // Stock map struct which holds the current
 // stockmaps loaded
 typedef struct
@@ -286,7 +296,6 @@ void Menu_GameOptions_Set(void);
 void Menu_CustomMaps_Set(void);
 void Menu_Lobby_Set(void);
 void Menu_GameSettings_Set(void);
-void Menu_Configuration_Set(void);
 void Menu_Video_Set (void);
 void Menu_Audio_Set (void);
 void Menu_Controls_Set (void);

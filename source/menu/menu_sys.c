@@ -25,8 +25,15 @@ int       		ui_scale;
 
 int				MENU_KEY_CONFIRM = -1;
 int				MENU_KEY_BACK = -1;
+int				MENU_KEY_DELETE = -1;
+int				MENU_KEY_SAVE_INPUT = -1;
 
-qboolean    menu_sound_playing;
+qboolean    	menu_sound_playing;
+
+extern image_t 	b_topface;
+extern image_t 	b_bottomface;
+extern image_t 	b_leftface;
+extern image_t 	b_rightface;
 
 // Set stock map attributes
 StockMaps   stock_maps[8] = {
@@ -189,16 +196,34 @@ void Menu_InitUI (void)
 	// Set scale
 	ui_scale = vid.height/STD_UI_HEIGHT;
 
-// Add platform-specific menu enter keys
+	// Add platform-specific menu enter keys
 #ifdef PLATFORM_ENTER_IS_CONFIRM
 	MENU_KEY_CONFIRM = K_ENTER;
 	MENU_KEY_BACK = K_ESCAPE;
+	MENU_KEY_DELETE = K_DELETE;
+	MENU_KEY_SAVE_INPUT = K_TAB;
 #elif PLATFORM_CONFIRM_FLIPPED
 	MENU_KEY_CONFIRM = K_RIGHTFACE;
 	MENU_KEY_BACK = K_BOTTOMFACE;
+	MENU_KEY_DELETE = K_TOPFACE;
+	MENU_KEY_SAVE_INPUT = K_LEFTFACE;
 #else
 	MENU_KEY_CONFIRM = K_BOTTOMFACE;
 	MENU_KEY_BACK = K_RIGHTFACE;
+	MENU_KEY_DELETE = K_TOPFACE;
+	MENU_KEY_SAVE_INPUT = K_LEFTFACE;
+#endif
+
+	// Set OSK button images
+	// these are currently the only
+	// two platforms which use OSK
+	// will be expanded to NSpire once
+	// button images are added.
+#if defined(__PSP__) || defined (__PSP2__)
+	osk_button[0] = b_leftface;
+	osk_button[1] = b_rightface;
+	osk_button[2] = b_topface;
+	osk_button[3] = b_bottomface;
 #endif
 }
 

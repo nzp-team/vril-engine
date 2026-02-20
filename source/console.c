@@ -68,14 +68,28 @@ extern void M_Menu_Main_f (void);
 #define MAXGAMEDIRLEN	1000
 char debuglogfile[MAXGAMEDIRLEN + 1];
 
-#ifndef __3DS__
-void M_OSK_Draw (void);
-void Con_OSK_f (char *input, char *output, int outlen);
-void Con_OSK_Key(int key);
-void Con_DrawOSK(void);
-#endif // __PSP__, __3DS__, __WII__
 
-extern qboolean console_enabled;
+#ifdef PLATFORM_USES_OSK
+qboolean scr_osk_active = false;
+
+void Con_SetOSKActive(qboolean active) 
+{
+	scr_osk_active = active;	
+}
+
+qboolean Con_isSetOSKActive(void) 
+{
+	return scr_osk_active;
+}
+
+void Con_DrawOSK(void) {
+	if (scr_osk_active) {
+		Menu_OSK_Draw();
+	}
+}
+#endif // PLATFORM_USES_OSK
+
+qboolean console_enabled;
 /*
 ================
 Con_ToggleConsole_f
@@ -95,12 +109,13 @@ void Con_ToggleConsole_f (void)
 		else
 		{
 			console_enabled = false;
-			Menu_Main_Set ();
+			Menu_Configuration_Set ();
 		}
-	}
-	else
+	} else {
+		console_enabled = true;
 		key_dest = key_console;
-	
+	}
+		
 	SCR_EndLoadingPlaque ();
 	memset (con_times, 0, sizeof(con_times));
 }
@@ -586,7 +601,6 @@ Draws the console with the solid background
 The typing input line at the bottom should only be drawn if typing is allowed
 ================
 */
-qboolean console_enabled;
 void Con_DrawConsole (int lines, qboolean drawinput, float scale)
 {
 	int				i, x, y;
@@ -632,27 +646,6 @@ void Con_DrawConsole (int lines, qboolean drawinput, float scale)
 	Con_DrawOSK();	
 #endif
 }
-
-#ifdef PLATFORM_USES_OSK
-static qboolean	scr_osk_active = false;
-
-
-void Con_SetOSKActive(qboolean active) 
-{
-	scr_osk_active = active;	
-}
-
-qboolean Con_isSetOSKActive(void) 
-{
-	return scr_osk_active;
-}
-
-void Con_DrawOSK(void) {
-	if (scr_osk_active) {
-		M_OSK_Draw();
-	}
-}
-#endif
 
 /*
 ==================

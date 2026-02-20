@@ -174,9 +174,10 @@ void Menu_Draw (void)
 		Menu_DrawInitLoadScreen();
 	}
 
-	if (m_state == m_none || (key_dest != key_menu && key_dest != key_menu_pause))
+	if (m_state == m_none || (key_dest != key_menu && key_dest != key_menu_pause)) {
 		return;
-
+	}
+	
 	if (!m_recursiveDraw)
 	{
 		scr_copyeverything = 1;
@@ -187,14 +188,12 @@ void Menu_Draw (void)
 			VID_UnlockBuffer ();
 			S_ExtraUpdate ();
 			VID_LockBuffer ();
-		}
-		else
+		} else {
 			Draw_FadeScreen ();
+		}
 
 		scr_fullupdate = 0;
-	}
-	else
-	{
+	} else {
 		m_recursiveDraw = false;
 	}
 

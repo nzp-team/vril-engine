@@ -75,7 +75,6 @@ COMMON_OBJS = \
 	source/menu/menu_bindings.o \
 	source/menu/menu_accessibility.o \
 	source/menu/menu_pause.o \
-	source/menu/menu_stubs.o \
 	source/menu/menu_loadscreen.o \
 	source/menu/menu_credits.o \
 	source/platform/psp/platform_menu.o \

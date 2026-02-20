@@ -858,3 +858,167 @@ void Menu_DrawCreditContributor (int order, int sub_order, char *header)
 	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 	Menu_DrawString(x_pos, y_pos, header, 255, 255, 255, 255, menu_text_scale_factor, 0);
 }
+
+//=============================================================================
+/* OSK IMPLEMENTATION */
+#define MAX_Y 8
+#define MAX_X 12
+
+#define MAX_CHAR_LINE 36
+#define MAX_CHAR      72
+
+int  osk_pos_x = 0;
+int  osk_pos_y = 0;
+int  max_len   = 0;
+
+char* osk_out_buff = NULL;
+char  osk_buffer[128];
+
+image_t osk_button[4];
+
+char *osk_text [] =
+{
+	" 1 2 3 4 5 6 7 8 9 0 - = ` ",
+	" q w e r t y u i o p [ ]   ",
+	"   a s d f g h j k l ; ' \\ ",
+	"     z x c v b n m   , . / ",
+	"                           ",
+	" ! @ # $ % ^ & * ( ) _ + ~ ",
+	" Q W E R T Y U I O P { }   ",
+	"   A S D F G H J K L : \" | ",
+	"     Z X C V B N M   < > ? "
+};
+
+void Con_OSK_f (char *input, char *output, int outlen)
+{
+	max_len = outlen;
+	strncpy(osk_buffer,input,max_len);
+	osk_buffer[outlen] = '\0';
+	osk_out_buff = output;
+}
+
+void Con_SetOSKActive(qboolean active);
+void Menu_OSK_Key (int key)
+{
+    switch (key)
+	{
+	case K_RIGHTARROW:
+		osk_pos_x++;
+		if (osk_pos_x > MAX_X)
+			osk_pos_x = 0;//MAX_X
+		break;
+	case K_LEFTARROW:
+		osk_pos_x--;
+		if (osk_pos_x < 0)
+			osk_pos_x = MAX_X;//0
+		break;
+	case K_DOWNARROW:
+		osk_pos_y++;
+		if (osk_pos_y > MAX_Y)
+			osk_pos_y = 0;//MAX_Y
+		break;
+	case K_UPARROW:
+		osk_pos_y--;
+		if (osk_pos_y < 0)
+			osk_pos_y = MAX_Y;//0
+		break;
+	default:
+		break;
+	}
+
+	if (key == MENU_KEY_CONFIRM) {
+		if (max_len > strlen(osk_buffer)) {
+			char *selected_line = osk_text[osk_pos_y];
+			char selected_char[2];
+
+			selected_char[0] = selected_line[1+(2*osk_pos_x)];
+
+			if (selected_char[0] == '\t')
+				selected_char[0] = ' ';
+
+			selected_char[1] = '\0';
+			strcat(osk_buffer,selected_char);
+		}
+	} else if (key == MENU_KEY_SAVE_INPUT) {
+		strncpy(osk_out_buff,osk_buffer,max_len);
+		Con_SetOSKActive(false);
+	} else if (key == MENU_KEY_DELETE) {
+		if (strlen(osk_buffer) > 0) {
+			osk_buffer[strlen(osk_buffer)-1] = '\0';
+		}
+	} else if (key == MENU_KEY_BACK) {
+		Con_SetOSKActive(false);
+	}
+}
+
+void Menu_OSK_Draw (void)
+{
+	int i;
+
+	char *selected_line = osk_text[osk_pos_y];
+	char selected_char[2];
+
+	selected_char[0] = selected_line[1+(2*osk_pos_x)];
+	selected_char[1] = '\0';
+	if (selected_char[0] == ' ' || selected_char[0] == '\t')
+		selected_char[0] = 'X';
+
+	int x_value = (vid.width/3)+80;
+	int y_value = (vid.height/3)+20;
+
+	int x_pos = vid.width/4;
+	int y_pos = vid.height/2 - y_value;
+
+	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+
+	// Draw the background fill
+	Menu_DrawFill(x_pos-5, y_pos-10, x_value, y_value, 0, 0, 0, 255);
+	// Map border is fine for this occassion 
+	Menu_DrawMapBorder (x_pos-5, y_pos-10, x_value, y_value);
+
+	for(i=0;i<=MAX_Y;i++) {
+		Menu_DrawString (x_pos, y_pos+(CHAR_WIDTH*i), osk_text[i], 255, 255, 255, 255, menu_text_scale_factor, 0);
+		
+		if (i == 0) {
+			Menu_DrawString (x_pos+(x_value)-88, y_pos+(CHAR_HEIGHT*i), "CONFIRM", 255, 255, 0, 255, menu_text_scale_factor, 0);
+			Menu_DrawPic (x_pos+(x_value)-20, y_pos+(CHAR_HEIGHT*i), osk_button[0], 8, 8);
+		} else if (i == 2) {
+			Menu_DrawString (x_pos+(x_value)-88, y_pos+(CHAR_HEIGHT*i), "CANCEL", 255, 255, 0, 255, menu_text_scale_factor, 0);
+			Menu_DrawPic (x_pos+(x_value)-20, y_pos+(CHAR_HEIGHT*i), osk_button[1], 8, 8);
+		} else if (i == 4) {
+			Menu_DrawString (x_pos+(x_value)-88, y_pos+(CHAR_HEIGHT*i), "DELETE", 255, 255, 0, 255, menu_text_scale_factor, 0);
+			Menu_DrawPic (x_pos+(x_value)-20, y_pos+(CHAR_HEIGHT*i), osk_button[2], 8, 8);
+		} else if (i == 6) {
+			Menu_DrawString (x_pos+(x_value)-88, y_pos+(CHAR_HEIGHT*i), "ADD CHAR", 255, 255, 0, 255, menu_text_scale_factor, 0);
+			Menu_DrawPic (x_pos+(x_value)-20, y_pos+(CHAR_HEIGHT*i), osk_button[3], 8, 8);
+		}
+	}
+	// Side bar
+	Menu_DrawFill(x_pos+(x_value)-95, y_pos-10, 2, y_value-26, 130, 130, 130, 255);
+	// Bottom bar
+	Menu_DrawFill(x_pos-3, y_pos+y_value-36, x_value-2, 2, 130, 130, 130, 255);
+	
+	int text_len = strlen(osk_buffer);
+	if (text_len > MAX_CHAR_LINE) {
+		char oneline[MAX_CHAR_LINE+1];
+		strncpy(oneline,osk_buffer,MAX_CHAR_LINE);
+		oneline[MAX_CHAR_LINE] = '\0';
+
+		Menu_DrawString (x_pos, y_pos+4+(CHAR_HEIGHT*(MAX_Y+2)), oneline, 255, 0, 0, 255, menu_text_scale_factor, 0);
+
+		strncpy(oneline,osk_buffer+MAX_CHAR_LINE, text_len - MAX_CHAR_LINE);
+		oneline[text_len - MAX_CHAR_LINE] = '\0';
+
+		// Current input char
+		Menu_DrawString (x_pos+(CHAR_WIDTH/2), y_pos+4+(CHAR_HEIGHT*(MAX_Y+3)), oneline, 255, 255, 255, 255, menu_text_scale_factor, 0);
+		// Current cursor
+		Menu_DrawFill (x_pos+((CHAR_WIDTH)*(text_len)), y_pos+4+(CHAR_HEIGHT*(MAX_Y+2)), 1, CHAR_HEIGHT, 255, 0, 0, 255);
+	} else {
+		// Current input char
+		Menu_DrawString (x_pos+(CHAR_WIDTH/2), y_pos+4+(CHAR_HEIGHT*(MAX_Y+2)), osk_buffer, 255, 255, 255, 255, menu_text_scale_factor, 0);
+		// Current cursor
+		Menu_DrawFill (x_pos+((CHAR_WIDTH)*(text_len)), y_pos+4+(CHAR_HEIGHT*(MAX_Y+2)), 1, CHAR_HEIGHT, 255, 0, 0, 255);
+	}
+	// Current hovered char
+	Menu_DrawString (x_pos+(CHAR_WIDTH/2)+(((osk_pos_x*1.25))*(CHAR_WIDTH)), y_pos+(osk_pos_y*CHAR_HEIGHT), selected_char, 255, 0, 0, 255, menu_text_scale_factor, 0);
+}

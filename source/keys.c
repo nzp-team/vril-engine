@@ -49,7 +49,6 @@ qboolean	keydown[256];
 void Con_OSK_f (char *input, char *output, int outlen);
 void Con_SetOSKActive(qboolean active);
 qboolean Con_isSetOSKActive(void);
-void Con_OSK_Key (int key);
 #endif
 
 typedef struct
@@ -173,7 +172,7 @@ void Key_Console (int key)
 
 #ifdef PLATFORM_USES_OSK
 	if (Con_isSetOSKActive()) {
-		Con_OSK_Key (key);
+		Menu_OSK_Key (key);
 	}
 
 	if (key == K_SELECT) {
@@ -720,7 +719,7 @@ void Key_Event (int key, qboolean down)
 
 #ifdef PLATFORM_USES_OSK
 	if (Con_isSetOSKActive() && down)  {
-		Con_OSK_Key (key);
+		Menu_OSK_Key (key);
 		
 		if (!Con_isSetOSKActive()) {
 			strcpy(key_lines[edit_line]+1, consoleInput);
