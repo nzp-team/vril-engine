@@ -23,7 +23,6 @@ void Menu_Main_Draw(void);
 void Menu_Pause_Draw(void);
 void Menu_Main_Draw(void);
 void Menu_StockMaps_Draw(void);
-void Menu_Keys_Draw(void);
 void Menu_Video_Draw(void);
 void Menu_Credits_Draw(void);
 void Menu_GameOptions_Draw(void);
@@ -259,10 +258,6 @@ void Menu_Draw (void)
 
 	case m_accessibility:
 		Menu_Accessibility_Draw ();
-		break;
-
-	case m_keys:
-		Menu_Keys_Draw ();
 		break;
 
 	case m_credits:

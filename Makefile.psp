@@ -77,6 +77,7 @@ COMMON_OBJS = \
 	source/menu/menu_pause.o \
 	source/menu/menu_stubs.o \
 	source/menu/menu_loadscreen.o \
+	source/menu/menu_credits.o \
 	source/platform/psp/platform_menu.o \
 	source/platform/psp/net_dgrm.o \
 	source/net_loop.o \

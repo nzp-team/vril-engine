@@ -834,3 +834,26 @@ void Menu_DrawBuildDate (void)
 	// Welcome text
 	Menu_DrawString(0, y_pos + y_offset, welcome_text, 255, 255, 0, 255, menu_text_scale_factor, UI_FLIPTEXTPOS);
 }
+
+void Menu_DrawCreditHeader (int order, char *header)
+{
+	int y_factor = 30;
+	int x_pos = 140; 
+	int y_pos = 30 + (order*y_factor);
+
+	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+
+	Menu_DrawString(x_pos, y_pos, header, 255, 255, 0, 255, menu_text_scale_factor, UI_FLIPTEXTPOS);
+}
+
+void Menu_DrawCreditContributor (int order, int sub_order, char *header)
+{
+	int y_factor = 30;
+	int x_pos = 160; 
+	int y_pos = 30 + (order*y_factor);
+
+	y_pos += sub_order * CHAR_HEIGHT;
+
+	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+	Menu_DrawString(x_pos, y_pos, header, 255, 255, 255, 255, menu_text_scale_factor, 0);
+}

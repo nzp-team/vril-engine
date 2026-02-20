@@ -35,18 +35,14 @@ extern int 				m_state;
 #define m_audio			12
 #define m_accessibility 13
 #define m_controls		14
-#define	m_keys			15
-#define	m_quit			16
-#define	m_restart		17
-#define	m_credits		18
-#define	m_exit			19
-#define	m_serialconfig	20
-#define	m_modemconfig	21
-#define	m_lanconfig		22
-#define	m_gameoptions	23
-#define	m_search		24
-#define	m_slist			25
-#define m_bindings		26
+#define	m_credits		15
+#define	m_serialconfig	16
+#define	m_modemconfig	17
+#define	m_lanconfig		18
+#define	m_gameoptions	19
+#define	m_search		20
+#define	m_slist			21
+#define m_bindings		22
 ///////////////////////////
 ///////////////////////////
 ///////////////////////////
@@ -269,6 +265,9 @@ void Menu_DrawDivider (int order);
 void Menu_DrawSocialBadge (int order, int which);
 void Menu_DrawMapPanel (void);
 void Menu_Preload_Custom_Images (void);
+void Menu_DrawCreditHeader (int order, char *header);
+void Menu_DrawCreditContributor (int order, int sub_order, char *header);
+
 void Menu_DrawLoadingFill(void);
 void Menu_DrawSubMenu (char *line_one, char *line_two);
 void Menu_DrawFill (int x, int y, int width, int height, int r, int g, int b, int a);
