@@ -16,6 +16,7 @@ set -o errexit
 
 PLATFORM="$1"
 CONTENT_DIR="$2"
+MODE="$3"
 WORKING_DIR="$4"
 
 source "setup/${PLATFORM}.sh"
@@ -28,10 +29,12 @@ source "setup/${PLATFORM}.sh"
 function run_generation()
 {
     print_info "Beginning content generation.."
-    mkdir -p "${CONTENT_DIR}/${PLATFORM}"
 
     local any_map_failed="0"
     local working_dir="${WORKING_DIR}"
+    local content_path="${CONTENT_DIR}/${PLATFORM}${MODE:+-$MODE}"
+    
+    mkdir -p "${content_path}"
 
     for bsp in ${working_dir}/nzportable/nzp/maps/*.bsp; do
         local map_failed="0"
@@ -49,7 +52,7 @@ function run_generation()
 
         # Load emulator and attempt to boot map
         print_info "Loading Nazi Zombies: Portable via [${EMULATOR_BIN}] with map [${pretty_bsp}].."
-        local command=$(run_nzportable "1" "${CONTENT_DIR}/blank.png")
+        local command=$(run_nzportable "1" "${CONTENT_DIR}/blank.png" "${MODE}")
         echo "[${command}]"
         ${command} > /dev/null 2>&1 || true
 
@@ -71,9 +74,8 @@ function run_generation()
             any_map_failed="1"
         else
             echo "[PASS]: SUCCESSFULLY spawned server using map [${pretty_bsp}]!"
-            local move_command="mv $(pwd)/__testfailure.bmp ${CONTENT_DIR}/${PLATFORM}/${pretty_bsp}.bmp"
+            local move_command="mv $(pwd)/capture.bmp ${content_path}/${pretty_bsp}.bmp"
             ${move_command}
-            rm -rf "$(pwd)/__testcompare.png"
         fi
     done
 
