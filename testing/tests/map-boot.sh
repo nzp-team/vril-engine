@@ -75,7 +75,7 @@ function run_mapboot_test()
             echo "[PASS]: SUCCESSFULLY spawned server using map [${pretty_bsp}]!"
         fi
 
-        ffmpeg -nostdin -y -i "${CONTENT_DIR}/${PLATFORM}/${pretty_bsp}.bmp" -i "$(pwd)/__testfailure.bmp" -filter_complex \
+        ffmpeg -nostdin -y -i "${CONTENT_DIR}/${PLATFORM}/${pretty_bsp}.bmp" -i "$(pwd)/capture.bmp" -filter_complex \
         "[0:v][1:v]psnr=stats_file=psnr_stats.log[psnr_out]; \
         [0:v][1:v]blend=all_mode='difference'[diff_out]" \
         -map "[psnr_out]" -f null - \
@@ -101,14 +101,13 @@ function run_mapboot_test()
 
             mkdir -p "${WORKING_DIR}/fail/map-boot"
             cp "${CONTENT_DIR}/${PLATFORM}/${pretty_bsp}.bmp" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_source.bmp" || true
-            mv "$(pwd)/__testfailure.bmp" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_new.bmp" || true
+            mv "$(pwd)/capture.bmp" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_new.bmp" || true
             mv "$(pwd)/difference.png" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_diff.png" || true
             any_map_failed="1"
         fi
 
         rm -rf "$(pwd)/difference.png"
-        rm -rf "$(pwd)/__testfailure.bmp"
-        rm -rf "$(pwd)/__testcompare.png"
+        rm -rf "$(pwd)/capture.bmp"
     done
 
     if [[ "${any_map_failed}" -ne "0" ]]; then

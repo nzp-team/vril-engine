@@ -50,15 +50,14 @@ function clone_ppsspp
 
 function build_ppsspp
 {
-    cd ${working_dir}/
+    cd ${working_dir}/ppsspp
     print_info "Patching PPSSPP.."
-    local command="patch -p0 ppsspp/headless/Headless.cpp ${testing_dir_path}/setup/utils/ppsspp.patch"
+    local command="git apply ${testing_dir_path}/setup/utils/ppsspp.patch"
     echo "[${command}]"
     $command
     print_info "Building PPSSPP.."
     command="./b.sh --headless"
     echo "[${command}]"
-    cd ${working_dir}/ppsspp
     ${command}
     print_info "Moving build binaries to working directory.."
     mv ${working_dir}/ppsspp/build/PPSSPP* ${working_dir}

@@ -91,7 +91,7 @@ jobs:
     container:
       image: ubuntu:24.04
       options: --shm-size=8192m
-    needs: [Compile-EBOOT, Compile-3DSX, Compile-TNS, Compile-VPK]
+    needs: [Compile-EBOOT]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -113,7 +113,7 @@ jobs:
     container:
       image: ubuntu:24.04
       options: --shm-size=8192m
-    needs: [Compile-EBOOT, Compile-3DSX, Compile-TNS, Compile-VPK]
+    needs: [Compile-EBOOT]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
