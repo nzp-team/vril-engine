@@ -77,7 +77,7 @@ function run_mapboot_test()
             continue
         else
             echo "[PASS]: SUCCESSFULLY spawned server using map [${pretty_bsp}]!"
-        
+        fi
 
         ffmpeg -nostdin -y -i "${content_path}/${pretty_bsp}.bmp" -i "$(pwd)/capture.bmp" -filter_complex \
         "[0:v][1:v]psnr=stats_file=psnr_stats.log[psnr_out]; \
