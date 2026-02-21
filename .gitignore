@@ -17,3 +17,4 @@ source/_build_info.h
 *.vpk
 *.velf
 *.sfo
+testing/working

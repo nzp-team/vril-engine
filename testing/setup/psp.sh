@@ -23,6 +23,7 @@ TIMEOUT=30
 ppsspp_version="v1.17.1"
 
 testing_dir_path=""
+binary_path=""
 
 # tzdata will try to display an interactive install prompt by
 # default, so make sure we define our system as non-interactive.
@@ -34,60 +35,80 @@ function install_dependencies
     apt update -y
     apt install build-essential cmake libgl1-mesa-dev \
     libsdl2-dev libsdl2-ttf-dev libfontconfig1-dev \
-    libvulkan-dev libglew-dev clang wget zip git -y
+    libvulkan-dev libglew-dev clang wget zip git \
+    ffmpeg -y
 }
 
 function clone_ppsspp
 {
     print_info "Cloning PPSSPP [${ppsspp_version}] from GitHub.."
     local command="git clone --recurse-submodules https://github.com/hrydgard/ppsspp -b ${ppsspp_version}"
-    cd /working
+    cd ${working_dir}
     echo "[${command}]"
     ${command}
 }
 
 function build_ppsspp
 {
-    cd /working/
+    cd ${working_dir}/ppsspp
     print_info "Patching PPSSPP.."
-    local command="patch -p0 ppsspp/headless/Headless.cpp ${testing_dir_path}/setup/utils/ppsspp.patch"
+    local command="git apply ${testing_dir_path}/setup/utils/ppsspp.patch"
     echo "[${command}]"
     $command
     print_info "Building PPSSPP.."
     command="./b.sh --headless"
     echo "[${command}]"
-    cd /working/ppsspp
     ${command}
     print_info "Moving build binaries to working directory.."
-    mv /working/ppsspp/build/PPSSPP* /working
-    cp -R /working/ppsspp/build/assets/* /working/assets
+    mv ${working_dir}/ppsspp/build/PPSSPP* ${working_dir}
+    cp -R ${working_dir}/ppsspp/build/assets/* ${working_dir}/assets
 }
 
 function obtain_nzportable
 {
     print_info "Obtaining latest Nazi Zombies: Portable PSP release.."
     sleep 0.5
-    cd /working
+    cd ${working_dir}
+    rm -f nzportable-psp.zip
     wget https://github.com/nzp-team/nzportable/releases/download/nightly/nzportable-psp.zip
-    unzip nzportable-psp.zip
+    unzip -o nzportable-psp.zip
 
-    print_info "Replacing binary with GitHub Actions Artifact.."
-    sleep 0.5
-    mv /psp-nzp-eboot/EBOOT.PBP /working/nzportable/
+    if [ -n "${binary_path}" ]; then
+        print_info "Replacing nightly binary with user-specified: [${binary_path}]"
+        sleep 0.5
+        mv ${binary_path} ${working_dir}/nzportable/
+    fi
 }
 
 function begin_setup()
 {
     testing_dir_path="${1}"
+    binary_path="${2}"
+    working_dir="${3}"
 
     # Create our working directory.
-    rm -rf /working
-    mkdir -p /working/assets
-    cd /working
+    if [[ ! -d "${working_dir}" ]]; then
+        mkdir -p "${working_dir}"
+    fi
+
+    mkdir -p ${working_dir}/assets
+    cd ${working_dir}
 
     install_dependencies;
-    clone_ppsspp;
-    build_ppsspp;
+    
+    # Check if we have the emulator already
+    if [[ -f "${working_dir}/${EMULATOR_BIN}" ]]; then
+        print_info "Emulator binary found in [${working_dir}], skipping build.."
+    else
+        # If we don't have it, we need to nuke the directory to ensure a clean build
+        # BUT we want to preserve the directory itself if it was mounted
+        find ${working_dir} -mindepth 1 -delete
+        mkdir -p ${working_dir}/assets
+        
+        clone_ppsspp;
+        build_ppsspp;
+    fi
+
     obtain_nzportable;
 
     print_info "Done setting up for PlayStation Portable testing!"
@@ -112,8 +133,8 @@ function run_nzportable()
     fi
 
     if [[ "${mode}" == "1" ]]; then
-        echo "/working/${EMULATOR_BIN} --system=${system} --screenshot=${comp} --timeout=${TIMEOUT} -r /working/nzportable/ /working/nzportable/EBOOT.PBP"
+        echo "${working_dir}/${EMULATOR_BIN} --system=${system} --screenshot=${comp} --timeout=${TIMEOUT} -r ${working_dir}/nzportable/ ${working_dir}/nzportable/EBOOT.PBP"
     else
-        echo "/working/${EMULATOR_BIN} --system=${system} --timeout=${TIMEOUT} -r /working/nzportable/ /working/nzportable/EBOOT.PBP"
+        echo "${working_dir}/${EMULATOR_BIN} --system=${system} --timeout=${TIMEOUT} -r ${working_dir}/nzportable/ ${working_dir}/nzportable/EBOOT.PBP"
     fi
 }
