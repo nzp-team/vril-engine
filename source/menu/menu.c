@@ -56,7 +56,6 @@ char*			game_build_date;
 qboolean		m_recursiveDraw;
 
 qboolean 		loading_init;
-image_t 		lscreen_image;
 
 // Current menu state
 int 			m_state;

@@ -143,7 +143,6 @@ extern char*            game_build_date;
 // Loading screens
 extern int          	loadingScreen;
 extern qboolean         loadscreeninit;
-extern image_t 			lscreen_image;
 
 // Custom maps
 typedef struct

@@ -164,12 +164,15 @@ void Menu_LoadMap (char *selected_map)
 	loadingScreen = 1;
 }
 
-void Menu_SetOptionCvar (cvar_t option, char *option_string, int min_option_value, int max_option_value, int increment_amount)
+void Menu_SetOptionCvar (cvar_t option, char *option_string, int min_option_value, int max_option_value, float increment_amount)
 {
 	if (current_menu.slider_pressed != 0) {
-
+		// set option value to be modified
 		float current_option = option.value;
-		current_option += (current_menu.slider_pressed*increment_amount);
+		// slider_pressed can be a value of
+		// 1 or -1, determined by which
+		// arrow key was pressed
+		current_option = current_option + (current_menu.slider_pressed * increment_amount);
 
 		if (current_option > max_option_value) {
 			current_option = max_option_value;
@@ -178,8 +181,8 @@ void Menu_SetOptionCvar (cvar_t option, char *option_string, int min_option_valu
 		}
 		
 		Cvar_SetValue (option_string, current_option);
+		current_menu.slider_pressed = 0;
 	}
-	current_menu.slider_pressed = 0;
 }
 
 void Menu_BuildMenuButtons (int button_index, char *button_name, void *on_activate)
@@ -690,7 +693,12 @@ void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, in
 	}
 
 	char _option_string[16] = "";
-	sprintf(_option_string, "%d", (int)option.value);
+	// if increment amount is a float
+	if (increment_amount < 1) {
+		sprintf(_option_string, "%.2f", option.value);
+	} else {
+		sprintf(_option_string, "%i", (int)option.value);
+	}
 
 	if (zero_to_one) {
 		if (!strcmp(_option_string, "0")) {

@@ -32,6 +32,8 @@ qboolean 		loadscreeninit;
 char* 			map_loadname;
 char* 			map_loadname_pretty;
 
+static image_t 	lscreen_image;
+
 //=============================================================================
 
 /*
@@ -44,11 +46,13 @@ void Menu_DrawLoadScreen (void)
 	if (developer.value) {
 		return;
 	}
+	
 	if (!con_forcedup) {
 	    return;
 	}
 
 	char map_path[MAX_OSPATH];
+	lscreen_image = -1;
 
 	if (loadingScreen) {
 		Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 255);
