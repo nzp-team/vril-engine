@@ -403,6 +403,11 @@ void SCR_CheckDrawUseString (void)
 	SCR_DrawUseString ();
 }
 
+int GetButtonIcon (char *buttonname)
+{
+	return -1;
+}
+
 //=============================================================================
 
 /*
