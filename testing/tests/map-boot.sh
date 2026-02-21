@@ -31,6 +31,7 @@ function run_mapboot_test()
 
     local any_map_failed="0"
     local working_dir="${WORKING_DIR}"
+    local failed_maps=()
 
     for bsp in ${working_dir}/nzportable/nzp/maps/*.bsp; do
         local map_failed="0"
@@ -71,6 +72,7 @@ function run_mapboot_test()
             echo ""
             echo "-----"
             any_map_failed="1"
+            failed_maps+=("${pretty_bsp}")
         else
             echo "[PASS]: SUCCESSFULLY spawned server using map [${pretty_bsp}]!"
         fi
@@ -88,6 +90,7 @@ function run_mapboot_test()
             cat /tmp/ffmpeg_log.txt
             echo "----------------------------------------------------"
             any_map_failed="1"
+            failed_maps+=("${pretty_bsp}")
         fi
 
         local map_psnr=$(cat /tmp/ffmpeg_log.txt | sed -n 's/.*average:\([0-9.]*\|inf\).*/\1/p')
@@ -104,6 +107,7 @@ function run_mapboot_test()
             mv "$(pwd)/capture.bmp" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_new.bmp" || true
             mv "$(pwd)/difference.png" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_diff.png" || true
             any_map_failed="1"
+            failed_maps+=("${pretty_bsp}")
         fi
 
         rm -rf "$(pwd)/difference.png"
@@ -111,6 +115,12 @@ function run_mapboot_test()
     done
 
     if [[ "${any_map_failed}" -ne "0" ]]; then
+        echo ""
+        echo "========================================"
+        echo " MAP BOOT TEST FAILURES"
+        echo "========================================"
+        printf '- %s\n' "${failed_maps[@]}" | sort -u
+        echo "========================================"
         exit 1
     else
         exit 0
