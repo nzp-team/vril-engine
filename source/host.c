@@ -893,14 +893,14 @@ void Host_Init (quakeparms_t *parms)
 			Sys_Error ("Couldn't load gfx/colormap.lmp");
 
 		VID_Init (host_basepal);
+		Draw_Init ();
+		SCR_Init ();
+		R_Init ();
 		HUD_Init ();
 		// Moved to after VID_Init to get screen width/height
 		// in order to set menu scaling
 		// and after HUD_Init to get button pics
 		Menu_Init ();
-		Draw_Init ();
-		SCR_Init ();
-		R_Init ();
 		S_Init ();
 		CDAudio_Init ();
 		CL_Init ();
