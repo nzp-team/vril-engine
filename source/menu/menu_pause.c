@@ -38,6 +38,7 @@ void Menu_Pause_EnterSubMenu(void)
 void Menu_Pause_Yes(void)
 {
     if (menu_paus_submenu == 1) {
+		// User is restarting the map
 		menu_paus_submenu = 0;
 		key_dest = key_game;
 		m_state = m_none;
@@ -45,9 +46,10 @@ void Menu_Pause_Yes(void)
 		// Perform Soft Restart
 		PR_ExecuteProgram (pr_global_struct->Soft_Restart);
 	} else if (menu_paus_submenu == 3) {
+		// User is returning to Main Menu
 		menu_paus_submenu = 0;
-		Cbuf_AddText("disconnect\n");
-		Menu_Main_Set();
+		// Exit the map
+		Menu_ExitMap();
 	}
 
     Menu_Pause_EnterSubMenu();

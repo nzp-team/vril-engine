@@ -261,6 +261,7 @@ void Menu_CustomMaps_MapFinder (void);
 int Menu_UserMapSupportsGameSettings (char *bsp_name);
 void Map_SetDefaultValues (void);
 void Menu_LoadMap (char *selected_map);
+void Menu_ExitMap (void);
 void Menu_DrawCustomBackground (qboolean draw_images);
 void Menu_DrawTitle (char *title_name, int color);
 void Menu_DrawButton (int order, int button_index, char* button_name, char* button_summary, void *on_activate);

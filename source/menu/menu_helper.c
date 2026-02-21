@@ -164,6 +164,22 @@ void Menu_LoadMap (char *selected_map)
 	loadingScreen = 1;
 }
 
+void Menu_ExitMap (void)
+{
+	// Stop sounds (especially looping!)
+	S_StopAllSounds (true);
+	// Disconnect from server
+	Cbuf_AddText("disconnect\n");
+	// Unload textures
+#ifdef __PSP__
+	GL_UnloadAllTextures();
+#elif defined(__3DS__) || defined (__PSP2__)
+	GL_UnloadTextures();
+#endif
+	// Enter main menu
+	Menu_Main_Set();
+}
+
 void Menu_SetOptionCvar (cvar_t option, char *option_string, int min_option_value, int max_option_value, float increment_amount)
 {
 	if (current_menu.slider_pressed != 0) {
@@ -695,7 +711,7 @@ void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, in
 	char _option_string[16] = "";
 	// if increment amount is a float
 	if (increment_amount < 1) {
-		sprintf(_option_string, "%.2f", option.value);
+		sprintf(_option_string, "%.2f", (double)option.value);
 	} else {
 		sprintf(_option_string, "%i", (int)option.value);
 	}
