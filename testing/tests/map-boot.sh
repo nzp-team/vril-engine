@@ -96,21 +96,27 @@ function run_mapboot_test()
             continue
         fi
 
-        local map_psnr=$(cat /tmp/ffmpeg_log.txt | sed -n 's/.*average:\([0-9.]*\|inf\).*/\1/p')
-        map_psnr=${map_psnr%.*}
+        local map_psnr=$(grep -o 'average:[^ ]*' /tmp/ffmpeg_log.txt | cut -d: -f2 | head -n1)
 
-        if [[ "${map_psnr}" == "inf" ]] || [[ "${map_psnr}" -gt "35" ]]; then
-            echo "[PASS]: Got PSNR value of [${map_psnr}]"
+        if [[ "$map_psnr" == "inf" ]]; then
+            echo "[PASS]: Captures were identical!"
         else
-            echo "[ERROR]: PSNR value was less than [35], got [${map_psnr}]!"
-            echo "         Writing comparison data to [${WORKING_DIR}/fail/map-boot]"
+            local map_psnr_int=${map_psnr%.*}
 
-            mkdir -p "${WORKING_DIR}/fail/map-boot"
-            cp "${content_path}/${pretty_bsp}.bmp" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_source.bmp" || true
-            mv "$(pwd)/capture.bmp" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_new.bmp" || true
-            mv "$(pwd)/difference.png" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_diff.png" || true
-            any_map_failed="1"
-            failed_maps+=("${pretty_bsp}")
+            if (( map_psnr_int > 35 )); then
+                echo "[PASS]: Got PSNR value of [${map_psnr}]"
+            else
+                echo "[ERROR]: PSNR value was less than [35], got [${map_psnr}]!"
+                echo "         Writing comparison data to [${WORKING_DIR}/fail/map-boot]"
+
+                mkdir -p "${WORKING_DIR}/fail/map-boot"
+                cp "${content_path}/${pretty_bsp}.bmp" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_source.bmp" || true
+                mv "$(pwd)/capture.bmp" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_new.bmp" || true
+                mv "$(pwd)/difference.png" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_diff.png" || true
+
+                any_map_failed="1"
+                failed_maps+=("${pretty_bsp}")
+            fi
         fi
 
         rm -rf "$(pwd)/difference.png"
