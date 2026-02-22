@@ -24,6 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern double hud_maxammo_starttime;
 extern double hud_maxammo_endtime;
 
+extern cvar_t scr_whiteflash;
+extern cvar_t cl_hitmarkers;
+
 qboolean 			crosshair_pulse_grenade;
 
 extern int EN_Find(int num,char *string);
@@ -1242,6 +1245,9 @@ void CL_ParseServerMessage (void)
 			screenflash_type = MSG_ReadByte();
 			screenflash_worktime = 0;
 			screenflash_starttime = sv.time;
+
+			if (screenflash_color == SCREENFLASH_COLOR_WHITE && scr_whiteflash.value == 1)
+				screenflash_color = SCREENFLASH_COLOR_BLACK;
 			break;
 
 		case svc_bettyprompt:
@@ -1401,7 +1407,8 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_hitmark:
-			Hitmark_Time = sv.time + 0.2;
+			if (cl_hitmarkers.value > 0)
+				Hitmark_Time = sv.time + 0.2;
 			break;
 
 		case svc_weaponfire:
