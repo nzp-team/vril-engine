@@ -303,5 +303,4 @@ void Menu_Bindings_Set (void);
 void Menu_Accessibility_Set (void);
 
 // Platform specifics
-void Platform_Menu_MapFinder(void);
 char *Platform_ReturnLoadingText (void);
