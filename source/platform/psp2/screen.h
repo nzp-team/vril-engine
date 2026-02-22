@@ -57,3 +57,4 @@ extern qboolean		block_drawing;
 extern cvar_t 	scr_fov;
 
 void SCR_UpdateWholeScreen (void);
+int GetButtonIcon (char *buttonname);
