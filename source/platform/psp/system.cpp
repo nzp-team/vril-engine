@@ -422,7 +422,7 @@ void Sys_Quit (void)
 	// Insert a false delay so files and stuff can be saved before the kernel kills us.
 	sceKernelDelayThread(50 * 1000);
 #ifdef PROFILE
-    gprof_cleanup();
+    gprof_stop("gmon.out", 1);
 #endif
 	// Exit.
 	sceKernelExitGame();
