@@ -1044,7 +1044,26 @@ void Menu_OSK_Draw (void)
 		// Current cursor
 		Menu_DrawFill (x_pos+((CHAR_WIDTH)*(text_len)), y_pos+4+(CHAR_HEIGHT*(MAX_Y+2)), 1, CHAR_HEIGHT, 255, 0, 0, 255);
 	}
+
+	// Use font kerning logic to find
+	// correct spacing for hovered OSK
+	// key
+	int char_index = 1 + (2 * osk_pos_x);
+	int hover_x = x_pos;
+	char *line = osk_text[osk_pos_y];
+
+	for (int i = 0; i < char_index; i++) {
+		char c = line[i];
+		if (c == ' ') {
+			hover_x += 4;
+		} else if ((int)c < 33 || (int)c > 126) {
+			hover_x += 8;
+		} else {
+			hover_x += (font_kerningamount[(int)(c - 33)] + 1);
+		}	
+	}
+
 	// Current hovered char
-	Menu_DrawString (x_pos+(CHAR_WIDTH/2)+(((osk_pos_x*1.25))*(CHAR_WIDTH)), y_pos+(osk_pos_y*CHAR_HEIGHT), selected_char, 255, 0, 0, 255, menu_text_scale_factor, 0);
+	Draw_ColoredString(hover_x, y_pos + (osk_pos_y * CHAR_HEIGHT), selected_char, 255, 0, 0, 255, menu_text_scale_factor);
 }
 #endif

@@ -116,11 +116,10 @@ void Menu_SetVersionString (void)
 		
 		fclose (f);
 	} else {
-		game_build_date = malloc(24*sizeof(char));
 		game_build_date = "version.txt not found.";
 	}
 #else
-/*
+
 	FILE *f = NULL;
 	char version_text_path[32];
 	int length = COM_FOpenFile("version.txt", &f);
@@ -136,10 +135,8 @@ void Menu_SetVersionString (void)
 		}
 		fclose(f);
 	} else {
-	*/
-		game_build_date = malloc(24*sizeof(char));
 		game_build_date = "version.txt not found.";
-	//}
+	}
 
 #endif
 }
