@@ -101,6 +101,12 @@ void Menu_Video_ApplyDithering (void)
     Cvar_SetValue ("r_dithering", current_dithering);
 }
 
+void Menu_Configuration_ApplySettings (void)
+{
+    // no op
+    Menu_SetSound(MENU_SND_ENTER);
+}
+
 /*
 ===============
 Menu_Video_Set
@@ -196,5 +202,7 @@ void Menu_Video_Draw (void)
         Menu_DrawOptionButton (7, dithering_string);
     }
 
+    Menu_DrawDivider(-2.5);
+	Menu_DrawButton(-2, video_items++, "APPLY", "Save & Apply Settings.", Menu_Configuration_ApplySettings);
 	Menu_DrawButton(-1, video_items, "BACK", "Return to Main Menu.", Menu_Configuration_Set);
 }

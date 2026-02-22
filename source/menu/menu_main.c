@@ -73,11 +73,11 @@ void Menu_Main_Draw (void)
 		Menu_DrawButton(3.25, 1, "CONFIGURATION", "Tweak Game Related Options", Menu_Configuration_Set);
 		Menu_DrawGreyButton(4.25, "ACHIEVEMENTS");
 
-		Menu_DrawDivider(5.25);
+		Menu_DrawDivider(5);
 
 		Menu_DrawButton(5.50, 2, "CREDITS", "NZ:P Team + Special Thanks", Menu_Credits_Set);
 
-		Menu_DrawDivider(6.50);
+		Menu_DrawDivider(6);
 
 		Menu_DrawButton(6.75, 3, "QUIT GAME", "Return to Home Screen", Menu_EnterSubMenu);
 	} else {
@@ -86,9 +86,9 @@ void Menu_Main_Draw (void)
 		Menu_DrawDivider(3);
 		Menu_DrawGreyButton(3.25, "CONFIGURATION");
 		Menu_DrawGreyButton(4.25, "ACHIEVEMENTS");
-		Menu_DrawDivider(5.25);
+		Menu_DrawDivider(5);
 		Menu_DrawGreyButton(5.50, "CREDITS");
-		Menu_DrawDivider(6.50);
+		Menu_DrawDivider(6);
 		Menu_DrawGreyButton(6.75, "QUIT GAME");
 
 		// Draw Sub Menu

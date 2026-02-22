@@ -37,6 +37,12 @@ void Menu_Audio_Set (void)
 	m_state = m_audio;
 }
 
+void Menu_Volume_ApplySettings (void)
+{
+	// no op
+	Menu_SetSound(MENU_SND_ENTER);
+}
+
 /*
 ===============
 Menu_Audio_Draw
@@ -57,5 +63,7 @@ void Menu_Audio_Draw (void)
 	Menu_DrawButton(2, 1, "MUSIC VOLUME", "Volume for Background Music.", NULL);
 	Menu_DrawOptionSlider (2, 1, 0, 1, bgmvolume, "bgmvolume", false, false, 0.1f);
 
-	Menu_DrawButton(-1, 2, "BACK", "Return to Main Menu.", Menu_Configuration_Set);
+	Menu_DrawDivider(-2.5);
+	Menu_DrawButton(-2, 2, "APPLY", "Save & Apply Settings.", Menu_Volume_ApplySettings);
+	Menu_DrawButton(-1, 3, "BACK", "Return to Main Menu.", Menu_Configuration_Set);
 }

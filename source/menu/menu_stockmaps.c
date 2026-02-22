@@ -84,7 +84,7 @@ void Menu_StockMaps_Draw (void)
         Menu_DrawMapButton(i+1, i, -1, stock_maps[i].category, stock_maps[i].bsp_name, Menu_StockMaps_SetMap);
     }
 
-    Menu_DrawDivider(i+1.25);
+    Menu_DrawDivider(i+1);
 
     Menu_DrawButton(i+1.5, i, "USER MAPS", "View User-Created Maps.", Menu_CustomMaps_Set);
     Menu_DrawButton(i+2.5, i+1, "RANDOM", "Feeling indecisive? Try rolling the dice.", Menu_StockMaps_SetRandomMap);

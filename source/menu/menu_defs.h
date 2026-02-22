@@ -272,7 +272,7 @@ void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, in
 void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficulty, char* info_startround, char* info_magic, char* info_headshotonly, char* info_fastrounds, char* info_hordesize);
 void Menu_DrawOptionKey (int order, char *current_bind);
 void Menu_DrawBuildDate ();
-void Menu_DrawDivider (int order);
+void Menu_DrawDivider (float order);
 void Menu_DrawSocialBadge (int order, int which);
 void Menu_DrawMapPanel (void);
 void Menu_Preload_Custom_Images (void);

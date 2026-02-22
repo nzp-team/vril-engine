@@ -133,6 +133,12 @@ void Menu_Controls_ApplyAnubMode (void)
     Cvar_SetValue ("in_anub_mode", current_anubmode);
 }
 
+void Menu_Controls_ApplySettings (void)
+{
+    // no op
+    Menu_SetSound(MENU_SND_ENTER);
+}
+
 /*
 ===============
 Menu_Controls_Draw
@@ -183,5 +189,7 @@ void Menu_Controls_Draw (void)
 	// Bindings
 	Menu_DrawButton (controls_buttons++, controls_index++, "BINDINGS", "Change Input Bindings.", Menu_Bindings_Set);
 
-	Menu_DrawButton (-1, controls_index++, "BACK", "Return to Main Menu.", Menu_Configuration_Set);
+	Menu_DrawDivider(-2.5);
+	Menu_DrawButton(-2, controls_index++, "APPLY", "Save & Apply Settings.", Menu_Controls_ApplySettings);
+	Menu_DrawButton (-1, controls_index, "BACK", "Return to Main Menu.", Menu_Configuration_Set);
 }

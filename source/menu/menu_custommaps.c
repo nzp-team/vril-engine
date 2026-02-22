@@ -434,7 +434,7 @@ void Menu_CustomMaps_Draw (void)
 		custommap_items++;
 	}
 
-	Menu_DrawDivider(9.25);
+	Menu_DrawDivider(9);
 
 	if (maps_on_page + maps_start_position < num_user_maps) {
 		Menu_DrawButton(9.5, custommap_items++, "NEXT PAGE", "Advance to next User Map page.", Menu_CustomMaps_NextPage);

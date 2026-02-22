@@ -282,14 +282,20 @@ void Menu_DrawSubPic (int x, int y, int pic, float s, float t, float s_coord_siz
 Menu_DrawDivider
 ======================
 */
-void Menu_DrawDivider (int order)
+void Menu_DrawDivider (float order)
 {
 	int y_factor = 15;
-	int y_pos = 30 + (order*y_factor) - (CHAR_HEIGHT/2);
+	int y_pos = 0;
 	int x_length = 140;
 	int y_length = 1;
 
-	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+	if (order < 0) {
+		y_pos = big_bar_height + ((order*-1)*y_factor);
+		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
+	} else {
+		y_pos = 30 + (order*y_factor) - (CHAR_HEIGHT/2);
+		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+	}
 
 	Menu_DrawFill(0, y_pos, x_length, y_length, 130, 130, 130, 255);
 }

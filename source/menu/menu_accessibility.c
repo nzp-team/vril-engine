@@ -100,7 +100,6 @@ void Menu_Accessibility_ApplySettings (void)
 {
 	// no op
 	Menu_SetSound(MENU_SND_ENTER);
-	return;
 }
 
 /*
@@ -131,9 +130,9 @@ void Menu_Accessibility_SetStrings (void)
 	}
 
 	if ((int)scr_whiteflash.value == 1) {
-		screenflash_string = "BLACK";
+		screenflash_string = "FORBID WHITE";
 	} else {
-		screenflash_string = "WHITE";
+		screenflash_string = "ALLOW WHITE";
 	}
 
 	switch((int)sv_spoofmonth.value) {
@@ -215,6 +214,7 @@ void Menu_Accessibility_Draw (void)
     Menu_DrawButton(5, 3, "MONTH SPOOF", "Lie to the game about the current Month, if you are host.", Menu_Accessibility_ApplyMonthSpoof);
 	Menu_DrawOptionButton(5, monthspoof_string);
 
+	Menu_DrawDivider(-2.5);
 	Menu_DrawButton(-2, 4, "APPLY", "Save & Apply Settings.", Menu_Accessibility_ApplySettings);
 	Menu_DrawButton(-1, 5, "BACK", "Return to Configuration Menu.", Menu_Configuration_Set);
 }
