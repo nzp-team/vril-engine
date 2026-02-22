@@ -56,6 +56,11 @@ cvar_t	m_side = {"m_side","0.8", true};
 cvar_t	in_disable_analog = {"in_disable_analog", "0", true};
 cvar_t	in_anub_mode = {"in_anub_mode", "0", true};
 
+cvar_t 	cl_hitmarkers = {"cl_hitmarkers", "1", true};
+cvar_t 	cl_colorblind = {"cl_colorblind", "0", true};
+cvar_t 	cl_textopacity = {"cl_textopacity", "0.20", true};
+cvar_t 	scr_whiteflash = {"scr_whiteflash", "0", true};
+
 //=================================================//
 modelindex_t		cl_modelindex[NUM_MODELINDEX]; //
 char				*cl_modelnames[NUM_MODELINDEX];//
@@ -1042,6 +1047,10 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&m_yaw);
 	Cvar_RegisterVariable (&m_forward);
 	Cvar_RegisterVariable (&m_side);
+
+	Cvar_RegisterVariable (&cl_hitmarkers);
+	Cvar_RegisterVariable (&cl_colorblind);
+	Cvar_RegisterVariable (&scr_whiteflash);
 
 //	Cvar_RegisterVariable (&cl_autofire);
 

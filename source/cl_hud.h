@@ -65,3 +65,16 @@ extern double screenflash_worktime;
 extern double screenflash_starttime;
 
 void HUD_Parse_Achievement (int ach);
+
+//
+// Types of screen-flashes.
+//
+
+// Colors
+#define SCREENFLASH_COLOR_WHITE			0
+#define SCREENFLASH_COLOR_BLACK			1
+
+// Types
+#define SCREENFLASH_FADE_INANDOUT		0
+#define SCREENFLASH_FADE_IN 			1
+#define SCREENFLASH_FADE_OUT 			2

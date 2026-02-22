@@ -1768,19 +1768,6 @@ HUD_Screenflash
 */
 
 //
-// Types of screen-flashes.
-//
-
-// Colors
-#define SCREENFLASH_COLOR_WHITE			0
-#define SCREENFLASH_COLOR_BLACK			1
-
-// Types
-#define SCREENFLASH_FADE_INANDOUT		0
-#define SCREENFLASH_FADE_IN 			1
-#define SCREENFLASH_FADE_OUT 			2
-
-//
 // invert float takes in float value between 0 and 1, inverts position
 // eg: 0.1 returns 0.9, 0.34 returns 0.66
 float invertfloat(float input) {
