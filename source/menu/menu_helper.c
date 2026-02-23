@@ -128,7 +128,7 @@ int Menu_GetMapImage (char *bsp_name)
 		}
 	}
 
-	return 0;
+	return -1;
 }
 
 void Map_SetDefaultValues (void)

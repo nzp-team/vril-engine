@@ -527,6 +527,8 @@ Draw_ColorPic
 */
 void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 {
+	if (pic < 1) return;
+
 	sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 
 	const gltexture_t &glt = gltextures[pic];
@@ -596,6 +598,8 @@ Draw_StretchPic
 */
 void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
 {
+	if (pic < 1) return;
+
 	const gltexture_t &glt = gltextures[pic];
 	GL_Bind (glt.texnum);
 
@@ -631,6 +635,8 @@ Draw_ColoredStretchPic
 */
 void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, int r, int g, int b, int a)
 {
+	if (pic < 1) return;
+
 	sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 
 	const gltexture_t &glt = gltextures[pic];
@@ -676,6 +682,8 @@ Draw_MenuPanningPic
 */
 void Draw_MenuPanningPic (int x, int y, int pic, int x_value, int y_value, float time)
 {
+	if (pic < 1) return;
+
 	const gltexture_t &glt = gltextures[pic];
     GL_Bind(glt.texnum);
 
@@ -737,7 +745,7 @@ Draw_SubPic
 */
 void Draw_SubPic (int x, int y, int pic, float s, float t, float s_coord_size, float t_coord_size, float scale, float r, float g , float b, float a)
 {
-	if (pic < 0) return;
+	if (pic < 1) return;
 
 	sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 
@@ -790,6 +798,8 @@ Draw_TransPic
 */
 void Draw_TransPic (int x, int y, int pic)
 {
+	if (pic < 1) return;
+
 	gltexture_t &texture = gltextures[pic];
 
 	if (x < 0 || (unsigned)(x + texture.width) > vid.width || y < 0 ||
@@ -815,9 +825,6 @@ void Draw_ConsoleBackground (int lines)
 		Draw_Fill(0, 0, vid.width, lines, 0);
 	else
 		Draw_Fill(0, 0, vid.width, lines, 0);
-
-
-
 }
 /*
 ================
