@@ -722,15 +722,15 @@ void Draw_MenuPanningPic (int x, int y, int pic, int x_value, int y_value, float
 		float t = time / duration;
 		if (t > 1.0f) t = 1.0f;
 
-		float x_offset = t * (zoom * 2.0f);
+		float offset = t * (zoom * 2.0f);
 
-		float u1 = x_offset;
-		float u = u1 + visible;
+		float u1 = offset;
 
 		GL_Bind (pic);
-		DrawQuad(x_offset, y, x_value, y_value, u, 0, 1, 1);
+		DrawQuad(x, y, x_value, y_value, u1, 0, visible, 1);
 
 		Platform_Graphics_Color(1,1,1,1);
+		glDisable(GL_ALPHA_TEST);
 	}
 }
 
@@ -863,8 +863,12 @@ void Draw_Fill (int x, int y, int w, int h, int c)
 
 void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a)
 {
-	DrawQuad_NoTex(x, y, w, h, (float)r/255, (float)g/255, (float)b/255, (float)a/255);
-	Platform_Graphics_Color(1,1,1,1);
+	glEnable (GL_BLEND);
+	glEnable(GL_ALPHA_TEST);
+	Platform_Graphics_Color(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
+	DrawQuad_NoTex(x, y, w, h, (float)r/255.0f, (float)g/255.0f, (float)b/255.0f, (float)a/255.0f);
+	glDisable (GL_BLEND);
+	Platform_Graphics_Color(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
 }
 //=============================================================================
 
