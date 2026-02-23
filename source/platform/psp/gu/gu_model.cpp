@@ -509,21 +509,14 @@ void Mod_LoadTextures (lump_t *l)
 	else
 	{
 		if (loadmodel->bspversion == HL_BSPVERSION)
-		{	
-			char filename[128];		// Filename to check r4w file
-			byte *data;
-			snprintf(filename, 128, "textures/maps/%s/%s.r4w", sv.name, mt->name);		// search in textures/maps/MAPNAME/TEXNAME
-			
-			data = static_cast<byte*>(COM_LoadHunkFile(filename));
-			
-			if (data == NULL) {
-				sprintf(filename, "textures/%s.r4w", mt->name);					// search in textures/TEXNAME
-				data = static_cast<byte*>(COM_LoadHunkFile(filename));
-			}
-			
-			if (data == NULL) {
-				Con_Printf("Loading texture %s as WAD3, %dx%d\n", mt->name, mt->width, mt->height);		// didn't find the texture in the folder
-					
+		{
+			// Check for external textures first
+			char filename[MAX_OSPATH];
+			snprintf (filename, sizeof(filename), "textures/%s", mt->name);
+			tx->gl_texturenum = Image_LoadImage (texname, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, GU_LINEAR, false, true);
+
+			// None found, load wad textures
+			if (tx->gl_texturenum < 0) {
 				int index = WAD3_LoadTextureClut4(mt);
 
 				if (index != 0) {
@@ -532,30 +525,16 @@ void Mod_LoadTextures (lump_t *l)
 					tx->dt_texturenum = 0;
 				} else {
 					// Fall back to missing texture.
-					Con_Printf("Texture %s not found\n", mt->name);
+					Con_DPrintf("Texture %s not found\n", mt->name);
 					tx->gl_texturenum = nonetexture;
 				}
-			
-			} else {
-				
-				int w, h;
-				
-				unsigned int magic = *((unsigned int*)(data));
-				if (magic == 0x65663463)								// what the fuck? 
-				{
-					w = *((int*)(data + 4));
-					h = *((int*)(data + 8));
-
-					tx->gl_texturenum = GL_LoadTexture4(mt->name, w, h, (byte*)(data + 16), GU_LINEAR, false);
-				}
-	
 			}
 		}
 		else
 		{
 			sprintf (texname, "textures/%s", mt->name);
 			tx->gl_texturenum = Image_LoadImage (texname, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, GU_LINEAR, false, true);
-			if(tx->gl_texturenum == 0)
+			if(tx->gl_texturenum < 0)
 			{
 				tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(tx_pixels), true, GU_LINEAR, level);
 			}
@@ -565,7 +544,7 @@ void Mod_LoadTextures (lump_t *l)
 			      tx->dt_texturenum = Image_LoadImage (detname, 0, 0, false, GU_LINEAR, false, false);
 			      mapTextureNameList.push_back(tx->dt_texturenum);
 */
-			tx->dt_texturenum = 0;
+			tx->dt_texturenum = -1;
 		          // check for fullbright pixels in the texture - only if it ain't liquid, etc also
 			if ((tx->name[0] != '*') && (FindFullbrightTexture ((byte *)(tx_pixels), pixels)))
 			{
@@ -2603,10 +2582,10 @@ extern "C" void Mod_Print (void)
 	int		i;
 	model_t	*mod;
 
-	Con_Printf ("Cached models:\n");
+	Con_DPrintf ("Cached models:\n");
 	for (i=0, mod=mod_known ; i < mod_numknown ; i++, mod++)
 	{
-		Con_Printf ("%8p : %s\n",mod->cache.data, mod->name);
+		Con_DPrintf ("%8p : %s\n",mod->cache.data, mod->name);
 	}
 }
 
