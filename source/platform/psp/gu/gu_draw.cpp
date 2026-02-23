@@ -725,9 +725,6 @@ void Draw_MenuPanningPic (int x, int y, int pic, int x_value, int y_value, float
     vertices[1].z = 0;
 
 	sceGuTexFilter(GU_LINEAR, GU_LINEAR);
-	sceGuTexWrap(GU_CLAMP, GU_CLAMP);
-	sceGuTexScale(1.0f, 1.0f);
-	sceGuTexOffset(0.0f, 0.0f);
 
     sceGuDrawArray(
         GU_SPRITES,
