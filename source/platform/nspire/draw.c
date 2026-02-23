@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define PAL_WHITETOYELLOW	2
 void Draw_AdvancedPic (int x, int y, int pic, int alpha, unsigned char palette_hack);
 void Draw_AdvancedStretchPic (int x, int y, int pic, int width, int height);
+void Draw_AdvancedStretchPicColor (int x, int y, int pic, int width, int height, int alpha, unsigned char palette_hack);
 
 extern int numcachepics;
 
@@ -659,8 +660,7 @@ void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, in
 {
 	unsigned char palette_hack = find_color_hack_from_rgb((byte) r, (byte) g, (byte) b);
 
-	// naievil -- TODO: implement stretching?
-	Draw_AdvancedPic(x, y, pic, a, palette_hack);
+	Draw_AdvancedStretchPicColor(x, y, pic, x_value, y_value, a, palette_hack);
 }
 
 /*
@@ -792,7 +792,7 @@ void Draw_AdvancedStretchPic (int x, int y, int pic, int width, int height)
 	if (x < 0 || (unsigned)(x + width) > vid.width || y < 0 ||
 		 (unsigned)(y + height) > vid.height)
 	{
-		Sys_Error ("Draw_AdvancedPic: bad coordinates");
+		Sys_Error ("Draw_AdvancedStretchPic: bad coordinates");
 	}
 
 	pixel_tracker = 0;
@@ -872,6 +872,153 @@ void Draw_AdvancedStretchPic (int x, int y, int pic, int width, int height)
 				u_acc += u_step;
 			}
 
+			pusdest += vid.rowbytes >> 1;
+			v_acc += v_step;
+		}
+	}
+}
+
+/*
+=============
+Draw_AdvancedPic
+=============
+*/
+void Draw_AdvancedStretchPicColor (int x, int y, int pic, int width, int height, int alpha, unsigned char palette_hack)
+{
+	byte	*dest, *source, tbyte;
+	unsigned short	*pusdest;
+	int				v, u;
+	int				du, dv;
+	int				src_u, src_v;
+	int 			dither_factor;
+	int 			pixel_tracker;
+	 
+	cachepic_t *tex = &cachepics[pic];
+
+	if (x < 0 || (unsigned)(x + width) > vid.width || y < 0 ||
+		 (unsigned)(y + height) > vid.height)
+	{
+		Sys_Error ("Draw_AdvancedStretchPicColor: bad coordinates");
+	}
+
+	if (alpha < 16)
+		return;
+	if (alpha < 32)
+		dither_factor = 9;
+	else if (alpha < 64)
+		dither_factor = 6;
+	else if (alpha < 80)
+		dither_factor = 3;
+	else
+		dither_factor = 0;
+
+	pixel_tracker = 0;
+		
+	source = tex->data;
+
+	if (r_pixbytes == 1)
+	{
+		dest = vid.buffer + y * vid.rowbytes + x;
+
+		int u_step = (tex->width  << 16) / width;
+		int v_step = (tex->height << 16) / height;
+
+		int v_acc = 0;
+		for (dv = 0; dv < height; dv++)
+		{
+			src_v = v_acc >> 16;
+			if (src_v >= tex->height) {
+				src_v = tex->height - 1;
+			}
+			source = tex->data + src_v * tex->width;
+
+			int u_acc = 0;
+			for (du = 0; du < width; du++)
+			{
+				pixel_tracker++;
+
+				// guard it to avoid spamming moduli
+				if (dither_factor != 0) {
+					// motolegacy -- this actually doesnt work as originally intended but it looks fucking awesome so im keeping it
+					if (pixel_tracker % dither_factor != 0)
+						continue;
+				}
+
+				src_u = u_acc >> 16;
+				if (src_u >= tex->width) {
+					src_u = tex->width - 1;
+				}
+
+				if ( (tbyte=source[src_u]) != TRANSPARENT_COLOR) {
+					switch(palette_hack) {
+						case PAL_WHITETORED:
+							dest[du] = convert_white_to_red(tbyte); 
+							break;
+						case PAL_WHITETOYELLOW:
+							dest[du] = convert_white_to_yellow(tbyte); 
+							break;
+						default: 
+							dest[du] = tbyte;
+							break;
+					}
+				}
+				u_acc += u_step;
+			}
+			dest += vid.rowbytes;
+			v_acc += v_step;
+		}
+	}
+	else
+	{
+		// FIXME: pretranslate at load time?
+		pusdest = (unsigned short *)vid.buffer + y * (vid.rowbytes >> 1) + x;
+
+		int u_step = (tex->width  << 16) / width;
+		int v_step = (tex->height << 16) / height;
+
+		int v_acc = 0;
+		for (dv = 0; dv < height; dv++)
+		{
+			src_v = v_acc >> 16;
+			if (src_v >= tex->height) {
+				src_v = tex->height - 1;
+			}
+			source = tex->data + src_v * tex->width;
+
+			int u_acc = 0;
+			for (du = 0; du < width; du++)
+			{
+				pixel_tracker++;
+
+				// guard it to avoid spamming moduli
+				if (dither_factor != 0) {
+					// motolegacy -- this actually doesnt work as originally intended but it looks fucking awesome so im keeping it
+					if (pixel_tracker % dither_factor != 0)
+						continue;
+				}
+
+				src_u = u_acc >> 16;
+				if (src_u >= tex->width) {
+					src_u = tex->width - 1;
+				}
+        		tbyte = source[src_u];
+
+				if (tbyte != TRANSPARENT_COLOR)
+				{
+					switch(palette_hack) {
+						case PAL_WHITETORED:
+							pusdest[du] = d_8to16table[convert_white_to_red(tbyte)]; 
+							break;
+						case PAL_WHITETOYELLOW:
+							pusdest[du] = d_8to16table[convert_white_to_yellow(tbyte)]; 
+							break;
+						default: 
+							pusdest[du] = d_8to16table[tbyte];
+							break;
+					}
+				}
+				u_acc += u_step;
+			}
 			pusdest += vid.rowbytes >> 1;
 			v_acc += v_step;
 		}
