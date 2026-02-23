@@ -1438,28 +1438,55 @@ void Draw_Fill (int x, int y, int w, int h, int r, int g, int b, int alpha, int 
 	{
 		dest = vid.buffer + y*vid.rowbytes + x;
 		for (v=0 ; v<h ; v++, dest += vid.rowbytes) {
-			for (u=0 ; u<w ; u++) {
+			
+			if (w > 0) {
+				for (u=0 ; u<w ; u++) {
+					pixel_tracker++;
+					// guard it to avoid spamming moduli
+					if (dither_factor != 0) {
+						// motolegacy -- this actually doesnt work as originally intended but it looks fucking awesome so im keeping it
+						if (pixel_tracker % dither_factor != 0)
+							continue;
+					}
 
-				pixel_tracker++;
-
-				// guard it to avoid spamming moduli
-				if (dither_factor != 0) {
-					// motolegacy -- this actually doesnt work as originally intended but it looks fucking awesome so im keeping it
-					if (pixel_tracker % dither_factor != 0)
-						continue;
+					if(c != TRANSPARENT_COLOR) {
+						switch(palette_hack) {
+							case PAL_WHITETORED:
+								dest[u] = convert_white_to_red(c); 
+								break;
+							case PAL_WHITETOYELLOW:
+								dest[u] = convert_white_to_yellow(c); 
+								break;
+							default: 
+								dest[u] = c;
+								break;
+						}
+					}
 				}
+			} else {
+				// negative x drawing
+				for (u=0 ; u>w ; u--) {
+					pixel_tracker++;
 
-				if(c != TRANSPARENT_COLOR) {
-					switch(palette_hack) {
-						case PAL_WHITETORED:
-							dest[u] = convert_white_to_red(c); 
-							break;
-						case PAL_WHITETOYELLOW:
-							dest[u] = convert_white_to_yellow(c); 
-							break;
-						default: 
-							dest[u] = c;
-							break;
+					// guard it to avoid spamming moduli
+					if (dither_factor != 0) {
+						// motolegacy -- this actually doesnt work as originally intended but it looks fucking awesome so im keeping it
+						if (pixel_tracker % dither_factor != 0)
+							continue;
+					}
+
+					if(c != TRANSPARENT_COLOR) {
+						switch(palette_hack) {
+							case PAL_WHITETORED:
+								dest[u] = convert_white_to_red(c); 
+								break;
+							case PAL_WHITETOYELLOW:
+								dest[u] = convert_white_to_yellow(c); 
+								break;
+							default: 
+								dest[u] = c;
+								break;
+						}
 					}
 				}
 			}
