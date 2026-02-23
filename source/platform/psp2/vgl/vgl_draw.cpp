@@ -709,7 +709,29 @@ Draw_MenuPanningPic
 */
 void Draw_MenuPanningPic (int x, int y, int pic, int x_value, int y_value, float time)
 {
-	Draw_StretchPic (x, y, pic, x_value, y_value);
+	if (pic > 0) {
+		glEnable(GL_ALPHA_TEST);
+		Platform_Graphics_Color(1,1,1,1);
+
+		// 5% horizonstal crop
+		const float zoom = 0.05f;
+		const float visible = 1.0f - (zoom * 2.0f);
+
+		// Pan amount (0 -> 1 over time)
+		float duration = 7.0f;
+		float t = time / duration;
+		if (t > 1.0f) t = 1.0f;
+
+		float x_offset = t * (zoom * 2.0f);
+
+		float u1 = x_offset;
+		float u = u1 + visible;
+
+		GL_Bind (pic);
+		DrawQuad(x_offset, y, x_value, y_value, u, 0, 1, 1);
+
+		Platform_Graphics_Color(1,1,1,1);
+	}
 }
 
 /*

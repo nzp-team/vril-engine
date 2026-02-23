@@ -518,27 +518,45 @@ Draw_MenuPanningPic
 */
 void Draw_MenuPanningPic (int x, int y, int pic, int x_value, int y_value, float time)
 {
-	if (pic > 0) {
-		// how much to "zoom in" (in texcoord space)
-		const float zoom = 0.05f;   // 5% crop on both sides
+	if (pic <= 0)
+        return;
 
-		glEnable(GL_ALPHA_TEST);
-		glColor4f(1,1,1,1);
+	// 5% horizonstal crop
+    const float zoom = 0.05f;
+    const float visible = 1.0f - (zoom * 2.0f);
 
-		GL_Bind (pic);
-		glBegin (GL_QUADS);
-		glTexCoord2f (0, 0);
-		glVertex2f (x, y);
-		glTexCoord2f (1, 0);
-		glVertex2f (x+(x_value) - zoom, y);
-		glTexCoord2f (1, 1);
-		glVertex2f (x+(x_value) - zoom, y+y_value);
-		glTexCoord2f (0, 1);
-		glVertex2f (x, y+y_value);
-		glEnd ();
-		glDisable(GL_ALPHA_TEST);
-		glColor4f(1,1,1,1);
-	}
+    // Pan amount (0 -> 1 over time)
+    float duration = 7.0f;
+	float t = time / duration;
+	if (t > 1.0f) t = 1.0f;
+
+	float offset = t * (zoom * 2.0f);
+
+    float u1 = offset;
+    float u2 = u1 + visible;
+
+    glEnable(GL_ALPHA_TEST);
+    glColor4f(1,1,1,1);
+
+	GL_Bind (pic);
+
+    glBegin(GL_QUADS);
+
+    glTexCoord2f(u1, 0);
+    glVertex2f(x, y);
+
+    glTexCoord2f(u2, 0);
+    glVertex2f(x + x_value, y);
+
+    glTexCoord2f(u2, 1);
+    glVertex2f(x + x_value, y + y_value);
+
+    glTexCoord2f(u1, 1);
+    glVertex2f(x, y + y_value);
+
+    glEnd();
+
+    glDisable(GL_ALPHA_TEST);
 }
 
 /*

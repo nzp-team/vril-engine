@@ -677,30 +677,57 @@ Draw_MenuPanningPic
 void Draw_MenuPanningPic (int x, int y, int pic, int x_value, int y_value, float time)
 {
 	const gltexture_t &glt = gltextures[pic];
-	GL_Bind (glt.texnum);
+    GL_Bind(glt.texnum);
 
-	struct vertex
-	{
-		unsigned short			u, v;
-		short			x, y, z;
-	};
+    struct vertex
+    {
+        float u, v;
+        short x, y, z;
+    };
 
+    vertex* const vertices =
+        static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
 
-	vertex* const vertices = static_cast<vertex*>(sceGuGetMemory(sizeof(vertex) * 2));
-	vertices[0].u = 0;
-	vertices[0].v = 0;
-	vertices[0].x = x;
-	vertices[0].y = y;
-	vertices[0].z = 0;
+	// 5% horizonstal crop
+	const float zoom = glt.width * 0.05f;
+    const float visible = glt.width - (zoom * 2.0f);
 
-	vertices[1].u = glt.width;
-	vertices[1].v = glt.height;
-	
-	vertices[1].x = x + x_value;
-	vertices[1].y = y + y_value;
-	vertices[1].z = 0;
+    // Pan amount (0 -> 1 over time)
+    float duration = 7.0f;
+	float t = time / duration;
+	if (t > 1.0f) t = 1.0f;
 
-	sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_VERTEX_16BIT | GU_TRANSFORM_2D, 2, 0, vertices);
+	float offset = t * (zoom * 2.0f);
+
+    float u1 = offset;
+    float u2 = u1 + visible;
+	float v1 = 0;
+    float v2 = glt.height;
+
+    vertices[0].u = u1;
+    vertices[0].v = v1;
+    vertices[0].x = x;
+    vertices[0].y = y;
+    vertices[0].z = 0;
+
+    vertices[1].u = u2;
+    vertices[1].v = v2;
+    vertices[1].x = x + x_value;
+    vertices[1].y = y + y_value;
+    vertices[1].z = 0;
+
+	sceGuTexFilter(GU_LINEAR, GU_LINEAR);
+	sceGuTexWrap(GU_CLAMP, GU_CLAMP);
+	sceGuTexScale(1.0f, 1.0f);
+	sceGuTexOffset(0.0f, 0.0f);
+
+    sceGuDrawArray(
+        GU_SPRITES,
+        GU_TEXTURE_32BITF | GU_VERTEX_16BIT | GU_TRANSFORM_2D,
+        2,
+        0,
+        vertices
+    );
 }
 
 /*

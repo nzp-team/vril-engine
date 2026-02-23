@@ -466,14 +466,6 @@ Menu_DrawCustomBackground
 */
 void Menu_DrawCustomBackground (qboolean draw_images)
 {
-    float elapsed_background_time = menu_time - menu_starttime;
-
-	// TODO
-
-	// 
-	// Slight background pan
-	//
-
 	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 
 #ifdef MENU_DONT_DRAW_BACKGROUND_IMAGES
@@ -481,14 +473,12 @@ void Menu_DrawCustomBackground (qboolean draw_images)
 	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 255, 255);
 #endif
 
-	// TODO
-
 	// Only draw background images if in active
 	// menu and not in a game
 	if (draw_images && key_dest != key_menu_pause) {
-		float time = (float)((vid.width * 1.05) - vid.width) * (elapsed_background_time/7);
-
-		Draw_MenuPanningPic(0, 0, menu_background, vid.width, vid.height, time);
+		float elapsed_background_time = menu_time - menu_starttime;
+		
+		Draw_MenuPanningPic(0, 0, menu_background, vid.width, vid.height, elapsed_background_time);
 		Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 50);
 
 		//
@@ -514,11 +504,11 @@ void Menu_DrawCustomBackground (qboolean draw_images)
 	}
 
 	// Top Bars
-	Menu_DrawFill(0, 0, vid.width, big_bar_height, 0, 0, 0, 228);
+	Menu_DrawFill(0, 0, vid.width, big_bar_height, 0, 0, 0, 225);
 	Menu_DrawFill(0, big_bar_height, vid.width, small_bar_height, 130, 130, 130, 255);
 
 	// Bottom Bars
-	Menu_DrawFill(0, (vid.height - big_bar_height), vid.width, big_bar_height, 0, 0, 0, 228);
+	Menu_DrawFill(0, (vid.height - big_bar_height), vid.width, big_bar_height, 0, 0, 0, 225);
 	Menu_DrawFill(0, (vid.height - big_bar_height) - small_bar_height, vid.width, small_bar_height, 130, 130, 130, 255);
 }
 
