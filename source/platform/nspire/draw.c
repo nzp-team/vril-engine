@@ -687,7 +687,7 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 
 void Draw_MenuPanningPic (int x, int y, int pic, int x_value, int y_value, float time)
 {
-	Draw_TransPic (x, y, pic);
+	Draw_AdvancedStretchPic (x, y, pic, x_value, y_value);
 }
 
 void Draw_SubPic (int x, int y, int pic, float s, float t, float s_coord_size, float t_coord_size, float scale, float r, float g , float b, float a)
@@ -784,6 +784,8 @@ void Draw_AdvancedStretchPic (int x, int y, int pic, int width, int height)
 	int				pixel_tracker;
 	int				du, dv;
 	int				src_u, src_v;
+
+	if (pic < 0) return;
 	 
 	cachepic_t *tex = &cachepics[pic];
 
@@ -1155,7 +1157,7 @@ Draw_BlackBackground
 */
 void Draw_BlackBackground (void)
 {
-	Draw_Fill(0, 0, vid.width, vid.height, 0);
+	Draw_Fill(0, 0, vid.width, vid.height, 0, 0, 0, 255, 0);
 }
 
 
@@ -1385,10 +1387,12 @@ unsigned char convert_24_to_8(const unsigned char palette[768], const int rgb[3]
 byte findclosestpalmatch(byte r, byte g, byte b, byte a)
 {
 	// naievil -- force alpha
+	/*
 	if (a == 0 || a < 120) {
 		return 255;
 	}
-
+	*/
+	
 	int rgb[3];
 	rgb[0] = r;
 	rgb[1] = g; 
@@ -1397,6 +1401,13 @@ byte findclosestpalmatch(byte r, byte g, byte b, byte a)
 	return (byte)convert_24_to_8(host_basepal, rgb);
 }
 
+int set_dither_factor(int alpha)
+{
+	if (alpha > 120) return 0;
+
+	float t = 1.0f - (alpha / 255.0f);
+    return (int)(15.0f * t * t);
+}
 
 /*
 =============
@@ -1405,19 +1416,54 @@ Draw_Fill
 Fills a box of pixels with a single color
 =============
 */
-void Draw_Fill (int x, int y, int w, int h, int c)
+void Draw_Fill (int x, int y, int w, int h, int r, int g, int b, int alpha, int c)
 {
 	byte			*dest;
 	unsigned short	*pusdest;
 	unsigned		uc;
 	int				u, v;
+	int 			dither_factor;
+	int 			pixel_tracker;
+
+	unsigned char palette_hack = find_color_hack_from_rgb((byte) r, (byte) g, (byte) b);
+
+	if (alpha < 16)
+		return;
+	
+	dither_factor = set_dither_factor(alpha);
+
+	pixel_tracker = 0;
 
 	if (r_pixbytes == 1)
 	{
 		dest = vid.buffer + y*vid.rowbytes + x;
-		for (v=0 ; v<h ; v++, dest += vid.rowbytes)
-			for (u=0 ; u<w ; u++)
-				dest[u] = c;
+		for (v=0 ; v<h ; v++, dest += vid.rowbytes) {
+			for (u=0 ; u<w ; u++) {
+
+				pixel_tracker++;
+
+				// guard it to avoid spamming moduli
+				if (dither_factor != 0) {
+					// motolegacy -- this actually doesnt work as originally intended but it looks fucking awesome so im keeping it
+					if (pixel_tracker % dither_factor != 0)
+						continue;
+				}
+
+				if(c != TRANSPARENT_COLOR) {
+					switch(palette_hack) {
+						case PAL_WHITETORED:
+							dest[u] = convert_white_to_red(c); 
+							break;
+						case PAL_WHITETOYELLOW:
+							dest[u] = convert_white_to_yellow(c); 
+							break;
+						default: 
+							dest[u] = c;
+							break;
+					}
+				}
+			}
+		}		
 	}
 	else
 	{
@@ -1436,7 +1482,7 @@ void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a)
 	int c = (int)findclosestpalmatch(r, g, b, a);
 
 	// naievil -- TODO: implement this
-	Draw_Fill(x, y, w, h, c);
+	Draw_Fill(x, y, w, h, r, g, b, a, c);
 }
 
 /*
