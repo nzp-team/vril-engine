@@ -153,7 +153,7 @@ void Menu_Bindings_Draw (void)
         Menu_DrawButton(7, bindings_index++, "MELEE", "", Menu_Bindings_SetBindListen);
         Menu_Bindings_PrintBindForCommand(7, "+knife");
 
-        Menu_DrawDivider(8.25);
+        Menu_DrawDivider(8);
 
         Menu_DrawButton(8.5, bindings_index++, "NEXT PAGE", "Advance to the next Keybind page.", Menu_Bindings_NextPage);
         Menu_DrawGreyButton(9.5, "PREVIOUS PAGE");
@@ -173,7 +173,7 @@ void Menu_Bindings_Draw (void)
         Menu_DrawButton(4, bindings_index++, "SHOOT WEAPON", "", Menu_Bindings_SetBindListen);
         Menu_Bindings_PrintBindForCommand(4, "+attack");
 
-        Menu_DrawDivider(5.25);
+        Menu_DrawDivider(5);
 
         Menu_DrawGreyButton(5.5, "NEXT PAGE");
         Menu_DrawButton(6.5, bindings_index++, "PREVIOUS PAGE", "Return to last Keybind page.", Menu_Bindings_PrevPage);
