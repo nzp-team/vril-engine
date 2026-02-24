@@ -684,6 +684,8 @@ void Draw_MenuPanningPic (int x, int y, int pic, int x_value, int y_value, float
 {
 	if (pic < 1) return;
 
+	sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
+
 	const gltexture_t &glt = gltextures[pic];
     GL_Bind(glt.texnum);
 
@@ -733,6 +735,11 @@ void Draw_MenuPanningPic (int x, int y, int pic, int x_value, int y_value, float
         0,
         vertices
     );
+
+	sceGuColor(GU_COLOR(1,1,1,1));
+	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
+
+	sceGuTexFilter(GU_NEAREST, GU_NEAREST);
 }
 
 /*
