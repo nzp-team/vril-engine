@@ -271,12 +271,6 @@ void Key_Console (int key)
 			con_backscroll = 0;
 		return;
 	}
-
-	if (key == K_SELECT) {
-		console_enabled = false;
-		con_backscroll = 0;
-		return;
-	}
 	
 	if (key < 32 || key > 127)
 		return;	// non printable
@@ -758,6 +752,7 @@ void Key_Event (int key, qboolean down)
 	//
 	// handle escape specialy, so the user can never unbind it
 	//
+	
 	if (key == K_ESCAPE || key == K_START)
 	{
 		if (!down)
@@ -773,7 +768,6 @@ void Key_Event (int key, qboolean down)
 			break;
 		case key_game:
 		case key_console:
-			console_enabled = false;
 			Menu_ToggleMenu_f ();
 			break;
 		default:
@@ -781,7 +775,7 @@ void Key_Event (int key, qboolean down)
 		}
 		return;
 	}
-
+	
 //
 // key up events only generate commands if the game key binding is
 // a button command (leading + sign).  These will occur even in console mode,

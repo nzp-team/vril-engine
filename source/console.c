@@ -103,12 +103,15 @@ void Con_ToggleConsole_f (void)
 		{
 			key_dest = key_game;
 			console_enabled = false;
+			key_dest = key_menu_pause;
 			key_lines[edit_line][1] = 0;	// clear any typing
 			key_linepos = 1;
 		}
 		else
 		{
 			console_enabled = false;
+			scr_osk_active = false;
+			key_dest = key_menu;
 			Menu_Configuration_Set ();
 		}
 	} else {
