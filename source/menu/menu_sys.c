@@ -197,7 +197,7 @@ void Menu_InitUI (void)
 	ui_scale = vid.height/STD_UI_HEIGHT;
 
 	// Add platform-specific menu enter keys
-#ifdef PLATFORM_ENTER_IS_CONFIRM
+#ifdef PLATFORM_CONFIRM_IS_ENTER
 	MENU_KEY_CONFIRM = K_ENTER;
 	MENU_KEY_BACK = K_ESCAPE;
 	MENU_KEY_DELETE = K_DELETE;
