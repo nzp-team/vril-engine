@@ -123,25 +123,25 @@ void UI_Align (int *x, int *y)
 {
     switch (current_frame.point_x) {
         case UI_ANCHOR_CENTER:
-            *x = (vid.width * 0.5) + *x;
+            *x = (vid.width * 0.5) + (*x*ui_scale);
             break;
         case UI_ANCHOR_LEFT:
 			// no op
             break;
         case UI_ANCHOR_RIGHT:
-            *x = vid.width - *x;
+            *x = vid.width - (*x*ui_scale);
             break;
     }
 
 	switch (current_frame.point_y) {
         case UI_ANCHOR_CENTER:
-            *y = (vid.height * 0.5) + *y;
+            *y = (vid.height * 0.5) + (*y*ui_scale);
             break;
         case UI_ANCHOR_TOP:
 			// no op
             break;
         case UI_ANCHOR_BOTTOM:
-            *y = vid.height - *y;
+            *y = vid.height - (*y*ui_scale);
             break;
     }
 }
@@ -152,7 +152,7 @@ void UI_Align (int *x, int *y)
 // vid.width/vid.height
 int UI_X(int x)
 {
-    if (x == (int)vid.width) return (int)vid.width;
+    if (x == (int)vid.width) return x;
 
     //printf("x %i\n", x);
     int ret = (x * ui_scale);
@@ -162,7 +162,7 @@ int UI_X(int x)
 
 int UI_Y(int y)
 {
-    if (y == (int)vid.height) return (int)vid.height;
+    if (y == (int)vid.height) return y;
 
     //printf("y %i\n", y);
     int ret = (y * ui_scale);
@@ -172,7 +172,7 @@ int UI_Y(int y)
 
 int UI_W(int w)
 {
-    if (w == (int)vid.width) return (int)vid.width;
+    if (w == (int)vid.width) return w;
     //printf("w %i\n", w);
     int ret = (w * ui_scale);
     //printf("ret %i\n", ret);
@@ -181,7 +181,7 @@ int UI_W(int w)
 
 int UI_H(int h)
 {
-    if (h == (int)vid.height) return (int)vid.height;
+    if (h == (int)vid.height) return h;
     //printf("h %i\n", h);
     int ret = (h * ui_scale);
     //printf("ret %i\n", ret);

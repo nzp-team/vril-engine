@@ -865,10 +865,10 @@ void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a)
 {
 	glEnable (GL_BLEND);
 	glEnable(GL_ALPHA_TEST);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	Platform_Graphics_Color(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
 	DrawQuad_NoTex(x, y, w, h, (float)r/255.0f, (float)g/255.0f, (float)b/255.0f, (float)a/255.0f);
 	glDisable (GL_BLEND);
-	Platform_Graphics_Color(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
 }
 //=============================================================================
 

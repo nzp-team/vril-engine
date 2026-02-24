@@ -80,6 +80,11 @@ void Menu_Main_Draw (void)
 		Menu_DrawDivider(6);
 
 		Menu_DrawButton(6.75, 3, "QUIT GAME", "Return to Home Screen", Menu_EnterSubMenu);
+
+		Menu_DrawSocialBadge (1, MENU_SOC_YOUTUBE);
+		Menu_DrawSocialBadge (2, MENU_SOC_BLUESKY);
+		Menu_DrawSocialBadge (3, MENU_SOC_PATREON);
+		Menu_DrawSocialBadge (4, MENU_SOC_DOCS);
 	} else {
 		Menu_DrawGreyButton(1, "SOLO");
 		Menu_DrawGreyButton(2, "COOPERATIVE");
@@ -91,15 +96,15 @@ void Menu_Main_Draw (void)
 		Menu_DrawDivider(6);
 		Menu_DrawGreyButton(6.75, "QUIT GAME");
 
+		Menu_DrawSocialBadge (1, MENU_SOC_YOUTUBE);
+		Menu_DrawSocialBadge (2, MENU_SOC_BLUESKY);
+		Menu_DrawSocialBadge (3, MENU_SOC_PATREON);
+		Menu_DrawSocialBadge (4, MENU_SOC_DOCS);
+
 		// Draw Sub Menu
     	Menu_DrawSubMenu("Are you sure you want to quit?", "You will lose any progress that you have made.");
 
 		Menu_DrawButton (7.5, 0, "GET ME OUTTA HERE!", "", Menu_Quit);
 		Menu_DrawButton (8.5, 1, "I WILL PERSEVERE", "", Menu_ExitSubMenu);
 	}
-
-	Menu_DrawSocialBadge (1, MENU_SOC_YOUTUBE);
-	Menu_DrawSocialBadge (2, MENU_SOC_BLUESKY);
-	Menu_DrawSocialBadge (3, MENU_SOC_PATREON);
-	Menu_DrawSocialBadge (4, MENU_SOC_DOCS);
 }
