@@ -159,6 +159,7 @@ void Menu_LoadMap (char *selected_map)
 	if (sv.active) {
 		Cbuf_AddText ("disconnect\n");
 	}
+	Cbuf_AddText ("cd stop\n");
 	snprintf (map_command, sizeof(map_command), "map %s\n", map_loadname);
 	Cbuf_AddText (map_command);
 	loadingScreen = 1;
