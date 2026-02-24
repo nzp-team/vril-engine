@@ -138,7 +138,7 @@ void Map_SetDefaultValues (void)
 	Cvar_SetValue("sv_startround", 0);
 	Cvar_SetValue("sv_magic", 1);
 	Cvar_SetValue("sv_headshotonly", 0);
-	Cvar_SetValue("sv_maxai", 24);
+	Cvar_SetValue("sv_maxai", sv_maxai.value);
 	Cvar_SetValue("sv_fastrounds", 0);
 }
 
