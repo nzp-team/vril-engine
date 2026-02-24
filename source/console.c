@@ -110,7 +110,9 @@ void Con_ToggleConsole_f (void)
 		else
 		{
 			console_enabled = false;
+#ifdef PLATFORM_USES_OSK
 			scr_osk_active = false;
+#endif
 			key_dest = key_menu;
 			Menu_Configuration_Set ();
 		}
