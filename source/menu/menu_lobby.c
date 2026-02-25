@@ -85,7 +85,7 @@ void Menu_Lobby_SetStrings (void)
     }
 
     int round_value = (int)sv_startround.value;
-    if (round_value == 1) round_value = 1;
+    if (round_value == 0) round_value = 1;
     sprintf (startround, "%i", round_value);
 
     if ((int)sv_magic.value == 1) { 
