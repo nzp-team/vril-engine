@@ -41,7 +41,9 @@ void Menu_Main_Set (void)
 	Menu_LoadPics();
 	Menu_ResetMenuButtons();
 	Menu_SetSound(MENU_SND_ENTER);
-	Cbuf_AddText("cd playstring tensioned_by_the_damned 1\n");
+	if (key_dest != key_menu) {
+		Cbuf_AddText("cd playstring tensioned_by_the_damned 1\n");
+	}
 
 	key_dest = key_menu;
 	m_previous_state = 0;
