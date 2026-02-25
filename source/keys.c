@@ -88,6 +88,11 @@ keyname_t keynames[] =
 	{"DELETE", K_DELETE},
 
 	{"TOUCH", K_TOUCH},
+	{"TOUCH1", K_TOUCH1},
+	{"TOUCH2", K_TOUCH2},
+	{"TOUCH3", K_TOUCH3},
+	{"TOUCH4", K_TOUCH4},
+	{"TOUCH5", K_TOUCH5},
 	
 	{"SPACE", K_SPACE},
 
@@ -655,6 +660,11 @@ void Key_Init (void)
 	consolekeys[K_DELETE] = true;
 
 	consolekeys[K_TOUCH] = true;
+	consolekeys[K_TOUCH1] = true;
+	consolekeys[K_TOUCH2] = true;
+	consolekeys[K_TOUCH3] = true;
+	consolekeys[K_TOUCH4] = true;
+	consolekeys[K_TOUCH5] = true;
 
 	consolekeys[K_JOY1] = true;
 	consolekeys[K_JOY2] = true;
