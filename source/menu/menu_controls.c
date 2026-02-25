@@ -39,24 +39,6 @@ extern cvar_t	in_acceleration;
 extern cvar_t	in_anub_mode;
 extern cvar_t	m_pitch;
 
-void Menu_Controls_AllocStrings (void)
-{
-	aimassist_string = malloc(16*sizeof(char));
-	invert_string = malloc(16*sizeof(char));
-#ifdef __PSP__
-	anub_string = malloc(32*sizeof(char));
-#endif
-}
-
-void Menu_Controls_FreeStrings (void)
-{
-	free(aimassist_string);
-	free(invert_string);
-#ifdef __PSP__
-	free(anub_string);
-#endif
-}
-
 /*
 ===============
 Menu_Controls_Set
@@ -65,7 +47,7 @@ Menu_Controls_Set
 void Menu_Controls_Set (void)
 {
 	Menu_ResetMenuButtons();
-	Menu_Controls_AllocStrings();
+
     m_previous_state = m_configuration;
 	m_state = m_controls;
 }

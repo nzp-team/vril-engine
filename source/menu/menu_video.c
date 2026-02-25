@@ -37,22 +37,6 @@ extern cvar_t r_runqmbparticles;
 extern cvar_t r_retro;
 extern cvar_t r_dithering;
 
-void Menu_Video_AllocStrings (void)
-{
-    fps_string = malloc(16*sizeof(char));
-    particles_string = malloc(16*sizeof(char));
-    retro_string = malloc(16*sizeof(char));
-    dithering_string = malloc(16*sizeof(char));
-}
-
-void Menu_Video_FreeStrings (void)
-{
-    free(fps_string);
-    free(particles_string);
-    free(retro_string);
-    free(dithering_string);
-}
-
 void Menu_Video_ApplyShowFPS (void)
 {
     float current_showfps = show_fps.value;
@@ -121,7 +105,7 @@ void Menu_Video_Set (void)
 #endif
 
     Menu_ResetMenuButtons();
-    Menu_Video_AllocStrings();
+
     m_previous_state = m_state;
 	m_state = m_video;
 }

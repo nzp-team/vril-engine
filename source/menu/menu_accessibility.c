@@ -32,22 +32,6 @@ extern cvar_t 	cl_colorblind;
 extern cvar_t 	scr_whiteflash;
 extern cvar_t 	sv_spoofmonth;
 
-void Menu_Accessibility_AllocStrings (void)
-{
-	hitmarkers_string = malloc(16*sizeof(char));
-	colorblind_string = malloc(16*sizeof(char));
-	screenflash_string = malloc(16*sizeof(char));
-	monthspoof_string = malloc(32*sizeof(char));
-}
-
-void Menu_Accessibility_FreeStrings (void)
-{
-	free(hitmarkers_string);
-	free(colorblind_string);
-	free(screenflash_string);
-	free(monthspoof_string);
-}
-
 void Menu_Accessibility_ApplyHitmarkers (void)
 {
 	float current_hitmarkers = cl_hitmarkers.value;
@@ -110,7 +94,7 @@ Menu_Accessibility_Set
 void Menu_Accessibility_Set (void)
 {
 	Menu_ResetMenuButtons();
-	Menu_Accessibility_AllocStrings();
+
 	m_previous_state = m_state;
 	m_state = m_accessibility;
 }

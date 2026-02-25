@@ -27,40 +27,15 @@ int             support_gamesettings;
 float           menu_lobby_countdown = 0;
 float           menu_lobby_last;
 
-char*           game_starting;
+char            game_starting[64];
 
 char*			gamemode;
 char*			difficulty;
-char*			startround;
+char			startround[8];
 char*			magic;
 char*			headshotonly;
 char*			fastrounds;
-char*			hordesize;
-
-void Menu_Lobby_AllocStrings (void)
-{
-    game_starting = malloc(64*sizeof(char));
-
-    gamemode = malloc(16*sizeof(char));
-    difficulty = malloc(12*sizeof(char));
-    startround = malloc(16*sizeof(char));
-    magic = malloc(16*sizeof(char));
-    headshotonly = malloc(16*sizeof(char));
-    fastrounds = malloc(16*sizeof(char));
-    hordesize = malloc(16*sizeof(char));
-}
-
-void Menu_Lobby_FreeStrings (void)
-{
-    free(game_starting);
-    free(gamemode);
-    free(difficulty);
-    free(startround);
-    free(magic);
-    free(headshotonly);
-    free(fastrounds);
-    free(hordesize);
-}
+char			hordesize[8];
 
 void Menu_Lobby_SetStrings (void)
 {
@@ -109,8 +84,9 @@ void Menu_Lobby_SetStrings (void)
             break;
     }
 
-    sprintf (startround, "%i", (int)sv_startround.value);
-    if ((int)sv_startround.value == 0) startround = "1";
+    int round_value = (int)sv_startround.value;
+    if (round_value == 1) round_value = 1;
+    sprintf (startround, "%i", round_value);
 
     if ((int)sv_magic.value == 1) { 
         magic = "ENABLED";
@@ -167,7 +143,7 @@ void Menu_Lobby_SetBack (void)
 void Menu_Lobby_Set (void)
 {
     Menu_ResetMenuButtons();
-    Menu_Lobby_AllocStrings();
+
     Menu_Lobby_SetStrings();
 
     support_gamesettings = Menu_UserMapSupportsGameSettings(current_selected_bsp);
@@ -228,6 +204,5 @@ void Menu_Lobby_Draw (void)
         // Start a match!
         Menu_LoadMap(current_selected_bsp);
         Menu_Lobby_StopCountdown();
-        //Menu_Lobby_FreeStrings();
     }
 }

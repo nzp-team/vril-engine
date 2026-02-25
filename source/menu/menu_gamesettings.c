@@ -32,44 +32,12 @@ char*           startround_string;
 char*           magic_string;
 char*           headshot_string;
 char*           fast_string;
-char*           hordesize_string;
-
-void Menu_GameSettings_AllocStrings (void)
-{
-    gamemode_description = malloc(128*sizeof(char));
-    gamemode_string = malloc(32*sizeof(char));
-
-    difficulty_description = malloc(128*sizeof(char));
-    difficulty_string = malloc(32*sizeof(char));
-
-    startround_string = malloc(16*sizeof(char));
-    magic_string = malloc(16*sizeof(char));
-    headshot_string = malloc(16*sizeof(char));
-    fast_string = malloc(16*sizeof(char));
-    hordesize_string = malloc(16*sizeof(char));
-
-    startround_string = "Round to begin the Game on.";
-}
-
-void Menu_GameSettings_FreeStrings (void)
-{
-    free(gamemode_description);
-    free(gamemode_string);
-
-    free(difficulty_description);
-    free(difficulty_string);
-
-    free(startround_string);
-    free(magic_string);
-    free(headshot_string);
-    free(fast_string);
-    free(hordesize_string);
-
-    free(startround_string); 
-}
+char            hordesize_string[8];
 
 void Menu_GameSettings_SetStrings (void)
 {
+    startround_string = "Round to begin the Game on.";
+
     switch ((int)sv_gamemode.value) {
         case 0:
             gamemode_description = "Classic Round-Based Zombies.";
@@ -209,7 +177,6 @@ void Menu_GameSettings_ApplyFastRounds (void)
 void Menu_GameSettings_Set (void)
 {
     Menu_ResetMenuButtons();
-    Menu_GameSettings_AllocStrings();
 
     key_dest = key_menu;
     m_previous_state = m_lobby;
