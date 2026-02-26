@@ -58,11 +58,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // PSP2/CTR
 #define K_TOUCH         159
-#define K_TOUCH1        160
-#define K_TOUCH2        161
-#define K_TOUCH3        162
-#define K_TOUCH4        163
-#define K_TOUCH5        164
+#define K_TOUCHACTION1  160
+#define K_TOUCHACTION2  161
+#define K_TOUCHACTION3  162
+#define K_TOUCHACTION4  163
+#define K_TOUCHACTION5  164
 
 // Joystick buttons
 #define	K_JOY1			184

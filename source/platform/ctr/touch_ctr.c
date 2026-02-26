@@ -81,7 +81,7 @@ void Touch_Update(){
 void Touch_SideBarTap()
 {
   uint16_t y = (touch.py - 14)/42;
-  lastKey = K_TOUCH1 + y;
+  lastKey = K_TOUCHACTION1 + y;
   Key_Event(lastKey, true);
 }
 
