@@ -195,33 +195,34 @@ void Menu_GameSettings_Draw (void)
     Menu_GameSettings_SetStrings();
 
     // Game Mode button
-    Menu_DrawButton(1, 0, "GAME MODE", gamemode_description, Menu_GameSettings_ApplyGameMode);
-    Menu_DrawOptionButton(1, gamemode_string);
+    Menu_DrawGreyButton(1, "GAME MODE");
+    //Menu_DrawButton(1, 0, "GAME MODE", gamemode_description, Menu_GameSettings_ApplyGameMode);
+    //Menu_DrawOptionButton(1, gamemode_string);
 
     // Difficulty button
-    Menu_DrawButton(2, 1, "DIFFICULTY", difficulty_description, Menu_GameSettings_ApplyDifficulty);
+    Menu_DrawButton(2, 0, "DIFFICULTY", difficulty_description, Menu_GameSettings_ApplyDifficulty);
     Menu_DrawOptionButton(2, difficulty_string); 
 
     // Start Round slider
-    Menu_DrawButton(3, 2, "START ROUND", startround_string, NULL);
+    Menu_DrawButton(3, 1, "START ROUND", startround_string, NULL);
     Menu_DrawOptionSlider(3, 2, 0, 50, sv_startround, "sv_startround", true, true, 5.0f);
 
     // Magic button
-    Menu_DrawButton(4, 3, "MAGIC", "Whether to allow Perks, Power-Ups, and the Mystery Box.", Menu_GameSettings_ApplyMagic);
+    Menu_DrawButton(4, 2, "MAGIC", "Whether to allow Perks, Power-Ups, and the Mystery Box.", Menu_GameSettings_ApplyMagic);
     Menu_DrawOptionButton(4, magic_string);
 
     // Headshots Only button
-    Menu_DrawButton(5, 4, "HEADSHOTS ONLY", "Headshots are the only means of Death. Explosives don't work, either.", Menu_GameSettings_ApplyHeadShotsOnly);
+    Menu_DrawButton(5, 3, "HEADSHOTS ONLY", "Headshots are the only means of Death. Explosives don't work, either.", Menu_GameSettings_ApplyHeadShotsOnly);
     Menu_DrawOptionButton(5, headshot_string);
 
     // Horde Size slider
-    Menu_DrawButton(6, 5, "HORDE SIZE", "Maximum Zombies that can Active at once.", NULL);
+    Menu_DrawButton(6, 4, "HORDE SIZE", "Maximum Zombies that can Active at once.", NULL);
     Menu_DrawOptionSlider(6, 5, 2, 64, sv_maxai, "sv_maxai", false, true, 2.0f);
 
     // Fast Rounds button
-    Menu_DrawButton(7, 6, "FAST ROUNDS", "Minimize Time between Rounds.", Menu_GameSettings_ApplyFastRounds);
+    Menu_DrawButton(7, 5, "FAST ROUNDS", "Minimize Time between Rounds.", Menu_GameSettings_ApplyFastRounds);
     Menu_DrawOptionButton(7, fast_string);
 
     // Back button
-    Menu_DrawButton(-1, 7, "BACK", "Return to Pre-Game Menu.", Menu_Lobby_Set);
+    Menu_DrawButton(-1, 6, "BACK", "Return to Pre-Game Menu.", Menu_Lobby_Set);
 }
