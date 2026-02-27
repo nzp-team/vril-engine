@@ -158,9 +158,6 @@ cvar_t	r_flametype	        = {"r_flametype",        "2",true};
 //Shpuld
 cvar_t  r_model_brightness = { "r_model_brightness", "1", true};   // Toggle high brightness model lighting
 
-//cypress
-cvar_t 	r_runqmbparticles = {"r_runqmbparticles", 	"1", true};
-
 extern cvar_t cl_maxfps;
 extern cvar_t scr_fov_viewmodel;
 

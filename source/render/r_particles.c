@@ -183,7 +183,7 @@ static	float	particle_time;
 qboolean		qmb_initialized = false;
 int				particle_mode = 0;	// 0: classic (default), 1: QMB, 2: mixed
 
-cvar_t 	r_runqmbparticles = {"r_runqmbparticles", 	"1", qtrue};
+cvar_t 	r_runqmbparticles = {"r_runqmbparticles", 	"1", true};
 
 void R_ReadPointFile_f (void)
 {
@@ -408,20 +408,6 @@ void QMB_AllocParticles (void)
 	particles = (particle_t *) malloc (r_numparticles * sizeof(particle_t));
 }
 
-int QMB_TEMP_loadtextureimage(char* path)
-{
-#ifdef __PSP__
-    int temp_gltexture;
-    temp_gltexture = loadtextureimage(path, 0, 0, false, GU_LINEAR);
-    GL_MarkTextureAsPermanent(temp_gltexture);
-    return temp_gltexture;
-#elif __3DS__
-    return loadtextureimage(path, 0, 0, false, true);
-#else
-    Sys_Error("not implemented");
-#endif
-}
-
 void R_InitParticles (void)
 {
 	int	i, count = 0, particleimage;
@@ -441,9 +427,9 @@ void R_InitParticles (void)
 	loading_num_step = loading_num_step + 24;
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
-    particleimage = QMB_TEMP_loadtextureimage("textures/particles/particlefont");
+    particleimage = Image_LoadImage("textures/particles/particlefont", IMAGE_TGA, GU_LINEAR, true, false);
 
-    if (particleimage == 0) {
+    if (particleimage < 0) {
         Sys_Error("Failed to load textures/particles/particlefont");	
 		return;
 	}
@@ -471,9 +457,9 @@ void R_InitParticles (void)
 	max_s = max_t = 128.0;
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
-    particleimage = QMB_TEMP_loadtextureimage("textures/particles/flame");
+    particleimage = Image_LoadImage("textures/particles/flame", IMAGE_TGA, GU_LINEAR, true, false);
 
-	if (particleimage == 0) {
+	if (particleimage < 0) {
         Sys_Error("Failed to load textures/particles/flame");	
 		return;
 	}
@@ -485,9 +471,9 @@ void R_InitParticles (void)
 	max_s = max_t = 64.0;
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
-    particleimage = QMB_TEMP_loadtextureimage("textures/particles/inferno");
+    particleimage = Image_LoadImage("textures/particles/inferno", IMAGE_TGA, GU_LINEAR, true, false);
 
-	if (particleimage == 0) {
+	if (particleimage < 0) {
         Sys_Error("Failed to load textures/particles/inferno");	
 		return;
 	}
@@ -499,9 +485,9 @@ void R_InitParticles (void)
 	SCR_UpdateScreen ();
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
-    particleimage = QMB_TEMP_loadtextureimage("textures/particles/zing1");
+    particleimage = Image_LoadImage("textures/particles/zing1", IMAGE_TGA, GU_LINEAR, true, false);
 
-	if (particleimage == 0) {
+	if (particleimage < 0) {
         Sys_Error("Failed to load textures/particles/zing1");	
 		return;
 	}
@@ -514,9 +500,9 @@ void R_InitParticles (void)
 	max_s = max_t = 128.0;
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
-    particleimage = QMB_TEMP_loadtextureimage("textures/mzfl/mzfl0");
+    particleimage = Image_LoadImage("textures/mzfl/mzfl0", IMAGE_TGA, GU_LINEAR, true, false);
 
-	if (particleimage == 0) {
+	if (particleimage < 0) {
         Sys_Error("Failed to load textures/mzfl/mzfl0");	
 		return;
 	}	
@@ -528,9 +514,9 @@ void R_InitParticles (void)
 	SCR_UpdateScreen ();
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
-    particleimage = QMB_TEMP_loadtextureimage("textures/mzfl/mzfl1");
+    particleimage = Image_LoadImage("textures/mzfl/mzfl1", IMAGE_TGA, GU_LINEAR, true, false);
 
-	if (particleimage == 0) {
+	if (particleimage < 0) {
         Sys_Error("Failed to load textures/mzfl/mzfl1");	
 		return;
 	}	
@@ -542,9 +528,9 @@ void R_InitParticles (void)
 	SCR_UpdateScreen ();
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
-    particleimage = QMB_TEMP_loadtextureimage("textures/mzfl/mzfl2");
+    particleimage = Image_LoadImage("textures/mzfl/mzfl2", IMAGE_TGA, GU_LINEAR, true, false);
 
-	if (particleimage == 0) {
+	if (particleimage < 0) {
         Sys_Error("Failed to load textures/mzfl/mzfl2");	
 		return;
 	}	
@@ -558,9 +544,9 @@ void R_InitParticles (void)
 	max_s = max_t = 64.0;
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
-    particleimage = QMB_TEMP_loadtextureimage("textures/particles/bloodcloud");
+    particleimage = Image_LoadImage("textures/particles/bloodcloud", IMAGE_TGA, GU_LINEAR, true, false);
 
-	if (particleimage == 0) {
+	if (particleimage < 0) {
         Sys_Error("Failed to load textures/particles/bloodcloud");	
 		return;
 	}	
@@ -1633,15 +1619,15 @@ void R_DrawParticles (void)
                     //vect3_t spark_vertices[9];
 
 					// struct vertex* const out = (struct vertex*)(malloc(sizeof(struct vertex) * 9));
-					// vertex_t *spark_vertices = Hyena_Graphics_AllocateMemoryForVertices(9);
+					//vertex_t *spark_vertices = Hyena_Graphics_AllocateMemoryForVertices(9);
 
                     Hyena_Graphics_SetColor(p->color[0] / 255.0f, p->color[1] / 255.0f, p->color[2] / 255.0f, p->color[3] / 255.0f);
 
-					Hyena_Graphics_BeginVertices(GFX_TRIANGLE_FAN);
+					//Hyena_Graphics_BeginVertices(GFX_TRIANGLE_FAN);
 
 					// glColor4f(p->color[0]/255, p->color[1]/255, p->color[2]/255, p->color[3]/255);
 
-					Hyena_Graphics_VertexXYZ(&spark_vertices[0], p->org[0], p->org[1], p->org[2]);
+					//Hyena_Graphics_VertexXYZ(&spark_vertices[0], p->org[0], p->org[1], p->org[2]);
 					// spark_vertices[0]->x = p->org[0];
 					// spark_vertices[0]->y = p->org[1];
 					// spark_vertices[0]->z = p->org[2];
@@ -1655,7 +1641,7 @@ void R_DrawParticles (void)
 					for (j=7; j>=0 ; j--)
 					{
 					    //for (int k=0 ; k<3 ; k++)
-						Hyena_Graphics_VertexXYZ(&spark_vertices[current_spark_vertex], 
+						//Hyena_Graphics_VertexXYZ(&spark_vertices[current_spark_vertex], 
 						// 	p->org[0] - p->vel[0] / 8 + vright[0] * cost[1%7] * p->size + vup[0] * sint[j%7] * p->size,
 						// 	p->org[1] - p->vel[1] / 8 + vright[1] * cost[1%7] * p->size + vup[1] * sint[j%7] * p->size,
 						// 	p->org[2] - p->vel[2] / 8 + vright[2] * cost[1%7] * p->size + vup[2] * sint[j%7] * p->size
@@ -1663,8 +1649,8 @@ void R_DrawParticles (void)
 					    current_spark_vertex += 1;
 					}
 
-					Hyena_Graphics_DrawVertices(spark_vertices, 9, GFX_TEXTURE_NOTEXTURE, GFX_VERTEX_32BITFLOAT);
-					Hyena_Graphics_EndVertices();
+					//Hyena_Graphics_DrawVertices(spark_vertices, 9, GFX_TEXTURE_NOTEXTURE, GFX_VERTEX_32BITFLOAT);
+					//Hyena_Graphics_EndVertices();
 					Hyena_Graphics_SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 					// glBegin (GL_TRIANGLE_FAN);
@@ -1709,7 +1695,7 @@ void R_DrawParticles (void)
 
 				    //glColor4f(p->color[0]/255, p->color[1]/255, p->color[2]/255, p->color[3]/255);
 
-					Hyena_Graphics_VertexXYZ(&raygun_spark_vertices[0], p->endorg[0], p->endorg[1], p->endorg[2]);
+					//Hyena_Graphics_VertexXYZ(&raygun_spark_vertices[0], p->endorg[0], p->endorg[1], p->endorg[2]);
 
 					// for (int gh=0 ; gh<3 ; gh++)
 					//   out[0].xyz[gh] = p->endorg[gh];
@@ -1722,7 +1708,7 @@ void R_DrawParticles (void)
 					for (j=7; j>=0 ; j--)
 					{
 					    //for (int k=0 ; k<3 ; k++)
-						Hyena_Graphics_VertexXYZ(&raygun_spark_vertices[current_raygun_spark_vertex], 
+						//Hyena_Graphics_VertexXYZ(&raygun_spark_vertices[current_raygun_spark_vertex], 
 						// 	p->org[0] - p->vel[0] / 8 + vright[0] * cost[1%7] * p->size + vup[0] * sint[j%7] * p->size,
 						// 	p->org[1] - p->vel[1] / 8 + vright[1] * cost[1%7] * p->size + vup[1] * sint[j%7] * p->size,
 						// 	p->org[2] - p->vel[2] / 8 + vright[2] * cost[1%7] * p->size + vup[2] * sint[j%7] * p->size
@@ -1730,8 +1716,8 @@ void R_DrawParticles (void)
 					    current_raygun_spark_vertex += 1;
 					}
 
-					Hyena_Graphics_DrawVertices(raygun_spark_vertices, 9, GFX_TEXTURE_NOTEXTURE, GFX_VERTEX_32BITFLOAT);
-					Hyena_Graphics_EndVertices();
+					//Hyena_Graphics_DrawVertices(raygun_spark_vertices, 9, GFX_TEXTURE_NOTEXTURE, GFX_VERTEX_32BITFLOAT);
+					//Hyena_Graphics_EndVertices();
 					Hyena_Graphics_SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 					// glColor4f((p->color[0] >> 1)/255, (p->color[1] >> 1)/255, (p->color[2] >> 1)/255, (p->color[3] >> 1)/255);
 
@@ -2885,7 +2871,7 @@ void QMB_LightningBeam (vec3_t start, vec3_t end)
 #define NUMVERTEXNORMALS	162
 
 extern	float	r_avertexnormals[NUMVERTEXNORMALS][3];
-extern vec3_t		avelocities[NUMVERTEXNORMALS];
+vec3_t		avelocities[NUMVERTEXNORMALS];
 
 /*
 ===============
