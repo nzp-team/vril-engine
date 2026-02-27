@@ -427,7 +427,7 @@ void R_InitParticles (void)
 	loading_num_step = loading_num_step + 24;
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
-    particleimage = Image_LoadImage("textures/particles/particlefont", IMAGE_TGA, GU_LINEAR, true, false);
+    particleimage = Image_LoadImage("textures/particles/particlefont", IMAGE_TGA, 1, true, false);
 
     if (particleimage < 0) {
         Sys_Error("Failed to load textures/particles/particlefont");	
@@ -457,7 +457,7 @@ void R_InitParticles (void)
 	max_s = max_t = 128.0;
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
-    particleimage = Image_LoadImage("textures/particles/flame", IMAGE_TGA, GU_LINEAR, true, false);
+    particleimage = Image_LoadImage("textures/particles/flame", IMAGE_TGA, 1, true, false);
 
 	if (particleimage < 0) {
         Sys_Error("Failed to load textures/particles/flame");	
@@ -471,7 +471,7 @@ void R_InitParticles (void)
 	max_s = max_t = 64.0;
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
-    particleimage = Image_LoadImage("textures/particles/inferno", IMAGE_TGA, GU_LINEAR, true, false);
+    particleimage = Image_LoadImage("textures/particles/inferno", IMAGE_TGA, 1, true, false);
 
 	if (particleimage < 0) {
         Sys_Error("Failed to load textures/particles/inferno");	
@@ -485,7 +485,7 @@ void R_InitParticles (void)
 	SCR_UpdateScreen ();
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
-    particleimage = Image_LoadImage("textures/particles/zing1", IMAGE_TGA, GU_LINEAR, true, false);
+    particleimage = Image_LoadImage("textures/particles/zing1", IMAGE_TGA, 1, true, false);
 
 	if (particleimage < 0) {
         Sys_Error("Failed to load textures/particles/zing1");	
@@ -500,7 +500,7 @@ void R_InitParticles (void)
 	max_s = max_t = 128.0;
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
-    particleimage = Image_LoadImage("textures/mzfl/mzfl0", IMAGE_TGA, GU_LINEAR, true, false);
+    particleimage = Image_LoadImage("textures/mzfl/mzfl0", IMAGE_TGA, 1, true, false);
 
 	if (particleimage < 0) {
         Sys_Error("Failed to load textures/mzfl/mzfl0");	
@@ -514,7 +514,7 @@ void R_InitParticles (void)
 	SCR_UpdateScreen ();
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
-    particleimage = Image_LoadImage("textures/mzfl/mzfl1", IMAGE_TGA, GU_LINEAR, true, false);
+    particleimage = Image_LoadImage("textures/mzfl/mzfl1", IMAGE_TGA, 1, true, false);
 
 	if (particleimage < 0) {
         Sys_Error("Failed to load textures/mzfl/mzfl1");	
@@ -528,7 +528,7 @@ void R_InitParticles (void)
 	SCR_UpdateScreen ();
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
-    particleimage = Image_LoadImage("textures/mzfl/mzfl2", IMAGE_TGA, GU_LINEAR, true, false);
+    particleimage = Image_LoadImage("textures/mzfl/mzfl2", IMAGE_TGA, 1, true, false);
 
 	if (particleimage < 0) {
         Sys_Error("Failed to load textures/mzfl/mzfl2");	
@@ -544,7 +544,7 @@ void R_InitParticles (void)
 	max_s = max_t = 64.0;
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
-    particleimage = Image_LoadImage("textures/particles/bloodcloud", IMAGE_TGA, GU_LINEAR, true, false);
+    particleimage = Image_LoadImage("textures/particles/bloodcloud", IMAGE_TGA, 1, true, false);
 
 	if (particleimage < 0) {
         Sys_Error("Failed to load textures/particles/bloodcloud");	
@@ -1379,8 +1379,10 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
 
     Hyena_Graphics_Translate(p->org[0], p->org[1], p->org[2]);
     Hyena_Graphics_Scale(scale, scale, scale);
-    Hyena_Graphics_RotateZYX(vpn[0] * (GFX_PI / 180.0f), vpn[1] * (GFX_PI / 180.0f), vpn[2] * (GFX_PI / 180.0f));
-
+	if (p->rotspeed) {
+		Hyena_Graphics_RotateZYX(vpn[0] * (GFX_PI / 180.0f), vpn[1] * (GFX_PI / 180.0f), vpn[2] * (GFX_PI / 180.0f));
+	}
+    
     // glEnable (GL_BLEND);
     // glDepthMask (GL_FALSE);
     // glBegin (GL_QUADS);

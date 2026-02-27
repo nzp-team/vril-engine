@@ -123,7 +123,6 @@ cvar_t	r_farclip	        = {"r_farclip",              "4096"};        //far clip
 
 cvar_t	r_flatlightstyles = {"r_flatlightstyles", "0", false};
 
-cvar_t 	r_runqmbparticles 	= {"r_runqmbparticles",  "1",true};
 cvar_t	r_retro   	        = {"r_retro",			"1",true}; // dr_mabuse1981: "retro filter".
 cvar_t	r_dithering 		= {"r_dithering","1",true};
 
@@ -1935,18 +1934,18 @@ int Hyena_Graphics_ResolveVertexMode(int mode)
 void Hyena_Graphics_BeginVertices(int mode)
 {
 	int gl_mode = Hyena_Graphics_ResolveVertexMode(mode);
-	glPushMatrix();
-	//glBegin(gl_mode);
+	//glPushMatrix();
+	glBegin(gl_mode);
 }
 
 void Hyena_Graphics_Translate(float x, float y, float z)
 {
-	//glTranslatef(x, y, z);
+	glTranslatef(x, y, z);
 }
 
 void Hyena_Graphics_Scale(float x, float y, float z)
 {
-	//glScalef(x, y, z);
+	glScalef(x, y, z);
 }
 
 void Hyena_Graphics_RotateXYZ(float x, float y, float z)
@@ -1977,7 +1976,7 @@ void Hyena_Graphics_2DTextureCoord(vertex_t *vertex, float u, float v)
 {
 	vertex->uv.u = u;
 	vertex->uv.v = v;
-	//glTexCoord2fv(&vertex->uv.u);
+	glTexCoord2fv(&vertex->uv.u);
 }
 
 void Hyena_Graphics_VertexXYZ(vertex_t *vertex, float x, float y, float z)
@@ -1985,7 +1984,7 @@ void Hyena_Graphics_VertexXYZ(vertex_t *vertex, float x, float y, float z)
 	vertex->xyz.x = x;
 	vertex->xyz.y = y;
 	vertex->xyz.z = z;
-	//glVertex3fv(&vertex->xyz.x);
+	glVertex3fv(&vertex->xyz.x);
 }
 
 void Hyena_Graphics_DrawVertices(vertex_t* vertices, int num_vertices, int texture_precision, int vertex_precision)
@@ -1996,8 +1995,8 @@ void Hyena_Graphics_DrawVertices(vertex_t* vertices, int num_vertices, int textu
 
 void Hyena_Graphics_EndVertices(void)
 {
-	//glEnd();
-	glPopMatrix();
+	glEnd();
+	//glPopMatrix();
 }
 
 int Hyena_Graphics_ResolveShadeMode(int shade_mode)
@@ -2054,7 +2053,7 @@ void Hyena_Graphics_SetBlendFunction(int source_blend, int dest_blend)
 {
 	int gl_source_blend = Hyena_Graphics_ResolveBlendFunction(source_blend);
 	int gl_dest_blend = Hyena_Graphics_ResolveBlendFunction(dest_blend);
-	//glBlendFunc(gl_source_blend, gl_dest_blend);
+	glBlendFunc(gl_source_blend, gl_dest_blend);
 }
 
 void Hyena_Graphics_SetDepthRange(float near, float far)
