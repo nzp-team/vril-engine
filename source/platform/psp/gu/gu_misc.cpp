@@ -263,9 +263,6 @@ void R_InitDecals (void);
 
 extern "C"
 {
-
-extern "C"
-{
 void R_ToggleDecals_f (void);
 void R_ToggleParticles_f (void);
 }
