@@ -73,7 +73,6 @@ void SV_Init (void)
 	Cvar_RegisterVariable (&sv_magic);
 	Cvar_RegisterVariable (&sv_headshotonly);
 	Cvar_RegisterVariable (&sv_fastrounds);
-
 	Cvar_RegisterVariable (&sv_spoofmonth);
 
 	Cvar_SetValue("sv_maxai", MAX_AI_COUNT);
@@ -229,7 +228,7 @@ void SV_SendServerinfo (client_t *client)
 	else
 		MSG_WriteByte (&client->message, GAME_COOP);
 
-	sprintf (message, "%s", pr_strings+sv.edicts->v.message);
+	sprintf (message, "%s", PR_GetString(sv.edicts->v.message));
 
 	MSG_WriteString (&client->message,message);
 
@@ -491,7 +490,7 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg, qboolean nomap)
 		if (ent != clent)	// clent is ALLWAYS sent
 		{
 // ignore ents without visible models
-			if (!ent->v.modelindex || !pr_strings[ent->v.model])
+			if (!ent->v.modelindex || !PR_GetString(ent->v.model))
 				continue;
 
 			for (i=0 ; i < ent->num_leafs ; i++)
@@ -786,7 +785,7 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	if (bits & SU_WEAPONSKIN)
 		MSG_WriteByte (msg, ent->v.weaponskin);
 
-	MSG_WriteShort (msg, SV_ModelIndex(pr_strings+ent->v.weaponmodel));
+	MSG_WriteShort (msg, SV_ModelIndex(PR_GetString(ent->v.weaponmodel)));
 
 	if (bits & SU_GRENADES)
 		MSG_WriteLong (msg, ent->v.grenades);
@@ -804,7 +803,7 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	MSG_WriteByte (msg, ent->v.x2_icon);
 	MSG_WriteByte (msg, ent->v.insta_icon);
 	MSG_WriteByte (msg, ent->v.progress_bar);
-	MSG_WriteShort (msg, SV_ModelIndex(pr_strings+ent->v.weapon2model));
+	MSG_WriteShort (msg, SV_ModelIndex(PR_GetString(ent->v.weapon2model)));
 	MSG_WriteByte (msg, ent->v.weapon2skin);
 	MSG_WriteByte (msg, ent->v.weapon2frame);
 	MSG_WriteShort (msg, ent->v.currentmag2);
@@ -1079,7 +1078,7 @@ void SV_CreateBaseline (void)
 		{
 			svent->baseline.colormap = 0;
 			svent->baseline.modelindex =
-				SV_ModelIndex(pr_strings + svent->v.model);
+				SV_ModelIndex(PR_GetString(svent->v.model));
 		}
 
 	//
@@ -1168,6 +1167,7 @@ void SV_SpawnServer (char *server)
 {
 	edict_t		*ent;
 	int			i;
+	static char	dummy[8] = { 0,0,0,0,0,0,0,0 };
 
 	// let's not have any servers with no name
 	if (hostname.string[0] == 0)
@@ -1257,9 +1257,9 @@ void SV_SpawnServer (char *server)
 //
 	SV_ClearWorld ();
 
-	sv.sound_precache[0] = pr_strings;
+	sv.sound_precache[0] = dummy;
 
-	sv.model_precache[0] = pr_strings;
+	sv.model_precache[0] = dummy;
 	sv.model_precache[1] = sv.modelname;
 	for (i=1 ; i<sv.worldmodel->numsubmodels ; i++)
 	{

@@ -32,9 +32,9 @@ void IN_Move (usercmd_t *cmd);
 void IN_ClearStates (void);
 // restores all button and position states to defaults
 
-#ifdef __3DS__
+#if defined(__3DS__) || defined(__SWITCH__)
 void IN_SwitchKeyboard (void);
-#endif // __3DS__
+#endif // __3DS__, __SWITCH__
 
 #ifdef __WII__
 void Wiimote_Rumble (int low_frequency, int high_frequency, int duration);
