@@ -500,6 +500,54 @@ void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
 
 /*
 =============
+Draw_MenuPanningPic
+=============
+*/
+void Draw_MenuPanningPic (int x, int y, int pic, int x_value, int y_value, float time)
+{
+	if (pic <= 0)
+        return;
+
+	// 5% horizonstal crop
+    const float zoom = 0.05f;
+    const float visible = 1.0f - (zoom * 2.0f);
+
+    // Pan amount (0 -> 1 over time)
+    float duration = 7.0f;
+	float t = time / duration;
+	if (t > 1.0f) t = 1.0f;
+
+	float offset = t * (zoom * 2.0f);
+
+    float u1 = offset;
+    float u2 = u1 + visible;
+
+    glEnable(GL_ALPHA_TEST);
+    glColor4f(1,1,1,1);
+
+	GL_Bind (pic);
+
+    glBegin(GL_QUADS);
+
+    glTexCoord2f(u1, 0);
+    glVertex2f(x, y);
+
+    glTexCoord2f(u2, 0);
+    glVertex2f(x + x_value, y);
+
+    glTexCoord2f(u2, 1);
+    glVertex2f(x + x_value, y + y_value);
+
+    glTexCoord2f(u1, 1);
+    glVertex2f(x, y + y_value);
+
+    glEnd();
+
+    glDisable(GL_ALPHA_TEST);
+}
+
+/*
+=============
 Draw_ColorPic
 =============
 */
@@ -530,6 +578,53 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 	glDisable(GL_BLEND);
 	//glDisable(GL_ALPHA_TEST);
 	glColor4f(1,1,1,1);
+}
+
+/*
+=============
+Draw_SubPic
+=============
+*/
+void Draw_SubPic (int x, int y, int pic, float s, float t, float s_coord_size, float t_coord_size, float scale, float r, float g , float b, float a)
+{
+	if (pic > 0) {
+		glDisable(GL_ALPHA_TEST);
+		glEnable(GL_BLEND);
+		glColor4f(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+		gltexture_t *glt = &gltextures[pic];
+		GL_Bind (glt->texnum);
+
+		float width_scale = scale * (s_coord_size / t_coord_size);
+
+		float u_scale = (float)glt->original_width / (float)glt->width;
+		float v_scale = (float)glt->original_height / (float)glt->height;
+
+		float u0 = s * u_scale;
+		float v0 = t * v_scale;
+		float u1 = (s + s_coord_size) * u_scale;
+		float v1 = (t + t_coord_size) * v_scale;
+
+		glBegin (GL_QUADS);
+		glTexCoord2f (u0, v0);
+		glVertex2f (x, y);
+		glTexCoord2f (u1, v0);
+		glVertex2f (x+(glt->original_width*width_scale), y);
+		glTexCoord2f (u1, v1);
+		glVertex2f (x+(glt->original_width*width_scale), y+(glt->original_height*scale));
+		glTexCoord2f (u0, v1);
+		glVertex2f (x, y+(glt->original_height*scale));
+		glEnd ();
+
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		glDisable(GL_BLEND);
+		glEnable(GL_ALPHA_TEST);
+		glColor4f(1.0f,1.0f,1.0f,1.0f);
+	}
 }
 
 /*
