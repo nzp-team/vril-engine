@@ -211,6 +211,22 @@ void HUD_Init (void)
 	b_zrt = Image_LoadImage ("gfx/butticons/shldr_zr", IMAGE_TGA, 0, true, false);
 	b_start = Image_LoadImage ("gfx/butticons/func_sta", IMAGE_TGA, 0, true, false);
 	b_select = Image_LoadImage ("gfx/butticons/func_sel", IMAGE_TGA, 0, true, false);
+#elif __SWITCH__
+	b_rightface = Image_LoadImage ("gfx/butticons/abutton", IMAGE_TGA, 0, true, false);
+	b_bottomface = Image_LoadImage ("gfx/butticons/bbutton", IMAGE_TGA, 0, true, false);
+	b_leftface = Image_LoadImage ("gfx/butticons/ybutton", IMAGE_TGA, 0, true, false);
+	b_topface = Image_LoadImage ("gfx/butticons/xbutton", IMAGE_TGA, 0, true, false);
+	b_left = Image_LoadImage ("gfx/butticons/left", IMAGE_TGA, 0, true, false);
+	b_right = Image_LoadImage ("gfx/butticons/right", IMAGE_TGA, 0, true, false);
+	b_up = Image_LoadImage ("gfx/butticons/up", IMAGE_TGA, 0, true, false);
+	b_down = Image_LoadImage ("gfx/butticons/down", IMAGE_TGA, 0, true, false);
+	b_lt = Image_LoadImage ("gfx/butticons/lt", IMAGE_TGA, 0, true, false);
+	b_rt = Image_LoadImage ("gfx/butticons/rt", IMAGE_TGA, 0, true, false);
+	b_zlt = Image_LoadImage ("gfx/butticons/lshoulder", IMAGE_TGA, 0, true, false);
+	b_zrt = Image_LoadImage ("gfx/butticons/rshoulder", IMAGE_TGA, 0, true, false);
+	// TODO these need assets (plus/minus)
+	b_start = Image_LoadImage ("gfx/butticons/func_sta", IMAGE_TGA, 0, true, false);
+	b_select = Image_LoadImage ("gfx/butticons/func_sel", IMAGE_TGA, 0, true, false);
 #elif __WII__
 	b_abutton = Image_LoadImage ("gfx/butticons/abutton", IMAGE_TGA, 0, true, false);
 	b_bbutton = Image_LoadImage ("gfx/butticons/bbutton", IMAGE_TGA, 0, true, false);
