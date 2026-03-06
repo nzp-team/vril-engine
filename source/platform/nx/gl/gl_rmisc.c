@@ -249,6 +249,10 @@ void R_Init (void)
 
 	Cvar_RegisterVariable (&r_flatlightstyles);
 
+	Cvar_RegisterVariable (&r_runqmbparticles);
+	Cvar_RegisterVariable (&r_retro);	 // dr_mabuse1981: "retro filter".
+	Cvar_RegisterVariable (&r_dithering);
+
 	R_InitParticles ();
 	R_InitOtherTextures ();
 	//R_InitParticleTexture ();
