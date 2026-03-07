@@ -72,6 +72,7 @@ void	VID_Init (unsigned char *palette)
 	vid.maxwarpwidth = vid.width = vid.conwidth = BASEWIDTH;
 	vid.maxwarpheight = vid.height = vid.conheight = BASEHEIGHT;
 	vid.aspect = 1.0;
+	vid.scale = vid.height/STD_UI_HEIGHT;
 	vid.numpages = 1;
 
 	/* man the colormap has just been loaded and then we copy it over and let it sit there unused while quake runs.. wasted 16k, sad.. */

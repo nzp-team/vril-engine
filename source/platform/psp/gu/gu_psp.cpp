@@ -249,6 +249,7 @@ void VID_Init(unsigned char* palette)
 	vid.recalc_refdef	= 0;
 	vid.rowbytes		= 0;
 	vid.width			= screen_width;
+	vid.scale 			= screen_height/STD_UI_HEIGHT;
 	
 	// Start a render.
 	sceGuStart(GU_DIRECT, display_list);

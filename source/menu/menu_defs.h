@@ -81,9 +81,6 @@ typedef struct menuframe_s {
 } menuframe_t;
 
 extern menuframe_t 		current_frame;
-extern int       		ui_scale;
-
-#define	STD_UI_HEIGHT 							240
 
 #define UI_ANCHOR_CENTER        				0
 #define UI_ANCHOR_LEFT       					1
@@ -93,7 +90,8 @@ extern int       		ui_scale;
 
 #define UI_FLIPTEXTPOS							1
 
-extern float            menu_text_scale_factor;
+#define	CHAR_WIDTH								8
+#define	CHAR_HEIGHT								8
 
 extern qboolean	        m_recursiveDraw;
 
@@ -177,11 +175,6 @@ extern qboolean		    menu_is_solo;
 extern int 			    big_bar_height;
 extern int 			    small_bar_height;
 
-// Width and height of a character
-// set by platform scale
-extern float			CHAR_WIDTH;
-extern float			CHAR_HEIGHT;
-
 // Menu specific key abstractions
 extern int				MENU_KEY_CONFIRM;
 extern int				MENU_KEY_BACK;
@@ -250,7 +243,6 @@ void Menu_KeyInput (int key);
 void Menu_UnbindCommand (char *command);
 void Menu_WaitForKeybind (int key);
 
-void Menu_DictateScaleFactor(void);
 void Menu_LoadPics (void);
 void Menu_SetSound (int type);
 image_t Menu_PickBackground (void);

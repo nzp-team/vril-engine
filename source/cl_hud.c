@@ -132,29 +132,6 @@ typedef struct
 
 point_change_t point_change[10];
 
-float	hud_scale_factor;
-
-/*
-===============
-HUD_DictateScaleFactor
-===============
-*/
-void HUD_DictateScaleFactor(void)
-{
-	// Platform-dictated text scale.
-#ifdef __WII__
-	hud_scale_factor = 1.5f;
-#elif __PSP__
-	hud_scale_factor = 1.0f;
-#elif __vita__
-	hud_scale_factor = 2.0f;
-#elif __3DS__
-	hud_scale_factor = 1.0f;
-#else
-	hud_scale_factor = 1.0f;
-#endif // __WII__, __PSP__, __vita__, __3DS__
-}
-
 /*
 ===============
 HUD_Init
@@ -256,8 +233,6 @@ void HUD_Init (void)
 	Cmd_AddCommand ("+showscores", HUD_Scoreboard_Down);
 	Cmd_AddCommand ("-showscores", HUD_Scoreboard_Up);
 #endif // __WII__
-
-	HUD_DictateScaleFactor();
 }
 
 /*
@@ -416,7 +391,7 @@ void HUD_EndScreen (void)
 	l = scoreboardlines;
 
 	if (!showscoreboard) {
-		Draw_ColoredStringCentered(65, "GAME OVER", 255, 0, 0, 255, hud_scale_factor);
+		Draw_ColoredStringCentered(65, "GAME OVER", 255, 0, 0, 255, vid.scale);
 
 		sprintf (str,"You survived %3i rounds", cl.stats[STAT_ROUNDS]);
 		Draw_String ((vid.width - strlen (str)*8)/2, 85, str);
@@ -497,10 +472,10 @@ void HUD_Parse_Point_Change (int points, int negative, int x_start, int y_start)
 	point_change[i].negative = negative;
 
 	f = HUD_itoa (points, str);
-	point_change[i].x = x_start + (10.0f + 8.0f*f * hud_scale_factor);
+	point_change[i].x = x_start + (10.0f + 8.0f*f * vid.scale);
 	point_change[i].y = y_start;
-	point_change[i].move_x = (1.0f * hud_scale_factor);
-	point_change[i].move_y = ((rand ()&RAND_MAX) / ((float)RAND_MAX)) - (0.5f * hud_scale_factor);
+	point_change[i].move_x = (1.0f * vid.scale);
+	point_change[i].move_y = ((rand ()&RAND_MAX) / ((float)RAND_MAX)) - (0.5f * vid.scale);
 
 	point_change[i].alive_time = Sys_FloatTime() + 0.4;
 }
@@ -518,8 +493,8 @@ void HUD_Points (void)
 	l = scoreboardlines;
 
 
-    x = 6 * hud_scale_factor;
-    y = vid.height - (72 * hud_scale_factor);
+    x = 6 * vid.scale;
+    y = vid.height - (72 * vid.scale);
 	for (i=0 ; i<l ; i++)
 	{
 		k = pointsort[i];
@@ -560,16 +535,16 @@ void HUD_Points (void)
 			}
 		}
 
-		Draw_StretchPic (x, y, sb_moneyback, 64 * hud_scale_factor, 16 * hud_scale_factor);
-		xplus = getTextWidth(va("%i", current_points), hud_scale_factor);
-		Draw_ColoredString((((64 * hud_scale_factor) - xplus)/2) + (5 * hud_scale_factor), y + (3 * hud_scale_factor), va("%i", current_points), 255, 255, 255, 255, hud_scale_factor);
+		Draw_StretchPic (x, y, sb_moneyback, 64 * vid.scale, 16 * vid.scale);
+		xplus = getTextWidth(va("%i", current_points), vid.scale);
+		Draw_ColoredString((((64 * vid.scale) - xplus)/2) + (5 * vid.scale), y + (3 * vid.scale), va("%i", current_points), 255, 255, 255, 255, vid.scale);
 
 		if (old_points != f)
 		{
 			if (f > old_points)
-				HUD_Parse_Point_Change(f - old_points, 0, (((64 * hud_scale_factor) - xplus)/2) + (5 * hud_scale_factor), y + (3 * hud_scale_factor));
+				HUD_Parse_Point_Change(f - old_points, 0, (((64 * vid.scale) - xplus)/2) + (5 * vid.scale), y + (3 * vid.scale));
 			else
-				HUD_Parse_Point_Change(old_points - f, 1, (((64 * hud_scale_factor) - xplus)/2) + (5 * hud_scale_factor), y + (3 * hud_scale_factor));
+				HUD_Parse_Point_Change(old_points - f, 1, (((64 * vid.scale) - xplus)/2) + (5 * vid.scale), y + (3 * vid.scale));
 
 			old_points = f;
 		}
@@ -596,9 +571,9 @@ void HUD_Point_Change (void)
 		if (point_change[i].points)
 		{
 			if (point_change[i].negative)
-				Draw_ColoredString (point_change[i].x, point_change[i].y, va ("-%i", point_change[i].points), 255, 0, 0, 255, hud_scale_factor);
+				Draw_ColoredString (point_change[i].x, point_change[i].y, va ("-%i", point_change[i].points), 255, 0, 0, 255, vid.scale);
 			else
-				Draw_ColoredString (point_change[i].x, point_change[i].y, va ("+%i", point_change[i].points), 255, 255, 0, 255, hud_scale_factor);
+				Draw_ColoredString (point_change[i].x, point_change[i].y, va ("+%i", point_change[i].points), 255, 255, 0, 255, vid.scale);
 			point_change[i].y = point_change[i].y + point_change[i].move_y;
 			point_change[i].x = point_change[i].x + point_change[i].move_x;
 			if (point_change[i].alive_time && point_change[i].alive_time < Sys_FloatTime())
@@ -693,8 +668,8 @@ void HUD_GameModeText(int alpha)
 	}
 
 	has_chaptertitle = true;
-	Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (10 * hud_scale_factor), mode_title, 255, 255, 255, alpha, hud_scale_factor);	
-	Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (20 * hud_scale_factor), subtitle, 255, 255, 255, alpha, hud_scale_factor);
+	Draw_ColoredString(6 * vid.scale, vid.height/2.0f + (10 * vid.scale), mode_title, 255, 255, 255, alpha, vid.scale);	
+	Draw_ColoredString(6 * vid.scale, vid.height/2.0f + (20 * vid.scale), subtitle, 255, 255, 255, alpha, vid.scale);
 }
 
 // modified from scatter's worldspawn parser
@@ -744,19 +719,19 @@ void HUD_WorldText(int alpha)
 		if (!strcmp("chaptertitle", key)) // search for chaptertitle key
 		{
 			has_chaptertitle = true;
-			Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (10 * hud_scale_factor), value, 255, 255, 255, alpha, hud_scale_factor);	
+			Draw_ColoredString(6 * vid.scale, vid.height/2.0f + (10 * vid.scale), value, 255, 255, 255, alpha, vid.scale);	
 		}
 		if (!strcmp("location", key)) // search for location key
 		{
-			Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (20 * hud_scale_factor), value, 255, 255, 255, alpha, hud_scale_factor);
+			Draw_ColoredString(6 * vid.scale, vid.height/2.0f + (20 * vid.scale), value, 255, 255, 255, alpha, vid.scale);
 		}
 		if (!strcmp("date", key)) // search for date key
 		{
-			Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (30 * hud_scale_factor), value, 255, 255, 255, alpha, hud_scale_factor);
+			Draw_ColoredString(6 * vid.scale, vid.height/2.0f + (30 * vid.scale), value, 255, 255, 255, alpha, vid.scale);
 		}
 		if (!strcmp("person", key)) // search for person key
 		{
-			Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (40 * hud_scale_factor), value, 255, 255, 255, alpha, hud_scale_factor);
+			Draw_ColoredString(6 * vid.scale, vid.height/2.0f + (40 * vid.scale), value, 255, 255, 255, alpha, vid.scale);
 		}
 	}
 }
@@ -773,8 +748,8 @@ void HUD_MaxAmmo(void)
 {
 	char* maxammo_string = "Max Ammo!";
 
-	int start_y = 55 * hud_scale_factor;
-	int end_y = 45 * hud_scale_factor;
+	int start_y = 55 * vid.scale;
+	int end_y = 45 * vid.scale;
 	int diff_y = end_y - start_y;
 
 	float text_alpha = 1.0f;
@@ -802,7 +777,7 @@ void HUD_MaxAmmo(void)
 		text_alpha = 1 - percent_time;
 	}
 
-	Draw_ColoredStringCentered(pos_y, maxammo_string, 255, 255, 255, (int)(255 * text_alpha), hud_scale_factor);
+	Draw_ColoredStringCentered(pos_y, maxammo_string, 255, 255, 255, (int)(255 * text_alpha), vid.scale);
 }
 
 /*
@@ -840,7 +815,7 @@ void HUD_Rounds (void)
 		if (!value)
 			value = 255;
 
-		Draw_ColoredStringCentered(80 * hud_scale_factor, "Round", 255, value, value, 255, hud_scale_factor * 2);
+		Draw_ColoredStringCentered(80 * vid.scale, "Round", 255, value, value, 255, vid.scale * 2);
 		
 		value -= cl.time * 0.4;
 
@@ -854,12 +829,12 @@ void HUD_Rounds (void)
 	// Now, fade out, and start fading worldtext in
 	// ~3s for fade out, 
 	else if (textstate == 1) {
-		Draw_ColoredStringCentered(80 * hud_scale_factor, "Round", 255, 0, 0, value, hud_scale_factor * 2);
+		Draw_ColoredStringCentered(80 * vid.scale, "Round", 255, 0, 0, value, vid.scale * 2);
 
 		HUD_WorldText(value2);
 		
 		if (has_chaptertitle == false)
-			Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (10 * hud_scale_factor), "'Nazi Zombies'", 255, 255, 255, value2, hud_scale_factor);
+			Draw_ColoredString(6 * vid.scale, vid.height/2.0f + (10 * vid.scale), "'Nazi Zombies'", 255, 255, 255, value2, vid.scale);
 		
 		value -= cl.time * 0.4;
 		value2 += cl.time * 0.4;
@@ -875,7 +850,7 @@ void HUD_Rounds (void)
 		HUD_WorldText(255);
 		
 		if (has_chaptertitle == false)
-			Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (10 * hud_scale_factor), "'Nazi Zombies'", 255, 255, 255, 255, hud_scale_factor);
+			Draw_ColoredString(6 * vid.scale, vid.height/2.0f + (10 * vid.scale), "'Nazi Zombies'", 255, 255, 255, 255, vid.scale);
 
 		value2 += cl.time * 0.4;
 
@@ -889,7 +864,7 @@ void HUD_Rounds (void)
 		HUD_WorldText(value2);
 		
 		if (has_chaptertitle == false)
-			Draw_ColoredString(6 * hud_scale_factor, vid.height/2.0f + (10 * hud_scale_factor), "'Nazi Zombies'", 255, 255, 255, value2, hud_scale_factor);
+			Draw_ColoredString(6 * vid.scale, vid.height/2.0f + (10 * vid.scale), "'Nazi Zombies'", 255, 255, 255, value2, vid.scale);
 
 		value2 -= cl.time * 0.4;
 
@@ -909,9 +884,9 @@ void HUD_Rounds (void)
 			textstate = 0;
 		}
 
-		Draw_ColoredStretchPic ((vid.width - (11  * hud_scale_factor))/2, 
-		(vid.height - (48 * hud_scale_factor))/2, sb_round[0], 
-		11 * hud_scale_factor, 48 * hud_scale_factor, 107, 1, 0, alphabling);
+		Draw_ColoredStretchPic ((vid.width - (11  * vid.scale))/2, 
+		(vid.height - (48 * vid.scale))/2, sb_round[0], 
+		11 * vid.scale, 48 * vid.scale, 107, 1, 0, alphabling);
 
 		alphabling = alphabling + 15;
 
@@ -923,13 +898,13 @@ void HUD_Rounds (void)
 	else if (cl.stats[STAT_ROUNDCHANGE] == 2)//this is the rounds icon moving from middle
 	{
 		Draw_ColoredStretchPic(round_center_x, round_center_y, sb_round[0], 
-		11 * hud_scale_factor, 48 * hud_scale_factor, 107, 1, 0, 255);
-		round_center_x = round_center_x - (229.0f/108.0f) - (0.2f * hud_scale_factor);
-		round_center_y = round_center_y + (0.95f * hud_scale_factor); // don't move y too quickly
-		if (round_center_x <= 5 * hud_scale_factor)
-			round_center_x = 5 * hud_scale_factor;
-		if (round_center_y >= vid.height - (48 * hud_scale_factor) - 2)
-			round_center_y = vid.height - (48 * hud_scale_factor) - 2;
+		11 * vid.scale, 48 * vid.scale, 107, 1, 0, 255);
+		round_center_x = round_center_x - (229.0f/108.0f) - (0.2f * vid.scale);
+		round_center_y = round_center_y + (0.95f * vid.scale); // don't move y too quickly
+		if (round_center_x <= 5 * vid.scale)
+			round_center_x = 5 * vid.scale;
+		if (round_center_y >= vid.height - (48 * vid.scale) - 2)
+			round_center_y = vid.height - (48 * vid.scale) - 2;
 	}
 	else if (cl.stats[STAT_ROUNDCHANGE] == 3)//shift to white
 	{
@@ -960,16 +935,16 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColoredStretchPic (5 * hud_scale_factor, vid.height - (48 * hud_scale_factor) - 4, sb_round[4],
-					60 * hud_scale_factor, 48 * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-					savex = x_offset + 10 * hud_scale_factor;
-					x_offset = x_offset + 10 * hud_scale_factor;
+					Draw_ColoredStretchPic (5 * vid.scale, vid.height - (48 * vid.scale) - 4, sb_round[4],
+					60 * vid.scale, 48 * vid.scale, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+					savex = x_offset + 10 * vid.scale;
+					x_offset = x_offset + 10 * vid.scale;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColoredStretchPic (5 * hud_scale_factor + savex, vid.height - (48 * hud_scale_factor) - 4, 
-					sb_round[4], 60 * hud_scale_factor, 48 * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+					Draw_ColoredStretchPic (5 * vid.scale + savex, vid.height - (48 * vid.scale) - 4, 
+					sb_round[4], 60 * vid.scale, 48 * vid.scale, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 					continue;
 				}
 				if (i > 4)
@@ -977,10 +952,10 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round[icon_num], 11 * hud_scale_factor, 48 * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				Draw_ColoredStretchPic (5 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round[icon_num], 11 * vid.scale, 48 * vid.scale, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 
-				x_offset = x_offset + (11 * hud_scale_factor) + 3;
+				x_offset = x_offset + (11 * vid.scale) + 3;
 			}
 		}
 		else
@@ -988,26 +963,26 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, sb_round_num[num[2]], 
-				32 * hud_scale_factor, 48 * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-				x_offset = x_offset + (32 * hud_scale_factor) - 8;
+				Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, sb_round_num[num[2]], 
+				32 * vid.scale, 48 * vid.scale, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				x_offset = x_offset + (32 * vid.scale) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round_num[num[1]], 32 * hud_scale_factor, 48 * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-				x_offset = x_offset + (32 * hud_scale_factor) - 8;
+				Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round_num[num[1]], 32 * vid.scale, 48 * vid.scale, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				x_offset = x_offset + (32 * vid.scale) - 8;
 			}
 			else
 				num[1] = 0;
 
 			num[0] = cl.stats[STAT_ROUNDS] - num[2]*100 - num[1]*10;
-			Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-			sb_round_num[num[0]], 32 * hud_scale_factor, 48 * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-			x_offset = x_offset + (32 * hud_scale_factor) - 8;
+			Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+			sb_round_num[num[0]], 32 * vid.scale, 48 * vid.scale, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+			x_offset = x_offset + (32 * vid.scale) - 8;
 		}
 	}
 	else if (cl.stats[STAT_ROUNDCHANGE] == 4)//blink white
@@ -1028,16 +1003,16 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColoredStretchPic (5 * hud_scale_factor, vid.height - (48 * hud_scale_factor) - 4, 
-					sb_round[4], 60 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
-					savex = x_offset + 10 * hud_scale_factor;
-					x_offset = x_offset + 10 * hud_scale_factor;
+					Draw_ColoredStretchPic (5 * vid.scale, vid.height - (48 * vid.scale) - 4, 
+					sb_round[4], 60 * vid.scale, 48 * vid.scale, 255, 255, 255, blinking);
+					savex = x_offset + 10 * vid.scale;
+					x_offset = x_offset + 10 * vid.scale;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColoredStretchPic (5 * hud_scale_factor + savex, vid.height - (48 * hud_scale_factor) - 4, 
-					sb_round[4], 60 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
+					Draw_ColoredStretchPic (5 * vid.scale + savex, vid.height - (48 * vid.scale) - 4, 
+					sb_round[4], 60 * vid.scale, 48 * vid.scale, 255, 255, 255, blinking);
 					continue;
 				}
 				if (i > 4)
@@ -1045,10 +1020,10 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round[icon_num], 11 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
+				Draw_ColoredStretchPic (5 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round[icon_num], 11 * vid.scale, 48 * vid.scale, 255, 255, 255, blinking);
 
-				x_offset = x_offset + (11 * hud_scale_factor) + 3;
+				x_offset = x_offset + (11 * vid.scale) + 3;
 			}
 		}
 		else
@@ -1056,26 +1031,26 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round_num[num[2]], 32 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
-				x_offset = x_offset + (32 * hud_scale_factor) - 8;
+				Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round_num[num[2]], 32 * vid.scale, 48 * vid.scale, 255, 255, 255, blinking);
+				x_offset = x_offset + (32 * vid.scale) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round_num[num[1]], 32 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
-				x_offset = x_offset + (32 * hud_scale_factor) - 8;
+				Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round_num[num[1]], 32 * vid.scale, 48 * vid.scale, 255, 255, 255, blinking);
+				x_offset = x_offset + (32 * vid.scale) - 8;
 			}
 			else
 				num[1] = 0;
 
 			num[0] = cl.stats[STAT_ROUNDS] - num[2]*100 - num[1]*10;
-			Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-			sb_round_num[num[0]], 32 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
-			x_offset = x_offset + (32 * hud_scale_factor) - 8;
+			Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+			sb_round_num[num[0]], 32 * vid.scale, 48 * vid.scale, 255, 255, 255, blinking);
+			x_offset = x_offset + (32 * vid.scale) - 8;
 		}
 
 		if (endroundchange == 0) {
@@ -1095,16 +1070,16 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColoredStretchPic (5 * hud_scale_factor, vid.height - (48 * hud_scale_factor) - 4, 
-					sb_round[4], 60 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
-					savex = x_offset + 10 * hud_scale_factor;
-					x_offset = (x_offset * hud_scale_factor) + 10;
+					Draw_ColoredStretchPic (5 * vid.scale, vid.height - (48 * vid.scale) - 4, 
+					sb_round[4], 60 * vid.scale, 48 * vid.scale, 255, 255, 255, blinking);
+					savex = x_offset + 10 * vid.scale;
+					x_offset = (x_offset * vid.scale) + 10;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColoredStretchPic (5 * hud_scale_factor + savex, vid.height - (48 * hud_scale_factor) - 4, 
-					sb_round[4], 60 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
+					Draw_ColoredStretchPic (5 * vid.scale + savex, vid.height - (48 * vid.scale) - 4, 
+					sb_round[4], 60 * vid.scale, 48 * vid.scale, 255, 255, 255, blinking);
 					continue;
 				}
 				if (i > 4)
@@ -1112,10 +1087,10 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round[icon_num], 11 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
+				Draw_ColoredStretchPic (5 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round[icon_num], 11 * vid.scale, 48 * vid.scale, 255, 255, 255, blinking);
 
-				x_offset = x_offset + (11 * hud_scale_factor) + 3;
+				x_offset = x_offset + (11 * vid.scale) + 3;
 			}
 		}
 		else
@@ -1123,26 +1098,26 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round_num[num[2]], 32 * hud_scale_factor,48 * hud_scale_factor, 255, 255, 255, blinking);
-				x_offset = x_offset + (32 * hud_scale_factor) - 8;
+				Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round_num[num[2]], 32 * vid.scale,48 * vid.scale, 255, 255, 255, blinking);
+				x_offset = x_offset + (32 * vid.scale) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round_num[num[1]], 32 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
-				x_offset = x_offset + (32 * hud_scale_factor) - 8;
+				Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round_num[num[1]], 32 * vid.scale, 48 * vid.scale, 255, 255, 255, blinking);
+				x_offset = x_offset + (32 * vid.scale) - 8;
 			}
 			else
 				num[1] = 0;
 
 			num[0] = cl.stats[STAT_ROUNDS] - num[2]*100 - num[1]*10;
-			Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-			sb_round_num[num[0]], 32 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
-			x_offset = x_offset + (32 * hud_scale_factor) - 8;
+			Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+			sb_round_num[num[0]], 32 * vid.scale, 48 * vid.scale, 255, 255, 255, blinking);
+			x_offset = x_offset + (32 * vid.scale) - 8;
 		}
 	}
 	else if (cl.stats[STAT_ROUNDCHANGE] == 6)//blink white while fading back
@@ -1163,16 +1138,16 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColoredStretchPic (5 * hud_scale_factor, vid.height - (48 * hud_scale_factor) - 4, 
-					sb_round[4], 60 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
-					savex = x_offset + 10 * hud_scale_factor;
-					x_offset = x_offset + 10 * hud_scale_factor;
+					Draw_ColoredStretchPic (5 * vid.scale, vid.height - (48 * vid.scale) - 4, 
+					sb_round[4], 60 * vid.scale, 48 * vid.scale, 255, 255, 255, blinking);
+					savex = x_offset + 10 * vid.scale;
+					x_offset = x_offset + 10 * vid.scale;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColoredStretchPic (5 * hud_scale_factor + savex, vid.height - (48 * hud_scale_factor) - 4, 
-					sb_round[4], 60 * hud_scale_factor,48 * hud_scale_factor, 255, 255, 255, blinking);
+					Draw_ColoredStretchPic (5 * vid.scale + savex, vid.height - (48 * vid.scale) - 4, 
+					sb_round[4], 60 * vid.scale,48 * vid.scale, 255, 255, 255, blinking);
 					continue;
 				}
 				if (i > 4)
@@ -1180,10 +1155,10 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round[icon_num], 11 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
+				Draw_ColoredStretchPic (5 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round[icon_num], 11 * vid.scale, 48 * vid.scale, 255, 255, 255, blinking);
 
-				x_offset = x_offset + (11 * hud_scale_factor) + 3;
+				x_offset = x_offset + (11 * vid.scale) + 3;
 			}
 		}
 		else
@@ -1191,26 +1166,26 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round_num[num[2]], 32 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
-				x_offset = x_offset + (32 * hud_scale_factor) - 8;
+				Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round_num[num[2]], 32 * vid.scale, 48 * vid.scale, 255, 255, 255, blinking);
+				x_offset = x_offset + (32 * vid.scale) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round_num[num[1]], 32 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
-				x_offset = x_offset + (32 * hud_scale_factor) - 8;
+				Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round_num[num[1]], 32 * vid.scale, 48 * vid.scale, 255, 255, 255, blinking);
+				x_offset = x_offset + (32 * vid.scale) - 8;
 			}
 			else
 				num[1] = 0;
 
 			num[0] = cl.stats[STAT_ROUNDS] - num[2]*100 - num[1]*10;
-			Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-			sb_round_num[num[0]], 32 * hud_scale_factor, 48 * hud_scale_factor, 255, 255, 255, blinking);
-			x_offset = x_offset + (32 * hud_scale_factor) - 8;
+			Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+			sb_round_num[num[0]], 32 * vid.scale, 48 * vid.scale, 255, 255, 255, blinking);
+			x_offset = x_offset + (32 * vid.scale) - 8;
 		}
 	}
 	else if (cl.stats[STAT_ROUNDCHANGE] == 7)//blink white while fading back
@@ -1241,16 +1216,16 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColoredStretchPic (5 * hud_scale_factor, vid.height - (48 * hud_scale_factor) - 4, 
-					sb_round[4], 60 * hud_scale_factor, 48 * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-					savex = x_offset + 10 * hud_scale_factor;
-					x_offset = x_offset + 10 * hud_scale_factor;
+					Draw_ColoredStretchPic (5 * vid.scale, vid.height - (48 * vid.scale) - 4, 
+					sb_round[4], 60 * vid.scale, 48 * vid.scale, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+					savex = x_offset + 10 * vid.scale;
+					x_offset = x_offset + 10 * vid.scale;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColoredStretchPic (5 * hud_scale_factor + savex, vid.height - (48 * hud_scale_factor) - 4, 
-					sb_round[4], 60 * hud_scale_factor, 48 * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+					Draw_ColoredStretchPic (5 * vid.scale + savex, vid.height - (48 * vid.scale) - 4, 
+					sb_round[4], 60 * vid.scale, 48 * vid.scale, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 					continue;
 				}
 				if (i > 4)
@@ -1258,10 +1233,10 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round[icon_num], 11 * hud_scale_factor, 48 * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				Draw_ColoredStretchPic (5 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round[icon_num], 11 * vid.scale, 48 * vid.scale, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 
-				x_offset = x_offset + (11 * hud_scale_factor) + 3;
+				x_offset = x_offset + (11 * vid.scale) + 3;
 			}
 		}
 		else
@@ -1269,26 +1244,26 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round_num[num[2]], 32 * hud_scale_factor, 48 * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-				x_offset = x_offset + (32 * hud_scale_factor) - 8;
+				Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round_num[num[2]], 32 * vid.scale, 48 * vid.scale, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				x_offset = x_offset + (32 * vid.scale) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round_num[num[1]], 32 * hud_scale_factor, 48 * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-				x_offset = x_offset + (32 * hud_scale_factor) - 8;
+				Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round_num[num[1]], 32 * vid.scale, 48 * vid.scale, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				x_offset = x_offset + (32 * vid.scale) - 8;
 			}
 			else
 				num[1] = 0;
 
 			num[0] = cl.stats[STAT_ROUNDS] - num[2]*100 - num[1]*10;
-			Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-			sb_round_num[num[0]], 32 * hud_scale_factor, 48 * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-			x_offset = x_offset + (32 * hud_scale_factor) - 8;
+			Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+			sb_round_num[num[0]], 32 * vid.scale, 48 * vid.scale, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+			x_offset = x_offset + (32 * vid.scale) - 8;
 		}
 	}
 	else
@@ -1304,16 +1279,16 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColoredStretchPic (5 * hud_scale_factor, vid.height - (48 * hud_scale_factor) - 4, 
-					sb_round[4], 60 * hud_scale_factor, 48 * hud_scale_factor, 107, 1, 0, 255);
-					savex = x_offset + 10 * hud_scale_factor;
-					x_offset = x_offset + 10 * hud_scale_factor;
+					Draw_ColoredStretchPic (5 * vid.scale, vid.height - (48 * vid.scale) - 4, 
+					sb_round[4], 60 * vid.scale, 48 * vid.scale, 107, 1, 0, 255);
+					savex = x_offset + 10 * vid.scale;
+					x_offset = x_offset + 10 * vid.scale;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColoredStretchPic (5 * hud_scale_factor + savex, vid.height - (48 * hud_scale_factor) - 4, 
-					sb_round[4], 60 * hud_scale_factor, 48 * hud_scale_factor, 107, 1, 0, 255);
+					Draw_ColoredStretchPic (5 * vid.scale + savex, vid.height - (48 * vid.scale) - 4, 
+					sb_round[4], 60 * vid.scale, 48 * vid.scale, 107, 1, 0, 255);
 					continue;
 				}
 				if (i > 4)
@@ -1321,10 +1296,10 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round[icon_num], 11 * hud_scale_factor,48 * hud_scale_factor, 107, 1, 0, 255);
+				Draw_ColoredStretchPic (5 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round[icon_num], 11 * vid.scale,48 * vid.scale, 107, 1, 0, 255);
 
-				x_offset = x_offset + (11 * hud_scale_factor) + 3;
+				x_offset = x_offset + (11 * vid.scale) + 3;
 			}
 		}
 		else
@@ -1332,18 +1307,18 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round_num[num[2]], 32 * hud_scale_factor, 48 * hud_scale_factor, 107, 1, 0, 255);
-				x_offset = x_offset + (32 * hud_scale_factor) - 8;
+				Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round_num[num[2]], 32 * vid.scale, 48 * vid.scale, 107, 1, 0, 255);
+				x_offset = x_offset + (32 * vid.scale) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-				sb_round_num[num[1]], 32 * hud_scale_factor, 48 * hud_scale_factor, 107, 1, 0, 255);
-				x_offset = x_offset + (32 * hud_scale_factor) - 8;
+				Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+				sb_round_num[num[1]], 32 * vid.scale, 48 * vid.scale, 107, 1, 0, 255);
+				x_offset = x_offset + (32 * vid.scale) - 8;
 			}
 			else
 				num[1] = 0;
@@ -1353,9 +1328,9 @@ void HUD_Rounds (void)
 			if(cl.stats[STAT_ROUNDS] == 0)
 				return;
 			
-			Draw_ColoredStretchPic (2 * hud_scale_factor + x_offset, vid.height - (48 * hud_scale_factor) - 4, 
-			sb_round_num[num[0]], 32 * hud_scale_factor, 48 * hud_scale_factor, 107, 1, 0, 255);
-			x_offset = x_offset + (32 * hud_scale_factor) - 8;
+			Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
+			sb_round_num[num[0]], 32 * vid.scale, 48 * vid.scale, 107, 1, 0, 255);
+			x_offset = x_offset + (32 * vid.scale) - 8;
 		}
 	}
 }
@@ -1378,9 +1353,9 @@ void HUD_Perks (void)
 {
 	int x, y, scale;
 
-	x = 18 * hud_scale_factor;
-	y = 2 * hud_scale_factor;
-	scale = 22 * hud_scale_factor;
+	x = 18 * vid.scale;
+	y = 2 * vid.scale;
+	scale = 22 * vid.scale;
 
 	// Double-Tap 2.0 specialty icon
 	int double_tap_icon;
@@ -1405,8 +1380,8 @@ void HUD_Perks (void)
 		y += scale;
 	}
 
-	x = 6 * hud_scale_factor;
-	y = 2 * hud_scale_factor;
+	x = 6 * vid.scale;
+	y = 2 * vid.scale;
 
 	// Now the first column.
 	for (int i = 0; i < 4; i++) {
@@ -1434,7 +1409,7 @@ void HUD_Powerups (void)
 	int count = 0;
 	float scale;
 	
-	scale = 26 * hud_scale_factor;
+	scale = 26 * vid.scale;
 
 	// horrible way to offset check :)))))))))))))))))) :DDDDDDDD XOXO
 
@@ -1446,13 +1421,13 @@ void HUD_Powerups (void)
 
 	// both are avail draw fixed order
 	if (count == 2) {
-		Draw_StretchPic((vid.width/2.0f) - (27 * hud_scale_factor), vid.height - (29 * hud_scale_factor), x2pic, scale, scale);
-		Draw_StretchPic((vid.width/2.0f) + (3 * hud_scale_factor), vid.height - (29 * hud_scale_factor), instapic, scale, scale);
+		Draw_StretchPic((vid.width/2.0f) - (27 * vid.scale), vid.height - (29 * vid.scale), x2pic, scale, scale);
+		Draw_StretchPic((vid.width/2.0f) + (3 * vid.scale), vid.height - (29 * vid.scale), instapic, scale, scale);
 	} else {
 		if (cl.stats[STAT_X2])
-			Draw_StretchPic((vid.width/2.0f) - (13 * hud_scale_factor), vid.height - (29 * hud_scale_factor), x2pic, scale, scale);
+			Draw_StretchPic((vid.width/2.0f) - (13 * vid.scale), vid.height - (29 * vid.scale), x2pic, scale, scale);
 		if(cl.stats[STAT_INSTA])
-			Draw_StretchPic ((vid.width/2.0f) - (13 * hud_scale_factor), vid.height - (29 * hud_scale_factor), instapic, scale, scale);
+			Draw_StretchPic ((vid.width/2.0f) - (13 * vid.scale), vid.height - (29 * vid.scale), instapic, scale, scale);
 	}
 }
 
@@ -1572,16 +1547,16 @@ void HUD_Ammo (void)
 	char* magstring;
 	int reslen;
 
-	reslen = getTextWidth(va("/%i", cl.stats[STAT_AMMO]), hud_scale_factor);
+	reslen = getTextWidth(va("/%i", cl.stats[STAT_AMMO]), vid.scale);
 
 	//
 	// Magazine
 	//
 	magstring = va("%i", cl.stats[STAT_CURRENTMAG]);
 	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG]) {
-		Draw_ColoredString(((vid.width - (55 * hud_scale_factor)) - (reslen)) - getTextWidth(magstring, hud_scale_factor), vid.height - (25 * hud_scale_factor), magstring, 255, 0, 0, 255, hud_scale_factor);
+		Draw_ColoredString(((vid.width - (55 * vid.scale)) - (reslen)) - getTextWidth(magstring, vid.scale), vid.height - (25 * vid.scale), magstring, 255, 0, 0, 255, vid.scale);
 	} else {
-		Draw_ColoredString(((vid.width - (55 * hud_scale_factor)) - (reslen)) - getTextWidth(magstring, hud_scale_factor), vid.height - (25 * hud_scale_factor), magstring, 255, 255, 255, 255, hud_scale_factor);
+		Draw_ColoredString(((vid.width - (55 * vid.scale)) - (reslen)) - getTextWidth(magstring, vid.scale), vid.height - (25 * vid.scale), magstring, 255, 255, 255, 255, vid.scale);
 	}
 
 	//
@@ -1589,9 +1564,9 @@ void HUD_Ammo (void)
 	//
 	magstring = va("/%i", cl.stats[STAT_AMMO]);
 	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_AMMO]) {
-		Draw_ColoredString((vid.width - (55 * hud_scale_factor)) - getTextWidth(magstring, hud_scale_factor), vid.height - (25 * hud_scale_factor), magstring, 255, 0, 0, 255, hud_scale_factor);
+		Draw_ColoredString((vid.width - (55 * vid.scale)) - getTextWidth(magstring, vid.scale), vid.height - (25 * vid.scale), magstring, 255, 0, 0, 255, vid.scale);
 	} else {
-		Draw_ColoredString((vid.width - (55 * hud_scale_factor)) - getTextWidth(magstring, hud_scale_factor), vid.height - (25 * hud_scale_factor), magstring, 255, 255, 255, 255, hud_scale_factor);
+		Draw_ColoredString((vid.width - (55 * vid.scale)) - getTextWidth(magstring, vid.scale), vid.height - (25 * vid.scale), magstring, 255, 255, 255, 255, vid.scale);
 	}
 
 	//
@@ -1600,9 +1575,9 @@ void HUD_Ammo (void)
 	if (IsDualWeapon(cl.stats[STAT_ACTIVEWEAPON])) {
 		magstring = va("%i", cl.stats[STAT_CURRENTMAG2]);
 		if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_CURRENTMAG2]) {
-			Draw_ColoredString((vid.width - (89 * hud_scale_factor)) - getTextWidth(magstring, hud_scale_factor), vid.height - (25 * hud_scale_factor), magstring, 255, 0, 0, 255, hud_scale_factor);
+			Draw_ColoredString((vid.width - (89 * vid.scale)) - getTextWidth(magstring, vid.scale), vid.height - (25 * vid.scale), magstring, 255, 0, 0, 255, vid.scale);
 		} else {
-			Draw_ColoredString((vid.width - (89 * hud_scale_factor)) - getTextWidth(magstring, hud_scale_factor), vid.height - (25 * hud_scale_factor), magstring, 255, 255, 255, 255, hud_scale_factor);
+			Draw_ColoredString((vid.width - (89 * vid.scale)) - getTextWidth(magstring, vid.scale), vid.height - (25 * vid.scale), magstring, 255, 255, 255, 255, vid.scale);
 		}
 	}
 }
@@ -1618,11 +1593,11 @@ void HUD_AmmoString (void)
 	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG])
 	{
 		if (0 < cl.stats[STAT_AMMO] && cl.stats[STAT_CURRENTMAG] >= 0) {
-			Draw_ColoredStringCentered(vid.height - (100 * hud_scale_factor), "Reload", 255, 255, 255, 255, hud_scale_factor);
+			Draw_ColoredStringCentered(vid.height - (100 * vid.scale), "Reload", 255, 255, 255, 255, vid.scale);
 		} else if (0 < cl.stats[STAT_CURRENTMAG]) {
-			Draw_ColoredStringCentered(vid.height - (100 * hud_scale_factor), "LOW AMMO", 255, 255, 0, 255, hud_scale_factor);
+			Draw_ColoredStringCentered(vid.height - (100 * vid.scale), "LOW AMMO", 255, 255, 0, 255, vid.scale);
 		} else {
-			Draw_ColoredStringCentered(vid.height - (100 * hud_scale_factor), "NO AMMO", 255, 0, 0, 255, hud_scale_factor);
+			Draw_ColoredStringCentered(vid.height - (100 * vid.scale), "NO AMMO", 255, 0, 0, 255, vid.scale);
 		}
 	}
 }
@@ -1637,23 +1612,23 @@ HUD_Grenades
 
 void HUD_Grenades (void)
 {
-	Draw_StretchPic (vid.width - (53 * hud_scale_factor), vid.height - (40 * hud_scale_factor), fragpic, 22 * hud_scale_factor, 22 * hud_scale_factor);
+	Draw_StretchPic (vid.width - (53 * vid.scale), vid.height - (40 * vid.scale), fragpic, 22 * vid.scale, 22 * vid.scale);
 
 	if (cl.stats[STAT_GRENADES] & UI_FRAG)
 	{
 		if (cl.stats[STAT_PRIGRENADES] <= 0)
-			Draw_ColoredString (vid.width - (40 * hud_scale_factor), vid.height - (25 * hud_scale_factor), va ("%i",cl.stats[STAT_PRIGRENADES]), 255, 0, 0, 255, hud_scale_factor);
+			Draw_ColoredString (vid.width - (40 * vid.scale), vid.height - (25 * vid.scale), va ("%i",cl.stats[STAT_PRIGRENADES]), 255, 0, 0, 255, vid.scale);
 		else
-			Draw_ColoredString (vid.width - (40 * hud_scale_factor), vid.height - (25 * hud_scale_factor), va ("%i",cl.stats[STAT_PRIGRENADES]), 255, 255, 255, 255, hud_scale_factor);
+			Draw_ColoredString (vid.width - (40 * vid.scale), vid.height - (25 * vid.scale), va ("%i",cl.stats[STAT_PRIGRENADES]), 255, 255, 255, 255, vid.scale);
 	}
 
 	if (cl.stats[STAT_GRENADES] & UI_BETTY)
 	{
-		Draw_StretchPic (vid.width - (32 * hud_scale_factor), vid.height - (40 * hud_scale_factor), bettypic, 22 * hud_scale_factor, 22 * hud_scale_factor);
+		Draw_StretchPic (vid.width - (32 * vid.scale), vid.height - (40 * vid.scale), bettypic, 22 * vid.scale, 22 * vid.scale);
 		if (cl.stats[STAT_PRIGRENADES] <= 0)
-			Draw_ColoredString (vid.width - (17 * hud_scale_factor), vid.height - (25 * hud_scale_factor), va ("%i",cl.stats[STAT_SECGRENADES]), 255, 0, 0, 255, hud_scale_factor);
+			Draw_ColoredString (vid.width - (17 * vid.scale), vid.height - (25 * vid.scale), va ("%i",cl.stats[STAT_SECGRENADES]), 255, 0, 0, 255, vid.scale);
 		else
-			Draw_ColoredString (vid.width - (17 * hud_scale_factor), vid.height - (25 * hud_scale_factor), va ("%i",cl.stats[STAT_SECGRENADES]), 255, 255, 255, 255, hud_scale_factor);
+			Draw_ColoredString (vid.width - (17 * vid.scale), vid.height - (25 * vid.scale), va ("%i",cl.stats[STAT_SECGRENADES]), 255, 255, 255, 255, vid.scale);
 	}
 }
 
@@ -1666,12 +1641,12 @@ void HUD_Weapon (void)
 {
 	char str[32];
 	x_value = vid.width;
-	y_value = vid.height - (40 * hud_scale_factor);
+	y_value = vid.height - (40 * vid.scale);
 
 	strcpy(str, pr_strings+sv_player->v.Weapon_Name);
 
-	x_value = (vid.width - (55 * hud_scale_factor)) - getTextWidth(str, hud_scale_factor);
-	Draw_ColoredString (x_value, y_value, str, 255, 255, 255, 255, hud_scale_factor);
+	x_value = (vid.width - (55 * vid.scale)) - getTextWidth(str, vid.scale);
+	Draw_ColoredString (x_value, y_value, str, 255, 255, 255, 255, vid.scale);
 }
 
 /*a
@@ -1722,9 +1697,9 @@ void HUD_BettyPrompt (void)
 	strcpy(str, "Press   to\n");
 	strcpy(str2, "place a Bouncing Betty");
 
-	Draw_ColoredStringCentered((70 * hud_scale_factor), str, 255, 255, 255, 255, hud_scale_factor);
-	Draw_ColoredStringCentered((90 * hud_scale_factor), str2, 255, 255, 255, 255, hud_scale_factor);
-	Draw_Pic (200 * hud_scale_factor + 14, 68 * hud_scale_factor, b_minus);
+	Draw_ColoredStringCentered((70 * vid.scale), str, 255, 255, 255, 255, vid.scale);
+	Draw_ColoredStringCentered((90 * vid.scale), str2, 255, 255, 255, 255, vid.scale);
+	Draw_Pic (200 * vid.scale + 14, 68 * vid.scale, b_minus);
 
 #endif // __PSP__, __3DS__, __WII__
 }
@@ -1741,7 +1716,7 @@ void HUD_PlayerName (void)
 	if (nameprint_time - sv.time < 1)
 		alpha = (int)((nameprint_time - sv.time)*255);
 
-	Draw_ColoredString(70 * hud_scale_factor, vid.height - (70 * hud_scale_factor), player_name, 255, 255, 255, alpha, hud_scale_factor);
+	Draw_ColoredString(70 * vid.scale, vid.height - (70 * vid.scale), player_name, 255, 255, 255, alpha, vid.scale);
 }
 
 /*

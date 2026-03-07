@@ -91,7 +91,7 @@ void Menu_DrawInitLoadScreen (void)
 
 		Menu_DrawFill (0, 0, vid.width, vid.width, 0, 0, 0, 255);
 
-		Menu_DrawString (0, STD_UI_HEIGHT/2, loading_string, 255, 255, 255, 255, menu_text_scale_factor*2, 0);
+		Menu_DrawString (0, STD_UI_HEIGHT/2, loading_string, 255, 255, 255, 255, vid.scale*2, 0);
 	}
 }
 
@@ -147,7 +147,6 @@ void Menu_Init (void)
 	loading_init = true;
 
 	Menu_InitUI();
-	Menu_DictateScaleFactor();
 	Menu_ResetMenuButtons();
 
 	Menu_SetVersionString();

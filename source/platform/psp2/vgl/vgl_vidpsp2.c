@@ -680,6 +680,7 @@ void VID_Init(unsigned char *palette)
 	vid.rowbytes = 2 * width;
 	vid.width = width * gl_ssaa;
 	vid.height = height * gl_ssaa;
+	vid.scale = vid.height/STD_UI_HEIGHT;
 
 	vid.conwidth = 480;
 	vid.conheight = 272;

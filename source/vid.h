@@ -22,6 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define VID_CBITS	6
 #define VID_GRADES	(1 << VID_CBITS)
 
+// Factor by which to set UI scale (vid.height/240)
+#define	STD_UI_HEIGHT 240
+
 // a pixel can be one, two, or four bytes
 typedef byte pixel_t;
 
@@ -41,6 +44,7 @@ typedef struct
 	unsigned		width;		
 	unsigned		height;
 	float			aspect;		// width / height -- < 0 is taller than wide
+	int				scale; 		// ui scale (vid.height/240)
 	int				numpages;
 	int				recalc_refdef;	// if true, recalc vid-based stuff
 	pixel_t			*conbuffer;

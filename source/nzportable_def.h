@@ -232,7 +232,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	SOUND_CHANNELS		8
 
 #include PLATFORM_FILE(common.h)
-#include PLATFORM_FILE(vid.h)
+
+#include "vid.h"
+
 #include PLATFORM_FILE(sys.h)
 
 #include "system.h"

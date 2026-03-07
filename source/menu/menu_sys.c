@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <assert.h>
 
 menuframe_t 	current_frame;
-int       		ui_scale;
 
 int				MENU_KEY_CONFIRM = -1;
 int				MENU_KEY_BACK = -1;
@@ -123,25 +122,25 @@ void UI_Align (int *x, int *y)
 {
     switch (current_frame.point_x) {
         case UI_ANCHOR_CENTER:
-            *x = (vid.width * 0.5) + (*x*ui_scale);
+            *x = (vid.width * 0.5) + (*x*vid.scale);
             break;
         case UI_ANCHOR_LEFT:
 			// no op
             break;
         case UI_ANCHOR_RIGHT:
-            *x = vid.width - (*x*ui_scale);
+            *x = vid.width - (*x*vid.scale);
             break;
     }
 
 	switch (current_frame.point_y) {
         case UI_ANCHOR_CENTER:
-            *y = (vid.height * 0.5) + (*y*ui_scale);
+            *y = (vid.height * 0.5) + (*y*vid.scale);
             break;
         case UI_ANCHOR_TOP:
 			// no op
             break;
         case UI_ANCHOR_BOTTOM:
-            *y = vid.height - (*y*ui_scale);
+            *y = vid.height - (*y*vid.scale);
             break;
     }
 }
@@ -155,7 +154,7 @@ int UI_X(int x)
     if (x == (int)vid.width) return x;
 
     //printf("x %i\n", x);
-    int ret = (x * ui_scale);
+    int ret = (x * vid.scale);
     //printf("ret %i\n", ret);
     return (ret);
 }
@@ -165,7 +164,7 @@ int UI_Y(int y)
     if (y == (int)vid.height) return y;
 
     //printf("y %i\n", y);
-    int ret = (y * ui_scale);
+    int ret = (y * vid.scale);
     //printf("ret %i\n", ret);
     return (ret);
 }
@@ -174,7 +173,7 @@ int UI_W(int w)
 {
     if (w == (int)vid.width) return w;
     //printf("w %i\n", w);
-    int ret = (w * ui_scale);
+    int ret = (w * vid.scale);
     //printf("ret %i\n", ret);
     return (ret);
 }
@@ -183,7 +182,7 @@ int UI_H(int h)
 {
     if (h == (int)vid.height) return h;
     //printf("h %i\n", h);
-    int ret = (h * ui_scale);
+    int ret = (h * vid.scale);
     //printf("ret %i\n", ret);
     return (ret);
 }
@@ -192,9 +191,6 @@ void Menu_InitUI (void)
 {
 	current_frame.point_x = 0;
 	current_frame.point_y = 0;
-
-	// Set scale
-	ui_scale = vid.height/STD_UI_HEIGHT;
 
 	// Add platform-specific menu enter keys
 #ifdef PLATFORM_CONFIRM_IS_ENTER
