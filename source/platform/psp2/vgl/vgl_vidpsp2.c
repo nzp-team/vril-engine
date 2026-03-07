@@ -126,10 +126,6 @@ void VID_ShiftPalette(unsigned char *p)
 //	VID_SetPalette(p);
 }
 
-void VID_ChangeRes(float scale){
-	
-}
-
 void	VID_SetPalette (unsigned char *palette)
 {
 	byte	*pal;
