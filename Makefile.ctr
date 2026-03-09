@@ -132,7 +132,7 @@ COMMON_OBJS =	system.o \
 				images.c \
 				platform/ctr/snd_ctr.c \
 				platform/ctr/in_ctr.c \
-				platform/ctr/cd_null.c \
+				cdaudio.c \
 				platform/ctr/gl/gl_qmb.c \
 				platform/ctr/gl/gl_decal.c \
 				platform/ctr/gl/gl_draw.c \
