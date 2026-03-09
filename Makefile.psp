@@ -38,7 +38,7 @@ COMMON_OBJS = \
 	source/platform/psp/network_psp.o \
 	source/platform/psp/gethost.o \
 	source/platform/psp/fnmatch.o \
-	source/platform/psp/cd.o \
+	source/cdaudio.o \
 	source/platform/psp/mp3.o \
 	source/platform/psp/Random.o \
 	\
