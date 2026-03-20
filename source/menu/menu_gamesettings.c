@@ -205,7 +205,7 @@ void Menu_GameSettings_Draw (void)
 
     // Start Round slider
     Menu_DrawButton(3, 1, "START ROUND", startround_string, NULL);
-    Menu_DrawOptionSlider(3, 2, 0, 50, sv_startround, "sv_startround", true, true, 5.0f);
+    Menu_DrawOptionSlider(3, 1, 0, 50, sv_startround, "sv_startround", true, true, 5.0f);
 
     // Magic button
     Menu_DrawButton(4, 2, "MAGIC", "Whether to allow Perks, Power-Ups, and the Mystery Box.", Menu_GameSettings_ApplyMagic);
@@ -217,7 +217,7 @@ void Menu_GameSettings_Draw (void)
 
     // Horde Size slider
     Menu_DrawButton(6, 4, "HORDE SIZE", "Maximum Zombies that can Active at once.", NULL);
-    Menu_DrawOptionSlider(6, 5, 2, 64, sv_maxai, "sv_maxai", false, true, 2.0f);
+    Menu_DrawOptionSlider(6, 4, 2, 64, sv_maxai, "sv_maxai", false, true, 2.0f);
 
     // Fast Rounds button
     Menu_DrawButton(7, 5, "FAST ROUNDS", "Minimize Time between Rounds.", Menu_GameSettings_ApplyFastRounds);
