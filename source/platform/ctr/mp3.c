@@ -25,10 +25,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 
 #define                 CHANNEL	        1
-#define                 MP3_BUFFERS     4
+#define                 MP3_BUFFERS     8
 
 static Thread           mp3_thread;
-static volatile bool    mp3_running = false;
+static bool             mp3_running = false;
 
 uint32_t                rate;
 uint8_t			        mp3_channels;
@@ -50,7 +50,6 @@ int mp3_init (void)
     }
 
     ndspSetOutputMode(NDSP_OUTPUT_STEREO);
-
     return 1;
 }
 
@@ -72,10 +71,11 @@ uint64_t mp3_decode(void *buffer)
 
 static void mp3_thread_func(void *arg)
 {
+    bool queued = false;
     mp3_running = true;
 
     while(mp3_running) {
-        svcSleepThread(500*1000);
+        queued = false;
 
         for(int i = 0; i < MP3_BUFFERS; i++) {
             if(waveBuf[i].status == NDSP_WBUF_DONE) {
@@ -88,12 +88,19 @@ static void mp3_thread_func(void *arg)
                     return;
                 }
 
-                waveBuf[i].nsamples = read / mp3_channels;
+                waveBuf[i].nsamples = read/mp3_channels;
                 waveBuf[i].status = NDSP_WBUF_FREE;
 
                 DSP_FlushDataCache(buf, read*sizeof(int16_t));
                 ndspChnWaveBufAdd(CHANNEL, &waveBuf[i]);
+                queued = true;
             }
+        }
+
+        if (queued) {
+            svcSleepThread(1000*1000);
+        } else {
+            svcSleepThread(8*1000*1000);
         }
     }
 }
@@ -124,7 +131,7 @@ int mp3_start_play(char *filename, int startpos)
         mp3_stop();
     }
 
-    int             encoding = 0;
+    int encoding = 0;
 
     handle = mpg123_new(NULL, NULL);
     if (handle == NULL) {
@@ -144,50 +151,57 @@ int mp3_start_play(char *filename, int startpos)
     mpg123_seek_frame(handle, startpos, SEEK_SET);
     mpg123_volume(handle, bgmvolume.value);
 
-    buffersize = mpg123_outblock(handle)*64;
+    buffersize = mpg123_outblock(handle)*128;
 
     buffers = linearAlloc(buffersize*MP3_BUFFERS);
+    if(!buffers) {
+        Sys_Error("Failed to allocate MP3 buffers\n");
+        return 0;
+    }
     memset(buffers, 0, buffersize*MP3_BUFFERS);
 
     ndspChnReset(CHANNEL);
     ndspChnWaveBufClear(CHANNEL);
     ndspChnSetInterp(CHANNEL, NDSP_INTERP_LINEAR);
     ndspChnSetRate(CHANNEL, rate);
-    ndspChnSetFormat(CHANNEL, NDSP_FORMAT_STEREO_PCM16);
+    ndspChnSetFormat(CHANNEL, mp3_channels == 1 ? NDSP_FORMAT_MONO_PCM16 : NDSP_FORMAT_STEREO_PCM16);
 
     float mix[12] = {0};
-    mix[0] = 1.0f; // left -> left
-    mix[3] = 1.0f; // right -> right
+    mix[0] = 1.0f;
+    mix[1] = 1.0f;
+    mix[2] = 1.0f;
+    mix[3] = 1.0f;
     ndspChnSetMix(CHANNEL, mix);
     ndspChnWaveBufClear(CHANNEL);
 
     memset(waveBuf, 0, sizeof(waveBuf));
 
     for(int i = 0; i < MP3_BUFFERS; i++) {
-        int16_t *buf = buffers + (i * (buffersize / sizeof(int16_t)));
+        int16_t *buf = buffers+(i*(buffersize/sizeof(int16_t)));
 
         size_t read = mp3_decode(buf);
+        if (read == 0) break;
 
         waveBuf[i].data_vaddr = buf;
-        waveBuf[i].nsamples = read / mp3_channels;
+        waveBuf[i].nsamples = read/mp3_channels;
         waveBuf[i].status = NDSP_WBUF_FREE;
 
         DSP_FlushDataCache(buf, read*sizeof(int16_t));
         ndspChnWaveBufAdd(CHANNEL, &waveBuf[i]);
     }
 
-    DSP_FlushDataCache(buffers, buffersize*MP3_BUFFERS);
-
     mp3_job_started = 1;
 
-    mp3_thread = threadCreate(mp3_thread_func, NULL, 64*1024, 0x17, -2, false);
+    mp3_thread = threadCreate(mp3_thread_func, NULL, 64*1024, 0x0A, -2, false);
 
     return 1;
 }
 
 void mp3_deinit (void)
 {
+    mp3_stop();
     mpg123_close(handle);
 	mpg123_delete(handle);
+    handle = NULL;
 	mpg123_exit();
 }
