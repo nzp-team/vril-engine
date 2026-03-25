@@ -16,17 +16,20 @@ See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
 */
 #include "nzportable_def.h"
+#include <stdio.h>
 
 #ifdef __PSP__
-#include <stdio.h>
 #include <pspaudiolib.h>
 #include "platform/psp/mp3.h"
+int sceKernelDelayThread(int delay);
 #elif __3DS__
-
+#include <3ds.h>
+#include "platform/ctr/mp3.h"
 #endif
+
+int				MAX_VOLUME;
 
 extern cvar_t 	bgmtype;
 extern cvar_t 	bgmvolume;
@@ -41,6 +44,108 @@ static char		*last_track_string = "";
 
 int 			cd_loop = 0;
 
+static void CD_f (void);
+
+void CDAudio_VolumeChange(float bgmvolume)
+{
+	int volume = (int)(bgmvolume*(float)MAX_VOLUME);
+	mp3_volume = volume;
+	cdvolume = bgmvolume;
+}
+
+void CDAudio_PlayFromString(char* track_name, qboolean looping)
+{
+	CDAudio_Stop();
+
+	char path[512];
+	snprintf(path, 512, "%s/tracks/%s.mp3", com_gamedir, track_name);
+
+	int ret = mp3_start_play(path, 0);
+	cd_loop = looping;
+	last_track_string = track_name;
+
+	if (ret != 2) playing = true;
+	else {
+		Con_Printf("Couldn't find %s\n", path);
+		playing = false;
+		Cvar_Set("bgmtype","none");
+		CDAudio_VolumeChange(0);
+	}
+
+	CDAudio_VolumeChange(0.75);
+}
+
+void CDAudio_Stop(void)
+{
+	mp3_job_started = 0;
+
+	playing = false;
+	CDAudio_VolumeChange(0);
+}
+
+void CDAudio_Pause(void)
+{
+	CDAudio_VolumeChange(0);
+	paused = true;
+}
+
+void CDAudio_Resume(void)
+{
+	CDAudio_VolumeChange(bgmvolume.value);
+	paused = false;
+}
+
+void CDAudio_Update(void)
+{
+	if (paused == false) {
+		CDAudio_Pause();
+	}
+	if (playing == true) {
+		CDAudio_Stop();
+	}
+}
+
+void CDAudio_DelayThread(int delay)
+{
+#ifdef __PSP__
+	sceKernelDelayThread(delay);
+#elif __3DS__
+	svcSleepThread(delay*2);
+#endif
+}
+
+void CDAudio_SetMaxVolume(void)
+{
+#ifdef __PSP__
+	MAX_VOLUME = PSP_VOLUME_MAX;
+#elif __3DS__
+	MAX_VOLUME = 60;
+#endif
+}
+
+void CDAudio_Init(void)
+{
+	if (cls.state == ca_dedicated) return;
+	if (COM_CheckParm("-nocdaudio")) return;
+
+	if (mp3_init() == 0) {
+		Sys_Error("Could not Initialize CDAudio.");
+	}
+
+	CDAudio_DelayThread(5*10000);
+	CDAudio_SetMaxVolume();
+
+	enabled = true;
+	Cmd_AddCommand ("cd", CD_f);
+}
+
+void CDAudio_Shutdown(void)
+{
+	CDAudio_Stop();
+	CDAudio_DelayThread(5*10000);
+	mp3_deinit();
+}
+
 static void CD_f (void)
 {
 	char	*command;
@@ -48,8 +153,8 @@ static void CD_f (void)
 	if (Cmd_Argc() < 2)
 	{
 		Con_Printf("commands:");
-		Con_Printf("on, off, reset, remap, \n");
-		Con_Printf("play, stop, loop, pause, resume\n");
+		Con_Printf("on, off, reset, \n");
+		Con_Printf("playstring, stop, pause, resume\n");
 		Con_Printf("eject, close, info\n");
 		return;
 	}
@@ -78,33 +183,11 @@ static void CD_f (void)
 		return;
 	}
 
-	if (Q_strcasecmp(command, "remap") == 0)
-	{
-		return;
-	}
-
-	if (Q_strcasecmp(command, "close") == 0)
-	{
-		return;
-	}
-
-	if (Q_strcasecmp(command, "play") == 0)
-	{
-		CDAudio_Play((byte)atoi(Cmd_Argv (2)), (qboolean) false);
-		return;
-	}
-
 	if (Q_strcasecmp(command, "playstring") == 0)
 	{
 		char* track_name = Cmd_Argv(2);
 		qboolean loop = (qboolean)atoi(Cmd_Argv(3));
 		CDAudio_PlayFromString(track_name, loop);
-	}
-
-	if (Q_strcasecmp(command, "loop") == 0)
-	{
-		CDAudio_Play((byte)atoi(Cmd_Argv (2)), (qboolean) true);
-		return;
 	}
 
 	if (Q_strcasecmp(command, "stop") == 0)
@@ -143,159 +226,3 @@ static void CD_f (void)
 		return;
 	}
 }
-
-void CDAudio_VolumeChange(float bgmvolume)
-{
-	int volume = (int) (bgmvolume * (float) PSP_VOLUME_MAX);
-	//pspAudioSetVolume(1, volume, volume);
-	mp3_volume = volume;
-	cdvolume = bgmvolume;
-
-//	Con_Printf("Volume changed to : %i\n", mp3_volume);
-
-}
-
-int sceKernelDelayThread(int delay);
-
-void CDAudio_Track(char* trackname)
-{
-	//CDAudio_Stop();
-
-	char path[256];
-
-	sprintf(path, "%s\\sounds\\stream\\%s", host_parms.basedir, trackname);
-
-	Sys_Error(path);
-}
-
-void CDAudio_PlayFromString(char* track_name, qboolean looping)
-{
-	CDAudio_Stop();
-
-	char path[512];
-	snprintf(path, 512, "%s/tracks/%s.mp3", com_gamedir, track_name);
-
-	int ret = mp3_start_play(path, 0);
-	cd_loop = looping;
-	last_track_string = track_name;
-
-	if (ret != 2) playing = true;
-	else {
-		Con_Printf("Couldn't find %s\n", path);
-		playing = false;
-		Cvar_Set("bgmtype","none");
-		CDAudio_VolumeChange(0);
-	}
-
-	CDAudio_VolumeChange(0.75);
-}
-
-void CDAudio_Play(byte track, qboolean looping)
-{
-	/*last_track = track;
-	CDAudio_Stop();
-
-    if (track < 1)
-        track = 1;
-
-	char path[256];
-	//snprintf(path, sizeof(path), "%s/%s/music/track%02u.mp3", host_parms.basedir, kurok ? "kurok" : "id1", track);
-	sprintf(path, "%s\\stream\\stream%02u.mp3", host_parms.basedir, track);
-
-	int ret;
-	ret = mp3_start_play(path, 0);
-
-	if(ret != 2)
-	{
-//		Con_Printf("Playing %s\n", path);
-		playing = true;
-	}
-	else
-	{
-		Con_Printf("Couldn't find %s\n", path);
-		playing = false;
-		Cvar_Set("bgmtype","none");
-		CDAudio_VolumeChange(0);
-	}
-
-
-	CDAudio_VolumeChange(bgmvolume.value);*/
-}
-
-void CDAudio_Stop(void)
-{
-	mp3_job_started = 0;
-
-//	file = -1;
-	playing = false;
-	CDAudio_VolumeChange(0);
-}
-
-void CDAudio_Pause(void)
-{
-	CDAudio_VolumeChange(0);
-	paused = true;
-}
-
-void CDAudio_Resume(void)
-{
-	CDAudio_VolumeChange(bgmvolume.value);
-	paused = false;
-}
-
-void CDAudio_Update(void)
-{
-
-	//if (bgmvolume.value != mp3_volume)
-	//	CDAudio_VolumeChange(bgmvolume.value);
-	//if(changeMp3Volume) CDAudio_VolumeChange(bgmvolume.value);
-
-	if (strcasecmp(bgmtype.string,"cd") == 0) {
-		/*if(mp3_status == MP3_END)
-		{
-			if(cd_loop == 1) {
-				CDAudio_PlayFromString(last_track_string, true);
-			} 
-		}*/
-
-	} else {
-		if (paused == false) {
-			CDAudio_Pause();
-		}
-		if (playing == true) {
-			CDAudio_Stop();
-		}
-	}
-}
-
-int CDAudio_Init(void)
-{
-	if (cls.state == ca_dedicated)
-		return -1;
-
-	if (COM_CheckParm("-nocdaudio"))
-		return -1;
-
-	mp3_init();
-	sceKernelDelayThread(5*10000);
-
-	enabled = true;
-
-	Cmd_AddCommand ("cd", CD_f);
-
-	Con_Printf("MP3 library Initialized\n");
-
-	return 0;
-}
-
-void CDAudio_Shutdown(void)
-{
-	Con_Printf("CDAudio_Shutdown\n");
-
-	CDAudio_Stop();
-
-	sceKernelDelayThread(5*10000);
-//	mp3_deinit();
-
-}
-
