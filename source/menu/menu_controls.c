@@ -41,6 +41,20 @@ extern cvar_t	in_tolerance;
 extern cvar_t	in_anub_mode;
 extern cvar_t	m_pitch;
 
+#ifdef __3DS__
+// Gyroscope aiming feature added by Yassine Milal.
+extern cvar_t	gyro_enable;
+extern cvar_t	gyro_sensitivity;
+extern cvar_t	gyro_pitch_sensitivity;
+extern cvar_t	gyro_yaw_sensitivity;
+extern cvar_t	gyro_invert_pitch;
+extern cvar_t	gyro_invert_yaw;
+char			*gyro_string;
+char			*gyro_invert_pitch_string;
+char			*gyro_invert_yaw_string;
+qboolean		controls_gyro_submenu = false;
+#endif
+
 /*
 ===============
 Menu_Controls_Set
@@ -49,10 +63,12 @@ Menu_Controls_Set
 void Menu_Controls_Set (void)
 {
 	Menu_ResetMenuButtons();
+	has_anub = false;
 
 #ifdef __PSP__
 	has_anub = true;
 #elif __3DS__
+	controls_gyro_submenu = false;
 	if (circlepadpro_flag || new3ds_flag) {
 		has_anub = true;
 	}
@@ -89,6 +105,26 @@ void Menu_Controls_SetStrings (void)
 			anub_string = "LOOK";
 		}
 	}
+
+#ifdef __3DS__
+	if ((int)gyro_enable.value == 1) {
+		gyro_string = "ENABLED";
+	} else {
+		gyro_string = "DISABLED";
+	}
+
+	if ((int)gyro_invert_pitch.value == 1) {
+		gyro_invert_pitch_string = "ENABLED";
+	} else {
+		gyro_invert_pitch_string = "DISABLED";
+	}
+
+	if ((int)gyro_invert_yaw.value == 1) {
+		gyro_invert_yaw_string = "ENABLED";
+	} else {
+		gyro_invert_yaw_string = "DISABLED";
+	}
+#endif
 }
 
 void Menu_Controls_ApplyAimAssist (void)
@@ -127,6 +163,47 @@ void Menu_Controls_ApplyAnubMode (void)
     Cvar_SetValue ("in_anub_mode", current_anubmode);
 }
 
+#ifdef __3DS__
+void Menu_Controls_ApplyGyro (void)
+{
+	float current_gyro = gyro_enable.value;
+	current_gyro += 1;
+	if (current_gyro > 1)
+		current_gyro = 0;
+	Cvar_SetValue("gyro_enable", current_gyro);
+}
+
+void Menu_Controls_ApplyGyroInvertPitch (void)
+{
+	float val = gyro_invert_pitch.value;
+	val += 1;
+	if (val > 1)
+		val = 0;
+	Cvar_SetValue("gyro_invert_pitch", val);
+}
+
+void Menu_Controls_ApplyGyroInvertYaw (void)
+{
+	float val = gyro_invert_yaw.value;
+	val += 1;
+	if (val > 1)
+		val = 0;
+	Cvar_SetValue("gyro_invert_yaw", val);
+}
+
+void Menu_Controls_OpenGyroSubmenu (void)
+{
+	controls_gyro_submenu = true;
+	Menu_ResetMenuButtons();
+}
+
+void Menu_Controls_CloseGyroSubmenu (void)
+{
+	controls_gyro_submenu = false;
+	Menu_ResetMenuButtons();
+}
+#endif
+
 void Menu_Controls_ApplySettings (void)
 {
     // no op
@@ -147,12 +224,20 @@ void Menu_Controls_Draw (void)
 	Menu_DrawCustomBackground (true);
 
 	// Header
+	#ifdef __3DS__
+	Menu_DrawTitle (controls_gyro_submenu ? "GYRO OPTIONS" : "CONTROL OPTIONS", MENU_COLOR_WHITE);
+	#else
 	Menu_DrawTitle ("CONTROL OPTIONS", MENU_COLOR_WHITE);
+	#endif
 
 	Menu_Controls_SetStrings();
 
 	// Map panel makes the background darker
     Menu_DrawMapPanel();
+
+#ifdef __3DS__
+	if (!controls_gyro_submenu) {
+#endif
 
 	// Aim Assist
 	Menu_DrawButton (controls_buttons++, controls_index++, "AIM ASSIST", "Toggle Assisted-Aim to Improve Targetting.", Menu_Controls_ApplyAimAssist);
@@ -180,8 +265,57 @@ void Menu_Controls_Draw (void)
 		Menu_DrawOptionButton (controls_buttons-1, anub_string);
 	}
 
+#ifdef __3DS__
+	// Open dedicated gyro submenu to avoid controls list overlap.
+	Menu_DrawButton (controls_buttons++, controls_index++, "GYRO SETTINGS",
+		"Open Gyroscope Settings.", Menu_Controls_OpenGyroSubmenu);
+	Menu_DrawOptionButton (controls_buttons-1, gyro_string);
+#endif
+
 	// Bindings
 	Menu_DrawButton (controls_buttons++, controls_index++, "BINDINGS", "Change Input Bindings.", Menu_Bindings_Set);
+
+#ifdef __3DS__
+	} else {
+		Menu_DrawButton (controls_buttons++, controls_index++, "BACK TO CONTROLS",
+			"Return to Control Options.", Menu_Controls_CloseGyroSubmenu);
+
+		// ---- Gyroscope Settings ----
+
+		// Gyro Enable
+		Menu_DrawButton (controls_buttons++, controls_index++, "GYRO AIMING",
+			"Enable Gyroscope Aiming.", Menu_Controls_ApplyGyro);
+		Menu_DrawOptionButton (controls_buttons-1, gyro_string);
+
+		// Gyro Sensitivity
+		Menu_DrawButton (controls_buttons++, controls_index++, "GYRO SENSITIVITY",
+			"Overall Gyroscope Sensitivity.", NULL);
+		Menu_DrawOptionSlider (controls_buttons-1, controls_index-1,
+			0.1f, 5.0f, gyro_sensitivity, "gyro_sensitivity", false, true, 0.1f);
+
+		// Gyro Yaw Sensitivity
+		Menu_DrawButton (controls_buttons++, controls_index++, "GYRO YAW SENS",
+			"Gyroscope Horizontal Sensitivity.", NULL);
+		Menu_DrawOptionSlider (controls_buttons-1, controls_index-1,
+			0.1f, 3.0f, gyro_yaw_sensitivity, "gyro_yaw_sensitivity", false, true, 0.1f);
+
+		// Gyro Pitch Sensitivity
+		Menu_DrawButton (controls_buttons++, controls_index++, "GYRO PITCH SENS",
+			"Gyroscope Vertical Sensitivity.", NULL);
+		Menu_DrawOptionSlider (controls_buttons-1, controls_index-1,
+			0.1f, 3.0f, gyro_pitch_sensitivity, "gyro_pitch_sensitivity", false, true, 0.1f);
+
+		// Gyro Invert Pitch
+		Menu_DrawButton (controls_buttons++, controls_index++, "GYRO INVERT PITCH",
+			"Invert Gyroscope Vertical Axis.", Menu_Controls_ApplyGyroInvertPitch);
+		Menu_DrawOptionButton (controls_buttons-1, gyro_invert_pitch_string);
+
+		// Gyro Invert Yaw
+		Menu_DrawButton (controls_buttons++, controls_index++, "GYRO INVERT YAW",
+			"Invert Gyroscope Horizontal Axis.", Menu_Controls_ApplyGyroInvertYaw);
+		Menu_DrawOptionButton (controls_buttons-1, gyro_invert_yaw_string);
+	}
+#endif
 
 	Menu_DrawDivider(-2.5);
 	Menu_DrawButton(-2, controls_index++, "APPLY", "Save & Apply Settings.", Menu_Controls_ApplySettings);

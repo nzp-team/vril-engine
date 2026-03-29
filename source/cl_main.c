@@ -56,6 +56,15 @@ cvar_t	m_side = {"m_side","0.8", true};
 cvar_t	in_disable_analog = {"in_disable_analog", "0", true};
 cvar_t	in_anub_mode = {"in_anub_mode", "0", true};
 
+#ifdef __3DS__
+cvar_t	gyro_enable            = {"gyro_enable",            "0",   true};
+cvar_t	gyro_sensitivity       = {"gyro_sensitivity",       "1.0", true};
+cvar_t	gyro_pitch_sensitivity = {"gyro_pitch_sensitivity", "1.0", true};
+cvar_t	gyro_yaw_sensitivity   = {"gyro_yaw_sensitivity",   "1.0", true};
+cvar_t	gyro_invert_pitch      = {"gyro_invert_pitch",      "1",   true};
+cvar_t	gyro_invert_yaw        = {"gyro_invert_yaw",        "1",   true};
+#endif
+
 cvar_t 	cl_hitmarkers = {"cl_hitmarkers", "1", true};
 cvar_t 	cl_colorblind = {"cl_colorblind", "0", true};
 cvar_t 	cl_textopacity = {"cl_textopacity", "0.20", true};
@@ -1037,6 +1046,15 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&in_acceleration);
 	Cvar_RegisterVariable (&in_disable_analog);
 	Cvar_RegisterVariable (&in_anub_mode);
+
+#ifdef __3DS__
+	Cvar_RegisterVariable (&gyro_enable);
+	Cvar_RegisterVariable (&gyro_sensitivity);
+	Cvar_RegisterVariable (&gyro_pitch_sensitivity);
+	Cvar_RegisterVariable (&gyro_yaw_sensitivity);
+	Cvar_RegisterVariable (&gyro_invert_pitch);
+	Cvar_RegisterVariable (&gyro_invert_yaw);
+#endif
 	
 #ifdef __WII__
 	Cvar_RegisterVariable (&ads_center);

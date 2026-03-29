@@ -32,6 +32,22 @@ extern float crosshair_opacity;
 
 extern cvar_t in_mlook; //Heffo - mlook cvar
 extern cvar_t in_anub_mode;
+extern cvar_t in_aimassist;
+
+// Gyroscope aiming feature added by Yassine Milal.
+// Gyroscope cvars
+extern cvar_t gyro_enable;
+extern cvar_t gyro_sensitivity;
+extern cvar_t gyro_pitch_sensitivity;
+extern cvar_t gyro_yaw_sensitivity;
+extern cvar_t gyro_invert_pitch;
+extern cvar_t gyro_invert_yaw;
+
+static qboolean gyro_was_enabled = false;
+static qboolean gyro_bias_ready = false;
+static int gyro_bias_samples = 0;
+static float gyro_bias_x = 0.0f;
+static float gyro_bias_y = 0.0f;
 
 void IN_Init (void)
 {
@@ -48,6 +64,9 @@ void IN_Init (void)
 			cppExit();
 		}
 	}
+
+	// Enable the gyroscope hardware
+	HIDUSER_EnableGyroscope();
 }
 
 void IN_Shutdown (void)
@@ -182,6 +201,93 @@ void IN_Move (usercmd_t *cmd)
 		cl.viewangles[PITCH] = 80.0f;
 	if (cl.viewangles[PITCH] < -70.0f)
 		cl.viewangles[PITCH] = -70.0f;
+
+	// ---- Gyroscope aiming ----
+	if (gyro_enable.value) {
+		angularRate gyro_data;
+		hidGyroRead(&gyro_data);
+
+		if (!gyro_was_enabled) {
+			gyro_was_enabled = true;
+			gyro_bias_ready = false;
+			gyro_bias_samples = 0;
+			gyro_bias_x = 0.0f;
+			gyro_bias_y = 0.0f;
+		}
+
+		if (!gyro_bias_ready) {
+			gyro_bias_x += gyro_data.x;
+			gyro_bias_y += gyro_data.y;
+			gyro_bias_samples++;
+
+			if (gyro_bias_samples >= 30) {
+				gyro_bias_x /= (float)gyro_bias_samples;
+				gyro_bias_y /= (float)gyro_bias_samples;
+				gyro_bias_ready = true;
+			}
+		} else {
+			float raw_yaw = gyro_data.y - gyro_bias_y;
+			float raw_pitch = gyro_data.x - gyro_bias_x;
+
+			// Filter tiny idle noise and sensor bias drift.
+			const float gyro_deadzone = 1.5f;
+			if (fabsf(raw_yaw) < gyro_deadzone)
+				raw_yaw = 0.0f;
+			if (fabsf(raw_pitch) < gyro_deadzone)
+				raw_pitch = 0.0f;
+
+			if (fabsf(raw_yaw) < (gyro_deadzone * 1.5f))
+				gyro_bias_y = (gyro_bias_y * 0.995f) + (gyro_data.y * 0.005f);
+			if (fabsf(raw_pitch) < (gyro_deadzone * 1.5f))
+				gyro_bias_x = (gyro_bias_x * 0.995f) + (gyro_data.x * 0.005f);
+
+			float gyro_sens       = gyro_sensitivity.value;
+			float gyro_yaw_sens   = gyro_yaw_sensitivity.value;
+			float gyro_pitch_sens = gyro_pitch_sensitivity.value;
+
+			// Raw gyro values are angular rate (roughly degrees/second).
+			// Scale down so the default sensitivity of 1.0 feels reasonable.
+			float gyro_scale = 0.005f;
+
+			// Landscape remap for 3DS handling:
+			// use sensor pitch for horizontal aim and roll for vertical aim.
+			float gyro_yaw   = raw_yaw   * gyro_sens * gyro_yaw_sens   * gyro_scale;
+			float gyro_pitch = raw_pitch * gyro_sens * gyro_pitch_sens * gyro_scale;
+
+			// Inversion
+			if (gyro_invert_yaw.value)
+				gyro_yaw = -gyro_yaw;
+			if (gyro_invert_pitch.value)
+				gyro_pitch = -gyro_pitch;
+
+			// Reduce gyro look speed when ADS / scoped (same as analog)
+			if (cl.stats[STAT_ZOOM] == 1) {
+				gyro_yaw   *= 0.5f;
+				gyro_pitch *= 0.5f;
+			} else if (cl.stats[STAT_ZOOM] == 2) {
+				gyro_yaw   *= 0.25f;
+				gyro_pitch *= 0.25f;
+			}
+
+			// Aim-assist slowdown
+			if ((in_aimassist.value) && (sv_player->v.facingenemy == 1)
+				&& cl.stats[STAT_CURRENTMAG] > 0) {
+				gyro_yaw   *= 0.5f;
+				gyro_pitch *= 0.5f;
+			}
+
+			cl.viewangles[YAW]   -= gyro_yaw;
+			cl.viewangles[PITCH] -= gyro_pitch;
+
+			// Re-clamp pitch
+			if (cl.viewangles[PITCH] > 80.0f)
+				cl.viewangles[PITCH] = 80.0f;
+			if (cl.viewangles[PITCH] < -70.0f)
+				cl.viewangles[PITCH] = -70.0f;
+		}
+	} else {
+		gyro_was_enabled = false;
+	}
 
 	// Ability to move with the left nub on NEW model systems
 	float move_x, move_y;
