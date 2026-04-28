@@ -695,6 +695,8 @@ void _Host_Frame (float time)
 	else
 		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
 
+	CDAudio_Update();
+
 	if (host_speeds.value)
 	{
 		pass1 = (time1 - time3)*1000;
