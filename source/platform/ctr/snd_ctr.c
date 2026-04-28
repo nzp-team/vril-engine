@@ -41,6 +41,8 @@ qboolean SNDDMA_Init(void)
   	}
 
     audio_buffer = linearAlloc(BUFFER_SIZE);
+	if(!audio_buffer) return false;
+	memset(audio_buffer, 0, BUFFER_SIZE);
 
     ndspSetOutputMode(NDSP_OUTPUT_STEREO);
 	ndspChnReset(0);
@@ -64,6 +66,7 @@ qboolean SNDDMA_Init(void)
 	shm->submission_chunk = 1;
 	shm->buffer = audio_buffer;
 
+	DSP_FlushDataCache(audio_buffer, BUFFER_SIZE);
 	ndspChnWaveBufAdd(0, &wave_buf);
 
 	sound_initialized = 1;
@@ -73,11 +76,10 @@ qboolean SNDDMA_Init(void)
 
 int SNDDMA_GetDMAPos(void)
 {
-	if(!sound_initialized)
-		return 0;
+	if(!sound_initialized) return 0;
 
-	shm->samplepos = ndspChnGetSamplePos(0) / (shm->samplebits / 8);
-	return shm->samplepos;
+    shm->samplepos = ndspChnGetSamplePos(0) * shm->channels;
+    return shm->samplepos;
 }
 
 void SNDDMA_Shutdown(void)
