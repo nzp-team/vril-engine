@@ -38,8 +38,6 @@ static bool 	playing  = false;
 static bool 	paused   = false;
 static bool 	enabled  = false;
 
-static float 	cdvolume = 0;
-
 static char		*last_track_string = "";
 
 int 			cd_loop = 0;
@@ -50,7 +48,6 @@ void CDAudio_VolumeChange(float bgmvolume)
 {
 	int volume = (int)(bgmvolume*(float)MAX_VOLUME);
 	mp3_volume = volume;
-	cdvolume = bgmvolume;
 }
 
 void CDAudio_PlayFromString(char* track_name, qboolean looping)
@@ -60,7 +57,7 @@ void CDAudio_PlayFromString(char* track_name, qboolean looping)
 	char path[512];
 	snprintf(path, 512, "%s/tracks/%s.mp3", com_gamedir, track_name);
 
-	int ret = mp3_start_play(path, 0);
+	int ret = mp3_start_play(path, looping);
 	cd_loop = looping;
 	last_track_string = track_name;
 
@@ -72,20 +69,20 @@ void CDAudio_PlayFromString(char* track_name, qboolean looping)
 		CDAudio_VolumeChange(0);
 	}
 
-	CDAudio_VolumeChange(0.75);
+	//CDAudio_VolumeChange(0.75);
 }
 
 void CDAudio_Stop(void)
 {
-	mp3_job_started = 0;
-
-	playing = false;
-	CDAudio_VolumeChange(0);
+    mp3_stop();
+    mp3_job_started = 0;
+    playing = false;
+    mp3_volume = 0;
 }
 
 void CDAudio_Pause(void)
 {
-	CDAudio_VolumeChange(0);
+	mp3_volume = 0;
 	paused = true;
 }
 
@@ -97,12 +94,15 @@ void CDAudio_Resume(void)
 
 void CDAudio_Update(void)
 {
-	if (paused == false) {
-		CDAudio_Pause();
+    if (!enabled || paused || !playing) {
+		return;
 	}
-	if (playing == true) {
-		CDAudio_Stop();
-	}
+
+    if (!mp3_job_started && cd_loop) {
+        CDAudio_PlayFromString(last_track_string, cd_loop);
+    } else if (!mp3_job_started) {
+        playing = false;
+    }
 }
 
 void CDAudio_DelayThread(int delay)
