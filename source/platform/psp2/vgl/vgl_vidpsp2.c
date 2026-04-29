@@ -211,14 +211,14 @@ void GL_LoadShader(const char* filename, GLuint idx, GLboolean fragment) {
 	if (fragment)
 	{
 		//glShaderBinary(1, &fs[idx], 0, res, size);
-		fs[idx] = glCreateShader(GL_FRAGMENT_SHADER);
+		fs[idx] = glCreateShader(GL_CG_FRAGMENT_SHADER_EXT);
 		glShaderSource(fs[idx], 1, &src, NULL);
 		glCompileShader(fs[idx]);
 	}
 	else
 	{
 		//glShaderBinary(1, &vs[idx], 0, res, size);
-		vs[idx] = glCreateShader(GL_VERTEX_SHADER);
+		vs[idx] = glCreateShader(GL_CG_VERTEX_SHADER_EXT);
 		glShaderSource(vs[idx], 1, &src, NULL);
 		glCompileShader(vs[idx]);	
 	}
@@ -361,10 +361,10 @@ void GL_ResetShaders() {
 	
 	// Loading shaders
 	for (int i = 0; i < NUM_FRAG_SHADERS; i++) {
-		fs[i] = glCreateShader(GL_FRAGMENT_SHADER);
+		fs[i] = glCreateShader(GL_CG_FRAGMENT_SHADER_EXT);
 	}
 	for (int i = 0; i < NUM_VERT_SHADERS; i++) {
-		vs[i] = glCreateShader(GL_VERTEX_SHADER);
+		vs[i] = glCreateShader(GL_CG_VERTEX_SHADER_EXT);
 	}
 	
 	if (gl_fog.value) {
