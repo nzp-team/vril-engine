@@ -68,10 +68,10 @@ void Menu_Lobby_SetStrings (void)
 
     switch ((int)sv_difficulty.value) {
         case 0:
-            difficulty = "EASY";
+            difficulty = "NORMAL";
             break;
         case 1:
-            difficulty = "NORMAL";
+            difficulty = "EASY";
             break;
         case 2:
             difficulty = "HARD";
