@@ -193,8 +193,8 @@ void Menu_Lobby_Draw (void)
         Menu_DrawStringCentered(x_pos*ui_scale, y_pos, game_starting, 255, 255, 255, 255);
 
         // Countdown bar
-        Menu_DrawFill(x_pos, y_pos - (CHAR_HEIGHT+2), ((float)(image_width*ui_scale)*(lobby_delta/(vid.width/60))/2), (vid.height/ui_scale)/36, 136, 136*(lobby_delta/(vid.width/60)), 136*(lobby_delta/(vid.width/60)), 230);
-        Menu_DrawFill(x_pos, y_pos - (CHAR_HEIGHT+2), -((float)(image_width*ui_scale)*(lobby_delta/(vid.width/60))/2), (vid.height/ui_scale)/36, 136, 136*(lobby_delta/(vid.width/60)), 136*(lobby_delta/(vid.width/60)), 230);
+        Menu_DrawFill(x_pos, y_pos - (_CHAR_HEIGHT+2), ((float)(image_width*ui_scale)*(lobby_delta/(vid.width/60))/2), (vid.height/ui_scale)/36, 136, 136*(lobby_delta/(vid.width/60)), 136*(lobby_delta/(vid.width/60)), 230);
+        Menu_DrawFill(x_pos, y_pos - (_CHAR_HEIGHT+2), -((float)(image_width*ui_scale)*(lobby_delta/(vid.width/60))/2), (vid.height/ui_scale)/36, 136, 136*(lobby_delta/(vid.width/60)), 136*(lobby_delta/(vid.width/60)), 230);
 
         if (menu_lobby_last != (float)floor(lobby_delta)) {
             Menu_SetSound(MENU_SND_BEEP);

@@ -23,9 +23,6 @@ float   		menu_text_scale_factor;
 
 qboolean		menu_is_solo;
 
-float			CHAR_WIDTH;
-float			CHAR_HEIGHT;
-
 int 			big_bar_height;
 int 			small_bar_height;
 
@@ -65,9 +62,6 @@ void Menu_DictateScaleFactor(void)
 #else
 	menu_text_scale_factor = 1.0f;
 #endif // __NSPIRE__, __PSP__, __vita__, __3DS__
-
-	CHAR_WIDTH = 8;
-	CHAR_HEIGHT = 8;
 
 	big_bar_height = 25;
 	small_bar_height = 2;
@@ -317,7 +311,7 @@ void Menu_DrawDivider (float order)
 		y_pos = big_bar_height + ((order*-1)*y_factor);
 		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
 	} else {
-		y_pos = 30 + (order*y_factor) - (CHAR_HEIGHT/2);
+		y_pos = 30 + (order*y_factor) - (_CHAR_HEIGHT/2);
 		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 	}
 
@@ -390,7 +384,7 @@ void Menu_DrawSelectionBox (int x_pos, int y_pos)
 {
 	int horizontal_border_height = 1;
 	int vertical_border_width = 1;
-	int border_height = (horizontal_border_height*2) + (CHAR_HEIGHT);
+	int border_height = (horizontal_border_height*2) + (_CHAR_HEIGHT);
 	int border_width = 140 + vertical_border_width;
 
 	// Draw selection box
@@ -479,9 +473,9 @@ void Menu_DrawSubMenu (char *line_one, char *line_two)
 
 	UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_TOP);
 	// Quit/Restart Text
-    Menu_DrawStringCentered (0, y_pos + (CHAR_HEIGHT*ui_scale), line_one, 255, 255, 255, 255);
+    Menu_DrawStringCentered (0, y_pos + (_CHAR_HEIGHT*ui_scale), line_one, 255, 255, 255, 255);
     // Lose progress text
-    Menu_DrawStringCentered (0, y_pos+((CHAR_HEIGHT*2)*ui_scale), line_two, 255, 255, 255, 255);
+    Menu_DrawStringCentered (0, y_pos+((_CHAR_HEIGHT*2)*ui_scale), line_two, 255, 255, 255, 255);
 }
 
 /*
@@ -576,7 +570,7 @@ void Menu_DrawButton (int order, int button_index, char* button_name, char* butt
 
 		// Draw the bottom screen text for selected button 
 		UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_BOTTOM);
-		Menu_DrawStringCentered (0, big_bar_height - CHAR_HEIGHT, button_summary, 255, 255, 255, 255);
+		Menu_DrawStringCentered (0, big_bar_height - _CHAR_HEIGHT, button_summary, 255, 255, 255, 255);
 	} else {
 		// Not hovering over button
 		if (order < 0) {
@@ -689,19 +683,19 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 			case MAP_CATEGORY_USER: s = 0.5; t = 0; badge_name = "USERMAP"; break;
 		}
 
-		Menu_DrawString((x_pos + 4 + menu_badges_width)/ui_scale, (y_pos + image_height - (menu_badges_height/2) - (CHAR_HEIGHT/2))/ui_scale, badge_name, 255, 255, 0, 255, menu_text_scale_factor, 0);
+		Menu_DrawString((x_pos + 4 + menu_badges_width)/ui_scale, (y_pos + image_height - (menu_badges_height/2) - (_CHAR_HEIGHT/2))/ui_scale, badge_name, 255, 255, 0, 255, menu_text_scale_factor, 0);
 		Menu_DrawSubPic((x_pos + 4), (y_pos + image_height - menu_badges_height), menu_badges, s, t, s_coord_size, t_coord_size, scale, 255, 255, 255, 255);
 
 #ifndef MENU_HIDE_MAP_DESCRIPTIONS
 		// Draw map description
 		for (int j = 0; j < 8; j++) {
-			Menu_DrawStringCentered ((x_pos + (image_width/2)), (y_pos + image_height + small_bar_height + ((CHAR_HEIGHT/2)*ui_scale) + j*desc_y_factor), custom_maps[index].map_desc[j], 255, 255, 255, 255);
+			Menu_DrawStringCentered ((x_pos + (image_width/2)), (y_pos + image_height + small_bar_height + ((_CHAR_HEIGHT/2)*ui_scale) + j*desc_y_factor), custom_maps[index].map_desc[j], 255, 255, 255, 255);
 		}
 #endif
 		// Draw map author
 		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
 		if (custom_maps[index].map_author != NULL) {
-			Menu_DrawStringCentered (vid.width/2, 0 + CHAR_HEIGHT, custom_maps[index].map_author, 255, 255, 0, 255);		
+			Menu_DrawStringCentered (vid.width/2, 0 + _CHAR_HEIGHT, custom_maps[index].map_author, 255, 255, 0, 255);		
 		}
 	}
 }
@@ -754,7 +748,7 @@ void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, in
 	Menu_DrawFill((x_pos+(option_pos*slider_box_width)) - slider_width, y_pos-2, slider_width, slider_box_height+4, 255, 255, 255, 255);
 	// Cvar value string
 	if (draw_option_string) {
-		Menu_DrawString(x_pos + slider_box_width + CHAR_WIDTH, y_pos - 2, _option_string, 255, 255, 255, 255, menu_text_scale_factor, 0);
+		Menu_DrawString(x_pos + slider_box_width + _CHAR_WIDTH, y_pos - 2, _option_string, 255, 255, 255, 255, menu_text_scale_factor, 0);
 	}
 }
 
@@ -796,7 +790,7 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 
 	int map_region_center = (150 + (((vid.width-150)/2)+2));
 	int image_x_pos = map_region_center - ((image_width/ui_scale)/2);
-	int image_y_pos = ((big_bar_height+small_bar_height)+(CHAR_HEIGHT)/2) + (image_height/ui_scale);
+	int image_y_pos = ((big_bar_height+small_bar_height)+(_CHAR_HEIGHT)/2) + (image_height/ui_scale);
 
 	int left_column_x = map_region_center - ((image_width/ui_scale)/2) + (20*ui_scale);
 	int left_column_y = 30*ui_scale;
@@ -859,7 +853,7 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 	// Draw border around map image
 	Menu_DrawMapBorder (image_x_pos/ui_scale, image_y_pos, image_width, image_height);
 	// Map Name (Pretty)
-	Menu_DrawStringCentered (image_x_pos + (image_width/2), image_y_pos - image_height + CHAR_HEIGHT, custom_maps[i].map_name_pretty, 255, 255, 0, 255);
+	Menu_DrawStringCentered (image_x_pos + (image_width/2), image_y_pos - image_height + _CHAR_HEIGHT, custom_maps[i].map_name_pretty, 255, 255, 0, 255);
 }
 
 /*
@@ -899,7 +893,7 @@ void Menu_DrawCreditContributor (int order, int sub_order, char *header)
 	int x_pos = 160; 
 	int y_pos = 30 + (order*y_factor);
 
-	y_pos += sub_order * CHAR_HEIGHT;
+	y_pos += sub_order * _CHAR_HEIGHT;
 
 	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 	Menu_DrawString(x_pos, y_pos, header, 255, 255, 255, 255, menu_text_scale_factor, 0);
@@ -1024,20 +1018,20 @@ void Menu_OSK_Draw (void)
 	Menu_DrawMapBorder (x_pos-5, y_pos-10, x_value, y_value);
 
 	for(i=0;i<=MAX_Y;i++) {
-		Menu_DrawString (x_pos, y_pos+(CHAR_HEIGHT*i), osk_text[i], 255, 255, 255, 255, menu_text_scale_factor, 0);
+		Menu_DrawString (x_pos, y_pos+(_CHAR_HEIGHT*i), osk_text[i], 255, 255, 255, 255, menu_text_scale_factor, 0);
 		
 		if (i == 0) {
-			Menu_DrawString (x_pos+(x_value)-88, y_pos+(CHAR_HEIGHT*i), "CONFIRM", 255, 255, 0, 255, menu_text_scale_factor, 0);
-			Menu_DrawPicStretch (x_pos+(x_value)-20, y_pos+(CHAR_HEIGHT*i), osk_button[0], 8, 8);
+			Menu_DrawString (x_pos+(x_value)-88, y_pos+(_CHAR_HEIGHT*i), "CONFIRM", 255, 255, 0, 255, menu_text_scale_factor, 0);
+			Menu_DrawPicStretch (x_pos+(x_value)-20, y_pos+(_CHAR_HEIGHT*i), osk_button[0], 8, 8);
 		} else if (i == 2) {
-			Menu_DrawString (x_pos+(x_value)-88, y_pos+(CHAR_HEIGHT*i), "CANCEL", 255, 255, 0, 255, menu_text_scale_factor, 0);
-			Menu_DrawPicStretch (x_pos+(x_value)-20, y_pos+(CHAR_HEIGHT*i), osk_button[1], 8, 8);
+			Menu_DrawString (x_pos+(x_value)-88, y_pos+(_CHAR_HEIGHT*i), "CANCEL", 255, 255, 0, 255, menu_text_scale_factor, 0);
+			Menu_DrawPicStretch (x_pos+(x_value)-20, y_pos+(_CHAR_HEIGHT*i), osk_button[1], 8, 8);
 		} else if (i == 4) {
-			Menu_DrawString (x_pos+(x_value)-88, y_pos+(CHAR_HEIGHT*i), "DELETE", 255, 255, 0, 255, menu_text_scale_factor, 0);
-			Menu_DrawPicStretch (x_pos+(x_value)-20, y_pos+(CHAR_HEIGHT*i), osk_button[2], 8, 8);
+			Menu_DrawString (x_pos+(x_value)-88, y_pos+(_CHAR_HEIGHT*i), "DELETE", 255, 255, 0, 255, menu_text_scale_factor, 0);
+			Menu_DrawPicStretch (x_pos+(x_value)-20, y_pos+(_CHAR_HEIGHT*i), osk_button[2], 8, 8);
 		} else if (i == 6) {
-			Menu_DrawString (x_pos+(x_value)-88, y_pos+(CHAR_HEIGHT*i), "ADD CHAR", 255, 255, 0, 255, menu_text_scale_factor, 0);
-			Menu_DrawPicStretch (x_pos+(x_value)-20, y_pos+(CHAR_HEIGHT*i), osk_button[3], 8, 8);
+			Menu_DrawString (x_pos+(x_value)-88, y_pos+(_CHAR_HEIGHT*i), "ADD CHAR", 255, 255, 0, 255, menu_text_scale_factor, 0);
+			Menu_DrawPicStretch (x_pos+(x_value)-20, y_pos+(_CHAR_HEIGHT*i), osk_button[3], 8, 8);
 		}
 	}
 	// Side bar
@@ -1051,20 +1045,20 @@ void Menu_OSK_Draw (void)
 		strncpy(oneline,osk_buffer,MAX_CHAR_LINE);
 		oneline[MAX_CHAR_LINE] = '\0';
 
-		Menu_DrawString (x_pos, y_pos+4+(CHAR_HEIGHT*(MAX_Y+2)), oneline, 255, 0, 0, 255, menu_text_scale_factor, 0);
+		Menu_DrawString (x_pos, y_pos+4+(_CHAR_HEIGHT*(MAX_Y+2)), oneline, 255, 0, 0, 255, menu_text_scale_factor, 0);
 
 		strncpy(oneline,osk_buffer+MAX_CHAR_LINE, text_len - MAX_CHAR_LINE);
 		oneline[text_len - MAX_CHAR_LINE] = '\0';
 
 		// Current input char
-		Menu_DrawString (x_pos+(CHAR_WIDTH/2), y_pos+4+(CHAR_HEIGHT*(MAX_Y+3)), oneline, 255, 255, 255, 255, menu_text_scale_factor, 0);
+		Menu_DrawString (x_pos+(_CHAR_WIDTH/2), y_pos+4+(_CHAR_HEIGHT*(MAX_Y+3)), oneline, 255, 255, 255, 255, menu_text_scale_factor, 0);
 		// Current cursor
-		Menu_DrawFill (x_pos+((CHAR_WIDTH)*(text_len)), y_pos+4+(CHAR_HEIGHT*(MAX_Y+2)), 1, CHAR_HEIGHT, 255, 0, 0, 255);
+		Menu_DrawFill (x_pos+((_CHAR_WIDTH)*(text_len)), y_pos+4+(_CHAR_HEIGHT*(MAX_Y+2)), 1, _CHAR_HEIGHT, 255, 0, 0, 255);
 	} else {
 		// Current input char
-		Menu_DrawString (x_pos+(CHAR_WIDTH/2), y_pos+4+(CHAR_HEIGHT*(MAX_Y+2)), osk_buffer, 255, 255, 255, 255, menu_text_scale_factor, 0);
+		Menu_DrawString (x_pos+(_CHAR_WIDTH/2), y_pos+4+(_CHAR_HEIGHT*(MAX_Y+2)), osk_buffer, 255, 255, 255, 255, menu_text_scale_factor, 0);
 		// Current cursor
-		Menu_DrawFill (x_pos+((CHAR_WIDTH)*(text_len)), y_pos+4+(CHAR_HEIGHT*(MAX_Y+2)), 1, CHAR_HEIGHT, 255, 0, 0, 255);
+		Menu_DrawFill (x_pos+((_CHAR_WIDTH)*(text_len)), y_pos+4+(_CHAR_HEIGHT*(MAX_Y+2)), 1, _CHAR_HEIGHT, 255, 0, 0, 255);
 	}
 
 	// Use font kerning logic to find
@@ -1086,6 +1080,6 @@ void Menu_OSK_Draw (void)
 	}
 
 	// Current hovered char
-	Draw_ColoredString(hover_x, y_pos + (osk_pos_y * CHAR_HEIGHT), selected_char, 255, 0, 0, 255, menu_text_scale_factor);
+	Draw_ColoredString(hover_x, y_pos + (osk_pos_y * _CHAR_HEIGHT), selected_char, 255, 0, 0, 255, menu_text_scale_factor);
 }
 #endif
