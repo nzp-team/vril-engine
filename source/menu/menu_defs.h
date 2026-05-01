@@ -175,6 +175,11 @@ extern qboolean		    menu_is_solo;
 extern int 			    big_bar_height;
 extern int 			    small_bar_height;
 
+// Width and height of a character
+// set by platform scale
+#define	_CHAR_WIDTH 		8
+#define	_CHAR_HEIGHT 		8
+
 // Menu specific key abstractions
 extern int				MENU_KEY_CONFIRM;
 extern int				MENU_KEY_BACK;

@@ -27,6 +27,8 @@ int sceKernelDelayThread(int delay);
 #elif __3DS__
 #include <3ds.h>
 #include "platform/ctr/mp3.h"
+#elif __PSP2__
+#include "platform/psp2/mp3.h"
 #endif
 
 int				MAX_VOLUME;
@@ -120,6 +122,8 @@ void CDAudio_SetMaxVolume(void)
 	MAX_VOLUME = PSP_VOLUME_MAX;
 #elif __3DS__
 	MAX_VOLUME = 60;
+#else
+	MAX_VOLUME = 60;
 #endif
 }
 
@@ -137,6 +141,8 @@ void CDAudio_Init(void)
 
 	enabled = true;
 	Cmd_AddCommand ("cd", CD_f);
+
+	Con_Printf("cdaudio init fine\n");
 }
 
 void CDAudio_Shutdown(void)
@@ -212,17 +218,6 @@ static void CD_f (void)
 	{
 		if (playing)
 			CDAudio_Stop();
-		return;
-	}
-
-	if (Q_strcasecmp(command, "info") == 0)
-	{
-		Con_Printf("MP3 Player By Crow_bar\n");
-		Con_Printf("Based On sceMp3 Lib\n");
-		Con_Printf("Additional fixed by\n");
-		Con_Printf("dr_mabuse1981 and Baker.\n");
-		Con_Printf("string support: cypress.\n");
-		Con_Printf("\n");
 		return;
 	}
 }
