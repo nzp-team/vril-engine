@@ -193,7 +193,7 @@ std::unique_ptr<AudioDecoder> AudioDecoder::Create(FILE* file, const std::string
 	if (!memcmp(magic, wma_magic, 4)) {
 		return std::unique_ptr<AudioDecoder>(new WMAUnsupportedFormatDecoder());
 	}
-
+/*
 	// False positive MP3s should be prevented before by checking for common headers
 #ifdef HAVE_MPG123
 	static bool mpg123_works = true;
@@ -234,7 +234,7 @@ std::unique_ptr<AudioDecoder> AudioDecoder::Create(FILE* file, const std::string
 		}
 	}
 #endif
-
+*/
 	fseek(file, 0, SEEK_SET);
 	return nullptr;
 }

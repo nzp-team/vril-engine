@@ -179,8 +179,8 @@ extern int 			    small_bar_height;
 
 // Width and height of a character
 // set by platform scale
-extern float			CHAR_WIDTH;
-extern float			CHAR_HEIGHT;
+#define	_CHAR_WIDTH 		8
+#define	_CHAR_HEIGHT 		8
 
 // Menu specific key abstractions
 extern int				MENU_KEY_CONFIRM;

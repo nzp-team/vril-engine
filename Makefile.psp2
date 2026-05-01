@@ -87,10 +87,10 @@ COMMON_OBJS =	\
 	source/platform/psp2/vgl/vgl_warp.o \
 	source/platform/psp2/vgl/vgl_fullbright.o \
 	source/platform/psp2/r_part.o \
-	source/platform/psp2/audiodec/cd_psp2.o \
+	source/platform/psp2/mp3.o \
+	source/cdaudio.o \
 	source/platform/psp2/audiodec/audio_decoder.o \
 	source/platform/psp2/audiodec/audio_resampler.o \
-	source/platform/psp2/audiodec/decoder_mpg123.o \
 	source/platform/psp2/audiodec/decoder_oggvorbis.o \
 	source/snd_dma.o \
 	source/snd_mix.o \
