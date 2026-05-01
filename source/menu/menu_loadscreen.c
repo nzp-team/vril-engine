@@ -84,7 +84,7 @@ void Menu_DrawLoadScreen (void)
 
 		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
 		if (key_dest == key_game) {
-			Menu_DrawStringCentered(vid.width/2, CHAR_HEIGHT+2, loadinglinetext, 255, 255, 255, 255);
+			Menu_DrawStringCentered(vid.width/2, _CHAR_HEIGHT+2, loadinglinetext, 255, 255, 255, 255);
 		}
 	}
 }
