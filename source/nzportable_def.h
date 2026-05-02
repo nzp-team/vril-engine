@@ -296,7 +296,8 @@ typedef struct
 #include "menu/menu_globaldefs.h"
 
 #include "crc.h"
-#include "cdaudio.h"
+#include "snd_music.h"
+#include PLATFORM_FILE(music.h)
 
 #include RENDERER_FILE(main.h)
 

@@ -61,8 +61,6 @@ extern int cpuClockSpeed;
 extern int ramClockSpeed;
 extern int busClockSpeed;
 
-void CDAudio_Stop(void);
-
 namespace quake
 {
 	namespace system
@@ -89,7 +87,7 @@ namespace quake
 		void suspend()
 		{
 			Con_Printf("Suspend requested \n");
-			CDAudio_Pause();
+			Music_Pause();
 			// Close each file.
 			for (std::size_t file_index = 0; file_index < file_count; ++file_index)
 			{
@@ -161,7 +159,7 @@ namespace quake
 				}
 			}
 			
-			CDAudio_Resume();
+			Music_Resume();
 			Con_Printf("Filesystem resumed\n");
 			
 		}
