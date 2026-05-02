@@ -1337,11 +1337,11 @@ void CL_ParseServerMessage (void)
 
 				if (cl.paused)
 				{
-					CDAudio_Pause ();
+					Music_Pause ();
 				}
 				else
 				{
-					CDAudio_Resume ();
+					Music_Resume ();
 				}
 			}
 			break;

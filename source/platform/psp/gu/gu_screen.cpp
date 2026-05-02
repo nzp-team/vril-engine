@@ -895,7 +895,6 @@ SCR_BeginLoadingPlaque
 */
 void SCR_BeginLoadingPlaque (void)
 {
-	CDAudio_Pause();
 	S_StopAllSounds (true);
 
 	if (cls.state != ca_connected)
@@ -929,7 +928,6 @@ void SCR_EndLoadingPlaque (void)
 	scr_disabled_for_loading = false;
 	scr_fullupdate = 0;
 	Con_ClearNotify ();
-	CDAudio_Resume();
 }
 
 //=============================================================================

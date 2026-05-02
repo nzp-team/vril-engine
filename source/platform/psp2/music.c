@@ -27,23 +27,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define                 CHANNEL	        1
 
-static volatile bool    mp3_running = false;
+static volatile bool    music_running = false;
 
-static SceUID           mp3_thread;
+static SceUID           music_thread;
 
 uint32_t                rate;
-uint8_t			        mp3_channels;
+uint8_t			        music_channels;
 size_t                  buffersize;
 static void             *decode_buf = NULL;
 
 static mpg123_handle    *handle = NULL;
 
-volatile int            mp3_job_started;
-int                     mp3_volume;
+volatile int            music_job_started;
+int                     music_volume;
 
 static int              audio_port = -1;
 
-int mp3_init (void)
+int music_init (void)
 {
     int err = mpg123_init();
     if (err != MPG123_OK) {
@@ -72,14 +72,14 @@ uint64_t mp3_decode(void *buffer)
 	return ret/(sizeof(int16_t));
 }
 
-static int mp3_thread_func(SceSize args, void *argp)
+static int music_thread_func(SceSize args, void *argp)
 {
-    while(mp3_running) {
+    while(music_running) {
         size_t read = mp3_decode(decode_buf);
 
         if(read == 0) {
-            mp3_job_started = 0;
-            mp3_running = false;
+            music_job_started = 0;
+            music_running = false;
             break;
         }
 
@@ -90,15 +90,15 @@ static int mp3_thread_func(SceSize args, void *argp)
     return 0;
 }
 
-void mp3_stop(void)
+void music_stop(void)
 {
-    mp3_running = false;
-    mp3_job_started = 0;
+    music_running = false;
+    music_job_started = 0;
 
-    if(mp3_thread) {
-        sceKernelWaitThreadEnd(mp3_thread, NULL, NULL);
-        sceKernelDeleteThread(mp3_thread);
-        mp3_thread = 0;
+    if(music_thread) {
+        sceKernelWaitThreadEnd(music_thread, NULL, NULL);
+        sceKernelDeleteThread(music_thread);
+        music_thread = 0;
     }
 
     sceAudioOutReleasePort(audio_port);
@@ -110,10 +110,10 @@ void mp3_stop(void)
     }
 }
 
-int mp3_start_play(char *filename, int startpos)
+int music_start_play(char *filename, int startpos)
 {
-    if(mp3_running) {
-        mp3_stop();
+    if(music_running) {
+        music_stop();
     }
 
     int encoding = 0;
@@ -133,11 +133,11 @@ int mp3_start_play(char *filename, int startpos)
     int err = mpg123_open(handle, filename); 
     if (err != MPG123_OK) return 0;
 
-    err = mpg123_getformat(handle, (long*)&rate, (int*)&mp3_channels, &encoding);
+    err = mpg123_getformat(handle, (long*)&rate, (int*)&music_channels, &encoding);
     if (err != MPG123_OK) return 0;
 
     mpg123_format_none(handle);
-	mpg123_format(handle, rate, mp3_channels, MPG123_ENC_SIGNED_16);
+	mpg123_format(handle, rate, music_channels, MPG123_ENC_SIGNED_16);
 
     mpg123_seek_frame(handle, startpos, SEEK_SET);
     mpg123_volume(handle, bgmvolume.value);
@@ -148,7 +148,7 @@ int mp3_start_play(char *filename, int startpos)
 
     int samples_per_buf = 256;
 
-    audio_port = sceAudioOutOpenPort(SCE_AUDIO_OUT_PORT_TYPE_BGM, samples_per_buf, rate, mp3_channels == 1 ? SCE_AUDIO_OUT_MODE_MONO : SCE_AUDIO_OUT_MODE_STEREO);
+    audio_port = sceAudioOutOpenPort(SCE_AUDIO_OUT_PORT_TYPE_BGM, samples_per_buf, rate, music_channels == 1 ? SCE_AUDIO_OUT_MODE_MONO : SCE_AUDIO_OUT_MODE_STEREO);
     if(audio_port < 0) {
         Sys_Error("Failed to open audio port: %d\n", audio_port);
         return 0;
@@ -158,24 +158,24 @@ int mp3_start_play(char *filename, int startpos)
     sceAudioOutSetVolume(audio_port, SCE_AUDIO_VOLUME_FLAG_L_CH | SCE_AUDIO_VOLUME_FLAG_R_CH, vol);
 
     // single decode buffer is enough since output is blocking
-    buffersize = samples_per_buf*mp3_channels*sizeof(int16_t);
+    buffersize = samples_per_buf*music_channels*sizeof(int16_t);
     decode_buf = malloc(buffersize);
     if(!decode_buf) {
         Sys_Error("Failed to allocate MP3 decode buffer\n");
         return 0;
     }
 
-    mp3_job_started = 1;
-    mp3_running = true;
-    mp3_thread = sceKernelCreateThread("mp3_thread", mp3_thread_func, 0x10000100, 0x10000, 0, 0, NULL);
-    sceKernelStartThread(mp3_thread, 0, NULL);
+    music_job_started = 1;
+    music_running = true;
+    music_thread = sceKernelCreateThread("music_thread", music_thread_func, 0x10000100, 0x10000, 0, 0, NULL);
+    sceKernelStartThread(music_thread, 0, NULL);
 
     return 1;
 }
 
-void mp3_deinit (void)
+void music_deinit (void)
 {
-    mp3_stop();
+    music_stop();
     mpg123_close(handle);
 	mpg123_delete(handle);
     handle = NULL;

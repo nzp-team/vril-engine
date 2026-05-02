@@ -27,22 +27,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define                 CHANNEL	        1
 #define                 MP3_BUFFERS     4
 
-static volatile bool    mp3_running = false;
+static volatile bool    music_running = false;
 
-static Thread           mp3_thread;
+static Thread           music_thread;
 
 uint32_t                rate;
-uint8_t			        mp3_channels;
+uint8_t			        music_channels;
 size_t                  buffersize;
 static int16_t          *buffers = NULL;
 
 static ndspWaveBuf      *waveBuf = NULL;
 static mpg123_handle    *handle = NULL;
 
-volatile int            mp3_job_started;
-int                     mp3_volume;
+volatile int            music_job_started;
+int                     music_volume;
 
-int mp3_init (void)
+int music_init (void)
 {
     int err = mpg123_init();
     if (err != MPG123_OK) {
@@ -71,9 +71,9 @@ uint64_t mp3_decode(void *buffer)
 	return ret/(sizeof(int16_t));
 }
 
-static void mp3_thread_func(void *arg)
+static void music_thread_func(void *arg)
 {
-    while(mp3_running) {
+    while(music_running) {
         bool queued = false;
 
         DSP_InvalidateDataCache(waveBuf, sizeof(ndspWaveBuf)*MP3_BUFFERS);
@@ -85,12 +85,12 @@ static void mp3_thread_func(void *arg)
                 size_t read = mp3_decode(buf);
 
                 if(read == 0) {
-                    mp3_job_started = 0;
-                    mp3_running = false;
+                    music_job_started = 0;
+                    music_running = false;
                     return;
                 }
 
-                waveBuf[i].nsamples = read/mp3_channels;
+                waveBuf[i].nsamples = read/music_channels;
                 //waveBuf[i].status = NDSP_WBUF_FREE;
 
                 DSP_FlushDataCache(buf, read*sizeof(int16_t));
@@ -107,15 +107,15 @@ static void mp3_thread_func(void *arg)
     }
 }
 
-void mp3_stop(void)
+void music_stop(void)
 {
-    mp3_running = false;
-    mp3_job_started = 0;
+    music_running = false;
+    music_job_started = 0;
 
-    if(mp3_thread) {
-        threadJoin(mp3_thread, U64_MAX);
-        threadFree(mp3_thread);
-        mp3_thread = NULL;
+    if(music_thread) {
+        threadJoin(music_thread, U64_MAX);
+        threadFree(music_thread);
+        music_thread = NULL;
     }
 
     ndspChnWaveBufClear(CHANNEL);
@@ -133,10 +133,10 @@ void mp3_stop(void)
     ndspChnReset(CHANNEL);
 }
 
-int mp3_start_play(char *filename, int startpos)
+int music_start_play(char *filename, int startpos)
 {
-    if(mp3_running) {
-        mp3_stop();
+    if(music_running) {
+        music_stop();
     }
 
     int encoding = 0;
@@ -156,11 +156,11 @@ int mp3_start_play(char *filename, int startpos)
     int err = mpg123_open(handle, filename); 
     if (err != MPG123_OK) return 0;
 
-    err = mpg123_getformat(handle, (long*)&rate, (int*)&mp3_channels, &encoding);
+    err = mpg123_getformat(handle, (long*)&rate, (int*)&music_channels, &encoding);
     if (err != MPG123_OK) return 0;
 
     mpg123_format_none(handle);
-	mpg123_format(handle, rate, mp3_channels, MPG123_ENC_SIGNED_16);
+	mpg123_format(handle, rate, music_channels, MPG123_ENC_SIGNED_16);
 
     mpg123_seek_frame(handle, startpos, SEEK_SET);
     mpg123_volume(handle, bgmvolume.value);
@@ -185,7 +185,7 @@ int mp3_start_play(char *filename, int startpos)
     ndspChnSetInterp(CHANNEL, NDSP_INTERP_LINEAR);
     ndspChnSetRate(CHANNEL, rate);
     // decide mono or stereo based on input file
-    ndspChnSetFormat(CHANNEL, mp3_channels == 1 ? NDSP_FORMAT_MONO_PCM16 : NDSP_FORMAT_STEREO_PCM16);
+    ndspChnSetFormat(CHANNEL, music_channels == 1 ? NDSP_FORMAT_MONO_PCM16 : NDSP_FORMAT_STEREO_PCM16);
 
     float mix[12] = {0};
     // set l/r mix
@@ -209,21 +209,21 @@ int mp3_start_play(char *filename, int startpos)
         if(read == 0) break;
 
         waveBuf[i].data_vaddr = buf;
-        waveBuf[i].nsamples = read / mp3_channels;
+        waveBuf[i].nsamples = read / music_channels;
         DSP_FlushDataCache(buf, read * sizeof(int16_t));
         ndspChnWaveBufAdd(CHANNEL, &waveBuf[i]);
     }
 
-    mp3_job_started = 1;
-    mp3_running = true;
-    mp3_thread = threadCreate(mp3_thread_func, NULL, 128*1024, 0x2C, -2, false);
+    music_job_started = 1;
+    music_running = true;
+    music_thread = threadCreate(music_thread_func, NULL, 128*1024, 0x2C, -2, false);
 
     return 1;
 }
 
-void mp3_deinit (void)
+void music_deinit (void)
 {
-    mp3_stop();
+    music_stop();
     mpg123_close(handle);
 	mpg123_delete(handle);
     handle = NULL;

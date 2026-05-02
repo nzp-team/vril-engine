@@ -166,7 +166,6 @@ void S_Startup (void)
 S_Init
 ================
 */
-void CDAudioSetVolume (void);
 void S_Init (void)
 {
 #ifdef NO_SOUND_PROCESSING
