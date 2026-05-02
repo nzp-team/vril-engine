@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "nzportable_def.h"
 
-extern cvar_t 	bgmtype;
 extern cvar_t 	bgmvolume;
 
 static bool 	playing  = false;
@@ -52,7 +51,6 @@ void Music_PlayFromString(char* track_name, qboolean looping)
 	else {
 		Con_Printf("Couldn't find %s\n", path);
 		playing = false;
-		Cvar_Set("bgmtype","none");
 		Music_VolumeChange(0);
 	}
 }
