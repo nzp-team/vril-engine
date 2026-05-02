@@ -102,7 +102,6 @@ COMMON_OBJS =	\
 	source/platform/psp2/in_psp2.o \
 	source/platform/psp2/vgl/vgl_vidpsp2.o \
 	source/platform/psp2/neon_mathfun.o \
-	source/platform/psp2/webdownload.o \
 	source/crypter.o
 	
 CPPSOURCES	:= source/audiodec
