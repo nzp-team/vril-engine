@@ -360,12 +360,14 @@ void GL_ResetShaders() {
 		shaders_set = true; 
 	
 	// Loading shaders
+	/*
 	for (int i = 0; i < NUM_FRAG_SHADERS; i++) {
 		fs[i] = glCreateShader(GL_CG_FRAGMENT_SHADER_EXT);
 	}
 	for (int i = 0; i < NUM_VERT_SHADERS; i++) {
 		vs[i] = glCreateShader(GL_CG_VERTEX_SHADER_EXT);
 	}
+	*/
 	
 	if (gl_fog.value) {
 		GL_LoadShader("app0:shaders/modulate_fog_f.cg", MODULATE, GL_TRUE);
