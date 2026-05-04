@@ -26,3 +26,5 @@ void Music_Pause(void);
 void Music_Resume(void);
 void Music_Shutdown(void);
 void Music_Update(void);
+
+extern float cur_bgmvolume;

@@ -83,6 +83,8 @@ static int music_thread_func(SceSize args, void *argp)
             break;
         }
 
+        sceAudioOutSetVolume(audio_port, SCE_AUDIO_VOLUME_FLAG_L_CH, &music_volume);
+        sceAudioOutSetVolume(audio_port, SCE_AUDIO_VOLUME_FLAG_R_CH, &music_volume);
         sceAudioOutOutput(audio_port, decode_buf);
     }
 

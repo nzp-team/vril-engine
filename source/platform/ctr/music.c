@@ -93,6 +93,7 @@ static void music_thread_func(void *arg)
                 waveBuf[i].nsamples = read/music_channels;
                 //waveBuf[i].status = NDSP_WBUF_FREE;
 
+                ndspSetMasterVol(cur_bgmvolume);
                 DSP_FlushDataCache(buf, read*sizeof(int16_t));
                 ndspChnWaveBufAdd(CHANNEL, &waveBuf[i]);
                 queued = true;
@@ -149,7 +150,7 @@ int music_start_play(char *filename, int startpos)
 
     handle = mpg123_new(NULL, NULL);
     if (handle == NULL) {
-        Sys_Error("Could not set handle for mpg123:\n");
+        Sys_Error("Could not set handle for mpg123\n");
         return 0;
     }
 
