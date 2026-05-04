@@ -6,4 +6,4 @@ extern void music_stop(void);
 extern volatile int  music_job_started;
 extern int  music_volume;
 
-#define PLATFORM_VOLUME_MAX 60
+#define PLATFORM_VOLUME_MAX 1

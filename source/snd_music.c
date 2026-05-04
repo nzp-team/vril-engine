@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern cvar_t 	bgmvolume;
 static float	prev_bgmvolume;
+float 			cur_bgmvolume;
 
 static bool 	playing  = false;
 static bool 	paused   = false;
@@ -84,7 +85,7 @@ void Music_Update(void)
 		return;
 	}
 
-	float cur_bgmvolume = bgmvolume.value;
+	cur_bgmvolume = bgmvolume.value;
 	if (cur_bgmvolume != prev_bgmvolume) {
 		Music_VolumeChange(bgmvolume.value);
 		prev_bgmvolume = bgmvolume.value;
