@@ -43,12 +43,14 @@ void Music_PlayFromString(char* track_name, qboolean looping)
 	char path[512];
 	snprintf(path, 512, "%s/tracks/%s.mp3", com_gamedir, track_name);
 
-	int ret = music_start_play(path, looping);
 	music_loop = looping;
+	int ret = music_start_play(path, 0);
 	last_track_string = track_name;
 
-	if (ret != 2) playing = true;
-	else {
+	if (ret != 2) {
+		playing = true;
+		Music_VolumeChange(bgmvolume.value);
+	} else {
 		Con_Printf("Couldn't find %s\n", path);
 		playing = false;
 		Music_VolumeChange(0);
