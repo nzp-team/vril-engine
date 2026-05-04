@@ -168,12 +168,12 @@ static SceUID load_start_module(const char *prxname)
 
 	mod = pspSdkLoadStartModule(prxname, PSP_MEMORY_PARTITION_KERNEL);
 	if (mod < 0) {
-		Sys_Error("failed to load %s (%08x), trying kuKernelLoadModule\n", prxname, mod);
+		printf("failed to load %s (%08x), trying kuKernelLoadModule\n", prxname, mod);
 		mod1 = kuKernelLoadModule(prxname, 0, NULL);
-		if (mod1 < 0) Sys_Error("kuKernelLoadModule failed with %08x\n", mod1);
+		if (mod1 < 0) printf("kuKernelLoadModule failed with %08x\n", mod1);
 		else {
 			ret = sceKernelStartModule(mod1, 0, NULL, &status, 0);
-			if (ret < 0) Sys_Error("sceKernelStartModule failed with %08x\n", ret);
+			if (ret < 0) printf("sceKernelStartModule failed with %08x\n", ret);
 			else mod = mod1;
 		}
 	}
