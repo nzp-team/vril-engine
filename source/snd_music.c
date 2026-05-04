@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "nzportable_def.h"
 
 extern cvar_t 	bgmvolume;
+static float	prev_bgmvolume;
 
 static bool 	playing  = false;
 static bool 	paused   = false;
@@ -83,6 +84,12 @@ void Music_Update(void)
 		return;
 	}
 
+	float cur_bgmvolume = bgmvolume.value;
+	if (cur_bgmvolume != prev_bgmvolume) {
+		Music_VolumeChange(bgmvolume.value);
+		prev_bgmvolume = bgmvolume.value;
+	}
+
     if (!music_job_started && music_loop) {
         Music_PlayFromString(last_track_string, music_loop);
     } else if (!music_job_started) {
@@ -101,6 +108,8 @@ void Music_Init(void)
 
 	enabled = true;
 	Cmd_AddCommand ("cd", Music_f);
+
+	prev_bgmvolume = bgmvolume.value;
 }
 
 void Music_Shutdown(void)
