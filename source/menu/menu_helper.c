@@ -41,30 +41,6 @@ void Menu_LoadPics ()
 	Menu_Preload_Custom_Images ();
 }
 
-/*
-===============
-Menu_DictateScaleFactor
-===============
-*/
-void Menu_DictateScaleFactor(void)
-{
-	// Platform-dictated text scale.
-#ifdef __NSPIRE__
-	menu_text_scale_factor = 1.0f;
-#elif __PSP__
-	menu_text_scale_factor = 1.0f;
-#elif __vita__
-	menu_text_scale_factor = 2.0f;
-#elif __3DS__
-	menu_text_scale_factor = 1.0f;
-#else
-	menu_text_scale_factor = 1.0f;
-#endif // __NSPIRE__, __PSP__, __vita__, __3DS__
-
-	big_bar_height = 25;
-	small_bar_height = 2;
-}
-
 image_t Menu_PickBackground (void)
 {
 	// No custom images
