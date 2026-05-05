@@ -49,10 +49,9 @@ jobs:
             --with-cpu=generic_fpu \
             CC=$DEVKITARM/bin/arm-none-eabi-gcc \
             CFLAGS="-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft -D_3DS"
-          cd src/libmpg123
-          make
-          make install
-          cp mpg123.h $DEVKITPRO/portlibs/3ds/include/
+          make -k || true
+          make -k install || true
+          cp src/libmpg123/mpg123.h $DEVKITPRO/portlibs/3ds/include/
       - name: Build
         working-directory: ./
         run: |
@@ -94,6 +93,7 @@ jobs:
       # Update VitaSDK
       - name: Update vitasdk
         run: |
+          apt-get install -y xz-utils
           $VITASDK/bin/vdpm vitasdk
       # Clone and rebuilt vitaGL with neccessary flags
       # Clone the commit we want to use
