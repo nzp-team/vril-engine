@@ -125,9 +125,9 @@ void Menu_Video_SetStrings (void)
     }
 
     if ((int)r_retro.value == 1) {
-        retro_string = "LINEAR";
-    } else {
         retro_string = "NEAREST";
+    } else {
+        retro_string = "LINEAR";
     }
 
     if ((int)r_dithering.value == 1) {
