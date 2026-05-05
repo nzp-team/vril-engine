@@ -49,9 +49,10 @@ jobs:
             --with-cpu=generic_fpu \
             CC=$DEVKITARM/bin/arm-none-eabi-gcc \
             CFLAGS="-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft -D_3DS"
-          make -C src/libmpg123
-          make -C src/libmpg123 install
-          cp src/libmpg123/mpg123.h $DEVKITPRO/portlibs/3ds/include/
+          cd src/libmpg123
+          make
+          make install
+          cp mpg123.h $DEVKITPRO/portlibs/3ds/include/
       - name: Build
         working-directory: ./
         run: |
