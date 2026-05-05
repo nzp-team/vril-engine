@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define                 CHANNEL	        1
 
 static volatile bool    music_running = false;
+qboolean                music_paused = false;
 
 static SceUID           music_thread;
 
@@ -75,6 +76,12 @@ uint64_t mp3_decode(void *buffer)
 static int music_thread_func(SceSize args, void *argp)
 {
     while(music_running) {
+        if (music_paused) {
+            memset(decode_buf, 0, buffersize);
+            sceAudioOutOutput(audio_port, decode_buf);
+            continue;
+        }
+
         size_t read = mp3_decode(decode_buf);
 
         if(read == 0) {
@@ -90,6 +97,22 @@ static int music_thread_func(SceSize args, void *argp)
 
     sceKernelExitDeleteThread(0);
     return 0;
+}
+
+void music_pause(void)
+{
+    if (!music_running) return;
+    music_paused = true;
+    int vol = 0;
+    sceAudioOutSetVolume(audio_port, SCE_AUDIO_VOLUME_FLAG_L_CH | SCE_AUDIO_VOLUME_FLAG_R_CH, &vol);
+}
+
+void music_resume(void)
+{
+    if (!music_running) return;
+    music_paused = false;
+    sceAudioOutSetVolume(audio_port, SCE_AUDIO_VOLUME_FLAG_L_CH, &music_volume);
+    sceAudioOutSetVolume(audio_port, SCE_AUDIO_VOLUME_FLAG_R_CH, &music_volume);
 }
 
 void music_stop(void)

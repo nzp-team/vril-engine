@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define                 MP3_BUFFERS     4
 
 static volatile bool    music_running = false;
+qboolean                music_paused = false;
 
 static Thread           music_thread;
 
@@ -74,8 +75,12 @@ uint64_t mp3_decode(void *buffer)
 static void music_thread_func(void *arg)
 {
     while(music_running) {
-        bool queued = false;
+        if (music_paused) {
+            svcSleepThread(500000);
+            continue;
+        }
 
+        bool queued = false;
         DSP_InvalidateDataCache(waveBuf, sizeof(ndspWaveBuf)*MP3_BUFFERS);
 
         for(int i = 0; i < MP3_BUFFERS; i++) {
@@ -108,10 +113,26 @@ static void music_thread_func(void *arg)
     }
 }
 
+void music_pause(void)
+{
+    if (!music_running) return;
+    music_paused = true;
+    ndspChnSetPaused(CHANNEL, true);
+}
+
+void music_resume(void)
+{
+    if (!music_running) return;
+    music_paused = false;
+    ndspChnSetPaused(CHANNEL, false);
+}
+
 void music_stop(void)
 {
     music_running = false;
     music_job_started = 0;
+
+    ndspChnSetPaused(CHANNEL, false);
 
     if(music_thread) {
         threadJoin(music_thread, U64_MAX);

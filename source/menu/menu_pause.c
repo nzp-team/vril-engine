@@ -26,7 +26,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern cvar_t 	waypoint_mode;
 int 			menu_paus_submenu;
 
-void Menu_Resume(void) { key_dest = key_game; m_state = m_none; m_previous_state = m_state; };
+void Menu_Resume(void)
+{ 
+	Music_Resume();
+
+	key_dest = key_game; 
+	m_state = m_none; 
+	m_previous_state = m_state; 
+}
 void Menu_Configuration(void) { Menu_Configuration_Set(); key_dest = key_menu_pause; };
 void Menu_Pause_EnterSubMenu(void)
 {
@@ -43,6 +50,11 @@ void Menu_Pause_Yes(void)
 		key_dest = key_game;
 		m_state = m_none;
 		m_previous_state = m_state;
+
+		if (music_paused) {
+			Music_Resume();
+		}
+
 		// Perform Soft Restart
 		PR_ExecuteProgram (pr_global_struct->Soft_Restart);
 	} else if (menu_paus_submenu == 3) {
@@ -69,6 +81,7 @@ void Menu_Pause_Set (void)
 {
 	Menu_ResetMenuButtons();
 	S_StopAllSounds(true);
+	Music_Pause();
 	Menu_SetSound(MENU_SND_ENTER);
 
 	menu_paus_submenu = 0;
