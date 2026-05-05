@@ -93,8 +93,12 @@ jobs:
       # Update VitaSDK
       - name: Update vitasdk
         run: |
-          apt-get install -y xz-utils
-          $VITASDK/bin/vdpm vitasdk
+          git clone https://github.com/vitasdk/vdpm
+          cd vdpm
+          ./bootstrap-vitasdk.sh
+          export VITASDK=/usr/local/vitasdk # define $VITASDK if you haven't already
+          export PATH=$VITASDK/bin:$PATH # add vitasdk tool to $PATH if you haven't already
+          ./install-all.sh
       # Clone and rebuilt vitaGL with neccessary flags
       # Clone the commit we want to use
       # in this case it's the latest as of this commit
