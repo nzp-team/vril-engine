@@ -32,11 +32,22 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install Packages and update picaGL
         run: |
-          dkp-pacman -Sy --noconfirm 3ds-mpg123
           git clone https://github.com/masterfeizz/picaGL.git
           cd picaGL
           git checkout revamp
           mkdir clean
+          make install
+          cd ..
+          curl -LO https://downloads.sourceforge.net/project/mpg123/mpg123/1.32.3/mpg123-1.32.3.tar.bz2
+          tar xf mpg123-1.32.3.tar.bz2
+          cd mpg123-1.32.3
+          ./configure --host=arm-none-eabi \
+            --prefix=$DEVKITPRO/portlibs/3ds \
+            --disable-shared \
+            --enable-static \
+            --with-cpu=generic_fpu \
+            CC=$DEVKITARM/bin/arm-none-eabi-gcc \
+            CFLAGS="-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft -D_3DS"
           make install
       - name: Build
         working-directory: ./
