@@ -90,9 +90,6 @@ extern menuframe_t 		current_frame;
 
 #define UI_FLIPTEXTPOS							1
 
-#define	CHAR_WIDTH								8
-#define	CHAR_HEIGHT								8
-
 extern qboolean	        m_recursiveDraw;
 
 // set true if user is currently
