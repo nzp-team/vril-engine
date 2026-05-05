@@ -21,8 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 qboolean		menu_is_solo;
 
-int 			big_bar_height;
-int 			small_bar_height;
+int 			big_bar_height = 25;
+int 			small_bar_height = 2;
 
 int 			num_stock_maps;
 char*			current_selected_bsp;
