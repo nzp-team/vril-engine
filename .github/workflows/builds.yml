@@ -46,6 +46,8 @@ jobs:
             --disable-shared \
             --enable-static \
             --with-cpu=generic_fpu \
+            --disable-programs \
+            --disable-libout123 \
             CC=$DEVKITARM/bin/arm-none-eabi-gcc \
             CFLAGS="-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft -D_3DS"
           make install
