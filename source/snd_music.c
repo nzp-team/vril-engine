@@ -24,10 +24,9 @@ static float	prev_bgmvolume;
 float 			cur_bgmvolume;
 
 static bool 	playing  = false;
-static bool 	paused   = false;
 static bool 	enabled  = false;
 
-static char		*last_track_string = "";
+static char 	last_track_string[MAX_QPATH] = "";
 int 			music_loop = 0;
 
 static void Music_f (void);
@@ -47,7 +46,8 @@ void Music_PlayFromString(char* track_name, qboolean looping)
 
 	music_loop = looping;
 	int ret = music_start_play(path, 0);
-	last_track_string = track_name;
+	
+	snprintf(last_track_string, MAX_QPATH, "%s", track_name);
 
 	if (ret != 2) {
 		playing = true;
@@ -61,40 +61,54 @@ void Music_PlayFromString(char* track_name, qboolean looping)
 
 void Music_Stop(void)
 {
+	// if paused, we need to unpause to unlock
+	// the thread before shutting it down
+	music_paused = false;
+
     music_stop();
+
     music_job_started = 0;
-    playing = false;
     music_volume = 0;
+	playing = false;
 }
 
 void Music_Pause(void)
 {
+	if (!playing || music_paused) return;
+
+	music_pause();
 	music_volume = 0;
-	paused = true;
 }
 
 void Music_Resume(void)
 {
+	if (!music_paused) return;
+
 	Music_VolumeChange(bgmvolume.value);
-	paused = false;
+	music_resume();
 }
 
 void Music_Update(void)
 {
-    if (!enabled || paused || !playing) {
+    if (!enabled || !playing) {
 		return;
 	}
 
-	cur_bgmvolume = bgmvolume.value;
-	if (cur_bgmvolume != prev_bgmvolume) {
-		Music_VolumeChange(bgmvolume.value);
-		prev_bgmvolume = bgmvolume.value;
+	if (!music_paused) {
+		cur_bgmvolume = bgmvolume.value;
+		if (cur_bgmvolume != prev_bgmvolume) {
+			Music_VolumeChange(bgmvolume.value);
+			prev_bgmvolume = bgmvolume.value;
+		}
 	}
 
-    if (!music_job_started && music_loop) {
-        Music_PlayFromString(last_track_string, music_loop);
-    } else if (!music_job_started) {
-        playing = false;
+    if (!music_job_started) {
+		if(music_loop && !music_paused) {
+			Music_PlayFromString(last_track_string, music_loop);
+		} else if (!music_loop) {
+			playing = false;
+			music_paused = false;
+		}
     }
 }
 

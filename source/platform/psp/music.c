@@ -33,6 +33,7 @@ static int thread_exit = 0;
 int done = 0;
 
 int music_job_started = 0;
+qboolean music_paused = false;
 
 int music_volume;
 
@@ -294,9 +295,26 @@ void music_deinit(void)
 	initialized = 0;
 }
 
+void music_pause(void)
+{
+    if (!music_job_started) return;
+    music_paused = true;
+}
+
+void music_resume(void)
+{
+    music_paused = false;
+}
+
 void music_stop(void)
 {
-	//no op
+	if (!initialized) return;
+
+	music_paused = false;
+    music_job_started = 0;
+
+	psp_sem_lock(thread_busy_sem);
+    psp_sem_unlock(thread_busy_sem);
 }
 
 short mp3_output_buffer[4][1152 * 2] __attribute__((aligned(64)));
@@ -328,6 +346,13 @@ static int decode_thread(SceSize args, void *argp)
 		while (music_job_started)
 		{
 			if (thread_exit) break;
+
+			if (music_paused) {
+				psp_sem_unlock(thread_busy_sem);
+				sceKernelDelayThread(50000);
+				psp_sem_lock(thread_busy_sem);
+				continue;
+			}
 
 			if(frame_size > 0)
 			{
