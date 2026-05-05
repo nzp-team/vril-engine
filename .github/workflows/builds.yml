@@ -46,11 +46,11 @@ jobs:
             --disable-shared \
             --enable-static \
             --with-cpu=generic_fpu \
-            --disable-programs \
-            --disable-libout123 \
             CC=$DEVKITARM/bin/arm-none-eabi-gcc \
             CFLAGS="-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft -D_3DS"
-          make install
+          make -C src/libmpg123
+          make -C src/libmpg123 install
+          cp src/libmpg123/mpg123.h $DEVKITPRO/portlibs/3ds/include/
       - name: Build
         working-directory: ./
         run: |
@@ -99,7 +99,7 @@ jobs:
       - name: Inject flags into vitaGL Makefile
         run: |
           cd vitaGL
-          sed -i 's/^CFLAGS[[:space:]]*= /&-DENABLE_LEGACY_PIPELINE=1 /&-DHAVE_FFP_SHADER_SUPPORT=1 /&-DSKIP_SPLASHSCREEN=1 /' Makefile
+          sed -i 's/^CFLAGS[[:space:]]*= /&-DENABLE_LEGACY_PIPELINE=1 -DHAVE_FFP_SHADER_SUPPORT=1 -DSKIP_SPLASHSCREEN=1 /' Makefile
       # Build vitaGL
       - name: Build vitaGL with required flags
         run: |
