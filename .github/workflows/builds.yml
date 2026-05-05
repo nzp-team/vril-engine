@@ -93,12 +93,12 @@ jobs:
         run: |
           git clone https://github.com/vitasdk/vdpm
           cd vdpm
-          export VITASDK=/usr/local/vitasdk
+          export VITASDK=$HOME/vitasdk
           export PATH=$VITASDK/bin:$PATH
-          sudo -E ./bootstrap-vitasdk.sh
-          sudo -E env "VITASDK=$VITASDK" "PATH=$PATH" ./install-all.sh
-          echo "VITASDK=/usr/local/vitasdk" >> $GITHUB_ENV
-          echo "/usr/local/vitasdk/bin" >> $GITHUB_PATH
+          ./bootstrap-vitasdk.sh
+          ./install-all.sh
+          echo "VITASDK=$HOME/vitasdk" >> $GITHUB_ENV
+          echo "$HOME/vitasdk/bin" >> $GITHUB_PATH
       # Clone and rebuilt vitaGL with neccessary flags
       # Clone the commit we want to use
       # in this case it's the latest as of this commit
