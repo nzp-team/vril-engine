@@ -90,6 +90,10 @@ jobs:
       - name: Install Packages and update VitaSDK
         run: |
           apt update && apt install -y build-essential
+      # Update VitaSDK
+      - name: Update vitasdk
+        run: |
+          $VITASDK/bin/vdpm vitasdk
       # Clone and rebuilt vitaGL with neccessary flags
       # Clone the commit we want to use
       # in this case it's the latest as of this commit
