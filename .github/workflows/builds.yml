@@ -37,7 +37,8 @@ jobs:
           git checkout revamp
           mkdir clean
           make install
-          cd ..
+      - name: Build and install mpg123
+        run: |
           curl -LO https://downloads.sourceforge.net/project/mpg123/mpg123/1.32.3/mpg123-1.32.3.tar.bz2
           tar xf mpg123-1.32.3.tar.bz2
           cd mpg123-1.32.3
