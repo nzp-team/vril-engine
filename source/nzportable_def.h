@@ -297,10 +297,7 @@ typedef struct
 
 #include "crc.h"
 #include "snd_music.h"
-
-#ifndef NO_SOUND_PROCESSING
 #include PLATFORM_FILE(music.h)
-#endif
 
 #include RENDERER_FILE(main.h)
 
