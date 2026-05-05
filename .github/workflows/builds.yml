@@ -83,23 +83,20 @@ jobs:
   Compile-VPK:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
-    container:
-      image: gnuton/vitasdk-docker:20251220
     steps:
-      - uses: actions/checkout@v2
-      - name: Install Packages and update VitaSDK
+      - uses: actions/checkout@v4
+      - name: Install Packages
         run: |
-          apt update && apt install -y build-essential
-      # Update VitaSDK
-      - name: Update vitasdk
+          sudo apt-get update 
+          sudo apt-get install -y build-essential curl git-core cmake python3
+      - name: Setup latest VitaSDK
         run: |
-          rm -rf /usr/local/vitasdk
           git clone https://github.com/vitasdk/vdpm
           cd vdpm
-          ./bootstrap-vitasdk.sh
-          export VITASDK=/usr/local/vitasdk # define $VITASDK if you haven't already
-          export PATH=$VITASDK/bin:$PATH # add vitasdk tool to $PATH if you haven't already
-          ./install-all.sh
+          sudo ./bootstrap-vitasdk.sh
+          sudo ./install-all.sh
+          echo "VITASDK=/usr/local/vitasdk" >> $GITHUB_ENV
+          echo "/usr/local/vitasdk/bin" >> $GITHUB_PATH
       # Clone and rebuilt vitaGL with neccessary flags
       # Clone the commit we want to use
       # in this case it's the latest as of this commit
