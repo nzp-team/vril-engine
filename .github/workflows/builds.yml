@@ -83,12 +83,12 @@ jobs:
         run: |
           git clone https://github.com/Rinnegatamante/vitaGL.git
       # Inject flag
-      - name: Inject flag into vitaGL Makefile
+      - name: Inject flags into vitaGL Makefile
         run: |
           cd vitaGL
-          sed -i 's/^CFLAGS[[:space:]]*= /&-DHAVE_FFP_SHADER_SUPPORT=1 /&-DSKIP_SPLASHSCREEN=1 /' Makefile
+          sed -i 's/^CFLAGS[[:space:]]*= /&-DENABLE_LEGACY_PIPELINE=1 /&-DHAVE_FFP_SHADER_SUPPORT=1 /&-DSKIP_SPLASHSCREEN=1 /' Makefile
       # Build vitaGL
-      - name: Build vitaGL with HAVE_FFP_SHADER_SUPPORT=1
+      - name: Build vitaGL with required flags
         run: |
           cd vitaGL
           make clean
