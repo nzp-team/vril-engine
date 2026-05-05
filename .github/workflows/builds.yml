@@ -93,6 +93,7 @@ jobs:
       # Update VitaSDK
       - name: Update vitasdk
         run: |
+          rm -rf /usr/local/vitasdk
           git clone https://github.com/vitasdk/vdpm
           cd vdpm
           ./bootstrap-vitasdk.sh
