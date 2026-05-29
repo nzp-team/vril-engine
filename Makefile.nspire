@@ -77,6 +77,7 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/menu/menu_accessibility.c \
 		source/menu/menu_pause.c \
 		source/menu/menu_loadscreen.c \
+		source/menu/menu_bios.c \
 		source/menu/menu_credits.c \
 		source/platform/nspire/platform_menu.c \
 		source/platform/nspire/cpu/cpu_main.c \

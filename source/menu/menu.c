@@ -26,6 +26,7 @@ void Menu_Main_Draw(void);
 void Menu_StockMaps_Draw(void);
 void Menu_Video_Draw(void);
 void Menu_Credits_Draw(void);
+void Menu_Bios_Draw(void);
 void Menu_GameOptions_Draw(void);
 void Menu_CustomMaps_Draw(void);
 void Menu_Lobby_Draw(void);
@@ -50,6 +51,7 @@ float			menu_starttime;
 image_t			menu_bk;
 image_t			menu_social;
 image_t			menu_badges;
+image_t 		menu_portraits[3];
 
 char*			game_build_date;
 
@@ -259,6 +261,10 @@ void Menu_Draw (void)
 
 	case m_credits:
 		Menu_Credits_Draw ();
+		break;
+
+	case m_bios:
+		Menu_Bios_Draw ();
 		break;
 
 	default:

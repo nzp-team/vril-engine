@@ -34,9 +34,13 @@ Menu_LoadPics
 */
 void Menu_LoadPics ()
 {
-	menu_bk 	= Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, false, false);
-	menu_social = Image_LoadImage("gfx/menu/social", IMAGE_TGA, 0, false, false);
-	menu_badges = Image_LoadImage("gfx/menu/map_badges", IMAGE_TGA, 0, false, false);
+	menu_bk 			= Image_LoadImage("gfx/menu/menu_background", IMAGE_TGA, 0, false, false);
+	menu_social 		= Image_LoadImage("gfx/menu/social", IMAGE_TGA, 0, false, false);
+	menu_badges 		= Image_LoadImage("gfx/menu/map_badges", IMAGE_TGA, 0, false, false);
+
+	menu_portraits[0]	= Image_LoadImage("gfx/portraits/portrait_0", IMAGE_TGA, 0, false, false);
+	menu_portraits[1] 	= Image_LoadImage("gfx/portraits/portrait_1", IMAGE_TGA, 0, false, false);
+	menu_portraits[2] 	= Image_LoadImage("gfx/portraits/portrait_2", IMAGE_TGA, 0, false, false);
 
 	Menu_Preload_Custom_Images ();
 }
@@ -452,6 +456,29 @@ void Menu_DrawSubMenu (char *line_one, char *line_two)
     Menu_DrawStringCentered (0, y_pos+((_CHAR_HEIGHT*2)*vid.scale), line_two, 255, 255, 255, 255);
 }
 
+void Menu_DrawCharacterPanel(char **description)
+{
+	int y_pos = 30;
+
+	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+#ifndef MENU_DONT_DRAW_BACKGROUND_IMAGES
+	// Dark red background
+    Menu_DrawFill (0, 0, vid.width, vid.height, 255, 0, 0, 20);
+#endif
+    // Black background box
+    Menu_DrawFill (0, y_pos, vid.width, vid.height - 40, 0, 0, 0, 255);
+    // Top yellow line
+    Menu_DrawFill (0, y_pos-small_bar_height, vid.width, small_bar_height, 255, 255, 0, 255);
+    // Bottom yellow line
+    Menu_DrawFill (0, vid.height - 23, vid.width, small_bar_height, 255, 255, 0, 255);
+
+	UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_TOP);
+
+	for (int i = 0; i < 17; i++) {
+		Menu_DrawStringCentered (0, y_pos + ((_CHAR_HEIGHT * (i + 1)) * vid.scale), description[i], 255, 255, 255, 255);
+	}
+}
+
 /*
 ======================
 Menu_DrawCustomBackground
@@ -576,6 +603,43 @@ void Menu_DrawGreyButton (int order, char* button_name)
 	}
 
 	Menu_DrawString (x_pos, y_pos, button_name, 128, 128, 128, 255, vid.scale, UI_FLIPTEXTPOS);
+}
+
+/*
+======================
+Menu_DrawBioButton
+======================
+*/
+void Menu_DrawBioButton (int order, int button_index, char* name, char* map, int portrait, vec2_t portrait_coords, void *on_activate)
+{
+	int image_width = (vid.width/3);
+
+	int pic_region_center = (150 + (((vid.width-150)/2)+2));
+
+	int x_pos = pic_region_center - ((image_width/vid.scale)/2);
+	int y_pos = 40*vid.scale;
+
+	// Draw the selectable button
+	Menu_DrawButton (order, button_index, name, "", on_activate);
+
+	if (Menu_IsButtonHovered(button_index)) {
+		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+
+		image_t portrait_pic = menu_portraits[0];
+
+		switch(portrait) {
+			case 0: portrait_pic = menu_portraits[0]; break;
+			case 1: portrait_pic = menu_portraits[1]; break;
+			case 2: portrait_pic = menu_portraits[2]; break;
+			default: break;
+		}
+
+		Menu_DrawSubPic(x_pos, y_pos, portrait_pic, portrait_coords[0], portrait_coords[1], 0.5f, 0.5f, 0.65f * vid.scale, 255, 255, 255, 255);
+
+		// Draw Map
+		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
+		Menu_DrawStringCentered (vid.width/2, 0 + (_CHAR_HEIGHT * 2), map, 255, 255, 0, 255);
+	}
 }
 
 /*

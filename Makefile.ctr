@@ -106,6 +106,7 @@ COMMON_OBJS =	system.o \
 				menu/menu_accessibility.c \
 				menu/menu_pause.c \
 				menu/menu_loadscreen.c \
+				menu/menu_bios.c \
 				menu/menu_credits.c \
 				platform/ctr/platform_menu.c \
 				platform/ctr/net_dgrm.c \

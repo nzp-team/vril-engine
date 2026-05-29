@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
+#ifndef _MENU_DEFS_H_
+#define _MENU_DEFS_H_
 // ===========
 // Menu state
 // ===========
@@ -44,6 +46,7 @@ extern int				m_previous_state;
 #define	m_search		20
 #define	m_slist			21
 #define m_bindings		22
+#define m_bios 			23
 ///////////////////////////
 ///////////////////////////
 ///////////////////////////
@@ -131,6 +134,7 @@ extern float            menu_starttime;
 extern image_t          menu_bk;
 extern image_t          menu_social;
 extern image_t			menu_badges;
+extern image_t 			menu_portraits[3];
 
 // Build date string
 extern char*            game_build_date;
@@ -261,6 +265,7 @@ void Menu_DrawTitle (char *title_name, int color);
 void Menu_DrawButton (int order, int button_index, char* button_name, char* button_summary, void *on_activate);
 void Menu_DrawGreyButton (int order, char* button_name);
 void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map_category, char* bsp_name, void *on_activate);
+void Menu_DrawBioButton (int order, int button_index, char* name, char* map, int portrait, vec2_t portrait_coords, void *on_activate);
 void Menu_DrawOptionButton(int order, char* selection_name);
 void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, int max_option_value, cvar_t option, char* _option_string, qboolean zero_to_one, qboolean draw_option_string, float increment_amount);
 void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficulty, char* info_startround, char* info_magic, char* info_headshotonly, char* info_fastrounds, char* info_hordesize);
@@ -275,6 +280,7 @@ void Menu_DrawCreditContributor (int order, int sub_order, char *header);
 
 void Menu_DrawLoadingFill(void);
 void Menu_DrawSubMenu (char *line_one, char *line_two);
+void Menu_DrawCharacterPanel(char **description);
 void Menu_DrawFill (int x, int y, int width, int height, int r, int g, int b, int a);
 void Menu_DrawString (int x, int y, char* string, int r, int g, int b, int a, float scale, int FLIP_TEXT_POS_START);
 void Menu_DrawStringCentered (int x, int y, char* text, int r, int g, int b, int a);
@@ -290,6 +296,7 @@ void Menu_GameOptions_Set(void);
 void Menu_CustomMaps_Set(void);
 void Menu_Lobby_Set(void);
 void Menu_GameSettings_Set(void);
+void Menu_Bios_Set(void);
 void Menu_Video_Set (void);
 void Menu_Audio_Set (void);
 void Menu_Controls_Set (void);
@@ -298,3 +305,5 @@ void Menu_Accessibility_Set (void);
 
 // Platform specifics
 char *Platform_ReturnLoadingText (void);
+
+#endif // _MENU_DEFS_H_
