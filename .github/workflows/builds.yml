@@ -109,6 +109,7 @@ jobs:
       - name: Inject flags into vitaGL Makefile
         run: |
           cd vitaGL
+          git checkout a1e3bde
           sed -i 's/^CFLAGS[[:space:]]*= /&-DENABLE_LEGACY_PIPELINE=1 -DHAVE_FFP_SHADER_SUPPORT=1 -DSKIP_SPLASHSCREEN=1 /' Makefile
       # Build vitaGL
       - name: Build vitaGL with required flags
