@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #elif __PSP2__
 #include <dirent.h>
 #include <psp2/io/fcntl.h> 
+#elif defined(PLATFORM_SDL)
+#include <dirent.h>
 #else
 #include <sys/dirent.h>
 #endif

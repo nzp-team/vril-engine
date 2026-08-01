@@ -19,7 +19,7 @@
 // r_color_quantization.c -- 8bpp to 4bpp quantizer for textures
 
 #include "../nzportable_def.h"
-#include <malloc.h>
+#include <stdlib.h>
 
 typedef struct {
     byte           r;

@@ -1260,7 +1260,7 @@ void PF_strtrim (void)
 		length = 0;
 
 	//str += offset;
-	strncpy(pr_string_temp, str, length);
+	memmove(pr_string_temp, str, length);
 	pr_string_temp[length] = 0;
 
 	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
@@ -3966,4 +3966,3 @@ ebfs_builtin_t pr_ebfs_builtins[] =
 
 int pr_ebfs_numbuiltins = sizeof(pr_ebfs_builtins)/sizeof(pr_ebfs_builtins[0]);
 // 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes  end
-

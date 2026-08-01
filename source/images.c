@@ -250,15 +250,11 @@ image_t Image_LoadImage(char* filename, int image_format, int filter, bool keep,
 	*/
 #ifdef __PSP__
 	texture_index = GL_LoadImages (texname, image_width, image_height, data, true, filter, 0, 4, keep);
-#elif __vita__
-	texture_index = GL_LoadTexture (texname, image_width, image_height, data, mipmap, true, 4, keep);
-#elif __3DS__
-	texture_index = GL_LoadTexture (texname, image_width, image_height, data, mipmap, true, 4, keep);
-#elif __WII__
-	texture_index = GL_LoadTexture (texname, image_width, image_height, data, false, true, keep, 4);
 #elif __NSPIRE__
 	qboolean transparenttoblack = (qboolean)filter;
 	texture_index = Soft_LoadTexture (texname, image_width, image_height, data, transparenttoblack, keep);
+#else
+	texture_index = GL_LoadTexture (texname, image_width, image_height, data, mipmap, true, 4, keep);
 #endif
 
 	if(texture_index < 0) {

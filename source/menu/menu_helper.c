@@ -538,17 +538,17 @@ void Menu_DrawCustomBackground (qboolean draw_images)
 Menu_DrawButton
 ======================
 */
-void Menu_DrawButton (int order, int button_index, char* button_name, char* button_summary, void *on_activate)
+void Menu_DrawButton (float order, int button_index, char* button_name, char* button_summary, void *on_activate)
 {
 	int y_factor = 15;
 	int x_pos = 140;
 	int y_pos = 0;
 
 	if (order < 0) {
-		y_pos = big_bar_height + ((order*-1)*y_factor);
+		y_pos = (int)(big_bar_height + ((order * -1.0f) * y_factor));
 		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
 	} else {
-		y_pos = 30 + (order*y_factor);
+		y_pos = (int)(30 + (order * y_factor));
 		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 	}
 
@@ -588,17 +588,17 @@ void Menu_DrawButton (int order, int button_index, char* button_name, char* butt
 Menu_DrawGreyButton
 ======================
 */
-void Menu_DrawGreyButton (int order, char* button_name)
+void Menu_DrawGreyButton (float order, char* button_name)
 {
 	int y_factor = 15;
 	int x_pos = 140;
 	int y_pos = 0;
 
 	if (order < 0) {
-		y_pos = big_bar_height + ((order*-1)*y_factor);
+		y_pos = (int)(big_bar_height + ((order * -1.0f) * y_factor));
 		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
 	} else {
-		y_pos = 30 + (order*y_factor);
+		y_pos = (int)(30 + (order * y_factor));
 		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
 	}
 

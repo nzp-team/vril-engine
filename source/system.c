@@ -42,7 +42,7 @@ void Sys_PrintError(const char *function_name, const char *source_file, int line
 
     char *error_message = va(
     "%s\nFile a ticket: https://github.com/nzp-team/nzportable/issues\n\n--- file info ---\nFunction: [%s]\nFile: [%s:%d]\n--- git info ---\nCommit Hash: [%s]\nBranch: [%s]\nBuild Date: [%s]",
-    message,
+    buffer,
     function_name,
     source_file,
     line_number,
