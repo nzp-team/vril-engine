@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _MSC_VER
 #include <unistd.h>
 #endif
+#include <errno.h>
 #include <fcntl.h>
 
 #include "nzportable_def.h"
@@ -387,12 +388,27 @@ void Con_DebugLog(char *file, char *fmt, ...)
     va_list argptr; 
     static char data[1024];
     int fd;
+    size_t length;
+    size_t written = 0;
     
     va_start(argptr, fmt);
-    vsprintf(data, fmt, argptr);
+    vsnprintf(data, sizeof(data), fmt, argptr);
     va_end(argptr);
     fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0666);
-    write(fd, data, strlen(data));
+    if (fd < 0)
+        return;
+
+    length = strlen(data);
+    while (written < length) {
+        ssize_t result = write(fd, data + written, length - written);
+        if (result > 0) {
+            written += (size_t)result;
+        } else if (result < 0 && errno == EINTR) {
+            continue;
+        } else {
+            break;
+        }
+    }
     close(fd);
 }
 
@@ -688,4 +704,3 @@ void Con_NotifyBox (char *text)
 	key_dest = key_game;
 	realtime = 0;				// put the cursor back to invisible
 }
-
