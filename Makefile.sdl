@@ -1,8 +1,8 @@
 CC ?= cc
 PKG_CONFIG ?= pkg-config
 
-TARGET := nzportable
 BUILD := build/sdl
+TARGET := $(BUILD)/nzportable
 DATA_DIR ?= build/data
 CPPFLAGS := -Isource -I$(BUILD) -DGLQUAKE -DPLATFORM_SDL -DPLATFORM_CONFIRM_IS_ENTER -DGL_SILENCE_DEPRECATION -DPLATFORM_DIRECTORY=sdl -DPLATFORM_RENDERER=gl -DMAX_AI_COUNT=24
 CFLAGS ?= -O2 -g
@@ -45,4 +45,4 @@ run: $(TARGET)
 	./$(TARGET) -basedir $(DATA_DIR)
 
 clean:
-	rm -rf $(BUILD) $(TARGET)
+	rm -rf $(BUILD)
