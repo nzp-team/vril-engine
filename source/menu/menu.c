@@ -103,22 +103,22 @@ void Menu_SetVersionString (void)
 	// Snag the game version
 	long length;
 	FILE* f = fopen(va("%s/version.txt", com_gamedir), "rb");
+	game_build_date = "version.txt not found.";
 
 	if (f) {
-		fseek (f, 0, SEEK_END);
-		length = ftell (f);
-		fseek (f, 0, SEEK_SET);
+		if (fseek (f, 0, SEEK_END) == 0 && (length = ftell (f)) >= 0 &&
+		    fseek (f, 0, SEEK_SET) == 0) {
+			char *version = malloc((size_t)length + 1);
 
-		game_build_date = malloc(length*sizeof(char));
-
-		if (game_build_date) {
-			fread (game_build_date, 1, length, f);
-			strip_newline (game_build_date);
+			if (version) {
+				size_t bytes_read = fread(version, 1, (size_t)length, f);
+				version[bytes_read] = '\0';
+				strip_newline(version);
+				game_build_date = version;
+			}
 		}
 		
 		fclose (f);
-	} else {
-		game_build_date = "version.txt not found.";
 	}
 #else
 

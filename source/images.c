@@ -74,8 +74,12 @@ typedef struct
 
 byte* LoadPCX(FILE* f, int matchwidth, int matchheight) 
 {
-    pcx_t pcxbuf;
-    fread(&pcxbuf, 1, sizeof(pcxbuf), f);
+    pcx_t pcxbuf = {0};
+    if (fread(&pcxbuf, 1, 128, f) != 128) {
+        fclose(f);
+        Sys_Error("Truncated pcx header\n");
+        return NULL;
+    }
 
     pcx_t* pcx = &pcxbuf;
 
@@ -109,11 +113,18 @@ byte* LoadPCX(FILE* f, int matchwidth, int matchheight)
         return NULL;
     }
 
-    fseek(f, -768, SEEK_END);
     unsigned char palette[768];
-    fread(palette, 1, 768, f);
+    if (fseek(f, -768, SEEK_END) != 0 || fread(palette, 1, sizeof(palette), f) != sizeof(palette)) {
+        fclose(f);
+        Sys_Error("Truncated pcx palette\n");
+        return NULL;
+    }
 
-    fseek(f, 128, SEEK_SET);
+    if (fseek(f, 128, SEEK_SET) != 0) {
+        fclose(f);
+        Sys_Error("Invalid pcx data offset\n");
+        return NULL;
+    }
 
     int count = (pcx->xmax + 1) * (pcx->ymax + 1);
     byte* image_rgba = (unsigned char*)(Q_malloc(4 * count));
@@ -122,11 +133,23 @@ byte* LoadPCX(FILE* f, int matchwidth, int matchheight)
     for (int y = 0; y <= pcx->ymax; y++) {
         for (int x = 0; x <= pcx->xmax;) {
             int dataByte = fgetc(f);
+            if (dataByte == EOF) {
+                free(image_rgba);
+                fclose(f);
+                Sys_Error("Truncated pcx image data\n");
+                return NULL;
+            }
 
             int runLength = 1;
             if ((dataByte & 0xC0) == 0xC0) {
                 runLength = dataByte & 0x3F;
                 dataByte = fgetc(f);
+                if (dataByte == EOF) {
+                    free(image_rgba);
+                    fclose(f);
+                    Sys_Error("Truncated pcx run data\n");
+                    return NULL;
+                }
             }
 
             while (runLength-- > 0) {
@@ -250,15 +273,11 @@ image_t Image_LoadImage(char* filename, int image_format, int filter, bool keep,
 	*/
 #ifdef __PSP__
 	texture_index = GL_LoadImages (texname, image_width, image_height, data, true, filter, 0, 4, keep);
-#elif __vita__
-	texture_index = GL_LoadTexture (texname, image_width, image_height, data, mipmap, true, 4, keep);
-#elif __3DS__
-	texture_index = GL_LoadTexture (texname, image_width, image_height, data, mipmap, true, 4, keep);
-#elif __WII__
-	texture_index = GL_LoadTexture (texname, image_width, image_height, data, false, true, keep, 4);
 #elif __NSPIRE__
 	qboolean transparenttoblack = (qboolean)filter;
 	texture_index = Soft_LoadTexture (texname, image_width, image_height, data, transparenttoblack, keep);
+#else
+	texture_index = GL_LoadTexture (texname, image_width, image_height, data, mipmap, true, 4, keep);
 #endif
 
 	if(texture_index < 0) {

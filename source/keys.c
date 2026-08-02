@@ -356,8 +356,12 @@ int Key_StringToKeynum (char *str)
 	
 	if (!str || !str[0])
 		return -1;
-	if (!str[1])
+	if (!str[1]) {
+		/* Physical keyboard input uses lowercase ASCII key identities. */
+		if (str[0] >= 'A' && str[0] <= 'Z')
+			return str[0] - 'A' + 'a';
 		return str[0];
+	}
 
 	for (kn=keynames ; kn->name ; kn++)
 	{
@@ -893,4 +897,3 @@ void Key_ClearStates (void)
 		key_repeats[i] = 0;
 	}
 }
-

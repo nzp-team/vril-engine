@@ -67,7 +67,7 @@ void Menu_Configuration_Draw (void)
 
 	Menu_DrawDivider(5);
 
-    Menu_DrawButton(5.25, 4, "OPEN CONSOLE", "Access the Developer Console.", Con_ToggleConsole_f);
+    Menu_DrawButton(5, 4, "OPEN CONSOLE", "Access the Developer Console.", Con_ToggleConsole_f);
 
 	Menu_DrawButton(-1, 5, "BACK", "Return to Main Menu.", Menu_Configuration_Back);
 }

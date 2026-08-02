@@ -1,0 +1,48 @@
+CC ?= cc
+PKG_CONFIG ?= pkg-config
+
+BUILD := build/sdl
+TARGET := $(BUILD)/nzportable
+DATA_DIR ?= build/data
+CPPFLAGS := -Isource -I$(BUILD) -DGLQUAKE -DPLATFORM_SDL -DPLATFORM_CONFIRM_IS_ENTER -DGL_SILENCE_DEPRECATION -DPLATFORM_DIRECTORY=sdl -DPLATFORM_RENDERER=gl -DMAX_AI_COUNT=24
+CFLAGS ?= -O2 -g
+CFLAGS += -std=gnu99 -Wall -Wno-unused-variable -Wno-unused-but-set-variable $(shell $(PKG_CONFIG) --cflags sdl2)
+ifneq ($(findstring clang,$(shell $(CC) --version)),)
+CFLAGS += -Wno-unknown-warning-option -Wno-unknown-pragmas
+endif
+ifeq ($(WERROR),1)
+CFLAGS += -Werror
+endif
+LDLIBS := $(shell $(PKG_CONFIG) --libs sdl2) -lSDL2_mixer -lm
+ifeq ($(shell uname -s),Darwin)
+LDLIBS += -framework OpenGL
+else
+LDLIBS += -lGL -lGLU
+endif
+
+ENGINE_SOURCES := $(wildcard source/*.c) $(wildcard source/menu/*.c) $(wildcard source/render/*.c)
+SDL_SOURCES := $(wildcard source/platform/sdl/*.c) $(wildcard source/platform/sdl/gl/*.c)
+SOURCES := $(ENGINE_SOURCES) $(SDL_SOURCES)
+OBJECTS := $(patsubst source/%.c,$(BUILD)/%.o,$(SOURCES))
+
+.PHONY: all clean run
+all: $(TARGET)
+
+$(BUILD)/_build_info.h:
+	@mkdir -p $(@D)
+	@{ echo '#define GIT_HASH "$(shell git rev-parse --short HEAD)$(shell git diff --quiet || echo -dirty)"'; \
+	   echo '#define GIT_BRANCH "$(shell git rev-parse --abbrev-ref HEAD)"'; \
+	   echo '#define BUILD_DATE "$(shell date -u +%Y-%m-%dT%H:%M:%SZ)"'; } > $@
+
+$(TARGET): $(OBJECTS)
+	$(CC) $(OBJECTS) $(LDLIBS) -o $@
+
+$(BUILD)/%.o: source/%.c $(BUILD)/_build_info.h
+	@mkdir -p $(@D)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+run: $(TARGET)
+	./$(TARGET) -basedir $(DATA_DIR)
+
+clean:
+	rm -rf $(BUILD)

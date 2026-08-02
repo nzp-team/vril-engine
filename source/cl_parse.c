@@ -421,7 +421,7 @@ void CL_ParseServerInfo (void)
 		}
 		CL_KeepaliveMessage ();
 		loading_cur_step++;
-		strcpy(loading_name, model_precache[i]);
+		snprintf(loading_name, sizeof(loading_name), "%s", model_precache[i]);
 		//Con_Printf("%i,",i);
 		SCR_UpdateScreen ();
 	}
@@ -1425,4 +1425,3 @@ void CL_ParseServerMessage (void)
 		}
 	}
 }
-

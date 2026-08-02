@@ -567,29 +567,34 @@ void Host_Loadgame_f (void)
 		return;
 	}
 
-	fscanf (f, "%i\n", &version);
+	if (fscanf (f, "%i\n", &version) != 1)
+		goto malformed_save;
 	if (version != SAVEGAME_VERSION)
 	{
 		fclose (f);
 		Con_Printf ("Savegame is version %i, not %i\n", version, SAVEGAME_VERSION);
 		return;
 	}
-	fscanf (f, "%s\n", str);
+	if (fscanf (f, "%32767s\n", str) != 1)
+		goto malformed_save;
 	for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
-		fscanf (f, "%f\n", &spawn_parms[i]);
+		if (fscanf (f, "%f\n", &spawn_parms[i]) != 1)
+			goto malformed_save;
 // this silliness is so we can load 1.06 save files, which have float skill values
-	fscanf (f, "%f\n", &tfloat);
+	if (fscanf (f, "%f\n", &tfloat) != 1)
+		goto malformed_save;
 	current_skill = (int)(tfloat + 0.1f);
 	Cvar_SetValue ("skill", (float)current_skill);
 
-	fscanf (f, "%s\n",mapname);
-	fscanf (f, "%f\n",&time);
+	if (fscanf (f, "%63s\n", mapname) != 1 || fscanf (f, "%f\n", &time) != 1)
+		goto malformed_save;
 
 	CL_Disconnect_f ();
 
 	SV_SpawnServer (mapname);
 	if (!sv.active)
 	{
+		fclose (f);
 		Con_Printf ("Couldn't load map\n");
 		return;
 	}
@@ -600,7 +605,8 @@ void Host_Loadgame_f (void)
 
 	for (i=0 ; i<MAX_LIGHTSTYLES ; i++)
 	{
-		fscanf (f, "%s\n", str);
+		if (fscanf (f, "%32767s\n", str) != 1)
+			goto malformed_save;
 		sv.lightstyles[i] = Hunk_Alloc (strlen(str)+1);
 		strcpy (sv.lightstyles[i], str);
 	}
@@ -664,6 +670,11 @@ void Host_Loadgame_f (void)
 		CL_EstablishConnection ("local");
 		Host_Reconnect_f ();
 	}
+	return;
+
+malformed_save:
+	fclose (f);
+	Con_Printf ("ERROR: malformed or truncated save file.\n");
 }
 
 

@@ -155,8 +155,8 @@ void Menu_Bindings_Draw (void)
 
         Menu_DrawDivider(8);
 
-        Menu_DrawButton(8.5, bindings_index++, "NEXT PAGE", "Advance to the next Keybind page.", Menu_Bindings_NextPage);
-        Menu_DrawGreyButton(9.5, "PREVIOUS PAGE");
+        Menu_DrawButton(8, bindings_index++, "NEXT PAGE", "Advance to the next Keybind page.", Menu_Bindings_NextPage);
+        Menu_DrawGreyButton(9, "PREVIOUS PAGE");
     } else {
         // Page 2
         bindings_index = 0;
@@ -175,8 +175,8 @@ void Menu_Bindings_Draw (void)
 
         Menu_DrawDivider(5);
 
-        Menu_DrawGreyButton(5.5, "NEXT PAGE");
-        Menu_DrawButton(6.5, bindings_index++, "PREVIOUS PAGE", "Return to last Keybind page.", Menu_Bindings_PrevPage);
+        Menu_DrawGreyButton(5, "NEXT PAGE");
+        Menu_DrawButton(6, bindings_index++, "PREVIOUS PAGE", "Return to last Keybind page.", Menu_Bindings_PrevPage);
     }
 
     Menu_DrawButton(-2, bindings_index++, "APPLY", "Save & Apply Settings.", Menu_Bindings_Apply);
