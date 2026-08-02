@@ -25,30 +25,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef BAN_TEST
 #if defined(_WIN32)
 #include <windows.h>
-#elif defined (NeXT)
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #else
-#define AF_INET 		2	/* internet */
-struct in_addr
-{
-	union
-	{
-		struct { unsigned char s_b1,s_b2,s_b3,s_b4; } S_un_b;
-		struct { unsigned short s_w1,s_w2; } S_un_w;
-		unsigned long S_addr;
-	} S_un;
-};
-#define	s_addr	S_un.S_addr	/* can be used for most tcp & ip code */
-struct sockaddr_in
-{
-    short			sin_family;
-    unsigned short	sin_port;
-	struct in_addr	sin_addr;
-    char			sin_zero[8];
-};
-char *inet_ntoa(struct in_addr in);
-unsigned long inet_addr(const char *cp);
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #endif
 #endif	// BAN_TEST
 
@@ -99,8 +79,8 @@ char *StrAddr (struct qsockaddr *addr)
 
 
 #ifdef BAN_TEST
-unsigned long banAddr = 0x00000000;
-unsigned long banMask = 0xffffffff;
+uint32_t banAddr = 0x00000000u;
+uint32_t banMask = 0xffffffffu;
 
 void NET_Ban_f (void)
 {
@@ -127,10 +107,14 @@ void NET_Ban_f (void)
 	switch (Cmd_Argc ())
 	{
 		case 1:
-			if (((struct in_addr *)&banAddr)->s_addr)
+			if (banAddr != 0)
 			{
-				Q_strcpy(addrStr, inet_ntoa(*(struct in_addr *)&banAddr));
-				Q_strcpy(maskStr, inet_ntoa(*(struct in_addr *)&banMask));
+				struct in_addr address;
+				struct in_addr mask;
+				address.s_addr = banAddr;
+				mask.s_addr = banMask;
+				Q_strcpy(addrStr, inet_ntoa(address));
+				Q_strcpy(maskStr, inet_ntoa(mask));
 				print("Banning %s [%s]\n", addrStr, maskStr);
 			}
 			else
@@ -965,8 +949,10 @@ static qsocket_t *_Datagram_CheckNewConnections (void)
 	// check for a ban
 	if (clientaddr.sa_family == AF_INET)
 	{
-		unsigned long testAddr;
-		testAddr = ((struct sockaddr_in *)&clientaddr)->sin_addr.s_addr;
+		uint32_t testAddr;
+		struct sockaddr_in internet_addr;
+		memcpy(&internet_addr, &clientaddr, sizeof(internet_addr));
+		testAddr = internet_addr.sin_addr.s_addr;
 		if ((testAddr & banMask) == banAddr)
 		{
 			SZ_Clear(&net_message);

@@ -1195,12 +1195,29 @@ COM_WriteFile
 The filename will be prefixed by the current game directory
 ============
 */
+static qboolean COM_JoinPath(char *dest, size_t dest_size, const char *directory, const char *filename)
+{
+	size_t directory_length = strlen(directory);
+	size_t filename_length = strlen(filename);
+
+	if (directory_length + 1 + filename_length + 1 > dest_size)
+		return false;
+
+	memcpy(dest, directory, directory_length);
+	dest[directory_length] = '/';
+	memcpy(dest + directory_length + 1, filename, filename_length + 1);
+	return true;
+}
+
 void COM_WriteFile (char *filename, void *data, int len)
 {
 	int             handle;
 	char    name[MAX_OSPATH];
 	
-	snprintf(name, sizeof(name), "%s/%s", com_gamedir, filename);
+	if (!COM_JoinPath(name, sizeof(name), com_gamedir, filename)) {
+		Sys_Printf ("COM_WriteFile: path is too long\n");
+		return;
+	}
 
 	handle = Sys_FileOpenWrite (name);
 	if (handle == -1)
@@ -1305,7 +1322,8 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 	for ( ; search ; search = search->next)
 	{             
 		// check a file in the directory tree
-		snprintf (netpath, sizeof(netpath), "%s/%s", search->filename, filename);
+		if (!COM_JoinPath(netpath, sizeof(netpath), search->filename, filename))
+			continue;
 		
 		findtime = Sys_FileTime (netpath);
 		if (findtime == -1)

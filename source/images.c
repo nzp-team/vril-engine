@@ -74,8 +74,12 @@ typedef struct
 
 byte* LoadPCX(FILE* f, int matchwidth, int matchheight) 
 {
-    pcx_t pcxbuf;
-    fread(&pcxbuf, 1, sizeof(pcxbuf), f);
+    pcx_t pcxbuf = {0};
+    if (fread(&pcxbuf, 1, 128, f) != 128) {
+        fclose(f);
+        Sys_Error("Truncated pcx header\n");
+        return NULL;
+    }
 
     pcx_t* pcx = &pcxbuf;
 
@@ -109,11 +113,18 @@ byte* LoadPCX(FILE* f, int matchwidth, int matchheight)
         return NULL;
     }
 
-    fseek(f, -768, SEEK_END);
     unsigned char palette[768];
-    fread(palette, 1, 768, f);
+    if (fseek(f, -768, SEEK_END) != 0 || fread(palette, 1, sizeof(palette), f) != sizeof(palette)) {
+        fclose(f);
+        Sys_Error("Truncated pcx palette\n");
+        return NULL;
+    }
 
-    fseek(f, 128, SEEK_SET);
+    if (fseek(f, 128, SEEK_SET) != 0) {
+        fclose(f);
+        Sys_Error("Invalid pcx data offset\n");
+        return NULL;
+    }
 
     int count = (pcx->xmax + 1) * (pcx->ymax + 1);
     byte* image_rgba = (unsigned char*)(Q_malloc(4 * count));
@@ -122,11 +133,23 @@ byte* LoadPCX(FILE* f, int matchwidth, int matchheight)
     for (int y = 0; y <= pcx->ymax; y++) {
         for (int x = 0; x <= pcx->xmax;) {
             int dataByte = fgetc(f);
+            if (dataByte == EOF) {
+                free(image_rgba);
+                fclose(f);
+                Sys_Error("Truncated pcx image data\n");
+                return NULL;
+            }
 
             int runLength = 1;
             if ((dataByte & 0xC0) == 0xC0) {
                 runLength = dataByte & 0x3F;
                 dataByte = fgetc(f);
+                if (dataByte == EOF) {
+                    free(image_rgba);
+                    fclose(f);
+                    Sys_Error("Truncated pcx run data\n");
+                    return NULL;
+                }
             }
 
             while (runLength-- > 0) {
