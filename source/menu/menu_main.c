@@ -73,16 +73,16 @@ void Menu_Main_Draw (void)
 
 		Menu_DrawDivider(3);
 
-		Menu_DrawButton(3.25, 1, "CONFIGURATION", "Tweak Game Related Options", Menu_Configuration_Set);
-		Menu_DrawButton(4.25, 2, "CHARACTER BIOS", "View Character Bios", Menu_Bios_Set);
+		Menu_DrawButton(3, 1, "CONFIGURATION", "Tweak Game Related Options", Menu_Configuration_Set);
+		Menu_DrawButton(4, 2, "CHARACTER BIOS", "View Character Bios", Menu_Bios_Set);
 
 		Menu_DrawDivider(5);
 
-		Menu_DrawButton(5.50, 3, "CREDITS", "NZ:P Team + Special Thanks", Menu_Credits_Set);
+		Menu_DrawButton(5, 3, "CREDITS", "NZ:P Team + Special Thanks", Menu_Credits_Set);
 
 		Menu_DrawDivider(6);
 
-		Menu_DrawButton(6.75, 4, "QUIT GAME", "Return to Home Screen", Menu_EnterSubMenu);
+		Menu_DrawButton(6, 4, "QUIT GAME", "Return to Home Screen", Menu_EnterSubMenu);
 
 		Menu_DrawSocialBadge (1, MENU_SOC_YOUTUBE);
 		Menu_DrawSocialBadge (2, MENU_SOC_BLUESKY);
@@ -92,12 +92,12 @@ void Menu_Main_Draw (void)
 		Menu_DrawGreyButton(1, "SOLO");
 		Menu_DrawGreyButton(2, "COOPERATIVE");
 		Menu_DrawDivider(3);
-		Menu_DrawGreyButton(3.25, "CONFIGURATION");
-		Menu_DrawGreyButton(4.25, "CHARACTER BIOS");
+		Menu_DrawGreyButton(3, "CONFIGURATION");
+		Menu_DrawGreyButton(4, "CHARACTER BIOS");
 		Menu_DrawDivider(5);
-		Menu_DrawGreyButton(5.50, "CREDITS");
+		Menu_DrawGreyButton(5, "CREDITS");
 		Menu_DrawDivider(6);
-		Menu_DrawGreyButton(6.75, "QUIT GAME");
+		Menu_DrawGreyButton(6, "QUIT GAME");
 
 		Menu_DrawSocialBadge (1, MENU_SOC_YOUTUBE);
 		Menu_DrawSocialBadge (2, MENU_SOC_BLUESKY);
@@ -107,7 +107,7 @@ void Menu_Main_Draw (void)
 		// Draw Sub Menu
     	Menu_DrawSubMenu("Are you sure you want to quit?", "You will lose any progress that you have made.");
 
-		Menu_DrawButton (7.5, 0, "GET ME OUTTA HERE!", "", Menu_Quit);
-		Menu_DrawButton (8.5, 1, "I WILL PERSEVERE", "", Menu_ExitSubMenu);
+		Menu_DrawButton (7, 0, "GET ME OUTTA HERE!", "", Menu_Quit);
+		Menu_DrawButton (8, 1, "I WILL PERSEVERE", "", Menu_ExitSubMenu);
 	}
 }

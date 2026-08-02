@@ -440,15 +440,15 @@ void Menu_CustomMaps_Draw (void)
 	Menu_DrawDivider(9);
 
 	if (maps_on_page + maps_start_position < num_user_maps) {
-		Menu_DrawButton(9.5, custommap_items++, "NEXT PAGE", "Advance to next User Map page.", Menu_CustomMaps_NextPage);
+		Menu_DrawButton(9, custommap_items++, "NEXT PAGE", "Advance to next User Map page.", Menu_CustomMaps_NextPage);
 	} else {
-		Menu_DrawGreyButton(9.5, "NEXT PAGE");
+		Menu_DrawGreyButton(9, "NEXT PAGE");
 	}
 
 	if (user_maps_page != 0) {
-		Menu_DrawButton(10.5, custommap_items++, "PREVIOUS PAGE", "Return to last User Map page.", Menu_CustomMaps_PrevPage);
+		Menu_DrawButton(10, custommap_items++, "PREVIOUS PAGE", "Return to last User Map page.", Menu_CustomMaps_PrevPage);
 	} else {
-		Menu_DrawGreyButton(10.5, "PREVIOUS PAGE");
+		Menu_DrawGreyButton(10, "PREVIOUS PAGE");
 	}
 
     Menu_DrawButton(-1, custommap_items, "BACK", "Return to Stock Map selection.", Menu_StockMaps_Set);
