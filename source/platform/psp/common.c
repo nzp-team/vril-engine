@@ -1686,8 +1686,11 @@ void COM_InitFilesystem (void)
 		com_cachedir[0] = 0;
 
 //
-// start up with GAMENAME by default (id1)
+// Start up with GAMENAME by default. The plain basedir is also added for
+// launchers that run PSP homebrew from a content path and keep assets next
+// to EBOOT.PBP instead of in a nested GAMENAME directory.
 //
+	COM_AddGameDirectory (basedir);
 	COM_AddGameDirectory (va("%s/"GAMENAME, basedir) );
 
 	if (COM_CheckParm ("-rogue"))

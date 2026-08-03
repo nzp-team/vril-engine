@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <psprtc.h>
 #include <pspctrl.h>
 #include <psphprm.h>
+#include <pspiofilemgr.h>
 #include <pspsdk.h>
 #include <pspge.h>
 #include <pspsysevent.h>
@@ -58,6 +59,41 @@ extern	int  com_argc;
 extern	char **com_argv;
 
 void Sys_ReadCommandLineFile (char* netpath);
+
+static bool PathExists(const char* path)
+{
+	SceIoStat stat;
+	memset(&stat, 0, sizeof(stat));
+	return sceIoGetstat(path, &stat) >= 0;
+}
+
+static bool HasGameData(const char* dir)
+{
+	char path[1024];
+
+	snprintf(path, sizeof(path), "%s/nzp/gfx/palette.lmp", dir);
+	if (PathExists(path))
+		return true;
+
+	snprintf(path, sizeof(path), "%s/gfx/palette.lmp", dir);
+	return PathExists(path);
+}
+
+static void CopyParentDirectory(char* out, size_t outSize, const char* path)
+{
+	if (!path || !path[0])
+		return;
+
+	strncpy(out, path, outSize - 1);
+	out[outSize - 1] = 0;
+
+	char* slash = strrchr(out, '/');
+	if (!slash)
+		slash = strrchr(out, '\\');
+
+	if (slash)
+		*slash = 0;
+}
 
 #define printf	pspDebugScreenPrintf
 #define MIN_HEAP_MB	6
@@ -534,6 +570,15 @@ int user_main(SceSize argc, void* argp)
 	memset(currentDirectory, 0, sizeof(currentDirectory));
 	getcwd(currentDirectory, sizeof(currentDirectory) - 1);
 
+	char launchDirectory[1024];
+	memset(launchDirectory, 0, sizeof(launchDirectory));
+#ifdef KERNEL_MODE
+	CopyParentDirectory(launchDirectory, sizeof(launchDirectory), (const char*)argp);
+#else
+	if (argc > 0 && argv && argv[0])
+		CopyParentDirectory(launchDirectory, sizeof(launchDirectory), argv[0]);
+#endif
+
 	char   path_f[256];
 	strcpy(path_f,currentDirectory);
 	strcat(path_f,"/setup.ini");
@@ -557,7 +602,12 @@ int user_main(SceSize argc, void* argp)
 	}
 	else
 	{
-		strncpy(gameDirectory, currentDirectory, sizeof(gameDirectory));
+		if (HasGameData(currentDirectory))
+			strncpy(gameDirectory, currentDirectory, sizeof(gameDirectory));
+		else if (HasGameData(launchDirectory))
+			strncpy(gameDirectory, launchDirectory, sizeof(gameDirectory));
+		else
+			strncpy(gameDirectory, currentDirectory, sizeof(gameDirectory));
 	}
 
 	/////
