@@ -65,7 +65,7 @@ typedef struct
 	byte		reliable_datagram_buf[MAX_DATAGRAM];
 
 	sizebuf_t	signon;
-	byte		signon_buf[8192];
+	byte		signon_buf[16384];
 } server_t;
 
 

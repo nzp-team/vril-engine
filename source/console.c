@@ -571,25 +571,29 @@ void Con_DrawNotify (void)
 	extern char chat_buffer[];
 
 	v = 0;
-	for (i= con_current-NUM_CON_TIMES+1 ; i<=con_current ; i++)
+
+	if (sys_testmode.value <= 0)
 	{
-		if (i < 0)
-			continue;
-		time = con_times[i % NUM_CON_TIMES];
-		if (time == 0)
-			continue;
-		time = (float)realtime - time;
-		if (time > con_notifytime.value)
-			continue;
-		text = con_text + (i % con_totallines)*con_linewidth;
-		
-		clearnotify = 0;
-		scr_copytop = 1;
+		for (i= con_current-NUM_CON_TIMES+1 ; i<=con_current ; i++)
+		{
+			if (i < 0)
+				continue;
+			time = con_times[i % NUM_CON_TIMES];
+			if (time == 0)
+				continue;
+			time = (float)realtime - time;
+			if (time > con_notifytime.value)
+				continue;
+			text = con_text + (i % con_totallines)*con_linewidth;
 
-		for (x = 0 ; x < con_linewidth ; x++)
-			Draw_Character ( (x+1)<<3, v, text[x]);
+			clearnotify = 0;
+			scr_copytop = 1;
 
-		v += 8;
+			for (x = 0 ; x < con_linewidth ; x++)
+				Draw_Character ( (x+1)<<3, v, text[x]);
+
+			v += 8;
+		}
 	}
 
 

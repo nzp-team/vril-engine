@@ -118,7 +118,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	ON_EPSILON		0.1			// point on plane side epsilon
 
-#define	MAX_MSGLEN		64000		// max length of a reliable message Crow_Bar. UP for PSP
+#define	MAX_MSGLEN		16384		// max length of a reliable message Crow_Bar. UP for PSP
 #define	MAX_DATAGRAM	8000		// max length of unreliable message Crow_Bar. UP for PSP
 
 //
