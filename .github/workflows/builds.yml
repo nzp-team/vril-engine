@@ -181,6 +181,8 @@ jobs:
           {
             echo "## PSP 1000 PR Test Failed"
             echo ""
+            cat testing/working/fail/summary.md
+            echo ""
             echo "[Failure Artifact](${ARTIFACT_URL})"
             echo ""
           } >> "${GITHUB_STEP_SUMMARY}"
@@ -222,6 +224,8 @@ jobs:
         run: |
           {
             echo "## PSP 2000 PR Test Failed"
+            echo ""
+            cat testing/working/fail/summary.md
             echo ""
             echo "[Failure Artifact](${ARTIFACT_URL})"
             echo ""

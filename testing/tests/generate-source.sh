@@ -48,7 +48,7 @@ function run_generation()
         # Remove setup.ini and write our new one, this will let us automatically
         # load the .BSP.
         rm -rf ${working_dir}/nzportable/setup.ini
-        echo "+developer 1 -cpu333 -user_maps +nosound 1 -condebug +host_framerate 0.05 +sys_testmode 1 +map ${pretty_bsp}" >> ${working_dir}/nzportable/setup.ini
+        echo "+developer 1 -cpu333 -user_maps +nosound 1 -condebug +show_fps 0 +host_framerate 0.05 +sys_testmode 1 +map ${pretty_bsp}" >> ${working_dir}/nzportable/setup.ini
 
         # Load emulator and attempt to boot map
         print_info "Loading Nazi Zombies: Portable via [${EMULATOR_BIN}] with map [${pretty_bsp}].."
