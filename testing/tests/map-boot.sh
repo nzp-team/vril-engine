@@ -37,6 +37,7 @@ function run_mapboot_test()
     for bsp in ${working_dir}/nzportable/nzp/maps/*.bsp; do
         local map_failed="0"
         local emulator_failed="0"
+        local ffmpeg_failed="0"
 
         # Get the BSP basename so we can add it to our setup.ini.
         local pretty_bsp=$(basename ${bsp} .bsp) 
@@ -47,12 +48,10 @@ function run_mapboot_test()
         # Remove setup.ini and write our new one, this will let us automatically
         # load the .BSP.
         rm -rf ${working_dir}/nzportable/setup.ini
-        echo "+developer 1 -cpu333 -user_maps +nosound 1 -condebug +sys_testmode 1 +map ${pretty_bsp}" >> ${working_dir}/nzportable/setup.ini
+        echo "+developer 1 -cpu333 -user_maps +nosound 1 -condebug +host_framerate 0.05 +sys_testmode 1 +map ${pretty_bsp}" >> ${working_dir}/nzportable/setup.ini
 
         # Load emulator and attempt to boot map
         print_info "Loading Nazi Zombies: Portable via [${EMULATOR_BIN}] with map [${pretty_bsp}].."
-        local command=$(run_nzportable "1" "${CONTENT_DIR}/blank.png" "${MODE}")
-
         local command=$(run_nzportable "1" "${content_path}/${pretty_bsp}.bmp" "${MODE}")
         echo "[${command}]"
         ${command} > /dev/null 2>&1 || emulator_failed="1"
@@ -103,7 +102,7 @@ function run_mapboot_test()
         else
             local map_psnr_int=${map_psnr%.*}
 
-            if (( map_psnr_int > 35 )); then
+            if (( map_psnr_int >= 35 )); then
                 echo "[PASS]: Got PSNR value of [${map_psnr}]"
             else
                 echo "[ERROR]: PSNR value was less than [35], got [${map_psnr}]!"
