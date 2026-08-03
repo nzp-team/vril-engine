@@ -108,6 +108,19 @@ function run_test()
     fi
 }
 
+function write_failure_summary()
+{
+    local test_exit=$?
+    trap - EXIT
+
+    if (( test_exit != 0 )) && [[ ! -f "${WORKING_DIR}/fail/summary.md" ]]; then
+        mkdir -p "${WORKING_DIR}/fail"
+        printf "## Test harness failure\n\nThe test run exited before detailed test results were available. Check the failed step log for the underlying error.\n" > "${WORKING_DIR}/fail/summary.md"
+    fi
+
+    exit "${test_exit}"
+}
+
 function main()
 {
     # Confirm everything is in order.
@@ -130,6 +143,10 @@ function main()
 
     # Remove trailing slash
     WORKING_DIR="${WORKING_DIR%/}"
+
+    # Ensure every failed test run leaves a summary that CI can publish, even
+    # when setup fails before an individual test can report its own details.
+    trap write_failure_summary EXIT
 
     load_setup_script;
     begin_setup "${dir}" "${BINARY_PATH}" "${WORKING_DIR}";

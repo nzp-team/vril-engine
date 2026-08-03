@@ -33,10 +33,12 @@ function run_mapboot_test()
     local working_dir="${WORKING_DIR}"
     local content_path="${CONTENT_DIR}/${PLATFORM}${MODE:+-$MODE}"
     local failed_maps=()
+    local failure_details=()
 
     for bsp in ${working_dir}/nzportable/nzp/maps/*.bsp; do
         local map_failed="0"
         local emulator_failed="0"
+        local ffmpeg_failed="0"
 
         # Get the BSP basename so we can add it to our setup.ini.
         local pretty_bsp=$(basename ${bsp} .bsp) 
@@ -47,12 +49,10 @@ function run_mapboot_test()
         # Remove setup.ini and write our new one, this will let us automatically
         # load the .BSP.
         rm -rf ${working_dir}/nzportable/setup.ini
-        echo "+developer 1 -cpu333 -user_maps +nosound 1 -condebug +sys_testmode 1 +map ${pretty_bsp}" >> ${working_dir}/nzportable/setup.ini
+        echo "+developer 1 -cpu333 -user_maps +nosound 1 -condebug +show_fps 0 +host_framerate 0.05 +sys_testmode 1 +map ${pretty_bsp}" >> ${working_dir}/nzportable/setup.ini
 
         # Load emulator and attempt to boot map
         print_info "Loading Nazi Zombies: Portable via [${EMULATOR_BIN}] with map [${pretty_bsp}].."
-        local command=$(run_nzportable "1" "${CONTENT_DIR}/blank.png" "${MODE}")
-
         local command=$(run_nzportable "1" "${content_path}/${pretty_bsp}.bmp" "${MODE}")
         echo "[${command}]"
         ${command} > /dev/null 2>&1 || emulator_failed="1"
@@ -74,6 +74,9 @@ function run_mapboot_test()
             echo "-----"
             any_map_failed="1"
             failed_maps+=("${pretty_bsp}")
+            failure_details+=("- \`${pretty_bsp}\`: emulator or server startup failed")
+            mkdir -p "${WORKING_DIR}/fail/map-boot"
+            cp "${working_dir}/nzportable/nzp/condebug.log" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_console.log" || true
             continue
         else
             echo "[PASS]: SUCCESSFULLY spawned server using map [${pretty_bsp}]!"
@@ -93,6 +96,11 @@ function run_mapboot_test()
             echo "----------------------------------------------------"
             any_map_failed="1"
             failed_maps+=("${pretty_bsp}")
+            failure_details+=("- \`${pretty_bsp}\`: FFmpeg could not compare the capture")
+            mkdir -p "${WORKING_DIR}/fail/map-boot"
+            cp /tmp/ffmpeg_log.txt "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_ffmpeg.log" || true
+            cp "${content_path}/${pretty_bsp}.bmp" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_source.bmp" || true
+            mv "$(pwd)/capture.bmp" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_new.bmp" || true
             continue
         fi
 
@@ -103,7 +111,7 @@ function run_mapboot_test()
         else
             local map_psnr_int=${map_psnr%.*}
 
-            if (( map_psnr_int > 35 )); then
+            if (( map_psnr_int >= 35 )); then
                 echo "[PASS]: Got PSNR value of [${map_psnr}]"
             else
                 echo "[ERROR]: PSNR value was less than [35], got [${map_psnr}]!"
@@ -116,6 +124,7 @@ function run_mapboot_test()
 
                 any_map_failed="1"
                 failed_maps+=("${pretty_bsp}")
+                failure_details+=("- \`${pretty_bsp}\`: image comparison was ${map_psnr} dB PSNR (minimum: 35 dB)")
             fi
         fi
 
@@ -130,6 +139,13 @@ function run_mapboot_test()
         echo "========================================"
         printf '%s\n' "${failed_maps[@]}" | sort -u
         echo "========================================"
+
+        mkdir -p "${WORKING_DIR}/fail"
+        {
+            echo "## map-boot"
+            echo ""
+            printf '%s\n' "${failure_details[@]}"
+        } > "${WORKING_DIR}/fail/summary.md"
         exit 1
     else
         exit 0

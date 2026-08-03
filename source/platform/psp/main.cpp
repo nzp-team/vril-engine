@@ -61,7 +61,9 @@ void Sys_ReadCommandLineFile (char* netpath);
 
 #define printf	pspDebugScreenPrintf
 #define MIN_HEAP_MB	6
-#define MAX_HEAP_MB (PSP_HEAP_SIZE_MB-1)
+#define MAX_HEAP_MB_SLIM 30
+#define MAX_HEAP_MB_PHAT 13
+#define MAX_HEAP_MB MAX_HEAP_MB_SLIM
 
 // Clock speeds.
 int cpuClockSpeed;
@@ -69,7 +71,7 @@ int ramClockSpeed;
 int busClockSpeed;
 
 #define HEAP_SIZE_SLIM		(30 * 1024 * 1024)
-#define HEAP_SIZE_PHAT 		((11 * 1024 * 1024) + (500 * 1024))
+#define HEAP_SIZE_PHAT 		(13 * 1024 * 1024)
 
 namespace quake
 {
@@ -564,14 +566,19 @@ int user_main(SceSize argc, void* argp)
 	StartUpParams(args, f_argc, path_f, currentDirectory, gameDirectory);
 
 	if (CheckParm(args, f_argc, "-heap")) {
-		char* tempStr = args[CheckParm(args, f_argc,"-heap")+1];
-		int heapSizeMB = atoi(tempStr);
+		int heapParm = CheckParm(args, f_argc, "-heap");
+		int maxHeapMB = psp_system_model == PSP_MODEL_PHAT ? MAX_HEAP_MB_PHAT : MAX_HEAP_MB_SLIM;
+
+		if (heapParm + 1 >= f_argc)
+			Sys_Error("-heap requires a size in megabytes");
+
+		int heapSizeMB = atoi(args[heapParm + 1]);
 
 		if (heapSizeMB < MIN_HEAP_MB )
 			heapSizeMB = MIN_HEAP_MB;
 
-		if (heapSizeMB > MAX_HEAP_MB )
-			heapSizeMB = MAX_HEAP_MB;
+		if (heapSizeMB > maxHeapMB )
+			heapSizeMB = maxHeapMB;
 
 		heapSize = heapSizeMB * 1024 * 1024;
 	}

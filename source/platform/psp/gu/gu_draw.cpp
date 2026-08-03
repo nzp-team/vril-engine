@@ -2740,6 +2740,15 @@ int GL_LoadTextureLM (const char *identifier, int width, int height, byte *data,
 
 		if ((width == texture.original_width) && (height == texture.original_height))
 		{
+			if (!texture.ram)
+			{
+				const std::size_t buffer_size = GL_GetTexSize(texture.format, texture.width, texture.height, 0);
+				texture.ram = static_cast<texel*>(memalign(16, buffer_size));
+				if (!texture.ram)
+				{
+					Sys_Error("Out of RAM for lightmap texture update.");
+				}
+			}
 	
 			    // Upload the texture.
 			if(!texture.swizzle)

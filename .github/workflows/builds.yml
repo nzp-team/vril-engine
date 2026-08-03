@@ -164,6 +164,28 @@ jobs:
         run: |
           cd ./testing
           ./run_tests.sh --platform psp --test all --content "$(pwd)/validate" --working-dir working/ --mode fat --binary /psp-nzp-eboot/EBOOT.PBP
+      - name: Upload Failure Artifact
+        id: psp_1000_failure_artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: psp-1000-pr-failures
+          path: testing/working/fail/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Add Image Comparison Failure Summary
+        if: failure() && steps.psp_1000_failure_artifact.outputs.artifact-url != ''
+        env:
+          ARTIFACT_URL: ${{ steps.psp_1000_failure_artifact.outputs.artifact-url }}
+        run: |
+          {
+            echo "## PSP 1000 PR Test Failed"
+            echo ""
+            cat testing/working/fail/summary.md
+            echo ""
+            echo "[Failure Artifact](${ARTIFACT_URL})"
+            echo ""
+          } >> "${GITHUB_STEP_SUMMARY}"
   Pull-Request-Test-PSP2000:
     if: github.event_name == 'pull_request'
     name: PSP-2000 Pull Request Tests
@@ -186,6 +208,28 @@ jobs:
         run: |
           cd ./testing
           ./run_tests.sh --platform psp --test all --content "$(pwd)/validate" --working-dir working/ --mode slim --binary /psp-nzp-eboot/EBOOT.PBP
+      - name: Upload Failure Artifact
+        id: psp_2000_failure_artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: psp-2000-pr-failures
+          path: testing/working/fail/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Add Image Comparison Failure Summary
+        if: failure() && steps.psp_2000_failure_artifact.outputs.artifact-url != ''
+        env:
+          ARTIFACT_URL: ${{ steps.psp_2000_failure_artifact.outputs.artifact-url }}
+        run: |
+          {
+            echo "## PSP 2000 PR Test Failed"
+            echo ""
+            cat testing/working/fail/summary.md
+            echo ""
+            echo "[Failure Artifact](${ARTIFACT_URL})"
+            echo ""
+          } >> "${GITHUB_STEP_SUMMARY}"
   Unify-and-Release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest

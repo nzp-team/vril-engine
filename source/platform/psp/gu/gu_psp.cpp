@@ -64,7 +64,7 @@ namespace quake
 
 		//! The GU display list.
 		//! @note	Aligned to 64 bytes so it doesn't share a cache line with anything.
-		unsigned int ALIGNED(64)	display_list[DLIST_SIZE_KB * 1024];
+		unsigned int ALIGNED(64)	display_list[(DLIST_SIZE_KB * 1024) / sizeof(unsigned int)];
 	}
 }
 

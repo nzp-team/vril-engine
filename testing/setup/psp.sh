@@ -76,7 +76,7 @@ function obtain_nzportable
     if [ -n "${binary_path}" ]; then
         print_info "Replacing nightly binary with user-specified: [${binary_path}]"
         sleep 0.5
-        mv ${binary_path} ${working_dir}/nzportable/
+        cp ${binary_path} ${working_dir}/nzportable/
     fi
 }
 
