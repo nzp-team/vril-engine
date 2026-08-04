@@ -33,6 +33,7 @@ function run_mapboot_test()
     local working_dir="${WORKING_DIR}"
     local content_path="${CONTENT_DIR}/${PLATFORM}${MODE:+-$MODE}"
     local captured_image="$(capture_path)"
+    local launch_log="${WORKING_DIR}/launch.log"
     local failed_maps=()
     local failure_details=()
 
@@ -54,28 +55,45 @@ function run_mapboot_test()
         print_info "Loading Nazi Zombies: Portable via [${EMULATOR_BIN}] with map [${pretty_bsp}].."
         local command=$(run_nzportable "1" "${content_path}/${pretty_bsp}.bmp" "${MODE}")
         echo "[${command}]"
-        ${command} > /dev/null 2>&1 || emulator_failed="1"
+        ${command} > "${launch_log}" 2>&1 || emulator_failed="1"
 
         # Validate that we were able to enter the server.
-        cat ${working_dir}/nzportable/nzp/condebug.log | grep "Server spawned." || map_failed="1"
-
-        while read -r host_error; do
-            echo "[ERROR]: ${host_error}"
+        local console_log="${working_dir}/nzportable/nzp/condebug.log"
+        if [[ ! -f "${console_log}" ]] || ! grep -q "Server spawned." "${console_log}"; then
             map_failed="1"
-        done < <(grep "Host_Error" ${working_dir}/nzportable/nzp/condebug.log)
+        fi
+
+        if [[ -f "${console_log}" ]]; then
+            while read -r host_error; do
+                echo "[ERROR]: ${host_error}"
+                map_failed="1"
+            done < <(grep "Host_Error" "${console_log}" || true)
+        fi
 
         if [[ "${map_failed}" -ne "0" ]] || [[ "${emulator_failed}" -ne "0" ]]; then
             echo "[ERROR]: FAILED to spawn a server using map [${pretty_bsp}]!"
-            echo "         Last 15 lines of console log follows"
+            echo "         Launcher output follows"
             echo "-----"
-            cat ${working_dir}/nzportable/nzp/condebug.log | tail -n 15
+            cat "${launch_log}"
             echo ""
             echo "-----"
+            if [[ -f "${console_log}" ]]; then
+                echo "         Last 15 lines of console log follows"
+                echo "-----"
+                tail -n 15 "${console_log}"
+                echo ""
+                echo "-----"
+            else
+                echo "         The engine exited before creating condebug.log."
+            fi
             any_map_failed="1"
             failed_maps+=("${pretty_bsp}")
             failure_details+=("- \`${pretty_bsp}\`: emulator or server startup failed")
             mkdir -p "${WORKING_DIR}/fail/map-boot"
-            cp "${working_dir}/nzportable/nzp/condebug.log" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_console.log" || true
+            cp "${launch_log}" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_launcher.log" || true
+            if [[ -f "${console_log}" ]]; then
+                cp "${console_log}" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_console.log"
+            fi
             continue
         else
             echo "[PASS]: SUCCESSFULLY spawned server using map [${pretty_bsp}]!"
