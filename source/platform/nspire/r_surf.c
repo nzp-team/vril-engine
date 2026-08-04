@@ -398,7 +398,6 @@ void R_DrawSurface (void)
 
 //=============================================================================
 
-#if	!id386
 
 /*
 ================
@@ -959,7 +958,6 @@ void R_DrawSurfaceBlock8_mip3_aligned_colormap (void)
 }
 
 
-#endif
 
 
 //============================================================================
@@ -1052,4 +1050,3 @@ void R_GenTile (msurface_t *psurf, void *pdest)
 		Sys_Error ("Unknown tile type");
 	}
 }
-

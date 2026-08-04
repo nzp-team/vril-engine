@@ -2966,9 +2966,8 @@ int GL_LoadImages (const char *identifier, int width, int height, byte *data, qb
 		free(texture.ram);
 		texture.ram = NULL;
 	} else {
-		Con_Printf("Couldn't fit %s into VRAM (%dkB)\n", identifier, buffer_size/1024);
 		total_overbudget_texturemem += buffer_size/1024;
-		Con_Printf("OVERFLOWN VRAM: %d\n", total_overbudget_texturemem);
+		Con_DPrintf("Couldn't fit %s into VRAM (%dkB, total: %dkB).\n  This is not necessarily a problem.\n", identifier, buffer_size/1024, total_overbudget_texturemem);
 	}
 
 	// Done.

@@ -312,7 +312,6 @@ void R_TransformFrustum (void)
 }
 
 
-#if	!id386
 
 /*
 ================
@@ -326,7 +325,6 @@ void TransformVector (vec3_t in, vec3_t out)
 	out[2] = DotProduct(in,vpn);		
 }
 
-#endif
 
 
 /*
@@ -540,4 +538,3 @@ r_refdef.viewangles[2]=    0;
 
 	D_SetupFrame ();
 }
-

@@ -52,6 +52,7 @@ int Image_FindImage (const char *identifier);
 
 //other
 void Clear_LoadingFill (void);
+void CL_UpdateLoadingScreen(qboolean force);
 #ifdef __PSP__
 byte *StringToRGB (char *s);
 #endif // __PSP__

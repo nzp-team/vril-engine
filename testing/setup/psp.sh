@@ -138,3 +138,14 @@ function run_nzportable()
         echo "${working_dir}/${EMULATOR_BIN} --system=${system} --timeout=${TIMEOUT} -r ${working_dir}/nzportable/ ${working_dir}/nzportable/EBOOT.PBP"
     fi
 }
+
+function write_test_setup()
+{
+	local map_name="${1}"
+	printf '%s\n' "$(map_boot_arguments "${map_name}") -cpu333" > "${working_dir}/nzportable/setup.ini"
+}
+
+function capture_path()
+{
+	echo "$(pwd)/capture.bmp"
+}

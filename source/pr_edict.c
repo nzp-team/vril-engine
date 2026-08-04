@@ -905,15 +905,7 @@ if (!strcmp(com_token, "light"))
 		key = ED_FindField (keyname);
 		if (!key)
 		{
-			if (strcmp (keyname, "compiler") &&
-				strcmp (keyname, "r_skycolor") &&
-				strcmp (keyname, "sequence") &&
-				strcmp (keyname, "message2") && //dirty hack to keep the console clean. Dem lazy mappers
-				strcmp (keyname, "mangle") &&
-				strcmp (keyname, "Maxrange") &&
-				strcmp (keyname, "light_lev") &&
-				strcmp (keyname, "fog"))
-				Con_Printf ("'%s' is not a field\n", keyname);
+			Con_DPrintf("'%s' is not a field\n", keyname);
 			continue;
 		}
 
@@ -1045,6 +1037,7 @@ void PR_LoadProgs (void)
 
 	pr_functions = (dfunction_t *)((byte *)progs + progs->ofs_functions);
 	pr_strings = (char *)progs + progs->ofs_strings;
+	PR_InitTempStrings ();
 	pr_globaldefs = (ddef_t *)((byte *)progs + progs->ofs_globaldefs);
 	pr_fielddefs = (ddef_t *)((byte *)progs + progs->ofs_fielddefs);
 	pr_statements = (dstatement_t *)((byte *)progs + progs->ofs_statements);

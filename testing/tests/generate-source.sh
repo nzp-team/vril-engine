@@ -33,6 +33,7 @@ function run_generation()
     local any_map_failed="0"
     local working_dir="${WORKING_DIR}"
     local content_path="${CONTENT_DIR}/${PLATFORM}${MODE:+-$MODE}"
+    local captured_image="$(capture_path)"
     
     mkdir -p "${content_path}"
 
@@ -45,10 +46,8 @@ function run_generation()
         # Remove the console log.
         rm -rf ${working_dir}/nzportable/nzp/condebug.log
 
-        # Remove setup.ini and write our new one, this will let us automatically
-        # load the .BSP.
-        rm -rf ${working_dir}/nzportable/setup.ini
-        echo "+developer 1 -cpu333 -user_maps +nosound 1 -condebug +show_fps 0 +host_framerate 0.05 +sys_testmode 1 +map ${pretty_bsp}" >> ${working_dir}/nzportable/setup.ini
+        # Write the platform launch configuration used to load the BSP.
+        write_test_setup "${pretty_bsp}"
 
         # Load emulator and attempt to boot map
         print_info "Loading Nazi Zombies: Portable via [${EMULATOR_BIN}] with map [${pretty_bsp}].."
@@ -74,7 +73,7 @@ function run_generation()
             any_map_failed="1"
         else
             echo "[PASS]: SUCCESSFULLY spawned server using map [${pretty_bsp}]!"
-            local move_command="mv $(pwd)/capture.bmp ${content_path}/${pretty_bsp}.bmp"
+            local move_command="mv ${captured_image} ${content_path}/${pretty_bsp}.bmp"
             ${move_command}
         fi
     done

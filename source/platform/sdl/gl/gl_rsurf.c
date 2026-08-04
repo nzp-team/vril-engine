@@ -55,6 +55,7 @@ msurface_t  *skychain = NULL;
 msurface_t  *waterchain = NULL;
 
 extern char	skybox_name[32];
+extern qboolean sky_is_layered;
 
 /*
 ===============
@@ -364,7 +365,7 @@ void DrawGLPolyLightmap (glpoly_t *p)
 	float	*v;
 	vec3_t	nv;
 
-	glBegin (GL_TRIANGLE_FAN);
+	glBegin (GL_POLYGON);
 	v = p->verts[0];
 	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
 	{
@@ -454,8 +455,10 @@ void R_RenderBrushPoly (msurface_t *fa)
 
 	if (fa->flags & SURF_DRAWSKY)
 	{	
-		if (strcmp(skybox_name, "") == 0)
+		if (!skybox_name[0] && sky_is_layered)
 			EmitBothSkyLayers (fa);
+		else if (!skybox_name[0])
+			EmitFlatSkyPolys (fa);
 		return;
 	}
 		

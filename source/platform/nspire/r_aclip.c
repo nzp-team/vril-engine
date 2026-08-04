@@ -92,7 +92,6 @@ void R_Alias_clip_z (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 }
 
 
-#if	!id386
 
 void R_Alias_clip_left (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 {
@@ -185,7 +184,6 @@ void R_Alias_clip_bottom (finalvert_t *pfv0, finalvert_t *pfv1,
 	}
 }
 
-#endif
 
 
 int R_AliasClip (finalvert_t *in, finalvert_t *out, int flag, int count,
@@ -347,4 +345,3 @@ void R_AliasClipTriangle (mtriangle_t *ptri)
 		D_PolysetDraw ();
 	}
 }
-

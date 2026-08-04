@@ -46,3 +46,9 @@ function print_error
         exit 1
     fi
 }
+
+function map_boot_arguments
+{
+	local map_name="${1}"
+	echo "+developer 1 +nosound 1 -condebug +show_fps 0 +host_framerate 0.05 +sys_testmode 1 +map ${map_name}"
+}

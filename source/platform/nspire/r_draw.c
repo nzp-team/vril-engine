@@ -78,7 +78,6 @@ int				r_ceilv1;
 qboolean	r_lastvertvalid;
 
 
-#if	!id386
 
 /*
 ================
@@ -763,7 +762,6 @@ void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip)
 	}
 }
 
-#endif	// !id386
 
 
 /*
@@ -1379,4 +1377,3 @@ void R_ZDrawSubmodelPolys (model_t *pmodel)
 		}
 	}
 }
-

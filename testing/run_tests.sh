@@ -130,6 +130,11 @@ function main()
 
     # Begin prepping our environment.
     local dir=$(pwd)
+
+    # Default validation content if not set
+    if [[ -z "${CONTENT_DIR}" ]]; then
+        CONTENT_DIR="${dir}/validate"
+    fi
     
     # Default working dir if not set
     if [[ -z "${WORKING_DIR}" ]]; then

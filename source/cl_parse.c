@@ -266,6 +266,20 @@ void CL_KeepaliveMessage (void)
 CL_ParseServerInfo
 ==================
 */
+
+void CL_UpdateLoadingScreen(qboolean force)
+{
+	static double last_update_time;
+	double current_time = Sys_FloatTime();
+	double lscreen_update_ms = 0.100;
+
+	if (!force && current_time >= last_update_time && current_time - last_update_time < lscreen_update_ms)
+		return;
+
+	SCR_UpdateScreen();
+	last_update_time = current_time;
+}
+
 int has_pap;
 int has_perk_revive;
 int has_perk_juggernog;
@@ -400,6 +414,7 @@ void CL_ParseServerInfo (void)
 
    loading_num_step = loading_num_step +nummodels + numsounds;
    loading_step = 1;
+	CL_UpdateLoadingScreen(true);
 
 	//Con_Printf("Loaded Model: ");
 
@@ -423,18 +438,18 @@ void CL_ParseServerInfo (void)
 		loading_cur_step++;
 		snprintf(loading_name, sizeof(loading_name), "%s", model_precache[i]);
 		//Con_Printf("%i,",i);
-		SCR_UpdateScreen ();
+		CL_UpdateLoadingScreen(false);
 	}
 
 	//Con_Printf("\n");
 	//Con_Printf("Total Models loaded: %i\n",nummodels);
-	SCR_UpdateScreen ();
 
 	// load the extra "no-flamed-torch" model
 	//cl.model_precache[nummodels] = Mod_ForName ("progs/flame0.mdl", false);
 	//cl_modelindex[mi_flame0] = nummodels++;
 
 	loading_step = 4;
+	CL_UpdateLoadingScreen(true);
 
 	S_BeginPrecaching ();
 	//Con_Printf("Loaded Sounds: ");
@@ -444,13 +459,13 @@ void CL_ParseServerInfo (void)
 		CL_KeepaliveMessage ();
 		loading_cur_step++;
 		//Con_Printf("%i,",i);
-		SCR_UpdateScreen ();
+		CL_UpdateLoadingScreen(false);
 	}
 	S_EndPrecaching ();
 
 	//Con_Printf("...\n");
 	//Con_Printf("Total Sounds Loaded: %i\n",numsounds);
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(true);
 
    	Clear_LoadingFill ();
 

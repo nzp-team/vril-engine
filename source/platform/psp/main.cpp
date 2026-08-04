@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define CONSOLE_DEBUG 0
 
 #include <stdexcept>
-#include <vector>
 #include <sys/unistd.h>
 
 #include <pspdisplay.h>
@@ -57,13 +56,7 @@ qboolean isDedicated = false;
 extern	int  com_argc;
 extern	char **com_argv;
 
-void Sys_ReadCommandLineFile (char* netpath);
-
 #define printf	pspDebugScreenPrintf
-#define MIN_HEAP_MB	6
-#define MAX_HEAP_MB_SLIM 30
-#define MAX_HEAP_MB_PHAT 13
-#define MAX_HEAP_MB MAX_HEAP_MB_SLIM
 
 // Clock speeds.
 int cpuClockSpeed;
@@ -77,9 +70,6 @@ namespace quake
 {
 	namespace main
 	{
-		// How big a heap to allocate.
-		static size_t  heapSize;
-
 		// Should the main loop stop running?
 		static volatile bool	quit			= false;
 
@@ -157,298 +147,7 @@ namespace quake
 using namespace quake;
 using namespace quake::main;
 
-#define MAX_NUM_ARGVS	50
-#define MAX_ARG_LENGTH  64
-static char *empty_string = "";
-char    *f_argv[MAX_NUM_ARGVS];
-int     f_argc;
 int 	user_main(SceSize argc, void* argp);
-
-int CheckParm (char **args, int argc, char *parm)
-{
-	int  i;
-
-	for (i=1 ; i<argc ; i++)
-	{
-		if (!args[i])
-			continue;               // NEXTSTEP sometimes clears appkit vars.
-		if (!strcmp (parm,args[i]))
-			return i;
-	}
-
-	return 0;
-}
-
-void StartUpParams(char **args, int argc, char *cmdlinePath, char *currentDirectory, char *gameDirectory)
-{
-#if 0
-	if (CheckParm(args, f_argc,"-prompt"))
-      {
-		SceCtrlData pad;
-		pspDebugScreenInit();
-
-		sceCtrlSetSamplingCycle(0);
-		sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
-
-		bool done = false;
-
-		int menu_min[3] = {0,0,0};
-		int menu_max[3] = {0,1,(MAX_HEAP_MB - MIN_HEAP_MB)-1};
-		int menu_cur[3] = {0,0,0};
-
-		int menu_item_min = 0;
-		int menu_item_max = 2;
-		int menu_item_cur = 0;
-
-		char temp_str[16];
-
-		char *cpus[2];
-		cpus[0] = strdup("222");
-		cpus[1] = strdup("333");
-
-		char *heaps[MAX_HEAP_MB - MIN_HEAP_MB];
-		for (int i = 0 ;i < MAX_HEAP_MB - MIN_HEAP_MB; i++) {
-			sprintf(temp_str, "%d", MIN_HEAP_MB+i);
-			heaps[i] = strdup(temp_str);
-		}
-
-		//++ dirs setup
-		char *dirs[64];
-		dirs[0] = strdup("");
-		int dir_fd = sceIoDopen(gameDirectory);
-		int j = 1;
-
- 		if (dir_fd >= 0) {
- 			SceIoDirent* p_dir_de = new SceIoDirent;
- 			int res = -1;
-
- 			do {
- 				res = sceIoDread(dir_fd, p_dir_de);
- 				if ((res > 0) && (p_dir_de->d_stat.st_attr & FIO_SO_IFDIR)) {
- 					if (!(strcasecmp(p_dir_de->d_name, ".") == 0 || strcasecmp(p_dir_de->d_name, "..") == 0 ||
- 					      strcasecmp(p_dir_de->d_name, "mp3") == 0 || strcasecmp(p_dir_de->d_name, "id1") == 0)) {
- 						dirs[j++] = strdup( p_dir_de->d_name);
- 					}
- 				}
- 			} while (res > 0);
- 			delete p_dir_de;
- 		}
-		sceIoDclose(dir_fd);
-		//-- dirs setup
-
-		menu_max[0] = j-1;
-
-		if (CheckParm(args, f_argc, "-cpu333"))
-			menu_cur[1] = 1;
-
-		if (CheckParm(args, f_argc, "-heap")) {
-			int idx = CheckParm(args, f_argc, "-heap");
-
-			if (idx+1 < f_argc) {
-				for (int i = 0 ;i < MAX_HEAP_MB - MIN_HEAP_MB; i++) {
-					if (strcasecmp(heaps[i], args[idx+1]) == 0) {
-						menu_cur[2] = i;
-					}
-
-					if (args[idx+1][0] == '-') {
-						args[idx][0] = '\0';
-					}
-				}
-			}
-		} else {
-			for (int i = 0 ;i < MAX_HEAP_MB - MIN_HEAP_MB; i++) {
-				sprintf(temp_str, "%d", heapSize/(1024*1024));
-				if (strcasecmp(heaps[i],temp_str) == 0) {
-					menu_cur[2] = i;
-				}
-			}
-		}
-
-		if (CheckParm(args, f_argc, "-game")) {
-			int idx = CheckParm(args, f_argc, "-game");
-
-			if (idx+1 < f_argc) {
-				for (int i = 0 ;i < j; i++) {
-					if (strcasecmp(args[idx+1],dirs[i]) == 0) {
-						menu_cur[0] = i;
-					}
-
-					if (args[idx+1][0] == '-') {
-						args[idx][0] = '\0';
-					}
-				}
-			}
-		}
-
-		while(!done) {
-			sceDisplayWaitVblankStart();
-    		sceDisplayWaitVblankStart();
-    		sceDisplayWaitVblankStart();
-			sceDisplayWaitVblankStart();
-    		sceDisplayWaitVblankStart();
-    		sceDisplayWaitVblankStart();
-
-			pspDebugScreenSetXY(0, 2);
-			sceCtrlReadBufferPositive(&pad, 1);
-
-			pspDebugScreenSetTextColor(0xffffff);
-
-			printf("DQuake v%4.2f \n", (float)VERSION);
-			printf("---------------- \n");
-			printf("Command line file : %s \n", cmdlinePath);
-			printf("Startup directory : %s \n", currentDirectory);
-			printf("Game directory    : %s \n", gameDirectory);
-			printf("\n");
-			printf("Press [X]Cross to Continue [O]Circle to Quit\n");
-			printf("\n");
-
-			pspDebugScreenSetTextColor(0x00ffff);
-
-			if (j > -1) {
-				if (menu_item_cur == 0)
-					pspDebugScreenSetTextColor(0x00ff00);
-				printf("Mod directory     : [%d/%d] '%s' \t \n", 1+menu_cur[0], 1+menu_max[0], dirs[menu_cur[0]]);
-				pspDebugScreenSetTextColor(0x00ffff);
-			}
-			if (menu_item_cur == 1)
-				pspDebugScreenSetTextColor(0x00ff00);
-			printf("CPU Speed         : [%d/%d] '%s' \t \n", 1+menu_cur[1], 1+menu_max[1], cpus[menu_cur[1]]);
-			pspDebugScreenSetTextColor(0x00ffff);
-
-			if (menu_item_cur == 2)
-				pspDebugScreenSetTextColor(0x00ff00);
-			printf("Heap Size         : [%d/%d] '%s' \t \n", 1+menu_cur[2], 1+menu_max[2], heaps[menu_cur[2]]);
-			pspDebugScreenSetTextColor(0xffffff);
-
-			if (pad.Buttons != 0) {
-				if (pad.Buttons & PSP_CTRL_CIRCLE){
-                    pspDebugScreenSetTextColor(0x0000ff);
-                    printf("\n");
-					printf("Shutting down...\n");
-                    printf("\n");
-					pspDebugScreenSetTextColor(0x00ffff);
-					Sys_Quit();
-				}
-				if (pad.Buttons & PSP_CTRL_CROSS){
-					done = true;
-				}
-				if (pad.Buttons & PSP_CTRL_UP){
-					menu_item_cur--;
-					menu_item_cur = (menu_item_cur < menu_item_min ? menu_item_min : menu_item_cur);
-				}
-				if (pad.Buttons & PSP_CTRL_DOWN){
-					menu_item_cur++;
-					menu_item_cur = (menu_item_cur > menu_item_max ? menu_item_max : menu_item_cur);
-				}
-				if (pad.Buttons & PSP_CTRL_LEFT){
-					menu_cur[menu_item_cur]--;
-					menu_cur[menu_item_cur] = (menu_cur[menu_item_cur] < menu_min[menu_item_cur] ? menu_min[menu_item_cur] : menu_cur[menu_item_cur]);
-				}
-				if (pad.Buttons & PSP_CTRL_RIGHT){
-					menu_cur[menu_item_cur]++;
-					menu_cur[menu_item_cur] = (menu_cur[menu_item_cur] > menu_max[menu_item_cur] ? menu_max[menu_item_cur] : menu_cur[menu_item_cur]);
-				}
-			}
-			if(sceHprmIsRemoteExist()){
-               u32 hprmkey;
-	           sceHprmPeekCurrentKey(&hprmkey);
-			   if (hprmkey != 0){
-                   if (hprmkey & PSP_HPRM_BACK){
-                      menu_cur[menu_item_cur]--;
-					  menu_cur[menu_item_cur] = (menu_cur[menu_item_cur] < menu_min[menu_item_cur] ? menu_min[menu_item_cur] : menu_cur[menu_item_cur]);
-				   }
-				   if (hprmkey & PSP_HPRM_FORWARD){
-                      menu_cur[menu_item_cur]++;
-					  menu_cur[menu_item_cur] = (menu_cur[menu_item_cur] > menu_max[menu_item_cur] ? menu_max[menu_item_cur] : menu_cur[menu_item_cur]);
-				   }
-				   if (hprmkey & PSP_HPRM_PLAYPAUSE){
-					done = true;
-				   }
-				}
-			}
-
-		}
-		if (CheckParm(args, f_argc, "-game")) {
-			int idx = CheckParm(args, f_argc, "-game");
-			if (strcasecmp(args[idx+1],dirs[menu_cur[0]]) != 0) {
-
-				if (strlen(dirs[menu_cur[0]]) > 0) {
-					int len2 = strlen(dirs[menu_cur[0]]);
-					args[idx+1] = new char[len2+1];
-					strcpy(args[idx+1], dirs[menu_cur[0]]);
-				} else {
-					strcpy(args[idx], "");
-					strcpy(args[idx+1], "");
-				}
-			}
-		}
-		else {
-			if (strlen(dirs[menu_cur[0]]) > 0) {
-				int len1 = strlen("-game");
-				int len2 = strlen(dirs[menu_cur[0]]);
-
-				args[f_argc] = new char[len1+1];
-				args[f_argc+1] = new char[len2+1];
-
-				strcpy(args[f_argc], "-game");
-				strcpy(args[f_argc+1], dirs[menu_cur[0]]);
-
-				f_argc += 2;
-			}
-		}
-
-		if (strcasecmp(cpus[menu_cur[1]],"333") == 0) {
-
-			if (!CheckParm(args, f_argc, "-cpu333")) {
-				int len1 = strlen("-cpu333");
-
-				args[f_argc] = new char[len1+1];
-				strcpy(args[f_argc], "-cpu333");
-
-				f_argc += 1;
-			}
-		} else {
-			if (CheckParm(args, f_argc, "-cpu333")) {
-				int idx = CheckParm(args, f_argc, "-cpu333");
-				strcpy(args[idx], "-cpu222");
-			}
-		}
-
-		if (CheckParm(args, f_argc, "-heap")) {
-
-			int idx = CheckParm(args, f_argc, "-heap");
-
-			int len2 = strlen(heaps[menu_cur[2]]);
-
-			args[idx+1] = new char[len2+1];
-			strcpy(args[idx+1], heaps[menu_cur[2]]);
-		}
-		else {
-			int len1 = strlen("-heap");
-			int len2 = strlen(heaps[menu_cur[2]]);
-
-			args[f_argc] = new char[len1+1];
-			args[f_argc+1] = new char[len2+1];
-
-			strcpy(args[f_argc], "-heap");
-			strcpy(args[f_argc+1], heaps[menu_cur[2]]);
-
-			f_argc += 2;
-		}
-
-		// get rid of temp. alloc memory
-		for (int i = 0 ;i < MAX_HEAP_MB - MIN_HEAP_MB; i++) {
-			free(heaps[i]);
-		}
-		for (int i = 0 ;i < j; i++) {
-			free(dirs[i]);
-		}
-		free(cpus[0]);
-		free(cpus[1]);
-		pspDebugScreenClear();
-	}
-#endif
-}
 
 int ctrl_kernel = 0;
 SceUID mod[2];
@@ -531,85 +230,54 @@ int user_main(SceSize argc, void* argp)
 	// Get the current working dir.
 	char currentDirectory[1024];
 	char gameDirectory[1024];
+	const char *baseDirectory;
+	startup_arguments_t startup;
+	char startupError[256];
+	size_t heapSize;
+	void *heap;
 
 	memset(gameDirectory, 0, sizeof(gameDirectory));
 	memset(currentDirectory, 0, sizeof(currentDirectory));
 	getcwd(currentDirectory, sizeof(currentDirectory) - 1);
 
-	char   path_f[256];
-	strcpy(path_f,currentDirectory);
-	strcat(path_f,"/setup.ini");
-	Sys_ReadCommandLineFile(path_f);
+	char path_f[1024];
+	snprintf(path_f, sizeof(path_f), "%s/setup.ini", currentDirectory);
+#ifdef KERNEL_MODE
+	if (!Startup_LoadArguments(&startup, 0, NULL, path_f,
+		startupError, sizeof(startupError)))
+#else
+	if (!Startup_LoadArguments(&startup, argc, argv, path_f,
+		startupError, sizeof(startupError)))
+#endif
+		Sys_Error("Startup: %s", startupError);
 
-	char *args[MAX_NUM_ARGVS];
-
-	for (int k =0; k < f_argc; k++) {
-		int len = strlen(f_argv[k]);
-		args[k] = new char[len+1];
-		strcpy(args[k], f_argv[k]);
-	}
-
-	if (CheckParm(args, f_argc,"-32depth"))
+	if (Startup_FindArgument(&startup, "-32depth"))
 		depthfl = true;
 
-	if (CheckParm(args, f_argc, "-gamedir")) 
-	{
-		char* tempStr = args[CheckParm(args, f_argc,"-gamedir")+1];
-		strncpy(gameDirectory, tempStr, sizeof(gameDirectory)-1);
-	}
-	else
-	{
-		strncpy(gameDirectory, currentDirectory, sizeof(gameDirectory));
-	}
+	if (!Startup_GetBaseDirectory(&startup, currentDirectory, &baseDirectory,
+		startupError, sizeof(startupError)))
+		Sys_Error("Startup: %s", startupError);
+	strncpy(gameDirectory, baseDirectory, sizeof(gameDirectory) - 1);
+	gameDirectory[sizeof(gameDirectory) - 1] = '\0';
 
-	/////
-	StartUpParams(args, f_argc, path_f, currentDirectory, gameDirectory);
-
-	if (CheckParm(args, f_argc, "-heap")) {
-		int heapParm = CheckParm(args, f_argc, "-heap");
-		int maxHeapMB = psp_system_model == PSP_MODEL_PHAT ? MAX_HEAP_MB_PHAT : MAX_HEAP_MB_SLIM;
-
-		if (heapParm + 1 >= f_argc)
-			Sys_Error("-heap requires a size in megabytes");
-
-		int heapSizeMB = atoi(args[heapParm + 1]);
-
-		if (heapSizeMB < MIN_HEAP_MB )
-			heapSizeMB = MIN_HEAP_MB;
-
-		if (heapSizeMB > maxHeapMB )
-			heapSizeMB = maxHeapMB;
-
-		heapSize = heapSizeMB * 1024 * 1024;
-	}
-
-	if (heapSize == 0) {
-		if (psp_system_model == PSP_MODEL_PHAT)
-			heapSize = HEAP_SIZE_PHAT;
-		else
-			heapSize = HEAP_SIZE_SLIM;
-	}
-
-	// Allocate the heap.
-	std::vector<unsigned char>	heap(heapSize, 0);
+	heap = Startup_AllocateHeap(&startup,
+		psp_system_model == PSP_MODEL_PHAT ? HEAP_SIZE_PHAT : HEAP_SIZE_SLIM,
+		&heapSize, startupError, sizeof(startupError));
+	if (!heap)
+		Sys_Error("Startup: %s", startupError);
 
 #if CONSOLE_DEBUG
-	if (f_argc > 1) {
-		args[f_argc++] = "-condebug";
-		COM_InitArgv(f_argc, args);
+	if (startup.argc > 1) {
+		startup.argv[startup.argc++] = "-condebug";
+		COM_InitArgv(startup.argc, startup.argv);
 	}
 	else {
-		args[0] = "";
-		args[1] = "-condebug";
-		COM_InitArgv(2, args);
+		startup.argv[0] = "";
+		startup.argv[1] = "-condebug";
+		COM_InitArgv(2, startup.argv);
 	}
 #else
-	if (f_argc > 1)
-		COM_InitArgv(f_argc, args);
-	else {
-		args[0] = "";
-		COM_InitArgv(0, NULL);
-	}
+	COM_InitArgv(startup.argc, startup.argv);
 #endif
 
 #ifdef PSP_SOFTWARE_VIDEO
@@ -632,8 +300,8 @@ int user_main(SceSize argc, void* argp)
 		parms.argc		= com_argc;
 		parms.argv		= com_argv;
 		parms.basedir	= gameDirectory;
-		parms.memsize	= heap.size();
-		parms.membase	= &heap.at(0);
+		parms.memsize	= (int)heapSize;
+		parms.membase	= heap;
 		Host_Init(&parms);
 
 		// Precalculate the tick rate.
@@ -687,57 +355,17 @@ int user_main(SceSize argc, void* argp)
 	catch (const std::exception& e)
 	{
 		// Report the error and quit.
+		free(heap);
+		Startup_FreeArguments(&startup);
 		Sys_Error("C++ Exception: %s", e.what());
 		return 0;
 	}
 
 	// Quit.
+	free(heap);
+	Startup_FreeArguments(&startup);
 	Sys_Quit();
 	return 0;
-}
-
-void Sys_ReadCommandLineFile (char* netpath)
-{
-	int 	in;
-	int     remaining;
-	char    buf[4096];
-	int     argc = 1;
-
-	remaining = Sys_FileOpenRead (netpath, &in);
-
-	if (in > 0 && remaining > 0) {
-		Sys_FileRead (in, buf, 4096);
-		f_argv[0] = empty_string;
-
-		char* lpCmdLine = buf;
-
-		while (*lpCmdLine && (argc < MAX_NUM_ARGVS))
-		{
-			while (*lpCmdLine && ((*lpCmdLine <= 32) || (*lpCmdLine > 126)))
-				lpCmdLine++;
-
-			if (*lpCmdLine)
-			{
-				f_argv[argc] = lpCmdLine;
-				argc++;
-
-				while (*lpCmdLine && ((*lpCmdLine > 32) && (*lpCmdLine <= 126)))
-					lpCmdLine++;
-
-				if (*lpCmdLine)
-				{
-					*lpCmdLine = 0;
-					lpCmdLine++;
-				}
-			}
-		}
-		f_argc = argc;
-	} else {
-		f_argc = 0;
-	}
-
-	if (in > 0)
-		Sys_FileClose (in);
 }
 
 int Sys_GetPSPModel(void) 
