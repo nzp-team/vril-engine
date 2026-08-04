@@ -253,7 +253,11 @@ int UDP_Read (int socket, byte *buf, int len, struct qsockaddr *addr)
 
 int UDP_MakeSocketBroadcastCapable (int socket)
 {
-	return -1;
+	int enabled = 1;
+	if (setsockopt(socket, SOL_SOCKET, SO_BROADCAST, &enabled, sizeof(enabled)) == -1)
+		return -1;
+	net_broadcastsocket = socket;
+	return 0;
 }
 
 
