@@ -17,7 +17,7 @@ function install_dependencies()
 {
 	print_info "Installing Linux test dependencies.."
 	apt-get update -y
-	apt-get install -y ffmpeg libgl1-mesa-dri libglu1-mesa libsdl2-2.0-0 libsdl2-mixer-2.0-0 unzip wget xauth xvfb
+	apt-get install -y ffmpeg libgl1 libgl1-mesa-dri libglu1-mesa libsdl2-2.0-0 libsdl2-mixer-2.0-0 unzip wget xauth xvfb
 }
 
 function obtain_nzportable()

@@ -21,6 +21,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../../nzportable_def.h"
 
+#ifndef _WIN32
+#include <dirent.h>
+#endif
+
 #define NUM_SAFE_ARGVS  7
 
 static char     *largv[MAX_NUM_ARGVS + NUM_SAFE_ARGVS + 1];
@@ -1209,6 +1213,53 @@ static qboolean COM_JoinPath(char *dest, size_t dest_size, const char *directory
 	return true;
 }
 
+#ifndef _WIN32
+static qboolean COM_ResolveCaseInsensitivePath(char *resolved, size_t resolved_size, const char *directory, const char *filename)
+{
+	char relative[MAX_OSPATH];
+	char current[MAX_OSPATH];
+	char joined[MAX_OSPATH];
+	char *component, *next;
+
+	strncpy(relative, filename, sizeof(relative) - 1);
+	relative[sizeof(relative) - 1] = 0;
+	strncpy(current, directory, sizeof(current) - 1);
+	current[sizeof(current) - 1] = 0;
+
+	for (component = strtok_r(relative, "/", &next); component; component = strtok_r(NULL, "/", &next))
+	{
+		DIR *dir = opendir(current);
+		struct dirent *entry;
+		qboolean found = false;
+
+		if (!dir)
+			return false;
+
+		while ((entry = readdir(dir)) != NULL)
+		{
+			if (!Q_strcasecmp(entry->d_name, component))
+			{
+				if (COM_JoinPath(joined, sizeof(joined), current, entry->d_name))
+				{
+					strcpy(current, joined);
+					found = true;
+				}
+				break;
+			}
+		}
+
+		closedir(dir);
+		if (!found)
+			return false;
+	}
+
+	if (strlen(current) >= resolved_size)
+		return false;
+	strcpy(resolved, current);
+	return true;
+}
+#endif
+
 void COM_WriteFile (char *filename, void *data, int len)
 {
 	int             handle;
@@ -1299,7 +1350,7 @@ Sets com_filesize and one of handle or file
 int COM_FindFile (char *filename, int *handle, FILE **file)
 {
 	searchpath_t    *search;
-    char            netpath[128];
+	char            netpath[MAX_OSPATH];
 	char            cachepath[MAX_OSPATH * 2];
 	int                     i;
 	int                     findtime, cachetime;
@@ -1326,6 +1377,12 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 			continue;
 		
 		findtime = Sys_FileTime (netpath);
+#ifndef _WIN32
+		if (findtime == -1 && COM_ResolveCaseInsensitivePath(netpath, sizeof(netpath), search->filename, filename))
+		{
+			findtime = Sys_FileTime(netpath);
+		}
+#endif
 		if (findtime == -1)
 			continue;
 			

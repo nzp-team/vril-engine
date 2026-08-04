@@ -253,6 +253,7 @@ extern	cvar_t	r_dynamic;
 extern	cvar_t	r_novis;
 extern  cvar_t  r_farclip;
 extern 	cvar_t 	r_skyfog;
+extern	cvar_t	r_skycolor;
 
 extern  cvar_t  r_laserpoint;
 extern  cvar_t  r_particle_count;
@@ -356,6 +357,7 @@ void GL_Set2D (void);
 
 void EmitWaterPolys (msurface_t *fa);
 void EmitSkyPolys (msurface_t *fa);
+void EmitFlatSkyPolys (msurface_t *fa);
 void EmitReflectivePolys (msurface_t *fa);
 void EmitScrollPolys (msurface_t *fa);
 void EmitBothSkyLayers (msurface_t *fa);

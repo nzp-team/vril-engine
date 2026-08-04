@@ -274,7 +274,7 @@ jobs:
           dpkg --add-architecture "${DEB_ARCH}"
           apt-get update
           apt-get install -y \
-            "libgl1-mesa-dri:${DEB_ARCH}" "libglu1-mesa:${DEB_ARCH}" \
+            "libgl1:${DEB_ARCH}" "libgl1-mesa-dri:${DEB_ARCH}" "libglu1-mesa:${DEB_ARCH}" \
             "libsdl2-2.0-0:${DEB_ARCH}" "libsdl2-mixer-2.0-0:${DEB_ARCH}"
       - name: Run All
         run: |
