@@ -1144,7 +1144,12 @@ void PF_dprint (void)
 	Con_DPrintf ("%s",PF_VarString(0));
 }
 
-char	pr_string_temp[PR_MAX_TEMPSTRING];	// 2001-10-25 Enhanced temp string handling by Maddes
+char	*pr_string_temp;	// 2001-10-25 Enhanced temp string handling by Maddes
+
+void PR_InitTempStrings (void)
+{
+	pr_string_temp = Hunk_AllocName(PR_MAX_TEMPSTRING, "pr_tempstrings");
+}
 
 void PF_ftos (void)
 {

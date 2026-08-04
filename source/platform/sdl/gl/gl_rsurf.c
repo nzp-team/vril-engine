@@ -364,7 +364,7 @@ void DrawGLPolyLightmap (glpoly_t *p)
 	float	*v;
 	vec3_t	nv;
 
-	glBegin (GL_TRIANGLE_FAN);
+	glBegin (GL_POLYGON);
 	v = p->verts[0];
 	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
 	{

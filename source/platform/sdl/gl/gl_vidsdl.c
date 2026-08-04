@@ -5,6 +5,8 @@ SDL_Window *sdl_window;
 SDL_GLContext sdl_gl_context;
 int sdl_window_width = 1280;
 int sdl_window_height = 720;
+cvar_t vid_width = {"vid_width", "1280", true};
+cvar_t vid_height = {"vid_height", "720", true};
 
 unsigned d_8to24table[256];
 unsigned char d_15to8table[65536];
@@ -69,8 +71,16 @@ static void Check_Gamma(unsigned char *pal)
 void VID_Init(unsigned char *palette)
 {
 	int parameter;
-	if ((parameter = COM_CheckParm("-width")) && parameter + 1 < com_argc) sdl_window_width = Q_atoi(com_argv[parameter + 1]);
-	if ((parameter = COM_CheckParm("-height")) && parameter + 1 < com_argc) sdl_window_height = Q_atoi(com_argv[parameter + 1]);
+	Cvar_RegisterVariable(&vid_width);
+	Cvar_RegisterVariable(&vid_height);
+	sdl_window_width = (int)vid_width.value;
+	sdl_window_height = (int)vid_height.value;
+	parameter = COM_CheckParm("-width");
+	if (!parameter) parameter = COM_CheckParm("+vid_width");
+	if (parameter && parameter + 1 < com_argc) sdl_window_width = Q_atoi(com_argv[parameter + 1]);
+	parameter = COM_CheckParm("-height");
+	if (!parameter) parameter = COM_CheckParm("+vid_height");
+	if (parameter && parameter + 1 < com_argc) sdl_window_height = Q_atoi(com_argv[parameter + 1]);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);

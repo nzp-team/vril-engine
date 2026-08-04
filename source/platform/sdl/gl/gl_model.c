@@ -437,7 +437,7 @@ void Mod_LoadTextures (lump_t *l)
 		}
 		snprintf(loading_name, sizeof(loading_name), "%s", mt->name);
         loading_cur_step++;
-		SCR_UpdateScreen();
+		CL_UpdateLoadingScreen(false);
 	}
 
 //
@@ -1324,91 +1324,91 @@ void Mod_LoadBrushModel (model_t *mod, void *buffer)
 	loading_step = 2;
 
 	strcpy(loading_name, "Vertexes");
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(true);
 
 	Mod_LoadVertexes (&header->lumps[LUMP_VERTEXES]);
 
     loading_cur_step++;
 	strcpy(loading_name, "Edges");
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(false);
 
 	Mod_LoadEdges (&header->lumps[LUMP_EDGES]);
 
     loading_cur_step++;
 	strcpy(loading_name, "Surfedges");
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(false);
 
 	Mod_LoadSurfedges (&header->lumps[LUMP_SURFEDGES]);
 
     loading_cur_step++;
 	strcpy(loading_name, "Entities");
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(false);
 
 	Mod_LoadEntities (&header->lumps[LUMP_ENTITIES]);
 
     loading_cur_step++;
 	strcpy(loading_name, "Textures");
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(false);
 
 	Mod_LoadTextures (&header->lumps[LUMP_TEXTURES]);
 	Mod_LoadLighting (&header->lumps[LUMP_LIGHTING]);
 
     loading_cur_step++;
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(false);
 
 	Mod_LoadPlanes (&header->lumps[LUMP_PLANES]);
 
     loading_cur_step++;
 	strcpy(loading_name, "Texinfo");
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(false);
 
 	Mod_LoadTexinfo (&header->lumps[LUMP_TEXINFO]);
 
     loading_cur_step++;
 	strcpy(loading_name, "Faces");
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(false);
 
 	Mod_LoadFaces (&header->lumps[LUMP_FACES]);
 
     loading_cur_step++;
 	strcpy(loading_name, "Marksurfaces");
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(false);
 
 	Mod_LoadMarksurfaces (&header->lumps[LUMP_MARKSURFACES]);
 
     loading_cur_step++;
 	strcpy(loading_name, "Visibility");
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(false);
 
 	Mod_LoadVisibility (&header->lumps[LUMP_VISIBILITY]);
 
     loading_cur_step++;
 	strcpy(loading_name, "Leafs");
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(false);
 
 	Mod_LoadLeafs (&header->lumps[LUMP_LEAFS]);
 
     loading_cur_step++;
 	strcpy(loading_name, "Nodes");
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(false);
 
 	Mod_LoadNodes (&header->lumps[LUMP_NODES]);
 
     loading_cur_step++;
 	strcpy(loading_name, "Clipnodes");
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(false);
 
 	Mod_LoadClipnodes (&header->lumps[LUMP_CLIPNODES]);
 
     loading_cur_step++;
 	strcpy(loading_name, "Submodels");
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(false);
 
 	Mod_LoadSubmodels (&header->lumps[LUMP_MODELS]);
 
     loading_cur_step++;
 	strcpy(loading_name, "Hull");
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(false);
 
 	Mod_MakeHull0 ();
 	loading_cur_step++;
@@ -1417,7 +1417,7 @@ void Mod_LoadBrushModel (model_t *mod, void *buffer)
 
 	strcpy(loading_name, "Screen");
     loading_cur_step++;
-	SCR_UpdateScreen ();
+	CL_UpdateLoadingScreen(true);
 	
 	mod->numframes = 2;		// regular and alternate animation
 	
@@ -2132,4 +2132,3 @@ void Mod_Print (void)
 		Con_Printf ("%8p : %s\n",mod->cache.data, mod->name);
 	}
 }
-

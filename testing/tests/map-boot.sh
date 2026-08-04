@@ -32,6 +32,7 @@ function run_mapboot_test()
     local any_map_failed="0"
     local working_dir="${WORKING_DIR}"
     local content_path="${CONTENT_DIR}/${PLATFORM}${MODE:+-$MODE}"
+    local captured_image="$(capture_path)"
     local failed_maps=()
     local failure_details=()
 
@@ -46,10 +47,8 @@ function run_mapboot_test()
         # Remove the console log.
         rm -rf ${working_dir}/nzportable/nzp/condebug.log
 
-        # Remove setup.ini and write our new one, this will let us automatically
-        # load the .BSP.
-        rm -rf ${working_dir}/nzportable/setup.ini
-        echo "+developer 1 -cpu333 -user_maps +nosound 1 -condebug +show_fps 0 +host_framerate 0.05 +sys_testmode 1 +map ${pretty_bsp}" >> ${working_dir}/nzportable/setup.ini
+        # Write the platform launch configuration used to load the BSP.
+        write_test_setup "${pretty_bsp}"
 
         # Load emulator and attempt to boot map
         print_info "Loading Nazi Zombies: Portable via [${EMULATOR_BIN}] with map [${pretty_bsp}].."
@@ -82,7 +81,7 @@ function run_mapboot_test()
             echo "[PASS]: SUCCESSFULLY spawned server using map [${pretty_bsp}]!"
         fi
 
-        ffmpeg -nostdin -y -i "${content_path}/${pretty_bsp}.bmp" -i "$(pwd)/capture.bmp" -filter_complex \
+        ffmpeg -nostdin -y -i "${content_path}/${pretty_bsp}.bmp" -i "${captured_image}" -filter_complex \
         "[0:v][1:v]psnr=stats_file=psnr_stats.log[psnr_out]; \
         [0:v][1:v]blend=all_mode='difference'[diff_out]" \
         -map "[psnr_out]" -f null - \
@@ -100,7 +99,7 @@ function run_mapboot_test()
             mkdir -p "${WORKING_DIR}/fail/map-boot"
             cp /tmp/ffmpeg_log.txt "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_ffmpeg.log" || true
             cp "${content_path}/${pretty_bsp}.bmp" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_source.bmp" || true
-            mv "$(pwd)/capture.bmp" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_new.bmp" || true
+            mv "${captured_image}" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_new.bmp" || true
             continue
         fi
 
@@ -119,7 +118,7 @@ function run_mapboot_test()
 
                 mkdir -p "${WORKING_DIR}/fail/map-boot"
                 cp "${content_path}/${pretty_bsp}.bmp" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_source.bmp" || true
-                mv "$(pwd)/capture.bmp" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_new.bmp" || true
+                mv "${captured_image}" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_new.bmp" || true
                 mv "$(pwd)/difference.png" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_diff.png" || true
 
                 any_map_failed="1"
@@ -129,7 +128,7 @@ function run_mapboot_test()
         fi
 
         rm -rf "$(pwd)/difference.png"
-        rm -rf "$(pwd)/capture.bmp"
+        rm -rf "${captured_image}"
     done
 
     if [[ "${any_map_failed}" -ne "0" ]]; then

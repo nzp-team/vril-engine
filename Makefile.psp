@@ -26,6 +26,7 @@ endif
 
 COMMON_OBJS = \
 	source/system.o \
+	source/startup.o \
 	source/platform/psp/battery.o \
 	source/platform/psp/thread.o \
 	source/platform/psp/VramExt.o \

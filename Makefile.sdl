@@ -1,8 +1,13 @@
-CC ?= cc
+CROSS_COMPILE ?=
+ifneq ($(strip $(CROSS_COMPILE)),)
+ifeq ($(origin CC),default)
+CC := $(CROSS_COMPILE)gcc
+endif
+endif
 PKG_CONFIG ?= pkg-config
 
-BUILD := build/sdl
-TARGET := $(BUILD)/nzportable
+BUILD ?= build/sdl
+TARGET ?= $(BUILD)/nzportable
 DATA_DIR ?= build/data
 CPPFLAGS := -Isource -I$(BUILD) -DGLQUAKE -DPLATFORM_SDL -DPLATFORM_CONFIRM_IS_ENTER -DGL_SILENCE_DEPRECATION -DPLATFORM_DIRECTORY=sdl -DPLATFORM_RENDERER=gl -DMAX_AI_COUNT=24
 CFLAGS ?= -O2 -g

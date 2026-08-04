@@ -71,7 +71,48 @@ void Sys_HighFPPrecision(void) {}
 void Sys_LowFPPrecision(void) {}
 void Sys_SetFPCW(void) {}
 void Sys_DebugLog(char *file, char *fmt, ...) { (void)file; (void)fmt; }
-void Sys_CaptureScreenshot(void) { Con_Printf("Screenshots are not implemented by the SDL backend yet.\n"); }
+void Sys_CaptureScreenshot(void)
+{
+	SDL_Surface *screenshot;
+	unsigned char *pixels;
+	int width = vid.width;
+	int height = vid.height;
+	int row_size = width * 3;
+	int y;
+
+	pixels = malloc((size_t)row_size * height);
+	if (!pixels) {
+		Con_Printf("Could not allocate screenshot buffer.\n");
+		return;
+	}
+
+	glReadBuffer(GL_BACK);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	screenshot = SDL_CreateRGBSurface(0, width, height, 24,
+		0xff0000, 0x00ff00, 0x0000ff, 0);
+#else
+	screenshot = SDL_CreateRGBSurface(0, width, height, 24,
+		0x0000ff, 0x00ff00, 0xff0000, 0);
+#endif
+	if (!screenshot) {
+		Con_Printf("Could not create screenshot surface: %s\n", SDL_GetError());
+		free(pixels);
+		return;
+	}
+
+	for (y = 0; y < height; ++y)
+		memcpy((byte *)screenshot->pixels + y * screenshot->pitch,
+			pixels + (height - y - 1) * row_size, row_size);
+
+	if (SDL_SaveBMP(screenshot, "capture.bmp") != 0)
+		Con_Printf("Could not save capture.bmp: %s\n", SDL_GetError());
+
+	SDL_FreeSurface(screenshot);
+	free(pixels);
+}
 
 void Sys_DefaultConfig(void)
 {
@@ -87,17 +128,39 @@ void Sys_DefaultConfig(void)
 int main(int argc, char **argv)
 {
 	quakeparms_t parms;
+	startup_arguments_t startup;
+	const char *base_directory;
+	char startup_error[256];
+	size_t heap_size;
 	double oldtime;
 	memset(&parms, 0, sizeof(parms));
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) != 0) {
-		fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
+	if (!Startup_LoadArguments(&startup, argc, argv, "setup.ini",
+		startup_error, sizeof(startup_error))) {
+		fprintf(stderr, "Startup: %s\n", startup_error);
 		return 1;
 	}
-	parms.memsize = DEFAULT_MEMORY_MB * 1024 * 1024;
-	parms.membase = malloc(parms.memsize);
-	parms.basedir = ".";
-	if (!parms.membase) { fprintf(stderr, "Unable to allocate engine memory\n"); return 1; }
-	COM_InitArgv(argc, argv);
+	if (!Startup_GetBaseDirectory(&startup, ".", &base_directory,
+		startup_error, sizeof(startup_error))) {
+		fprintf(stderr, "Startup: %s\n", startup_error);
+		Startup_FreeArguments(&startup);
+		return 1;
+	}
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) != 0) {
+		fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
+		Startup_FreeArguments(&startup);
+		return 1;
+	}
+	parms.membase = Startup_AllocateHeap(&startup, DEFAULT_MEMORY_MB * 1024 * 1024,
+		&heap_size, startup_error, sizeof(startup_error));
+	if (!parms.membase) {
+		fprintf(stderr, "Startup: %s\n", startup_error);
+		Startup_FreeArguments(&startup);
+		SDL_Quit();
+		return 1;
+	}
+	parms.memsize = (int)heap_size;
+	parms.basedir = (char *)base_directory;
+	COM_InitArgv(startup.argc, startup.argv);
 	parms.argc = com_argc;
 	parms.argv = com_argv;
 	Host_Init(&parms);
@@ -110,6 +173,7 @@ int main(int argc, char **argv)
 	}
 	Host_Shutdown();
 	free(parms.membase);
+	Startup_FreeArguments(&startup);
 	SDL_Quit();
 	return 0;
 }
