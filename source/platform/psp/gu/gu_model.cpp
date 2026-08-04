@@ -513,7 +513,7 @@ void Mod_LoadTextures (lump_t *l)
 			// Check for external textures first
 			char filename[MAX_OSPATH];
 			snprintf (filename, sizeof(filename), "textures/%s", mt->name);
-			tx->gl_texturenum = Image_LoadImage (texname, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, GU_LINEAR, false, true);
+			tx->gl_texturenum = Image_LoadImage (filename, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, GU_LINEAR, false, true);
 
 			// None found, load wad textures
 			if (tx->gl_texturenum < 0) {
