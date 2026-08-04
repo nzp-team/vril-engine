@@ -576,7 +576,7 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 	glEnd ();
 
 	glDisable(GL_BLEND);
-	//glDisable(GL_ALPHA_TEST);
+	glDisable(GL_ALPHA_TEST);
 	glColor4f(1,1,1,1);
 }
 

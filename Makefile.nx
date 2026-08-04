@@ -24,7 +24,7 @@ ARCH	:=	-march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
 
 CFLAGS	:=	-g -Wall -Wdouble-promotion -std=gnu99 -O3 \
 			-fomit-frame-pointer -ffunction-sections \
-			$(ARCH) $(DEFINES)
+			$(ARCH) $(DEFINES) `$(PREFIX)pkg-config --cflags SDL2_mixer`
 
 CFLAGS	+=	$(INCLUDE) -DARM11 -D__SWITCH__ -DGLQUAKE -DPLATFORM_DIRECTORY="nx" -DPLATFORM_RENDERER="gl" \
 			 -DMAX_AI_COUNT=24 -DPLATFORM_CONFIRM_FLIPPED -D__SWITCH__
@@ -42,7 +42,7 @@ CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:=  -lSDL2 -lEGL -lglapi -ldrm_nouveau -lnx -lm -lstdc++
+LIBS	:=  `$(PREFIX)pkg-config --libs SDL2_mixer`
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
