@@ -533,8 +533,6 @@ POINT TESTING IN HULLS
 ===============================================================================
 */
 
-#if	!id386
-
 /*
 ==================
 SV_HullPointContents
@@ -567,8 +565,6 @@ int SV_HullPointContents (hull_t *hull, int num, vec3_t p)
 
 	return num;
 }
-
-#endif	// !id386
 
 
 /*
@@ -1109,4 +1105,3 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 
 	return clip.trace;
 }
-

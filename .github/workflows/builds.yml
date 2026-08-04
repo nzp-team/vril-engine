@@ -52,6 +52,7 @@ jobs:
           TRIPLET: ${{ matrix.triplet }}
           PKG_CONFIG_LIBDIR: /usr/lib/${{ matrix.lib_triplet }}/pkgconfig:/usr/share/pkgconfig
         run: |
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
           make -f Makefile.sdl WERROR=1 -j$(nproc) \
             BUILD="build/sdl/${ARCH}" \
             CROSS_COMPILE="${TRIPLET}-"

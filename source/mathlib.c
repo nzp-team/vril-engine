@@ -811,10 +811,6 @@ int GreatestCommonDivisor (int i1, int i2)
 }
 
 
-#if	!id386
-
-// TODO: move to nonintel.c
-
 /*
 ===================
 Invert24To16
@@ -831,8 +827,6 @@ fixed16_t Invert24To16(fixed16_t val)
 	return (fixed16_t)
 			(((float)0x10000 * (float)0x1000000 / (float)val) + 0.5f);
 }
-
-#endif
 
 void VectorTransform (const vec3_t in1, matrix3x4 in2, vec3_t out)
 {
