@@ -1609,9 +1609,7 @@ void R_SetupGL (void)
 		w = h = 256;
 	}
 
-	// fancyTODO: Why does this not work on NX but work everywhere else?
-	//glViewport (glx + x, gly + y2, w, h);
-	glViewport (glx, gly, glwidth, glheight);
+	glViewport (glx + x, gly + y2, w, h);
     screenaspect = (float)r_refdef.vrect.width/r_refdef.vrect.height;
     
     MYgluPerspective (r_refdef.fov_y,  screenaspect,  4,  4096);
