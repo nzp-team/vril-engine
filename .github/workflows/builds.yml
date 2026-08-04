@@ -32,8 +32,6 @@ jobs:
     container:
       image: debian:12
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
       - name: Install cross toolchain
         env:
           DEB_ARCH: ${{ matrix.deb_arch }}
@@ -46,16 +44,17 @@ jobs:
           apt-get install -y make git pkg-config "${COMPILER}" \
             "libsdl2-dev:${DEB_ARCH}" "libsdl2-mixer-dev:${DEB_ARCH}" \
             "libgl-dev:${DEB_ARCH}" "libglu1-mesa-dev:${DEB_ARCH}"
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         env:
           ARCH: ${{ matrix.arch }}
           TRIPLET: ${{ matrix.triplet }}
-          LIB_TRIPLET: ${{ matrix.lib_triplet }}
+          PKG_CONFIG_LIBDIR: /usr/lib/${{ matrix.lib_triplet }}/pkgconfig:/usr/share/pkgconfig
         run: |
           make -f Makefile.sdl WERROR=1 -j$(nproc) \
             BUILD="build/sdl/${ARCH}" \
-            CROSS_COMPILE="${TRIPLET}-" \
-            PKG_CONFIG_LIBDIR="/usr/lib/${LIB_TRIPLET}/pkgconfig:/usr/share/pkgconfig"
+            CROSS_COMPILE="${TRIPLET}-"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
