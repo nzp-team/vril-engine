@@ -46,9 +46,12 @@ static EGLDisplay s_display;
 static EGLContext s_context;
 static EGLSurface s_surface;
 
+#define NX_SCREEN_WIDTH  1920
+#define NX_SCREEN_HEIGHT 1080
+
 void GL_Init (void)
 {
-	nwindowSetDimensions(nwindowGetDefault(), 1920, 1080);
+	nwindowSetDimensions(nwindowGetDefault(), NX_SCREEN_WIDTH, NX_SCREEN_HEIGHT);
  // Connect to the EGL default display
     s_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     if (!s_display)
@@ -116,15 +119,17 @@ void GL_Init (void)
     }
 
     // Connect the context to the surface
-    eglMakeCurrent(s_display, s_surface, s_surface, s_context);
+	eglMakeCurrent(s_display, s_surface, s_surface, s_context);
 	eglSwapInterval(s_display, 1);
-	nwindowSetCrop(nwindowGetDefault(), 0, 0, 1920, 1080);
+	nwindowSetCrop(nwindowGetDefault(), 0, 0, NX_SCREEN_WIDTH, NX_SCREEN_HEIGHT);
 
     int version = gladLoadGL(eglGetProcAddress);
-    if (version == 0) {
-        Sys_Error("Failed to initialize OpenGL context\n");
-        return;
-    }
+	if (version == 0) {
+		Sys_Error("Failed to initialize OpenGL context\n");
+		return;
+	}
+
+	glClearDepth (1.0f);
 	glClearColor ((float)(16/255),(float)(32/255),(float)(64/255),1);
 	glCullFace(GL_FRONT);
 	glEnable(GL_TEXTURE_2D);
@@ -151,8 +156,8 @@ void GL_Init (void)
 void GL_BeginRendering (int *x, int *y, int *width, int *height)
 {
 	*x = *y = 0;
-	*width = 1920;
-	*height = 1080;
+	*width = NX_SCREEN_WIDTH;
+	*height = NX_SCREEN_HEIGHT;
 }
 
 
@@ -250,8 +255,8 @@ void	VID_Init (unsigned char *palette)
 {
 	int i;
 	//char	gldir[512];
-	int width = 1920;
-	int height = 1080;
+	int width = NX_SCREEN_WIDTH;
+	int height = NX_SCREEN_HEIGHT;
 
 	Cvar_RegisterVariable (&gl_ztrick);
 	
@@ -280,10 +285,12 @@ void	VID_Init (unsigned char *palette)
 	if (vid.conwidth > width)
 		vid.conwidth = width;
 
-	vid.width = 1920;
-	vid.height = 1080;
+	vid.width = width;
+	vid.height = height;
 
-	vid.aspect = ((float)vid.height / (float)vid.width);
+	vid.aspect = ((float)vid.height / (float)vid.width) *
+				(320.0f / 240.0f);
+	vid.scale = vid.height / STD_UI_HEIGHT;
 	vid.numpages = 2;
 
 	GL_Init();
