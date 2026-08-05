@@ -35,7 +35,7 @@ static Thread           music_thread;
 uint32_t                rate;
 uint8_t			        music_channels;
 size_t                  buffersize;
-static int16_t          *buffers[4];
+static int16_t          *buffers[MP3_BUFFERS];
 
 static AudioOutBuffer      *waveBuf;
 static AudioOutBuffer      *waveBufReleased = NULL;
@@ -63,7 +63,6 @@ int music_init (void)
 
 uint64_t mp3_decode(void *buffer)
 {
-    Con_Printf("MP3: mp3_decode!\n");
     size_t ret = 0;
     int err = mpg123_read(handle, buffer, buffersize, &ret);
 
@@ -84,7 +83,6 @@ static void music_thread_func(void *arg)
 {
     Con_Printf("MP3: music_thread_func!\n");
     while(music_running) {
-        Con_Printf("MP3: music is running!\n");
         if (music_paused) {
             svcSleepThread(500000);
             continue;
@@ -98,10 +96,7 @@ static void music_thread_func(void *arg)
             if(read == 0) {
                 music_job_started = 0;
                 music_running = false;
-                Con_Printf("MP3: No Audio To Read!\n");
                 return;
-            } else {
-                Con_Printf("MP3: Yes Audio To Read!\n");
             }
 
             waveBuf[i].buffer = buf;
@@ -134,8 +129,10 @@ void music_stop(void)
     music_running = false;
     music_job_started = 0;
 
+    threadWaitForExit(&music_thread);
+    threadClose(&music_thread);
 
-    for(int i = 0; i < 4; i++) {
+    for(int i = 0; i < MP3_BUFFERS; i++) {
         if(buffers[i]) {
             linearFree(buffers[i]);
             buffers[i] = NULL;
@@ -170,10 +167,16 @@ int music_start_play(char *filename, int startpos)
     }
 
     int err = mpg123_open(handle, filename); 
-    if (err != MPG123_OK) return 0;
+    if (err != MPG123_OK) {
+        Con_Printf("MP3: mpg123_open failed!\n");
+        return 0;
+    }
 
     err = mpg123_getformat(handle, (long*)&rate, (int*)&music_channels, &encoding);
-    if (err != MPG123_OK) return 0;
+    if (err != MPG123_OK) {
+        Con_Printf("MP3: mpg123_getformat failed!\n");
+        return 0;
+    }
 
     mpg123_format_none(handle);
 	mpg123_format(handle, rate, music_channels, MPG123_ENC_SIGNED_16);
@@ -189,7 +192,7 @@ int music_start_play(char *filename, int startpos)
     // slightly larger buffersize to allow
     // for less cpu load (bigger blocks)
     buffersize = mpg123_outblock(handle)*24;
-    for(int i = 0; i < 4; i++) 
+    for(int i = 0; i < MP3_BUFFERS; i++) 
     {
         buffers[i] = linearAlloc(buffersize);
         if(!buffers[i]) {

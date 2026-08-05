@@ -42,8 +42,7 @@ void Menu_Main_Set (void)
 	Menu_ResetMenuButtons();
 	Menu_SetSound(MENU_SND_ENTER);
 	if (key_dest != key_menu) {
-		//		Cbuf_AddText("cd playstring tensioned_by_the_damned 1\n");
-		Music_PlayFromString("tensioned_by_the_damned", 1);
+		Cbuf_AddText("cd playstring tensioned_by_the_damned 1\n");
 	}
 
 	key_dest = key_menu;
