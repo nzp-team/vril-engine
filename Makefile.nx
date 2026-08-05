@@ -102,6 +102,7 @@ COMMON_OBJS =	system.o \
 				menu/menu_accessibility.c \
 				menu/menu_pause.c \
 				menu/menu_loadscreen.c \
+				menu/menu_bios.c \
 				menu/menu_credits.c \
 				platform/nx/platform_menu.c \
 				platform/nx/net_dgrm.c \
@@ -128,7 +129,8 @@ COMMON_OBJS =	system.o \
 				images.c \
 				platform/nx/snd_nx.c \
 				platform/nx/in_nx.c \
-				platform/nx/cd_null.c \
+				platform/nx/music_sdl.c \
+				snd_music.c \
 				platform/nx/gl/gl.c \
 				platform/nx/gl/gl_qmb.c \
 				platform/nx/gl/gl_decal.c \
