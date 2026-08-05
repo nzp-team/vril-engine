@@ -490,7 +490,7 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg, qboolean nomap)
 		if (ent != clent)	// clent is ALLWAYS sent
 		{
 // ignore ents without visible models
-			if (!ent->v.modelindex || !PR_GetString(ent->v.model))
+			if (!ent->v.modelindex || !*PR_GetString(ent->v.model))
 				continue;
 
 			for (i=0 ; i < ent->num_leafs ; i++)

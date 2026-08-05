@@ -243,16 +243,16 @@ $(BUILD):
 	@mkdir -p $(BUILD)/menu
 	@mkdir -p $(BUILD)/render
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile.nx
-	@mkdir -p $(BUILD)/switch
-	@mkdir -p $(BUILD)/switch/bin/
-	@mv $(BUILD)/*.o $(BUILD)/switch/
-	@mv $(BUILD)/*.d $(BUILD)/switch/
-	@mv $(BUILD)/platform/nx $(BUILD)/switch/
-	@mv $(BUILD)/menu $(BUILD)/switch/
-	@mv $(BUILD)/render $(BUILD)/switch/
-	@mv $(BUILD)/$(TARGET).lst $(BUILD)/switch/
-	@mv $(BUILD)/$(TARGET).map $(BUILD)/switch/
-	@mv $(TARGET).* $(BUILD)/switch/bin/
+	@mkdir -p $(BUILD)/nx
+	@mkdir -p $(BUILD)/nx/bin/
+	@mv $(BUILD)/*.o $(BUILD)/nx/
+	@mv $(BUILD)/*.d $(BUILD)/nx/
+	@mv $(BUILD)/platform/nx $(BUILD)/nx/
+	@mv $(BUILD)/menu $(BUILD)/nx/
+	@mv $(BUILD)/render $(BUILD)/nx/
+	@mv $(BUILD)/$(TARGET).lst $(BUILD)/nx/
+	@mv $(BUILD)/$(TARGET).map $(BUILD)/nx/
+	@mv $(TARGET).* $(BUILD)/nx/bin/
 
 #---------------------------------------------------------------------------------
 clean:
