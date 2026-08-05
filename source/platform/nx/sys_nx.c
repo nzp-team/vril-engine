@@ -30,13 +30,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //#define TICKS_PER_SEC 268123480.0
 
 // this is more than enough for the hunk
-#define QUAKE_HUNK_MB			20	 	// cypress -- usable quake hunk size in mB
-#define QUAKE_HUNK_MB_NEW3DS	64		// ^^ ditto, but n3ds
+#define QUAKE_HUNK_MB	128
 
-bool new3ds_flag;
 
 qboolean isDedicated;
-
 PadState pad;
 
 
@@ -301,17 +298,13 @@ int main (int argc, char **argv)
 {
 	static float time, oldtime;
 	static quakeparms_t parms;
-	new3ds_flag = true;
 
 	padConfigureInput(1, HidNpadStyleSet_NpadStandard);
 	padInitializeDefault(&pad);
 	
-	chdir("/switch/nzportable");
+	chdir("/switch/nzportable/");
 
-	if (new3ds_flag == true)
-		parms.memsize = QUAKE_HUNK_MB_NEW3DS * 1024 * 1024;
-	else
-		parms.memsize = QUAKE_HUNK_MB * 1024 * 1024;
+	parms.memsize = QUAKE_HUNK_MB * 1024 * 1024;
 	
 	parms.membase = malloc(parms.memsize);
 	parms.basedir = "/switch/nzportable/";

@@ -26,12 +26,3 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // Some platforms have not fully migrated to bool from qboolean, CTR included. 
 #define qtrue   1
 #define qfalse  0
-
-// Behaviors differ on OLD CTR / NEW CTR, this boolean is TRUE if we are running
-// on NEW CTR.
-#include <stdbool.h>
-extern bool new3ds_flag;
-
-// Used to determine if the user is using the Circle Pad Pro.
-// on OLD CTR
-extern bool circlepadpro_flag;

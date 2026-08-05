@@ -39,6 +39,7 @@ void Music_VolumeChange(float bgmvolume)
 
 void Music_PlayFromString(char* track_name, qboolean looping)
 {
+	Con_Printf("Music_PlayFromString(%s, %i)\n", track_name, looping);
 	Music_Stop();
 
 	char path[512];
@@ -91,6 +92,7 @@ void Music_Resume(void)
 void Music_Update(void)
 {
     if (!enabled || !playing) {
+		Con_Printf("Music_Update Quit Early! enabled: %i playing: %i\n", enabled, playing);
 		return;
 	}
 

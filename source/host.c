@@ -78,7 +78,7 @@ cvar_t	show_bat = {"show_bat","0"};	// test
 
 int			fps_count;
 
-cvar_t	developer = {"developer","0"};
+cvar_t	developer = {"developer","1"};
 
 cvar_t	skill = {"skill","1"};						// 0 - 3
 cvar_t	deathmatch = {"deathmatch","0"};			// 0, 1, or 2

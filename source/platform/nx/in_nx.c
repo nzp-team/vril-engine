@@ -33,9 +33,7 @@ extern cvar_t in_anub_mode;
 
 void IN_Init (void)
 {
-	if (new3ds_flag) {
-		Cvar_SetValue("in_anub_mode", 1);
-	}
+	Cvar_SetValue("in_anub_mode", 1);
 }
 
 void IN_Shutdown (void)

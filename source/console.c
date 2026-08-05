@@ -238,7 +238,6 @@ void Con_CheckResize (void)
 	con_current = con_totallines - 1;
 }
 
-
 /*
 ================
 Con_Init
@@ -248,7 +247,11 @@ void Con_Init (void)
 {
 	char 	*t2 = "/" FILE_SPECIAL_PREFIX "condebug.log" FILE_SPECIAL_SUFFIX;
 
+#if defined(CONSOLE_DEBUG)
+	con_debuglog = true;
+#else
 	con_debuglog = COM_CheckParm("-condebug");
+#endif
 
 	if (con_debuglog)
 	{
