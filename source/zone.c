@@ -635,7 +635,7 @@ void *Z_Malloc (int size)
     Z_Free(ptr);
     ret = Z_TagMalloc(size, 1);
     if (!ret) Sys_Error("%s: failed on allocation of %i bytes", __func__, size);
-    if (ret != ptr) memmove(ret, ptr, qmin(orig_size, size));
+    if (ret != ptr) memmove(ret, ptr, MIN(orig_size, size));
     if (size > orig_size) memset((byte *)ret + orig_size, 0, size - orig_size);
     return ret;
 }
@@ -1371,4 +1371,3 @@ void Memory_Init (void *buf, int size)
 
 	Cmd_AddCommand ("hunk_print", Hunk_Print_f); //johnfitz
 }
-

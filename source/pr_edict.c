@@ -1090,7 +1090,12 @@ void PR_LoadProgs (void)
 
 	pr_functions = (dfunction_t *)((byte *)progs + progs->ofs_functions);
 	pr_strings = (char *)progs + progs->ofs_strings;
-	PR_InitTempStrings ();
+	pr_strings_size = progs->numstrings;
+
+	if (progs->ofs_strings + pr_strings_size >= com_filesize)
+		Host_Error ("progs.dat strings go past end of file\n");
+
+	PR_InitStringTable ();
 	pr_globaldefs = (ddef_t *)((byte *)progs + progs->ofs_globaldefs);
 	pr_fielddefs = (ddef_t *)((byte *)progs + progs->ofs_fielddefs);
 	pr_statements = (dstatement_t *)((byte *)progs + progs->ofs_statements);

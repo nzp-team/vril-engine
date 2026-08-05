@@ -68,8 +68,6 @@ void PR_Init (void);
 
 void PR_ExecuteProgram (func_t fnum);
 void PR_LoadProgs (void);
-void PR_InitTempStrings (void);
-
 void PR_Profile_f (void);
 
 char *PR_GetString (int num);
