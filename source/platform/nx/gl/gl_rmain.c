@@ -82,6 +82,7 @@ cvar_t	r_wateralpha = {"r_wateralpha","1"};
 cvar_t	r_dynamic = {"r_dynamic","1"};
 cvar_t	r_novis = {"r_novis","0"};
 cvar_t 	r_skyfog = {"r_skyfog", "1"};
+cvar_t	r_skycolor = {"r_skycolor", "64 64 70", true};
 
 cvar_t	gl_finish = {"gl_finish","0"};
 cvar_t	gl_clear = {"gl_clear","0"};
@@ -98,6 +99,7 @@ cvar_t	gl_reporttjunctions = {"gl_reporttjunctions","0"};
 cvar_t	gl_doubleeyes = {"gl_doubleeys", "1"};
 
 //QMB
+//cypress
 cvar_t  r_explosiontype     = {"r_explosiontype",    "0",true};
 cvar_t	r_laserpoint		= {"r_laserpoint",       "0",true};
 cvar_t	r_part_explosions	= {"r_part_explosions",  "1",true};
@@ -115,7 +117,7 @@ cvar_t	r_part_flies		= {"r_part_flies",       "1",true};
 cvar_t	r_part_muzzleflash  = {"r_part_muzzleflash", "1",true};
 cvar_t	r_flametype	        = {"r_flametype",        "2",true};
 //Shpuld
-cvar_t  r_model_brightness  = { "r_model_brightness", "1", true};   // Toggle high brightness model lighting
+cvar_t  r_model_brightness  = { "r_model_brightness", "1",true};   // Toggle high brightness model lighting
 
 cvar_t	r_farclip	        = {"r_farclip",              "4096"};        //far cliping for q3 models
 
@@ -662,7 +664,7 @@ void R_SetupAliasFrame (int frame, aliashdr_t *paliashdr)
 
 	if ((frame >= paliashdr->numframes) || (frame < 0))
 	{
-		Con_DPrintf ("R_AliasSetupFrame: no such frame %d\n", frame);
+		//Con_DPrintf ("R_AliasSetupFrame: no such frame %d\n", frame);
 		frame = 0;
 	}
 
@@ -695,7 +697,7 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 
 	if ((frame >= paliashdr->numframes) || (frame < 0))
 	{
-		Con_DPrintf ("R_AliasSetupFrame: no such frame %d\n", frame);
+		//Con_DPrintf ("R_AliasSetupFrame: no such frame %d\n", frame);
 		frame = 0;
 	}
 
@@ -1684,9 +1686,21 @@ R_Clear
 */
 void R_Clear (void)
 {
+	qboolean clear_color = gl_clear.value;
+	extern char skybox_name[32];
+	extern qboolean sky_is_layered;
+
+	if (!skybox_name[0] && !sky_is_layered)
+	{
+		int r = 64, g = 64, b = 70;
+		sscanf(r_skycolor.string, "%d %d %d", &r, &g, &b);
+		glClearColor(bound(0, r, 255) / 255.0f, bound(0, g, 255) / 255.0f, bound(0, b, 255) / 255.0f, 1);
+		clear_color = true;
+	}
+
 	if (r_mirroralpha.value != 1.0f)
 	{
-		if (gl_clear.value)
+		if (clear_color)
 			glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		else
 			glClear (GL_DEPTH_BUFFER_BIT);
@@ -1698,7 +1712,7 @@ void R_Clear (void)
 	{
 		static int trickframe;
 
-		if (gl_clear.value)
+		if (clear_color)
 			glClear (GL_COLOR_BUFFER_BIT);
 
 		trickframe++;
@@ -1717,7 +1731,7 @@ void R_Clear (void)
 	}
 	else
 	{
-		if (gl_clear.value)
+		if (clear_color)
 			glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		else
 			glClear (GL_DEPTH_BUFFER_BIT);

@@ -91,8 +91,11 @@ void Music_Resume(void)
 
 void Music_Update(void)
 {
+#ifdef __SWITCH__
+	music_update();
+#endif
+
     if (!enabled || !playing) {
-		Con_Printf("Music_Update Quit Early! enabled: %i playing: %i\n", enabled, playing);
 		return;
 	}
 

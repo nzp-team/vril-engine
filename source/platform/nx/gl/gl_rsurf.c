@@ -55,6 +55,7 @@ msurface_t  *skychain = NULL;
 msurface_t  *waterchain = NULL;
 
 extern char	skybox_name[32];
+extern qboolean sky_is_layered;
 
 /*
 ===============
@@ -454,8 +455,10 @@ void R_RenderBrushPoly (msurface_t *fa)
 
 	if (fa->flags & SURF_DRAWSKY)
 	{	
-		if (strcmp(skybox_name, "") == 0)
+		if (!skybox_name[0] && sky_is_layered)
 			EmitBothSkyLayers (fa);
+		else if (!skybox_name[0])
+			EmitFlatSkyPolys (fa);
 		return;
 	}
 		
@@ -465,7 +468,7 @@ void R_RenderBrushPoly (msurface_t *fa)
 	bool choosealpha = t->name[0] == '{' ? true : false; // naievil -- need to choose alpha mode for certain textures
 	if(choosealpha) {
 		glEnable(GL_ALPHA_TEST);
-		glAlphaFunc(GL_GREATER, 0xaa);
+		glAlphaFunc(GL_GREATER, 0xaa / 255.0f);
 		glEnable(GL_MODULATE);
 		glColor4f(1, 1, 1, 1);
 	}
@@ -1387,4 +1390,3 @@ void GL_BuildLightmaps (void)
 		lightmap_index[i] = GL_LoadLMTexture (lm_name, BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+(i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes), false);
 	}
 }
-

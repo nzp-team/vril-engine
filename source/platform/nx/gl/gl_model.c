@@ -190,6 +190,10 @@ void Mod_ClearAll (void)
 	//purge old sky textures
 	for (i=0; i<5; i++)
 		skyimage[i] = -1;
+
+	//purge old lightmaps
+	for (i=0; i<MAX_LIGHTMAPS; i++)
+		lightmap_index[i] = -1;
 }
 
 /*
@@ -431,7 +435,7 @@ void Mod_LoadTextures (lump_t *l)
 				texture_mode = GL_LINEAR;
 			}
 		}
-		strcpy(loading_name, mt->name);
+		snprintf(loading_name, sizeof(loading_name), "%s", mt->name);
         loading_cur_step++;
 		CL_UpdateLoadingScreen(false);
 	}

@@ -1850,7 +1850,9 @@ void HUD_Draw (void)
 	HUD_Perks();
 	HUD_Powerups();
 	HUD_ProgressBar();
-	if ((HUD_Change_time > Sys_FloatTime() || GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG] || GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_AMMO]) && cl.stats[STAT_HEALTH] >= 20)
+	if (sys_testmode.value <= 0 &&
+		(HUD_Change_time > Sys_FloatTime() || GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG] || GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_AMMO]) &&
+		cl.stats[STAT_HEALTH] >= 20)
 	{ //these elements are only drawn when relevant for few seconds
 		HUD_Ammo();
 		HUD_Grenades();
