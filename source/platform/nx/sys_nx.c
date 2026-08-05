@@ -323,6 +323,7 @@ int main (int argc, char **argv)
 	{
 		time = Sys_FloatTime();
 		Host_Frame (time - oldtime);
+		music_update();
 		oldtime = time;
 	}
 	return 0;
