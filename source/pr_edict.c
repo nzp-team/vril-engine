@@ -339,33 +339,33 @@ char *PR_ValueString (etype_t type, eval_t *val)
 	switch (type)
 	{
 	case ev_string:
-		q_snprintf (line, sizeof(line), "%s", PR_GetString(val->string));
+		snprintf (line, sizeof(line), "%s", PR_GetString(val->string));
 		break;
 	case ev_entity:
-		q_snprintf (line, sizeof(line), "entity %i", NUM_FOR_EDICT(PROG_TO_EDICT(val->edict)) );
+		snprintf (line, sizeof(line), "entity %i", NUM_FOR_EDICT(PROG_TO_EDICT(val->edict)) );
 		break;
 	case ev_function:
 		f = pr_functions + val->function;
-		q_snprintf (line, sizeof(line), "%s()", PR_GetString(f->s_name));
+		snprintf (line, sizeof(line), "%s()", PR_GetString(f->s_name));
 		break;
 	case ev_field:
 		def = ED_FieldAtOfs ( val->_int );
-		q_snprintf (line, sizeof(line), ".%s", PR_GetString(def->s_name));
+		snprintf (line, sizeof(line), ".%s", PR_GetString(def->s_name));
 		break;
 	case ev_void:
-		q_snprintf (line, sizeof(line), "void");
+		snprintf (line, sizeof(line), "void");
 		break;
 	case ev_float:
-		q_snprintf (line, sizeof(line), "%5.1f", (double)val->_float);
+		snprintf (line, sizeof(line), "%5.1f", (double)val->_float);
 		break;
 	case ev_vector:
-		q_snprintf (line, sizeof(line), "'%5.1f %5.1f %5.1f'", (double)val->vector[0], (double)val->vector[1], (double)val->vector[2]);
+		snprintf (line, sizeof(line), "'%5.1f %5.1f %5.1f'", (double)val->vector[0], (double)val->vector[1], (double)val->vector[2]);
 		break;
 	case ev_pointer:
-		q_snprintf (line, sizeof(line), "pointer");
+		snprintf (line, sizeof(line), "pointer");
 		break;
 	default:
-		q_snprintf (line, sizeof(line), "bad type %i", type);
+		snprintf (line, sizeof(line), "bad type %i", type);
 		break;
 	}
 
@@ -391,30 +391,30 @@ char *PR_UglyValueString (etype_t type, eval_t *val)
 	switch (type)
 	{
 	case ev_string:
-		q_snprintf (line, sizeof(line), "%s", PR_GetString(val->string));
+		snprintf (line, sizeof(line), "%s", PR_GetString(val->string));
 		break;
 	case ev_entity:
-		q_snprintf (line, sizeof(line), "%i", NUM_FOR_EDICT(PROG_TO_EDICT(val->edict)));
+		snprintf (line, sizeof(line), "%i", NUM_FOR_EDICT(PROG_TO_EDICT(val->edict)));
 		break;
 	case ev_function:
 		f = pr_functions + val->function;
-		q_snprintf (line, sizeof(line), "%s", PR_GetString(f->s_name));
+		snprintf (line, sizeof(line), "%s", PR_GetString(f->s_name));
 		break;
 	case ev_field:
 		def = ED_FieldAtOfs ( val->_int );
-		q_snprintf (line, sizeof(line), "%s", PR_GetString(def->s_name));
+		snprintf (line, sizeof(line), "%s", PR_GetString(def->s_name));
 		break;
 	case ev_void:
-		q_snprintf (line, sizeof(line), "void");
+		snprintf (line, sizeof(line), "void");
 		break;
 	case ev_float:
-		q_snprintf (line, sizeof(line), "%f", (double)val->_float);
+		snprintf (line, sizeof(line), "%f", (double)val->_float);
 		break;
 	case ev_vector:
-		q_snprintf (line, sizeof(line), "%f %f %f", (double)val->vector[0], (double)val->vector[1], (double)val->vector[2]);
+		snprintf (line, sizeof(line), "%f %f %f", (double)val->vector[0], (double)val->vector[1], (double)val->vector[2]);
 		break;
 	default:
-		q_snprintf (line, sizeof(line), "bad type %i", type);
+		snprintf (line, sizeof(line), "bad type %i", type);
 		break;
 	}
 
@@ -440,11 +440,11 @@ char *PR_GlobalString (int ofs)
 	val = (void *)&pr_globals[ofs];
 	def = ED_GlobalAtOfs(ofs);
 	if (!def)
-		q_snprintf (line, sizeof(line), "%i(?\?\?)", ofs);
+		snprintf (line, sizeof(line), "%i(?\?\?)", ofs);
 	else
 	{
 		s = PR_ValueString (def->type, val);
-		q_snprintf (line, sizeof(line), "%i(%s)%s", ofs, PR_GetString(def->s_name), s);
+		snprintf (line, sizeof(line), "%i(%s)%s", ofs, PR_GetString(def->s_name), s);
 	}
 
 	i = strlen(line);
@@ -463,9 +463,9 @@ char *PR_GlobalStringNoContents (int ofs)
 
 	def = ED_GlobalAtOfs(ofs);
 	if (!def)
-		q_snprintf (line, sizeof(line), "%i(?\?\?)", ofs);
+		snprintf (line, sizeof(line), "%i(?\?\?)", ofs);
 	else
-		q_snprintf (line, sizeof(line), "%i(%s)", ofs, PR_GetString(def->s_name));
+		snprintf (line, sizeof(line), "%i(%s)", ofs, PR_GetString(def->s_name));
 
 	i = strlen(line);
 	for ( ; i<20 ; i++)

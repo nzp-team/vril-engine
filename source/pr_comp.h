@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __PR_COMP_H
 #define __PR_COMP_H
 
+#include <stdint.h>
+
 // this file is shared by quake and qcc
 
 typedef int32_t	func_t;
