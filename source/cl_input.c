@@ -329,7 +329,7 @@ void CL_AdjustAngles (void)
 	
 #ifdef __PSP__
 	cl_sensitivity = in_sensitivity.value;
-#elif __3DS__
+#elif defined(__3DS__) || defined (__SWITCH__)
 	cl_sensitivity = sensitivity.value;
 #else
 	cl_sensitivity = 1.0f;
@@ -478,7 +478,7 @@ int EN_Find(int num,char *string)
 		ed = EDICT_NUM(e);
 		if(ed->free)
 			continue;
-		if(!strcmp(pr_strings + ed->v.classname,string))
+		if(!strcmp(PR_GetString(ed->v.classname),string))
 		{
 			return e;
 		}

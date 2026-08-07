@@ -211,6 +211,22 @@ void HUD_Init (void)
 	b_zrt = Image_LoadImage ("gfx/butticons/shldr_zr", IMAGE_TGA, 0, true, false);
 	b_start = Image_LoadImage ("gfx/butticons/func_sta", IMAGE_TGA, 0, true, false);
 	b_select = Image_LoadImage ("gfx/butticons/func_sel", IMAGE_TGA, 0, true, false);
+#elif __SWITCH__
+	b_rightface = Image_LoadImage ("gfx/butticons/abutton", IMAGE_TGA, 0, true, false);
+	b_bottomface = Image_LoadImage ("gfx/butticons/bbutton", IMAGE_TGA, 0, true, false);
+	b_leftface = Image_LoadImage ("gfx/butticons/ybutton", IMAGE_TGA, 0, true, false);
+	b_topface = Image_LoadImage ("gfx/butticons/xbutton", IMAGE_TGA, 0, true, false);
+	b_left = Image_LoadImage ("gfx/butticons/left", IMAGE_TGA, 0, true, false);
+	b_right = Image_LoadImage ("gfx/butticons/right", IMAGE_TGA, 0, true, false);
+	b_up = Image_LoadImage ("gfx/butticons/up", IMAGE_TGA, 0, true, false);
+	b_down = Image_LoadImage ("gfx/butticons/down", IMAGE_TGA, 0, true, false);
+	b_lt = Image_LoadImage ("gfx/butticons/lt", IMAGE_TGA, 0, true, false);
+	b_rt = Image_LoadImage ("gfx/butticons/rt", IMAGE_TGA, 0, true, false);
+	b_zlt = Image_LoadImage ("gfx/butticons/lshoulder", IMAGE_TGA, 0, true, false);
+	b_zrt = Image_LoadImage ("gfx/butticons/rshoulder", IMAGE_TGA, 0, true, false);
+	// TODO these need assets (plus/minus)
+	b_start = Image_LoadImage ("gfx/butticons/func_sta", IMAGE_TGA, 0, true, false);
+	b_select = Image_LoadImage ("gfx/butticons/func_sel", IMAGE_TGA, 0, true, false);
 #elif __WII__
 	b_abutton = Image_LoadImage ("gfx/butticons/abutton", IMAGE_TGA, 0, true, false);
 	b_bbutton = Image_LoadImage ("gfx/butticons/bbutton", IMAGE_TGA, 0, true, false);
@@ -1643,7 +1659,7 @@ void HUD_Weapon (void)
 	x_value = vid.width;
 	y_value = vid.height - (40 * vid.scale);
 
-	strcpy(str, pr_strings+sv_player->v.Weapon_Name);
+	strcpy(str, PR_GetString(sv_player->v.Weapon_Name));
 
 	x_value = (vid.width - (55 * vid.scale)) - getTextWidth(str, vid.scale);
 	Draw_ColoredString (x_value, y_value, str, 255, 255, 255, 255, vid.scale);
@@ -1834,7 +1850,9 @@ void HUD_Draw (void)
 	HUD_Perks();
 	HUD_Powerups();
 	HUD_ProgressBar();
-	if ((HUD_Change_time > Sys_FloatTime() || GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG] || GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_AMMO]) && cl.stats[STAT_HEALTH] >= 20)
+	if (sys_testmode.value <= 0 &&
+		(HUD_Change_time > Sys_FloatTime() || GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG] || GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_AMMO]) &&
+		cl.stats[STAT_HEALTH] >= 20)
 	{ //these elements are only drawn when relevant for few seconds
 		HUD_Ammo();
 		HUD_Grenades();

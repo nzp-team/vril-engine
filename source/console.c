@@ -238,7 +238,6 @@ void Con_CheckResize (void)
 	con_current = con_totallines - 1;
 }
 
-
 /*
 ================
 Con_Init
@@ -525,7 +524,7 @@ Con_DrawInput
 The input line scrolls horizontally if typing goes beyond the right edge
 ================
 */
-void Con_DrawInput (void)
+void Con_DrawInput (float scale)
 {
 	int		i;
 	char	*text;
@@ -546,9 +545,10 @@ void Con_DrawInput (void)
 	if (key_linepos >= con_linewidth)
 		text += 1 + key_linepos - con_linewidth;
 		
-// draw it
+	// draw it
 	for (i=0 ; i<con_linewidth ; i++)
-		Draw_Character ( (i+1)<<3, con_vislines - 16, text[i]);
+		Draw_CharacterRGBA (((i+1)<<3)*scale, (con_vislines - 16)*scale,
+			text[i], 255, 255, 255, 255, scale);
 
 // remove cursor
 	key_lines[edit_line][key_linepos] = 0;
@@ -664,7 +664,7 @@ void Con_DrawConsole (int lines, qboolean drawinput, float scale)
 // draw the input prompt, user text, and cursor if desired
 #ifndef __WII__
 	if (drawinput)
-		Con_DrawInput ();
+		Con_DrawInput (scale);
 #endif // __WII__
 
 #ifdef PLATFORM_USES_OSK
