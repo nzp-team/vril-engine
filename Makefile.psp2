@@ -1,5 +1,12 @@
 TARGET		:= nzportable
 TITLE		:= NZPORTABL
+BUILD		:= build/psp2
+ELF			:= $(BUILD)/$(TARGET).elf
+VELF		:= $(BUILD)/$(TARGET).velf
+VPK			:= $(BUILD)/$(TARGET).vpk
+EBOOT		:= $(BUILD)/eboot.bin
+PARAM_SFO	:= $(BUILD)/param.sfo
+SCE_SYS		:= $(BUILD)/sce_sys
 GIT_VERSION := $(shell git describe --abbrev=6 --dirty --always --tags)
 
 LIBS = -lvitaGL -lvitashark -lSceShaccCgExt -ltaihen_stub -lvorbisfile -lvorbis -logg \
@@ -107,9 +114,9 @@ COMMON_OBJS =	\
 	
 CPPSOURCES	:= source/audiodec
 
-CFILES	:= $(COMMON_OBJS)
-CPPFILES   := $(foreach dir,$(CPPSOURCES), $(wildcard $(dir)/*.cpp))
-OBJS     := $(CFILES:.c=.o) $(CPPFILES:.cpp=.o)
+CPPFILES := $(foreach dir,$(CPPSOURCES),$(wildcard $(dir)/*.cpp))
+OBJS := $(addprefix $(BUILD)/,$(COMMON_OBJS)) \
+	$(patsubst %.cpp,$(BUILD)/%.o,$(CPPFILES))
 
 PREFIX  = arm-vita-eabi
 CC      = $(PREFIX)-gcc
@@ -133,7 +140,8 @@ CXXFLAGS  = $(CFLAGS) -fno-exceptions -std=gnu++11 \
 			-Wno-write-strings -Wno-sign-compare -Wno-strict-aliasing
 ASFLAGS = $(CFLAGS)
 
-all: _build_info.h $(TARGET).vpk
+.PHONY: all clean
+all: _build_info.h $(VPK)
 
 _build_info.h:
 	rm -rf $(CURDIR)/source/_build_info.h
@@ -142,27 +150,37 @@ _build_info.h:
 	echo "#define BUILD_DATE \"$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")\"" >> $(CURDIR)/source/_build_info.h
 
 
-$(TARGET).vpk: $(TARGET).velf
-	mkdir -p build/sce_sys
-	vita-make-fself -c -s $< build/eboot.bin
-	vita-mksfoex -s TITLE_ID=$(TITLE) -d ATTRIBUTE2=12 "$(TARGET)" param.sfo
-	cp -f param.sfo build/sce_sys/param.sfo
-	vita-pack-vpk -s param.sfo -b build/eboot.bin "$(TARGET).vpk" \
-		-a build/sce_sys=sce_sys
+$(VPK): $(VELF)
+	@mkdir -p $(SCE_SYS)
+	vita-make-fself -c -s $< $(EBOOT)
+	vita-mksfoex -s TITLE_ID=$(TITLE) -d ATTRIBUTE2=12 "$(TARGET)" $(PARAM_SFO)
+	cp -f $(PARAM_SFO) $(SCE_SYS)/param.sfo
+	vita-pack-vpk -s $(PARAM_SFO) -b $(EBOOT) $@ -a $(SCE_SYS)=sce_sys
 
 %_f.h:
-	psp2cgc -profile sce_fp_psp2 $(@:_f.h=_f.cg) -Wperf -fastprecision -O3 -o build/$(@:_f.h=_f.gxp)
+	@mkdir -p $(BUILD)/$(@D)
+	psp2cgc -profile sce_fp_psp2 $(@:_f.h=_f.cg) -Wperf -fastprecision -O3 -o $(BUILD)/$(@:_f.h=_f.gxp)
 	
 %_v.h:
-	psp2cgc -profile sce_vp_psp2 $(@:_v.h=_v.cg) -Wperf -fastprecision -O3 -o build/$(@:_v.h=_v.gxp)
+	@mkdir -p $(BUILD)/$(@D)
+	psp2cgc -profile sce_vp_psp2 $(@:_v.h=_v.cg) -Wperf -fastprecision -O3 -o $(BUILD)/$(@:_v.h=_v.gxp)
 	
-%.velf: %.elf
-	cp $< $<.unstripped.elf
+$(VELF): $(ELF)
+	cp $< $(BUILD)/$(TARGET).unstripped.elf
 	$(PREFIX)-strip -g $<
 	vita-elf-create $< $@
 
-$(TARGET).elf: $(OBJS)
+$(ELF): $(OBJS)
+	@mkdir -p $(@D)
 	$(CXX) $(GCCFLAGS) $(CXXFLAGS) $^ $(LIBS) -o $@
 
+$(BUILD)/%.o: %.c _build_info.h
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/%.o: %.cpp _build_info.h
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 clean:
-	@rm -rf $(TARGET).velf $(TARGET).elf $(OBJS) $(TARGET).elf.unstripped.elf $(TARGET).vpk build/eboot.bin build/sce_sys/param.sfo ./param.sfo
+	@rm -rf $(BUILD)
