@@ -36,11 +36,7 @@ cvar_t	cl_lightning_zadjust = {"cl_lightning_zadjust", "0", true};
 
 cvar_t	lookspring = {"lookspring","0", true};
 cvar_t	lookstrafe = {"lookstrafe","0", true};
-#ifdef __PSP__
-cvar_t	in_sensitivity = {"sensitivity","3", true};
-#else
-cvar_t	sensitivity = {"sensitivity","8", true};
-#endif // __PSP__
+cvar_t	sensitivity = {"sensitivity","3", true};
 cvar_t	in_tolerance = {"tolerance","0.25", true};
 cvar_t	in_acceleration = {"acceleration","1.0", true};
 
@@ -1026,11 +1022,7 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&cl_gibfilter);
 	Cvar_RegisterVariable (&cl_lightning_zadjust);
     Cvar_RegisterVariable (&cl_truelightning);
-#ifdef __PSP__
-	Cvar_RegisterVariable (&in_sensitivity);
-#else
 	Cvar_RegisterVariable (&sensitivity);
-#endif // __PSP__
     Cvar_RegisterVariable (&in_mlook); //Heffo - mlook cvar
 	Cvar_RegisterVariable (&in_aimassist);
 	Cvar_RegisterVariable (&in_tolerance);

@@ -327,13 +327,7 @@ void CL_AdjustAngles (void)
 	else if (cl.stats[STAT_ZOOM] == 2)
 		speed *= 0.25f;
 	
-#ifdef __PSP__
-	cl_sensitivity = in_sensitivity.value;
-#elif defined(__3DS__) || defined (__SWITCH__)
 	cl_sensitivity = sensitivity.value;
-#else
-	cl_sensitivity = 1.0f;
-#endif
 
 	if (!(in_strafe.state & 1))
 	{

@@ -33,12 +33,22 @@ m*_t structures are in-memory
 
 // entity effects
 
-#define	EF_BRIGHTFIELD			1
+#define	EF_BLUELIGHT			1
 #define	EF_MUZZLEFLASH 			2
 #define	EF_BRIGHTLIGHT 			4
-#define	EF_DIMLIGHT 			8
-#define EF_BLUE					64
-#define EF_RED					128
+#define	EF_REDLIGHT 			8
+#define	EF_ORANGELIGHT			16
+#define	EF_GREENLIGHT			32
+#define	EF_PINKLIGHT			64				// formerly EF_LIGHT
+#define	EF_NODRAW				128
+#define EF_LIMELIGHT			256				// formerly EF_BRIGHTFIELD
+#define EF_FULLBRIGHT			512
+#define EF_CYANLIGHT			1024			// formerly EF_DARKLIGHT
+#define EF_YELLOWLIGHT			2048			// formerly EF_DARKFIELD
+#define EF_PURPLELIGHT    		4096
+#define EF_RAYRED	 			8196			// red trail for porter x2
+#define EF_RAYGREEN  			16384			// green trail for ray gun
+
 
 /*
 ==============================================================================
@@ -52,7 +62,6 @@ BRUSH MODELS
 //
 // in memory representation
 //
-// !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct
 {
 	vec3_t		position;
@@ -64,7 +73,6 @@ typedef struct
 
 
 // plane_t structure
-// !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct mplane_s
 {
 	vec3_t	normal;
@@ -85,8 +93,6 @@ typedef struct texture_s
 	struct texture_s *anim_next;		// in the animation sequence
 	struct texture_s *alternate_anims;	// bmodels in frmae 1 use these
 	unsigned	offsets[MIPLEVELS];		// four mip maps stored
-	int			fullbright;
-	bool		luma;
 } texture_t;
 
 
@@ -101,10 +107,9 @@ typedef struct texture_s
 #define TEXFLAG_NODRAW		256
 #define TEXFLAG_LIGHT		512
 
-// !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct
 {
-	unsigned int	v[2];
+	unsigned short	v[2];
 	unsigned int	cachededgeoffset;
 } medge_t;
 
@@ -125,6 +130,7 @@ typedef struct glpoly_s
 	int		numverts;
 	int		flags;			// for SURF_UNDERWATER
 	float	verts[4][VERTEXSIZE];	// variable sized (xyz s1t1 s2t2)
+//    vec3_t midpoint;//MHQuake // naievil -- fixme: this guy is causing some kind of rendering issue
 } glpoly_t;
 
 typedef struct msurface_s
@@ -154,10 +160,8 @@ typedef struct msurface_s
 	int			lightmaptexturenum;
 	byte		styles[MAXLIGHTMAPS];
 	int			cached_light[MAXLIGHTMAPS];	// values currently used in lightmap
-	bool	cached_dlight;				// true if dynamic light in cache
+	qboolean	cached_dlight;				// true if dynamic light in cache
 	byte		*samples;		// [numstyles*surfsize]
-	int			draw_this_frame;
-	int		overbright;
 } msurface_t;
 
 typedef struct mnode_s
@@ -174,8 +178,8 @@ typedef struct mnode_s
 	mplane_t	*plane;
 	struct mnode_s	*children[2];	
 
-	unsigned int		firstsurface;
-	unsigned int		numsurfaces;
+	unsigned short		firstsurface;
+	unsigned short		numsurfaces;
 } mnode_t;
 
 
@@ -200,15 +204,6 @@ typedef struct mleaf_s
 	byte		ambient_sound_level[NUM_AMBIENTS];
 } mleaf_t;
 
-//johnfitz -- for clipnodes>32k
-typedef struct mclipnode_s
-{
-	int			planenum;
-	int			children[2]; // negative numbers are contents
-} mclipnode_t;
-//johnfitz
-
-// !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct
 {
 	dclipnode_t	*clipnodes;
@@ -296,7 +291,6 @@ typedef struct
 	maliasgroupframedesc_t	frames[1];
 } maliasgroup_t;
 
-// !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct mtriangle_s {
 	int					facesfront;
 	int					vertindex[3];
@@ -330,9 +324,9 @@ typedef struct {
 	maliasframedesc_t	frames[1];	// variable sized
 } aliashdr_t;
 
-#define	MAXALIASVERTS	5120
+#define	MAXALIASVERTS	2048
 #define	MAXALIASFRAMES	256
-#define	MAXALIASTRIS	4096
+#define	MAXALIASTRIS	2048
 extern	aliashdr_t	*pheader;
 extern	stvert_t	stverts[MAXALIASVERTS];
 extern	mtriangle_t	triangles[MAXALIASTRIS];
@@ -355,11 +349,31 @@ typedef enum {mod_brush, mod_sprite, mod_alias} modtype_t;
 #define	EF_TRACER2	64			// orange split trail + rotate
 #define	EF_TRACER3	128			// purple trail
 
+
+// some models are special
+typedef enum
+{
+	MOD_NORMAL,
+	MOD_PLAYER,
+	MOD_EYES,
+	MOD_FLAME,
+	MOD_THUNDERBOLT,
+	MOD_WEAPON,
+	MOD_LAVABALL,
+	MOD_SPIKE,
+	MOD_SHAMBLER,
+	MOD_SPR,
+	MOD_SPR32,
+//	MOD_GKEY,
+//	MOD_SKEY,
+} modhint_t;
+
 typedef struct model_s
 {
 	char		name[MAX_QPATH];
-	unsigned int	path_id;
-	bool	needload;		// bmodels and sprites don't cache normally
+	qboolean	needload;		// bmodels and sprites don't cache normally
+
+	modhint_t			modhint;
 
 	modtype_t	type;
 	int			numframes;
@@ -376,7 +390,7 @@ typedef struct model_s
 //
 // solid volume for clipping 
 //
-	bool	clipbox;
+	qboolean	clipbox;
 	vec3_t		clipmins, clipmaxs;
 
 //
@@ -424,14 +438,14 @@ typedef struct model_s
 
 	byte		*visdata;
 	byte		*lightdata;
-	signed char	*entities;
-	
-	int bspversion;
+	char		*entities;
 
 //
 // additional model data
 //
 	cache_user_t	cache;		// only access through Mod_Extradata
+
+	int 		bspversion; //Diabolickal HLBSP
 
 } model_t;
 
@@ -439,12 +453,10 @@ typedef struct model_s
 
 void	Mod_Init (void);
 void	Mod_ClearAll (void);
-void	Mod_ResetAll (void); // for gamedir changes (Host_Game_f)
-model_t *Mod_ForName (char *name, bool crash);
+model_t *Mod_ForName (char *name, qboolean crash);
 void	*Mod_Extradata (model_t *mod);	// handles caching
 void	Mod_TouchModel (char *name);
 
-mleaf_t *Mod_PointInLeaf (float *p, model_t *model);
+mleaf_t *Mod_PointInLeaf (vec3_t p, model_t *model);
 byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model);
-
 #endif	// __MODEL__

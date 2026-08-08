@@ -17,27 +17,31 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
  */
-// vgl_fog.c -- PSP2 vitaGL Fog Rendering
+// gl_fog.c -- CTR picaGL Fog Rendering
 
 #include "../../../nzportable_def.h"
-#include <vitasdk.h>
 
 /**
  * @brief Sets fogging mode. (Platform-specific, see `Fog_SetupFrame()`)
  */
-extern GLint fogcoloruniformlocs[5];
-extern GLint fogfaruniformlocs[5];
-extern GLint fograngeuniformlocs[5];
 void
 Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, float green, float blue, float alpha)
 {
-    float color[4] = {red / 64.0f, green / 64.0f, blue / 64.0f, alpha};
-    for(int i = 0; i < 5; i++)
-    {
-        glUniform4fv(fogcoloruniformlocs[i], 1, color);
-        glUniform1f(fogfaruniformlocs[i], end);
-        glUniform1f(fograngeuniformlocs[i], end - start);
-    }
+	/*
+	 * The world is rendered in base-texture and multiplicative-lightmap passes.
+	 * Neutral gray on the first pass lets the second pass produce the requested
+	 * fog color. Game fog colors use a 0..100 scale; GL expects 0..1.
+	 */
+	float color[4] = {
+		is_world_geometry ? 0.5f : red * 0.01f,
+		is_world_geometry ? 0.5f : green * 0.01f,
+		is_world_geometry ? 0.5f : blue * 0.01f,
+		alpha
+	};
+
+    glFogfv(GL_FOG_COLOR, color);
+	glFogf(GL_FOG_START, start);
+	glFogf(GL_FOG_END, end);
 }
 
 /**
@@ -46,8 +50,7 @@ Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, floa
 void
 Platform_Fog_Enable(void)
 {
-    // Stubbed on vitaGL backend due to the lack of a good way to enable fog when using shaders
-    return;
+    glEnable(GL_FOG);
 }
 
 /**
@@ -56,8 +59,7 @@ Platform_Fog_Enable(void)
 void
 Platform_Fog_Disable(void)
 {
-    // Stubbed on vitaGL backend due to the lack of a good way to disable fog when using shaders
-    return;
+    glDisable(GL_FOG);
 }
 
 /**
@@ -66,6 +68,5 @@ Platform_Fog_Disable(void)
 void
 Platform_Fog_Init(void)
 {
-    // Uneeded on Vita as Fog is setup on Shader init
-    return;
+	glFogi(GL_FOG_MODE, GL_LINEAR);
 }
