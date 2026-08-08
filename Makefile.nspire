@@ -39,6 +39,7 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/console.c \
 		source/crc.c \
 		source/cvar.c \
+		source/input.c \
 		source/platform/nspire/d_edge.c \
 		source/platform/nspire/d_fill.c \
 		source/platform/nspire/d_init.c \
