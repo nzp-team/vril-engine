@@ -31,6 +31,7 @@ COMMON_OBJS = \
 	source/platform/psp/thread.o \
 	source/platform/psp/VramExt.o \
 	input.o \
+	source/platform/psp/input.o \
 	source/platform/psp/main.o \
 	source/platform/psp/math.o \
 	source/platform/psp/sound.o \
@@ -121,7 +122,7 @@ HARDWARE_VIDEO_ONLY_OBJS = \
     source/platform/psp/gu/gu_mesh.o \
     source/platform/psp/gu/gu_misc.o \
     source/platform/psp/gu/gu_model.o \
-    source/platform/psp/gu/gu_screen.o \
+    source/render/r_screen.o \
     source/platform/psp/gu/gu_surface.o \
     source/platform/psp/gu/gu_warp.o \
     source/platform/psp/gu/gu_fog.o \
@@ -141,7 +142,7 @@ LIBS		= $(GPROF_LIBS) $(GU_LIBS) $(AUDIO_LIBS) $(MISC_LIBS) $(STD_LIBS) $(NET_LI
 CFLAGS = -ffast-math -O3 -Ofast -G0 -Wall $(GPROF_FLAGS) -DPSP $(MODE) $(HARDWARE_VIDEO_ONLY_FLAGS) \
 		-DSWIZZLE32 -DPSP_MP3_HWDECODE -DFULLBRIGHT -DHL_RENDER -Wno-strict-aliasing -DPSP_VFPU -DPLATFORM_DIRECTORY="psp" \
 		-DPLATFORM_RENDERER="gu" -DMAX_AI_COUNT=12 -DRENDERER_SUPPORTS_DITHERING -DPLATFORM_KEYBOARD_OSK \
-		-DPLATFORM_HAS_ONE_ANALOG_STICK
+		-DPLATFORM_HAS_ONE_ANALOG_STICK -DPLATFORM_INPUT_GAMEPAD
 
 ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror

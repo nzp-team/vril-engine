@@ -29,6 +29,29 @@ void IN_Commands (void);
 void IN_Move (usercmd_t *cmd);
 // add additional movement on top of the keyboard move cmd
 
+#ifdef PLATFORM_INPUT_KBM
+void IN_SetMouseToRelative(bool relative);
+#endif
+
+#ifdef PLATFORM_INPUT_GAMEPAD
+typedef enum {
+	IN_STICK_LEFT,
+	IN_STICK_RIGHT
+} in_analog_stick_id_t;
+
+typedef struct {
+	float x;
+	float y;
+} in_analog_stick_t;
+
+// Platform input backends normalize both axes to [-1, 1], with positive Y up.
+void IN_GetAnalogStick(in_analog_stick_id_t stick, in_analog_stick_t *value);
+void IN_PlatformInit(void);
+void IN_PlatformShutdown(void);
+void IN_PlatformCommands(void);
+void IN_PlatformMove(usercmd_t *cmd);
+#endif
+
 #ifdef PLATFORM_KEYBOARD_SYSTEM
 void IN_OpenOSKeyboard (void);
 #endif

@@ -126,8 +126,8 @@ void Sys_DefaultConfig(void)
 }
 
 
-static int mouse_dx;
-static int mouse_dy;
+int mouse_dx;
+int mouse_dy;
 
 static int SDL_KeyToQuake(SDL_Keycode key)
 {

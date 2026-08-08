@@ -1,6 +1,9 @@
 #include "../../nzportable_def.h"
 #include "sdl_local.h"
 
+extern int mouse_dx;
+extern int mouse_dy;
+
 void IN_SetMouseToRelative(bool relative)
 {
 	if (relative)

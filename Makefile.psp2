@@ -84,7 +84,7 @@ COMMON_OBJS =	\
 	source/platform/psp2/gl/gl_rmain.o \
 	source/platform/psp2/gl/gl_rmisc.o \
 	source/platform/psp2/gl/gl_rsurf.o \
-	source/platform/psp2/gl/gl_screen.o \
+	source/render/r_screen.o \
 	source/platform/psp2/gl/gl_warp.o \
 	source/platform/psp2/r_part.o \
 	source/platform/psp2/music.o \
@@ -119,7 +119,7 @@ CFLAGS  = -fsigned-char -Wl,-q -O3 -g -fno-optimize-sibling-calls \
 	-DGLQUAKE -DHAVE_OGGVORBIS -DHAVE_MPG123 -DHAVE_LIBSPEEXDSP \
 	-DUSE_AUDIO_RESAMPLER -DHAVE_STRLCAT -DGIT_VERSION=\"$(GIT_VERSION)\" \
 	-DPLATFORM_DIRECTORY="psp2" -DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=24 \
-	-DENABLE_RAZOR_CAPTURE -D__PSP2__ -DPLATFORM_KEYBOARD_OSK
+	-DENABLE_RAZOR_CAPTURE -D__PSP2__ -DPLATFORM_KEYBOARD_OSK -DPLATFORM_INPUT_GAMEPAD
 
 ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror

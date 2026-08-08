@@ -32,7 +32,7 @@ CFLAGS	:=	-g -Wall -Wdouble-promotion -std=gnu99 -O3 -mword-relocations \
 
 CFLAGS	+=	$(INCLUDE) -DARM11 -D__3DS__ -DGLQUAKE -DPLATFORM_DIRECTORY="ctr" \
 			-DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=18 -DPLATFORM_CONFIRM_FLIPPED \
-			+DPLATFORM_KEYBOARD_SYSTEM -DPLATFORM_HAS_ONE_ANALOG_STICK
+			-DPLATFORM_KEYBOARD_SYSTEM -DPLATFORM_HAS_ONE_ANALOG_STICK -DPLATFORM_INPUT_GAMEPAD
 
 ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror
@@ -135,6 +135,7 @@ COMMON_OBJS =	system.o \
 				images.c \
 				platform/ctr/snd_ctr.c \
 				input.c \
+				platform/ctr/in_ctr.c \
 				platform/ctr/music.c \
 				snd_music.c \
 				platform/ctr/gl/gl_qmb.c \
@@ -149,7 +150,7 @@ COMMON_OBJS =	system.o \
 				platform/ctr/gl/gl_rmain.c \
 				platform/ctr/gl/gl_rmisc.c \
 				platform/ctr/gl/gl_rsurf.c \
-				platform/ctr/gl/gl_screen.c \
+				render/r_screen.c \
 				platform/ctr/gl/gl_warp.c \
 				platform/ctr/gl/gl_vidctr.c \
 				platform/ctr/r_part.c \
