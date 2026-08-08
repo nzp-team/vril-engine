@@ -1685,7 +1685,7 @@ void d8to24col (col_t colourv, int colour)
 
 __inline static void AddColoredParticle (part_type_t type, vec3_t org, int count, float size, float time, int colorStart, int colorLength, vec3_t dir)
 {
-	col_t		color;
+	col_t		color = {255, 0, 0, 50};
 	int		i, j, colorMod = 0;
 	float		tempSize;
 	particle_t	*p;
@@ -2496,7 +2496,7 @@ void QMB_ShamblerCharge (vec3_t org)
 void QMB_LaserSight (void)
 {
 	float		frametime	= fabs(cl.time - cl.oldtime);
-	col_t		color;
+	col_t		color = {255, 0, 0, 50};
 	int			c;
 
 	extern cvar_t	r_laserpoint;

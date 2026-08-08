@@ -498,7 +498,6 @@ int quake_main (unsigned int argc, void* argv){
 	vglInitExtended(0x100000, 960, 544, 0x1000000, SCE_GXM_MULTISAMPLE_4X);
 
 	gl_ssaa = 1;
-	vglUseVram(GL_TRUE);
 	
 	// Official mission packs support
 	SceAppUtilAppEventParam eventParam;

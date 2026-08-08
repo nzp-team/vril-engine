@@ -27,7 +27,17 @@
 void
 Platform_Fog_Set(bool is_world_geometry, float start, float end, float red, float green, float blue, float alpha)
 {
-	float color[4] = {red, green, blue, alpha};
+	/*
+	 * The world is rendered in base-texture and multiplicative-lightmap passes.
+	 * Neutral gray on the first pass lets the second pass produce the requested
+	 * fog color. Game fog colors use a 0..100 scale; GL expects 0..1.
+	 */
+	float color[4] = {
+		is_world_geometry ? 0.5f : red * 0.01f,
+		is_world_geometry ? 0.5f : green * 0.01f,
+		is_world_geometry ? 0.5f : blue * 0.01f,
+		alpha
+	};
 
     glFogfv(GL_FOG_COLOR, color);
 	glFogf(GL_FOG_START, start);

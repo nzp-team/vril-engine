@@ -54,7 +54,7 @@ int 	loading_step;
 float 	loading_cur_step_bk;
 
 #define	MAX_GLTEXTURES	1024
-gltexture_t	gltextures[MAX_GLTEXTURES];
+static gltexture_t	gltextures[MAX_GLTEXTURES];
 static int	numgltextures = 0;
 static GLuint current_gl_id = 0;
 
@@ -78,15 +78,18 @@ void GL_Bind (int texnum)
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		} else {
-			if (texnum == char_texture) {
-				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			} else {
-				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			}
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+			    glt->mipmap ? gl_filter_min : gl_filter_max);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 		}
 	}
+}
+
+static void GL_Bind2D (int texnum)
+{
+	GL_Bind(texnum);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 }
 
 void GL_FreeTextures (int texnum)
@@ -293,7 +296,7 @@ void Draw_Character (int x, int y, int num)
 	fcol = col*0.0625;
 	size = 0.0625;
 
-	GL_Bind (char_texture);
+	GL_Bind2D (char_texture);
 
 	glEnable(GL_ALPHA_TEST);
 
@@ -341,7 +344,7 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 	fcol = col*0.0625f;
 	size = 0.0625f*scale;
 
-	GL_Bind (char_texture);
+	GL_Bind2D (char_texture);
 
 	glEnable(GL_BLEND);
 	glColor4f(r/255, g/255, b/255, a/255);
@@ -463,11 +466,11 @@ void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, in
 	if (pic > 0) {
 		glEnable(GL_BLEND);
 		glDisable(GL_ALPHA_TEST);
-		glColor4f(r/255.0,g/255.0,b/255.0,a/255.0);
+		glColor4f(r/255.0f,g/255.0f,b/255.0f,a/255.0f);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-		GL_Bind (pic);
+		GL_Bind2D (pic);
 		glBegin (GL_QUADS);
 		glTexCoord2f (0, 0);
 		glVertex2f (x, y);
@@ -478,7 +481,7 @@ void Draw_ColoredStretchPic (int x, int y, int pic, int x_value, int y_value, in
 		glTexCoord2f (0, 1);
 		glVertex2f (x, y+y_value);
 		glEnd ();
-		glDisable(GL_ALPHA_TEST);
+		glDisable(GL_BLEND);
 		glColor4f(1,1,1,1);
 	}
 }
@@ -490,24 +493,7 @@ Draw_StretchPic
 */
 void Draw_StretchPic (int x, int y, int pic, int x_value, int y_value)
 {
-	if (pic > 0) {
-		glEnable(GL_ALPHA_TEST);
-		glColor4f(1,1,1,1);
-
-		GL_Bind (pic);
-		glBegin (GL_QUADS);
-		glTexCoord2f (0, 0);
-		glVertex2f (x, y);
-		glTexCoord2f (1, 0);
-		glVertex2f (x+x_value, y);
-		glTexCoord2f (1, 1);
-		glVertex2f (x+x_value, y+y_value);
-		glTexCoord2f (0, 1);
-		glVertex2f (x, y+y_value);
-		glEnd ();
-		glDisable(GL_ALPHA_TEST);
-		glColor4f(1,1,1,1);
-	}
+	Draw_ColoredStretchPic(x, y, pic, x_value, y_value, 255, 255, 255, 255);
 }
 
 /*
@@ -537,7 +523,7 @@ void Draw_MenuPanningPic (int x, int y, int pic, int x_value, int y_value, float
     glEnable(GL_ALPHA_TEST);
     glColor4f(1,1,1,1);
 
-	GL_Bind (pic);
+	GL_Bind2D (pic);
 
     glBegin(GL_QUADS);
 
@@ -573,7 +559,7 @@ void Draw_ColorPic (int x, int y, int pic, float r, float g , float b, float a)
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 		gltexture_t *glt = &gltextures[pic];
-		GL_Bind (glt->texnum);
+		GL_Bind2D (glt->texnum);
 
 		glBegin (GL_QUADS);
 		glTexCoord2f (0, 0);
@@ -607,7 +593,7 @@ void Draw_SubPic (int x, int y, int pic, float s, float t, float s_coord_size, f
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 		gltexture_t *glt = &gltextures[pic];
-		GL_Bind (glt->texnum);
+		GL_Bind2D (glt->texnum);
 
 		float width_scale = scale * (s_coord_size / t_coord_size);
 
@@ -654,7 +640,7 @@ void Draw_TransPic (int x, int y, int pic)
 		{
 			Sys_Error ("bad coordinates");
 		}
-			
+
 		Draw_Pic (x, y, pic);
 	}
 }
@@ -1315,7 +1301,7 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 	GLuint texID;
 	glGenTextures(1, &texID);     // Ask GL for a real texture object
 
-	snprintf(glt->identifier, sizeof(glt->identifier), identifier);
+	snprintf(glt->identifier, sizeof(glt->identifier), "%s", identifier);
 	glt->gl_id = texID;
 	glt->texnum = texture_index;
 	glt->width = width;
@@ -1412,8 +1398,3 @@ int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qbool
 
 	return texture_index;
 }
-
-/****************************************/
-float gVertexBuffer[VERTEXARRAYSIZE];
-float gColorBuffer[VERTEXARRAYSIZE];
-float gTexCoordBuffer[VERTEXARRAYSIZE];

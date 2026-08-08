@@ -72,7 +72,8 @@ int scr_width = 960, scr_height = 544;
 
 int		texture_mode = GL_LINEAR;
 
-float		gldepthmin, gldepthmax;
+double		gldepthmin, gldepthmax;
+qboolean gl_mtexable = false;
 
 const char *gl_vendor;
 const char *gl_renderer;

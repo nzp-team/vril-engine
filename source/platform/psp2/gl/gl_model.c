@@ -435,7 +435,7 @@ void Mod_LoadTextures (lump_t *l)
 				texture_mode = GL_LINEAR;
 			}
 		}
-		strcpy(loading_name, mt->name);
+		snprintf(loading_name, sizeof(loading_name), "%s", mt->name);
         loading_cur_step++;
 		CL_UpdateLoadingScreen(false);
 	}
