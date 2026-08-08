@@ -100,12 +100,15 @@ cvar_t		scr_coloredtext = {"scr_coloredtext", "1", true};
 cvar_t		scr_conheight = {"scr_conheight", "0.5"};
 cvar_t		r_dithering = {"r_dithering", "1", true};
 #endif
+<<<<<<< HEAD
 ========
 cvar_t 		scr_showfps = {"scr_showfps", "0"};
 cvar_t		scr_loadscreen = {"scr_loadscreen","1"};
 cvar_t		gl_triplebuffer = {"gl_triplebuffer", "1", true };
 cvar_t 		cl_crosshair_debug = {"cl_crosshair_debug", "0", true};
 >>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
+=======
+>>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 
 extern	cvar_t	crosshair;
 
@@ -203,6 +206,7 @@ void SCR_DrawCenterString (void)
 		for (l=0 ; l<40 ; l++)
 			if (start[l] == '\n' || !start[l])
 				break;
+<<<<<<< HEAD
 <<<<<<<< HEAD:source/render/r_screen.c
 		memcpy(line, start, l);
 		line[l] = '\0';
@@ -220,18 +224,27 @@ void SCR_DrawCenterString (void)
 				x += (font_kerningamount[(int)(start[j] - 33)] + 1) * vid.scale;
 ========
 		x = (vid.width - getTextWidth(start, 1))/2;
+=======
+		memcpy(line, start, l);
+		line[l] = '\0';
+		x = (vid.width - getTextWidth(line, vid.scale))/2;
+>>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 		for (j=0 ; j<l ; j++)
 		{
-			Draw_Character (x, y, start[j]);	
+			Draw_CharacterRGBA(x, y, start[j], 255, 255, 255, 255, vid.scale);
 
 			// Hooray for variable-spacing!
 			if (start[j] == ' ')
-				x += 4;
+				x += 4 * vid.scale;
 			else if ((int)start[j] < 33 || (int)start[j] > 126)
-				x += 8;
+				x += 8 * vid.scale;
 			else
+<<<<<<< HEAD
 				x += (font_kerningamount[(int)(start[j] - 33)] + 1);
 >>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
+=======
+				x += (font_kerningamount[(int)(start[j] - 33)] + 1) * vid.scale;
+>>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 
 			if (!remaining--)
 				return;
@@ -899,19 +912,21 @@ void SCR_DrawUseString (void)
 {
 	int	y;
 	int x;
+	float scale = vid.scale;
 
 	if (cl.stats[STAT_HEALTH] < 0)
 		return;
 // the finale prints the characters one at a time
 
-	y = 160;
-    x = (vid.width - getTextWidth(scr_usestring, 1))/2;
+	y = 182 * scale;
+    x = (vid.width - getTextWidth(scr_usestring, scale))/2;
 
-	Draw_ColoredStringCentered(y, scr_usestring, 255, 255, 255, 255, 1);
-	Draw_ColoredStringCentered(y + 10, scr_usestring2, 255, 255, 255, 255, 1);
+	Draw_ColoredStringCentered(y, scr_usestring, 255, 255, 255, 255, scale);
+	Draw_ColoredStringCentered(y + (10 * scale), scr_usestring2, 255, 255, 255, 255, scale);
 
 	if (button_pic_x != 100)
-		Draw_Pic (x + button_pic_x, y - 4, GetButtonIcon("+use"));
+		Draw_StretchPic(x + getTextWidth("Hold ", scale), y - (4 * scale),
+			GetButtonIcon("+use"), 16 * scale, 16 * scale);
 }
 
 void SCR_CheckDrawUseString (void)
@@ -1090,14 +1105,20 @@ void SCR_Init (void)
 	Cvar_RegisterVariable (&scr_showfps);
 	Cvar_RegisterVariable (&scr_loadscreen);
 	Cvar_RegisterVariable (&cl_crosshair_debug);
+<<<<<<< HEAD
 <<<<<<<< HEAD:source/render/r_screen.c
+=======
+>>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 #ifdef __PSP__
 	Cvar_RegisterVariable (&scr_coloredtext);
 	Cvar_RegisterVariable (&scr_conheight);
 	Cvar_RegisterVariable (&r_dithering);
 #endif
+<<<<<<< HEAD
 ========
 >>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
+=======
+>>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 
 	Cvar_RegisterVariable (&gl_triplebuffer);
 
@@ -1149,12 +1170,17 @@ void SCR_DrawFPS (void)
 	{
 		char	st[16];
 		sprintf (st, "%4.0f fps", lastfps);
+<<<<<<< HEAD
 <<<<<<<< HEAD:source/render/r_screen.c
 		Draw_ColoredString(vid.width - getTextWidth(st, vid.scale) - (4 * vid.scale),
 			2 * vid.scale, st, 255, 255, 255, 255, vid.scale);
 ========
 		Draw_String (300, 0, st);
 >>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
+=======
+		Draw_ColoredString(vid.width - getTextWidth(st, vid.scale) - (4 * vid.scale),
+			2 * vid.scale, st, 255, 255, 255, 255, vid.scale);
+>>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 	}
 }
 
@@ -1244,10 +1270,14 @@ void SCR_DrawConsole (void)
 ============================================================================== 
 */ 
 
+<<<<<<< HEAD
 <<<<<<<< HEAD:source/render/r_screen.c
 #ifndef __PSP__
 ========
 >>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
+=======
+#ifndef __PSP__
+>>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 typedef struct _TargaHeader {
 	unsigned char 	id_length, colormap_type, image_type;
 	unsigned short	colormap_index, colormap_length;
@@ -1312,10 +1342,14 @@ void SCR_ScreenShot_f (void)
 	free (buffer);
 	Con_Printf ("Wrote %s\n", pcxname);
 } 
+<<<<<<< HEAD
 <<<<<<<< HEAD:source/render/r_screen.c
 #endif
 ========
 >>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
+=======
+#endif
+>>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 
 
 //=============================================================================
@@ -1372,10 +1406,14 @@ qboolean	scr_drawdialog;
 void SCR_DrawNotifyString (void)
 {
 	char	*start;
+<<<<<<< HEAD
 <<<<<<<< HEAD:source/render/r_screen.c
 	char	line[41];
 ========
 >>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
+=======
+	char	line[41];
+>>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 	int		l;
 	int		j;
 	int		x, y;
@@ -1390,7 +1428,10 @@ void SCR_DrawNotifyString (void)
 		for (l=0 ; l<40 ; l++)
 			if (start[l] == '\n' || !start[l])
 				break;
+<<<<<<< HEAD
 <<<<<<<< HEAD:source/render/r_screen.c
+=======
+>>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 		memcpy(line, start, l);
 		line[l] = '\0';
 		x = (vid.width - getTextWidth(line, vid.scale))/2;
@@ -1403,6 +1444,7 @@ void SCR_DrawNotifyString (void)
 			else
 				x += (font_kerningamount[(int)(start[j] - 33)] + 1) * vid.scale;
 		}
+<<<<<<< HEAD
 			
 		y += 8 * vid.scale;
 ========
@@ -1412,6 +1454,10 @@ void SCR_DrawNotifyString (void)
 			
 		y += 8;
 >>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
+=======
+			
+		y += 8 * vid.scale;
+>>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 
 		while (*start && *start != '\n')
 			start++;

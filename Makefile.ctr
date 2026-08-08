@@ -134,6 +134,7 @@ COMMON_OBJS =	system.o \
 				images.c \
 				platform/ctr/snd_ctr.c \
 				input.c \
+				platform/ctr/in_ctr.c \
 				platform/ctr/music.c \
 				snd_music.c \
 				platform/ctr/gl/gl_qmb.c \

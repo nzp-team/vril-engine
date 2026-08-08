@@ -31,6 +31,7 @@ COMMON_OBJS = \
 	source/platform/psp/thread.o \
 	source/platform/psp/VramExt.o \
 	input.o \
+	source/platform/psp/input.o \
 	source/platform/psp/main.o \
 	source/platform/psp/math.o \
 	source/platform/psp/sound.o \
