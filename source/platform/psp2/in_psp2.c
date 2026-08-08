@@ -37,6 +37,11 @@ extern void Log (const char *format, ...);
 
 #define lerp(value, from_max, to_max) ((((value*10) * (to_max*10))/(from_max*10))/10)
 
+float IN_CalcInput(int axis, float speed, float tolerance, float acceleration);
+
+extern bool croshhairmoving;
+extern float crosshair_opacity;
+
 uint64_t rumble_tick = 0;
 SceCtrlData oldanalogs, analogs;
 SceMotionState motionstate;
@@ -112,22 +117,89 @@ void IN_StopRumble (void)
 void IN_Move (usercmd_t *cmd)
 {
 	// ANALOGS
-	if ((in_speed.state & 1)){
-		cl_forwardspeed = 400;
-		cl_backspeed = 400;
-		cl_sidespeed = 700;
-	}else{
-		cl_forwardspeed = 200;
-		cl_backspeed = 200;
-		cl_sidespeed = 300;
-	}
-
 	sceCtrlPeekBufferPositive(0, &analogs, 1);
 	int left_x = analogs.lx - 127;
 	int left_y = analogs.ly - 127;
 	int right_x = analogs.rx - 127;
 	int right_y = analogs.ry - 127;
 
+	// Convert the inputs to floats in the range [-1, 1].
+	// Implement the dead zone.
+	float speed;
+	float deadZone = in_tolerance.value;
+	float acceleration = in_acceleration.value;
+	float look_x, look_y;
+
+	// 
+	// Analog look tweaks
+	//
+	speed = sensitivity.value;
+
+	// cut look speed in half when facing enemy, unless mag is empty
+	if ((in_aimassist.value) && (sv_player->v.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0) {
+		speed *= 0.5f;
+	}
+	// additionally, slice look speed when ADS/scopes
+	if (cl.stats[STAT_ZOOM] == 1)
+		speed *= 0.5f;
+	else if (cl.stats[STAT_ZOOM] == 2)
+		speed *= 0.25f;
+	
+	look_x = IN_CalcInput(right_x, speed, deadZone, acceleration);
+	look_y = IN_CalcInput(right_y, speed, deadZone, acceleration);
+
+	const float yawScale = 30.0f;
+	cl.viewangles[YAW] -= yawScale * look_x * (float)host_frametime;
+
+	// Set the pitch.
+	const bool invertPitch = m_pitch.value > 0;
+	const float pitchScale = yawScale * (invertPitch ? 1 : -1);
+
+	cl.viewangles[PITCH] += pitchScale * look_y * (float)host_frametime;
+
+	// Don't look too far up or down.
+	if (cl.viewangles[PITCH] > 80.0f)
+		cl.viewangles[PITCH] = 80.0f;
+	if (cl.viewangles[PITCH] < -70.0f)
+		cl.viewangles[PITCH] = -70.0f;
+
+	// Ability to move with the left nub on NEW model systems
+	float move_x, move_y;
+
+	cl_backspeed = cl_forwardspeed = cl_sidespeed = sv_player->v.maxspeed;
+	cl_sidespeed *= 0.8f;
+	cl_backspeed *= 0.7f;
+
+	move_x = IN_CalcInput(left_x, cl_sidespeed, deadZone, acceleration);
+
+	if (left_y > 0)
+		move_y = IN_CalcInput(left_y, cl_forwardspeed, deadZone, acceleration);
+	else
+		move_y = IN_CalcInput(left_y, cl_backspeed, deadZone, acceleration);
+
+	// cypress -- explicitly setting instead of adding so we always prioritize
+	// analog movement over standard bindings if both are at play
+	if (move_x != 0 || move_y != 0) {
+		cmd->sidemove = move_x;
+		cmd->forwardmove = move_y;
+	} 
+
+	// crosshair stuff
+	if (move_x < 50 && move_x > -50 && move_y < 50 && move_y > -50) {
+		croshhairmoving = false;
+
+		crosshair_opacity += 22;
+
+		if (crosshair_opacity >= 255)
+			crosshair_opacity = 255;
+	} else {
+		croshhairmoving = true;
+		crosshair_opacity -= 8;
+		if (crosshair_opacity <= 128)
+			crosshair_opacity = 128;
+	}
+
+	/*
 	// Left analog support for player movement
 	float x_mov = abs(left_x) < 30 ? 0 : (left_x * cl_sidespeed) * 0.01;
 	float y_mov = abs(left_y) < 30 ? 0 : (left_y * (left_y > 0 ? cl_backspeed : cl_forwardspeed)) * 0.01;
@@ -143,10 +215,11 @@ void IN_Move (usercmd_t *cmd)
 	cl.viewangles[YAW] -= x_cam;
 	V_StopPitchDrift();
 	cl.viewangles[PITCH] += y_cam;
-
+	*/
 	// TOUCH SUPPORT
 
 	// Retrotouch support for camera movement
+	/*
 	SceTouchData touch;
 	if (retrotouch.value){
 		sceTouchPeek(SCE_TOUCH_PORT_BACK, &touch, 1);
@@ -198,6 +271,6 @@ void IN_Move (usercmd_t *cmd)
 
       cl.viewangles[PITCH] -= y_gyro_cam;
   }
-
-	cl.viewangles[PITCH] = COM_Clamp(cl.viewangles[PITCH], -70, 80);
+	*/
+	//cl.viewangles[PITCH] = COM_Clamp(cl.viewangles[PITCH], -70, 80);
 }

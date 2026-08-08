@@ -99,7 +99,7 @@ COMMON_OBJS =	\
 	source/platform/psp2/net_psp2.o \
 	source/platform/psp2/net_adhoc_psp2.o \
 	source/platform/psp2/net_udp_psp2.o \
-	input.o \s
+	source/input.o \
 	source/platform/psp2/in_psp2.o \
 	source/platform/psp2/gl/gl_vidpsp2.o \
 	source/platform/psp2/neon_mathfun.o \
@@ -118,13 +118,8 @@ CFLAGS  = -fsigned-char -Wl,-q -O3 -g -fno-optimize-sibling-calls \
 	-ffast-math -mtune=cortex-a9 -mfpu=neon \
 	-DGLQUAKE -DHAVE_OGGVORBIS -DHAVE_MPG123 -DHAVE_LIBSPEEXDSP \
 	-DUSE_AUDIO_RESAMPLER -DHAVE_STRLCAT -DGIT_VERSION=\"$(GIT_VERSION)\" \
-<<<<<<< HEAD
-	-DPLATFORM_DIRECTORY="psp2" -DPLATFORM_RENDERER="vgl" -DMAX_AI_COUNT=24 \
-	-DENABLE_RAZOR_CAPTURE -D__PSP2__ -DPLATFORM_KEYBOARD_OSK
-=======
 	-DPLATFORM_DIRECTORY="psp2" -DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=24 \
-	-DENABLE_RAZOR_CAPTURE -D__PSP2__ -DPLATFORM_USES_OSK
->>>>>>> 1134ff7 (PSP2: Experimental move to FFP render pipeline)
+	-DENABLE_RAZOR_CAPTURE -D__PSP2__ -DPLATFORM_KEYBOARD_OSK
 
 ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror
