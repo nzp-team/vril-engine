@@ -81,6 +81,8 @@ keyname_t keynames[] =
 
 	{"START", K_START},
 	{"SELECT", K_SELECT},
+	{"LTHUMB", K_LTHUMB},
+	{"RTHUMB", K_RTHUMB},
 
 	{"CTRL", K_CTRL},
 	{"SHIFT", K_SHIFT},
@@ -648,6 +650,8 @@ void Key_Init (void)
 	consolekeys['~'] = false;
 	consolekeys[K_START] = true;
 	consolekeys[K_SELECT] = true;
+	consolekeys[K_LTHUMB] = true;
+	consolekeys[K_RTHUMB] = true;
 	consolekeys[K_PLUS] = true;
 	consolekeys[K_MINUS] = true;
 
