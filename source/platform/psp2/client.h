@@ -312,6 +312,7 @@ extern	beam_t			cl_beams[MAX_BEAMS];
 //
 dlight_t *CL_AllocDlight (int key);
 void	CL_DecayLights (void);
+void CL_NewDlight (int key, vec3_t origin, float radius, float time, int type);
 
 void CL_Init (void);
 

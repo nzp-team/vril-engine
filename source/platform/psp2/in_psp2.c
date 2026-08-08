@@ -132,15 +132,15 @@ void IN_Move (usercmd_t *cmd)
 	float x_mov = abs(left_x) < 30 ? 0 : (left_x * cl_sidespeed) * 0.01;
 	float y_mov = abs(left_y) < 30 ? 0 : (left_y * (left_y > 0 ? cl_backspeed : cl_forwardspeed)) * 0.01;
 	cmd->forwardmove -= y_mov;
-	if (gl_xflip.value) cmd->sidemove -= x_mov;
-	else cmd->sidemove += x_mov;
+	//if (gl_xflip.value) cmd->sidemove -= x_mov;
+	cmd->sidemove += x_mov;
 
 	// Right analog support for camera movement
 	//IN_RescaleAnalog(&right_x, &right_y, 30);
 	float x_cam = (right_x * sensitivity.value) * 0.008;
 	float y_cam = (right_y * sensitivity.value) * 0.008;
-	if (gl_xflip.value) cl.viewangles[YAW] += x_cam;
-	else cl.viewangles[YAW] -= x_cam;
+	//if (gl_xflip.value) cl.viewangles[YAW] += x_cam;
+	cl.viewangles[YAW] -= x_cam;
 	V_StopPitchDrift();
 	cl.viewangles[PITCH] += y_cam;
 
@@ -189,10 +189,10 @@ void IN_Move (usercmd_t *cmd)
     float x_gyro_cam = motionstate.angularVelocity.y * motion_horizontal_sensitivity.value;
     float y_gyro_cam = motionstate.angularVelocity.x * motion_vertical_sensitivity.value;
 
-    if (gl_xflip.value)
-      cl.viewangles[YAW] -= x_gyro_cam;
-    else
-      cl.viewangles[YAW] += x_gyro_cam;
+    //if (gl_xflip.value)
+      //cl.viewangles[YAW] -= x_gyro_cam;
+    //else
+    cl.viewangles[YAW] += x_gyro_cam;
 
     V_StopPitchDrift();
 

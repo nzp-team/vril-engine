@@ -492,44 +492,12 @@ int quake_main (unsigned int argc, void* argv){
 	cfg_height = scr_height;
 	
 	// Initializing vitaGL
-	vglUseTripleBuffering(GL_FALSE);
-	GLboolean invalid_res = GL_FALSE;
-	switch (antialiasing) {
-	case 1:
-	case 5:
-	case 6:
-		invalid_res = vglInitExtended(0, scr_width, scr_height, 0x1000000, SCE_GXM_MULTISAMPLE_2X);
-		break;
-	case 2:
-	case 7:
-	case 8:
-		invalid_res = vglInitExtended(0, scr_width, scr_height, 0x1000000, SCE_GXM_MULTISAMPLE_4X);
-		break;
-	default:
-		invalid_res = vglInitExtended(0, scr_width, scr_height, 0x1000000, SCE_GXM_MULTISAMPLE_NONE);
-		break;
-	}
-	if (invalid_res) {
-		cfg_width = scr_width = 960;
-		cfg_height = scr_height = 544;
-	}
-	
-	// Properly setting SSAA
-	switch (antialiasing) {
-	case 3:
-	case 5:
-	case 7:
-		gl_ssaa = 2;
-		break;
-	case 4:
-	case 6:
-	case 8:
-		gl_ssaa = 4;
-		break;
-	default:
-		gl_ssaa = 1;
-		break;
-	}
+	//vglUseTripleBuffering(GL_FALSE);
+	// The fixed-function renderer uses glBegin/glEnd, which requires a
+	// non-zero vitaGL legacy/immediate-mode pool.
+	vglInitExtended(0x100000, 960, 544, 0x1000000, SCE_GXM_MULTISAMPLE_4X);
+
+	gl_ssaa = 1;
 	vglUseVram(GL_TRUE);
 	
 	// Official mission packs support

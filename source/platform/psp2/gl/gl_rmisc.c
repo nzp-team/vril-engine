@@ -21,11 +21,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../../../nzportable_def.h"
 
-extern cvar_t gl_torchflares;
-extern cvar_t gl_compress;
-extern cvar_t 	r_skyfog;
+extern cvar_t r_flatlightstyles;
+
+int decal_blood1, decal_blood2, decal_blood3, decal_q3blood, decal_burn, decal_mark, decal_glow;
 int zombie_skins[4];
-extern int decal_blood1, decal_blood2, decal_blood3, decal_q3blood, decal_burn, decal_mark, decal_glow;
 
 /*
 ==================
@@ -99,40 +98,20 @@ byte	dottexture[8][8] =
 void R_InitParticleTexture (void)
 {
 	int		x,y;
-	byte	data[8][8][4];
+	byte	data[8][8];
 
 	//
 	// particle texture
 	//
-	particletexture = GL_LoadTexture("particletex", 8, 8, (byte *)data, false, true, 1, true);
-    GL_Bind(particletexture);
-
 	for (x=0 ; x<8 ; x++)
 	{
 		for (y=0 ; y<8 ; y++)
 		{
-			data[y][x][0] = 255;
-			data[y][x][1] = 255;
-			data[y][x][2] = 255;
-			data[y][x][3] = dottexture[x][y]*255;
+			data[y][x] = dottexture[x][y] ? 15 : 255; // ELUTODO assumes 15 is white
 		}
 	}
 
-	GL_EnableState(GL_MODULATE);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-}
-
-/*
-===============
-R_Envmap_f
-
-Grab six views for environment mapping tests
-===============
-*/
-void R_Envmap_f (void)
-{
+	particletexture = GL_LoadTexture("particletex", 8, 8, (byte *)data, false, true, 1, true);
 }
 
 /*
@@ -142,11 +121,8 @@ R_Init
 */
 void R_Init (void)
 {	
-	extern byte *hunk_base;
 	extern cvar_t gl_finish;
-
-	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f);	
-	Cmd_AddCommand ("envmap", R_Envmap_f);	
+	
 	Cmd_AddCommand ("pointfile", R_ReadPointFile_f);	
 
 	Cvar_RegisterVariable (&r_norefresh);
@@ -160,16 +136,14 @@ void R_Init (void)
 	Cvar_RegisterVariable (&r_dynamic);
 	Cvar_RegisterVariable (&r_novis);
 	Cvar_RegisterVariable (&r_speeds);
-	
-	// fenix@io.com: register new cvars for model interpolation
-    Cvar_RegisterVariable (&r_interpolate_model_animation);
-    Cvar_RegisterVariable (&r_interpolate_model_transform);
-	
+
+	Cvar_RegisterVariable (&r_farclip);
+
 	Cvar_RegisterVariable (&gl_finish);
 	Cvar_RegisterVariable (&gl_clear);
 	Cvar_RegisterVariable (&gl_texsort);
-	
-	Cvar_RegisterVariable (&gl_compress);
+
+	Cvar_SetValue("gl_clear", 1);
 
 	Cvar_RegisterVariable (&gl_cull);
 	Cvar_RegisterVariable (&gl_smoothmodels);
@@ -183,24 +157,41 @@ void R_Init (void)
 	Cvar_RegisterVariable (&gl_reporttjunctions);
 
 	Cvar_RegisterVariable (&gl_doubleeyes);
-	
-	Cvar_RegisterVariable (&gl_torchflares); // Torch flares. KH
-	Cvar_RegisterVariable (&gl_xflip);
-	Cvar_RegisterVariable (&gl_overbright);
-	
+
+	Cvar_RegisterVariable (&r_explosiontype);
+	Cvar_RegisterVariable (&r_laserpoint);
+	Cvar_RegisterVariable (&r_part_explosions);
+	Cvar_RegisterVariable (&r_part_trails);
+	Cvar_RegisterVariable (&r_part_sparks);
+	Cvar_RegisterVariable (&r_part_gunshots);
+	Cvar_RegisterVariable (&r_part_blood);
+	Cvar_RegisterVariable (&r_part_telesplash);
+	Cvar_RegisterVariable (&r_part_blobs);
+	Cvar_RegisterVariable (&r_part_lavasplash);
+	Cvar_RegisterVariable (&r_part_flames);
+	Cvar_RegisterVariable (&r_part_lightning);
+	Cvar_RegisterVariable (&r_part_flies);
+	Cvar_RegisterVariable (&r_part_muzzleflash);
+	Cvar_RegisterVariable (&r_flametype);
+	Cvar_RegisterVariable (&r_model_brightness);
 	Cvar_RegisterVariable (&r_skyfog);
 
-	//Shpuld
-	Cvar_RegisterVariable (&r_model_brightness);
+	Cvar_RegisterVariable (&r_flatlightstyles);
 
-	//Cvar_RegisterVariable (&r_flatlightstyles);
+	Cvar_RegisterVariable (&r_runqmbparticles);
+	Cvar_RegisterVariable (&r_retro);	 // dr_mabuse1981: "retro filter".
+	Cvar_RegisterVariable (&r_dithering);
 
 	R_InitParticles ();
 	R_InitOtherTextures ();
-	R_InitParticleTexture ();
+	//R_InitParticleTexture ();
 
 	Sky_Init (); //johnfitz
 	Fog_Init (); //johnfitz
+
+#ifdef GLTEST
+	Test_Init ();
+#endif
 }
 
 /*
@@ -229,7 +220,7 @@ void R_NewMap (void)
 	GL_BuildLightmaps ();
 
 	Sky_NewMap (); //johnfitz -- skybox in worldspawn
-    Fog_ParseWorldspawn ();
+	Fog_ParseWorldspawn ();
 
 	// identify sky texture
 	skytexturenum = -1;
@@ -242,20 +233,9 @@ void R_NewMap (void)
 			skytexturenum = i;
 		if (!strncmp(cl.worldmodel->textures[i]->name,"window02_1",10) )
 			mirrortexturenum = i;
- 		cl.worldmodel->textures[i]->texturechain = NULL;
+		cl.worldmodel->textures[i]->texturechain = NULL;
 	}
-}
-
-
-/*
-====================
-R_TimeRefresh_f
-
-For program optimization
-====================
-*/
-void R_TimeRefresh_f (void)
-{
+	//R_LoadSkys ();
 }
 
 void D_FlushCaches (void)

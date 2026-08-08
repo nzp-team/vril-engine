@@ -22,9 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../../../nzportable_def.h"
 
 extern	model_t	*loadmodel;
-extern cvar_t gl_compress;
 
-//int		skytexturenum;
+int		skytexturenum;
 
 int		solidskytexture;
 int		alphaskytexture;
@@ -78,8 +77,8 @@ void SubdividePolygon (int numverts, float *verts)
 
 	for (i=0 ; i<3 ; i++)
 	{
-		m = (mins[i] + maxs[i]) * 0.5;
-		m = gl_subdivide_size.value * floor (m/gl_subdivide_size.value + 0.5);
+		m = (mins[i] + maxs[i]) * 0.5f;
+		m = gl_subdivide_size.value * floorf (m/gl_subdivide_size.value + 0.5f);
 		if (maxs[i] - m < 8)
 			continue;
 		if (m - mins[i] < 8)
@@ -154,10 +153,6 @@ void GL_SubdivideSurface (msurface_t *fa)
 {
 	vec3_t		verts[64];
 	int			numverts;
-	int			i;
-	int			lindex;
-	float		*vec;
-	texture_t	*t;
 
 	warpface = fa;
 
@@ -165,9 +160,10 @@ void GL_SubdivideSurface (msurface_t *fa)
 	// convert edges back to a normal polygon
 	//
 	numverts = 0;
-	for (i=0 ; i<fa->numedges ; i++)
+	for (int i=0 ; i<fa->numedges ; i++)
 	{
-		lindex = loadmodel->surfedges[fa->firstedge + i];
+		float *vec;
+		int lindex = loadmodel->surfedges[fa->firstedge + i];
 
 		if (lindex > 0)
 			vec = loadmodel->vertexes[loadmodel->edges[lindex].v[0]].position;
@@ -187,7 +183,7 @@ void GL_SubdivideSurface (msurface_t *fa)
 // speed up sin calculations - Ed
 float	turbsin[] =
 {
-	#include "vgl_warp_sin.h"
+	#include "gl_warp_sin.h"
 };
 #define TURBSCALE (256.0 / (2 * M_PI))
 
@@ -208,24 +204,22 @@ void EmitWaterPolys (msurface_t *fa)
 
 	for (p=fa->polys ; p ; p=p->next)
 	{
-		float *pUV = gTexCoordBuffer;
-		float *pPoint = gVertexBuffer;
+		glBegin (GL_POLYGON);
 		for (i=0,v=p->verts[0] ; i<p->numverts ; i++, v+=VERTEXSIZE)
 		{
 			os = v[3];
 			ot = v[4];
-			s = os + turbsin[(int)((ot*0.125+realtime) * TURBSCALE) & 255];
-			s *= (0.015625f);
-			t = ot + turbsin[(int)((os*0.125+realtime) * TURBSCALE) & 255];
-			t *= (0.015625f);
-			*gTexCoordBuffer++ = s;
-			*gTexCoordBuffer++ = t;
-			memcpy(gVertexBuffer, &v[0], sizeof(vec3_t));
-			gVertexBuffer += 3;
+
+			s = os + turbsin[(int)((ot*0.125f+(float)realtime) * (float)TURBSCALE) & 255];
+			s *= (1.0f/64);
+
+			t = ot + turbsin[(int)((os*0.125f+(float)realtime) * (float)TURBSCALE) & 255];
+			t *= (1.0f/64);
+
+			glTexCoord2f (s, t);
+			glVertex3fv (v);
 		}
-		vglVertexAttribPointerMapped(0, pPoint);
-		vglVertexAttribPointerMapped(1, pUV);
-		GL_DrawPolygon(GL_TRIANGLE_FAN, p->numverts);
+		glEnd ();
 	}
 }
 
@@ -248,27 +242,26 @@ void EmitSkyPolys (msurface_t *fa)
 
 	for (p=fa->polys ; p ; p=p->next)
 	{
-		float *pUV = gTexCoordBuffer;
-		float *pPoint = gVertexBuffer;
+		glBegin (GL_POLYGON);
 		for (i=0,v=p->verts[0] ; i<p->numverts ; i++, v+=VERTEXSIZE)
 		{
 			VectorSubtract (v, r_origin, dir);
-			dir[2] *= 3;    // flatten the sphere
+			dir[2] *= 3;	// flatten the sphere
+
 			length = dir[0]*dir[0] + dir[1]*dir[1] + dir[2]*dir[2];
-			length = sqrt (length);
-			length = 378/length;
+			length = sqrtf (length);
+			length = 6*63/length;
+
 			dir[0] *= length;
 			dir[1] *= length;
-			s = (speedscale + dir[0]) * (0.0078125f);
-			t = (speedscale + dir[1]) * (0.0078125f);
-			*gTexCoordBuffer++ = s;
-			*gTexCoordBuffer++ = t;
-			memcpy(gVertexBuffer, &v[0], sizeof(vec3_t));
-			gVertexBuffer += 3;
+
+			s = (speedscale + dir[0]) * (1.0f/128);
+			t = (speedscale + dir[1]) * (1.0f/128);
+
+			glTexCoord2f (s, t);
+			glVertex3fv (v);
 		}
-		vglVertexAttribPointerMapped(0, pPoint);
-		vglVertexAttribPointerMapped(1, pUV);
-		GL_DrawPolygon(GL_TRIANGLE_FAN, p->numverts);
+		glEnd ();
 	}
 }
 
@@ -283,10 +276,6 @@ will have them chained together.
 */
 void EmitBothSkyLayers (msurface_t *fa)
 {
-	int			i;
-	int			lindex;
-	float		*vec;
-
 	GL_Bind (solidskytexture);
 	speedscale = realtime*8;
 	speedscale -= (int)speedscale & ~127 ;
@@ -406,7 +395,7 @@ void Sky_NewMap (void)
 	char	*data;
 
     //purge old sky textures
-    //UnloadSkyTexture ();
+    //UnloadSkyTexture ();-
 
 	//
 	// initially no sky
@@ -533,6 +522,43 @@ void R_ClearSkyBox (void)
 }
 
 
+void MakeSkyVec (float s, float t, int axis)
+{
+	vec3_t		v, b;
+	int			j, k;
+
+	b[0] = s*2048;
+	b[1] = t*2048;
+	b[2] = 2048;
+
+	for (j=0 ; j<3 ; j++)
+	{
+		k = st_to_vec[axis][j];
+		if (k < 0)
+			v[j] = -b[-k - 1];
+		else
+			v[j] = b[k - 1];
+		v[j] += r_origin[j];
+	}
+
+	// avoid bilerp seam
+	s = (s+1)*0.5f;
+	t = (t+1)*0.5f;
+
+	if (s < 1.0f/512)
+		s = 1.0f/512;
+	else if (s > 511.0f/512)
+		s = 511.0f/512;
+	if (t < 1.0f/512)
+		t = 1.0f/512;
+	else if (t > 511.0f/512)
+		t = 511.0f/512;
+
+	t = 1.0f - t;
+	glTexCoord2f (s, t);
+	glVertex3fv (v);
+}
+
 /*
 ==============
 R_DrawSkyBox
@@ -572,8 +598,8 @@ void R_DrawSkyBox (void)
 	//Fog_SetColorForSkyS();
 
 	glDisable(GL_BLEND);
-	GL_DisableState(GL_ALPHA_TEST);
-	GL_EnableState(GL_MODULATE);
+	glDisable(GL_ALPHA_TEST);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	glDepthMask(GL_FALSE);
 	glDisable(GL_DEPTH_TEST);
 
@@ -599,35 +625,53 @@ void R_DrawSkyBox (void)
 		// move ever so slightly less towards forward to make edges overlap a bit, just to not have shimmering pixels between sky edges
 		float forwardfact = 0.99f;
 
-		gTexCoordBuffer[0] = sky_vertices[0].s = 0.5f / skyboxtexsize;
-		gTexCoordBuffer[1] = sky_vertices[0].t = (skyboxtexsize - .5f) / skyboxtexsize;
-		gVertexBuffer[0] = sky_vertices[0].x = r_origin[0] + (forwardfact * skynormals[i][0] - skyrt[i][0] - skyup[i][0] * upnegfact) * skydepth;
-		gVertexBuffer[1] = sky_vertices[0].y = r_origin[1] + (forwardfact * skynormals[i][1] - skyrt[i][1] - skyup[i][1] * upnegfact) * skydepth;
-		gVertexBuffer[2] = sky_vertices[0].z = r_origin[2] + (forwardfact * skynormals[i][2] - skyrt[i][2] - skyup[i][2] * upnegfact) * skydepth;
+		glBegin(GL_QUADS);
 
-		gTexCoordBuffer[2] = sky_vertices[1].s = 0.5f / skyboxtexsize;
-		gTexCoordBuffer[3] = sky_vertices[1].t = 0.5f / skyboxtexsize;
-		gVertexBuffer[3] = sky_vertices[1].x = r_origin[0] + (forwardfact * skynormals[i][0] - skyrt[i][0] + skyup[i][0]) * skydepth;
-		gVertexBuffer[4] = sky_vertices[1].y = r_origin[1] + (forwardfact * skynormals[i][1] - skyrt[i][1] + skyup[i][1]) * skydepth;
-		gVertexBuffer[5] = sky_vertices[1].z = r_origin[2] + (forwardfact * skynormals[i][2] - skyrt[i][2] + skyup[i][2]) * skydepth;
+		sky_vertices[0].s = 0.5f / skyboxtexsize;
+		sky_vertices[0].t = (skyboxtexsize - .5f) / skyboxtexsize;
+		sky_vertices[0].x = r_origin[0] + (forwardfact * skynormals[i][0] - skyrt[i][0] - skyup[i][0] * upnegfact) * skydepth;
+		sky_vertices[0].y = r_origin[1] + (forwardfact * skynormals[i][1] - skyrt[i][1] - skyup[i][1] * upnegfact) * skydepth;
+		sky_vertices[0].z = r_origin[2] + (forwardfact * skynormals[i][2] - skyrt[i][2] - skyup[i][2] * upnegfact) * skydepth;
+		v[0] = sky_vertices[0].x;
+		v[1] = sky_vertices[0].y;
+		v[2] = sky_vertices[0].z;
+		glTexCoord2f (sky_vertices[0].s, sky_vertices[0].t);
+		glVertex3fv (v);
 
-		gTexCoordBuffer[4] = sky_vertices[2].s = (skyboxtexsize - .5f) / skyboxtexsize;
-		gTexCoordBuffer[5] = sky_vertices[2].t = 0.5f / skyboxtexsize;
-		gVertexBuffer[6] = sky_vertices[2].x = r_origin[0] + (forwardfact * skynormals[i][0] + skyrt[i][0] + skyup[i][0]) * skydepth;
-		gVertexBuffer[7] = sky_vertices[2].y = r_origin[1] + (forwardfact * skynormals[i][1] + skyrt[i][1] + skyup[i][1]) * skydepth;
-		gVertexBuffer[8] = sky_vertices[2].z = r_origin[2] + (forwardfact * skynormals[i][2] + skyrt[i][2] + skyup[i][2]) * skydepth;
+		sky_vertices[1].s = 0.5f / skyboxtexsize;
+		sky_vertices[1].t = 0.5f / skyboxtexsize;
+		sky_vertices[1].x = r_origin[0] + (forwardfact * skynormals[i][0] - skyrt[i][0] + skyup[i][0]) * skydepth;
+		sky_vertices[1].y = r_origin[1] + (forwardfact * skynormals[i][1] - skyrt[i][1] + skyup[i][1]) * skydepth;
+		sky_vertices[1].z = r_origin[2] + (forwardfact * skynormals[i][2] - skyrt[i][2] + skyup[i][2]) * skydepth;
+		v[0] = sky_vertices[1].x;
+		v[1] = sky_vertices[1].y;
+		v[2] = sky_vertices[1].z;
+		glTexCoord2f (sky_vertices[1].s, sky_vertices[1].t);
+		glVertex3fv (v);
 
-		gTexCoordBuffer[6] = sky_vertices[3].s = (skyboxtexsize - .5f) / skyboxtexsize;
-		gTexCoordBuffer[7] = sky_vertices[3].t = (skyboxtexsize - .5f) / skyboxtexsize;
-		gVertexBuffer[9] = sky_vertices[3].x = r_origin[0] + (forwardfact * skynormals[i][0] + skyrt[i][0] - skyup[i][0] * upnegfact) * skydepth;
-		gVertexBuffer[10] = sky_vertices[3].y = r_origin[1] + (forwardfact * skynormals[i][1] + skyrt[i][1] - skyup[i][1] * upnegfact) * skydepth;
-		gVertexBuffer[11] = sky_vertices[3].z = r_origin[2] + (forwardfact * skynormals[i][2] + skyrt[i][2] - skyup[i][2] * upnegfact) * skydepth;
+		sky_vertices[2].s = (skyboxtexsize - .5f) / skyboxtexsize;
+		sky_vertices[2].t = 0.5f / skyboxtexsize;
+		sky_vertices[2].x = r_origin[0] + (forwardfact * skynormals[i][0] + skyrt[i][0] + skyup[i][0]) * skydepth;
+		sky_vertices[2].y = r_origin[1] + (forwardfact * skynormals[i][1] + skyrt[i][1] + skyup[i][1]) * skydepth;
+		sky_vertices[2].z = r_origin[2] + (forwardfact * skynormals[i][2] + skyrt[i][2] + skyup[i][2]) * skydepth;
+		v[0] = sky_vertices[2].x;
+		v[1] = sky_vertices[2].y;
+		v[2] = sky_vertices[2].z;
+		glTexCoord2f (sky_vertices[2].s, sky_vertices[2].t);
+		glVertex3fv (v);
 
-		vglVertexAttribPointerMapped(0, gVertexBuffer);
-		vglVertexAttribPointerMapped(1, gTexCoordBuffer);
-		gVertexBuffer += 12;
-		gTexCoordBuffer += 8;
-		GL_DrawPolygon(GL_TRIANGLE_FAN, 4);
+		sky_vertices[3].s = (skyboxtexsize - .5f) / skyboxtexsize;
+		sky_vertices[3].t = (skyboxtexsize - .5f) / skyboxtexsize;
+		sky_vertices[3].x = r_origin[0] + (forwardfact * skynormals[i][0] + skyrt[i][0] - skyup[i][0] * upnegfact) * skydepth;
+		sky_vertices[3].y = r_origin[1] + (forwardfact * skynormals[i][1] + skyrt[i][1] - skyup[i][1] * upnegfact) * skydepth;
+		sky_vertices[3].z = r_origin[2] + (forwardfact * skynormals[i][2] + skyrt[i][2] - skyup[i][2] * upnegfact) * skydepth;
+		v[0] = sky_vertices[3].x;
+		v[1] = sky_vertices[3].y;
+		v[2] = sky_vertices[3].z;
+		glTexCoord2f (sky_vertices[3].s, sky_vertices[3].t);
+		glVertex3fv (v);
+
+		glEnd();
 	}
 
 	glDepthMask(GL_TRUE);
@@ -650,11 +694,11 @@ void R_InitSky (miptex_t *mt)
 {
 	int			i, j, p;
 	byte		*src;
-	unsigned	trans[16384];
+	unsigned	trans[128*128];
 	unsigned	transpix;
 	int			r, g, b;
 	unsigned	*rgba;
-	
+
 	src = (byte *)mt + mt->offsets[0];
 
 	// make an average value for the back to avoid
@@ -672,19 +716,14 @@ void R_InitSky (miptex_t *mt)
 			b += ((byte *)rgba)[2];
 		}
 
-	((byte *)&transpix)[0] = r/(16384);
-	((byte *)&transpix)[1] = g/(16384);
-	((byte *)&transpix)[2] = b/(16384);
+	((byte *)&transpix)[0] = r/(128*128);
+	((byte *)&transpix)[1] = g/(128*128);
+	((byte *)&transpix)[2] = b/(128*128);
 	((byte *)&transpix)[3] = 0;
 
 
 	if (!solidskytexture)
 		solidskytexture = GL_LoadTexture("render_solidskytexture", 128, 128, (byte *)trans, false, true, 1, true);
-
-	GL_Bind (solidskytexture );
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
 
 	for (i=0 ; i<128 ; i++)
 		for (j=0 ; j<128 ; j++)
@@ -698,8 +737,5 @@ void R_InitSky (miptex_t *mt)
 
 	if (!alphaskytexture)
 		alphaskytexture = GL_LoadTexture("render_alphaskytexture", 128, 128, (byte *)trans, false, true, 1, true);
-
-	GL_Bind(alphaskytexture);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
+

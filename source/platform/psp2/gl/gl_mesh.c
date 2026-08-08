@@ -32,7 +32,7 @@ ALIAS MODEL DISPLAY LIST GENERATION
 model_t		*aliasmodel;
 aliashdr_t	*paliashdr;
 
-int 	used[8192];
+qboolean	used[8192];
 
 // the command list holds counts and s/t values that are valid for
 // every frame
@@ -55,7 +55,7 @@ int		stripcount;
 StripLength
 ================
 */
-static int	StripLength (int starttri, int startv)
+int	StripLength (int starttri, int startv)
 {
 	int			m1, m2;
 	int			j;
@@ -124,7 +124,7 @@ done:
 FanLength
 ===========
 */
-static int	FanLength (int starttri, int startv)
+int	FanLength (int starttri, int startv)
 {
 	int		m1, m2;
 	int		j;
@@ -195,20 +195,20 @@ Generate a list of trifans or strips
 for the model, which holds for all frames
 ================
 */
-static void BuildTris (void)
+void BuildTris (void)
 {
 	int		i, j, k;
 	int		startv;
-	float  s, t;
-	int		len, bestlen, besttype;
+	float	s, t;
+	int		len, bestlen;
+	int 	besttype = 0;
 	int		bestverts[1024];
 	int		besttris[1024];
 	int		type;
-	
+
 	//
 	// build tristrips
 	//
-	besttype = 0;
 	numorder = 0;
 	numcommands = 0;
 	memset (used, 0, sizeof(used));
@@ -259,12 +259,12 @@ static void BuildTris (void)
 			s = stverts[k].s;
 			t = stverts[k].t;
 			if (!triangles[besttris[0]].facesfront && stverts[k].onseam)
-				s += pheader->skinwidth / 2;	// on back side
-			s = (s + 0.5) / pheader->skinwidth;
-			t = (t + 0.5) / pheader->skinheight;
+				s += pheader->skinwidth / 2.0f;	// on back side
+			s = (s + 0.5f) / pheader->skinwidth;
+			t = (t + 0.5f) / pheader->skinheight;
 
-			*(float *)&commands[numcommands++] = s;
-			*(float *)&commands[numcommands++] = t;
+			memcpy(&commands[numcommands++], &s, sizeof(float));
+			memcpy(&commands[numcommands++], &t, sizeof(float));
 		}
 	}
 
@@ -284,25 +284,25 @@ GL_MakeAliasModelDisplayLists
 */
 void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr)
 {
-	int i,j;
+	int		i, j;
+	int			*cmds;
+	trivertx_t	*verts;
+
 	aliasmodel = m;
 	paliashdr = hdr;	// (aliashdr_t *)Mod_Extradata (m);
 
 	BuildTris ();		// trifans or lists
-	
-	// save the data out
 
 	paliashdr->poseverts = numorder;
 
-	int* cmds = (int*)Hunk_Alloc (numcommands * 4);
+	cmds = Hunk_Alloc (numcommands * 4);
 	paliashdr->commands = (byte *)cmds - (byte *)paliashdr;
 	memcpy (cmds, commands, numcommands * 4);
 
-	trivertx_t* verts = (trivertx_t*)Hunk_Alloc (paliashdr->numposes * paliashdr->poseverts 
+	verts = Hunk_Alloc (paliashdr->numposes * paliashdr->poseverts 
 		* sizeof(trivertx_t) );
 	paliashdr->posedata = (byte *)verts - (byte *)paliashdr;
 	for (i=0 ; i<paliashdr->numposes ; i++)
 		for (j=0 ; j<numorder ; j++)
 			*verts++ = poseverts[i][vertexorder[j]];
 }
-

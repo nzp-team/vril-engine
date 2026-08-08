@@ -1,7 +1,6 @@
 TARGET		:= nzportable
 TITLE		:= NZPORTABL
 GIT_VERSION := $(shell git describe --abbrev=6 --dirty --always --tags)
-SHADERS     := shaders
 
 LIBS = -lvitaGL -lvitashark -lSceShaccCgExt -ltaihen_stub -lvorbisfile -lvorbis -logg \
 	-lspeexdsp -lmpg123 -lScePspnetAdhoc_stub -lSceShaccCg_stub -lSceKernelDmacMgr_stub \
@@ -76,17 +75,17 @@ COMMON_OBJS =	\
 	source/render/r_light.o \
 	source/images.o \
 	source/platform/psp2/sys_psp2.o \
-	source/platform/psp2/vgl/vgl_fog.o \
-	source/platform/psp2/vgl/vgl_qmb.o \
-	source/platform/psp2/vgl/vgl_draw.o \
-	source/platform/psp2/vgl/vgl_mesh.o \
-	source/platform/psp2/vgl/vgl_model.o \
-	source/platform/psp2/vgl/vgl_rmain.o \
-	source/platform/psp2/vgl/vgl_rmisc.o \
-	source/platform/psp2/vgl/vgl_rsurf.o \
-	source/platform/psp2/vgl/vgl_screen.o \
-	source/platform/psp2/vgl/vgl_warp.o \
-	source/platform/psp2/vgl/vgl_fullbright.o \
+	source/platform/psp2/gl/gl_fog.o \
+	source/platform/psp2/gl/gl_decal.o \
+	source/platform/psp2/gl/gl_qmb.o \
+	source/platform/psp2/gl/gl_draw.o \
+	source/platform/psp2/gl/gl_mesh.o \
+	source/platform/psp2/gl/gl_model.o \
+	source/platform/psp2/gl/gl_rmain.o \
+	source/platform/psp2/gl/gl_rmisc.o \
+	source/platform/psp2/gl/gl_rsurf.o \
+	source/platform/psp2/gl/gl_screen.o \
+	source/platform/psp2/gl/gl_warp.o \
 	source/platform/psp2/r_part.o \
 	source/platform/psp2/music.o \
 	source/snd_music.o \
@@ -100,8 +99,9 @@ COMMON_OBJS =	\
 	source/platform/psp2/net_psp2.o \
 	source/platform/psp2/net_adhoc_psp2.o \
 	source/platform/psp2/net_udp_psp2.o \
-	input.o \
-	source/platform/psp2/vgl/vgl_vidpsp2.o \
+	input.o \s
+	source/platform/psp2/in_psp2.o \
+	source/platform/psp2/gl/gl_vidpsp2.o \
 	source/platform/psp2/neon_mathfun.o \
 	source/crypter.o
 	
@@ -109,8 +109,6 @@ CPPSOURCES	:= source/audiodec
 
 CFILES	:= $(COMMON_OBJS)
 CPPFILES   := $(foreach dir,$(CPPSOURCES), $(wildcard $(dir)/*.cpp))
-CGFILES  := $(foreach dir,$(SHADERS), $(wildcard $(dir)/*.cg))
-CGSHADERS  := $(CGFILES:.cg=.h)
 OBJS     := $(CFILES:.c=.o) $(CPPFILES:.cpp=.o)
 
 PREFIX  = arm-vita-eabi
@@ -120,8 +118,13 @@ CFLAGS  = -fsigned-char -Wl,-q -O3 -g -fno-optimize-sibling-calls \
 	-ffast-math -mtune=cortex-a9 -mfpu=neon \
 	-DGLQUAKE -DHAVE_OGGVORBIS -DHAVE_MPG123 -DHAVE_LIBSPEEXDSP \
 	-DUSE_AUDIO_RESAMPLER -DHAVE_STRLCAT -DGIT_VERSION=\"$(GIT_VERSION)\" \
+<<<<<<< HEAD
 	-DPLATFORM_DIRECTORY="psp2" -DPLATFORM_RENDERER="vgl" -DMAX_AI_COUNT=24 \
 	-DENABLE_RAZOR_CAPTURE -D__PSP2__ -DPLATFORM_KEYBOARD_OSK
+=======
+	-DPLATFORM_DIRECTORY="psp2" -DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=24 \
+	-DENABLE_RAZOR_CAPTURE -D__PSP2__ -DPLATFORM_USES_OSK
+>>>>>>> 1134ff7 (PSP2: Experimental move to FFP render pipeline)
 
 ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror
@@ -150,7 +153,6 @@ $(TARGET).vpk: $(TARGET).velf
 	vita-mksfoex -s TITLE_ID=$(TITLE) -d ATTRIBUTE2=12 "$(TARGET)" param.sfo
 	cp -f param.sfo build/sce_sys/param.sfo
 	vita-pack-vpk -s param.sfo -b build/eboot.bin "$(TARGET).vpk" \
-		-a source/platform/psp2/vgl/shaders=shaders \
 		-a build/sce_sys=sce_sys
 
 %_f.h:
@@ -158,8 +160,6 @@ $(TARGET).vpk: $(TARGET).velf
 	
 %_v.h:
 	psp2cgc -profile sce_vp_psp2 $(@:_v.h=_v.cg) -Wperf -fastprecision -O3 -o build/$(@:_v.h=_v.gxp)
-	
-shaders: $(CGSHADERS)
 	
 %.velf: %.elf
 	cp $< $<.unstripped.elf
