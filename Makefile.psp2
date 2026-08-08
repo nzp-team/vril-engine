@@ -1,5 +1,5 @@
 TARGET		:= nzportable
-TITLE		:= NZPORTABL
+TITLE		:= NZZMBSPTB
 BUILD		:= build/psp2
 ELF			:= $(BUILD)/$(TARGET).elf
 VELF		:= $(BUILD)/$(TARGET).velf
@@ -153,9 +153,15 @@ _build_info.h:
 $(VPK): $(VELF)
 	@mkdir -p $(SCE_SYS)
 	vita-make-fself -c -s $< $(EBOOT)
-	vita-mksfoex -s TITLE_ID=$(TITLE) -d ATTRIBUTE2=12 "$(TARGET)" $(PARAM_SFO)
+	vita-mksfoex -s TITLE_ID=$(TITLE) -d ATTRIBUTE2=12 "Nazi Zombies: Portable" $(PARAM_SFO)
 	cp -f $(PARAM_SFO) $(SCE_SYS)/param.sfo
-	vita-pack-vpk -s $(PARAM_SFO) -b $(EBOOT) $@ -a $(SCE_SYS)=sce_sys
+	vita-pack-vpk -s $(PARAM_SFO) -b $(EBOOT) $@ -a $(SCE_SYS)=sce_sys \
+	--add $(EBOOT)=nzp.bin \
+	--add source/platform/psp2/art/sce_sys/icon0.png=sce_sys/icon0.png \
+	--add source/platform/psp2/art/sce_sys/livearea/contents/bg.png=sce_sys/livearea/contents/bg.png \
+	--add source/platform/psp2/art/sce_sys/livearea/contents/startup.png=sce_sys/livearea/contents/startup.png \
+	--add source/platform/psp2/art/sce_sys/livearea/contents/template.xml=sce_sys/livearea/contents/template.xml \
+	build/psp2/nzportable.vpk
 
 %_f.h:
 	@mkdir -p $(BUILD)/$(@D)
