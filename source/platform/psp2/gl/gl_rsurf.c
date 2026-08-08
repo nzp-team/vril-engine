@@ -1406,4 +1406,3 @@ void GL_BuildLightmaps (void)
 		lightmap_index[i] = GL_LoadLMTexture (lm_name, BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+(i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes), false);
 	}
 }
-

@@ -90,6 +90,7 @@ cvar_t		scr_showram = {"showram","1"};
 cvar_t		scr_showturtle = {"showturtle","0"};
 cvar_t		scr_showpause = {"showpause","1"};
 cvar_t		scr_printspeed = {"scr_printspeed","8"};
+<<<<<<< HEAD
 <<<<<<<< HEAD:source/render/r_screen.c
 cvar_t 		scr_showfps = {"show_fps", "0"};
 cvar_t		scr_loadscreen = {"scr_loadscreen","1"};
@@ -102,6 +103,9 @@ cvar_t		r_dithering = {"r_dithering", "1", true};
 #endif
 ========
 cvar_t 		scr_showfps = {"scr_showfps", "0"};
+=======
+cvar_t 		scr_showfps = {"show_fps", "0"};
+>>>>>>> 000b776 (PSP2: Fix misc FFP rendering bugs)
 cvar_t		scr_loadscreen = {"scr_loadscreen","1"};
 cvar_t		gl_triplebuffer = {"gl_triplebuffer", "1", true };
 cvar_t 		cl_crosshair_debug = {"cl_crosshair_debug", "0", true};
@@ -1000,10 +1004,14 @@ static void SCR_CalcRefdef (void)
 	if (scr_viewsize.value >= 100.0f) {
 		full = true;
 		size = 100.0;
+<<<<<<< HEAD
 <<<<<<<< HEAD:source/render/r_screen.c
 		sb_lines = 0;
 ========
 >>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
+=======
+		sb_lines = 0;
+>>>>>>> 000b776 (PSP2: Fix misc FFP rendering bugs)
 	} else
 		size = scr_viewsize.value;
 	if (cl.intermission)
@@ -1221,11 +1229,15 @@ void SCR_DrawConsole (void)
 	if (scr_con_current)
 	{
 		scr_copyeverything = 1;
+<<<<<<< HEAD
 <<<<<<<< HEAD:source/render/r_screen.c
 		Con_DrawConsole (scr_con_current, true, vid.scale);
 ========
 		Con_DrawConsole (scr_con_current, true, 1);
 >>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
+=======
+		Con_DrawConsole (scr_con_current, true, vid.scale);
+>>>>>>> 000b776 (PSP2: Fix misc FFP rendering bugs)
 		clearconsole = 0;
 	}
 	else
@@ -1705,4 +1717,3 @@ void SCR_UpdateScreen (void)
 
 	GL_EndRendering ();
 }
-
