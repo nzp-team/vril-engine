@@ -29,11 +29,7 @@ char 			*anub_string;
 cvar_t			global_sensitivity;
 
 extern cvar_t 	in_aimassist;
-#ifdef __PSP__
-extern cvar_t	in_sensitivity;
-#else
 extern cvar_t	sensitivity;
-#endif // __PSP__
 extern cvar_t	in_acceleration;
 extern cvar_t	in_tolerance;
 extern cvar_t	in_anub_mode;
@@ -54,11 +50,7 @@ void Menu_Controls_Set (void)
 
 void Menu_Controls_SetStrings (void)
 {
-#ifdef __PSP__
-	global_sensitivity = in_sensitivity;
-#else
 	global_sensitivity = sensitivity;
-#endif
 
 	if((int)in_aimassist.value == 1) {
 		aimassist_string = "ENABLED";
