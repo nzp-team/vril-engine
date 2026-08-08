@@ -52,6 +52,8 @@ void IN_GetAnalogStick(in_analog_stick_id_t stick, in_analog_stick_t *value)
 	HidAnalogStickState state = padGetStickPos(&pad, stick == IN_STICK_LEFT ? 0 : 1);
 	value->x = (float)state.x / (float)SHRT_MAX;
 	value->y = (float)state.y / (float)SHRT_MAX;
+	if (stick == IN_STICK_RIGHT)
+		value->y = -value->y;
 }
 
 void IN_PlatformMove(usercmd_t *cmd) { (void)cmd; }
