@@ -30,7 +30,7 @@ COMMON_OBJS = \
 	source/platform/psp/battery.o \
 	source/platform/psp/thread.o \
 	source/platform/psp/VramExt.o \
-	input.o \
+	source/input.o \
 	source/platform/psp/input.o \
 	source/platform/psp/main.o \
 	source/platform/psp/math.o \
