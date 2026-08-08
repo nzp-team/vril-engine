@@ -104,8 +104,7 @@ void IN_Move(usercmd_t *cmd)
 
 	look_x = IN_ShapeAxis(look_stick.x, speed, tolerance, acceleration);
 	look_y = IN_ShapeAxis(look_stick.y, speed, tolerance, acceleration);
-	if (look_x != 0.0f || look_y != 0.0f)
-		V_StopPitchDrift();
+	V_StopPitchDrift();
 	cl.viewangles[YAW] -= 30.0f * look_x * (float)host_frametime;
 	cl.viewangles[PITCH] += 30.0f * (m_pitch.value > 0 ? 1.0f : -1.0f)
 		* look_y * (float)host_frametime;
