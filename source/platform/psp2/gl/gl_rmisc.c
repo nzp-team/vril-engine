@@ -190,9 +190,7 @@ R_Init
 void R_Init (void)
 {	
 	extern cvar_t gl_finish;
-
-	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f);	
-	Cmd_AddCommand ("envmap", R_Envmap_f);	
+	
 	Cmd_AddCommand ("pointfile", R_ReadPointFile_f);	
 
 	Cvar_RegisterVariable (&r_norefresh);

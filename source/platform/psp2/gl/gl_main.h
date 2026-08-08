@@ -1,14 +1,14 @@
 /*
-Copyright (C) 1996-1997 Id Software, Inc.
+ C opyright (C) 1996-1997 Id* Software, Inc.
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+ This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -31,13 +31,13 @@ void GL_EndRendering (void);
 #ifdef _WIN32
 // Function prototypes for the Texture Object Extension routines
 typedef GLboolean (APIENTRY *ARETEXRESFUNCPTR)(GLsizei, const GLuint *,
-                    const GLboolean *);
+											   const GLboolean *);
 typedef void (APIENTRY *BINDTEXFUNCPTR)(GLenum, GLuint);
 typedef void (APIENTRY *DELTEXFUNCPTR)(GLsizei, const GLuint *);
 typedef void (APIENTRY *GENTEXFUNCPTR)(GLsizei, GLuint *);
 typedef GLboolean (APIENTRY *ISTEXFUNCPTR)(GLuint);
 typedef void (APIENTRY *PRIORTEXFUNCPTR)(GLsizei, const GLuint *,
-                    const GLclampf *);
+										 const GLclampf *);
 typedef void (APIENTRY *TEXSUBIMAGEPTR)(int, int, int, int, int, int, int, int, void *);
 
 extern	BINDTEXFUNCPTR bindTexFunc;
@@ -88,10 +88,10 @@ extern	PROC glVertexPointerEXT;
 
 
 /*
----------------------------------
-half-life Render Modes. Crow_bar
----------------------------------
-*/
+ - -------------------------*-------
+ half-life Render Modes. Crow_bar
+ ---------------------------------
+ */
 
 #define TEX_COLOR    1
 #define TEX_TEXTURE  2
@@ -101,8 +101,8 @@ half-life Render Modes. Crow_bar
 #define TEX_LMPOINT  6 //for light point
 
 #define ISCOLOR(ent)    ((ent)->rendermode == TEX_COLOR    && ((ent)->rendercolor[0] <= 1|| \
-                                                               (ent)->rendercolor[1] <= 1|| \
-															   (ent)->rendercolor[2] <= 1))
+(ent)->rendercolor[1] <= 1|| \
+(ent)->rendercolor[2] <= 1))
 
 #define ISTEXTURE(ent)  ((ent)->rendermode == TEX_TEXTURE  && (ent)->renderamt > 0 && (ent)->renderamt <= 1)
 #define ISGLOW(ent)     ((ent)->rendermode == TEX_GLOW     && (ent)->renderamt > 0 && (ent)->renderamt <= 1)
@@ -110,13 +110,13 @@ half-life Render Modes. Crow_bar
 #define ISADDITIVE(ent) ((ent)->rendermode == TEX_ADDITIVE && (ent)->renderamt > 0 && (ent)->renderamt <= 1)
 
 #define ISLMPOINT(ent)  ((ent)->rendermode == TEX_LMPOINT  && ((ent)->rendercolor[0] <= 1|| \
-                                                               (ent)->rendercolor[1] <= 1|| \
-															   (ent)->rendercolor[2] <= 1))
+(ent)->rendercolor[1] <= 1|| \
+(ent)->rendercolor[2] <= 1))
 /*
----------------------------------
-//half-life Render Modes
----------------------------------
-*/
+ - -------------------------*-------
+ //half-life Render Modes
+ ---------------------------------
+ */
 
 
 // r_local.h -- private refresh defs
@@ -389,5 +389,4 @@ void QMB_MuzzleFlashLG (vec3_t org);
 
 void R_SpawnDecal (vec3_t center, vec3_t normal, vec3_t tangent, int tex, int size, int isbsp);
 void R_SpawnDecalStatic (vec3_t org, int tex, int size);
-
 extern	qboolean	qmb_initialized;
