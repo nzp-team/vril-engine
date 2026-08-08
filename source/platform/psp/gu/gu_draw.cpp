@@ -1150,7 +1150,7 @@ extern float crosshair_opacity;
 extern cvar_t cl_crosshair_debug;
 extern cvar_t crosshair;
 extern qboolean crosshair_pulse_grenade;
-void Draw_Crosshair (void)
+extern "C" void Draw_Crosshair (void)
 {
 	if (cl_crosshair_debug.value) {
 		Draw_FillByColor(vid.width/2, 0, 1, 272, 255, 0, 0, 255);
