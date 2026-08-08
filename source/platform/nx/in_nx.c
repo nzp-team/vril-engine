@@ -181,10 +181,8 @@ void IN_Move (usercmd_t *cmd)
 	}
 }
 
-//
-// ctr software keyboard courtesy of libctru samples
-//
-void IN_SwitchKeyboard(void)
+
+void IN_OpenOSKeyboard(void)
 {
 	static SwkbdConfig swkbd;
 	static char console_buffer[64];

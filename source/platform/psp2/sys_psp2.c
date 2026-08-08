@@ -439,7 +439,6 @@ bool CheckForMod(char* dir)
 	return ret;
 }
 
-void IN_ResetInputs(void);
 void IN_StopRumble (void);
 #ifndef sceKernelChangeThreadVfpException
 int sceKernelChangeThreadVfpException(SceUInt32 clear, SceUInt32 set);
@@ -676,7 +675,6 @@ int quake_main (unsigned int argc, void* argv){
 		Cbuf_AddText(cmd);
 	}
 
-	IN_ResetInputs();
 	Cbuf_AddText("exec config.cfg\n");
 
 	vglWaitVblankStart(vid_vsync.value);

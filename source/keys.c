@@ -45,7 +45,7 @@ int			keyshift[256];		// key to map to if shift held down in console
 int			key_repeats[256];	// if > 1, it is autorepeating
 qboolean	keydown[256];
 
-#ifdef PLATFORM_USES_OSK
+#ifdef PLATFORM_KEYBOARD_OSK
 void Con_OSK_f (char *input, char *output, int outlen);
 void Con_SetOSKActive(qboolean active);
 qboolean Con_isSetOSKActive(void);
@@ -175,7 +175,10 @@ void Key_Console (int key)
 {
 	char	*cmd;
 
-#ifdef PLATFORM_USES_OSK
+	if (key == K_SPACE)
+		key = ' ';
+
+#ifdef PLATFORM_KEYBOARD_OSK
 	if (Con_isSetOSKActive()) {
 		Menu_OSK_Key (key);
 	}
@@ -185,9 +188,9 @@ void Key_Console (int key)
 		Con_OSK_f(key_lines[edit_line]+1, consoleInput, 72);
 		return;
 	}
-#elif __3DS__
+#elif PLATFORM_KEYBOARD_SYSTEM
 	if (key == K_SELECT) {
-		IN_SwitchKeyboard();
+		IN_OpenOSKeyboard();
 		return;
 	}
 #endif
@@ -227,7 +230,7 @@ void Key_Console (int key)
 		}
 	}
 
-	if (key == K_LEFTARROW) {
+	if (key == '\b' || key == K_LEFTARROW) {
 		if (key_linepos > 1)
 			key_linepos--;
 		return;
@@ -725,7 +728,7 @@ void Key_Event (int key, qboolean down)
 	keydown[key] = down;
 	lastkey = key;
 
-#ifdef PLATFORM_USES_OSK
+#ifdef PLATFORM_KEYBOARD_OSK
 	if (Con_isSetOSKActive() && down)  {
 		Menu_OSK_Key (key);
 		

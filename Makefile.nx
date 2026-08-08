@@ -27,7 +27,7 @@ CFLAGS	:=	-g -Wall -Wdouble-promotion -std=gnu99 -O3 \
 			$(ARCH) $(DEFINES) `$(PREFIX)pkg-config --cflags SDL2_mixer`
 
 CFLAGS	+=	$(INCLUDE) -DARM11 -D__SWITCH__ -DGLQUAKE -DPLATFORM_DIRECTORY="nx" -DPLATFORM_RENDERER="gl" \
-			-DMAX_AI_COUNT=24 -DPLATFORM_CONFIRM_FLIPPED
+			-DMAX_AI_COUNT=24 -DPLATFORM_CONFIRM_FLIPPED +DPLATFORM_KEYBOARD_SYSTEM
 
 ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror
@@ -128,7 +128,7 @@ COMMON_OBJS =	system.o \
 				snd_mem.c \
 				images.c \
 				platform/nx/snd_nx.c \
-				platform/nx/in_nx.c \
+				input.c \
 				platform/nx/music_sdl.c \
 				snd_music.c \
 				platform/nx/gl/gl.c \

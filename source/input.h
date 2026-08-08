@@ -29,13 +29,6 @@ void IN_Commands (void);
 void IN_Move (usercmd_t *cmd);
 // add additional movement on top of the keyboard move cmd
 
-void IN_ClearStates (void);
-// restores all button and position states to defaults
-
-#if defined(__3DS__) || defined(__SWITCH__)
-void IN_SwitchKeyboard (void);
-#endif // __3DS__, __SWITCH__
-
-#ifdef __WII__
-void Wiimote_Rumble (int low_frequency, int high_frequency, int duration);
-#endif // __WII__
+#ifdef PLATFORM_KEYBOARD_SYSTEM
+void IN_OpenOSKeyboard (void);
+#endif

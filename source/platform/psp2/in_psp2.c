@@ -62,25 +62,6 @@ void IN_Init (void)
   sceMotionStartSampling();
 }
 
-void IN_ResetInputs(void)
-{
-	// Set default PSVITA controls
-	Cbuf_AddText("unbindall\n");
-	Cbuf_AddText("bind BOTTOMFACE +jump\n"); // Cross
-	Cbuf_AddText("bind LEFTFACE +reload\n"); // Square
-	Cbuf_AddText("bind RIGHTFACE \"impulse 12\"\n"); // Circle
-	Cbuf_AddText("bind TOPFACE \"impulse 10\"\n"); // Triangle
-	Cbuf_AddText("bind LTRIGGER +aim\n"); // Left Trigger
-	Cbuf_AddText("bind RTRIGGER +attack\n"); // Right Trigger
-	Cbuf_AddText("bind UPARROW +forward\n"); // Up
-	Cbuf_AddText("bind DOWNARROW +back\n"); // Down
-	Cbuf_AddText("bind LEFTARROW +moveleft\n"); // Left
-	Cbuf_AddText("bind RIGHTARROW +moveright\n"); // Right
-	//Cbuf_AddText("bind TOUCH +showscores\n"); // Touchscreen
-	//Cbuf_AddText("bind SELECT +showscores\n"); // Touchscreen
-	Cbuf_AddText("sensitivity 2.5\n"); // Right Analog Sensitivity
-}
-
 void IN_Shutdown (void)
 {
 }
@@ -108,25 +89,25 @@ void IN_StopRumble (void)
 	rumble_tick = 0;
 }
 
-void IN_RescaleAnalog(int *x, int *y, int dead) {
-	//radial and scaled deadzone
-	//http://www.third-helix.com/2013/04/12/doing-thumbstick-dead-zones-right.html
+// void IN_RescaleAnalog(int *x, int *y, int dead) {
+// 	//radial and scaled deadzone
+// 	//http://www.third-helix.com/2013/04/12/doing-thumbstick-dead-zones-right.html
 
-	float analogX = (float) *x;
-	float analogY = (float) *y;
-	float deadZone = (float) dead;
-	float maximum = 128.0f;
-	float magnitude = sqrt(analogX * analogX + analogY * analogY);
-	if (magnitude >= deadZone)
-	{
-		float scalingFactor = maximum / magnitude * (magnitude - deadZone) / (maximum - deadZone);
-		*x = (int) (analogX * scalingFactor);
-		*y = (int) (analogY * scalingFactor);
-	} else {
-		*x = 0;
-		*y = 0;
-	}
-}
+// 	float analogX = (float) *x;
+// 	float analogY = (float) *y;
+// 	float deadZone = (float) dead;
+// 	float maximum = 128.0f;
+// 	float magnitude = sqrt(analogX * analogX + analogY * analogY);
+// 	if (magnitude >= deadZone)
+// 	{
+// 		float scalingFactor = maximum / magnitude * (magnitude - deadZone) / (maximum - deadZone);
+// 		*x = (int) (analogX * scalingFactor);
+// 		*y = (int) (analogY * scalingFactor);
+// 	} else {
+// 		*x = 0;
+// 		*y = 0;
+// 	}
+// }
 
 void IN_Move (usercmd_t *cmd)
 {
@@ -155,7 +136,7 @@ void IN_Move (usercmd_t *cmd)
 	else cmd->sidemove += x_mov;
 
 	// Right analog support for camera movement
-	IN_RescaleAnalog(&right_x, &right_y, 30);
+	//IN_RescaleAnalog(&right_x, &right_y, 30);
 	float x_cam = (right_x * sensitivity.value) * 0.008;
 	float y_cam = (right_y * sensitivity.value) * 0.008;
 	if (gl_xflip.value) cl.viewangles[YAW] += x_cam;

@@ -30,7 +30,9 @@ CFLAGS	:=	-g -Wall -Wdouble-promotion -std=gnu99 -O3 -mword-relocations \
 			-fomit-frame-pointer -ffunction-sections \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM11 -D__3DS__ -DGLQUAKE -DPLATFORM_DIRECTORY="ctr" -DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=18 -DPLATFORM_CONFIRM_FLIPPED
+CFLAGS	+=	$(INCLUDE) -DARM11 -D__3DS__ -DGLQUAKE -DPLATFORM_DIRECTORY="ctr" \
+			-DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=18 -DPLATFORM_CONFIRM_FLIPPED \
+			+DPLATFORM_KEYBOARD_SYSTEM -DPLATFORM_HAS_ONE_ANALOG_STICK
 
 ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror
@@ -132,7 +134,7 @@ COMMON_OBJS =	system.o \
 				snd_mem.c \
 				images.c \
 				platform/ctr/snd_ctr.c \
-				platform/ctr/in_ctr.c \
+				input.c \
 				platform/ctr/music.c \
 				snd_music.c \
 				platform/ctr/gl/gl_qmb.c \
