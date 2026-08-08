@@ -1,7 +1,13 @@
 TARGET		:= nzportable
-TITLE		:= NZPORTABL
+TITLE		:= NZZMBSPTB
+BUILD		:= build/psp2
+ELF			:= $(BUILD)/$(TARGET).elf
+VELF		:= $(BUILD)/$(TARGET).velf
+VPK			:= $(BUILD)/$(TARGET).vpk
+EBOOT		:= $(BUILD)/eboot.bin
+PARAM_SFO	:= $(BUILD)/param.sfo
+SCE_SYS		:= $(BUILD)/sce_sys
 GIT_VERSION := $(shell git describe --abbrev=6 --dirty --always --tags)
-SHADERS     := shaders
 
 LIBS = -lvitaGL -lvitashark -lSceShaccCgExt -ltaihen_stub -lvorbisfile -lvorbis -logg \
 	-lspeexdsp -lmpg123 -lScePspnetAdhoc_stub -lSceShaccCg_stub -lSceKernelDmacMgr_stub \
@@ -76,17 +82,17 @@ COMMON_OBJS =	\
 	source/render/r_light.o \
 	source/images.o \
 	source/platform/psp2/sys_psp2.o \
-	source/platform/psp2/vgl/vgl_fog.o \
-	source/platform/psp2/vgl/vgl_qmb.o \
-	source/platform/psp2/vgl/vgl_draw.o \
-	source/platform/psp2/vgl/vgl_mesh.o \
-	source/platform/psp2/vgl/vgl_model.o \
-	source/platform/psp2/vgl/vgl_rmain.o \
-	source/platform/psp2/vgl/vgl_rmisc.o \
-	source/platform/psp2/vgl/vgl_rsurf.o \
-	source/platform/psp2/vgl/vgl_screen.o \
-	source/platform/psp2/vgl/vgl_warp.o \
-	source/platform/psp2/vgl/vgl_fullbright.o \
+	source/platform/psp2/gl/gl_fog.o \
+	source/platform/psp2/gl/gl_decal.o \
+	source/platform/psp2/gl/gl_qmb.o \
+	source/platform/psp2/gl/gl_draw.o \
+	source/platform/psp2/gl/gl_mesh.o \
+	source/platform/psp2/gl/gl_model.o \
+	source/platform/psp2/gl/gl_rmain.o \
+	source/platform/psp2/gl/gl_rmisc.o \
+	source/platform/psp2/gl/gl_rsurf.o \
+	source/render/r_screen.o \
+	source/platform/psp2/gl/gl_warp.o \
 	source/platform/psp2/r_part.o \
 	source/platform/psp2/music.o \
 	source/snd_music.o \
@@ -100,18 +106,17 @@ COMMON_OBJS =	\
 	source/platform/psp2/net_psp2.o \
 	source/platform/psp2/net_adhoc_psp2.o \
 	source/platform/psp2/net_udp_psp2.o \
+	source/input.o \
 	source/platform/psp2/in_psp2.o \
-	source/platform/psp2/vgl/vgl_vidpsp2.o \
+	source/platform/psp2/gl/gl_vidpsp2.o \
 	source/platform/psp2/neon_mathfun.o \
 	source/crypter.o
 	
 CPPSOURCES	:= source/audiodec
 
-CFILES	:= $(COMMON_OBJS)
-CPPFILES   := $(foreach dir,$(CPPSOURCES), $(wildcard $(dir)/*.cpp))
-CGFILES  := $(foreach dir,$(SHADERS), $(wildcard $(dir)/*.cg))
-CGSHADERS  := $(CGFILES:.cg=.h)
-OBJS     := $(CFILES:.c=.o) $(CPPFILES:.cpp=.o)
+CPPFILES := $(foreach dir,$(CPPSOURCES),$(wildcard $(dir)/*.cpp))
+OBJS := $(addprefix $(BUILD)/,$(COMMON_OBJS)) \
+	$(patsubst %.cpp,$(BUILD)/%.o,$(CPPFILES))
 
 PREFIX  = arm-vita-eabi
 CC      = $(PREFIX)-gcc
@@ -120,8 +125,8 @@ CFLAGS  = -fsigned-char -Wl,-q -O3 -g -fno-optimize-sibling-calls \
 	-ffast-math -mtune=cortex-a9 -mfpu=neon \
 	-DGLQUAKE -DHAVE_OGGVORBIS -DHAVE_MPG123 -DHAVE_LIBSPEEXDSP \
 	-DUSE_AUDIO_RESAMPLER -DHAVE_STRLCAT -DGIT_VERSION=\"$(GIT_VERSION)\" \
-	-DPLATFORM_DIRECTORY="psp2" -DPLATFORM_RENDERER="vgl" -DMAX_AI_COUNT=24 \
-	-DENABLE_RAZOR_CAPTURE -D__PSP2__ -DPLATFORM_USES_OSK
+	-DPLATFORM_DIRECTORY="psp2" -DPLATFORM_RENDERER="gl" -DMAX_AI_COUNT=24 \
+	-DENABLE_RAZOR_CAPTURE -D__PSP2__ -DPLATFORM_KEYBOARD_OSK -DPLATFORM_INPUT_GAMEPAD
 
 ifeq ($(WERROR),1)
 CFLAGS 		+= -Werror
@@ -135,7 +140,8 @@ CXXFLAGS  = $(CFLAGS) -fno-exceptions -std=gnu++11 \
 			-Wno-write-strings -Wno-sign-compare -Wno-strict-aliasing
 ASFLAGS = $(CFLAGS)
 
-all: _build_info.h $(TARGET).vpk
+.PHONY: all clean
+all: _build_info.h $(VPK)
 
 _build_info.h:
 	rm -rf $(CURDIR)/source/_build_info.h
@@ -144,30 +150,43 @@ _build_info.h:
 	echo "#define BUILD_DATE \"$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")\"" >> $(CURDIR)/source/_build_info.h
 
 
-$(TARGET).vpk: $(TARGET).velf
-	mkdir -p build/sce_sys
-	vita-make-fself -c -s $< build/eboot.bin
-	vita-mksfoex -s TITLE_ID=$(TITLE) -d ATTRIBUTE2=12 "$(TARGET)" param.sfo
-	cp -f param.sfo build/sce_sys/param.sfo
-	vita-pack-vpk -s param.sfo -b build/eboot.bin "$(TARGET).vpk" \
-		-a source/platform/psp2/vgl/shaders=shaders \
-		-a build/sce_sys=sce_sys
+$(VPK): $(VELF)
+	@mkdir -p $(SCE_SYS)
+	vita-make-fself -c -s $< $(EBOOT)
+	vita-mksfoex -s TITLE_ID=$(TITLE) -d ATTRIBUTE2=12 "Nazi Zombies: Portable" $(PARAM_SFO)
+	cp -f $(PARAM_SFO) $(SCE_SYS)/param.sfo
+	vita-pack-vpk -s $(PARAM_SFO) -b $(EBOOT) $@ -a $(SCE_SYS)=sce_sys \
+	--add $(EBOOT)=nzp.bin \
+	--add source/platform/psp2/art/sce_sys/icon0.png=sce_sys/icon0.png \
+	--add source/platform/psp2/art/sce_sys/livearea/contents/bg.png=sce_sys/livearea/contents/bg.png \
+	--add source/platform/psp2/art/sce_sys/livearea/contents/startup.png=sce_sys/livearea/contents/startup.png \
+	--add source/platform/psp2/art/sce_sys/livearea/contents/template.xml=sce_sys/livearea/contents/template.xml \
+	build/psp2/nzportable.vpk
 
 %_f.h:
-	psp2cgc -profile sce_fp_psp2 $(@:_f.h=_f.cg) -Wperf -fastprecision -O3 -o build/$(@:_f.h=_f.gxp)
+	@mkdir -p $(BUILD)/$(@D)
+	psp2cgc -profile sce_fp_psp2 $(@:_f.h=_f.cg) -Wperf -fastprecision -O3 -o $(BUILD)/$(@:_f.h=_f.gxp)
 	
 %_v.h:
-	psp2cgc -profile sce_vp_psp2 $(@:_v.h=_v.cg) -Wperf -fastprecision -O3 -o build/$(@:_v.h=_v.gxp)
+	@mkdir -p $(BUILD)/$(@D)
+	psp2cgc -profile sce_vp_psp2 $(@:_v.h=_v.cg) -Wperf -fastprecision -O3 -o $(BUILD)/$(@:_v.h=_v.gxp)
 	
-shaders: $(CGSHADERS)
-	
-%.velf: %.elf
-	cp $< $<.unstripped.elf
+$(VELF): $(ELF)
+	cp $< $(BUILD)/$(TARGET).unstripped.elf
 	$(PREFIX)-strip -g $<
 	vita-elf-create $< $@
 
-$(TARGET).elf: $(OBJS)
+$(ELF): $(OBJS)
+	@mkdir -p $(@D)
 	$(CXX) $(GCCFLAGS) $(CXXFLAGS) $^ $(LIBS) -o $@
 
+$(BUILD)/%.o: %.c _build_info.h
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/%.o: %.cpp _build_info.h
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 clean:
-	@rm -rf $(TARGET).velf $(TARGET).elf $(OBJS) $(TARGET).elf.unstripped.elf $(TARGET).vpk build/eboot.bin build/sce_sys/param.sfo ./param.sfo
+	@rm -rf $(BUILD)

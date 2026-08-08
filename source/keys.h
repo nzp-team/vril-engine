@@ -49,6 +49,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define K_START         142
 #define K_SELECT 		143
 
+// Analog stick buttons
+#define K_LTHUMB        144
+#define K_RTHUMB        145
+
 // NSpire Extras
 #define K_CTRL          153
 #define K_SHIFT         155

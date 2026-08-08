@@ -29,13 +29,29 @@ void IN_Commands (void);
 void IN_Move (usercmd_t *cmd);
 // add additional movement on top of the keyboard move cmd
 
-void IN_ClearStates (void);
-// restores all button and position states to defaults
+#ifdef PLATFORM_INPUT_KBM
+void IN_SetMouseToRelative(bool relative);
+#endif
 
-#if defined(__3DS__) || defined(__SWITCH__)
-void IN_SwitchKeyboard (void);
-#endif // __3DS__, __SWITCH__
+#ifdef PLATFORM_INPUT_GAMEPAD
+typedef enum {
+	IN_STICK_LEFT,
+	IN_STICK_RIGHT
+} in_analog_stick_id_t;
 
-#ifdef __WII__
-void Wiimote_Rumble (int low_frequency, int high_frequency, int duration);
-#endif // __WII__
+typedef struct {
+	float x;
+	float y;
+} in_analog_stick_t;
+
+// Platform input backends normalize both axes to [-1, 1], with positive Y up.
+void IN_GetAnalogStick(in_analog_stick_id_t stick, in_analog_stick_t *value);
+void IN_PlatformInit(void);
+void IN_PlatformShutdown(void);
+void IN_PlatformCommands(void);
+void IN_PlatformMove(usercmd_t *cmd);
+#endif
+
+#ifdef PLATFORM_KEYBOARD_SYSTEM
+void IN_OpenOSKeyboard (void);
+#endif

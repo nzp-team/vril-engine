@@ -234,7 +234,7 @@ void Sys_DefaultConfig(void)
 	//Cbuf_AddText ("lookspring \"0.000000\"\n");
 }
 
-void Sys_SetKeys(u32 keys, u32 state){
+void Sys_SetKeys(u64 keys, qboolean state){
 	if( keys & HidNpadButton_Minus)
 		Key_Event(K_SELECT, state);
 	if( keys & HidNpadButton_Plus)
@@ -263,14 +263,18 @@ void Sys_SetKeys(u32 keys, u32 state){
 		Key_Event(K_ZLTRIGGER, state);
 	if( keys & HidNpadButton_ZR)
 		Key_Event(K_ZRTRIGGER, state);
+	if( keys & HidNpadButton_StickL)
+		Key_Event(K_LTHUMB, state);
+	if( keys & HidNpadButton_StickR)
+		Key_Event(K_RTHUMB, state);
 }
 
 void Sys_SendKeyEvents (void)
 {
 	padUpdate(&pad);
 
-	u32 kDown = padGetButtonsDown(&pad);
-	u32 kUp = padGetButtonsUp(&pad);
+	u64 kDown = padGetButtonsDown(&pad);
+	u64 kUp = padGetButtonsUp(&pad);
 
 	if(kDown)
 		Sys_SetKeys(kDown, true);

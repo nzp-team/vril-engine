@@ -937,7 +937,7 @@ void Menu_DrawCreditContributor (int order, int sub_order, char *header)
 	Menu_DrawString(x_pos, y_pos, header, 255, 255, 255, 255, vid.scale, 0);
 }
 
-#ifdef PLATFORM_USES_OSK
+#ifdef PLATFORM_KEYBOARD_OSK
 //=============================================================================
 /* OSK IMPLEMENTATION */
 #define MAX_Y 8

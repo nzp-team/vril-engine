@@ -9,7 +9,9 @@ PKG_CONFIG ?= pkg-config
 BUILD ?= build/sdl
 TARGET ?= $(BUILD)/nzportable
 DATA_DIR ?= build/data
-CPPFLAGS := -Isource -I$(BUILD) -DGLQUAKE -DPLATFORM_SDL -DPLATFORM_CONFIRM_IS_ENTER -DGL_SILENCE_DEPRECATION -DPLATFORM_DIRECTORY=sdl -DPLATFORM_RENDERER=gl -DMAX_AI_COUNT=24
+CPPFLAGS := -Isource -I$(BUILD) -DGLQUAKE -DPLATFORM_SDL -DPLATFORM_CONFIRM_IS_ENTER \
+			-DGL_SILENCE_DEPRECATION -DPLATFORM_DIRECTORY=sdl -DPLATFORM_RENDERER=gl \
+			-DMAX_AI_COUNT=24 -DPLATFORM_INPUT_KBM
 CFLAGS ?= -O2 -g
 CFLAGS += -std=gnu99 -Wall -Wno-unused-variable -Wno-unused-but-set-variable $(shell $(PKG_CONFIG) --cflags sdl2)
 ifneq ($(findstring clang,$(shell $(CC) --version)),)

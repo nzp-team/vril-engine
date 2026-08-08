@@ -145,40 +145,20 @@ jobs:
   Compile-VPK:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
+    container:
+      image: vitasdk/vitasdk
     steps:
       - uses: actions/checkout@v4
       - name: Install Packages
         run: |
-          sudo apt-get update 
-          sudo apt-get install -y build-essential curl git cmake python3
+          apk add git
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-      - name: Setup latest VitaSDK
-        run: |
-          git clone https://github.com/vitasdk/vdpm
-          cd vdpm
-          export VITASDK=$HOME/vitasdk
-          export PATH=$VITASDK/bin:$PATH
-          ./bootstrap-vitasdk.sh
-          ./install-all.sh
-          echo "VITASDK=$HOME/vitasdk" >> $GITHUB_ENV
-          echo "$HOME/vitasdk/bin" >> $GITHUB_PATH
-      # Clone and rebuilt vitaGL with neccessary flags
-      # Clone the commit we want to use
-      # in this case it's the latest as of this commit
-      - name: Clone vitaGL
+      - name: Setup latest vitaGL
         run: |
           git clone https://github.com/Rinnegatamante/vitaGL.git
-      # Inject flag
-      - name: Inject flags into vitaGL Makefile
-        run: |
           cd vitaGL
-          git checkout a1e3bde
-          sed -i 's/^CFLAGS[[:space:]]*= /&-DENABLE_LEGACY_PIPELINE=1 -DHAVE_FFP_SHADER_SUPPORT=1 -DSKIP_SPLASHSCREEN=1 /' Makefile
-      # Build vitaGL
-      - name: Build vitaGL with required flags
-        run: |
-          cd vitaGL
-          make clean
+          git checkout 6e7fe40
+          make MATH_SPEEDHACK=1 PRIMITIVES_SPEEDHACK=1 HAVE_FFP_SHADER_SUPPORT=1 DISABLE_FFP_MULTITEXTURE=1 HAVE_WVP_ON_GPU=1 NO_TILE_CLIPPER=1 NO_SPLASHSCREEN=1 -j$(nproc)
           make install
       - name: Build
         working-directory: ./
@@ -188,7 +168,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: psp2-nzp-vpk
-          path: ./nzportable.vpk
+          path: ./build/psp2/nzportable.vpk
   Compile-NRO:
       if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
       runs-on: ubuntu-latest

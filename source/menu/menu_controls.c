@@ -28,14 +28,8 @@ char 			*anub_string;
 
 cvar_t			global_sensitivity;
 
-qboolean		has_anub = false;
-
 extern cvar_t 	in_aimassist;
-#ifdef __PSP__
-extern cvar_t	in_sensitivity;
-#else
 extern cvar_t	sensitivity;
-#endif // __PSP__
 extern cvar_t	in_acceleration;
 extern cvar_t	in_tolerance;
 extern cvar_t	in_anub_mode;
@@ -50,25 +44,13 @@ void Menu_Controls_Set (void)
 {
 	Menu_ResetMenuButtons();
 
-#ifdef __PSP__
-	has_anub = true;
-#elif __3DS__
-	if (circlepadpro_flag || new3ds_flag) {
-		has_anub = true;
-	}
-#endif
-
     m_previous_state = m_configuration;
 	m_state = m_controls;
 }
 
 void Menu_Controls_SetStrings (void)
 {
-#ifdef __PSP__
-	global_sensitivity = in_sensitivity;
-#else
 	global_sensitivity = sensitivity;
-#endif
 
 	if((int)in_aimassist.value == 1) {
 		aimassist_string = "ENABLED";
@@ -82,13 +64,13 @@ void Menu_Controls_SetStrings (void)
 		invert_string = "DISABLED";
 	}
 
-	if (has_anub) {
-		if((int)in_anub_mode.value == 1) {
-			anub_string = "MOVE";
-		} else {
-			anub_string = "LOOK";
-		}
+#ifdef PLATFORM_HAS_ONE_ANALOG_STICK
+	if((int)in_anub_mode.value == 1) {
+		anub_string = "MOVE";
+	} else {
+		anub_string = "LOOK";
 	}
+#endif
 }
 
 void Menu_Controls_ApplyAimAssist (void)
@@ -117,6 +99,7 @@ void Menu_Controls_ApplyLookInversion (void)
 
 void Menu_Controls_ApplyAnubMode (void)
 {
+#ifdef PLATFORM_HAS_ONE_ANALOG_STICK
 	float current_anubmode = in_anub_mode.value;
 
     current_anubmode += 1;
@@ -125,6 +108,7 @@ void Menu_Controls_ApplyAnubMode (void)
     }
 
     Cvar_SetValue ("in_anub_mode", current_anubmode);
+#endif
 }
 
 void Menu_Controls_ApplySettings (void)
@@ -170,15 +154,15 @@ void Menu_Controls_Draw (void)
 	Menu_DrawButton (controls_buttons++, controls_index++, "INVERT LOOK", "Invert Y-Axis Camera Input.", Menu_Controls_ApplyLookInversion);
 	Menu_DrawOptionButton (controls_buttons-1, invert_string);
 
-	if (has_anub) {
-		// Anub tolerance
-		Menu_DrawButton (controls_buttons++, controls_index++, "A-NUB TOLERANCE", "Change A-Nub Tolerance.", NULL);
-		Menu_DrawOptionSlider (controls_buttons-1, controls_index-1, 0, 1, in_tolerance, "tolerance", false, true, 0.25f);
+#ifdef PLATFORM_HAS_ONE_ANALOG_STICK
+	// Anub tolerance
+	Menu_DrawButton (controls_buttons++, controls_index++, "A-NUB TOLERANCE", "Change A-Nub Tolerance.", NULL);
+	Menu_DrawOptionSlider (controls_buttons-1, controls_index-1, 0, 1, in_tolerance, "tolerance", false, true, 0.25f);
 
-		// Anub-mode (look/move)
-		Menu_DrawButton (controls_buttons++, controls_index++, "A-NUB MODE", "Toggle between Look and Move A-Nub Options.", Menu_Controls_ApplyAnubMode);
-		Menu_DrawOptionButton (controls_buttons-1, anub_string);
-	}
+	// Anub-mode (look/move)
+	Menu_DrawButton (controls_buttons++, controls_index++, "A-NUB MODE", "Toggle between Look and Move A-Nub Options.", Menu_Controls_ApplyAnubMode);
+	Menu_DrawOptionButton (controls_buttons-1, anub_string);
+#endif
 
 	// Bindings
 	Menu_DrawButton (controls_buttons++, controls_index++, "BINDINGS", "Change Input Bindings.", Menu_Bindings_Set);

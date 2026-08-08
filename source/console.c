@@ -70,7 +70,7 @@ extern void M_Menu_Main_f (void);
 char debuglogfile[MAXGAMEDIRLEN + 1];
 
 
-#ifdef PLATFORM_USES_OSK
+#ifdef PLATFORM_KEYBOARD_OSK
 qboolean scr_osk_active = false;
 
 void Con_SetOSKActive(qboolean active) 
@@ -88,7 +88,7 @@ void Con_DrawOSK(void) {
 		Menu_OSK_Draw();
 	}
 }
-#endif // PLATFORM_USES_OSK
+#endif // PLATFORM_KEYBOARD_OSK
 
 qboolean console_enabled;
 /*
@@ -111,7 +111,7 @@ void Con_ToggleConsole_f (void)
 		else
 		{
 			console_enabled = false;
-#ifdef PLATFORM_USES_OSK
+#ifdef PLATFORM_KEYBOARD_OSK
 			scr_osk_active = false;
 #endif
 			key_dest = key_menu;
@@ -667,7 +667,7 @@ void Con_DrawConsole (int lines, qboolean drawinput, float scale)
 		Con_DrawInput (scale);
 #endif // __WII__
 
-#ifdef PLATFORM_USES_OSK
+#ifdef PLATFORM_KEYBOARD_OSK
 	Con_DrawOSK();	
 #endif
 }
