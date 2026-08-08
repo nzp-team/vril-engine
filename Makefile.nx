@@ -134,7 +134,6 @@ COMMON_OBJS =	system.o \
 				images.c \
 				platform/nx/snd_nx.c \
 				input.c \
-				platform/nx/in_nx.c \
 				platform/nx/music_sdl.c \
 				snd_music.c \
 				platform/nx/gl/gl.c \

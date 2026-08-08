@@ -88,7 +88,7 @@ void Con_DrawOSK(void) {
 		Menu_OSK_Draw();
 	}
 }
-#endif // PLATFORM_KEYBOARD_OSK
+#endif // PLATFORM_USES_OSK
 
 qboolean console_enabled;
 static keydest_t console_previous_key_dest;
