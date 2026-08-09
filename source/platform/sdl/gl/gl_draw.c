@@ -897,11 +897,11 @@ void Draw_Crosshair (void)
 
 	float col;
 
-	if (sv_player->v.facingenemy == 1) {
-		col = 0;
-	} else {
-		col = 255;
-	}
+	// if (sv_player->v.facingenemy == 1) {
+	// 	col = 0;
+	// } else {
+	// 	col = 255;
+	// }
 
 	// crosshair moving
 	if (crosshair_spread_time > sv.time && crosshair_spread_time)
@@ -933,11 +933,11 @@ void Draw_Crosshair (void)
 		if (CrossHairMaxSpread() < crosshair_offset || croshhairmoving)
 			crosshair_offset = CrossHairMaxSpread();
 
-		if (sv_player->v.view_ofs[2] == 8) {
-			crosshair_offset *= 0.80f;
-		} else if (sv_player->v.view_ofs[2] == -10) {
-			crosshair_offset *= 0.65f;
-		}
+		// if (sv_player->v.view_ofs[2] == 8) {
+		// 	crosshair_offset *= 0.80f;
+		// } else if (sv_player->v.view_ofs[2] == -10) {
+		// 	crosshair_offset *= 0.65f;
+		// }
 
 		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5f;
 
