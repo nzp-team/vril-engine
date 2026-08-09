@@ -192,13 +192,14 @@ When the client is taking a long time to load stuff, send keepalive messages
 so the server doesn't disconnect.
 ==================
 */
+static byte	net_olddata[NET_MAXMESSAGE];
 void CL_KeepaliveMessage (void)
 {
 	double	time;
 	static double lastmsg;//BLUBSFIX, this was a float
 	int		ret;
 	sizebuf_t	old;
-	byte		olddata[8192];
+	byte	*olddata = NULL;
 
 	if (sv.active)
 	{
@@ -212,6 +213,7 @@ void CL_KeepaliveMessage (void)
 	}
 
 // read messages from server, should just be nops
+	olddata = net_olddata;
 	old = net_message;
 #ifdef PSP_VFPU
 	memcpy_vfpu(olddata, net_message.data, net_message.cursize);
