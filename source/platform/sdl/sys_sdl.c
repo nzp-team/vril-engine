@@ -116,8 +116,8 @@ void Sys_CaptureScreenshot(void)
 
 void Sys_DefaultConfig(void)
 {
-	Cbuf_AddText("bind JOY1 +attack\n");
-	Cbuf_AddText("bind JOY2 +aim\n");
+	Cbuf_AddText("bind MOUSE1 +attack\n");
+	Cbuf_AddText("bind MOUSE2 +aim\n");
 	Cbuf_AddText("bind w +forward\n");
 	Cbuf_AddText("bind s +back\n");
 	Cbuf_AddText("bind a +moveleft\n");
@@ -134,7 +134,7 @@ static int SDL_KeyToQuake(SDL_Keycode key)
 	switch (key) {
 	case SDLK_UP: return K_UPARROW; case SDLK_DOWN: return K_DOWNARROW;
 	case SDLK_LEFT: return K_LEFTARROW; case SDLK_RIGHT: return K_RIGHTARROW;
-	case SDLK_ESCAPE: return K_ESCAPE; case SDLK_RETURN: return K_ENTER;
+	case SDLK_ESCAPE: return K_ESCAPE; case SDLK_RETURN: case SDLK_KP_ENTER: return K_ENTER;
 	case SDLK_TAB: return K_TAB; case SDLK_BACKSPACE: return '\b';
 	case SDLK_DELETE: return K_DELETE;
 	case SDLK_F1: return K_AUX1; case SDLK_F2: return K_AUX2; case SDLK_F3: return K_AUX3;
@@ -150,7 +150,7 @@ static int SDL_KeyToQuake(SDL_Keycode key)
 
 static int SDL_MouseToQuake(Uint8 button)
 {
-	switch (button) { case SDL_BUTTON_LEFT: return K_JOY1; case SDL_BUTTON_RIGHT: return K_JOY2; case SDL_BUTTON_MIDDLE: return K_JOY3; default: return 0; }
+	switch (button) { case SDL_BUTTON_LEFT: return K_MOUSE1; case SDL_BUTTON_RIGHT: return K_MOUSE2; case SDL_BUTTON_MIDDLE: return K_MOUSE3; default: return 0; }
 }
 
 void Sys_SendKeyEvents(void)

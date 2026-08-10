@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	RETURN_EDICT(e) (((int *)pr_globals)[OFS_RETURN] = EDICT_TO_PROG(e))
 
 extern cvar_t sv_maxai;
+extern cvar_t sv_spoofmonth;
 
 /*
 ===============================================================================
@@ -523,7 +524,7 @@ void PF_random (void)
 {
 	float		num;
 
-	num = (rand ()&0x7fff) / ((float)0x7fff);
+	num = (rand ()&0x7fff) / 32768.0f;
 
 	G_FLOAT(OFS_RETURN) = num;
 }
@@ -1290,37 +1291,24 @@ string strcat (string, string)
 void PF_strcat (void)
 {
 	char *s1, *s2;
-	int		maxlen;	// 2001-10-25 Enhanced temp string handling by Maddes
+	char	result[PR_MAX_TEMPSTRING];
+	size_t	s1len, s2len;
 
 	s1 = G_STRING(OFS_PARM0);
 	s2 = PF_VarString(1);
 
-// 2001-10-25 Enhanced temp string handling by Maddes  start
-	pr_string_temp[0] = 0;
-	if (strlen(s1) < PR_MAX_TEMPSTRING)
-	{
-		strcpy(pr_string_temp, s1);
-	}
-	else
-	{
-		strncpy(pr_string_temp, s1, PR_MAX_TEMPSTRING);
-		pr_string_temp[PR_MAX_TEMPSTRING-1] = 0;
-	}
+	s1len = strlen(s1);
+	if (s1len >= sizeof(result))
+		s1len = sizeof(result) - 1;
+	memcpy(result, s1, s1len);
 
-	maxlen = PR_MAX_TEMPSTRING - strlen(pr_string_temp) - 1;	// -1 is EndOfString
-	if (maxlen > 0)
-	{
-		if (maxlen > (int)strlen(s2))
-		{
-			strcat (pr_string_temp, s2);
-		}
-		else
-		{
-			strncat (pr_string_temp, s2, maxlen);
-			pr_string_temp[PR_MAX_TEMPSTRING-1] = 0;
-		}
-	}
-// 2001-10-25 Enhanced temp string handling by Maddes  end
+	s2len = strlen(s2);
+	if (s2len > sizeof(result) - s1len - 1)
+		s2len = sizeof(result) - s1len - 1;
+	memcpy(result + s1len, s2, s2len);
+	result[s1len + s2len] = 0;
+
+	memcpy(pr_string_temp, result, s1len + s2len + 1);
 
 	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
 }
@@ -3437,12 +3425,48 @@ void PF_SetDoubleTapVersion(void)
 
 void PF_SetClientMode(void)
 {
-	// int 		state;
+	int 		state;
 
-	// state = G_FLOAT(OFS_PARM1);
+	state = G_FLOAT(OFS_PARM0);
 
-	// MSG_WriteByte(&sv.reliable_datagram, svc_gamemode);
-	// MSG_WriteByte(&sv.reliable_datagram, state);
+	MSG_WriteByte(&sv.reliable_datagram, svc_gamemode);
+	MSG_WriteByte(&sv.reliable_datagram, state);
+}
+
+void PF_SetRoundColor(void)
+{
+	float *color;
+
+	color = G_VECTOR(OFS_PARM0);
+	Con_Printf("color: %f %f %f\n", color[0], color[1], color[2]);
+	MSG_WriteByte(&sv.reliable_datagram, svc_roundcolor);
+	MSG_WriteCoord(&sv.reliable_datagram, color[0] * 4.0f);
+	MSG_WriteCoord(&sv.reliable_datagram, color[1] * 4.0f);
+	MSG_WriteCoord(&sv.reliable_datagram, color[2] * 4.0f);
+}
+
+void PF_GetMonthOfYear(void)
+{
+	if (sv_spoofmonth.value) {
+		G_FLOAT(OFS_RETURN) = sv_spoofmonth.value;
+		return;
+	}
+
+	// Get month using time.h
+	time_t raw_time = time(NULL);
+	struct tm *time_info = localtime(&raw_time);
+	int current_month = time_info->tm_mon + 1;
+	G_FLOAT(OFS_RETURN) = current_month;
+}
+
+void PF_SetPerkOrientation(void)
+{
+	int 		orientation;
+
+	orientation = G_FLOAT(OFS_PARM0);
+
+	MSG_WriteByte(&sv.reliable_datagram, svc_perkorientation);
+	MSG_WriteByte(&sv.reliable_datagram, orientation);
 }
 
 /*
@@ -3958,7 +3982,11 @@ ebfs_builtin_t pr_ebfs_builtins[] =
   { 507, "nzp_screenflash", PF_ScreenFlash },
   { 508, "nzp_lockviewmodel", PF_LockViewmodel },
   { 509, "nzp_rumble", PF_Rumble },
-  { 510, "nzp_setclientmode", PF_SetClientMode }
+  { 510, "nzp_setclientmode", PF_SetClientMode },
+  { 511, "nzp_setroundcolor", PF_SetRoundColor },
+  { 512, "nzp_getmonthofyear", PF_GetMonthOfYear },
+  { 513, "nzp_setperkorientation", PF_SetPerkOrientation }
+
 
 // 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  end
 

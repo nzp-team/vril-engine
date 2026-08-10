@@ -513,6 +513,21 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
+		case 21: // Magic disabled
+			strcpy(s, "...\n");
+			strcpy(c, "");
+			button_pic_x = 100;
+			break;
+		case 22: // Jugger-Nog (NIGHTMARE)
+			strcpy(s, "It doesn't seem to be working..\n");
+			strcpy(c, "");
+			button_pic_x = 101;
+			break;
+		case 23: // Tactical Nuke (Gun Game)
+			strcpy(s, va("Hold  %s  to Drop the Nuke\n", GetUseButtonL()));
+			strcpy(c, "");
+			button_pic_x = getTextWidth("Hold ", 1);
+			break;
 		default:
 			Con_Printf ("No type defined in engine for useprint\n");
 			break;
@@ -537,10 +552,13 @@ void SCR_DrawUseString (void)
 	y = 182 * scale;
     x = (vid.width - getTextWidth(scr_usestring, scale))/2;
 
-	Draw_ColoredStringCentered(y, scr_usestring, 255, 255, 255, 255, scale);
+	if (button_pic_x == 101)
+		Draw_ColoredStringCentered(y, scr_usestring, 255, 0, 0, 255, scale);
+	else
+		Draw_ColoredStringCentered(y, scr_usestring, 255, 255, 255, 255, scale);
 	Draw_ColoredStringCentered(y + (10 * scale), scr_usestring2, 255, 255, 255, 255, scale);
 
-	if (button_pic_x != 100)
+	if (button_pic_x < 100)
 		Draw_StretchPic(x + getTextWidth("Hold ", scale), y - (4 * scale),
 			GetButtonIcon("+use"), 16 * scale, 16 * scale);
 }
