@@ -3438,7 +3438,6 @@ void PF_SetRoundColor(void)
 	float *color;
 
 	color = G_VECTOR(OFS_PARM0);
-	Con_Printf("color: %f %f %f\n", color[0], color[1], color[2]);
 	MSG_WriteByte(&sv.reliable_datagram, svc_roundcolor);
 	MSG_WriteCoord(&sv.reliable_datagram, color[0] * 4.0f);
 	MSG_WriteCoord(&sv.reliable_datagram, color[1] * 4.0f);
