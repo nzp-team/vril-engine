@@ -1497,7 +1497,7 @@ void HUD_Powerups (void)
 	scale = 26 * vid.scale;
 
 	if (perk_orientation == HUD_PERK_ORI_CW)
-		y -= (10 * vid.height);
+		y -= (10 * vid.scale);
 
 	// horrible way to offset check :)))))))))))))))))) :DDDDDDDD XOXO
 
