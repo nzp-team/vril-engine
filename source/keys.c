@@ -96,6 +96,10 @@ keyname_t keynames[] =
 	{"TOUCH3", K_TOUCHACTION3},
 	{"TOUCH4", K_TOUCHACTION4},
 	{"TOUCH5", K_TOUCHACTION5},
+
+	{"MOUSE1", K_MOUSE1},
+	{"MOUSE2", K_MOUSE2},
+	{"MOUSE3", K_MOUSE3},
 	
 	{"SPACE", K_SPACE},
 
@@ -659,6 +663,7 @@ void Key_Init (void)
 	consolekeys[K_SHIFT] = true;
 	consolekeys[K_VAR] = true;
 	consolekeys[K_TAB] = true;
+	consolekeys['\b'] = true;
 	consolekeys[K_SPACE] = true;
 	consolekeys[K_DELETE] = true;
 
@@ -668,6 +673,9 @@ void Key_Init (void)
 	consolekeys[K_TOUCHACTION3] = true;
 	consolekeys[K_TOUCHACTION4] = true;
 	consolekeys[K_TOUCHACTION5] = true;
+	consolekeys[K_MOUSE1] = true;
+	consolekeys[K_MOUSE2] = true;
+	consolekeys[K_MOUSE3] = true;
 
 	consolekeys[K_JOY1] = true;
 	consolekeys[K_JOY2] = true;
@@ -869,6 +877,9 @@ void Key_Event (int key, qboolean down)
 	if (!down) {
 		return;		// other systems only care about key down events
 	}
+
+	if (keydown[K_SHIFT])
+		key = keyshift[key];
 
 	switch (key_dest)
 	{

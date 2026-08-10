@@ -53,6 +53,7 @@ extern double nameprint_time;
 
 extern int perk_order[8];
 extern int current_perk_order;
+extern int perk_orientation;
 extern double Hitmark_Time, crosshair_spread_time;
 extern float cur_spread;
 extern float crosshair_offset_step;
@@ -63,7 +64,12 @@ extern int screenflash_type;
 extern double screenflash_worktime;
 extern double screenflash_starttime;
 
+extern vec3_t round_color_target;
+
 void HUD_Parse_Achievement (int ach);
+
+#define HUD_PERK_ORI_DEFAULT            0
+#define HUD_PERK_ORI_CW                 1
 
 //
 // Types of screen-flashes.

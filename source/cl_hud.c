@@ -97,6 +97,8 @@ double hud_maxammo_endtime;
 
 int perk_order[8];
 int current_perk_order;
+int perk_orientation;
+
 double Hitmark_Time, crosshair_spread_time;
 float cur_spread;
 float crosshair_offset_step; 
@@ -104,6 +106,7 @@ float crosshair_offset_step;
 char player_name[16];
 
 extern cvar_t waypoint_mode;
+extern cvar_t sv_gamemode;
 
 int screenflash_color;
 double screenflash_duration;
@@ -118,6 +121,8 @@ int point_change_interval_neg;
 int alphabling = 0;
 float round_center_x;
 float round_center_y;
+
+vec3_t 	round_color_target;
 
 typedef struct
 {
@@ -296,10 +301,15 @@ void HUD_NewMap (void)
 	perk_order[6] = 0;
 	perk_order[7] = 0;
 	cl.perks = 0;
+	perk_orientation = 0;
 	current_perk_order = 0;
 	crosshair_spread_time = 0;
 	crosshair_offset_step = 0;
 	cur_spread = 0;
+
+	round_color_target[0] = 107;
+	round_color_target[1] = 1;
+	round_color_target[2] = 0;
 }
 
 
@@ -654,6 +664,7 @@ HUD_GetWorldText
 #define GAMEMODE_HARDCORE       3
 #define GAMEMODE_WILDWEST       4
 #define GAMEMODE_STICKSNSTONES  5
+#define GAMEMODE_FESTIVE		6
 
 void HUD_GameModeText(int alpha)
 {
@@ -902,7 +913,7 @@ void HUD_Rounds (void)
 
 		Draw_ColoredStretchPic ((vid.width - (11  * vid.scale))/2, 
 		(vid.height - (48 * vid.scale))/2, sb_round[0], 
-		11 * vid.scale, 48 * vid.scale, 107, 1, 0, alphabling);
+		11 * vid.scale, 48 * vid.scale, round_color_target[0], round_color_target[1], round_color_target[2], alphabling);
 
 		alphabling = alphabling + 15;
 
@@ -914,7 +925,7 @@ void HUD_Rounds (void)
 	else if (cl.stats[STAT_ROUNDCHANGE] == 2)//this is the rounds icon moving from middle
 	{
 		Draw_ColoredStretchPic(round_center_x, round_center_y, sb_round[0], 
-		11 * vid.scale, 48 * vid.scale, 107, 1, 0, 255);
+		11 * vid.scale, 48 * vid.scale, round_color_target[0], round_color_target[1], round_color_target[2], 255);
 		round_center_x = round_center_x - (229.0f/108.0f) - (0.2f * vid.scale);
 		round_center_y = round_center_y + (0.95f * vid.scale); // don't move y too quickly
 		if (round_center_x <= 5 * vid.scale)
@@ -926,9 +937,9 @@ void HUD_Rounds (void)
 	{
 		if (!color_shift_init)
 		{
-			color_shift[0] = 107;
-			color_shift[1] = 1;
-			color_shift[2] = 0;
+			color_shift[0] = round_color_target[0];
+			color_shift[1] = round_color_target[1];
+			color_shift[2] = round_color_target[2];
 			for (i = 0; i < 3; i++)
 			{
 				color_shift_end[i] = 255;
@@ -1208,9 +1219,9 @@ void HUD_Rounds (void)
 	{
 		if (!color_shift_init)
 		{
-			color_shift_end[0] = 107;
-			color_shift_end[1] = 1;
-			color_shift_end[2] = 0;
+			color_shift_end[0] = round_color_target[0];
+			color_shift_end[1] = round_color_target[1];
+			color_shift_end[2] = round_color_target[2];
 			for (i = 0; i < 3; i++)
 			{
 				color_shift[i] = 255;
@@ -1284,9 +1295,9 @@ void HUD_Rounds (void)
 	}
 	else
 	{
-		color_shift[0] = 107;
-		color_shift[1] = 1;
-		color_shift[2] = 0;
+		color_shift[0] = round_color_target[0];
+		color_shift[1] = round_color_target[1];
+		color_shift[2] = round_color_target[2];
 		color_shift_init = 0;
 		alphabling = 0;
 		if (cl.stats[STAT_ROUNDS] > 0 && cl.stats[STAT_ROUNDS] < 11)
@@ -1296,7 +1307,7 @@ void HUD_Rounds (void)
 				if (i == 4)
 				{
 					Draw_ColoredStretchPic (5 * vid.scale, vid.height - (48 * vid.scale) - 4, 
-					sb_round[4], 60 * vid.scale, 48 * vid.scale, 107, 1, 0, 255);
+					sb_round[4], 60 * vid.scale, 48 * vid.scale, round_color_target[0], round_color_target[1], round_color_target[2], 255);
 					savex = x_offset + 10 * vid.scale;
 					x_offset = x_offset + 10 * vid.scale;
 					continue;
@@ -1304,7 +1315,7 @@ void HUD_Rounds (void)
 				if (i == 9)
 				{
 					Draw_ColoredStretchPic (5 * vid.scale + savex, vid.height - (48 * vid.scale) - 4, 
-					sb_round[4], 60 * vid.scale, 48 * vid.scale, 107, 1, 0, 255);
+					sb_round[4], 60 * vid.scale, 48 * vid.scale, round_color_target[0], round_color_target[1], round_color_target[2], 255);
 					continue;
 				}
 				if (i > 4)
@@ -1313,7 +1324,7 @@ void HUD_Rounds (void)
 					icon_num = i;
 
 				Draw_ColoredStretchPic (5 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
-				sb_round[icon_num], 11 * vid.scale,48 * vid.scale, 107, 1, 0, 255);
+				sb_round[icon_num], 11 * vid.scale,48 * vid.scale, round_color_target[0], round_color_target[1], round_color_target[2], 255);
 
 				x_offset = x_offset + (11 * vid.scale) + 3;
 			}
@@ -1324,7 +1335,7 @@ void HUD_Rounds (void)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
 				Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
-				sb_round_num[num[2]], 32 * vid.scale, 48 * vid.scale, 107, 1, 0, 255);
+				sb_round_num[num[2]], 32 * vid.scale, 48 * vid.scale, round_color_target[0], round_color_target[1], round_color_target[2], 255);
 				x_offset = x_offset + (32 * vid.scale) - 8;
 			}
 			else
@@ -1333,7 +1344,7 @@ void HUD_Rounds (void)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
 				Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
-				sb_round_num[num[1]], 32 * vid.scale, 48 * vid.scale, 107, 1, 0, 255);
+				sb_round_num[num[1]], 32 * vid.scale, 48 * vid.scale, round_color_target[0], round_color_target[1], round_color_target[2], 255);
 				x_offset = x_offset + (32 * vid.scale) - 8;
 			}
 			else
@@ -1345,7 +1356,7 @@ void HUD_Rounds (void)
 				return;
 			
 			Draw_ColoredStretchPic (2 * vid.scale + x_offset, vid.height - (48 * vid.scale) - 4, 
-			sb_round_num[num[0]], 32 * vid.scale, 48 * vid.scale, 107, 1, 0, 255);
+			sb_round_num[num[0]], 32 * vid.scale, 48 * vid.scale, round_color_target[0], round_color_target[1], round_color_target[2], 255);
 			x_offset = x_offset + (32 * vid.scale) - 8;
 		}
 	}
@@ -1365,7 +1376,7 @@ HUD_Perks
 #define 	P_DEAD 		64
 #define 	P_MULE 		128
 
-void HUD_Perks (void)
+void HUD_DrawPerksDefault(void)
 {
 	int x, y, scale;
 
@@ -1415,6 +1426,63 @@ void HUD_Perks (void)
 	}
 }
 
+void HUD_DrawPerksCenter(void)
+{
+	int scale;
+	int gap;
+	int x, y;
+
+	scale = 14 * vid.scale;
+	gap = 2 * vid.scale;
+
+	// Double-Tap 2.0 specialty icon
+	int double_tap_icon;
+	if (doubletap_has_damage_buff)
+		double_tap_icon = doublepic2;
+	else
+		double_tap_icon = doublepic;
+
+	y = vid.height - scale - (2 * vid.scale);
+
+	int num_perks = 0;
+	for (int i = 0; i < 8; i++)
+	{
+		if (perk_order[i] != 0)
+			num_perks++;
+	}
+
+	int total_width = (num_perks * (scale + gap)) - gap;
+	x = (vid.width / 2) - (total_width / 2);
+
+	for (int i = 0; i < 8; i++)
+	{
+		if (!perk_order[i])
+			continue;
+
+		if (perk_order[i] == P_JUG) {Draw_StretchPic(x, y, jugpic, scale, scale);}
+		if (perk_order[i] == P_DOUBLE) {Draw_StretchPic(x, y, double_tap_icon, scale, scale);}
+		if (perk_order[i] == P_SPEED) {Draw_StretchPic(x, y, speedpic, scale, scale);}
+		if (perk_order[i] == P_REVIVE) {Draw_StretchPic(x, y, revivepic, scale, scale);}
+		if (perk_order[i] == P_FLOP) {Draw_StretchPic(x, y, floppic, scale, scale);}
+		if (perk_order[i] == P_STAMIN) {Draw_StretchPic(x, y, staminpic, scale, scale);}
+		if (perk_order[i] == P_DEAD) {Draw_StretchPic(x, y, deadpic, scale, scale);}
+		if (perk_order[i] == P_MULE) {Draw_StretchPic(x, y, mulepic, scale, scale);}
+		x += scale + gap;
+	}
+}
+
+void HUD_Perks (void)
+{
+	switch(perk_orientation) {
+		case HUD_PERK_ORI_CW:
+			HUD_DrawPerksCenter();
+			break;
+		default:
+			HUD_DrawPerksDefault();
+			break;
+	}
+}
+
 /*
 ===============
 HUD_Powerups
@@ -1423,9 +1491,13 @@ HUD_Powerups
 void HUD_Powerups (void)
 {
 	int count = 0;
+	int y = vid.height - (29 * vid.scale);
 	float scale;
 	
 	scale = 26 * vid.scale;
+
+	if (perk_orientation == HUD_PERK_ORI_CW)
+		y -= (10 * vid.scale);
 
 	// horrible way to offset check :)))))))))))))))))) :DDDDDDDD XOXO
 
@@ -1437,13 +1509,13 @@ void HUD_Powerups (void)
 
 	// both are avail draw fixed order
 	if (count == 2) {
-		Draw_StretchPic((vid.width/2.0f) - (27 * vid.scale), vid.height - (29 * vid.scale), x2pic, scale, scale);
-		Draw_StretchPic((vid.width/2.0f) + (3 * vid.scale), vid.height - (29 * vid.scale), instapic, scale, scale);
+		Draw_StretchPic((vid.width/2.0f) - (27 * vid.scale), y, x2pic, scale, scale);
+		Draw_StretchPic((vid.width/2.0f) + (3 * vid.scale), y, instapic, scale, scale);
 	} else {
 		if (cl.stats[STAT_X2])
-			Draw_StretchPic((vid.width/2.0f) - (13 * vid.scale), vid.height - (29 * vid.scale), x2pic, scale, scale);
+			Draw_StretchPic((vid.width/2.0f) - (13 * vid.scale), y, x2pic, scale, scale);
 		if(cl.stats[STAT_INSTA])
-			Draw_StretchPic ((vid.width/2.0f) - (13 * vid.scale), vid.height - (29 * vid.scale), instapic, scale, scale);
+			Draw_StretchPic ((vid.width/2.0f) - (13 * vid.scale), y, instapic, scale, scale);
 	}
 }
 
@@ -1836,6 +1908,18 @@ void HUD_Draw (void)
 		if (screenflash_duration > sv.time)
 			HUD_Screenflash();
 
+		return;
+	}
+
+	if (sv_gamemode.value == 3)
+	{
+		HUD_Blood();
+		HUD_Points();
+		HUD_Point_Change();
+
+		if (screenflash_duration > sv.time)
+			HUD_Screenflash();
+		
 		return;
 	}
 

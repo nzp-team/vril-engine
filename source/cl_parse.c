@@ -1239,6 +1239,14 @@ void CL_ParseServerMessage (void)
 		case svc_gamemode:
 			current_gamemode = MSG_ReadByte();
 			break;
+		case svc_roundcolor:
+			round_color_target[0] = MSG_ReadCoord();
+			round_color_target[1] = MSG_ReadCoord();
+			round_color_target[2] = MSG_ReadCoord();
+			break;
+		case svc_perkorientation:
+			perk_orientation = MSG_ReadByte();
+			break;
 		case svc_lockviewmodel:
 			lock_viewmodel = MSG_ReadByte();
 			break;
