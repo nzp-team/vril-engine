@@ -288,9 +288,11 @@ int GetButtonIcon (char *buttonname)
 	for (j=0 ; j<256 ; j++)
 	{
 		b = keybindings[j];
-		if (!b)
-			continue;
-		if (!strncmp (b, buttonname, l) )
+		if (!b || strncmp (b, buttonname, l))
+			b = dtbindings[j];
+		if (!b || strncmp (b, buttonname, l))
+			b = holdbindings[j];
+		if (b && !strncmp (b, buttonname, l) )
 		{
 			// naievil -- need to fix these
 			if (!strcmp(Key_KeynumToString(j), "UPARROW"))
