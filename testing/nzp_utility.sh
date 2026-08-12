@@ -50,5 +50,5 @@ function print_error
 function map_boot_arguments
 {
 	local map_name="${1}"
-	echo "+developer 1 +nosound 1 -condebug +show_fps 0 +host_framerate 0.05 +sys_testmode 1 +map ${map_name}"
+	echo "+developer 1 +nosound 1 -condebug +scr_showfps 0 +host_framerate 0.05 +sys_testmode 1 +map ${map_name}"
 }

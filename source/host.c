@@ -67,7 +67,6 @@ cvar_t	teamplay = {"teamplay","0",false,true};
 
 cvar_t	samelevel = {"samelevel","0"};
 
-cvar_t	show_fps = {"show_fps","0", true};	// set for running times - muff
 #ifndef __WII__
 cvar_t	cl_maxfps = {"cl_maxfps", "30", true}; // dr_mabuse1981: maxfps setting
 #endif // __WII__ creates a timing issue within Dolphin emu - and vsync is always on anyhow
@@ -235,7 +234,6 @@ void Host_InitLocal (void)
     Cvar_RegisterVariable (&show_bat); // Crow_bar battery info
 #endif // __PSP__
 
-	Cvar_RegisterVariable (&show_fps); // muff
 #ifndef __WII__
 	Cvar_RegisterVariable (&cl_maxfps); // dr_mabuse1981: maxfps setting
 #endif
