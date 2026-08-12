@@ -1430,7 +1430,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 				strcpy (netpath, cachepath);
 			}	
 
-			Sys_Printf ("FindFile: %s\n",netpath);
+			//Sys_Printf ("FindFile: %s\n",netpath);
 			com_filesize = Sys_FileOpenRead (netpath, &i);
 			if (handle)
 				*handle = i;
@@ -1444,7 +1444,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 		
 	}
 	
-	Sys_Printf ("FindFile: can't find %s\n", filename);
+	//Sys_Printf ("FindFile: can't find %s\n", filename);
 	
 	if (handle)
 		*handle = -1;
