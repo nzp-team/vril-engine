@@ -39,11 +39,19 @@ int			key_count;			// incremented every key event
 
 char		*keybindings[256];
 char		*dtbindings[256];
+char		*holdbindings[256];
 qboolean	consolekeys[256];	// if true, can't be rebound while in console
 qboolean	menubound[256];	// if true, can't be rebound while in menu
 int			keyshift[256];		// key to map to if shift held down in console
 int			key_repeats[256];	// if > 1, it is autorepeating
 qboolean	keydown[256];
+static double holdstart[256];
+static qboolean holdfired[256];
+static qboolean defernormal[256];
+
+#define HOLD_BIND_TIME 0.2
+
+extern float scr_usetime_off;
 
 #ifdef PLATFORM_KEYBOARD_OSK
 void Con_OSK_f (char *input, char *output, int outlen);
@@ -465,6 +473,30 @@ void Key_SetDTBinding (int keynum, char *binding)
 	dtbindings[keynum] = new;
 }
 
+
+/*
+===================
+Key_SetHoldBinding
+===================
+*/
+void Key_SetHoldBinding (int keynum, char *binding)
+{
+	char *new;
+	int l;
+
+	if (keynum == -1)
+		return;
+	if (holdbindings[keynum]) {
+		Z_Free (holdbindings[keynum]);
+		holdbindings[keynum] = NULL;
+	}
+	l = Q_strlen (binding);
+	new = Z_Malloc (l + 1);
+	Q_strcpy (new, binding);
+	new[l] = 0;
+	holdbindings[keynum] = new;
+}
+
 /*
 ===================
 Key_Unbind_f
@@ -580,6 +612,43 @@ void Key_Binddt_f (void)
 	Key_SetDTBinding (b, cmd);
 }
 
+
+/*
+===================
+Key_Bindhold_f
+===================
+*/
+static void Key_BindHold_f (void)
+{
+	int i, c, b;
+	char cmd[1024];
+
+	c = Cmd_Argc();
+	if (c != 2 && c != 3) {
+		Con_Printf ("bindhold <key> [command] : attach a command to a held key\n");
+		return;
+	}
+	b = Key_StringToKeynum (Cmd_Argv(1));
+	if (b == -1) {
+		Con_Printf ("\"%s\" isn't a valid key\n", Cmd_Argv(1));
+		return;
+	}
+	if (c == 2) {
+		if (holdbindings[b])
+			Con_Printf ("\"%s\" = \"%s\"\n", Cmd_Argv(1), holdbindings[b]);
+		else
+			Con_Printf ("\"%s\" is not bound\n", Cmd_Argv(1));
+		return;
+	}
+	cmd[0] = 0;
+	for (i = 2; i < c; i++) {
+		if (i > 2)
+			strcat (cmd, " ");
+		strcat (cmd, Cmd_Argv(i));
+	}
+	Key_SetHoldBinding (b, cmd);
+}
+
 /*
 ============
 Key_WriteBindings
@@ -612,6 +681,58 @@ void Key_WriteDTBindings (FILE *f)
 		if (dtbindings[i])
 			if (*dtbindings[i])
 				fprintf (f, "binddt \"%s\" \"%s\"\n", Key_KeynumToString(i), dtbindings[i]);
+}
+
+
+/*
+============
+Key_WriteHoldBindings
+
+Writes lines containing "bindhold key value"
+============
+*/
+void Key_WriteHoldBindings (FILE *f)
+{
+	int i;
+
+	for (i = 0; i < 256; i++)
+		if (holdbindings[i] && *holdbindings[i])
+			fprintf (f, "bindhold \"%s\" \"%s\"\n", Key_KeynumToString(i), holdbindings[i]);
+}
+
+static void Key_RunBinding (char *binding, int key)
+{
+	char cmd[1024];
+
+	if (!binding || !*binding)
+		return;
+	if (binding[0] == '+') {
+		sprintf (cmd, "%s %i\n", binding, key);
+		Cbuf_AddText (cmd);
+	} else {
+		Cbuf_AddText (binding);
+		Cbuf_AddText ("\n");
+	}
+}
+
+
+/*
+============
+Key_UpdateHoldBindings
+============
+*/
+void Key_UpdateHoldBindings (void)
+{
+	int key;
+	double now = Sys_FloatTime();
+
+	for (key = 0; key < 256; key++) {
+		if (keydown[key] && holdstart[key] && !holdfired[key] &&
+			now - holdstart[key] >= HOLD_BIND_TIME) {
+			Key_RunBinding (holdbindings[key], key);
+			holdfired[key] = true;
+		}
+	}
 }
 
 /*
@@ -715,6 +836,7 @@ void Key_Init (void)
 //
 	Cmd_AddCommand ("bind",Key_Bind_f);
 	Cmd_AddCommand ("binddt",Key_Binddt_f);
+	Cmd_AddCommand ("bindhold",Key_BindHold_f);
 	Cmd_AddCommand ("unbind",Key_Unbind_f);
 	Cmd_AddCommand ("unbindall",Key_Unbindall_f);
 }
@@ -738,6 +860,18 @@ void Key_Event (int key, qboolean down)
 
 	oldkey = lastkey;
 	keydown[key] = down;
+	if (down && key_repeats[key] == 0 && holdbindings[key] && *holdbindings[key]) {
+		holdstart[key] = Sys_FloatTime();
+		holdfired[key] = false;
+
+		// Special functionality: when +use is a hold action and there's a useprint,
+		// and we have a different action on the same button for normal bind, make
+		// it activate on-release instead of on-press.
+		defernormal[key] = key_dest == key_game && scr_usetime_off > 0 &&
+			!cl.intermission && cl.stats[STAT_HEALTH] > 0 &&
+			!strncmp(holdbindings[key], "+use", 4) &&
+			(holdbindings[key][4] == 0 || holdbindings[key][4] == ' ' || holdbindings[key][4] == ';');
+	}
 	lastkey = key;
 
 #ifdef PLATFORM_KEYBOARD_OSK
@@ -756,6 +890,25 @@ void Key_Event (int key, qboolean down)
 #endif
 
 	if (!down) {
+		if (holdstart[key]) {
+			if (!holdfired[key] && Sys_FloatTime() - holdstart[key] >= HOLD_BIND_TIME) {
+				Key_RunBinding (holdbindings[key], key);
+				holdfired[key] = true;
+			}
+			if (holdfired[key] && holdbindings[key] && holdbindings[key][0] == '+') {
+				sprintf (cmd, "-%s %i\n", holdbindings[key] + 1, key);
+				Cbuf_AddText (cmd);
+			}
+			if (defernormal[key] && !holdfired[key]) {
+				Key_RunBinding (keybindings[key], key);
+				if (keybindings[key] && keybindings[key][0] == '+') {
+					sprintf (cmd, "-%s %i\n", keybindings[key] + 1, key);
+					Cbuf_AddText (cmd);
+				}
+			}
+			holdstart[key] = 0;
+			holdfired[key] = false;
+		}
 		key_repeats[key] = 0;
 	}
 
@@ -814,17 +967,18 @@ void Key_Event (int key, qboolean down)
 //
 	if (!down) {
 		kb = keybindings[key];
-		if (kb && kb[0] == '+') {
+		if (!defernormal[key] && kb && kb[0] == '+') {
 			sprintf (cmd, "-%s %i\n", kb+1, key);
 			Cbuf_AddText (cmd);
 		}
-		if (keyshift[key] != key) {
+		if (!defernormal[key] && keyshift[key] != key) {
 			kb = keybindings[keyshift[key]];
 			if (kb && kb[0] == '+') {
 				sprintf (cmd, "-%s %i\n", kb+1, key);
 				Cbuf_AddText (cmd);
 			}
 		}
+		defernormal[key] = false;
 		return;
 	}
 
@@ -857,7 +1011,7 @@ void Key_Event (int key, qboolean down)
 			lastkey = 0;
 		}
 
-		kb = keybindings[key];
+		kb = defernormal[key] ? NULL : keybindings[key];
 		if (kb)
 		{
 			if (kb[0] == '+')
@@ -913,5 +1067,8 @@ void Key_ClearStates (void)
 	for (i=0 ; i<256 ; i++) {
 		keydown[i] = false;
 		key_repeats[i] = 0;
+		holdstart[i] = 0;
+		holdfired[i] = false;
+		defernormal[i] = false;
 	}
 }
