@@ -15,9 +15,10 @@ void IN_SetMouseToRelative(bool relative)
 void IN_Move(usercmd_t *cmd)
 {
 	(void)cmd;
+
+	V_StopPitchDrift();
 	if (mouse_dx || mouse_dy) {
 		float pitch_direction = m_pitch.value > 0 ? -1.0f : 1.0f;
-		V_StopPitchDrift();
 		cl.viewangles[YAW] -= mouse_dx * sensitivity.value * 0.022f;
 		cl.viewangles[PITCH] += mouse_dy * sensitivity.value * 0.022f * pitch_direction;
 		if (cl.viewangles[PITCH] > 80) cl.viewangles[PITCH] = 80;
