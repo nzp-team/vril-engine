@@ -2140,7 +2140,7 @@ void QMB_MuzzleFlash(vec3_t org)
 
 	if(!(ISUNDERWATER(TruePointContents(org))))
 	{
-		size = sv_player->v.Flash_Size;
+		size = cl.flash_size;
 
 		if(size == 0 || cl.stats[STAT_ZOOM] == 2)
 			return;

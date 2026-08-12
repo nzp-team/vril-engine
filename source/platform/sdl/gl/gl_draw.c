@@ -648,7 +648,7 @@ Draw_ConsoleBackground
 */
 void Draw_ConsoleBackground (int lines)
 {
-	Draw_FillByColor(0, 0, vid.width, lines, 0, 0, 0, 255);
+	Draw_FillByColor(0, 0, vid.width, lines, 0, 0, 0, 155);
 }
 
 /*
@@ -897,11 +897,11 @@ void Draw_Crosshair (void)
 
 	float col;
 
-	// if (sv_player->v.facingenemy == 1) {
-	// 	col = 0;
-	// } else {
-	// 	col = 255;
-	// }
+	if (cl.facingenemy == 1) {
+		col = 0;
+	} else {
+		col = 255;
+	}
 
 	// crosshair moving
 	if (crosshair_spread_time > sv.time && crosshair_spread_time)

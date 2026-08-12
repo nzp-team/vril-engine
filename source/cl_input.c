@@ -318,7 +318,7 @@ void CL_AdjustAngles (void)
 	// ==== Aim Assist + ====
 	// cut look speed in half when facing enemy, unless
 	// mag is empty
-	if ((in_aimassist.value) && (sv_player->v.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0) {
+	if ((in_aimassist.value) && (cl.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0) {
 		speed *= 0.5f;
 	}
 	// additionally, slice look speed when ADS/scopes
@@ -386,7 +386,7 @@ void CL_BaseMove (usercmd_t *cmd)
 	Q_memset (cmd, 0, sizeof(*cmd));
 
 	// cypress - we handle movespeed in QC now.
-	cl_backspeed = cl_forwardspeed = cl_sidespeed = sv_player->v.maxspeed;
+	cl_backspeed = cl_forwardspeed = cl_sidespeed = cl.maxspeed;
 
 	// Throttle side and back speeds
 	cl_sidespeed *= 0.8f;

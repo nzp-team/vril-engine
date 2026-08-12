@@ -171,7 +171,8 @@ typedef struct
 	int			progress_bar;			// Perk icons.
 	float	item_gettime[32];	// cl.time of aquiring item, for blinking
 	float		faceanimtime;	// use anim frame if cl.time < this
-
+	float 		maxspeed; 			// Player's maximum allowed speed.
+	int 		facingenemy;		// which ent is the client currently facing?
 	cshift_t	cshifts[NUM_CSHIFTS];	// color shifts for damage, powerups
 	cshift_t	prev_cshifts[NUM_CSHIFTS];	// and content types
 
@@ -189,6 +190,10 @@ typedef struct
 
 	vec3_t		punchangle;		// temporary offset
 	vec3_t		gun_kick;		// temporary kick
+	vec3_t 		ads_offset;	
+	vec3_t 		flash_offset;
+
+	int 		flash_size; 	// Size of muzzleflash
 
 // pitch drifting vars
 	float		idealpitch;
@@ -225,6 +230,8 @@ typedef struct
 	struct model_s		*model_precache[MAX_MODELS];
 	struct sfx_s		*sound_precache[MAX_SOUNDS];
 
+	char 		weaponname[32]; // name of the currently held weapon
+	char 		touchstring[32]; // name of the weapon/other string we're touching.
 	char		levelname[40];	// for display on solo scoreboard
 	int			viewentity;		// cl_entitites[cl.viewentity] = player
 	int			maxclients;

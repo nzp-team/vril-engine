@@ -808,12 +808,12 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 3://ammo
-			strcpy(s, va("Hold  %s  to buy Ammo for %s\n", GetUseButtonL(), PR_GetString(sv_player->v.Weapon_Name_Touch)));
+			strcpy(s, va("Hold  %s  to buy Ammo for %s\n", GetUseButtonL(), cl.touchstring));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 4://weapon
-			strcpy(s, va("Hold  %s  to buy %s\n", GetUseButtonL(), PR_GetString(sv_player->v.Weapon_Name_Touch)));
+			strcpy(s, va("Hold  %s  to buy %s\n", GetUseButtonL(), cl.touchstring));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
@@ -828,7 +828,7 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 7://box take
-			strcpy(s, va("Hold  %s  for %s\n", GetUseButtonL(), PR_GetString(sv_player->v.Weapon_Name_Touch)));
+			strcpy(s, va("Hold  %s  for %s\n", GetUseButtonL(), cl.touchstring));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
