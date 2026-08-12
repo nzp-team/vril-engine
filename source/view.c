@@ -1110,9 +1110,9 @@ void V_CalcRefdef (void)
 	vec3_t ADSOffset;
 	if(cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2)
 	{
-		ADSOffset[0] = sv_player->v.ADS_Offset[0];
-		ADSOffset[1] = sv_player->v.ADS_Offset[1];
-		ADSOffset[2] = sv_player->v.ADS_Offset[2];
+		ADSOffset[0] = cl.ads_offset[0];
+		ADSOffset[1] = cl.ads_offset[1];
+		ADSOffset[2] = cl.ads_offset[2];
 		
 		ADSOffset[0] = ADSOffset[0]/1000;
 		ADSOffset[1] = ADSOffset[1]/1000;

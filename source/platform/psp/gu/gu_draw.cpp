@@ -1185,7 +1185,7 @@ extern "C" void Draw_Crosshair (void)
 
 	float col;
 
-	if (sv_player->v.facingenemy == 1) {
+	if (cl.facingenemy == 1) {
 		col = 0;
 	} else {
 		col = 255;
