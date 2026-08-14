@@ -374,7 +374,6 @@ void QMB_InitParticles (void)
 	}
 
 	loading_cur_step++;
-	strcpy(loading_name, "Particles");
 	SCR_UpdateScreen ();
 
 	max_s = max_t = 128.0;
@@ -561,7 +560,6 @@ void QMB_InitParticles (void)
 	ADD_PARTICLE_TYPE(p_q3flame, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_q3flame, 180, 0.66, 0, pm_nophysics, 0);
 	
 	loading_cur_step++;
-	strcpy(loading_name, "particles");
 	SCR_UpdateScreen ();
 
 	Clear_LoadingFill ();

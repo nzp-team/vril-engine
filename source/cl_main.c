@@ -212,6 +212,9 @@ void CL_SignonReply (void)
 			break;
 
 		case 2:
+			if (LoadingScreen_ShouldWaitForSpawn())
+				break;
+
 			MSG_WriteByte (&cls.message, clc_stringcmd);
 			MSG_WriteString (&cls.message, va("name \"%s\"\n", cl_name.string));
 
@@ -228,6 +231,7 @@ void CL_SignonReply (void)
 
 		case 4:
 		{
+			LoadingScreen_Finish();
 			SCR_EndLoadingPlaque ();		// allow normal screen updates
 			break;
 		}
@@ -1053,4 +1057,3 @@ void CL_Init (void)
 	Cmd_AddCommand ("playdemo", CL_PlayDemo_f);
 	Cmd_AddCommand ("timedemo", CL_TimeDemo_f);
 }
-

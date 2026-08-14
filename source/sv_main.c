@@ -189,7 +189,7 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 	if (field_mask & SND_ATTENUATION)
 		MSG_WriteByte (&sv.datagram, attenuation*64);
 	MSG_WriteShort (&sv.datagram, channel);
-	MSG_WriteByte (&sv.datagram, sound_num);
+	MSG_WriteShort (&sv.datagram, sound_num);
 	for (i=0 ; i<3 ; i++)
 		MSG_WriteCoord (&sv.datagram, entity->v.origin[i]+0.5f*(entity->v.mins[i]+entity->v.maxs[i]));
 }
@@ -1316,71 +1316,75 @@ void SV_SpawnServer (char *server)
 
 //ZOMBIE AI THINGS BELOVE THIS!!!
 #define W_MAX_TEMPSTRING 2048
-char	*w_string_temp;
-int W_fopen (void)
+static char	w_string_temp[128];
+static byte	*w_file_buffer;
+static int	w_file_size;
+static int	w_file_pos;
+
+static int W_fopen_path (char *path)
 {
 	int h = 0;
+	int size;
 
-	Sys_FileOpenRead (va("%s/maps/%s.way",com_gamedir, sv.name), &h);
-
-	if (h > 0)
-		return h;
-	else 
+	size = Sys_FileOpenRead (path, &h);
+	if (size < 0 || h <= 0)
 		return -1;
+
+	w_file_buffer = Z_Malloc(size + 1);
+	if (size > 0 && Sys_FileRead(h, w_file_buffer, size) != size)
+	{
+		Sys_FileClose(h);
+		Z_Free(w_file_buffer);
+		w_file_buffer = NULL;
+		return -1;
+	}
+
+	Sys_FileClose(h);
+	w_file_buffer[size] = 0;
+	w_file_size = size;
+	w_file_pos = 0;
+	return 1;
+}
+
+int W_fopen (void)
+{
+	return W_fopen_path (va("%s/maps/%s.way",com_gamedir, sv.name));
 }
 
 int W_fopenbeta(void)
 {
-	int h = 0;
-
-	Sys_FileOpenRead (va("%s/data/%s",com_gamedir, sv.name), &h);
-
-	if (h > 0)
-		return h;
-	else 
-		return -1;
+	return W_fopen_path (va("%s/data/%s",com_gamedir, sv.name));
 }
 
 void W_fclose (int h)
 {
-	Sys_FileClose(h);
+	(void)h;
+	if (w_file_buffer)
+		Z_Free(w_file_buffer);
+	w_file_buffer = NULL;
+	w_file_size = 0;
+	w_file_pos = 0;
 }
 
 char *W_fgets (int h)
 {
-	// reads one line (up to a \n) into a string
-	int		i;
-	int		count;
-	char	buffer;
+	int i = 0;
 
-	count = Sys_FileRead(h, &buffer, 1);
-	if (count && buffer == '\r')	// carriage return
-	{
-		count = Sys_FileRead(h, &buffer, 1);	// skip
-	}
-	if (!count)	// EndOfFile
-	{
+	(void)h;
+	if (!w_file_buffer || w_file_pos >= w_file_size)
 		return "";
-	}
 
-	i = 0;
-	while (count && buffer != '\n')
+	while (w_file_pos < w_file_size && w_file_buffer[w_file_pos] != '\n')
 	{
-		if (i < 128-1)	// no place for character in temp string
-		{
-			w_string_temp[i++] = buffer;
-		}
+		char c = w_file_buffer[w_file_pos++];
+		if (c != '\r' && i < (int)sizeof(w_string_temp) - 1)
+			w_string_temp[i++] = c;
+	}
+	if (w_file_pos < w_file_size && w_file_buffer[w_file_pos] == '\n')
+		w_file_pos++;
 
-		// read next character
-		count = Sys_FileRead(h, &buffer, 1);
-		if (count && buffer == '\r')	// carriage return
-		{
-			count = Sys_FileRead(h, &buffer, 1);	// skip
-		}
-	};
 	w_string_temp[i] = 0;
-
-	return (w_string_temp);
+	return w_string_temp;
 }
 
 char *W_substring (char *p, int offset, int length)
@@ -1403,7 +1407,7 @@ char *W_substring (char *p, int offset, int length)
 		length = 0;
 
 	p += offset;
-	strncpy(w_string_temp, p, length);
+	memmove(w_string_temp, p, length);
 	w_string_temp[length]=0;
 
 	return w_string_temp;
@@ -1620,7 +1624,6 @@ void Load_Waypoint () {
 
 	h = W_fopen();
 
-	w_string_temp = Z_Malloc(128);
 	if (h == -1) {
 		Con_DPrintf("No waypoint file (%s/maps/%s.way) found, trying beta format..\n", com_gamedir, sv.name);
 		Load_Waypoint_NZPBETA();

@@ -29,8 +29,11 @@ void IN_Commands (void);
 void IN_Move (usercmd_t *cmd);
 // add additional movement on top of the keyboard move cmd
 
+void IN_ClearPendingInput(void);
+
 #ifdef PLATFORM_INPUT_KBM
 void IN_SetMouseToRelative(bool relative);
+void IN_PlatformClearPendingInput(void);
 #endif
 
 #ifdef PLATFORM_INPUT_GAMEPAD

@@ -586,7 +586,7 @@ void PF_ambientsound (void)
 	for (i=0 ; i<3 ; i++)
 		MSG_WriteCoord(&sv.signon, pos[i]);
 
-	MSG_WriteByte (&sv.signon, soundnum);
+	MSG_WriteShort (&sv.signon, soundnum);
 
 	MSG_WriteByte (&sv.signon, vol*255);
 	MSG_WriteByte (&sv.signon, attenuation*64);

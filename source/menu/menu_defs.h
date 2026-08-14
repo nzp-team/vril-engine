@@ -142,6 +142,13 @@ extern char*            game_build_date;
 // Loading screens
 extern int          	loadingScreen;
 extern qboolean         loadscreeninit;
+void LoadingScreen_Begin(const char *map_name);
+qboolean LoadingScreen_IsActive(void);
+qboolean LoadingScreen_IsWaiting(void);
+qboolean LoadingScreen_ShouldWaitForSpawn(void);
+qboolean LoadingScreen_Key(int key, qboolean down);
+void LoadingScreen_Update(void);
+void LoadingScreen_Finish(void);
 
 // Custom maps
 typedef struct
@@ -183,6 +190,7 @@ extern int 			    small_bar_height;
 
 // Menu specific key abstractions
 extern int				MENU_KEY_CONFIRM;
+image_t Menu_GetConfirmIcon(void);
 extern int				MENU_KEY_BACK;
 extern int				MENU_KEY_DELETE;
 extern int				MENU_KEY_SAVE_INPUT;
@@ -304,6 +312,11 @@ void Menu_Bindings_Set (void);
 void Menu_Accessibility_Set (void);
 
 // Platform specifics
-char *Platform_ReturnLoadingText (void);
+char *LoadingScreen_ReturnTip(void);
+void LoadingScreen_DrawProgressBar(void);
+void LoadingScreen_ClearProgress(void);
+void LoadingScreen_CompleteProgress(void);
+void LoadingScreen_BeginProgressPhase(float start, float end, int total);
+void LoadingScreen_AdvanceProgress(void);
 
 #endif // _MENU_DEFS_H_

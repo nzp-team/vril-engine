@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 void Music_Init(void);
 void Music_Play(byte track, qboolean looping);
 void Music_PlayFromString(char* track_name, qboolean looping);
+void Music_PlayLoadingTrack(const char *map_name);
+qboolean Music_IsPlaying(void);
 void Music_Stop(void);
 void Music_Pause(void);
 void Music_Resume(void);

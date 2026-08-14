@@ -1221,7 +1221,7 @@ void SCR_UpdateScreen (void)
 	scr_copytop = 0;
 	scr_copyeverything = 0;
 
-	if (scr_disabled_for_loading)
+	if (scr_disabled_for_loading && !LoadingScreen_IsActive())
 	{
 		if ((float)realtime - scr_disabled_time > 60)
 		{
@@ -1295,21 +1295,24 @@ void SCR_UpdateScreen (void)
 //
 // do 3D refresh drawing, and then update the screen
 //
-	SCR_SetUpToDrawConsole ();
-
-	V_RenderView ();
+	if (!LoadingScreen_IsWaiting()) {
+		SCR_SetUpToDrawConsole ();
+		V_RenderView ();
+	}
 
 	GL_Set2D ();
 
-	Draw_Crosshair ();
+	if (!LoadingScreen_IsWaiting()) {
+		Draw_Crosshair ();
 
-	//muff - to show FPS on screen
-	SCR_DrawFPS ();
-	SCR_CheckDrawCenterString ();
-	SCR_CheckDrawUseString ();
-	HUD_Draw ();
-	SCR_DrawConsole ();
-	Menu_Draw ();
+		//muff - to show FPS on screen
+		SCR_DrawFPS ();
+		SCR_CheckDrawCenterString ();
+		SCR_CheckDrawUseString ();
+		HUD_Draw ();
+		SCR_DrawConsole ();
+		Menu_Draw ();
+	}
 
 	if(scr_loadscreen.value) {
 		Menu_DrawLoadScreen();

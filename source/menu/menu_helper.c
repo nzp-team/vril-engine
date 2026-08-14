@@ -131,10 +131,9 @@ void Menu_LoadMap (char *selected_map)
 	if (sv.active) {
 		Cbuf_AddText ("disconnect\n");
 	}
-	Cbuf_AddText ("cd stop\n");
 	snprintf (map_command, sizeof(map_command), "map %s\n", map_loadname);
 	Cbuf_AddText (map_command);
-	loadingScreen = 1;
+	LoadingScreen_Begin(map_loadname);
 }
 
 void Menu_ExitMap (void)
@@ -200,7 +199,8 @@ void Menu_DrawFill (int x, int y, int width, int height, int r, int g, int b, in
 
 	if (current_frame.point_x != UI_ANCHOR_LEFT) {
 		x_value = x;
-	} else if (current_frame.point_y != UI_ANCHOR_TOP) {
+	}
+	if (current_frame.point_y != UI_ANCHOR_TOP) {
 		y_value = y;
 	}
 	

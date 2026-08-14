@@ -40,6 +40,11 @@ void Draw_AlphaPic (int x, int y,  int texnum, float alpha);
 void Draw_Fill (int x, int y, int w, int h, int c);
 #endif
 void Draw_LoadingFill(void);
+void LoadingScreen_DrawProgressBar(void);
+void LoadingScreen_ClearProgress(void);
+void LoadingScreen_CompleteProgress(void);
+void LoadingScreen_BeginProgressPhase(float start, float end, int total);
+void LoadingScreen_AdvanceProgress(void);
 void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a);
 void Draw_FadeScreen (void);
 void Draw_String (int x, int y, char *str);
@@ -59,7 +64,6 @@ byte *StringToRGB (char *s);
 
 extern float loading_cur_step;
 extern int loading_step;
-extern char loading_name[32];
 extern float loading_num_step;
 extern int font_kerningamount[96];
 

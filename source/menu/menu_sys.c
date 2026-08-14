@@ -34,6 +34,23 @@ extern image_t 	b_bottomface;
 extern image_t 	b_leftface;
 extern image_t 	b_rightface;
 
+image_t Menu_GetConfirmIcon(void)
+{
+	switch (MENU_KEY_CONFIRM)
+	{
+	case K_BOTTOMFACE:
+		return b_bottomface;
+	case K_RIGHTFACE:
+		return b_rightface;
+	case K_TOPFACE:
+		return b_topface;
+	case K_LEFTFACE:
+		return b_leftface;
+	default:
+		return -1;
+	}
+}
+
 // Set stock map attributes
 StockMaps   stock_maps[8] = {
 	[0] = { .bsp_name = "ndu", .category = MAP_CATEGORY_WAW, .array_index = 0 },

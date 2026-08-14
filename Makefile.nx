@@ -110,7 +110,6 @@ COMMON_OBJS =	system.o \
 				menu/menu_loadscreen.c \
 				menu/menu_bios.c \
 				menu/menu_credits.c \
-				platform/nx/platform_menu.c \
 				platform/nx/net_dgrm.c \
 				platform/nx/net_udpnx.c \
 				net_loop.c \

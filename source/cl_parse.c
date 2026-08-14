@@ -140,7 +140,7 @@ void CL_ParseStartSoundPacket(void)
 		attenuation = DEFAULT_SOUND_PACKET_ATTENUATION;
 
 	channel = MSG_ReadShort ();
-	sound_num = MSG_ReadByte ();
+	sound_num = MSG_ReadShort ();
 
 	ent = channel >> 3;
 	channel &= 7;
@@ -414,6 +414,7 @@ void CL_ParseServerInfo (void)
 
    loading_num_step = loading_num_step +nummodels + numsounds;
    loading_step = 1;
+	LoadingScreen_BeginProgressPhase(0.45f, 0.80f, nummodels - 1);
 	CL_UpdateLoadingScreen(true);
 
 	//Con_Printf("Loaded Model: ");
@@ -432,11 +433,12 @@ void CL_ParseServerInfo (void)
 		{
 			Con_Printf("Model %s not found\n", model_precache[i]);
 			loading_cur_step++;
+			LoadingScreen_AdvanceProgress();
 			return;
 		}
 		CL_KeepaliveMessage ();
 		loading_cur_step++;
-		snprintf(loading_name, sizeof(loading_name), "%s", model_precache[i]);
+		LoadingScreen_AdvanceProgress();
 		//Con_Printf("%i,",i);
 		CL_UpdateLoadingScreen(false);
 	}
@@ -449,6 +451,7 @@ void CL_ParseServerInfo (void)
 	//cl_modelindex[mi_flame0] = nummodels++;
 
 	loading_step = 4;
+	LoadingScreen_BeginProgressPhase(0.80f, 0.98f, numsounds - 1);
 	CL_UpdateLoadingScreen(true);
 
 	S_BeginPrecaching ();
@@ -458,6 +461,7 @@ void CL_ParseServerInfo (void)
 		cl.sound_precache[i] = S_PrecacheSound (sound_precache[i]);
 		CL_KeepaliveMessage ();
 		loading_cur_step++;
+		LoadingScreen_AdvanceProgress();
 		//Con_Printf("%i,",i);
 		CL_UpdateLoadingScreen(false);
 	}
@@ -467,7 +471,7 @@ void CL_ParseServerInfo (void)
 	//Con_Printf("Total Sounds Loaded: %i\n",numsounds);
 	CL_UpdateLoadingScreen(true);
 
-   	Clear_LoadingFill ();
+	LoadingScreen_CompleteProgress();
 
 // local state
 	cl_entities[0].model = cl.worldmodel = cl.model_precache[1];
@@ -1075,7 +1079,7 @@ void CL_ParseStaticSound (void)
 
 	for (i=0 ; i<3 ; i++)
 		org[i] = MSG_ReadCoord ();
-	sound_num = MSG_ReadByte ();
+	sound_num = MSG_ReadShort ();
 	vol = MSG_ReadByte ();
 	atten = MSG_ReadByte ();
 
