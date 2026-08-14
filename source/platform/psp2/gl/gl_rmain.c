@@ -472,12 +472,31 @@ int	lastposenum;
 GL_DrawAliasFrame -- johnfitz -- rewritten to support colored light, lerping, entalpha, multitexture, and r_drawflat
 =============
 */
+static int GL_AliasTriangleIndex (qboolean fan, int triangle, int corner)
+{
+	if (fan)
+		return corner ? triangle + corner : 0;
+	if ((triangle & 1) && corner < 2)
+		return triangle + 1 - corner;
+	return triangle + corner;
+}
+
+static void GL_AliasTexCoord (const int *commands, int index)
+{
+	float u, v;
+	memcpy (&u, &commands[index * 2], sizeof(u));
+	memcpy (&v, &commands[index * 2 + 1], sizeof(v));
+	glTexCoord2f (u, v);
+}
+
 void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum)
 {
 	trivertx_t *verts;
+	trivertx_t *primitive_verts;
 	int		*commands;
-	int		count;
-	float	u,v;
+	int		*primitive_commands;
+	int		count, triangle, corner, index;
+	qboolean fan;
 
 	verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
 	verts += posenum * paliashdr->poseverts;
@@ -492,28 +511,26 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum)
 		if (!count)
 			break;		// done
 
-		if (count < 0)
-		{
+		fan = count < 0;
+		if (fan)
 			count = -count;
-			glBegin (GL_TRIANGLE_FAN);
-		}
-		else
-			glBegin (GL_TRIANGLE_STRIP);
+		primitive_commands = commands;
+		primitive_verts = verts;
 
-		do
+		glBegin (GL_TRIANGLES);
+		for (triangle = 0; triangle < count - 2; triangle++)
 		{
-			u = ((float *)commands)[0];
-			v = ((float *)commands)[1];
-
-			glTexCoord2f (u, v);
-
-			commands += 2;
-
-			glVertex3f (verts->v[0], verts->v[1], verts->v[2]);
-			verts++;
-		} while (--count);
+			for (corner = 0; corner < 3; corner++)
+			{
+				index = GL_AliasTriangleIndex (fan, triangle, corner);
+				GL_AliasTexCoord (primitive_commands, index);
+				glVertex3f (primitive_verts[index].v[0], primitive_verts[index].v[1], primitive_verts[index].v[2]);
+			}
+		}
 
 		glEnd ();
+		commands += count * 2;
+		verts += count;
 	}
 }
 
@@ -536,10 +553,13 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 	// }
 	trivertx_t* verts1;
 	trivertx_t* verts2;
+	trivertx_t* primitive_verts1;
+	trivertx_t* primitive_verts2;
 	vec3_t	  d;
 	int		*commands;
-	int		count;
-	float	u,v;
+	int		*primitive_commands;
+	int		count, triangle, corner, index;
+	qboolean fan;
 
 	lastposenum0 = pose1;
 	lastposenum  = pose2;
@@ -561,30 +581,31 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 		if (!count)
 			break;		// done
 
-		if (count < 0)
-		{
+		fan = count < 0;
+		if (fan)
 			count = -count;
-			glBegin (GL_TRIANGLE_FAN);
-		}
-		else
-			glBegin (GL_TRIANGLE_STRIP);
+		primitive_commands = commands;
+		primitive_verts1 = verts1;
+		primitive_verts2 = verts2;
 
-		do
+		glBegin (GL_TRIANGLES);
+		for (triangle = 0; triangle < count - 2; triangle++)
 		{
-			u = ((float *)commands)[0];
-			v = ((float *)commands)[1];
-
-			glTexCoord2f (u, v);
-
-			commands += 2;
-
-			VectorSubtract(verts2->v, verts1->v, d);
-			glVertex3f (verts1->v[0] + (blend * d[0]), verts1->v[1] + (blend * d[1]), verts1->v[2] + (blend * d[2]));
-			verts1++;
-			verts2++;
-		} while (--count);
+			for (corner = 0; corner < 3; corner++)
+			{
+				index = GL_AliasTriangleIndex (fan, triangle, corner);
+				GL_AliasTexCoord (primitive_commands, index);
+				VectorSubtract(primitive_verts2[index].v, primitive_verts1[index].v, d);
+				glVertex3f (primitive_verts1[index].v[0] + (blend * d[0]),
+					primitive_verts1[index].v[1] + (blend * d[1]),
+					primitive_verts1[index].v[2] + (blend * d[2]));
+			}
+		}
 
 		glEnd ();
+		commands += count * 2;
+		verts1 += count;
+		verts2 += count;
 	}
 }
 
@@ -598,10 +619,12 @@ extern	vec3_t			lightspot;
 void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 {
 	trivertx_t	*verts;
+	trivertx_t	*primitive_verts;
 	int		*order;
 	vec3_t	point;
 	float	height, lheight;
-	int		count;
+	int		count, triangle, corner, index;
+	qboolean fan;
 
 	lheight = currententity->origin[2] - lightspot[2];
 
@@ -618,35 +641,30 @@ void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 		count = *order++;
 		if (!count)
 			break;		// done
-		if (count < 0)
-		{
+		fan = count < 0;
+		if (fan)
 			count = -count;
-			glBegin (GL_TRIANGLE_FAN);
-		}
-		else
-			glBegin (GL_TRIANGLE_STRIP);
+		primitive_verts = verts;
 
-		do
+		glBegin (GL_TRIANGLES);
+		for (triangle = 0; triangle < count - 2; triangle++)
 		{
-			// texture coordinates come from the draw list
-			// (skipped for shadows) glTexCoord2fv ((float *)order);
-			order += 2;
-
-			// normals and vertexes come from the frame list
-			point[0] = verts->v[0] * paliashdr->scale[0] + paliashdr->scale_origin[0];
-			point[1] = verts->v[1] * paliashdr->scale[1] + paliashdr->scale_origin[1];
-			point[2] = verts->v[2] * paliashdr->scale[2] + paliashdr->scale_origin[2];
-
-			point[0] -= shadevector[0]*(point[2]+lheight);
-			point[1] -= shadevector[1]*(point[2]+lheight);
-			point[2] = height;
-//			height -= 0.001;
-			glVertex3fv (point);
-
-			verts++;
-		} while (--count);
+			for (corner = 0; corner < 3; corner++)
+			{
+				index = GL_AliasTriangleIndex (fan, triangle, corner);
+				point[0] = primitive_verts[index].v[0] * paliashdr->scale[0] + paliashdr->scale_origin[0];
+				point[1] = primitive_verts[index].v[1] * paliashdr->scale[1] + paliashdr->scale_origin[1];
+				point[2] = primitive_verts[index].v[2] * paliashdr->scale[2] + paliashdr->scale_origin[2];
+				point[0] -= shadevector[0]*(point[2]+lheight);
+				point[1] -= shadevector[1]*(point[2]+lheight);
+				point[2] = height;
+				glVertex3fv (point);
+			}
+		}
 
 		glEnd ();
+		order += count * 2;
+		verts += count;
 	}	
 }
 

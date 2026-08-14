@@ -6,7 +6,6 @@ VELF		:= $(BUILD)/$(TARGET).velf
 VPK			:= $(BUILD)/$(TARGET).vpk
 EBOOT		:= $(BUILD)/eboot.bin
 PARAM_SFO	:= $(BUILD)/param.sfo
-SCE_SYS		:= $(BUILD)/sce_sys
 GIT_VERSION := $(shell git describe --abbrev=6 --dirty --always --tags)
 
 LIBS = -lvitaGL -lvitashark -lSceShaccCgExt -ltaihen_stub -lvorbisfile -lvorbis -logg \
@@ -151,17 +150,14 @@ _build_info.h:
 
 
 $(VPK): $(VELF)
-	@mkdir -p $(SCE_SYS)
 	vita-make-fself -c -s $< $(EBOOT)
 	vita-mksfoex -s TITLE_ID=$(TITLE) -d ATTRIBUTE2=12 "Nazi Zombies: Portable" $(PARAM_SFO)
-	cp -f $(PARAM_SFO) $(SCE_SYS)/param.sfo
-	vita-pack-vpk -s $(PARAM_SFO) -b $(EBOOT) $@ -a $(SCE_SYS)=sce_sys \
+	vita-pack-vpk -s $(PARAM_SFO) -b $(EBOOT) $@ \
 	--add $(EBOOT)=nzp.bin \
 	--add source/platform/psp2/art/sce_sys/icon0.png=sce_sys/icon0.png \
 	--add source/platform/psp2/art/sce_sys/livearea/contents/bg.png=sce_sys/livearea/contents/bg.png \
 	--add source/platform/psp2/art/sce_sys/livearea/contents/startup.png=sce_sys/livearea/contents/startup.png \
-	--add source/platform/psp2/art/sce_sys/livearea/contents/template.xml=sce_sys/livearea/contents/template.xml \
-	build/psp2/nzportable.vpk
+	--add source/platform/psp2/art/sce_sys/livearea/contents/template.xml=sce_sys/livearea/contents/template.xml
 
 %_f.h:
 	@mkdir -p $(BUILD)/$(@D)
