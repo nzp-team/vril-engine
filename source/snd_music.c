@@ -61,7 +61,7 @@ void Music_PlayFromString(char* track_name, qboolean looping)
 
 void Music_PlayLoadingTrack(const char *map_name)
 {
-	char path[MAX_OSPATH];
+	char path[MAX_OSPATH * 2];
 	char track[MAX_QPATH];
 
 	snprintf(track, sizeof(track), "load/%s", map_name);
