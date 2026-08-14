@@ -87,7 +87,9 @@ void LoadingScreen_DrawProgressBar(void)
 		progress = 1;
 
 	width = vid.width * 3 / 4;
-	height = max(2, 2 * vid.scale);
+	height = 2 * vid.scale;
+	if (height < 2)
+		height = 2;
 	x = (vid.width - width) / 2;
 	y = vid.height - 17 * vid.scale;
 
