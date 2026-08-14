@@ -22,6 +22,7 @@ void LoadingScreen_ClearProgress(void);
 void LoadingScreen_CompleteProgress(void);
 void LoadingScreen_BeginProgressPhase(float start, float end, int total);
 void LoadingScreen_AdvanceProgress(void);
+void LoadingScreen_MarkPrecacheComplete(void);
 
 void Menu_FindKeysForCommand (char *command, int *twokeys);
 

@@ -43,6 +43,7 @@ static char lscreen_identifier[64];
 static int lscreen_format;
 static qboolean loading_waiting_for_input;
 static qboolean loading_spawn_released;
+static qboolean loading_precache_complete;
 static int loading_skip_key = -1;
 static double loadscreen_start_time;
 static float loading_progress_shown;
@@ -150,6 +151,11 @@ static qboolean LoadingScreen_IntroComplete(void)
 	return Sys_FloatTime() - loadscreen_start_time >= 3.5;
 }
 
+static qboolean LoadingScreen_ReadyToContinue(void)
+{
+	return loading_precache_complete && LoadingScreen_IntroComplete();
+}
+
 static char *LoadingScreen_GameModeName(void)
 {
 	switch ((int)sv_gamemode.value)
@@ -224,6 +230,7 @@ void LoadingScreen_Begin(const char *map_name)
 	lscreen_identifier[0] = '\0';
 	loading_waiting_for_input = menu_is_solo;
 	loading_spawn_released = false;
+	loading_precache_complete = false;
 	loading_skip_key = -1;
 	loadscreen_start_time = Sys_FloatTime();
 	Music_PlayLoadingTrack(map_name);
@@ -251,6 +258,11 @@ qboolean LoadingScreen_IsWaiting(void)
 	return loading_waiting_for_input;
 }
 
+void LoadingScreen_MarkPrecacheComplete(void)
+{
+	loading_precache_complete = true;
+}
+
 qboolean LoadingScreen_ShouldWaitForSpawn(void)
 {
 	if (!loadingScreen || !menu_is_solo || loading_spawn_released)
@@ -270,7 +282,7 @@ qboolean LoadingScreen_Key(int key, qboolean down)
 		return true;
 	}
 
-	if (!loading_waiting_for_input || !LoadingScreen_IntroComplete() ||
+	if (!loading_waiting_for_input || !LoadingScreen_ReadyToContinue() ||
 		key != MENU_KEY_CONFIRM)
 		return false;
 
@@ -284,7 +296,8 @@ qboolean LoadingScreen_Key(int key, qboolean down)
 
 void LoadingScreen_Update(void)
 {
-	if (loading_waiting_for_input && !Music_IsPlaying())
+	if (loading_waiting_for_input && LoadingScreen_ReadyToContinue() &&
+		!Music_IsPlaying())
 		LoadingScreen_ReleaseSpawn();
 }
 
@@ -293,6 +306,7 @@ void LoadingScreen_Finish(void)
 	loadingScreen = 0;
 	loading_waiting_for_input = false;
 	loading_spawn_released = false;
+	loading_precache_complete = false;
 	loading_skip_key = -1;
 	LoadingScreen_ClearProgress();
 	Music_Stop();
@@ -353,7 +367,7 @@ void Menu_DrawLoadScreen (void)
 			Draw_ColoredString(vid.width/2 - (getTextWidth(loadinglinetext, vid.scale)/2), vid.height - (4 * vid.scale) - (_CHAR_HEIGHT * vid.scale), loadinglinetext, 255, 255, 255, 255, vid.scale);
 		}
 
-		if (loading_waiting_for_input && LoadingScreen_IntroComplete())
+		if (loading_waiting_for_input && LoadingScreen_ReadyToContinue())
 			LoadingScreen_DrawSkipPrompt(elapsed);
 	}
 }
