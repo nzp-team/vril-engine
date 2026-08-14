@@ -298,42 +298,50 @@ Warp the vertex coordinates
 */
 void DrawGLWaterPoly (glpoly_t *p)
 {
-	int		i;
+	int		i, j, index;
 	float	*v;
 	vec3_t	nv;
 
-	glBegin (GL_TRIANGLE_FAN);
-	v = p->verts[0];
-	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
+	glBegin (GL_TRIANGLES);
+	for (i=1 ; i<p->numverts-1 ; i++)
 	{
-		glTexCoord2f (v[3], v[4]);
+		for (j=0 ; j<3 ; j++)
+		{
+			index = (j == 0) ? 0 : i + j - 1;
+			v = p->verts[index];
+			glTexCoord2f (v[3], v[4]);
 
-		nv[0] = v[0] + 8*sinf(v[1]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
-		nv[1] = v[1] + 8*sinf(v[0]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
-		nv[2] = v[2];
+			nv[0] = v[0] + 8*sinf(v[1]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
+			nv[1] = v[1] + 8*sinf(v[0]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
+			nv[2] = v[2];
 
-		glVertex3fv (nv);
+			glVertex3fv (nv);
+		}
 	}
 	glEnd ();
 }
 
 void DrawGLWaterPolyLightmap (glpoly_t *p)
 {
-	int		i;
+	int		i, j, index;
 	float	*v;
 	vec3_t	nv;
 
-	glBegin (GL_TRIANGLE_FAN);
-	v = p->verts[0];
-	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
+	glBegin (GL_TRIANGLES);
+	for (i=1 ; i<p->numverts-1 ; i++)
 	{
-		glTexCoord2f (v[5], v[6]);
+		for (j=0 ; j<3 ; j++)
+		{
+			index = (j == 0) ? 0 : i + j - 1;
+			v = p->verts[index];
+			glTexCoord2f (v[5], v[6]);
 
 		nv[0] = v[0] + 8*sinf(v[1]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
 		nv[1] = v[1] + 8*sinf(v[0]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
 		nv[2] = v[2];
 
-		glVertex3fv (nv);
+			glVertex3fv (nv);
+		}
 	}
 	glEnd ();
 }
@@ -345,15 +353,19 @@ DrawGLPoly
 */
 void DrawGLPoly (glpoly_t *p)
 {
-	int		i;
+	int		i, j, index;
 	float	*v;
 
-	glBegin (GL_POLYGON);
-	v = p->verts[0];
-	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
+	glBegin (GL_TRIANGLES);
+	for (i=1 ; i<p->numverts-1 ; i++)
 	{
-		glTexCoord2f (v[3], v[4]);
-		glVertex3fv (v);
+		for (j=0 ; j<3 ; j++)
+		{
+			index = (j == 0) ? 0 : i + j - 1;
+			v = p->verts[index];
+			glTexCoord2f (v[3], v[4]);
+			glVertex3fv (v);
+		}
 	}
 	glEnd ();
 }
@@ -361,21 +373,25 @@ void DrawGLPoly (glpoly_t *p)
 // rbaldwin2 -- This is based on DrawGLWaterPolyLightmap and designed to be cheaper
 void DrawGLPolyLightmap (glpoly_t *p)
 {
-	int		i;
+	int		i, j, index;
 	float	*v;
 	vec3_t	nv;
 
-	glBegin (GL_TRIANGLE_FAN);
-	v = p->verts[0];
-	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
+	glBegin (GL_TRIANGLES);
+	for (i=1 ; i<p->numverts-1 ; i++)
 	{
-		glTexCoord2f (v[5], v[6]);
+		for (j=0 ; j<3 ; j++)
+		{
+			index = (j == 0) ? 0 : i + j - 1;
+			v = p->verts[index];
+			glTexCoord2f (v[5], v[6]);
 
 		nv[0] = v[0];
 		nv[1] = v[1];
 		nv[2] = v[2];
 
-		glVertex3fv (nv);
+			glVertex3fv (nv);
+		}
 	}
 	glEnd ();
 }
