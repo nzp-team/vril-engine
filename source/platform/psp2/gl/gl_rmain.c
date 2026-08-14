@@ -1571,6 +1571,9 @@ void MYgluPerspective( GLdouble fovy, GLdouble aspect,
 }
 
 
+#define GL_NEARCLIP 16.0
+
+
 /*
 =============
 R_SetupGL
@@ -1614,7 +1617,7 @@ void R_SetupGL (void)
 	glViewport (glx + x, gly + y2, w, h);
     screenaspect = (float)r_refdef.vrect.width/r_refdef.vrect.height;
     
-    MYgluPerspective (r_refdef.fov_y,  screenaspect,  4,  4096);
+    MYgluPerspective (r_refdef.fov_y,  screenaspect,  GL_NEARCLIP,  4096);
 
 	if (mirror)
 	{
