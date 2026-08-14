@@ -145,6 +145,11 @@ static float LoadingScreen_Fade(double elapsed, double start, double duration)
 	return fade;
 }
 
+static qboolean LoadingScreen_IntroComplete(void)
+{
+	return Sys_FloatTime() - loadscreen_start_time >= 3.5;
+}
+
 static char *LoadingScreen_GameModeName(void)
 {
 	switch ((int)sv_gamemode.value)
@@ -265,7 +270,8 @@ qboolean LoadingScreen_Key(int key, qboolean down)
 		return true;
 	}
 
-	if (!loading_waiting_for_input || key != MENU_KEY_CONFIRM)
+	if (!loading_waiting_for_input || !LoadingScreen_IntroComplete() ||
+		key != MENU_KEY_CONFIRM)
 		return false;
 
 	if (down)
@@ -347,7 +353,7 @@ void Menu_DrawLoadScreen (void)
 			Draw_ColoredString(vid.width/2 - (getTextWidth(loadinglinetext, vid.scale)/2), vid.height - (4 * vid.scale) - (_CHAR_HEIGHT * vid.scale), loadinglinetext, 255, 255, 255, 255, vid.scale);
 		}
 
-		if (loading_waiting_for_input)
+		if (loading_waiting_for_input && LoadingScreen_IntroComplete())
 			LoadingScreen_DrawSkipPrompt(elapsed);
 	}
 }
