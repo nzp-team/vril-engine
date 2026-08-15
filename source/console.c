@@ -91,6 +91,8 @@ void Con_DrawOSK(void) {
 #endif // PLATFORM_KEYBOARD_OSK
 
 qboolean console_enabled;
+static keydest_t console_previous_key_dest;
+static qboolean console_has_previous_key_dest;
 /*
 ================
 Con_ToggleConsole_f
@@ -100,24 +102,23 @@ void Con_ToggleConsole_f (void)
 {
 	if (key_dest == key_console)
 	{
-		if (cls.state == ca_connected)
-		{
-			key_dest = key_game;
-			console_enabled = false;
-			key_dest = key_menu_pause;
-			key_lines[edit_line][1] = 0;	// clear any typing
-			key_linepos = 1;
-		}
+		console_enabled = false;
+#ifdef PLATFORM_KEYBOARD_OSK
+		scr_osk_active = false;
+#endif
+		key_lines[edit_line][1] = 0;	// clear any typing
+		key_linepos = 1;
+		if (console_has_previous_key_dest)
+			key_dest = console_previous_key_dest;
 		else
 		{
-			console_enabled = false;
-#ifdef PLATFORM_KEYBOARD_OSK
-			scr_osk_active = false;
-#endif
 			key_dest = key_menu;
-			Menu_Configuration_Set ();
+			Menu_Main_Set ();
 		}
+		console_has_previous_key_dest = false;
 	} else {
+		console_previous_key_dest = key_dest;
+		console_has_previous_key_dest = true;
 		console_enabled = true;
 		key_dest = key_console;
 	}

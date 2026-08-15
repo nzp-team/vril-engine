@@ -278,7 +278,7 @@ Similiar to above, but will also print the current button for the action.
 ==============
 */
 
-int GetButtonIcon (char *buttonname)
+static int GetButtonKey (char *buttonname)
 {
 	int		j;
 	int		l;
@@ -293,63 +293,60 @@ int GetButtonIcon (char *buttonname)
 		if (!b || strncmp (b, buttonname, l))
 			b = holdbindings[j];
 		if (b && !strncmp (b, buttonname, l) )
-		{
-			// naievil -- need to fix these
-			if (!strcmp(Key_KeynumToString(j), "UPARROW"))
-				return b_up;
-			else if (!strcmp(Key_KeynumToString(j), "DOWNARROW"))
-				return b_down;
-			else if (!strcmp(Key_KeynumToString(j), "LEFTARROW"))
-				return b_left;
-			else if (!strcmp(Key_KeynumToString(j), "RIGHTARROW"))
-				return b_right;
-			else if (!strcmp(Key_KeynumToString(j), "SELECT"))
-				return b_select;
-			else if (!strcmp(Key_KeynumToString(j), "RIGHTFACE"))
-				return b_rightface;
-			else if (!strcmp(Key_KeynumToString(j), "BOTTOMFACE"))
-				return b_bottomface;
-			else if (!strcmp(Key_KeynumToString(j), "TOPFACE"))
-				return b_topface;
-			else if (!strcmp(Key_KeynumToString(j), "LEFTFACE"))
-				return b_leftface;
-			else if (!strcmp(Key_KeynumToString(j), "LTRIGGER"))
-				return b_lt;
-			else if (!strcmp(Key_KeynumToString(j), "RTRIGGER"))
-				return b_rt;
-			else if (!strcmp(Key_KeynumToString(j), "ZLTRIGGER"))
-				return b_zlt;
-			else if (!strcmp(Key_KeynumToString(j), "ZRTRIGGER"))
-				return b_zrt;
-		}
+			return j;
 	}
-	return b_rightface;
+	return -1;
+}
+
+static image_t GetKeyIcon (int key)
+{
+	char *keyname;
+
+	if (key < 0)
+		return -1;
+	keyname = Key_KeynumToString(key);
+	if (!strcmp(keyname, "UPARROW")) return b_up;
+	if (!strcmp(keyname, "DOWNARROW")) return b_down;
+	if (!strcmp(keyname, "LEFTARROW")) return b_left;
+	if (!strcmp(keyname, "RIGHTARROW")) return b_right;
+	if (!strcmp(keyname, "SELECT")) return b_select;
+	if (!strcmp(keyname, "RIGHTFACE")) return b_rightface;
+	if (!strcmp(keyname, "BOTTOMFACE")) return b_bottomface;
+	if (!strcmp(keyname, "TOPFACE")) return b_topface;
+	if (!strcmp(keyname, "LEFTFACE")) return b_leftface;
+	if (!strcmp(keyname, "LTRIGGER")) return b_lt;
+	if (!strcmp(keyname, "RTRIGGER")) return b_rt;
+	if (!strcmp(keyname, "ZLTRIGGER")) return b_zlt;
+	if (!strcmp(keyname, "ZRTRIGGER")) return b_zrt;
+	return -1;
+}
+
+static char *GetButtonKeyLabel (int key)
+{
+	static char label[32];
+	int i;
+
+	if (key < 0)
+		return "USE";
+	Q_strncpyz (label, Key_KeynumToString(key), sizeof(label));
+	for (i = 0; label[i]; i++)
+		label[i] = toupper((unsigned char)label[i]);
+	return label;
+}
+
+int GetButtonIcon (char *buttonname)
+{
+	image_t icon = GetKeyIcon(GetButtonKey(buttonname));
+	return icon >= 0 ? icon : b_rightface;
 }
 
 char *GetUseButtonL ()
 {
-	int		j;
-	int		l;
-	char	*b;
-	l = strlen("+use");
+	int key = GetButtonKey("+use");
 
-	for (j=0 ; j<256 ; j++)
-	{
-		b = keybindings[j];
-		if (!b)
-			continue;
-		if (!strncmp (b, "+use", l) )
-		{
-			if (!strcmp(Key_KeynumToString(j), "SELECT") ||
-				!strcmp(Key_KeynumToString(j), "LTRIGGER") ||
-				!strcmp(Key_KeynumToString(j), "RTRIGGER") ||
-				!strcmp(Key_KeynumToString(j), "HOME"))
-				return "  ";
-			else
-				return " ";
-		}
-	}
-	return " ";
+	if (GetKeyIcon(key) >= 0)
+		return "  ";
+	return GetButtonKeyLabel(key);
 }
 
 char *GetGrenadeButtonL ()
@@ -416,37 +413,37 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			strcpy(c, "");
 			break;
 		case 1://door
-			strcpy(s, va("Hold  %s  to open Door\n", GetUseButtonL()));
+			strcpy(s, va("Hold %s to open Door\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 2://debris
-			strcpy(s, va("Hold  %s  to remove Debris\n", GetUseButtonL()));
+			strcpy(s, va("Hold %s to remove Debris\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 3://ammo
-			strcpy(s, va("Hold  %s  to buy Ammo for %s\n", GetUseButtonL(), PR_GetString(sv_player->v.Weapon_Name_Touch)));
+			strcpy(s, va("Hold %s to buy Ammo for %s\n", GetUseButtonL(), PR_GetString(sv_player->v.Weapon_Name_Touch)));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 4://weapon
-			strcpy(s, va("Hold  %s  to buy %s\n", GetUseButtonL(), PR_GetString(sv_player->v.Weapon_Name_Touch)));
+			strcpy(s, va("Hold %s to buy %s\n", GetUseButtonL(), PR_GetString(sv_player->v.Weapon_Name_Touch)));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 5://window
-			strcpy(s, va("Hold  %s  to Rebuild Barrier\n", GetUseButtonL()));
+			strcpy(s, va("Hold %s to Rebuild Barrier\n", GetUseButtonL()));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 6://box
-			strcpy(s, va("Hold  %s  to for Mystery Box\n", GetUseButtonL()));
+			strcpy(s, va("Hold %s to for Mystery Box\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 7://box take
-			strcpy(s, va("Hold  %s  for %s\n", GetUseButtonL(), PR_GetString(sv_player->v.Weapon_Name_Touch)));
+			strcpy(s, va("Hold %s for %s\n", GetUseButtonL(), PR_GetString(sv_player->v.Weapon_Name_Touch)));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
@@ -456,37 +453,37 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			button_pic_x = 100;
 			break;
 		case 9://perk
-			strcpy(s, va("Hold  %s  to buy %s\n", GetUseButtonL(), GetPerkName(weapon)));
+			strcpy(s, va("Hold %s to buy %s\n", GetUseButtonL(), GetPerkName(weapon)));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 10://turn on power
-			strcpy(s, va("Hold  %s  to Turn On the Power\n", GetUseButtonL()));
+			strcpy(s, va("Hold %s to Turn On the Power\n", GetUseButtonL()));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 11://turn on trap
-			strcpy(s, va("Hold  %s  to Activate the Trap\n", GetUseButtonL()));
+			strcpy(s, va("Hold %s to Activate the Trap\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 12://PAP
-			strcpy(s, va("Hold  %s  to Pack-a-Punch\n", GetUseButtonL()));
+			strcpy(s, va("Hold %s to Pack-a-Punch\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 13://revive
-			strcpy(s, va("Hold  %s  to Fix your Code.. :)\n", GetUseButtonL()));
+			strcpy(s, va("Hold %s to Fix your Code.. :)\n", GetUseButtonL()));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 14://use teleporter (free)
-			strcpy(s, va("Hold  %s  to use Teleporter\n", GetUseButtonL()));
+			strcpy(s, va("Hold %s to use Teleporter\n", GetUseButtonL()));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 15://use teleporter (cost)
-			strcpy(s, va("Hold  %s  to use Teleporter\n", GetUseButtonL()));
+			strcpy(s, va("Hold %s to use Teleporter\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
@@ -496,7 +493,7 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			button_pic_x = 100;
 			break;
 		case 17://link
-			strcpy(s, va("Hold  %s  to initiate link to pad\n", GetUseButtonL()));
+			strcpy(s, va("Hold %s to initiate link to pad\n", GetUseButtonL()));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
@@ -506,12 +503,12 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			button_pic_x = 100;
 			break;
 		case 19://finish link
-			strcpy(s, va("Hold  %s  to link pad with core\n", GetUseButtonL()));
+			strcpy(s, va("Hold %s to link pad with core\n", GetUseButtonL()));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 20://buyable ending
-			strcpy(s, va("Hold  %s  to End the Game\n", GetUseButtonL()));
+			strcpy(s, va("Hold %s to End the Game\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
@@ -526,7 +523,7 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			button_pic_x = 101;
 			break;
 		case 23: // Tactical Nuke (Gun Game)
-			strcpy(s, va("Hold  %s  to Drop the Nuke\n", GetUseButtonL()));
+			strcpy(s, va("Hold %s to Drop the Nuke\n", GetUseButtonL()));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
@@ -545,13 +542,16 @@ void SCR_DrawUseString (void)
 {
 	int	y;
 	int x;
+	int use_key;
+	image_t use_icon;
+	char *use_name;
 	float scale = vid.scale;
 
 	if (cl.stats[STAT_HEALTH] < 0)
 		return;
 // the finale prints the characters one at a time
 
-	y = 182 * scale;
+	y = vid.height - (88 * scale);
     x = (vid.width - getTextWidth(scr_usestring, scale))/2;
 
 	if (button_pic_x == 101)
@@ -560,9 +560,16 @@ void SCR_DrawUseString (void)
 		Draw_ColoredStringCentered(y, scr_usestring, 255, 255, 255, 255, scale);
 	Draw_ColoredStringCentered(y + (10 * scale), scr_usestring2, 255, 255, 255, 255, scale);
 
-	if (button_pic_x < 100)
-		Draw_StretchPic(x + getTextWidth("Hold ", scale), y - (4 * scale),
-			GetButtonIcon("+use"), 16 * scale, 16 * scale);
+	if (button_pic_x < 100) {
+		use_key = GetButtonKey("+use");
+		use_icon = GetKeyIcon(use_key);
+		if (use_icon >= 0) {
+			Draw_StretchPic(x + getTextWidth("Hold ", scale), y - (4 * scale), use_icon, 16 * scale, 16 * scale);
+		} else {
+			use_name = GetButtonKeyLabel(use_key);
+			Draw_ColoredString(x + getTextWidth("Hold ", scale), y, use_name, 255, 255, 0, 255, scale);
+		}
+	}
 }
 
 void SCR_CheckDrawUseString (void)

@@ -1165,6 +1165,7 @@ This is called at the start of each level
 */
 extern float		scr_centertime_off;
 void Load_Waypoint ();
+static int sv_restart_hunkmark;
 
 void SV_SpawnServer (char *server)
 {
@@ -1312,7 +1313,103 @@ void SV_SpawnServer (char *server)
 			SV_SendServerinfo (host_client);
 
 	Load_Waypoint ();
+	sv_restart_hunkmark = Hunk_LowMark ();
 	Con_DPrintf ("Server spawned.\n");
+}
+
+/*
+================
+SV_RestartServer
+
+Rebuild the current server while retaining its loaded map and asset caches.
+================
+*/
+void SV_RestartServer (void)
+{
+	static char dummy[8] = { 0,0,0,0,0,0,0,0 };
+	model_t *worldmodel;
+	edict_t *edicts;
+	edict_t *ent;
+	char mapname[MAX_QPATH];
+	int i;
+
+	if (!sv.active || !sv.worldmodel || !sv.edicts || !sv_restart_hunkmark)
+		return;
+
+	Con_DPrintf ("RestartServer: %s\n", sv.name);
+	SV_SendReconnect ();
+	S_StopAllSounds (true);
+
+	worldmodel = sv.worldmodel;
+	edicts = sv.edicts;
+	Q_strncpyz (mapname, sv.name, sizeof(mapname));
+
+	Hunk_FreeToLowMark (sv_restart_hunkmark);
+	PR_ResetProgs ();
+	memset (edicts, 0, MAX_EDICTS * pr_edict_size);
+	memset (&sv, 0, sizeof(sv));
+
+	scr_centertime_off = 0;
+	svs.changelevel_issued = false;
+	sv.max_edicts = MAX_EDICTS;
+	sv.edicts = edicts;
+	sv.num_edicts = svs.maxclients + 1;
+	for (i = 0; i < svs.maxclients; i++)
+		svs.clients[i].edict = EDICT_NUM(i + 1);
+
+	sv.datagram.maxsize = sizeof(sv.datagram_buf);
+	sv.datagram.data = sv.datagram_buf;
+	sv.reliable_datagram.maxsize = sizeof(sv.reliable_datagram_buf);
+	sv.reliable_datagram.data = sv.reliable_datagram_buf;
+	sv.signon.maxsize = sizeof(sv.signon_buf);
+	sv.signon.data = sv.signon_buf;
+
+	sv.state = ss_loading;
+	sv.time = 1.0;
+	Q_strncpyz (sv.name, mapname, sizeof(sv.name));
+	sprintf (sv.modelname, "maps/%s.bsp", mapname);
+	sv.worldmodel = worldmodel;
+	sv.models[1] = worldmodel;
+
+	SV_ClearWorld ();
+	sv.sound_precache[0] = dummy;
+	sv.model_precache[0] = dummy;
+	sv.model_precache[1] = sv.modelname;
+	for (i = 1; i < worldmodel->numsubmodels; i++)
+	{
+		sv.model_precache[i + 1] = localmodels[i];
+		sv.models[i + 1] = Mod_ForName (localmodels[i], false);
+	}
+
+	ent = EDICT_NUM(0);
+	ent->free = false;
+	ent->v.model = PR_SetString (worldmodel->name);
+	ent->v.modelindex = 1;
+	ent->v.solid = SOLID_BSP;
+	ent->v.movetype = MOVETYPE_PUSH;
+
+	if (coop.value)
+		pr_global_struct->coop = coop.value;
+	else
+		pr_global_struct->deathmatch = deathmatch.value;
+	pr_global_struct->mapname = PR_SetString (sv.name);
+	pr_global_struct->serverflags = svs.serverflags;
+
+	ED_LoadFromFile (worldmodel->entities);
+	sv.active = true;
+	sv.state = ss_active;
+
+	host_frametime = 0.1;
+	SV_Physics ();
+	SV_Physics ();
+	SV_CreateBaseline ();
+
+	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+		if (host_client->active)
+			SV_SendServerinfo (host_client);
+
+	Load_Waypoint ();
+	Con_DPrintf ("Server restarted.\n");
 }
 
 
@@ -1606,6 +1703,8 @@ void Load_Waypoint () {
 	int h = 0;
 	int s = 0;
 	vec3_t d;
+
+	PR_ResetWaypointState ();
 
 	// ---------------------------------------
 	// Clear the structs

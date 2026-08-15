@@ -23,4 +23,5 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern cvar_t sys_testmode;
 
 void TestHandler_MapBoot(void);
+void TestHandler_RestartStress(void);
 void TestHandler_Init(void);

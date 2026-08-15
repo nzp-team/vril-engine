@@ -1205,12 +1205,7 @@ string strzone (string)
 */
 void PF_strzone (void)
 {
-	char *m, *p;
-	m = G_STRING(OFS_PARM0);
-	p = Z_Malloc(strlen(m) + 1);
-	strcpy(p, m);
-
-	G_INT(OFS_RETURN) = PR_SetString(p);
+	G_INT(OFS_RETURN) = PR_SetString(PR_ZoneString(G_STRING(OFS_PARM0)));
 }
 
 /*
@@ -1222,7 +1217,7 @@ string strunzone (string)
 */
 void PF_strunzone (void)
 {
-	Z_Free(G_STRING(OFS_PARM0));
+	PR_UnzoneString(G_STRING(OFS_PARM0));
 	G_INT(OFS_PARM0) = OFS_NULL; // empty the def
 };
 
@@ -1473,6 +1468,14 @@ char waypoint_set[MAX_WAYPOINTS]; // waypoint_set[i] contains the set identifier
 unsigned short openset_waypoints[MAX_WAYPOINTS]; // List of waypoints currently in the open set sorted by heuristic cost (index 0 contains lowest cost waypoint)
 unsigned short openset_length; // Current length of the open set
 zombie_ai zombie_list[MAX_AI_COUNT];
+
+void PR_ResetWaypointState (void)
+{
+	memset (waypoint_set, 0, sizeof(waypoint_set));
+	memset (openset_waypoints, 0, sizeof(openset_waypoints));
+	openset_length = 0;
+	memset (zombie_list, 0, sizeof(zombie_list));
+}
 
 
 //
@@ -2644,9 +2647,7 @@ char* PR_CopyToZoneIfTempString (char *s)
 	// trying to precache temp string potentially breaks future precaches, so copy contents to zone.
 	if (s == pr_string_temp)
 	{
-		char * newstr = Z_Malloc(strlen(s) + 1);
-		strcpy(newstr, s);
-		return newstr;
+		return PR_ZoneString(s);
 	}
 	return s;
 }
