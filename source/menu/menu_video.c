@@ -29,7 +29,7 @@ char* dithering_string;
 
 qboolean platform_supports_dithering;
 
-extern cvar_t show_fps;
+extern cvar_t scr_showfps;
 extern cvar_t cl_maxfps;
 extern cvar_t scr_fov;
 extern cvar_t v_gamma;
@@ -39,14 +39,14 @@ extern cvar_t r_dithering;
 
 void Menu_Video_ApplyShowFPS (void)
 {
-    float current_showfps = show_fps.value;
+    float current_showfps = scr_showfps.value;
 
     current_showfps += 1;
     if (current_showfps > 1) {
         current_showfps = 0;
     }
 
-    Cvar_SetValue ("show_fps", current_showfps);
+    Cvar_SetValue ("scr_showfps", current_showfps);
 }
 
 void Menu_Video_ApplyParticles (void)
@@ -112,7 +112,7 @@ void Menu_Video_Set (void)
 
 void Menu_Video_SetStrings (void)
 {
-    if ((int)show_fps.value == 1) {
+    if ((int)scr_showfps.value == 1) {
         fps_string = "ENABLED";
     } else {
         fps_string = "DISABLED";
