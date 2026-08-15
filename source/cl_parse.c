@@ -271,7 +271,7 @@ void CL_UpdateLoadingScreen(qboolean force)
 {
 	static double last_update_time;
 	double current_time = Sys_FloatTime();
-	double lscreen_update_ms = 0.100;
+	double lscreen_update_ms = LoadingScreen_IntroComplete() ? 0.100 : (1.0 / 30.0);
 
 	if (!force && current_time >= last_update_time && current_time - last_update_time < lscreen_update_ms)
 		return;

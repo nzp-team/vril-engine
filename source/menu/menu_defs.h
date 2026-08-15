@@ -145,6 +145,7 @@ extern qboolean         loadscreeninit;
 void LoadingScreen_Begin(const char *map_name);
 qboolean LoadingScreen_IsActive(void);
 qboolean LoadingScreen_IsWaiting(void);
+qboolean LoadingScreen_IntroComplete(void);
 qboolean LoadingScreen_ShouldWaitForSpawn(void);
 qboolean LoadingScreen_Key(int key, qboolean down);
 void LoadingScreen_Update(void);

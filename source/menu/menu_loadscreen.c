@@ -146,7 +146,7 @@ static float LoadingScreen_Fade(double elapsed, double start, double duration)
 	return fade;
 }
 
-static qboolean LoadingScreen_IntroComplete(void)
+qboolean LoadingScreen_IntroComplete(void)
 {
 	return Sys_FloatTime() - loadscreen_start_time >= 3.5;
 }
