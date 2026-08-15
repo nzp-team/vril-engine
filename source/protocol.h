@@ -134,7 +134,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	svc_centerprint		26	// [string] to put in center of the screen
 
-#define	svc_spawnstaticsound	29	// [coord3] [byte] samp [byte] vol [byte] aten
+#define	svc_spawnstaticsound	29	// [coord3] [short] samp [byte] vol [byte] aten
 
 #define	svc_intermission	30		// [string] music
 #define	svc_finale			31		// [string] music [string] text

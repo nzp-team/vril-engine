@@ -858,6 +858,9 @@ void Key_Event (int key, qboolean down)
 	char	*kb;
 	char	cmd[1024];
 
+	if (LoadingScreen_Key(key, down))
+		return;
+
 	oldkey = lastkey;
 	keydown[key] = down;
 	if (down && key_repeats[key] == 0 && holdbindings[key] && *holdbindings[key]) {

@@ -47,11 +47,6 @@ int		gl_filter_min = GL_LINEAR_MIPMAP_NEAREST;
 int		gl_filter_max = GL_LINEAR;
 
 //Loading Fill by Crow_bar
-float 	loading_cur_step;
-char	loading_name[32];
-float 	loading_num_step;
-int 	loading_step;
-float 	loading_cur_step_bk;
 
 #define	MAX_GLTEXTURES	1024
 static gltexture_t	gltextures[MAX_GLTEXTURES];
@@ -664,50 +659,12 @@ By Crow_bar
 */
 void Draw_LoadingFill(void)
 {
-    if(!loading_num_step)
-		return;
-
-	int size       	= 8;
-	int max_step   	= 350;
-    int x          	= (vid.width  / 2) - (max_step / 2);
-    int y          	= vid.height - (size/ 2) - 25;
-	char* text;
-
-
-	if(loading_cur_step > loading_num_step)
-	      loading_cur_step = loading_num_step;
-
-	if (loading_cur_step < loading_cur_step_bk)
-		loading_cur_step = loading_cur_step_bk;
-
-	if (loading_cur_step == loading_num_step && loading_cur_step_bk != loading_num_step)
-		loading_cur_step = loading_cur_step_bk;
-
-    float loadsize = loading_cur_step * (max_step / loading_num_step);
-	Draw_FillByColor (x - 2, y - 2, max_step + 4, size + 4, 69, 69, 69, 255);
-	Draw_FillByColor (x, y, (int)loadsize, size, 0, 0, 0, 200);
-
-	switch(loading_step) {
-		case 1: text = "Loading Models.."; break;
-		case 2: text = "Loading World.."; break;
-		case 3: text = "Running Test Frame.."; break;
-		case 4: text = "Loading Sounds.."; break;
-		default: text = "Initializing.."; break;
-	}
-	
-	Draw_ColoredStringCentered(y, text, 255, 255, 255, 255, 1);
-
-	loading_cur_step_bk = loading_cur_step;
+	LoadingScreen_DrawProgressBar();
 }
 
 void Clear_LoadingFill (void)
 {
-    //it is end loading
-	loading_cur_step = 0;
-	loading_cur_step_bk = 0;
-	loading_num_step = 0;
-	loading_step = -1;
-	memset(loading_name, 0, sizeof(loading_name));
+	LoadingScreen_ClearProgress();
 }
 
 /*

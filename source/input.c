@@ -58,6 +58,14 @@ void IN_Commands(void)
 #endif
 }
 
+void IN_ClearPendingInput(void)
+{
+	Key_ClearStates();
+#ifdef PLATFORM_INPUT_KBM
+	IN_PlatformClearPendingInput();
+#endif
+}
+
 #ifdef PLATFORM_INPUT_GAMEPAD
 static float IN_ShapeAxis(float value, float speed, float tolerance, float acceleration)
 {

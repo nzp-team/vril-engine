@@ -59,6 +59,24 @@ void Music_PlayFromString(char* track_name, qboolean looping)
 	}
 }
 
+void Music_PlayLoadingTrack(const char *map_name)
+{
+	char path[MAX_OSPATH * 2];
+	char track[MAX_QPATH];
+
+	snprintf(track, sizeof(track), "load/%s", map_name);
+	snprintf(path, sizeof(path), "%s/tracks/%s.mp3", com_gamedir, track);
+	if (Sys_FileTime(path) == -1)
+		Music_PlayFromString("xmas/obtain", false);
+	else
+		Music_PlayFromString(track, false);
+}
+
+qboolean Music_IsPlaying(void)
+{
+	return playing;
+}
+
 void Music_Stop(void)
 {
 	// if paused, we need to unpause to unlock

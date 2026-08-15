@@ -971,7 +971,7 @@ void SCR_UpdateScreen (void)
 	scr_copytop = 0;
 	scr_copyeverything = 0;
 
-	if (scr_disabled_for_loading)
+	if (scr_disabled_for_loading && !LoadingScreen_IsActive())
 	{
 		if (realtime - scr_disabled_time > 60)
 		{

@@ -12,6 +12,12 @@ void IN_SetMouseToRelative(bool relative)
 		SDL_SetRelativeMouseMode(SDL_FALSE);
 }
 
+void IN_PlatformClearPendingInput(void)
+{
+	mouse_dx = 0;
+	mouse_dy = 0;
+}
+
 void IN_Move(usercmd_t *cmd)
 {
 	(void)cmd;

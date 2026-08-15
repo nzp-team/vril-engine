@@ -599,7 +599,7 @@ void Host_ServerFrame (void)
 
 // move things around and think
 // always pause in single player if in console or menus
-	if (!sv.paused && (svs.maxclients > 1 || key_dest == key_game) )
+	if (!sv.paused && !LoadingScreen_IsWaiting() && (svs.maxclients > 1 || key_dest == key_game) )
 		SV_Physics ();
 
 // send all messages to the clients
@@ -698,6 +698,7 @@ void _Host_Frame (float time)
 		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
 
 	Music_Update();
+	LoadingScreen_Update();
 
 	if (host_speeds.value)
 	{
