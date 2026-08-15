@@ -1893,17 +1893,6 @@ void HUD_GunGame (void)
 
 	Draw_ColoredString(vid.width/2 - getTextWidth(weapon_id, vid.scale)/2, 6 * vid.scale, weapon_id, 255, 255, 255, 255, vid.scale);
 	Draw_ColoredString(vid.width/2 - getTextWidth(point_info, vid.scale)/2, 18 * vid.scale, point_info, 255, 255, 0, 255, vid.scale);
-
-	/*
-
-	if (getstatf(STAT_GUNGAME_IDX) >= 100) {
-		weapon_id = "You've passed all weapons!";
-		point_info = "The Winner can choose to End the Game";
-	} else {
-		weapon_id = sprintf("%s [%d/32]", getstats(STAT_WEAPONNAME), getstatf(STAT_GUNGAME_IDX) + 1);
-		point_info = sprintf("[%d] Score until next Weapon", getstatf(STAT_GUNGAME_SCOREGOAL) - getstatf(STAT_TOTALSCORE));
-	}
-	*/
 }
 
 /*
