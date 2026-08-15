@@ -127,29 +127,40 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 // stats are integers communicated to the client by the server
 //
-#define	MAX_CL_STATS		32
-#define	STAT_HEALTH			0
-#define	STAT_POINTS			1
-#define	STAT_WEAPON			2
-#define	STAT_AMMO			3
-#define	STAT_SECGRENADES	4
-#define	STAT_WEAPONFRAME	5
-#define	STAT_CURRENTMAG		6
-#define	STAT_ZOOM			7
-#define	STAT_WEAPONSKIN		8
-#define	STAT_GRENADES		9
-#define	STAT_ACTIVEWEAPON	10
-#define	STAT_ROUNDS			11
-#define	STAT_ROUNDCHANGE	12
-#define	STAT_X2				13
-#define	STAT_INSTA			14
-#define	STAT_PRIGRENADES	15
-#define	STAT_WEAPON2		17
-#define	STAT_WEAPON2SKIN	18
-#define	STAT_WEAPON2FRAME	19
-#define STAT_CURRENTMAG2 	20
-#define STAT_VIEWMODEL_EFFECTS 21
+#define	MAX_CL_STATS			32
+#define	STAT_HEALTH				0
+#define	STAT_POINTS				1
+#define	STAT_WEAPON				2
+#define	STAT_AMMO				3
+#define	STAT_SECGRENADES		4
+#define	STAT_WEAPONFRAME		5
+#define	STAT_CURRENTMAG			6
+#define	STAT_ZOOM				7
+#define	STAT_WEAPONSKIN			8
+#define	STAT_GRENADES			9
+#define	STAT_ACTIVEWEAPON		10
+#define	STAT_ROUNDS				11
+#define	STAT_ROUNDCHANGE		12
+#define	STAT_X2					13
+#define	STAT_INSTA				14
+#define	STAT_PRIGRENADES		15
+#define	STAT_WEAPON2			17
+#define	STAT_WEAPON2SKIN		18
+#define	STAT_WEAPON2FRAME		19
+#define STAT_CURRENTMAG2 		20
+#define STAT_VIEWMODEL_EFFECTS 	21
 #define STAT_VIEWMODEL2_EFFECTS 22
+#define STAT_GUNGAME_IDX		23
+#define STAT_GUNGAME_SCOREGOAL	24
+
+// Gamemodes 
+#define GAMEMODE_CLASSIC        0
+#define GAMEMODE_GRIEF          1
+#define GAMEMODE_GUNGAME        2
+#define GAMEMODE_HARDCORE       3
+#define GAMEMODE_WILDWEST       4
+#define GAMEMODE_STICKSNSTONES  5
+#define GAMEMODE_FESTIVE		6
 
 // stock defines
 

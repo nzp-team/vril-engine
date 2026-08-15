@@ -658,13 +658,6 @@ void HUD_Blood (void)
 HUD_GetWorldText
 ===============
 */
-#define GAMEMODE_CLASSIC        0
-#define GAMEMODE_GRIEF          1
-#define GAMEMODE_GUNGAME        2
-#define GAMEMODE_HARDCORE       3
-#define GAMEMODE_WILDWEST       4
-#define GAMEMODE_STICKSNSTONES  5
-#define GAMEMODE_FESTIVE		6
 
 void HUD_GameModeText(int alpha)
 {
@@ -1870,6 +1863,51 @@ void HUD_Screenflash (void)
 
 /*
 ===============
+HUD_GunGame
+===============
+*/
+void HUD_GunGame (void)
+{
+	char weapon_id[64];
+	char point_info[64];
+
+	int client_points;
+
+	for(int i = 0; i < svs.maxclients; i++) {
+		if (i == cl.viewentity - 1) {
+			client_points = cl.scores[i].points;
+			break;
+		}
+	}
+
+	Draw_FillByColor(60 * vid.scale, 2 * vid.scale, vid.width - (120 * vid.scale), 28 * vid.scale, 0, 0, 0, 100);
+
+	if (cl.stats[STAT_GUNGAME_IDX] >= 100) {
+		sprintf(weapon_id, "You've passed all weapons!");
+		sprintf(point_info, "The Winner can choose to End the Game");
+	} else {
+		sprintf(weapon_id, "%s [%d/32]", PR_GetString(sv_player->v.Weapon_Name), cl.stats[STAT_GUNGAME_IDX] + 1);
+		sprintf(point_info, "[%d] Score until next Weapon", cl.stats[STAT_GUNGAME_SCOREGOAL] - client_points);
+	}
+
+
+	Draw_ColoredString(vid.width/2 - getTextWidth(weapon_id, vid.scale)/2, 6 * vid.scale, weapon_id, 255, 255, 255, 255, vid.scale);
+	Draw_ColoredString(vid.width/2 - getTextWidth(point_info, vid.scale)/2, 18 * vid.scale, point_info, 255, 255, 0, 255, vid.scale);
+
+	/*
+
+	if (getstatf(STAT_GUNGAME_IDX) >= 100) {
+		weapon_id = "You've passed all weapons!";
+		point_info = "The Winner can choose to End the Game";
+	} else {
+		weapon_id = sprintf("%s [%d/32]", getstats(STAT_WEAPONNAME), getstatf(STAT_GUNGAME_IDX) + 1);
+		point_info = sprintf("[%d] Score until next Weapon", getstatf(STAT_GUNGAME_SCOREGOAL) - getstatf(STAT_TOTALSCORE));
+	}
+	*/
+}
+
+/*
+===============
 HUD_Draw
 ===============
 */
@@ -1949,6 +1987,11 @@ void HUD_Draw (void)
 
 	if (hud_maxammo_endtime > sv.time)
 		HUD_MaxAmmo();
+
+	switch(current_gamemode) {
+		case GAMEMODE_GUNGAME: HUD_GunGame();
+		default: break;
+	}
 
 	// This should always come last!
 	if (screenflash_duration > sv.time)

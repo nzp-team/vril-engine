@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern double hud_maxammo_starttime;
 extern double hud_maxammo_endtime;
+extern int current_gamemode;
 
 extern cvar_t scr_whiteflash;
 extern cvar_t cl_hitmarkers;
@@ -1036,6 +1037,14 @@ void CL_ParseClientdata (int bits)
 	i = MSG_ReadShort ();
 	if (cl.stats[STAT_VIEWMODEL2_EFFECTS] != i)
 		cl.stats[STAT_VIEWMODEL2_EFFECTS] = i;
+
+	i = MSG_ReadByte ();
+	if (cl.stats[STAT_GUNGAME_IDX] != i)
+		cl.stats[STAT_GUNGAME_IDX] = i;
+
+	i = MSG_ReadShort ();
+	if (cl.stats[STAT_GUNGAME_SCOREGOAL] != i)
+		cl.stats[STAT_GUNGAME_SCOREGOAL] = i;
 }
 
 /*
@@ -1144,7 +1153,6 @@ CL_ParseServerMessage
 */
 extern double bettyprompt_time;
 extern qboolean doubletap_has_damage_buff;
-extern int current_gamemode;
 extern int lock_viewmodel;
 void CL_ParseServerMessage (void)
 {
