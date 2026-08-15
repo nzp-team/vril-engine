@@ -43,14 +43,12 @@ void Menu_GameSettings_SetStrings (void)
             gamemode_description = "Classic Round-Based Zombies.";
             gamemode_string = "CLASSIC";
             break;
-        
         case 1:
-            Cvar_SetValue ("sv_gamemode", 3);
+            Cvar_SetValue ("sv_gamemode", 2);
             break;
         case 2:
-            Cvar_SetValue ("sv_gamemode", 3);
-            // gamemode_description = "Race to earn Score to cycle through Weaponry."; 
-            // gamemode_string = "GUN GAME";
+            gamemode_description = "Race to earn Score to cycle through Weaponry."; 
+            gamemode_string = "GUN GAME";
             break;
         case 3: 
             gamemode_description = "No HUD? Two Perks? 150% Item Cost? No Problem."; 

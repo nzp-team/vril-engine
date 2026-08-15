@@ -809,6 +809,9 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	MSG_WriteShort (msg, ent->v.currentmag2);
 	MSG_WriteShort (msg, ent->v.viewmodel_effects);
 	MSG_WriteShort (msg, ent->v.viewmodel2_effects);
+
+	MSG_WriteByte (msg, ent->v.gungame_weapon_idx);
+	MSG_WriteShort (msg, ent->v.gungame_score_threshold);
 }
 
 /*

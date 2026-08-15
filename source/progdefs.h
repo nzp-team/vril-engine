@@ -107,6 +107,8 @@ typedef struct
 	float		grenades;
 	float   	perks;
 	float		takedamage;
+	float 		gungame_weapon_idx;
+	float 		gungame_score_threshold;
 	int			chain;
 	float		deadflag;
 	vec3_t		view_ofs;
