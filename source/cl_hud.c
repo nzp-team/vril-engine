@@ -1871,7 +1871,7 @@ void HUD_GunGame (void)
 	char weapon_id[64];
 	char point_info[64];
 
-	int client_points;
+	int client_points = 0;
 
 	for(int i = 0; i < svs.maxclients; i++) {
 		if (i == cl.viewentity - 1) {
