@@ -21,9 +21,12 @@ function run_restart_stress_test()
 	local launch_log="${WORKING_DIR}/restart-stress.log"
 	local command
 	local exit_status
+	local engine_pid
+	local tail_pid
 
 	print_info "Beginning same-map restart stress test.."
 	rm -f "${console_log}" "${launch_log}"
+	touch "${console_log}"
 	write_test_setup "ndu" "2"
 
 	# Allow for 100 five-second intervals plus startup overhead.
@@ -32,8 +35,13 @@ function run_restart_stress_test()
 	echo "[${command}]"
 
 	set +o errexit
-	${command} > "${launch_log}" 2>&1
+	${command} > "${launch_log}" 2>&1 &
+	engine_pid=$!
+	tail -n 0 --pid="${engine_pid}" -F "${console_log}" &
+	tail_pid=$!
+	wait "${engine_pid}"
 	exit_status=$?
+	wait "${tail_pid}" || true
 	set -o errexit
 
 	if [[ "${exit_status}" -eq 0 ]] &&
