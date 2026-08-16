@@ -105,6 +105,7 @@ COMMON_OBJS =	\
 	source/platform/psp2/net_adhoc_psp2.o \
 	source/platform/psp2/net_udp_psp2.o \
 	source/input.o \
+	source/platform/psp2/in_psp2.o \
 	source/platform/psp2/gl/gl_vidpsp2.o \
 	source/platform/psp2/neon_mathfun.o \
 	source/crypter.o

@@ -157,7 +157,7 @@ typedef struct {
 //	trailstate_t *emitstate;    //when to next emit
 	unsigned short frame;
 } lerpents_t;
-//
+///
 // the client_state_t structure is wiped completely at every
 // server signon
 //
@@ -165,7 +165,7 @@ typedef struct
 {
 	int			movemessages;	// since connecting to this server
 								// throw out the first couple, so the player
-								// doesn't accidentally do something the
+								// doesn't accidentally do something the 
 								// first frame
 	usercmd_t	cmd;			// last command sent to the server
 
@@ -175,7 +175,8 @@ typedef struct
 	int			progress_bar;			// Perk icons.
 	float	item_gettime[32];	// cl.time of aquiring item, for blinking
 	float		faceanimtime;	// use anim frame if cl.time < this
-
+	float 		maxspeed; 			// Player's maximum allowed speed.
+	int 		facingenemy;		// which ent is the client currently facing?
 	cshift_t	cshifts[NUM_CSHIFTS];	// color shifts for damage, powerups
 	cshift_t	prev_cshifts[NUM_CSHIFTS];	// and content types
 
@@ -186,13 +187,17 @@ typedef struct
 	vec3_t		mviewangles[2];	// during demo playback viewangles is lerped
 								// between these
 	vec3_t		viewangles;
-
+	
 	vec3_t		mvelocity[2];	// update by server, used for lean+bob
 								// (0 is newest)
 	vec3_t		velocity;		// lerped between mvelocity[0] and [1]
 
 	vec3_t		punchangle;		// temporary offset
 	vec3_t		gun_kick;		// temporary kick
+	vec3_t 		ads_offset;	
+	vec3_t 		flash_offset;
+
+	int 		flash_size; 	// Size of muzzleflash
 
 // pitch drifting vars
 	float		idealpitch;
@@ -207,20 +212,21 @@ typedef struct
 	qboolean	paused;			// send over by server
 	qboolean	onground;
 	qboolean	inwater;
-
+	
 	int			intermission;	// don't change view angle, full screen, etc
 	int			completed_time;	// latched at intermission start
-
-	double		mtime[2];		// the timestamp of last two messages
+	
+	double		mtime[2];		// the timestamp of last two messages	
 	double		time;			// clients view of time, should be between
 								// servertime and oldservertime to generate
 								// a lerp point for other data
 	double		oldtime;		// previous cl.time, time-oldtime is used
 								// to decay light values and smooth step ups
 	double		ctime;			// joe: copy of cl.time, to avoid incidents caused by rewind
-    double		thundertime;		// R00k
-    double			laser_point_time;
+
+
 	float		last_received_message;	// (realtime) for net trouble icon
+    double			laser_point_time;
 
 //
 // information that is static for the entire time connected to a server
@@ -228,15 +234,15 @@ typedef struct
 	struct model_s		*model_precache[MAX_MODELS];
 	struct sfx_s		*sound_precache[MAX_SOUNDS];
 
+	char 		weaponname[32]; // name of the currently held weapon
+	char 		touchstring[32]; // name of the weapon/other string we're touching.
 	char		levelname[40];	// for display on solo scoreboard
-	int			viewentity;		// cl_entities[cl.viewentity] = player
+	int			viewentity;		// cl_entitites[cl.viewentity] = player
 	int			maxclients;
 	int			gametype;
 
-	lerpents_t	*lerpents;
-
 // refresh related state
-	struct model_s	*worldmodel;	// cl_entities[0].model
+	struct model_s	*worldmodel;	// cl_entitites[0].model
 	struct efrag_s	*free_efrags;
 	int			num_efrags;
 	int			num_entities;	// held in cl_entities array
@@ -248,6 +254,13 @@ typedef struct
 
 // frag scoreboard
 	scoreboard_t	*scores;		// [cl.maxclients]
+
+#ifdef QUAKE2
+// light level at player's position including dlights
+// this is sent back to the server each frame
+// architectually ugly but it works
+	int			light_level;
+#endif
 } client_state_t;
 
 

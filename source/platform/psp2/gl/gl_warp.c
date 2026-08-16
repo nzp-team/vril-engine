@@ -777,6 +777,3 @@ void R_InitSky (miptex_t *mt)
 
 	free(trans);
 }
-
-	free(trans);
-}
