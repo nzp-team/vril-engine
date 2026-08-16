@@ -90,7 +90,6 @@ cvar_t		scr_showram = {"showram","1"};
 cvar_t		scr_showturtle = {"showturtle","0"};
 cvar_t		scr_showpause = {"showpause","1"};
 cvar_t		scr_printspeed = {"scr_printspeed","8"};
-<<<<<<<< HEAD:source/render/r_screen.c
 cvar_t 		scr_showfps = {"show_fps", "0"};
 cvar_t		scr_loadscreen = {"scr_loadscreen","1"};
 cvar_t		gl_triplebuffer = {"gl_triplebuffer", "1", true };
@@ -100,15 +99,6 @@ cvar_t		scr_coloredtext = {"scr_coloredtext", "1", true};
 cvar_t		scr_conheight = {"scr_conheight", "0.5"};
 cvar_t		r_dithering = {"r_dithering", "1", true};
 #endif
-<<<<<<< HEAD
-========
-cvar_t 		scr_showfps = {"scr_showfps", "0"};
-cvar_t		scr_loadscreen = {"scr_loadscreen","1"};
-cvar_t		gl_triplebuffer = {"gl_triplebuffer", "1", true };
-cvar_t 		cl_crosshair_debug = {"cl_crosshair_debug", "0", true};
->>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
-=======
->>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 
 extern	cvar_t	crosshair;
 
@@ -206,8 +196,6 @@ void SCR_DrawCenterString (void)
 		for (l=0 ; l<40 ; l++)
 			if (start[l] == '\n' || !start[l])
 				break;
-<<<<<<< HEAD
-<<<<<<<< HEAD:source/render/r_screen.c
 		memcpy(line, start, l);
 		line[l] = '\0';
 		x = (vid.width - getTextWidth(line, vid.scale))/2;
@@ -222,29 +210,6 @@ void SCR_DrawCenterString (void)
 				x += 8 * vid.scale;
 			else
 				x += (font_kerningamount[(int)(start[j] - 33)] + 1) * vid.scale;
-========
-		x = (vid.width - getTextWidth(start, 1))/2;
-=======
-		memcpy(line, start, l);
-		line[l] = '\0';
-		x = (vid.width - getTextWidth(line, vid.scale))/2;
->>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
-		for (j=0 ; j<l ; j++)
-		{
-			Draw_CharacterRGBA(x, y, start[j], 255, 255, 255, 255, vid.scale);
-
-			// Hooray for variable-spacing!
-			if (start[j] == ' ')
-				x += 4 * vid.scale;
-			else if ((int)start[j] < 33 || (int)start[j] > 126)
-				x += 8 * vid.scale;
-			else
-<<<<<<< HEAD
-				x += (font_kerningamount[(int)(start[j] - 33)] + 1);
->>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
-=======
-				x += (font_kerningamount[(int)(start[j] - 33)] + 1) * vid.scale;
->>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 
 			if (!remaining--)
 				return;
@@ -277,7 +242,6 @@ void SCR_CheckDrawCenterString (void)
 	SCR_DrawCenterString ();
 }
 
-<<<<<<<< HEAD:source/render/r_screen.c
 /*
 ===============================================================================
 
@@ -622,333 +586,11 @@ void SCR_CheckDrawUseString (void)
 
 //=============================================================================
 
-========
->>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
-/*
-===============================================================================
-
-Press somthing printing
-
-===============================================================================
-*/
-<<<<<<<< HEAD:source/render/r_screen.c
-========
-
-char			scr_usestring[64];
-char 			scr_usestring2[64];
-float			scr_usetime_off = 0.0f;
-int				button_pic_x;
-
-extern image_t 	b_rightface;
-extern image_t 	b_leftface;
-extern image_t 	b_bottomface;
-extern image_t 	b_topface;
-extern image_t 	b_left;
-extern image_t 	b_right;
-extern image_t 	b_up;
-extern image_t 	b_down;
-extern image_t 	b_lt;
-extern image_t 	b_rt;
-extern image_t 	b_start;
-extern image_t 	b_select;
-extern image_t	b_zlt;
-extern image_t 	b_zrt;
-
-/*
-==============
-SCR_UsePrint
-
-Similiar to above, but will also print the current button for the action.
-==============
-*/
-
-int GetButtonIcon (char *buttonname)
-{
-	int		j;
-	int		l;
-	char	*b;
-	l = strlen(buttonname);
-
-	for (j=0 ; j<256 ; j++)
-	{
-		b = keybindings[j];
-		if (!b)
-			continue;
-		if (!strncmp (b, buttonname, l) )
-		{
-			// naievil -- need to fix these
-			if (!strcmp(Key_KeynumToString(j), "UPARROW"))
-				return b_up;
-			else if (!strcmp(Key_KeynumToString(j), "DOWNARROW"))
-				return b_down;
-			else if (!strcmp(Key_KeynumToString(j), "LEFTARROW"))
-				return b_left;
-			else if (!strcmp(Key_KeynumToString(j), "RIGHTARROW"))
-				return b_right;
-			else if (!strcmp(Key_KeynumToString(j), "SELECT"))
-				return b_select;
-			else if (!strcmp(Key_KeynumToString(j), "RIGHTFACE"))
-				return b_rightface;
-			else if (!strcmp(Key_KeynumToString(j), "BOTTOMFACE"))
-				return b_bottomface;
-			else if (!strcmp(Key_KeynumToString(j), "TOPFACE"))
-				return b_topface;
-			else if (!strcmp(Key_KeynumToString(j), "LEFTFACE"))
-				return b_leftface;
-			else if (!strcmp(Key_KeynumToString(j), "LTRIGGER"))
-				return b_lt;
-			else if (!strcmp(Key_KeynumToString(j), "RTRIGGER"))
-				return b_rt;
-			else if (!strcmp(Key_KeynumToString(j), "ZLTRIGGER"))
-				return b_zlt;
-			else if (!strcmp(Key_KeynumToString(j), "ZRTRIGGER"))
-				return b_zrt;
-		}
-	}
-	return b_rightface;
-}
-
-char *GetUseButtonL ()
-{
-	int		j;
-	int		l;
-	char	*b;
-	l = strlen("+use");
-
-	for (j=0 ; j<256 ; j++)
-	{
-		b = keybindings[j];
-		if (!b)
-			continue;
-		if (!strncmp (b, "+use", l) )
-		{
-			if (!strcmp(Key_KeynumToString(j), "SELECT") ||
-				!strcmp(Key_KeynumToString(j), "LTRIGGER") ||
-				!strcmp(Key_KeynumToString(j), "RTRIGGER") ||
-				!strcmp(Key_KeynumToString(j), "HOME"))
-				return "  ";
-			else
-				return " ";
-		}
-	}
-	return " ";
-}
-
-char *GetGrenadeButtonL ()
-{
-	int		j;
-	int		l;
-	char	*b;
-	l = strlen("+grenade");
-
-	for (j=0 ; j<256 ; j++)
-	{
-		b = keybindings[j];
-		if (!b)
-			continue;
-		if (!strncmp (b, "+grenade", l) )
-		{
-			if (!strcmp(Key_KeynumToString(j), "SELECT") ||
-				!strcmp(Key_KeynumToString(j), "LTRIGGER") ||
-				!strcmp(Key_KeynumToString(j), "RTRIGGER") ||
-				!strcmp(Key_KeynumToString(j), "HOME"))
-				return "  ";
-			else
-				return " ";
-		}
-	}
-	return " ";
-}
-
-char *GetPerkName (int perk)
-{
-	switch (perk)
-	{
-		case 1:
-			return "Quick Revive";
-		case 2:
-			return "Juggernog";
-		case 3:
-			return "Speed Cola";
-		case 4:
-			return "Double Tap";
-		case 5:
-			return "Stamin-Up";
-		case 6:
-			return "PhD Flopper";
-		case 7:
-			return "Deadshot Daiquiri";
-		case 8:
-			return "Mule Kick";
-		default:
-			return "NULL";
-	}
-}
-
-void SCR_UsePrint (int type, int cost, int weapon)
-{
-	//naievil -- fixme
-    char s[128];
-	char c[128];
-
-    switch (type)
-	{
-		case 0://clear
-			strcpy(s, "");
-			strcpy(c, "");
-			break;
-		case 1://door
-			strcpy(s, va("Hold  %s  to open Door\n", GetUseButtonL()));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 2://debris
-			strcpy(s, va("Hold  %s  to remove Debris\n", GetUseButtonL()));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 3://ammo
-			strcpy(s, va("Hold  %s  to buy Ammo for %s\n", GetUseButtonL(), cl.touchstring));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 4://weapon
-			strcpy(s, va("Hold  %s  to buy %s\n", GetUseButtonL(), cl.touchstring));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 5://window
-			strcpy(s, va("Hold  %s  to Rebuild Barrier\n", GetUseButtonL()));
-			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 6://box
-			strcpy(s, va("Hold  %s  to for Mystery Box\n", GetUseButtonL()));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 7://box take
-			strcpy(s, va("Hold  %s  for %s\n", GetUseButtonL(), cl.touchstring));
-			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 8://power
-			strcpy(s, "The Power must be Activated first\n");
-			strcpy(c, "");
-			button_pic_x = 100;
-			break;
-		case 9://perk
-			strcpy(s, va("Hold  %s  to buy %s\n", GetUseButtonL(), GetPerkName(weapon)));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 10://turn on power
-			strcpy(s, va("Hold  %s  to Turn On the Power\n", GetUseButtonL()));
-			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 11://turn on trap
-			strcpy(s, va("Hold  %s  to Activate the Trap\n", GetUseButtonL()));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 12://PAP
-			strcpy(s, va("Hold  %s  to Pack-a-Punch\n", GetUseButtonL()));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 13://revive
-			strcpy(s, va("Hold  %s  to Fix your Code.. :)\n", GetUseButtonL()));
-			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 14://use teleporter (free)
-			strcpy(s, va("Hold  %s  to use Teleporter\n", GetUseButtonL()));
-			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 15://use teleporter (cost)
-			strcpy(s, va("Hold  %s  to use Teleporter\n", GetUseButtonL()));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 16://tp cooldown
-			strcpy(s, "Teleporter is cooling down\n");
-			strcpy(c, "");
-			button_pic_x = 100;
-			break;
-		case 17://link
-			strcpy(s, va("Hold  %s  to initiate link to pad\n", GetUseButtonL()));
-			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 18://no link
-			strcpy(s, "Link not active\n");
-			strcpy(c, "");
-			button_pic_x = 100;
-			break;
-		case 19://finish link
-			strcpy(s, va("Hold  %s  to link pad with core\n", GetUseButtonL()));
-			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 20://buyable ending
-			strcpy(s, va("Hold  %s  to End the Game\n", GetUseButtonL()));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		default:
-			Con_Printf ("No type defined in engine for useprint\n");
-			break;
-	}
-
-	strncpy (scr_usestring, va(s), sizeof(scr_usestring)-1);
-	strncpy (scr_usestring2, va(c), sizeof(scr_usestring2)-1);
-	scr_usetime_off = 0.1;
-}
-
-
-void SCR_DrawUseString (void)
-{
-	int	y;
-	int x;
-	float scale = vid.scale;
-
-	if (cl.stats[STAT_HEALTH] < 0)
-		return;
-// the finale prints the characters one at a time
-
-	y = 182 * scale;
-    x = (vid.width - getTextWidth(scr_usestring, scale))/2;
-
-	Draw_ColoredStringCentered(y, scr_usestring, 255, 255, 255, 255, scale);
-	Draw_ColoredStringCentered(y + (10 * scale), scr_usestring2, 255, 255, 255, 255, scale);
-
-	if (button_pic_x != 100)
-		Draw_StretchPic(x + getTextWidth("Hold ", scale), y - (4 * scale),
-			GetButtonIcon("+use"), 16 * scale, 16 * scale);
-}
-
-void SCR_CheckDrawUseString (void)
-{
-	scr_copytop = 1;
-
-	scr_usetime_off -= (float)host_frametime;
-
-	if ((scr_usetime_off <= 0 && !cl.intermission) || key_dest != key_game || cl.stats[STAT_HEALTH] <= 0)
-		return;
-
-	SCR_DrawUseString ();
-}
-
-//=============================================================================
-
 /*
 ====================
 CalcFov
 ====================
 */
->>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
 float CalcFov (float fov_x, float width, float height)
 {
         float   a;
@@ -1015,10 +657,7 @@ static void SCR_CalcRefdef (void)
 	if (scr_viewsize.value >= 100.0f) {
 		full = true;
 		size = 100.0;
-<<<<<<<< HEAD:source/render/r_screen.c
 		sb_lines = 0;
-========
->>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
 	} else
 		size = scr_viewsize.value;
 	if (cl.intermission)
@@ -1105,20 +744,11 @@ void SCR_Init (void)
 	Cvar_RegisterVariable (&scr_showfps);
 	Cvar_RegisterVariable (&scr_loadscreen);
 	Cvar_RegisterVariable (&cl_crosshair_debug);
-<<<<<<< HEAD
-<<<<<<<< HEAD:source/render/r_screen.c
-=======
->>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 #ifdef __PSP__
 	Cvar_RegisterVariable (&scr_coloredtext);
 	Cvar_RegisterVariable (&scr_conheight);
 	Cvar_RegisterVariable (&r_dithering);
 #endif
-<<<<<<< HEAD
-========
->>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
-=======
->>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 
 	Cvar_RegisterVariable (&gl_triplebuffer);
 
@@ -1170,17 +800,8 @@ void SCR_DrawFPS (void)
 	{
 		char	st[16];
 		sprintf (st, "%4.0f fps", lastfps);
-<<<<<<< HEAD
-<<<<<<<< HEAD:source/render/r_screen.c
 		Draw_ColoredString(vid.width - getTextWidth(st, vid.scale) - (4 * vid.scale),
 			2 * vid.scale, st, 255, 255, 255, 255, vid.scale);
-========
-		Draw_String (300, 0, st);
->>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
-=======
-		Draw_ColoredString(vid.width - getTextWidth(st, vid.scale) - (4 * vid.scale),
-			2 * vid.scale, st, 255, 255, 255, 255, vid.scale);
->>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 	}
 }
 
@@ -1247,11 +868,7 @@ void SCR_DrawConsole (void)
 	if (scr_con_current)
 	{
 		scr_copyeverything = 1;
-<<<<<<<< HEAD:source/render/r_screen.c
 		Con_DrawConsole (scr_con_current, true, vid.scale);
-========
-		Con_DrawConsole (scr_con_current, true, 1);
->>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
 		clearconsole = 0;
 	}
 	else
@@ -1270,14 +887,7 @@ void SCR_DrawConsole (void)
 ============================================================================== 
 */ 
 
-<<<<<<< HEAD
-<<<<<<<< HEAD:source/render/r_screen.c
 #ifndef __PSP__
-========
->>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
-=======
-#ifndef __PSP__
->>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 typedef struct _TargaHeader {
 	unsigned char 	id_length, colormap_type, image_type;
 	unsigned short	colormap_index, colormap_length;
@@ -1342,14 +952,7 @@ void SCR_ScreenShot_f (void)
 	free (buffer);
 	Con_Printf ("Wrote %s\n", pcxname);
 } 
-<<<<<<< HEAD
-<<<<<<<< HEAD:source/render/r_screen.c
 #endif
-========
->>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
-=======
-#endif
->>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 
 
 //=============================================================================
@@ -1406,14 +1009,7 @@ qboolean	scr_drawdialog;
 void SCR_DrawNotifyString (void)
 {
 	char	*start;
-<<<<<<< HEAD
-<<<<<<<< HEAD:source/render/r_screen.c
 	char	line[41];
-========
->>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
-=======
-	char	line[41];
->>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 	int		l;
 	int		j;
 	int		x, y;
@@ -1428,10 +1024,6 @@ void SCR_DrawNotifyString (void)
 		for (l=0 ; l<40 ; l++)
 			if (start[l] == '\n' || !start[l])
 				break;
-<<<<<<< HEAD
-<<<<<<<< HEAD:source/render/r_screen.c
-=======
->>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 		memcpy(line, start, l);
 		line[l] = '\0';
 		x = (vid.width - getTextWidth(line, vid.scale))/2;
@@ -1444,20 +1036,8 @@ void SCR_DrawNotifyString (void)
 			else
 				x += (font_kerningamount[(int)(start[j] - 33)] + 1) * vid.scale;
 		}
-<<<<<<< HEAD
 			
 		y += 8 * vid.scale;
-========
-		x = (vid.width - l*8)/2;
-		for (j=0 ; j<l ; j++, x+=8)
-			Draw_Character (x, y, start[j]);	
-			
-		y += 8;
->>>>>>>> 2bbc1b7 (PSP2: Experimental move to FFP render pipeline):source/platform/psp2/gl/gl_screen.c
-=======
-			
-		y += 8 * vid.scale;
->>>>>>> c1f9307 (GLOBAL: Unify input, r_screen)
 
 		while (*start && *start != '\n')
 			start++;
@@ -1751,4 +1331,3 @@ void SCR_UpdateScreen (void)
 
 	GL_EndRendering ();
 }
-
