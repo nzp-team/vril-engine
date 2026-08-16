@@ -246,3 +246,4 @@ void SV_CheckForNewClients (void);
 void SV_RunClients (void);
 void SV_SaveSpawnparms ();
 void SV_SpawnServer (char *server);
+void SV_RestartServer (void);

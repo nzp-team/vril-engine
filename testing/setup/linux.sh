@@ -62,5 +62,6 @@ function capture_path()
 function write_test_setup()
 {
 	local map_name="${1}"
-	printf '%s\n' "$(map_boot_arguments "${map_name}") +vid_width 320 +vid_height 240" > "${working_dir}/nzportable/setup.ini"
+	local test_mode="${2:-1}"
+	printf '%s\n' "$(map_boot_arguments "${map_name}" "${test_mode}") +vid_width 320 +vid_height 240" > "${working_dir}/nzportable/setup.ini"
 }

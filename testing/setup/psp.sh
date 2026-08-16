@@ -142,7 +142,8 @@ function run_nzportable()
 function write_test_setup()
 {
 	local map_name="${1}"
-	printf '%s\n' "$(map_boot_arguments "${map_name}") -cpu333" > "${working_dir}/nzportable/setup.ini"
+	local test_mode="${2:-1}"
+	printf '%s\n' "$(map_boot_arguments "${map_name}" "${test_mode}") -cpu333" > "${working_dir}/nzportable/setup.ini"
 }
 
 function capture_path()

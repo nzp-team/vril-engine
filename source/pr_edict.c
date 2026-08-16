@@ -1051,6 +1051,54 @@ void ED_LoadFromFile (char *data)
 
 func_t	EndFrame;
 void PR_InitStringTable(void);
+static float *pr_initial_globals;
+static int pr_initial_globals_count;
+
+typedef struct pr_zoned_string_s
+{
+	struct pr_zoned_string_s *next;
+	struct pr_zoned_string_s **prev;
+} pr_zoned_string_t;
+
+static pr_zoned_string_t *pr_zoned_strings;
+
+static void PR_ClearZonedStrings (void)
+{
+	pr_zoned_string_t *string;
+
+	while ((string = pr_zoned_strings) != NULL)
+	{
+		pr_zoned_strings = string->next;
+		Z_Free (string);
+	}
+}
+
+char *PR_ZoneString (const char *value)
+{
+	pr_zoned_string_t *string;
+	char *copy;
+
+	string = Z_Malloc (sizeof(*string) + strlen(value) + 1);
+	string->next = pr_zoned_strings;
+	string->prev = &pr_zoned_strings;
+	if (string->next)
+		string->next->prev = &string->next;
+	pr_zoned_strings = string;
+
+	copy = (char *)(string + 1);
+	strcpy (copy, value);
+	return copy;
+}
+
+void PR_UnzoneString (char *value)
+{
+	pr_zoned_string_t *string = ((pr_zoned_string_t *)value) - 1;
+
+	*string->prev = string->next;
+	if (string->next)
+		string->next->prev = string->prev;
+	Z_Free (string);
+}
 /*
 ===============
 PR_LoadProgs
@@ -1278,6 +1326,24 @@ void PR_LoadProgs (void)
 
 	if ((f = ED_FindFunction ("EndFrame")) != NULL)
 		EndFrame = (func_t)(f - pr_functions);
+
+	PR_ClearZonedStrings ();
+	pr_initial_globals_count = progs->numglobals;
+	pr_initial_globals = Hunk_AllocName (
+		pr_initial_globals_count * sizeof(*pr_initial_globals), "pr_globals");
+	memcpy (pr_initial_globals, pr_globals,
+		pr_initial_globals_count * sizeof(*pr_initial_globals));
+}
+
+void PR_ResetProgs (void)
+{
+	if (!pr_initial_globals || pr_initial_globals_count != progs->numglobals)
+		Host_Error ("PR_ResetProgs: no initial globals snapshot");
+
+	memcpy (pr_globals, pr_initial_globals, pr_initial_globals_count * sizeof(*pr_initial_globals));
+	PR_ClearZonedStrings ();
+	PR_InitStringTable ();
+	memset (gefvCache, 0, sizeof(gefvCache));
 }
 
 // 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes  start

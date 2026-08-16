@@ -329,16 +329,12 @@ Restarts the current server for a dead player
 */
 void Host_Restart_f (void)
 {
-	char	mapname[MAX_QPATH];
-
 	if (cls.demoplayback || !sv.active)
 		return;
 
 	if (cmd_source != src_command)
 		return;
-	strcpy (mapname, sv.name);	// must copy out, because it gets cleared
-								// in sv_spawnserver
-    SV_SpawnServer (mapname);
+	SV_RestartServer ();
 }
 
 /*

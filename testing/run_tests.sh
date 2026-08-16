@@ -92,6 +92,11 @@ function load_setup_script()
 function run_test()
 {
     if [[ "${TEST}" == "all" ]]; then
+        local any_test_failed=0
+        local combined_summary="${WORKING_DIR}/fail/summary-all.md"
+        local summary="${WORKING_DIR}/fail/summary.md"
+
+        rm -f "${combined_summary}"
         for test_script in tests/*.sh; do
             local pretty_sh=$(basename ${test_script} .sh) 
 
@@ -100,8 +105,36 @@ function run_test()
                 continue
             fi
 
-            source "./tests/${pretty_sh}.sh" "${PLATFORM}" "${CONTENT_DIR}" "${MODE}" "${WORKING_DIR}"
+            rm -f "${summary}"
+            echo "[TEST]: Running ${pretty_sh}"
+
+            set +o errexit
+            (
+                set -o errexit
+                source "./tests/${pretty_sh}.sh" "${PLATFORM}" "${CONTENT_DIR}" "${MODE}" "${WORKING_DIR}"
+            )
+            local test_status=$?
+            set -o errexit
+
+            if [[ "${test_status}" -ne 0 ]]; then
+                any_test_failed=1
+                mkdir -p "${WORKING_DIR}/fail"
+                if [[ -f "${summary}" ]]; then
+                    cat "${summary}" >> "${combined_summary}"
+                    printf '\n' >> "${combined_summary}"
+                else
+                    printf '## %s\n\n- Test exited with status %i.\n\n' \
+                        "${pretty_sh}" "${test_status}" >> "${combined_summary}"
+                fi
+            fi
         done
+
+        if [[ "${any_test_failed}" -ne 0 ]]; then
+            mv "${combined_summary}" "${summary}"
+            return 1
+        fi
+
+        rm -f "${combined_summary}" "${summary}"
     else
         echo "$(pwd)"
         source "./tests/${TEST}.sh" "${PLATFORM}" "${CONTENT_DIR}" "${MODE}" "${WORKING_DIR}"

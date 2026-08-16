@@ -55,8 +55,7 @@ void Menu_Pause_Yes(void)
 			Music_Resume();
 		}
 
-		// Perform Soft Restart
-		PR_ExecuteProgram (pr_global_struct->Soft_Restart);
+		SV_RestartServer ();
 	} else if (menu_paus_submenu == 3) {
 		// User is returning to Main Menu
 		menu_paus_submenu = 0;

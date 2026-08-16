@@ -163,9 +163,9 @@ function run_mapboot_test()
             echo ""
             printf '%s\n' "${failure_details[@]}"
         } > "${WORKING_DIR}/fail/summary.md"
-        exit 1
+        return 1
     else
-        exit 0
+        return 0
     fi
 }
 

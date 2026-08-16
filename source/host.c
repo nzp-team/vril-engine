@@ -608,6 +608,7 @@ void Host_ServerFrame (void)
 	if (sv.time >= 5.0) {
 		TestHandler_MapBoot();
 	}
+	TestHandler_RestartStress();
 }
 
 /*
