@@ -1245,7 +1245,7 @@ void SV_SpawnServer (char *server)
 	sv.time = 1.0;
 
 	strcpy (sv.name, server);
-	sprintf (sv.modelname,"maps/%s.bsp", server);
+	snprintf (sv.modelname, sizeof(sv.modelname), "maps/%.*s.bsp", (int)sizeof(sv.modelname) - (int)sizeof("maps/.bsp"), server);
 	sv.worldmodel = Mod_ForName (sv.modelname, false);
 	if (!sv.worldmodel)
 	{
@@ -1367,7 +1367,7 @@ void SV_RestartServer (void)
 	sv.state = ss_loading;
 	sv.time = 1.0;
 	Q_strncpyz (sv.name, mapname, sizeof(sv.name));
-	sprintf (sv.modelname, "maps/%s.bsp", mapname);
+	snprintf (sv.modelname, sizeof(sv.modelname), "maps/%.*s.bsp", (int)sizeof(sv.modelname) - (int)sizeof("maps/.bsp"), mapname);
 	sv.worldmodel = worldmodel;
 	sv.models[1] = worldmodel;
 
