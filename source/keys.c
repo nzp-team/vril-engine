@@ -48,6 +48,7 @@ qboolean	keydown[256];
 static double holdstart[256];
 static qboolean holdfired[256];
 static qboolean defernormal[256];
+static qboolean dtfired[256];
 
 #define HOLD_BIND_TIME 0.2
 
@@ -969,6 +970,15 @@ void Key_Event (int key, qboolean down)
 // downs can be matched with ups
 //
 	if (!down) {
+		if (dtfired[key]) {
+			kb = dtbindings[key];
+			if (kb && kb[0] == '+') {
+				sprintf (cmd, "-%.*s %i\n",
+					(int)strcspn(kb + 1, " ;\t\r\n"), kb + 1, key);
+				Cbuf_AddText (cmd);
+			}
+			dtfired[key] = false;
+		}
 		kb = keybindings[key];
 		if (!defernormal[key] && kb && kb[0] == '+') {
 			sprintf (cmd, "-%s %i\n", kb+1, key);
@@ -1001,6 +1011,7 @@ void Key_Event (int key, qboolean down)
 				{	// button commands add keynum as a parm
 					sprintf (cmd, kb, key);
 					Cbuf_AddText (cmd);
+					dtfired[key] = true;
 				}
 				else
 				{
@@ -1073,5 +1084,6 @@ void Key_ClearStates (void)
 		holdstart[i] = 0;
 		holdfired[i] = false;
 		defernormal[i] = false;
+		dtfired[i] = false;
 	}
 }
