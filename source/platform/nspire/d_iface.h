@@ -24,45 +24,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define MAX_LBM_HEIGHT	480
 
-#define FIXED_POINT_PARTICLES 1
-
 typedef struct
 {
 	float	u, v;
 	float	s, t;
 	float	zi;
 } emitpoint_t;
-
-typedef enum {
-	pt_static, pt_grav, pt_slowgrav, pt_fire, pt_explode, pt_explode2, pt_blob, pt_blob2
-} ptype_t;
-
-// !!! if this is changed, it must be changed in d_ifacea.h too !!!
-typedef struct particle_s
-{
-// driver-usable fields
-#if !FIXED_POINT_PARTICLES
-	vec3_t		org;
-	float		color;
-#else
-	fixed16_t   rgf16_org[ 3 ];
-	fixed16_t   f16_color;
-#endif
-// drivers never touch the following fields
-	struct particle_s	*next;
-#if !FIXED_POINT_PARTICLES
-	vec3_t		vel;
-	float		ramp;
-	float		die;
-#else
-	fixed16_t   rgf16_vel[ 3 ];
-	fixed16_t	f16_ramp;
-	fixed16_t 	f16_die;
-#endif
-	ptype_t		type;
-} particle_t;
-
-#define PARTICLE_Z_CLIP	8.0
 
 typedef struct polyvert_s {
 	float	u, v, zi, s, t;
@@ -168,17 +135,14 @@ void D_DisableBackBufferAccess (void);
 void D_EndDirectRect (int x, int y, int width, int height);
 void D_PolysetDraw (void);
 void D_PolysetDrawFinalVerts (finalvert_t *fv, int numverts);
-void D_DrawParticle (particle_t *pparticle);
 void D_DrawPoly (void);
 void D_DrawSprite (void);
 void D_DrawSurfaces (void);
 void D_DrawZPoint (void);
 void D_EnableBackBufferAccess (void);
-void D_EndParticles (void);
 void D_Init (void);
 void D_ViewChanged (void);
 void D_SetupFrame (void);
-void D_StartParticles (void);
 void D_TurnZOn (void);
 void D_WarpScreen (void);
 
@@ -246,4 +210,3 @@ extern int		c_surf;
 extern vrect_t	scr_vrect;
 
 extern byte		*r_warpbuffer;
-

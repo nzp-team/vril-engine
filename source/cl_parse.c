@@ -165,7 +165,6 @@ Crow_bar.
 */
 void CL_ParseBSPDecal (void)
 {
-#ifdef __PSP__
 	vec3_t		pos;
 	int			decal_size;
 	char        *texname;
@@ -179,10 +178,9 @@ void CL_ParseBSPDecal (void)
 	if(!texname)
 		return;
 
-	Con_Printf("BSPDECAL[tex: %s size: %i pos: %f %f %f]\n", texname, decal_size, pos[0], pos[1], pos[2]);
+	Con_DPrintf("BSPDECAL[tex: %s size: %i pos: %f %f %f]\n", texname, decal_size, pos[0], pos[1], pos[2]);
 
 	R_SpawnDecalBSP(pos, texname, decal_size);
-#endif // __PSP__
 }
 
 /*

@@ -84,6 +84,7 @@ typedef struct cachepic_s
 	char			name[MAX_QPATH];
 	int				width, height;
 	qboolean		used;
+	byte			transparent_color;
 	byte			*data;
 	cache_user_t	cache;
 } cachepic_t;

@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern cvar_t r_flatlightstyles;
 
-int decal_blood1, decal_blood2, decal_blood3, decal_q3blood, decal_burn, decal_mark, decal_glow;
 int zombie_skins[4];
 
 /*
@@ -33,17 +32,6 @@ R_InitOtherTextures
 */
 void	R_InitOtherTextures (void)
 {
-	/*
-	//static decals
-	decal_blood1  = Image_LoadImage ("textures/decals/blood_splat01", 0, 0, false, 0, false, true);
-	decal_blood2  = Image_LoadImage ("textures/decals/blood_splat02", 0, 0, false, 0, false, true);
-	decal_blood3  = Image_LoadImage ("textures/decals/blood_splat03", 0, 0, false, 0, false, true);
-    decal_q3blood = Image_LoadImage ("textures/decals/blood_stain", 0, 0, false, 0, false, true);
-	decal_burn	  = Image_LoadImage ("textures/decals/explo_burn01", 0, 0, false, 0, false, true);
-	decal_mark	  = Image_LoadImage ("textures/decals/particle_burn01", 0, 0, false, 0, false, true);
-	decal_glow	  = Image_LoadImage ("textures/decals/glow2", 0, 0, false, 0, false, true);
-	*/
-
 	// external zombie skins
 	zombie_skins[0] = Image_LoadImage ("models/ai/zfull.mdl_0", IMAGE_PCX, 0, true, false);
 	zombie_skins[1] = Image_LoadImage ("models/ai/zfull.mdl_1", IMAGE_PCX, 0, true, false);
@@ -345,4 +333,3 @@ void R_TimeRefresh_f (void)
 void D_FlushCaches (void)
 {
 }
-

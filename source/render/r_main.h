@@ -24,14 +24,18 @@
 #ifndef _RENDER_MAIN_H_
 #define _RENDER_MAIN_H_
 
+#include "r_hyena_types.h"
+#include "r_hyena.h"
 #include "r_color_quantization.h"
 #include "r_entity_fragments.h"
 #include "r_light.h"
 #include "r_fog.h"
 
-#define GFX_REPLACE     0
-
-void Platform_Graphics_SetTextureMode(int texture_mode);
-void Platform_Graphics_Color(float red, float green, float blue, float alpha);
+void R_InitDecals(void);
+void R_ClearDecals(void);
+void R_DrawDecals(void);
+void R_SpawnDecal(vec3_t center, vec3_t normal, vec3_t tangent, int texture, int size, int bsp_decal);
+void R_SpawnDecalStatic(vec3_t origin, int texture, int size);
+void R_SpawnDecalBSP(vec3_t origin, char *texture_name, int size);
 
 #endif // _RENDER_MAIN_H_

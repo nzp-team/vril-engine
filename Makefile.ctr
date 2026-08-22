@@ -137,11 +137,11 @@ COMMON_OBJS =	system.o \
 				platform/ctr/in_ctr.c \
 				platform/ctr/music.c \
 				snd_music.c \
-				platform/ctr/gl/gl_qmb.c \
-				platform/ctr/gl/gl_decal.c \
+				render/r_particles.c \
+				platform/ctr/gl/gl_hyena.c \
+				render/r_decals.c \
 				platform/ctr/gl/gl_draw.c \
 				render/r_fog.c \
-		    	platform/ctr/gl/gl_fog.c \
 				platform/ctr/gl/gl_mesh.c \
 				platform/ctr/gl/gl_model.c \
 				render/r_entity_fragments.c \
@@ -152,7 +152,6 @@ COMMON_OBJS =	system.o \
 				render/r_screen.c \
 				platform/ctr/gl/gl_warp.c \
 				platform/ctr/gl/gl_vidctr.c \
-				platform/ctr/r_part.c \
 				platform/ctr/touch_ctr.c \
 				crypter.c
 

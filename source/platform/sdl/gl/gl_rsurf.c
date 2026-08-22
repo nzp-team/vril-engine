@@ -758,7 +758,7 @@ void R_DrawBrushModel (entity_t *e)
 	if (R_CullBox (mins, maxs))
 		return;
 
-	Platform_Graphics_Color(1,1,1,1);
+	Hyena_SetColor(1, 1, 1, 1);
 	memset (lightmap_polys, 0, sizeof(lightmap_polys));
 
 	VectorSubtract (r_refdef.vieworg, e->origin, modelorg);
@@ -1068,7 +1068,7 @@ void R_DrawWorld (void)
 
 	currententity = &ent;
 
-	Platform_Graphics_Color(1,1,1,1);
+	Hyena_SetColor(1, 1, 1, 1);
 	memset (lightmap_polys, 0, sizeof(lightmap_polys));
 
 	R_ClearSkyBox ();

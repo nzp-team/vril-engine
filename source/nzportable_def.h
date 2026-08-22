@@ -302,9 +302,9 @@ typedef struct
 #include "snd_music.h"
 #include PLATFORM_FILE(music.h)
 
-#include RENDERER_FILE(main.h)
-
 #include "render/r_main.h"
+
+#include RENDERER_FILE(main.h)
 
 //=============================================================================
 

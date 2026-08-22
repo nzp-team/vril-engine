@@ -151,7 +151,6 @@ cvar_t	r_aliastransadj = {"r_aliastransadj", "100"};
 
 cvar_t r_retro = {"r_retro", "1"};
 cvar_t r_dithering = {"r_dithering", "1"};
-cvar_t r_runqmbparticles = {"r_runqmbparticles", "1"};
 
 extern cvar_t	scr_fov;
 
@@ -1235,6 +1234,7 @@ SetVisibilityByPassages ();
 	}
 	/*printf("R_RenderView_ %s:%d\n", __FILE__, __LINE__ );*/
 
+	R_DrawDecals ();
 	R_DrawParticles ();
 
 	if (r_dspeeds.value)

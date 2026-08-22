@@ -138,11 +138,11 @@ COMMON_OBJS =	system.o \
 				platform/nx/music_sdl.c \
 				snd_music.c \
 				platform/nx/gl/gl.c \
-				platform/nx/gl/gl_qmb.c \
-				platform/nx/gl/gl_decal.c \
+				render/r_particles.c \
+				platform/nx/gl/gl_hyena.c \
+				render/r_decals.c \
 				platform/nx/gl/gl_draw.c \
 				render/r_fog.c \
-		    	platform/nx/gl/gl_fog.c \
 				platform/nx/gl/gl_mesh.c \
 				platform/nx/gl/gl_model.c \
 				render/r_entity_fragments.c \
@@ -153,7 +153,6 @@ COMMON_OBJS =	system.o \
 				render/r_screen.c \
 				platform/nx/gl/gl_warp.c \
 				platform/nx/gl/gl_vidnx.c \
-				platform/nx/r_part.c \
 				crypter.c
 
 CFILES		:=	$(COMMON_OBJS)

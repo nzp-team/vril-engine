@@ -473,7 +473,7 @@ byte* loadimagepixelstoqpal (char* texname, int width, int height, byte *data, q
 	int converted_counter = 0;
 	byte result;
 	for (int i = 0; i < width * height * 4; i+= 4) {
-		result = findclosestpalmatch(data[i], data[i + 1], data[i + 2], data[i + 3]);
+		result = data[i + 3] < 128 ? 255 : findclosestpalmatch(data[i], data[i + 1], data[i + 2], data[i + 3]);
 		converted_pixels[converted_counter] = transparenttoblack && result == 255 ? 0 : result;
 		converted_counter++;
 	}
@@ -525,6 +525,7 @@ int Soft_LoadTexture (char *texname, int width, int height, byte *data, qboolean
 	pic->width = width;
 	pic->height = height;
 	pic->used = qtrue;
+	pic->transparent_color = transparenttoblack ? 0 : 255;
 	
 	numcachepics++;
 
