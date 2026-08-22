@@ -18,6 +18,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#ifndef _NSPIRE_CPU_MAIN_H_
+#define _NSPIRE_CPU_MAIN_H_
+
+typedef enum {
+	pm_classic, pm_qmb, pm_quake3, pm_mixed
+} part_mode_t;
+
+extern cvar_t	r_farclip;
+extern cvar_t	r_explosiontype;
+extern cvar_t	r_flametype;
+extern cvar_t	r_laserpoint;
+extern cvar_t	r_part_explosions;
+extern cvar_t	r_part_sparks;
+extern cvar_t	r_part_blood;
+extern cvar_t	r_part_blobs;
+extern cvar_t	r_part_lavasplash;
+extern cvar_t	r_part_flies;
 extern cvar_t	r_part_spikes;
 extern cvar_t 	r_part_gunshots;
 extern cvar_t 	r_part_telesplash;
@@ -55,6 +72,8 @@ half-life Render Modes. Crow_bar
 #define ISGLOW(ent)     ((ent)->rendermode == TEX_GLOW     && (ent)->renderamt > 0 && (ent)->renderamt <= 1)
 #define ISSOLID(ent)    ((ent)->rendermode == TEX_SOLID    && (ent)->renderamt > 0 && (ent)->renderamt <= 1)
 #define ISADDITIVE(ent) ((ent)->rendermode == TEX_ADDITIVE && (ent)->renderamt > 0 && (ent)->renderamt <= 1)
+
+#endif // _NSPIRE_CPU_MAIN_H_
 
 #define ISLMPOINT(ent)  ((ent)->rendermode == TEX_LMPOINT  && ((ent)->rendercolor[0] <= 1|| \
                                                                (ent)->rendercolor[1] <= 1|| \

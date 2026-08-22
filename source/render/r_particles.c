@@ -175,6 +175,9 @@ int particle_mode        = 0; // 0: classic (default), 1: QMB, 2: mixed
 
 cvar_t r_runqmbparticles = { "r_runqmbparticles", "1", true };
 
+void R_ClearParticles(void);
+void QMB_RunParticleEffect(vec3_t org, vec3_t dir, int col, int count);
+
 void
 R_ReadPointFile_f(void)
 {
@@ -687,7 +690,7 @@ AddParticle(part_type_t type, vec3_t org, int count, float size, float time, col
     if (!qmb_initialized)
         Sys_Error("QMB particle added without initialization");
 
-    if (type < 0 || type >= num_particletypes) {
+    if (type >= num_particletypes) {
         Sys_Error("Invalid type (%d)", type);
     }
 
@@ -925,7 +928,7 @@ AddParticleTrail(part_type_t type, vec3_t start, vec3_t end, float size, float t
     if (!qmb_initialized)
         Sys_Error("QMB particle added without initialization");
 
-    if (type < 0 || type >= num_particletypes)
+    if (type >= num_particletypes)
         Sys_Error("Invalid type (%d)", type);
 
     pt = &particle_types[particle_type_index[type]];
@@ -1745,7 +1748,7 @@ AddColoredParticle(part_type_t type, vec3_t org, int count, float size, float ti
     if (!qmb_initialized)
         Sys_Error("QMB particle added without initialization");
 
-    if (type < 0 || type >= num_particletypes)
+    if (type >= num_particletypes)
         Sys_Error("Invalid type (%d)", type);
 
     pt = &particle_types[particle_type_index[type]];
@@ -2658,6 +2661,7 @@ vec3_t avelocities[NUMVERTEXNORMALS];
 void
 R_EntityParticles(entity_t * ent)
 {
+    #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 
     int i;

@@ -178,7 +178,8 @@ void CL_ParseBSPDecal (void)
 	if(!texname)
 		return;
 
-	Con_DPrintf("BSPDECAL[tex: %s size: %i pos: %f %f %f]\n", texname, decal_size, pos[0], pos[1], pos[2]);
+	Con_DPrintf("BSPDECAL[tex: %s size: %i pos: %f %f %f]\n", texname, decal_size,
+		(double)pos[0], (double)pos[1], (double)pos[2]);
 
 	R_SpawnDecalBSP(pos, texname, decal_size);
 }
