@@ -254,6 +254,7 @@ void SV_SendServerinfo (client_t *client)
 
 	client->sendsignon = true;
 	client->spawned = false;		// need prespawn, spawn, etc
+	client->old_weaponid = -1;		// resend svc_weapondata after (re)connect
 }
 
 /*
@@ -812,6 +813,10 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 
 	MSG_WriteByte (msg, ent->v.gungame_weapon_idx);
 	MSG_WriteShort (msg, ent->v.gungame_score_threshold);
+	// movement speed + aim-assist state for remote clients (sv_player
+	// is not available off-host)
+	MSG_WriteShort (msg, ent->v.maxspeed);
+	MSG_WriteByte (msg, ent->v.facingenemy);
 }
 
 /*
@@ -891,7 +896,7 @@ void SV_UpdateToReliableMessages (void)
 				MSG_WriteShort (&client->message, host_client->edict->v.kills);
 			}
 
-			host_client->old_points = host_client->edict->v.points;
+			host_client->old_kills = host_client->edict->v.kills;
 		}
 	}
 
@@ -950,6 +955,25 @@ void SV_SendClientMessages (void)
 
 		if (host_client->spawned)
 		{
+			// per-weapon client visuals (name, ADS/flash offsets) live
+			// in the progs, which remote clients cannot read — send
+			// them reliably whenever this client's weapon changes
+			if ((int)host_client->edict->v.weapon != host_client->old_weaponid &&
+			    host_client->message.maxsize - host_client->message.cursize > 96)
+			{
+				edict_t *ed = host_client->edict;
+				int k;
+
+				MSG_WriteByte (&host_client->message, svc_weapondata);
+				MSG_WriteString (&host_client->message, PR_GetString(ed->v.Weapon_Name));
+				for (k = 0; k < 3; k++)
+					MSG_WriteShort (&host_client->message, (int)ed->v.ADS_Offset[k]);
+				for (k = 0; k < 3; k++)
+					MSG_WriteShort (&host_client->message, (int)ed->v.Flash_Offset[k]);
+				MSG_WriteShort (&host_client->message, (int)ed->v.Flash_Size);
+				host_client->old_weaponid = (int)ed->v.weapon;
+			}
+
 			if (!SV_SendClientDatagram (host_client))
 				continue;
 		}

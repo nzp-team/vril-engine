@@ -1122,7 +1122,7 @@ extern "C" void Draw_Crosshair (void)
 		Draw_FillByColor(368, 7, 112, 256, 0, 0, 0, 255); // Right
 	}
 		
-   	if (Hitmark_Time > sv.time)
+   	if (Hitmark_Time > cl.time)
 		Draw_ColoredStretchPic ((vid.width - 16)/2, (vid.height - 16)/2, hitmark, 16, 16, 255, 255, 255, 225);
 
 	// Make sure to do this after hitmark drawing.
@@ -1134,14 +1134,16 @@ extern "C" void Draw_Crosshair (void)
 
 	float col;
 
-	if (sv_player->v.facingenemy == 1) {
+	// replicated via STAT_FACINGENEMY — valid for the local player on
+	// host and remote clients alike (sv_player is neither)
+	if (cl.stats[STAT_FACINGENEMY] == 1) {
 		col = 0;
 	} else {
 		col = 255;
 	}
 
 	// crosshair moving
-	if (crosshair_spread_time > sv.time && crosshair_spread_time)
+	if (crosshair_spread_time > cl.time && crosshair_spread_time)
     {
         cur_spread = cur_spread + 10;
 		crosshair_opacity = 128;
@@ -1150,7 +1152,7 @@ extern "C" void Draw_Crosshair (void)
 			cur_spread = CrossHairMaxSpread();
     }
 	// crosshair not moving
-    else if (crosshair_spread_time < sv.time && crosshair_spread_time)
+    else if (crosshair_spread_time < cl.time && crosshair_spread_time)
     {
         cur_spread = cur_spread - 4;
 		crosshair_opacity = 255;
@@ -1175,9 +1177,11 @@ extern "C" void Draw_Crosshair (void)
 		if (CrossHairMaxSpread() < crosshair_offset || croshhairmoving)
 			crosshair_offset = CrossHairMaxSpread();
 
-		if (sv_player->v.view_ofs[2] == 8) {
+		// cl.viewheight mirrors the player's view_ofs[2] via
+		// svc_clientdata, so it is correct on remote clients too
+		if (cl.viewheight == 8) {
 			crosshair_offset *= 0.80;
-		} else if (sv_player->v.view_ofs[2] == -10) {
+		} else if (cl.viewheight == -10) {
 			crosshair_offset *= 0.65;
 		}
 

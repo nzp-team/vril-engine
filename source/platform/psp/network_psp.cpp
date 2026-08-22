@@ -82,7 +82,7 @@ pdpStatStruct *findPdpStat(int socket, pdpStatStruct *pdpStat)
 		return &gPdpStat;
 	}
 		if(pdpStat->next) return findPdpStat(socket, pdpStat->next);
-		return (pdpStatStruct *)-1;
+		return NULL;
 }
 
 
@@ -612,10 +612,14 @@ namespace quake
 
 				S_ClearBuffer ();
 
-				sceUtilityLoadNetModule(PSP_NET_MODULE_COMMON);
-				sceUtilityLoadNetModule(PSP_NET_MODULE_ADHOC);
+				const int err1 = sceUtilityLoadNetModule(PSP_NET_MODULE_COMMON);
+				if(err1 < 0)
+					Con_Printf("Couldn't load MODULE_COMMON: %08x\n", err1);
+				const int err2 = sceUtilityLoadNetModule(PSP_NET_MODULE_ADHOC);
+				if(err2 < 0)
+					Con_Printf("Couldn't load MODULE_ADHOC: %08x\n", err2);
 
-				int stateLast = -1;
+				int timeout = 0;
 				rc = pspSdkAdhocInit("ULUS00443");
 				if(rc < 0) {
 					Con_Printf("Couldn't initialise the network %08X\n", rc);
@@ -624,7 +628,11 @@ namespace quake
 					return -1;
 				}
 
-				rc = sceNetAdhocctlConnect((const char *)"quake");
+				// NOTE: group name intentionally differs from v1's "quake" —
+				// v1 shares NET_PROTOCOL_VERSION/PROTOCOL_VERSION with 2.x but
+				// has an incompatible svc set, so the builds must not discover
+				// each other.
+				rc = sceNetAdhocctlConnect((const char *)"nzp2");
 				if(rc < 0) {
 					Con_Printf("Couldn't initialise the network %08X\n", rc);
 					pspSdkAdhocTerm();
@@ -643,13 +651,18 @@ namespace quake
 						sceUtilityUnloadNetModule(PSP_NET_MODULE_COMMON);
 						return -1;
 					}
-					if (state > stateLast) {
-						stateLast = state;
-					}
 					if (state == 1) {
 						break;
 					}
 					sceKernelDelayThread(50*1000); // 50ms
+
+					if (++timeout > 200) { // ~10 seconds
+						Con_Printf("Timeout joining adhoc group\n");
+						pspSdkAdhocTerm();
+						sceUtilityUnloadNetModule(PSP_NET_MODULE_ADHOC);
+						sceUtilityUnloadNetModule(PSP_NET_MODULE_COMMON);
+						return -1;
+					}
 				}
 
 				gethostname(buff, MAXHOSTNAMELEN);
@@ -751,12 +764,13 @@ namespace quake
 				if (accept_socket == -1)
 					return -1;
 
+				memset(pdpStat, 0, sizeof(pdpStat));
 				int err = sceNetAdhocGetPdpStat(&length, pdpStat);
-				if(err < 0) return -1;
+				if(err < 0 || length == 0) return -1;
 
 				pdpStatStruct *tempPdp = findPdpStat(accept_socket, pdpStat);
 
-				if(tempPdp->pdpId < 0) return -1;
+				if(!tempPdp) return -1;
 
 				if(tempPdp->rcvdData > 0) return accept_socket;
 
@@ -769,12 +783,13 @@ namespace quake
 			{
 				unsigned short port;
 				int datalength = len;
-				unsigned int ret;
+				int ret;
 
 				sceKernelDelayThread(1);
 
 				ret = sceNetAdhocPdpRecv(socket, (unsigned char *)((sockaddr_adhoc *)addr)->mac, &port, buf, &datalength, 0, 1);
-				if(ret == ADHOC_EWOULDBLOCK) return 0;
+				if((unsigned int)ret == ADHOC_EWOULDBLOCK) return 0;
+				if(ret < 0) return -1;
 
 				((sockaddr_adhoc *)addr)->port = port;
 
@@ -817,8 +832,9 @@ namespace quake
 				int ret = -1;
 
 				ret = sceNetAdhocPdpSend(socket, (unsigned char*)((sockaddr_adhoc *)addr)->mac, ((sockaddr_adhoc *)addr)->port, buf, len, 0, 1);
+				if((unsigned int)ret == ADHOC_EWOULDBLOCK) return 0;
+				if(ret < 0) return -1;
 
-				//if(ret < 0) Con_Printf("Failed to send message, errno=%08X\n", ret);//blubs
 				return ret;
 			}
 
@@ -826,7 +842,7 @@ namespace quake
 
 			char* addr_to_string (struct qsockaddr *addr)
 			{
-				static char buffer[22];
+				static char buffer[32]; // "aa:bb:cc:dd:ee:ff" + ":65535" + NUL
 
 				sceNetEtherNtostr((unsigned char *)((sockaddr_adhoc *)addr)->mac, buffer);
 				sprintf(buffer + strlen(buffer), ":%d", ((sockaddr_adhoc *)addr)->port);
@@ -839,7 +855,9 @@ namespace quake
 			{
 				int ha1, ha2, ha3, ha4, ha5, ha6, hp;
 
-				sscanf(string, "%x:%x:%x:%x:%x:%x:%d", &ha1, &ha2, &ha3, &ha4, &ha5, &ha6, &hp);
+				int r = sscanf(string, "%x:%x:%x:%x:%x:%x:%d", &ha1, &ha2, &ha3, &ha4, &ha5, &ha6, &hp);
+				if (r < 6) return -1;
+				if (r < 7) hp = net_hostport;
 				addr->sa_family = ADHOC_NET;
 				((struct sockaddr_adhoc *)addr)->mac[0] = ha1 & 0xFF;
 				((struct sockaddr_adhoc *)addr)->mac[1] = ha2 & 0xFF;
@@ -858,11 +876,12 @@ namespace quake
 				pdpStatStruct pdpStat[20];
 				int length = sizeof(pdpStatStruct) * 20;
 
+				memset(pdpStat, 0, sizeof(pdpStat));
 				int err = sceNetAdhocGetPdpStat(&length, pdpStat);
-				if(err<0) return -1;
+				if(err < 0 || length == 0) return -1;
 
 				pdpStatStruct *tempPdp = findPdpStat(socket, pdpStat);
-				if(tempPdp->pdpId < 0) return -1;
+				if(!tempPdp) return -1;
 
 				memcpy_vfpu(((struct sockaddr_adhoc *)addr)->mac, tempPdp->mac, 6);
 				((struct sockaddr_adhoc *)addr)->port = tempPdp->port;
@@ -911,22 +930,30 @@ namespace quake
 
 			//=============================================================================
 
-			int pspSdkAdhocInit(char *product)
+			int pspSdkAdhocInit(const char *product)
 			{
-				u32 retVal;
+				int retVal;
 				struct productStruct temp;
 
 				retVal = sceNetInit(0x20000, 0x20, 0x1000, 0x20, 0x1000);
 				if (retVal != 0) return retVal;
 
 				retVal = sceNetAdhocInit();
-				if (retVal != 0) return retVal;
+				if (retVal != 0) {
+					sceNetTerm();
+					return retVal;
+				}
 
-				strcpy(temp.product, product);
+				memset(temp.product, 0, sizeof(temp.product));
+				memcpy(temp.product, product, strlen(product) > sizeof(temp.product) ? sizeof(temp.product) : strlen(product));
 				temp.unknown = 0;
 
 				retVal = sceNetAdhocctlInit(0x2000, 0x20, &temp);
-				if (retVal != 0) return retVal;
+				if (retVal != 0) {
+					sceNetAdhocTerm();
+					sceNetTerm();
+					return retVal;
+				}
 
 				return 0;
 			}
@@ -935,6 +962,7 @@ namespace quake
 
 			void pspSdkAdhocTerm()
 			{
+				sceNetAdhocctlDisconnect();
 				sceNetAdhocctlTerm();
 				sceNetAdhocTerm();
 				sceNetTerm();

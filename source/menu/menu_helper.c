@@ -120,17 +120,33 @@ void Menu_LoadMap (char *selected_map)
 	char map_command[64];
 
 	for (i = 0; i < num_user_maps; i++) {
-		if (!strcmp(selected_map, custom_maps[i].map_name)) 
+		if (!strcmp(selected_map, custom_maps[i].map_name))
 			break;
 	}
 
 	map_loadname = current_selected_bsp;
-    map_loadname_pretty = custom_maps[i].map_name_pretty;
+	if (i < num_user_maps)
+		map_loadname_pretty = custom_maps[i].map_name_pretty;
+	else
+		map_loadname_pretty = selected_map;
 
 	key_dest = key_game;
 	if (sv.active) {
 		Cbuf_AddText ("disconnect\n");
 	}
+#ifdef __PSP__
+	if (!menu_is_solo) {
+		// hosting an AdHoc game: coop must be set BEFORE maxplayers
+		// (MaxPlayers_f forces deathmatch 1 otherwise)
+		Cbuf_AddText ("coop 1\n");
+		Cbuf_AddText ("maxplayers 4\n");
+		Cbuf_AddText ("listen 1\n");
+	} else {
+		// back to solo: stop listening and free the client slots
+		Cbuf_AddText ("coop 0\n");
+		Cbuf_AddText ("maxplayers 1\n");
+	}
+#endif
 	snprintf (map_command, sizeof(map_command), "map %s\n", map_loadname);
 	Cbuf_AddText (map_command);
 	LoadingScreen_Begin(map_loadname);

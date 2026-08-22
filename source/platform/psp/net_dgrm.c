@@ -29,6 +29,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define sfunc	net_landrivers[sock->landriver]
 #define dfunc	net_landrivers[net_landriverlevel]
 
+// AdHoc PDP datagrams travel as single 802.11/UDP frames with no
+// reliable fragmentation underneath (PPSSPP forwards each PdpSend as
+// one UDP packet) — keep each packet under the WiFi MTU there. Big
+// 8000-byte chunks work on loopback but die on real links.
+#define DGRM_ADHOC_MTU		1400
+#define DGRM_MAX_PAYLOAD	(tcpipAdhoc ? DGRM_ADHOC_MTU : MAX_DATAGRAM)
+
 static int net_landriverlevel;
 
 int net_driver_to_use;
@@ -95,14 +102,14 @@ int Datagram_SendMessage (qsocket_t *sock, sizebuf_t *data)
 	Q_memcpy(sock->sendMessage, data->data, data->cursize);
 	sock->sendMessageLength = data->cursize;
 
-	if (data->cursize <= MAX_DATAGRAM)
+	if (data->cursize <= DGRM_MAX_PAYLOAD)
 	{
 		dataLen = data->cursize;
 		eom = NETFLAG_EOM;
 	}
 	else
 	{
-		dataLen = MAX_DATAGRAM;
+		dataLen = DGRM_MAX_PAYLOAD;
 		eom = 0;
 	}
 	packetLen = NET_HEADERSIZE + dataLen;
@@ -128,14 +135,14 @@ int SendMessageNext (qsocket_t *sock)
 	unsigned int	dataLen;
 	unsigned int	eom;
 
-	if (sock->sendMessageLength <= MAX_DATAGRAM)
+	if (sock->sendMessageLength <= DGRM_MAX_PAYLOAD)
 	{
 		dataLen = sock->sendMessageLength;
 		eom = NETFLAG_EOM;
 	}
 	else
 	{
-		dataLen = MAX_DATAGRAM;
+		dataLen = DGRM_MAX_PAYLOAD;
 		eom = 0;
 	}
 	packetLen = NET_HEADERSIZE + dataLen;
@@ -161,14 +168,14 @@ int ReSendMessage (qsocket_t *sock)
 	unsigned int	dataLen;
 	unsigned int	eom;
 
-	if (sock->sendMessageLength <= MAX_DATAGRAM)
+	if (sock->sendMessageLength <= DGRM_MAX_PAYLOAD)
 	{
 		dataLen = sock->sendMessageLength;
 		eom = NETFLAG_EOM;
 	}
 	else
 	{
-		dataLen = MAX_DATAGRAM;
+		dataLen = DGRM_MAX_PAYLOAD;
 		eom = 0;
 	}
 	packetLen = NET_HEADERSIZE + dataLen;
@@ -329,16 +336,25 @@ int	Datagram_GetMessage (qsocket_t *sock)
 				Con_DPrintf("Duplicate ACK received\n");
 				continue;
 			}
-			sock->sendMessageLength -= MAX_DATAGRAM;
-			if (sock->sendMessageLength > 0)
+			// advance by the size of the chunk that was actually
+			// sent (DGRM_MAX_PAYLOAD-sized, smaller for the tail) —
+			// the classic fixed MAX_DATAGRAM stride only works when
+			// chunks are always MAX_DATAGRAM bytes
 			{
-				Q_memcpy(sock->sendMessage, sock->sendMessage+MAX_DATAGRAM, sock->sendMessageLength);
-				sock->sendNext = true;
-			}
-			else
-			{
-				sock->sendMessageLength = 0;
-				sock->canSend = true;
+				int acked = (sock->sendMessageLength <= DGRM_MAX_PAYLOAD)
+					? sock->sendMessageLength : DGRM_MAX_PAYLOAD;
+
+				sock->sendMessageLength -= acked;
+				if (sock->sendMessageLength > 0)
+				{
+					Q_memcpy(sock->sendMessage, sock->sendMessage+acked, sock->sendMessageLength);
+					sock->sendNext = true;
+				}
+				else
+				{
+					sock->sendMessageLength = 0;
+					sock->canSend = true;
+				}
 			}
 			continue;
 		}
@@ -681,9 +697,13 @@ int Datagram_Init ()
 	int i;
 	int csock;
 
-	myDriverLevel = net_driverlevel;
+	// only latch the driver level at boot (NET_Init) — later re-inits
+	// come from the coop menu, where net_driverlevel is stale
 	if(!host_initialized)
+	{
+		myDriverLevel = net_driverlevel;
 		Cmd_AddCommand ("net_stats", NET_Stats_f);
+	}
 
 	if (COM_CheckParm("-nolan"))
 		return -1;
@@ -1104,11 +1124,29 @@ static qsocket_t *_Datagram_Connect (char *host)
 
 	// see if we can resolve the host name
 	if (dfunc.GetAddrFromName(host, &sendaddr) == -1)
+	{
+		Q_strcpy(m_return_reason, "Bad address");
+		if (m_return_onerror)
+		{
+			key_dest = key_menu;
+			m_state = m_return_state;
+			m_return_onerror = false;
+		}
 		return NULL;
+	}
 
 	newsock = dfunc.OpenSocket (0);
 	if (newsock == -1)
+	{
+		Q_strcpy(m_return_reason, "No free sockets");
+		if (m_return_onerror)
+		{
+			key_dest = key_menu;
+			m_state = m_return_state;
+			m_return_onerror = false;
+		}
 		return NULL;
+	}
 
 	sock = NET_NewQSocket ();
 	if (sock == NULL)

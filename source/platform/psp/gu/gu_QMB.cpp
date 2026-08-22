@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern "C"
 {
 #include "../../../nzportable_def.h"
+
+extern float cl_flash_size; // svc_weapondata, cl_parse.c
 //entity_t *CL_NewTempEntity (void);
 }
 
@@ -2313,7 +2315,9 @@ void QMB_MuzzleFlash(vec3_t org)
 
 	if(!(ISUNDERWATER(TruePointContents(org))))
 	{
-		size = sv_player->v.Flash_Size;
+		// per-weapon flash size replicated via svc_weapondata — valid
+		// on the listen host and on remote clients alike
+		size = cl_flash_size;
 
 		if(size == 0 || cl.stats[STAT_ZOOM] == 2)
 			return;

@@ -30,6 +30,13 @@ extern cvar_t cl_hitmarkers;
 
 qboolean 			crosshair_pulse_grenade;
 
+// per-weapon client visuals replicated from the server via
+// svc_weapondata — remote clients cannot read the host's progs
+char				cl_weaponname[64];
+float				cl_ads_offset[3];
+float				cl_flash_offset[3];
+float				cl_flash_size;
+
 extern int EN_Find(int num,char *string);
 
 char *svc_strings[] =
@@ -199,7 +206,11 @@ void CL_KeepaliveMessage (void)
 	static double lastmsg;//BLUBSFIX, this was a float
 	int		ret;
 	sizebuf_t	old;
-	byte		olddata[8192];
+	// MUST hold a full reliable message — net_message.cursize goes up
+	// to NET_MAXMESSAGE (16384). The old 8192 here smashed the stack
+	// (return address overwritten with precache strings) whenever the
+	// serverinfo message of a remote server exceeded 8KB.
+	byte		olddata[NET_MAXMESSAGE];
 
 	if (sv.active)
 	{
@@ -309,6 +320,11 @@ void CL_ParseServerInfo (void)
 //
 	CL_ClearState ();
 
+	cl_weaponname[0] = 0;
+	memset (cl_ads_offset, 0, sizeof(cl_ads_offset));
+	memset (cl_flash_offset, 0, sizeof(cl_flash_offset));
+	cl_flash_size = 0;
+
 // parse protocol version number
 	i = MSG_ReadLong ();
 	if (i != PROTOCOL_VERSION)
@@ -374,6 +390,9 @@ void CL_ParseServerInfo (void)
 			return;
 		}
 
+		if (msg_badread)
+			Host_Error ("CL_ParseServerInfo: bad model precache list");
+
 		Q_strncpyz (model_precache[nummodels], str, sizeof(model_precache[nummodels]));
 		//Con_Printf("%i,",nummodels);
 
@@ -401,7 +420,11 @@ void CL_ParseServerInfo (void)
 			Con_Printf ("Server sent too many sound precaches\n");
 			return;
 		}
-		strcpy (sound_precache[numsounds], str);
+		if (msg_badread)
+			Host_Error ("CL_ParseServerInfo: bad sound precache list");
+		// str can exceed MAX_QPATH on a corrupt/misaligned message —
+		// never let it smash the stack
+		Q_strncpyz (sound_precache[numsounds], str, sizeof(sound_precache[numsounds]));
 		S_TouchSound (str);
 		//Con_Printf("%i,",numsounds);
 	}
@@ -421,8 +444,7 @@ void CL_ParseServerInfo (void)
 	//Con_Printf("Loaded Model: ");
 
 	for (i=1 ; i<nummodels ; i++)
-	{
-		cl.model_precache[i] = Mod_ForName (model_precache[i], false);
+	{		cl.model_precache[i] = Mod_ForName (model_precache[i], false);
 
 		// rbaldwin2 -- At last resort use a missing model
 		if (cl.model_precache[i] == NULL)
@@ -458,8 +480,7 @@ void CL_ParseServerInfo (void)
 	S_BeginPrecaching ();
 	//Con_Printf("Loaded Sounds: ");
 	for (i=1 ; i<numsounds ; i++)
-	{
-		cl.sound_precache[i] = S_PrecacheSound (sound_precache[i]);
+	{		cl.sound_precache[i] = S_PrecacheSound (sound_precache[i]);
 		CL_KeepaliveMessage ();
 		loading_cur_step++;
 		LoadingScreen_AdvanceProgress();
@@ -1045,6 +1066,14 @@ void CL_ParseClientdata (int bits)
 	i = MSG_ReadShort ();
 	if (cl.stats[STAT_GUNGAME_SCOREGOAL] != i)
 		cl.stats[STAT_GUNGAME_SCOREGOAL] = i;
+
+	i = MSG_ReadShort ();
+	if (cl.stats[STAT_MAXSPEED] != i)
+		cl.stats[STAT_MAXSPEED] = i;
+
+	i = MSG_ReadByte ();
+	if (cl.stats[STAT_FACINGENEMY] != i)
+		cl.stats[STAT_FACINGENEMY] = i;
 }
 
 /*
@@ -1107,7 +1136,7 @@ void CL_ParseWeaponFire (void)
 {
 	vec3_t		kick;
 	return_time = (double)6/MSG_ReadLong ();
-	crosshair_spread_time = return_time + sv.time;
+	crosshair_spread_time = return_time + cl.time;
 
 	kick[0] = MSG_ReadCoord()/5;
 	kick[1] = MSG_ReadCoord()/5;
@@ -1235,11 +1264,28 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_useprint:
-			SCR_UsePrint (MSG_ReadByte (),MSG_ReadShort (),MSG_ReadByte ());
+		{
+			int up_type   = MSG_ReadByte ();
+			int up_cost   = MSG_ReadShort ();
+			int up_weapon = MSG_ReadByte ();
+			SCR_UsePrint (up_type, up_cost, up_weapon, MSG_ReadString ());
 			break;
+		}
+
+		case svc_weapondata:
+		{
+			int k;
+			Q_strncpyz (cl_weaponname, MSG_ReadString (), sizeof(cl_weaponname));
+			for (k = 0; k < 3; k++)
+				cl_ads_offset[k] = MSG_ReadShort ();
+			for (k = 0; k < 3; k++)
+				cl_flash_offset[k] = MSG_ReadShort ();
+			cl_flash_size = MSG_ReadShort ();
+			break;
+		}
 		case svc_maxammo:
-			hud_maxammo_starttime = sv.time;
-			hud_maxammo_endtime = sv.time + 2;
+			hud_maxammo_starttime = cl.time;
+			hud_maxammo_endtime = cl.time + 2;
 			break;
 
 		case svc_pulse:
@@ -1277,21 +1323,21 @@ void CL_ParseServerMessage (void)
 
 		case svc_screenflash:
 			screenflash_color = MSG_ReadByte();
-			screenflash_duration = sv.time + MSG_ReadByte();
+			screenflash_duration = cl.time + MSG_ReadByte();
 			screenflash_type = MSG_ReadByte();
 			screenflash_worktime = 0;
-			screenflash_starttime = sv.time;
+			screenflash_starttime = cl.time;
 
 			if (screenflash_color == SCREENFLASH_COLOR_WHITE && scr_whiteflash.value == 1)
 				screenflash_color = SCREENFLASH_COLOR_BLACK;
 			break;
 
 		case svc_bettyprompt:
-			bettyprompt_time = sv.time + 4;
+			bettyprompt_time = cl.time + 4;
 			break;
 
 		case svc_playername:
-			nameprint_time = sv.time + 11;
+			nameprint_time = cl.time + 11;
 			strcpy(player_name, MSG_ReadString());
 			break;
 
@@ -1444,7 +1490,7 @@ void CL_ParseServerMessage (void)
 
 		case svc_hitmark:
 			if (cl_hitmarkers.value > 0)
-				Hitmark_Time = sv.time + 0.2;
+				Hitmark_Time = cl.time + 0.2;
 			break;
 
 		case svc_weaponfire:

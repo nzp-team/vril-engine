@@ -75,7 +75,7 @@ namespace quake
 			int  addr_compare (struct qsockaddr *addr1, struct qsockaddr *addr2);
 			int  get_socket_port (struct qsockaddr *addr);
 			int  set_socket_port (struct qsockaddr *addr, int port);
-			int pspSdkAdhocInit(char *product);
+			int pspSdkAdhocInit(const char *product);
 			void pspSdkAdhocTerm();
 		}
 	}

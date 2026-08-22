@@ -530,6 +530,18 @@ void HUD_Points (void)
 
 	// draw background
 
+	// the counter animation state (old_points/current_points) is a
+	// single global set, so only animate the local player's row —
+	// other players' rows draw their raw score
+		if (k != cl.viewentity - 1)
+		{
+			Draw_StretchPic (x, y, sb_moneyback, 64 * vid.scale, 16 * vid.scale);
+			xplus = getTextWidth(va("%i", s->points), vid.scale);
+			Draw_ColoredString((((64 * vid.scale) - xplus)/2) + (5 * vid.scale), y + (3 * vid.scale), va("%i", s->points), 255, 255, 255, 255, vid.scale);
+			y += 10;
+			continue;
+		}
+
 	// draw number
 		f = s->points;
 		if (f > current_points)
@@ -779,11 +791,11 @@ void HUD_MaxAmmo(void)
 	double start_time, end_time;
 
 	// For the first 0.5s, stay still while we fade in
-	if (hud_maxammo_endtime > sv.time + 1.5) {
+	if (hud_maxammo_endtime > cl.time + 1.5) {
 		start_time = hud_maxammo_starttime;
 		end_time = hud_maxammo_starttime + 0.5;
 
-		text_alpha = (sv.time - start_time) / (end_time - start_time);
+		text_alpha = (cl.time - start_time) / (end_time - start_time);
 		pos_y = start_y;
 	}
 	// For the remaining 1.5s, fade out while we fly upwards.
@@ -791,7 +803,7 @@ void HUD_MaxAmmo(void)
 		start_time = hud_maxammo_starttime + 0.5;
 		end_time = hud_maxammo_endtime;
 
-		float percent_time = (sv.time - start_time) / (end_time - start_time);
+		float percent_time = (cl.time - start_time) / (end_time - start_time);
 
 		pos_y = start_y + diff_y * percent_time;
 		text_alpha = 1 - percent_time;
@@ -1523,7 +1535,7 @@ void HUD_ProgressBar (void)
 
 	if (cl.progress_bar)
 	{
-		progressbar = 100 - ((cl.progress_bar-sv.time)*10);
+		progressbar = 100 - ((cl.progress_bar-cl.time)*10);
 		if (progressbar >= 100)
 			progressbar = 100;
 		Draw_FillByColor  ((vid.width)/2 - 51, vid.height*0.75 - 1, 102, 5, 0, 0, 0,100);
@@ -1724,7 +1736,13 @@ void HUD_Weapon (void)
 	x_value = vid.width;
 	y_value = vid.height - (40 * vid.scale);
 
-	strcpy(str, PR_GetString(sv_player->v.Weapon_Name));
+	// replicated from the server via svc_weapondata — valid on the
+	// listen host and on remote clients alike
+	extern char cl_weaponname[64];
+	if (!cl_weaponname[0])
+		return;
+
+	strcpy(str, cl_weaponname);
 
 	x_value = (vid.width - (55 * vid.scale)) - getTextWidth(str, vid.scale);
 	Draw_ColoredString (x_value, y_value, str, 255, 255, 255, 255, vid.scale);
@@ -1794,8 +1812,8 @@ void HUD_PlayerName (void)
 {
 	int alpha = 255;
 
-	if (nameprint_time - sv.time < 1)
-		alpha = (int)((nameprint_time - sv.time)*255);
+	if (nameprint_time - cl.time < 1)
+		alpha = (int)((nameprint_time - cl.time)*255);
 
 	Draw_ColoredString(70 * vid.scale, vid.height - (70 * vid.scale), player_name, 255, 255, 255, alpha, vid.scale);
 }
@@ -1868,12 +1886,12 @@ HUD_GunGame
 */
 void HUD_GunGame (void)
 {
-	char weapon_id[64];
+	char weapon_id[96];
 	char point_info[64];
 
 	int client_points = 0;
 
-	for(int i = 0; i < svs.maxclients; i++) {
+	for(int i = 0; i < cl.maxclients; i++) {
 		if (i == cl.viewentity - 1) {
 			client_points = cl.scores[i].points;
 			break;
@@ -1886,7 +1904,11 @@ void HUD_GunGame (void)
 		sprintf(weapon_id, "You've passed all weapons!");
 		sprintf(point_info, "The Winner can choose to End the Game");
 	} else {
-		sprintf(weapon_id, "%s [%d/32]", PR_GetString(sv_player->v.Weapon_Name), cl.stats[STAT_GUNGAME_IDX] + 1);
+		// weapon name replicated via svc_weapondata
+		{
+			extern char cl_weaponname[64];
+			snprintf(weapon_id, sizeof(weapon_id), "%.48s [%d/32]", cl_weaponname, cl.stats[STAT_GUNGAME_IDX] + 1);
+		}
 		sprintf(point_info, "[%d] Score until next Weapon", cl.stats[STAT_GUNGAME_SCOREGOAL] - client_points);
 	}
 
@@ -1907,7 +1929,7 @@ void HUD_Draw (void)
 
 	if (key_dest == key_menu_pause) {
 		// Make sure we still draw the screen flash.
-		if (screenflash_duration > sv.time)
+		if (screenflash_duration > cl.time)
 			HUD_Screenflash();
 		return;
 	}
@@ -1932,7 +1954,7 @@ void HUD_Draw (void)
 		HUD_EndScreen ();
 		
 		// Make sure we still draw the screen flash.
-		if (screenflash_duration > sv.time)
+		if (screenflash_duration > cl.time)
 			HUD_Screenflash();
 
 		return;
@@ -1944,16 +1966,16 @@ void HUD_Draw (void)
 		HUD_Points();
 		HUD_Point_Change();
 
-		if (screenflash_duration > sv.time)
+		if (screenflash_duration > cl.time)
 			HUD_Screenflash();
 		
 		return;
 	}
 
-	if (bettyprompt_time > sv.time)
+	if (bettyprompt_time > cl.time)
 		HUD_BettyPrompt();
 
-	if (nameprint_time > sv.time)
+	if (nameprint_time > cl.time)
 		HUD_PlayerName();
 
 	HUD_Blood();
@@ -1974,7 +1996,7 @@ void HUD_Draw (void)
 	HUD_Point_Change();
 	HUD_Achievement();
 
-	if (hud_maxammo_endtime > sv.time)
+	if (hud_maxammo_endtime > cl.time)
 		HUD_MaxAmmo();
 
 	switch(current_gamemode) {
@@ -1983,6 +2005,6 @@ void HUD_Draw (void)
 	}
 
 	// This should always come last!
-	if (screenflash_duration > sv.time)
+	if (screenflash_duration > cl.time)
 		HUD_Screenflash();
 }

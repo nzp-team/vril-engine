@@ -28,7 +28,7 @@ void SCR_SizeUp (void);
 void SCR_SizeDown (void);
 void SCR_BringDownConsole (void);
 void SCR_CenterPrint (char *str);
-void SCR_UsePrint (int type, int cost, int weapon);
+void SCR_UsePrint (int type, int cost, int weapon, char *weapon_name);
 int GetButtonIcon (char *buttonname);
 char *GetGrenadeButtonL();
 char *GetUseButtonL();

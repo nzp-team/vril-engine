@@ -389,7 +389,9 @@ void PF_useprint (void)
 	MSG_WriteByte (&client->message,type);
 	MSG_WriteShort (&client->message,cost);
 	MSG_WriteByte (&client->message,weapon);
-	//MSG_WriteString (&client->message, s );
+	// touched-weapon name for the buy prompt — progs strings are not
+	// readable on remote clients
+	MSG_WriteString (&client->message, PR_GetString(G_EDICT(OFS_PARM0)->v.Weapon_Name_Touch));
 }
 
 

@@ -38,7 +38,11 @@ void Menu_StockMaps_SetRandomMap (void)
     Menu_Lobby_Set();
 }
 
+#ifdef __PSP__
+void Menu_StockMaps_SetMainMenu (void) { if (menu_is_solo) {Menu_Main_Set();} else {Menu_Coop_Set();} };
+#else
 void Menu_StockMaps_SetMainMenu (void) { if (menu_is_solo) {Menu_Main_Set();} };
+#endif
 
 /*
 =======================
@@ -48,9 +52,13 @@ Menu_SinglePlayer_Set
 void Menu_StockMaps_Set (void)
 {
     Menu_ResetMenuButtons();
-    
+
     key_dest = key_menu;
+#ifdef __PSP__
+    m_previous_state = menu_is_solo ? m_main : m_coop;
+#else
     m_previous_state = m_main;
+#endif
 	m_state = m_stockmaps;
 }
 

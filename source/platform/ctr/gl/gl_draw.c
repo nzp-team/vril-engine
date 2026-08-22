@@ -899,7 +899,7 @@ void Draw_Crosshair (void)
 		Draw_Pic (-39, -15, sniper_scope);
 	}
 
-   	if (Hitmark_Time > sv.time) {
+   	if (Hitmark_Time > cl.time) {
         Draw_Pic ((vid.width - gltextures[hitmark].width)/2,(vid.height - gltextures[hitmark].height)/2, hitmark);
 	}
 
@@ -919,7 +919,7 @@ void Draw_Crosshair (void)
 	}
 
 	// crosshair moving
-	if (crosshair_spread_time > sv.time && crosshair_spread_time)
+	if (crosshair_spread_time > cl.time && crosshair_spread_time)
     {
         cur_spread = cur_spread + 10;
 		crosshair_opacity = 128;
@@ -928,7 +928,7 @@ void Draw_Crosshair (void)
 			cur_spread = CrossHairMaxSpread();
     }
 	// crosshair not moving
-	else if (crosshair_spread_time < sv.time && crosshair_spread_time)
+	else if (crosshair_spread_time < cl.time && crosshair_spread_time)
     {
         cur_spread = cur_spread - 4;
 		crosshair_opacity = 255;

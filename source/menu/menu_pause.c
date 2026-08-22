@@ -44,7 +44,7 @@ void Menu_Pause_EnterSubMenu(void)
 
 void Menu_Pause_Yes(void)
 {
-    if (menu_paus_submenu == 1) {
+    if (sv.active && menu_paus_submenu == 1) {
 		// User is restarting the map
 		menu_paus_submenu = 0;
 		key_dest = key_game;
@@ -56,8 +56,9 @@ void Menu_Pause_Yes(void)
 		}
 
 		SV_RestartServer ();
-	} else if (menu_paus_submenu == 3) {
-		// User is returning to Main Menu
+	} else if (menu_paus_submenu == 3 || (!sv.active && menu_paus_submenu == 2)) {
+		// User is returning to Main Menu (button index 2 in the
+		// remote-client layout, where RESTART LEVEL is greyed out)
 		menu_paus_submenu = 0;
 		// Exit the map
 		Menu_ExitMap();
@@ -105,14 +106,22 @@ void Menu_Pause_Draw (void)
 	Menu_DrawTitle ("PAUSED", MENU_COLOR_WHITE);
 
 	if (menu_paus_submenu == 0) {
-		// Resume
-		Menu_DrawButton (1, 0, "RESUME CARNAGE", "Return to Game.", Menu_Resume);
-		// Restart
-		Menu_DrawButton (2, 1, "RESTART LEVEL", "Tough luck? Give things another go.", Menu_Pause_EnterSubMenu);
-		// Options
-		Menu_DrawButton (3, 2, "OPTIONS", "Tweak Game related Options.", Menu_Configuration);
-		// End game
-		Menu_DrawButton (4, 3, "END GAME", "Return to Main Menu.", Menu_Pause_EnterSubMenu);
+		if (sv.active) {
+			// Resume
+			Menu_DrawButton (1, 0, "RESUME CARNAGE", "Return to Game.", Menu_Resume);
+			// Restart
+			Menu_DrawButton (2, 1, "RESTART LEVEL", "Tough luck? Give things another go.", Menu_Pause_EnterSubMenu);
+			// Options
+			Menu_DrawButton (3, 2, "OPTIONS", "Tweak Game related Options.", Menu_Configuration);
+			// End game
+			Menu_DrawButton (4, 3, "END GAME", "Return to Main Menu.", Menu_Pause_EnterSubMenu);
+		} else {
+			// Remote client: restarting the level is the host's call
+			Menu_DrawButton (1, 0, "RESUME CARNAGE", "Return to Game.", Menu_Resume);
+			Menu_DrawGreyButton (2, "RESTART LEVEL");
+			Menu_DrawButton (3, 1, "OPTIONS", "Tweak Game related Options.", Menu_Configuration);
+			Menu_DrawButton (4, 2, "END GAME", "Disconnect and return to Main Menu.", Menu_Pause_EnterSubMenu);
+		}
 	} else {
 		Menu_DrawGreyButton (1,"RESUME CARNAGE");
 		Menu_DrawGreyButton (2, "RESTART LEVEL");
@@ -120,9 +129,9 @@ void Menu_Pause_Draw (void)
 		Menu_DrawGreyButton (4, "END GAME");
 
 		// Draw Sub Menu
-		if (menu_paus_submenu == 1) {
+		if (sv.active && menu_paus_submenu == 1) {
 			Menu_DrawSubMenu("Are you sure you want to restart?", "You will lose any progress that you have made.");
-		} else if (menu_paus_submenu == 3) {
+		} else if (menu_paus_submenu == 3 || (!sv.active && menu_paus_submenu == 2)) {
 			Menu_DrawSubMenu("Are you sure you want to quit?", "You will lose any progress that you have made.");
 		}
     

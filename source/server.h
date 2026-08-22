@@ -103,6 +103,7 @@ typedef struct client_s
 // client known data for deltas
 	int				old_points;
 	int				old_kills;
+	int				old_weaponid;		// last weapon svc_weapondata was sent for
 // joe, from ProQuake: allow clients to connect if they don't have the map
 	qboolean	nomap;
 } client_t;

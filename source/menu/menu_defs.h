@@ -47,6 +47,8 @@ extern int				m_previous_state;
 #define	m_slist			21
 #define m_bindings		22
 #define m_bios 			23
+#define m_coop			24
+#define m_coopjoin		25
 ///////////////////////////
 ///////////////////////////
 ///////////////////////////
@@ -311,6 +313,10 @@ void Menu_Audio_Set (void);
 void Menu_Controls_Set (void);
 void Menu_Bindings_Set (void);
 void Menu_Accessibility_Set (void);
+#ifdef __PSP__
+void Menu_Coop_Set (void);
+void Menu_CoopJoin_Set (void);
+#endif
 
 // Platform specifics
 char *LoadingScreen_ReturnTip(void);

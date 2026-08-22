@@ -680,9 +680,15 @@ void CL_RelinkEntities (void)
 				smokeorg[2] += cl.viewheight; // account for beta maps
 				VectorCopy(smokeorg,start);
 
-				right_offset	 = sv_player->v.Flash_Offset[0];
-				up_offset		 = sv_player->v.Flash_Offset[1];
-				forward_offset 	 = sv_player->v.Flash_Offset[2];
+				// per-weapon flash offset replicated via
+				// svc_weapondata — valid on the listen host and on
+				// remote clients alike
+				{
+					extern float cl_flash_offset[3];
+					right_offset	 = cl_flash_offset[0];
+					up_offset		 = cl_flash_offset[1];
+					forward_offset 	 = cl_flash_offset[2];
+				}
 				 
 				right_offset	= right_offset/1000;
 				up_offset		= up_offset/1000;

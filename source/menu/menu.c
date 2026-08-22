@@ -37,6 +37,10 @@ void Menu_Audio_Draw (void);
 void Menu_Controls_Draw (void);
 void Menu_Bindings_Draw (void);
 void Menu_Accessibility_Draw (void);
+#ifdef __PSP__
+void Menu_Coop_Draw (void);
+void Menu_CoopJoin_Draw (void);
+#endif
 
 menu_t			current_menu;
 menu_button_t	current_menu_buttons[MAX_MENU_BUTTONS];
@@ -267,6 +271,16 @@ void Menu_Draw (void)
 		Menu_Bios_Draw ();
 		break;
 
+#ifdef __PSP__
+	case m_coop:
+		Menu_Coop_Draw ();
+		break;
+
+	case m_coopjoin:
+		Menu_CoopJoin_Draw ();
+		break;
+#endif
+
 	default:
 		Con_Printf("Cannot identify menu for case %d\n", m_state);
 	}
@@ -294,7 +308,12 @@ void Menu_ToggleMenu_f (void)
 	}
 	if (key_dest == key_console) {
 		Con_ToggleConsole_f ();
-	} else if (sv.active && (svs.maxclients > 1 || key_dest == key_game)) {
+	} else if ((sv.active && (svs.maxclients > 1 || key_dest == key_game)) ||
+	           (!sv.active && cls.state == ca_connected && !cls.demoplayback)) {
+		// second clause: we are a remote client on someone else's
+		// server — the pause menu (with its disconnect option) is the
+		// only sane in-game menu there (demo playback excluded: it
+		// also runs connected without a local server)
 		Menu_Pause_Set();
 	} else {
 		Menu_Main_Set ();

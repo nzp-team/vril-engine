@@ -990,7 +990,7 @@ void DropRecoilKick (void)
 {
 	float	len;
 
-	if (crosshair_spread_time > sv.time)
+	if (crosshair_spread_time > cl.time)
 		return;
 	len = VectorNormalize (cl.gun_kick);
 
@@ -1110,9 +1110,12 @@ void V_CalcRefdef (void)
 	vec3_t ADSOffset;
 	if(cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2)
 	{
-		ADSOffset[0] = sv_player->v.ADS_Offset[0];
-		ADSOffset[1] = sv_player->v.ADS_Offset[1];
-		ADSOffset[2] = sv_player->v.ADS_Offset[2];
+		// per-weapon ADS offset replicated via svc_weapondata — valid
+		// on the listen host and on remote clients alike
+		extern float cl_ads_offset[3];
+		ADSOffset[0] = cl_ads_offset[0];
+		ADSOffset[1] = cl_ads_offset[1];
+		ADSOffset[2] = cl_ads_offset[2];
 		
 		ADSOffset[0] = ADSOffset[0]/1000;
 		ADSOffset[1] = ADSOffset[1]/1000;

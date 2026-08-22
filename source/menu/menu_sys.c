@@ -319,6 +319,14 @@ void Menu_SetPreviousMenu (void)
 		case m_accessibility:
 			Menu_Accessibility_Set();
 			break;
+#ifdef __PSP__
+		case m_coop:
+			Menu_Coop_Set();
+			break;
+		case m_coopjoin:
+			Menu_CoopJoin_Set();
+			break;
+#endif
 	}
 }
 

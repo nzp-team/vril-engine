@@ -98,10 +98,17 @@ qboolean bmg_type_changed = false;
 Host_EndGame
 ================
 */
+void Menu_ExitMap (void);
+
+// set when a remote client loses its server; consumed at the top of
+// _Host_Frame where running the menu-return sequence is safe
+static qboolean host_return_to_menu = false;
+
 void Host_EndGame (char *message, ...)
 {
 	va_list		argptr;
 	char		string[1024];
+	qboolean	was_remote_client = (!sv.active && cls.state == ca_connected && !cls.demoplayback);
 
 	va_start (argptr,message);
 	vsprintf (string,message,argptr);
@@ -118,6 +125,13 @@ void Host_EndGame (char *message, ...)
 		CL_NextDemo ();
 	else
 		CL_Disconnect ();
+
+	// a remote client has no local server to fall back to — return to
+	// the main menu instead of leaving a dead scene with no input focus
+	// (deferred to the next _Host_Frame: this error path may run inside
+	// rendering, where unloading textures is unsafe)
+	if (was_remote_client)
+		host_return_to_menu = true;
 
     Clear_LoadingFill ();
 
@@ -136,6 +150,7 @@ void Host_Error (char *error, ...)
 	va_list		argptr;
 	char		string[1024];
 	static	qboolean inerror = false;
+	qboolean	was_remote_client = (!sv.active && cls.state == ca_connected && !cls.demoplayback);
 
 	if (inerror)
 		Sys_Error ("Host_Error: recursively entered");
@@ -156,6 +171,10 @@ void Host_Error (char *error, ...)
 
 	CL_Disconnect ();
 	cls.demonum = -1;
+
+	// see Host_EndGame — don't strand a remote client on a dead scene
+	if (was_remote_client)
+		host_return_to_menu = true;
 
 	Clear_LoadingFill ();
 
@@ -629,7 +648,15 @@ void _Host_Frame (float time)
 	{
 		return;			// something bad happened, or the server disconnected
 	}
-	
+
+// a remote client lost its server last frame (Host_EndGame/Host_Error) —
+// recover to the main menu now, at a safe point outside the error path
+	if (host_return_to_menu)
+	{
+		host_return_to_menu = false;
+		Menu_ExitMap ();
+	}
+
 // keep the random time dependent
 	rand ();
 

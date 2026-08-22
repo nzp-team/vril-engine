@@ -1212,7 +1212,7 @@ void Draw_Crosshair (void)
 		}
 	}
 	
-   	if (Hitmark_Time > sv.time) {
+   	if (Hitmark_Time > cl.time) {
 		
 		if ((cl.stats[STAT_ZOOM] == 1 && ads_center.value) || (cl.stats[STAT_ZOOM] == 2 && sniper_center.value)) {
 			Draw_ColoredStretchPic ((vid.width - 12)/2, (vid.height - 12)/2, hitmark, 24, 24, 255, 255, 255, 225);
@@ -1237,7 +1237,7 @@ void Draw_Crosshair (void)
 	}
 
 	// crosshair moving
-	if ((crosshair_spread_time > sv.time && crosshair_spread_time) || croshhairmoving == true)
+	if ((crosshair_spread_time > cl.time && crosshair_spread_time) || croshhairmoving == true)
     {
         cur_spread = cur_spread + 4;
 		if (cur_spread >= CrossHairMaxSpread())
@@ -1248,7 +1248,7 @@ void Draw_Crosshair (void)
 			crosshair_opacity = 155;
     }
 	// crosshair not moving
-    else if ((crosshair_spread_time < sv.time && crosshair_spread_time) || croshhairmoving == false)
+    else if ((crosshair_spread_time < cl.time && crosshair_spread_time) || croshhairmoving == false)
     {
         cur_spread = cur_spread - 2;
 		if (cur_spread <= 0) {

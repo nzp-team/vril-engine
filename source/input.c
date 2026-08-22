@@ -103,7 +103,10 @@ void IN_Move(usercmd_t *cmd)
 	}
 
 	speed = sensitivity.value;
-	if (in_aimassist.value && sv_player->v.facingenemy == 1 && cl.stats[STAT_CURRENTMAG] > 0)
+	// replicated via STAT_FACINGENEMY — correct for the local player on
+	// both host and remote clients (sv_player is not: it tracks the last
+	// client the server processed)
+	if (in_aimassist.value && (cl.stats[STAT_FACINGENEMY] == 1) && cl.stats[STAT_CURRENTMAG] > 0)
 		speed *= 0.5f;
 	if (cl.stats[STAT_ZOOM] == 1)
 		speed *= 0.5f;
@@ -118,7 +121,9 @@ void IN_Move(usercmd_t *cmd)
 		* look_y * (float)host_frametime;
 	cl.viewangles[PITCH] = IN_Clamp(cl.viewangles[PITCH], -70.0f, 80.0f);
 
-	cl_backspeed = cl_forwardspeed = cl_sidespeed = sv_player->v.maxspeed;
+	// replicated via STAT_MAXSPEED — correct for the local player on
+	// both host and remote clients
+	cl_backspeed = cl_forwardspeed = cl_sidespeed = (cl.stats[STAT_MAXSPEED] > 0) ? cl.stats[STAT_MAXSPEED] : 190;
 	cl_sidespeed *= 0.8f;
 	cl_backspeed *= 0.7f;
 	move_x = IN_ShapeAxis(move_stick.x, cl_sidespeed, tolerance, acceleration);

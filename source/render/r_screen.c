@@ -400,7 +400,7 @@ char *GetPerkName (int perk)
 	}
 }
 
-void SCR_UsePrint (int type, int cost, int weapon)
+void SCR_UsePrint (int type, int cost, int weapon, char *weapon_name)
 {
 	//naievil -- fixme
     char s[128];
@@ -423,12 +423,12 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 3://ammo
-			strcpy(s, va("Hold %s to buy Ammo for %s\n", GetUseButtonL(), PR_GetString(sv_player->v.Weapon_Name_Touch)));
+			strcpy(s, weapon_name[0] ? va("Hold %s to buy Ammo for %s\n", GetUseButtonL(), weapon_name) : va("Hold %s to buy Ammo\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 4://weapon
-			strcpy(s, va("Hold %s to buy %s\n", GetUseButtonL(), PR_GetString(sv_player->v.Weapon_Name_Touch)));
+			strcpy(s, weapon_name[0] ? va("Hold %s to buy %s\n", GetUseButtonL(), weapon_name) : va("Hold %s to buy\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
@@ -443,7 +443,7 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;
 		case 7://box take
-			strcpy(s, va("Hold %s for %s\n", GetUseButtonL(), PR_GetString(sv_player->v.Weapon_Name_Touch)));
+			strcpy(s, weapon_name[0] ? va("Hold %s for %s\n", GetUseButtonL(), weapon_name) : va("Hold %s to take Weapon\n", GetUseButtonL()));
 			strcpy(c, "");
 			button_pic_x = getTextWidth("Hold ", 1);
 			break;

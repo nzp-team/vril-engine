@@ -1886,7 +1886,7 @@ void Draw_Crosshair (void)
 	if (cl.stats[STAT_ZOOM] == 2)
 		Draw_Pic (0, 0, sniper_scope);
 
-   	if (Hitmark_Time > sv.time)
+   	if (Hitmark_Time > cl.time)
         Draw_Pic ((vid.width - tex->width)/2,(vid.height - tex->height)/2, hitmark);
 
 	// Make sure to do this after hitmark drawing.
@@ -1905,7 +1905,7 @@ void Draw_Crosshair (void)
 	}
 
 	// crosshair moving
-	if (crosshair_spread_time > sv.time && crosshair_spread_time)
+	if (crosshair_spread_time > cl.time && crosshair_spread_time)
     {
         cur_spread = cur_spread + 10;
 		crosshair_opacity = 128;
@@ -1914,7 +1914,7 @@ void Draw_Crosshair (void)
 			cur_spread = CrossHairMaxSpread();
     }
 	// crosshair not moving
-    else if (crosshair_spread_time < sv.time && crosshair_spread_time)
+    else if (crosshair_spread_time < cl.time && crosshair_spread_time)
     {
         cur_spread = cur_spread - 4;
 		crosshair_opacity = 255;

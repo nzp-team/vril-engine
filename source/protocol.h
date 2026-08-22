@@ -19,7 +19,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // protocol.h -- communications protocols
 
-#define	PROTOCOL_VERSION	15
+// 16: svc_clientdata carries maxspeed + facingenemy for remote clients
+// (also keeps legacy v1 builds, which are protocol 15 with a different
+// svc set, from cross-connecting)
+#define	PROTOCOL_VERSION	16
 
 // if the high bit of the servercmd is set, the low bits are fast update flags:
 #define	U_MOREBITS	(1<<0)
@@ -164,6 +167,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define svc_gamemode		53		// [byte] game mode for client
 #define svc_roundcolor		54 		// [byte] red [byte] green [byte] blue
 #define svc_perkorientation 55		// [byte] Perk orientation for HUD
+#define svc_weapondata		56		// [string] weapon name, [short*3] ADS offset,
+									// [short*3] flash offset, [short] flash size —
+									// per-weapon client visuals, sent on weapon change
+									// (remote clients cannot read the host's progs)
 
 //
 // client to server

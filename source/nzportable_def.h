@@ -152,6 +152,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define STAT_VIEWMODEL2_EFFECTS 22
 #define STAT_GUNGAME_IDX		23
 #define STAT_GUNGAME_SCOREGOAL	24
+#define STAT_MAXSPEED			25
+#define STAT_FACINGENEMY		26
 
 // Gamemodes 
 #define GAMEMODE_CLASSIC        0

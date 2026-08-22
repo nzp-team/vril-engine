@@ -318,7 +318,10 @@ void CL_AdjustAngles (void)
 	// ==== Aim Assist + ====
 	// cut look speed in half when facing enemy, unless
 	// mag is empty
-	if ((in_aimassist.value) && (sv_player->v.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0) {
+	// (replicated via STAT_FACINGENEMY — correct for the local player
+	// on both host and remote clients; sv_player is NOT: on a listen
+	// host with >1 client it points at the last client processed)
+	if ((in_aimassist.value) && (cl.stats[STAT_FACINGENEMY] == 1) && cl.stats[STAT_CURRENTMAG] > 0) {
 		speed *= 0.5f;
 	}
 	// additionally, slice look speed when ADS/scopes
@@ -386,7 +389,10 @@ void CL_BaseMove (usercmd_t *cmd)
 	Q_memset (cmd, 0, sizeof(*cmd));
 
 	// cypress - we handle movespeed in QC now.
-	cl_backspeed = cl_forwardspeed = cl_sidespeed = sv_player->v.maxspeed;
+	// (replicated via STAT_MAXSPEED — correct for the local player on
+	// both host and remote clients, unlike sv_player which tracks the
+	// last client the server processed)
+	cl_backspeed = cl_forwardspeed = cl_sidespeed = (cl.stats[STAT_MAXSPEED] > 0) ? cl.stats[STAT_MAXSPEED] : 190;
 
 	// Throttle side and back speeds
 	cl_sidespeed *= 0.8f;
@@ -491,6 +497,10 @@ void CL_Aim_Snap(void)
 	float bestDist = 10000;
 	vec3_t distVec, zOrg, pOrg;
 	//32 is v_ofs num
+
+	// walks server edicts — only possible on the listen host
+	if (!sv.active)
+		return;
 
 	bz = sv.edicts;
 
