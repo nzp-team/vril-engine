@@ -46,6 +46,11 @@ int			pr_xstatement;
 
 int		pr_argc;
 
+static qboolean PR_IsTruthy (const eval_t *value)
+{
+	return ((unsigned int)value->_int & 0x7fffffffU) != 0;
+}
+
 char *pr_opnames[] =
 {
 "DONE",
@@ -473,10 +478,10 @@ while (1)
 		c->_float = a->_float < b->_float;
 		break;
 	case OP_AND:
-		c->_float = a->_float && b->_float;
+		c->_float = PR_IsTruthy(a) && PR_IsTruthy(b);
 		break;
 	case OP_OR:
-		c->_float = a->_float || b->_float;
+		c->_float = PR_IsTruthy(a) || PR_IsTruthy(b);
 		break;
 
 	case OP_NOT_F:
