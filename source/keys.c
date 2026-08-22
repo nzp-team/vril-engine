@@ -973,7 +973,8 @@ void Key_Event (int key, qboolean down)
 		if (dtfired[key]) {
 			kb = dtbindings[key];
 			if (kb && kb[0] == '+') {
-				sprintf (cmd, "-%s %i\n", kb + 1, key);
+				sprintf (cmd, "-%.*s %i\n",
+					(int)strcspn(kb + 1, " ;\t\r\n"), kb + 1, key);
 				Cbuf_AddText (cmd);
 			}
 			dtfired[key] = false;
@@ -1008,7 +1009,8 @@ void Key_Event (int key, qboolean down)
 			{
 				if (kb[0] == '+')
 				{	// button commands add keynum as a parm
-					Key_RunBinding (kb, key);
+					sprintf (cmd, kb, key);
+					Cbuf_AddText (cmd);
 					dtfired[key] = true;
 				}
 				else
