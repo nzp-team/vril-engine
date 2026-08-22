@@ -74,7 +74,7 @@ DecalClipPolygon(int vertexCount, vec3_t * vertices, vec3_t * newVertex);
 float
 RandomMinMax(float min, float max)
 {
-    return min + ((rand() % 10000) / 10000.0) * (max - min);
+    return min + ((rand() % 10000) / 10000.0f) * (max - min);
 }
 
 /*
@@ -170,29 +170,29 @@ R_SpawnDecal(vec3_t center, vec3_t normal, vec3_t tangent, int tex, int size, in
 
     width          = RandomMinMax(size * 0.5, size);
     height         = width;
-    depth          = width * 0.5;
-    dec->radius    = fmax(fmax(width, height), depth);
-    dec->starttime = cl.time;
+    depth          = width * 0.5f;
+    dec->radius    = fmaxf(fmaxf(width, height), depth);
+    dec->starttime = (float) cl.time;
     dec->bspdecal  = isbsp;
-    dec->die       = (isbsp ? 0 : cl.time + r_decaltime.value);
+    dec->die       = (isbsp ? 0.0f : (float) cl.time + r_decaltime.value);
     dec->texture   = tex;
 
     // Calculate boundary planes
     d = DotProduct(center, tangent);
     VectorCopy(tangent, leftPlane.normal);
-    leftPlane.dist = -(width * 0.5 - d);
+    leftPlane.dist = -(width * 0.5f - d);
     VectorNegate(tangent, tangent);
     VectorCopy(tangent, rightPlane.normal);
     VectorNegate(tangent, tangent);
-    rightPlane.dist = -(width * 0.5 + d);
+    rightPlane.dist = -(width * 0.5f + d);
 
     d = DotProduct(center, binormal);
     VectorCopy(binormal, bottomPlane.normal);
-    bottomPlane.dist = -(height * 0.5 - d);
+    bottomPlane.dist = -(height * 0.5f - d);
     VectorNegate(binormal, binormal);
     VectorCopy(binormal, topPlane.normal);
     VectorNegate(binormal, binormal);
-    topPlane.dist = -(height * 0.5 + d);
+    topPlane.dist = -(height * 0.5f + d);
 
     d = DotProduct(center, normal);
     VectorCopy(normal, backPlane.normal);
@@ -401,7 +401,7 @@ DecalAddPolygon(decal_t * dec, int vertcount, vec3_t * vertices)
     return true;
 }
 
-const double decalEpsilon = 0.001;
+const float decalEpsilon = 0.001f;
 
 void
 DecalClipLeaf(decal_t * dec, mleaf_t * leaf)
@@ -476,7 +476,7 @@ DecalClipPolygonAgainstPlane(plane_t * plane, int vertexCount, vec3_t * vertex, 
 
     // Classify vertices
     for (a = 0 ; a < vertexCount ; a++) {
-        bool neg = ((DotProduct(plane->normal, vertex[a]) - plane->dist) < 0.0);
+        bool neg = ((DotProduct(plane->normal, vertex[a]) - plane->dist) < 0.0f);
         negative[a]    = neg;
         negativeCount += neg;
     }
@@ -501,7 +501,7 @@ DecalClipPolygonAgainstPlane(plane_t * plane, int vertexCount, vec3_t * vertex, 
                   + plane->normal[1] * (v1[1] - v2[1])
                   + plane->normal[2] * (v1[2] - v2[2]));
 
-                VectorScale(v1, (1.0 - t), newVertex[count]);
+                VectorScale(v1, (1.0f - t), newVertex[count]);
                 VectorMA(newVertex[count], t, v2, newVertex[count]);
 
                 count++;
@@ -517,7 +517,7 @@ DecalClipPolygonAgainstPlane(plane_t * plane, int vertexCount, vec3_t * vertex, 
                   + plane->normal[1] * (v1[1] - v2[1])
                   + plane->normal[2] * (v1[2] - v2[2]));
 
-                VectorScale(v1, (1.0 - t), newVertex[count]);
+                VectorScale(v1, (1.0f - t), newVertex[count]);
                 VectorMA(newVertex[count], t, v2, newVertex[count]);
 
                 count++;
@@ -549,7 +549,7 @@ R_DrawDecals(void)
     if (!qmb_initialized)
         return;
 
-    while ((kill = active_decals) != NULL && kill->die < cl.time && !kill->bspdecal) {
+    while ((kill = active_decals) != NULL && kill->die < (float) cl.time && !kill->bspdecal) {
         active_decals = kill->next;
         kill->next    = free_decals;
         free_decals   = kill;
@@ -563,7 +563,7 @@ R_DrawDecals(void)
     Hyena_SetDepthOffset(-1.0f);
 
     for (p = active_decals; p; p = p->next) {
-        while ((kill = p->next) != NULL && kill->die < cl.time && !kill->bspdecal) {
+        while ((kill = p->next) != NULL && kill->die < (float) cl.time && !kill->bspdecal) {
             p->next     = kill->next;
             kill->next  = free_decals;
             free_decals = kill;
@@ -573,9 +573,9 @@ R_DrawDecals(void)
         if (VectorLength(decaldist) > r_decal_viewdistance.value)
             continue;
 
-        if (!p->bspdecal && p->die - cl.time < 0.5f) {
+        if (!p->bspdecal && p->die - (float) cl.time < 0.5f) {
             dcolor = 1.0f;
-            alpha  = bound(0.0f, 2.0f * (p->die - cl.time), 1.0f);
+            alpha  = bound(0.0f, 2.0f * (p->die - (float) cl.time), 1.0f);
         } else {
             dcolor = bound(0.0f, 1.0f - VectorLength(decaldist) / r_decal_viewdistance.value, 1.0f);
             alpha  = dcolor;
