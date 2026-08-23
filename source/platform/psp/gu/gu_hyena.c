@@ -25,8 +25,7 @@ Hyena_SetTextureMode(int texture_mode)
 void
 Hyena_SetColor(float red, float green, float blue, float alpha)
 {
-    sceGuColor(GU_COLOR((int) (red * 255.0f), (int) (green * 255.0f),
-      (int) (blue * 255.0f), (int) (alpha * 255.0f)));
+    sceGuColor(GU_COLOR(red, green, blue, alpha));
 }
 
 static int

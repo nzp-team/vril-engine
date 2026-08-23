@@ -175,8 +175,10 @@ int particle_mode        = 0; // 0: classic (default), 1: QMB, 2: mixed
 
 cvar_t r_runqmbparticles = { "r_runqmbparticles", "1", true };
 
-void R_ClearParticles(void);
-void QMB_RunParticleEffect(vec3_t org, vec3_t dir, int col, int count);
+void
+R_ClearParticles(void);
+void
+QMB_RunParticleEffect(vec3_t org, vec3_t dir, int col, int count);
 
 void
 R_ReadPointFile_f(void)
@@ -1441,6 +1443,7 @@ R_DrawParticles(void)
             case pd_beam:
                 ptex = &particle_textures[pt->texture];
                 Hyena_BindTexture(ptex->texnum);
+                Hyena_DisableCapability(HYE_CULL_FACE);
                 for (p = pt->start ; p ; p = p->next) {
                     if (particle_time < p->start || particle_time >= p->die)
                         continue;
@@ -1517,9 +1520,11 @@ R_DrawParticles(void)
                     // glEnd ();
                     // glColor4f(1,1,1,1); //return to normal color
                 }
+                Hyena_EnableCapability(HYE_CULL_FACE);
                 break;
             case pd_spark:
                 Hyena_DisableCapability(HYE_TEXTURE_2D);
+                Hyena_DisableCapability(HYE_CULL_FACE);
                 for (p = pt->start ; p ; p = p->next) {
                     vertex_t * spark_vertices;
                     int vertex_index;
@@ -1552,10 +1557,12 @@ R_DrawParticles(void)
                     Hyena_EndVertices();
                     Hyena_SetColor(1.0f, 1.0f, 1.0f, 1.0f);
                 }
+                Hyena_EnableCapability(HYE_CULL_FACE);
                 Hyena_EnableCapability(HYE_TEXTURE_2D);
                 break;
             case pd_sparkray:
                 Hyena_DisableCapability(HYE_TEXTURE_2D);
+                Hyena_DisableCapability(HYE_CULL_FACE);
                 for (p = pt->start ; p ; p = p->next) {
                     vertex_t * spark_vertices;
                     int vertex_index;
@@ -1588,6 +1595,7 @@ R_DrawParticles(void)
                     Hyena_EndVertices();
                     Hyena_SetColor(1.0f, 1.0f, 1.0f, 1.0f);
                 }
+                Hyena_EnableCapability(HYE_CULL_FACE);
                 Hyena_EnableCapability(HYE_TEXTURE_2D);
                 break;
             case pd_billboard:
@@ -1635,7 +1643,7 @@ R_DrawParticles(void)
                     VectorSubtract(right, up, velcoord[3]);
                     VectorNegate(velcoord[2], velcoord[0]);
                     VectorNegate(velcoord[3], velcoord[1]);
-                    // DRAW_PARTICLE_BILLBOARD(ptex, p, velcoord);
+                    DRAW_PARTICLE_BILLBOARD(ptex, p, velcoord);
                 }
                 break;
             default:
