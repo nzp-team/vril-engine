@@ -2519,7 +2519,7 @@ void
 QMB_LaserSight(void)
 {
     float frametime = fabs(cl.time - cl.oldtime);
-    col_t color;
+    col_t color     = { 255, 255, 255, 50 };
     int c;
 
     extern cvar_t r_laserpoint;
