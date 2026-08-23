@@ -84,9 +84,9 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/platform/nspire/net_main.c \
 		source/platform/nspire/net_nspire.c \
 		source/net_vcr.c \
-		source/pr_cmds.c \
-		source/pr_edict.c \
-		source/pr_exec.c \
+		source/qcvm/pr_cmds.c \
+		source/qcvm/pr_edict.c \
+		source/qcvm/pr_exec.c \
 		source/platform/nspire/r_aclip.c \
 		source/platform/nspire/r_alias.c \
 		source/platform/nspire/r_bsp.c \
@@ -110,7 +110,10 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/sv_user.c \
 		source/system.c \
 		source/platform/nspire/sys_nspire.c \
-		source/test_handler.c \
+		source/tests/test_handler.c \
+		source/tests/test_map_boot.c \
+		source/tests/test_restart.c \
+		source/tests/test_qcvm.c \
 		source/platform/nspire/vid_nspire.c \
 		source/view.c \
 		source/wad.c \

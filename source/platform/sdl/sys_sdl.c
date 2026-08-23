@@ -184,6 +184,7 @@ int main(int argc, char **argv)
 	char startup_error[256];
 	size_t heap_size;
 	double oldtime;
+	qboolean headless_test;
 	memset(&parms, 0, sizeof(parms));
 	if (!Startup_LoadArguments(&startup, argc, argv, "setup.ini",
 		startup_error, sizeof(startup_error))) {
@@ -196,7 +197,9 @@ int main(int argc, char **argv)
 		Startup_FreeArguments(&startup);
 		return 1;
 	}
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) != 0) {
+	headless_test = TestHandler_ArgumentsAllowHeadless(startup.argc, startup.argv);
+	if (SDL_Init(headless_test ? SDL_INIT_TIMER :
+		(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER)) != 0) {
 		fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
 		Startup_FreeArguments(&startup);
 		return 1;
@@ -222,7 +225,8 @@ int main(int argc, char **argv)
 		music_update();
 		oldtime = now;
 	}
-	Host_Shutdown();
+	if (host_initialized)
+		Host_Shutdown();
 	free(parms.membase);
 	Startup_FreeArguments(&startup);
 	SDL_Quit();

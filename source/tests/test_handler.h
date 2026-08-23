@@ -1,5 +1,4 @@
 /*
-Copyright (C) 1996-1997 Id Software, Inc.
 Copyright (C) 2025 NZ:P Team
 
 This program is free software; you can redistribute it and/or
@@ -18,10 +17,32 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-// test_handler.h
+// tests/test_handler.h
 
 extern cvar_t sys_testmode;
 
-void TestHandler_MapBoot(void);
-void TestHandler_RestartStress(void);
-void TestHandler_Init(void);
+typedef enum
+{
+	TEST_STATUS_RUNNING,
+	TEST_STATUS_PASSED,
+	TEST_STATUS_FAILED
+} test_status_t;
+
+typedef struct
+{
+	int mode;
+	const char *name;
+	qboolean requires_server;
+	test_status_t (*start)(void);
+	test_status_t (*frame)(void);
+} test_suite_t;
+
+test_status_t Test_QCVM_Start(void);
+test_status_t Test_MapBoot_Start(void);
+test_status_t Test_MapBoot_Frame(void);
+test_status_t Test_Restart_Start(void);
+test_status_t Test_Restart_Frame(void);
+
+void TestHandler_Frame(void);
+qboolean TestHandler_ArgumentsAllowHeadless(int argc, char **argv);
+qboolean TestHandler_Init(void);

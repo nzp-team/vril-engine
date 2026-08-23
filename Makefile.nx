@@ -16,7 +16,7 @@ ICON        :=  source/platform/nx/art/icon.jpg
 
 TARGET		:=	nzportable
 BUILD		:=	build
-SOURCES		:=	source
+SOURCES		:=	source source/qcvm source/tests
 #DATA		:=	data
 INCLUDES	:=	include
 ICON		:= 	source/platform/nx/art/icon.jpg
@@ -73,6 +73,9 @@ export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
 COMMON_OBJS =	system.o \
 				test_handler.c \
+				test_map_boot.c \
+				test_restart.c \
+				test_qcvm.c \
 				chase.c \
                 cl_hud.c \
 				cl_demo.c \

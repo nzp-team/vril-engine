@@ -271,7 +271,7 @@ typedef struct
 
 #include "protocol.h"
 #include "cmd.h"
-#include "test_handler.h"
+#include "tests/test_handler.h"
 
 #include PLATFORM_FILE(render.h)
 #include PLATFORM_FILE(client.h)
@@ -279,7 +279,7 @@ typedef struct
 #include "cl_hud.h"
 #include "sound.h"
 
-#include "progs.h"
+#include "qcvm/progs.h"
 #include "server.h"
 
 #include RENDERER_FILE(model.h)
