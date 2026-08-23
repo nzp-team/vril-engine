@@ -22,17 +22,16 @@ static int Test_QCVM_ExpectFloat(const char *name, float actual, float expected)
 		Con_Printf("[PASS] QCVM: %s\n", name);
 		return 0;
 	}
-	Con_Printf("[FAIL] QCVM: %s (got %g, expected %g)\n",
-		name, actual, expected);
+	Con_Printf("[FAIL] QCVM: %s (got %g, expected %g)\n", name, (double)actual, (double)expected);
 	return 1;
 }
 
 static int Test_QCVM_FloatOpcode(const char *name, int opcode,
 	float lhs, float rhs, float expected)
 {
-	eval_t a = {0};
-	eval_t b = {0};
-	eval_t c = {0};
+	eval_t a = {.vector = {0.0f, 0.0f, 0.0f}};
+	eval_t b = {.vector = {0.0f, 0.0f, 0.0f}};
+	eval_t c = {.vector = {0.0f, 0.0f, 0.0f}};
 
 	a._float = lhs;
 	b._float = rhs;
@@ -44,9 +43,9 @@ static int Test_QCVM_FloatOpcode(const char *name, int opcode,
 static int Test_QCVM_VectorOpcode(const char *name, int opcode,
 	const vec3_t lhs, const vec3_t rhs, const vec3_t expected)
 {
-	eval_t a = {0};
-	eval_t b = {0};
-	eval_t c = {0};
+	eval_t a = {.vector = {0.0f, 0.0f, 0.0f}};
+	eval_t b = {.vector = {0.0f, 0.0f, 0.0f}};
+	eval_t c = {.vector = {0.0f, 0.0f, 0.0f}};
 	int matches;
 
 	VectorCopy(lhs, a.vector);
@@ -76,11 +75,11 @@ test_status_t Test_QCVM_Start(void)
 	const vec3_t vector_sub = {5.0f, -7.0f, 3.0f};
 	const vec3_t vector_scaled = {2.0f, -4.0f, 7.0f};
 	const vec3_t vector_b_doubled = {-8.0f, 10.0f, 1.0f};
-	eval_t a = {0};
-	eval_t b = {0};
-	eval_t c = {0};
-	eval_t target = {0};
-	eval_t result = {0};
+	eval_t a = {.vector = {0.0f, 0.0f, 0.0f}};
+	eval_t b = {.vector = {0.0f, 0.0f, 0.0f}};
+	eval_t c = {.vector = {0.0f, 0.0f, 0.0f}};
+	eval_t target = {.vector = {0.0f, 0.0f, 0.0f}};
+	eval_t result = {.vector = {0.0f, 0.0f, 0.0f}};
 	eval_t array_slots[8] = {{0}};
 	int array_words[16] = {0};
 	int entity_words[8] = {0};
