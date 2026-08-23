@@ -1,4 +1,4 @@
-#include "nzportable_def.h"
+#include "../nzportable_def.h"
 
 test_status_t Test_MapBoot_Start(void)
 {

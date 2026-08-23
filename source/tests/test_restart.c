@@ -1,4 +1,4 @@
-#include "nzportable_def.h"
+#include "../nzportable_def.h"
 
 #define NZP_RESTART_TEST_COUNT 100
 #define NZP_RESTART_TEST_DELAY 5.0
