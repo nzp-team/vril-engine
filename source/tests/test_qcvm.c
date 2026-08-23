@@ -1,5 +1,5 @@
 #include "../nzportable_def.h"
-#include "qcvm/pr_vm.h"
+#include "../qcvm/pr_vm.h"
 
 #include <math.h>
 
