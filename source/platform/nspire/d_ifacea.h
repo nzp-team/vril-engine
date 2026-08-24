@@ -43,21 +43,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // !!! if this is changed, it must be changed in quakedef.h too !!!
 #define CACHE_SIZE	32		// used to align key data structures
 
-// particle_t structure
-// !!! if this is changed, it must be changed in d_iface.h too !!!
-// driver-usable fields
-#define pt_org				0
-#define pt_color			12
-// drivers never touch the following fields
-#define pt_next				16
-#define pt_vel				20
-#define pt_ramp				32
-#define pt_die				36
-#define pt_type				40
-#define pt_size				44
-
-#define PARTICLE_Z_CLIP	8.0
-
 // finalvert_t structure
 // !!! if this is changed, it must be changed in d_iface.h too !!!
 #define fv_v				0	// !!! if this is moved, cases where the !!!
@@ -95,4 +80,3 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define atd_drawtype		28
 #define atd_seamfixupX16	32
 #define atd_size			36
-

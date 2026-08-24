@@ -22,39 +22,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "cpu_main.h"
 
+cvar_t	r_farclip		= {"r_farclip",          "4096", qfalse};
+cvar_t	r_explosiontype	= {"r_explosiontype",    "0", qfalse};
+cvar_t	r_flametype		= {"r_flametype",        "2", qfalse};
+cvar_t	r_laserpoint		= {"r_laserpoint",       "0", qfalse};
+cvar_t	r_part_explosions	= {"r_part_explosions",  "0", qfalse};
+cvar_t	r_part_sparks		= {"r_part_sparks",      "0", qfalse};
+cvar_t	r_part_blood		= {"r_part_blood",       "0", qfalse};
+cvar_t	r_part_blobs		= {"r_part_blobs",       "0", qfalse};
+cvar_t	r_part_lavasplash	= {"r_part_lavasplash",  "0", qfalse};
+cvar_t	r_part_flies		= {"r_part_flies",       "0", qfalse};
 cvar_t	r_part_spikes		= {"r_part_spikes",      "0",qfalse};
 cvar_t	r_part_gunshots	    = {"r_part_gunshots",    "0",qfalse};
 cvar_t	r_part_telesplash	= {"r_part_telesplash",  "0",qfalse};
 cvar_t	r_part_lightning	= {"r_part_lightning",   "0",qfalse};
-cvar_t 	r_decal_bullets 	= {"r_decal_bullets",    "0",qfalse};
-cvar_t 	r_decal_explosions 	= {"r_decal_explosions", "0",qfalse};
 cvar_t 	r_part_trails 		= {"r_part_trails", 	 "0",qfalse};
 cvar_t 	r_part_flames 		= {"r_part_flames", 	 "0",qfalse};
 cvar_t 	r_part_muzzleflash	= {"r_part_muzzleflash", "0",qfalse};
 
 cvar_t	gl_polyblend 		= {"gl_polyblend","0", qfalse};
 
-qboolean		qmb_initialized = qfalse;
-
-int decal_blood1, decal_blood2, decal_blood3, decal_burn, decal_mark, decal_glow;
-
-void R_SpawnDecalStatic (vec3_t org, int tex, int size)
-{
-	// naievil -- TODO: implement me
-	return;
-}
-
-void QMB_LightningBeam (vec3_t start, vec3_t end)
-{
-	// naievil -- TODO: implement me
-	return;
-}
-
-void QMB_MuzzleFlash (vec3_t org)
-{
-	// naievil -- TODO: implement me
-	return;
-}
 
 void Sky_LoadSkyBox(char* name)
 {

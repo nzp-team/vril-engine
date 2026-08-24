@@ -87,6 +87,12 @@ typedef struct
     int		type;		        // color
 } dlight_t;
 
+typedef enum {
+	lt_default, lt_muzzleflash, lt_explosion, lt_rocket,
+	lt_red, lt_blue, lt_redblue, lt_green, NUM_DLIGHTTYPES,
+	lt_explosion2, lt_explosion3, lt_rayred, lt_raygreen
+} dlighttype_t;
+
 
 #define	MAX_BEAMS	24
 typedef struct
@@ -207,6 +213,7 @@ typedef struct
 	double		oldtime;		// previous cl.time, time-oldtime is used
 								// to decay light values and smooth step ups
 	double		ctime;			// joe: copy of cl.time, to avoid incidents caused by rewind
+	double		laser_point_time;
 
 
 	float		last_received_message;	// (realtime) for net trouble icon
@@ -302,6 +309,7 @@ extern	beam_t			cl_beams[MAX_BEAMS];
 // cl_main
 //
 dlight_t *CL_AllocDlight (int key);
+void CL_NewDlight (int key, vec3_t origin, float radius, float time, int type);
 void	CL_DecayLights (void);
 
 void CL_Init (void);
@@ -413,4 +421,5 @@ void V_SetContentsColor (int contents);
 // cl_tent
 //
 void CL_InitTEnts (void);
+qboolean TraceLineN (vec3_t start, vec3_t end, vec3_t impact, vec3_t normal);
 void CL_SignonReply (void);

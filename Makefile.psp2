@@ -78,11 +78,11 @@ COMMON_OBJS =	\
 	source/render/r_entity_fragments.o \
 	source/render/r_color_quantization.o \
 	source/render/r_light.o \
+	source/render/r_particles.o \
+	source/render/r_decals.o \
+	source/platform/psp2/gl/gl_hyena.o \
 	source/images.o \
 	source/platform/psp2/sys_psp2.o \
-	source/platform/psp2/gl/gl_fog.o \
-	source/platform/psp2/gl/gl_decal.o \
-	source/platform/psp2/gl/gl_qmb.o \
 	source/platform/psp2/gl/gl_draw.o \
 	source/platform/psp2/gl/gl_mesh.o \
 	source/platform/psp2/gl/gl_model.o \
@@ -91,7 +91,6 @@ COMMON_OBJS =	\
 	source/platform/psp2/gl/gl_rsurf.o \
 	source/render/r_screen.o \
 	source/platform/psp2/gl/gl_warp.o \
-	source/platform/psp2/r_part.o \
 	source/platform/psp2/music.o \
 	source/snd_music.o \
 	source/platform/psp2/audiodec/audio_decoder.o \

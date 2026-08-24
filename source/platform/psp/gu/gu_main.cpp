@@ -158,9 +158,6 @@ cvar_t	r_flametype	        = {"r_flametype",        "2",true};
 //Shpuld
 cvar_t  r_model_brightness = { "r_model_brightness", "1", true};   // Toggle high brightness model lighting
 
-//cypress
-cvar_t 	r_runqmbparticles = {"r_runqmbparticles", 	"1", true};
-
 extern cvar_t cl_maxfps;
 extern cvar_t scr_fov_viewmodel;
 
@@ -2456,23 +2453,4 @@ void R_RenderView (void)
 		Con_Printf ("%4i world poly\n",  c_brush_polys);
 		Con_Printf ("%4i entity poly\n",  c_alias_polys);
 	}
-}
-
-// MARK: Vril Graphics Wrapper
-
-void Platform_Graphics_SetTextureMode(int texture_mode)
-{
-	switch(texture_mode) {
-		case GFX_REPLACE:
-			sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
-			break;
-		default:
-			Sys_Error("Received unknown texture mode [%d]\n", texture_mode);
-			break;
-	}
-}
-
-void Platform_Graphics_Color(float red, float green, float blue, float alpha)
-{
-	sceGuColor(GU_COLOR(red, green, blue, alpha));
 }
