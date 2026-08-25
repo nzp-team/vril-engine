@@ -27,7 +27,7 @@ else
 LDLIBS += -lGL -lGLU
 endif
 
-ENGINE_SOURCES := $(wildcard source/*.c) $(wildcard source/menu/*.c) $(wildcard source/render/*.c)
+ENGINE_SOURCES := $(wildcard source/*.c) $(wildcard source/menu/*.c) $(wildcard source/qcvm/*.c) $(wildcard source/render/*.c) $(wildcard source/tests/*.c)
 SDL_SOURCES := $(wildcard source/platform/sdl/*.c) $(wildcard source/platform/sdl/gl/*.c)
 SOURCES := $(ENGINE_SOURCES) $(SDL_SOURCES)
 OBJECTS := $(patsubst source/%.c,$(BUILD)/%.o,$(SOURCES))

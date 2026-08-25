@@ -45,7 +45,10 @@ COMMON_OBJS = \
 	source/snd_music.o \
 	source/platform/psp/Random.o \
 	\
-	source/test_handler.o \
+	source/tests/test_handler.o \
+	source/tests/test_map_boot.o \
+	source/tests/test_restart.o \
+	source/tests/test_qcvm.o \
 	source/chase.o \
 	source/cl_demo.o \
 	source/cl_input.o \
@@ -85,9 +88,9 @@ COMMON_OBJS = \
 	source/net_loop.o \
 	source/platform/psp/net_main.o \
 	source/net_vcr.o \
-	source/pr_cmds.o \
-	source/pr_edict.o \
-	source/pr_exec.o \
+	source/qcvm/pr_cmds.o \
+	source/qcvm/pr_edict.o \
+	source/qcvm/pr_exec.o \
 	source/snd_dma.o \
 	source/snd_mem.o \
 	source/snd_mix.o \

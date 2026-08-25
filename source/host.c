@@ -605,10 +605,7 @@ void Host_ServerFrame (void)
 // send all messages to the clients
 	SV_SendClientMessages ();
 
-	if (sv.time >= 5.0) {
-		TestHandler_MapBoot();
-	}
-	TestHandler_RestartStress();
+	TestHandler_Frame();
 }
 
 /*
@@ -881,7 +878,8 @@ void Host_Init (quakeparms_t *parms)
 	Mod_Init ();
 	NET_Init ();
 	SV_Init ();
-	TestHandler_Init ();
+	if (TestHandler_Init ())
+		return;
 
 
 	Sys_PrintSystemInfo();

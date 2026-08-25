@@ -18,7 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "nzportable_def.h"
+#include "../nzportable_def.h"
+#include "pr_vm.h"
 
 /*
 
@@ -31,12 +32,12 @@ typedef struct
 } prstack_t;
 
 #define	MAX_STACK_DEPTH		32
-prstack_t	pr_stack[MAX_STACK_DEPTH];
-int			pr_depth;
+static prstack_t	pr_stack[MAX_STACK_DEPTH];
+static int			pr_depth;
 
 #define	LOCALSTACK_SIZE		2048
-int			localstack[LOCALSTACK_SIZE];
-int			localstack_used;
+static int			localstack[LOCALSTACK_SIZE];
+static int			localstack_used;
 
 
 qboolean	pr_trace;
@@ -46,98 +47,19 @@ int			pr_xstatement;
 
 int		pr_argc;
 
-static qboolean PR_IsTruthy (const eval_t *value)
+static inline eval_t *PR_VM_ResolvePointer (int pointer)
 {
-	return ((unsigned int)value->_int & 0x7fffffffU) != 0;
+	return PR_VM_PointerAddress(pointer, pr_globals, sv.edicts);
 }
 
-char *pr_opnames[] =
+static const char *const pr_opnames[OP_COUNT] =
 {
-"DONE",
-
-"MUL_F",
-"MUL_V",
-"MUL_FV",
-"MUL_VF",
-
-"DIV",
-
-"ADD_F",
-"ADD_V",
-
-"SUB_F",
-"SUB_V",
-
-"EQ_F",
-"EQ_V",
-"EQ_S",
-"EQ_E",
-"EQ_FNC",
-
-"NE_F",
-"NE_V",
-"NE_S",
-"NE_E",
-"NE_FNC",
-
-"LE",
-"GE",
-"LT",
-"GT",
-
-"INDIRECT",
-"INDIRECT",
-"INDIRECT",
-"INDIRECT",
-"INDIRECT",
-"INDIRECT",
-
-"ADDRESS",
-
-"STORE_F",
-"STORE_V",
-"STORE_S",
-"STORE_ENT",
-"STORE_FLD",
-"STORE_FNC",
-
-"STOREP_F",
-"STOREP_V",
-"STOREP_S",
-"STOREP_ENT",
-"STOREP_FLD",
-"STOREP_FNC",
-
-"RETURN",
-
-"NOT_F",
-"NOT_V",
-"NOT_S",
-"NOT_ENT",
-"NOT_FNC",
-
-"IF",
-"IFNOT",
-
-"CALL0",
-"CALL1",
-"CALL2",
-"CALL3",
-"CALL4",
-"CALL5",
-"CALL6",
-"CALL7",
-"CALL8",
-
-"STATE",
-
-"GOTO",
-
-"AND",
-"OR",
-
-"BITAND",
-"BITOR"
+#define PR_OPCODE_NAME(op, name) [op] = name,
+	PR_OPCODE_LIST(PR_OPCODE_NAME)
+#undef PR_OPCODE_NAME
+#define PR_EXTENDED_OPCODE_NAME(op, value, name) [op] = name,
+	PR_EXTENDED_OPCODE_LIST(PR_EXTENDED_OPCODE_NAME)
+#undef PR_EXTENDED_OPCODE_NAME
 };
 
 char *PR_GlobalString (int ofs);
@@ -155,7 +77,7 @@ void PR_PrintStatement (dstatement_t *s)
 {
 	int		i;
 
-	if ( (unsigned)s->op < sizeof(pr_opnames)/sizeof(pr_opnames[0]))
+	if ((unsigned)s->op < OP_COUNT && pr_opnames[s->op])
 	{
 		Con_Printf ("%s ",  pr_opnames[s->op]);
 		i = strlen(pr_opnames[s->op]);
@@ -280,6 +202,13 @@ void PR_RunError (char *error, ...)
 	Host_Error ("Program error");
 }
 
+static inline eval_t *PR_VM_GlobalAt (int index, int width)
+{
+	if (index < 0 || index > progs->numglobals - width)
+		PR_RunError ("global array index %i out of range", index);
+	return (eval_t *)&pr_globals[index];
+}
+
 /*
 ============================================================================
 PR_ExecuteProgram
@@ -295,7 +224,7 @@ PR_EnterFunction
 Returns the new program statement counter
 ====================
 */
-int PR_EnterFunction (dfunction_t *f)
+static inline int PR_EnterFunction (dfunction_t *f)
 {
 	int		i, j, c, o;
 
@@ -334,7 +263,7 @@ int PR_EnterFunction (dfunction_t *f)
 PR_LeaveFunction
 ====================
 */
-int PR_LeaveFunction (void)
+static inline int PR_LeaveFunction (void)
 {
 	int		i, c;
 
@@ -415,126 +344,21 @@ while (1)
 
 	switch (st->op)
 	{
-	case OP_ADD_F:
-		c->_float = a->_float + b->_float;
-		break;
-	case OP_ADD_V:
-		c->vector[0] = a->vector[0] + b->vector[0];
-		c->vector[1] = a->vector[1] + b->vector[1];
-		c->vector[2] = a->vector[2] + b->vector[2];
-		break;
+#define PR_VM_EXEC_CASE(op, handler) case op: handler(a, b, c); break;
+	PR_VM_CORE_OPCODES(PR_VM_EXEC_CASE)
+#undef PR_VM_EXEC_CASE
 
-	case OP_SUB_F:
-		c->_float = a->_float - b->_float;
-		break;
-	case OP_SUB_V:
-		c->vector[0] = a->vector[0] - b->vector[0];
-		c->vector[1] = a->vector[1] - b->vector[1];
-		c->vector[2] = a->vector[2] - b->vector[2];
-		break;
-
-	case OP_MUL_F:
-		c->_float = a->_float * b->_float;
-		break;
-	case OP_MUL_V:
-		c->_float = a->vector[0]*b->vector[0]
-				+ a->vector[1]*b->vector[1]
-				+ a->vector[2]*b->vector[2];
-		break;
-	case OP_MUL_FV:
-		c->vector[0] = a->_float * b->vector[0];
-		c->vector[1] = a->_float * b->vector[1];
-		c->vector[2] = a->_float * b->vector[2];
-		break;
-	case OP_MUL_VF:
-		c->vector[0] = b->_float * a->vector[0];
-		c->vector[1] = b->_float * a->vector[1];
-		c->vector[2] = b->_float * a->vector[2];
-		break;
-
-	case OP_DIV_F:
-		c->_float = a->_float / b->_float;
-		break;
-
-	case OP_BITAND:
-		c->_float = (int)a->_float & (int)b->_float;
-		break;
-
-	case OP_BITOR:
-		c->_float = (int)a->_float | (int)b->_float;
-		break;
-
-
-	case OP_GE:
-		c->_float = a->_float >= b->_float;
-		break;
-	case OP_LE:
-		c->_float = a->_float <= b->_float;
-		break;
-	case OP_GT:
-		c->_float = a->_float > b->_float;
-		break;
-	case OP_LT:
-		c->_float = a->_float < b->_float;
-		break;
-	case OP_AND:
-		c->_float = PR_IsTruthy(a) && PR_IsTruthy(b);
-		break;
-	case OP_OR:
-		c->_float = PR_IsTruthy(a) || PR_IsTruthy(b);
-		break;
-
-	case OP_NOT_F:
-		c->_float = !a->_float;
-		break;
-	case OP_NOT_V:
-		c->_float = !a->vector[0] && !a->vector[1] && !a->vector[2];
-		break;
 	case OP_NOT_S:
 		c->_float = !a->string || !*PR_GetString(a->string);
-		break;
-	case OP_NOT_FNC:
-		c->_float = !a->function;
 		break;
 	case OP_NOT_ENT:
 		c->_float = (PROG_TO_EDICT(a->edict) == sv.edicts);
 		break;
-
-	case OP_EQ_F:
-		c->_float = a->_float == b->_float;
-		break;
-	case OP_EQ_V:
-		c->_float = (a->vector[0] == b->vector[0]) &&
-					(a->vector[1] == b->vector[1]) &&
-					(a->vector[2] == b->vector[2]);
-		break;
 	case OP_EQ_S:
 		c->_float = !strcmp(PR_GetString(a->string),PR_GetString(b->string));
 		break;
-	case OP_EQ_E:
-		c->_float = a->_int == b->_int;
-		break;
-	case OP_EQ_FNC:
-		c->_float = a->function == b->function;
-		break;
-
-
-	case OP_NE_F:
-		c->_float = a->_float != b->_float;
-		break;
-	case OP_NE_V:
-		c->_float = (a->vector[0] != b->vector[0]) ||
-					(a->vector[1] != b->vector[1]) ||
-					(a->vector[2] != b->vector[2]);
-		break;
 	case OP_NE_S:
 		c->_float = strcmp(PR_GetString(a->string),PR_GetString(b->string));
-		break;
-	case OP_NE_E:
-		c->_float = a->_int != b->_int;
-		break;
-	case OP_NE_FNC:
-		c->_float = a->function != b->function;
 		break;
 
 //==================
@@ -556,14 +380,148 @@ while (1)
 	case OP_STOREP_FLD:		// integers
 	case OP_STOREP_S:
 	case OP_STOREP_FNC:		// pointers
-		ptr = (eval_t *)((byte *)sv.edicts + b->_int);
+		ptr = PR_VM_ResolvePointer(b->_int);
 		ptr->_int = a->_int;
 		break;
 	case OP_STOREP_V:
-		ptr = (eval_t *)((byte *)sv.edicts + b->_int);
+		ptr = PR_VM_ResolvePointer(b->_int);
 		ptr->vector[0] = a->vector[0];
 		ptr->vector[1] = a->vector[1];
 		ptr->vector[2] = a->vector[2];
+		break;
+
+	case OP_MULSTOREP_F:
+		ptr = PR_VM_ResolvePointer(b->_int);
+		PR_VM_MulStorePFloat(a, ptr, c);
+		break;
+	case OP_MULSTOREP_VF:
+		ptr = PR_VM_ResolvePointer(b->_int);
+		PR_VM_MulStorePVectorFloat(a, ptr, c);
+		break;
+	case OP_DIVSTOREP_F:
+		ptr = PR_VM_ResolvePointer(b->_int);
+		PR_VM_DivStorePFloat(a, ptr, c);
+		break;
+	case OP_ADDSTOREP_F:
+		ptr = PR_VM_ResolvePointer(b->_int);
+		PR_VM_AddStorePFloat(a, ptr, c);
+		break;
+	case OP_ADDSTOREP_V:
+		ptr = PR_VM_ResolvePointer(b->_int);
+		PR_VM_AddStorePVector(a, ptr, c);
+		break;
+	case OP_SUBSTOREP_F:
+		ptr = PR_VM_ResolvePointer(b->_int);
+		PR_VM_SubStorePFloat(a, ptr, c);
+		break;
+	case OP_SUBSTOREP_V:
+		ptr = PR_VM_ResolvePointer(b->_int);
+		PR_VM_SubStorePVector(a, ptr, c);
+		break;
+	case OP_BITSETSTOREP_F:
+		ptr = PR_VM_ResolvePointer(b->_int);
+		PR_VM_BitSetStorePFloat(a, ptr);
+		break;
+	case OP_BITCLRSTOREP_F:
+		ptr = PR_VM_ResolvePointer(b->_int);
+		PR_VM_BitClearStorePFloat(a, ptr);
+		break;
+
+	case OP_STOREF_F:
+	case OP_STOREF_S:
+	case OP_STOREF_I:
+		ed = PROG_TO_EDICT(a->edict);
+		if (ed == (edict_t *)sv.edicts && sv.state == ss_active)
+			PR_RunError ("assignment to world entity");
+		ptr = (eval_t *)((int *)&ed->v + b->_int);
+		PR_VM_StoreScalar(c, ptr);
+		break;
+	case OP_STOREF_V:
+		ed = PROG_TO_EDICT(a->edict);
+		if (ed == (edict_t *)sv.edicts && sv.state == ss_active)
+			PR_RunError ("assignment to world entity");
+		ptr = (eval_t *)((int *)&ed->v + b->_int);
+		PR_VM_StoreVector(c, ptr);
+		break;
+
+	case OP_RAND0:
+		c->_float = PR_VM_RandomUnit(rand());
+		break;
+	case OP_RAND1:
+		c->_float = PR_VM_RandomScale(rand(), a->_float);
+		break;
+	case OP_RAND2:
+		c->_float = PR_VM_RandomRange(rand(), a->_float, b->_float);
+		break;
+
+	case OP_GLOBALADDRESS:
+		i = st->a + b->_int;
+		PR_VM_GlobalAt(i, 1);
+		c->_int = PR_VM_GlobalPointer((uint32_t)i * sizeof(int));
+		break;
+	case OP_ADD_PIW:
+		c->_int = PR_VM_AddPointerWords(a->_int, b->_int);
+		break;
+
+	case OP_LOADA_F:
+	case OP_LOADA_S:
+	case OP_LOADA_ENT:
+	case OP_LOADA_FLD:
+	case OP_LOADA_FNC:
+	case OP_LOADA_I:
+		ptr = PR_VM_GlobalAt(st->a + b->_int, 1);
+		PR_VM_StoreScalar(ptr, c);
+		break;
+	case OP_LOADA_V:
+		ptr = PR_VM_GlobalAt(st->a + b->_int, 3);
+		PR_VM_StoreVector(ptr, c);
+		break;
+
+	case OP_LOADP_F:
+	case OP_LOADP_S:
+	case OP_LOADP_ENT:
+	case OP_LOADP_FLD:
+	case OP_LOADP_FNC:
+	case OP_LOADP_I:
+		ptr = PR_VM_ResolvePointer(PR_VM_AddPointerWords(a->_int, b->_int));
+		PR_VM_StoreScalar(ptr, c);
+		break;
+	case OP_LOADP_V:
+		ptr = PR_VM_ResolvePointer(PR_VM_AddPointerWords(a->_int, b->_int));
+		PR_VM_StoreVector(ptr, c);
+		break;
+
+	case OP_GLOAD_I:
+	case OP_GLOAD_F:
+	case OP_GLOAD_FLD:
+	case OP_GLOAD_ENT:
+	case OP_GLOAD_S:
+	case OP_GLOAD_FNC:
+		ptr = PR_VM_GlobalAt(a->_int, 1);
+		PR_VM_StoreScalar(ptr, c);
+		break;
+	case OP_GLOAD_V:
+		ptr = PR_VM_GlobalAt(a->_int, 3);
+		PR_VM_StoreVector(ptr, c);
+		break;
+	case OP_GSTOREP_I:
+	case OP_GSTOREP_F:
+	case OP_GSTOREP_ENT:
+	case OP_GSTOREP_FLD:
+	case OP_GSTOREP_S:
+	case OP_GSTOREP_FNC:
+		ptr = PR_VM_GlobalAt(b->_int, 1);
+		PR_VM_StoreScalar(a, ptr);
+		break;
+	case OP_GSTOREP_V:
+		ptr = PR_VM_GlobalAt(b->_int, 3);
+		PR_VM_StoreVector(a, ptr);
+		break;
+
+	case OP_BOUNDCHECK:
+		if (!PR_VM_InBounds(a->_int, (uint16_t)st->c, (uint16_t)st->b))
+			PR_RunError ("Progs boundcheck failed. Value is %i. Must be %u<=value<%u",
+				a->_int, (uint16_t)st->c, (uint16_t)st->b);
 		break;
 
 	case OP_ADDRESS:

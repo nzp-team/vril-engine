@@ -21,6 +21,8 @@ BUILD		:=	obj
 SOURCES		:=	source/platform_rvl\
 			source/platform_rvl/gx\
 			source\
+			source/qcvm\
+			source/tests\
 
 INCLUDES	:=
 

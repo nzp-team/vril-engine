@@ -1,4 +1,4 @@
-/* TODO: Use FTEQCC to autogenerate this. */
+/* TODO: Use FTEQCC to autogenerate this QCVM interface. */
 
 typedef struct
 {	
