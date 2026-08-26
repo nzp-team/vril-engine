@@ -1466,8 +1466,28 @@ char *PR_GetString(int num)
 	} else if (num < 0 && num >= -num_prstr) {
         s = pr_strtbl[-num - 1];
 	} else {
-        Host_Error("%s: invalid string offset %d (%d to %d valid)\n", __func__, num, -num_prstr,
-                   pr_strings_size - 2);\
+		const char *function_name = "<outside QCVM>";
+		int opcode = -1;
+		int operand_a = 0;
+		int operand_b = 0;
+		int operand_c = 0;
+
+		if (pr_xfunction && pr_xfunction->s_name >= 0
+			&& pr_xfunction->s_name < pr_strings_size - 1)
+			function_name = pr_strings + pr_xfunction->s_name;
+		if (pr_xstatement >= 0 && pr_xstatement < progs->numstatements)
+		{
+			dstatement_t *statement = &pr_statements[pr_xstatement];
+			opcode = statement->op;
+			operand_a = statement->a;
+			operand_b = statement->b;
+			operand_c = statement->c;
+		}
+		Host_Error("%s: invalid string offset %d (%d to %d valid); "
+			"QC %s statement %d opcode %d (%d, %d, %d)\n",
+			__func__, num, -num_prstr, pr_strings_size - 2,
+			function_name, pr_xstatement, opcode,
+			operand_a, operand_b, operand_c);
 	}
 
     return s;

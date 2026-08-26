@@ -135,33 +135,11 @@ void Host_Error (char *error, ...)
 {
 	va_list		argptr;
 	char		string[1024];
-	static	qboolean inerror = false;
-
-	if (inerror)
-		Sys_Error ("Host_Error: recursively entered");
-	inerror = true;
-
-	SCR_EndLoadingPlaque ();		// reenable screen updates
 
 	va_start (argptr,error);
-	vsprintf (string,error,argptr);
+	vsnprintf (string, sizeof(string), error, argptr);
 	va_end (argptr);
-	Con_Printf ("Host_Error: %s\n",string);
-
-	if (sv.active)
-		Host_ShutdownServer (false);
-
-	if (cls.state == ca_dedicated)
-		Sys_Error ("Host_Error: %s\n",string);	// dedicated servers exit
-
-	CL_Disconnect ();
-	cls.demonum = -1;
-
-	Clear_LoadingFill ();
-
-	inerror = false;
-
-	longjmp (host_abortserver, 1);
+	Sys_Error ("Host_Error: %s", string);
 }
 
 /*

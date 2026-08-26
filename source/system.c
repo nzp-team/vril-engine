@@ -51,5 +51,6 @@ void Sys_PrintError(const char *function_name, const char *source_file, int line
     BUILD_DATE);
 
     Con_Printf(error_message);
-    Sys_SystemError(error_message); 
+    Sys_SystemError(error_message);
+	abort();
 }

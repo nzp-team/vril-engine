@@ -2518,6 +2518,7 @@ void PF_fgets (void)
 	char	buffer;
 
 	h = (int)G_FLOAT(OFS_PARM0);
+	G_INT(OFS_RETURN) = OFS_NULL;
 
 	count = Sys_FileRead(h, &buffer, 1);
 	
