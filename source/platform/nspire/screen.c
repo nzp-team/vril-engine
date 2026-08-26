@@ -696,7 +696,6 @@ void SCR_UpdateScreen (void)
 	/*printf("in SCR_UpdateScreen %s:%d\n", __FILE__, __LINE__ );*/
 
 	SCR_SetUpToDrawConsole ();
-	SCR_EraseCenterString ();
 
 	D_DisableBackBufferAccess ();	// for adapters that can't stay mapped in
 									//  for linear writes all the time

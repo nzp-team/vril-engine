@@ -275,6 +275,8 @@ extern	cvar_t	cl_pitchspeed;
 extern	cvar_t	r_hlbsponly;
 
 extern	cvar_t	cl_anglespeedkey;
+extern	cvar_t	cl_lightning_zadjust;
+extern	cvar_t	cl_truelightning;
 
 extern	cvar_t	cl_autofire;
 
