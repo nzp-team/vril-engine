@@ -19,8 +19,8 @@
  */
 // r_hud.c -- heads-up display
 
-#include "nzportable_def.h"
-#include "menu/menu_defs.h"
+#include "../nzportable_def.h"
+#include "../menu/menu_defs.h"
 
 #ifdef PSP_VFPU
 #include <pspmath.h>
@@ -1257,7 +1257,7 @@ HUD_DrawRoundCounter(int round, const vec3_t color, int alpha)
         return;
     }
     {
-        char digits[8];
+        char digits[12];
         snprintf(digits, sizeof(digits), "%i", round);
         for (i = 0; digits[i]; i++) {
             int digit = digits[i] - '0';

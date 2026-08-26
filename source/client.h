@@ -272,6 +272,7 @@ extern	cvar_t	cl_movespeedkey;
 
 extern	cvar_t	cl_yawspeed;
 extern	cvar_t	cl_pitchspeed;
+extern	cvar_t	r_hlbsponly;
 
 extern	cvar_t	cl_anglespeedkey;
 
