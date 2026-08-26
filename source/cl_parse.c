@@ -26,8 +26,6 @@ extern double hud_maxammo_endtime;
 extern int current_gamemode;
 
 extern cvar_t scr_whiteflash;
-extern cvar_t cl_hitmarkers;
-
 qboolean 			crosshair_pulse_grenade;
 
 extern int EN_Find(int num,char *string);
@@ -82,9 +80,21 @@ char *svc_strings[] =
 	"svc_limbupdate",
     "svc_fog",    // 41		// [byte] start [byte] end [byte] red [byte] green [byte] blue [float] time
     "svc_bspdecal", //42     // [string] name [byte] decal_size [coords] pos
-    "svc_achievement", //43
-	"svc_maxammo" //44
-	//"svc_pulse" //45
+    "svc_achievement",
+	"svc_songegg",
+	"svc_maxammo",
+	"svc_pulse",
+	"svc_bettyprompt",
+	"svc_playername",
+	"svc_doubletap",
+	"svc_screenflash",
+	"svc_lockviewmodel",
+	"svc_rumble",
+	"svc_gamemode",
+	"svc_roundcolor",
+	"svc_perkorientation",
+	"svc_hudtoast",
+	"svc_updatescorestats"
 };
 
 //=============================================================================
@@ -945,14 +955,14 @@ void CL_ParseClientdata (int bits)
 
 	if (cl.stats[STAT_GRENADES] != i)
 	{
-		HUD_Change_time = Sys_FloatTime() + 6;
+		HUD_Change_time = Sys_FloatTime() + 7;
 		cl.stats[STAT_GRENADES] = i;
 	}
 
 	i = MSG_ReadShort ();
 	if (cl.stats[STAT_PRIGRENADES] != i)
 	{
-		HUD_Change_time = Sys_FloatTime() + 6;
+		HUD_Change_time = Sys_FloatTime() + 7;
 		cl.stats[STAT_PRIGRENADES] = i;
 	}
 
@@ -960,7 +970,7 @@ void CL_ParseClientdata (int bits)
 	i = MSG_ReadShort ();
 	if (cl.stats[STAT_SECGRENADES] != i)
 	{
-		HUD_Change_time = Sys_FloatTime() + 6;
+		HUD_Change_time = Sys_FloatTime() + 7;
 		cl.stats[STAT_SECGRENADES] = i;
 	}
 
@@ -971,14 +981,14 @@ void CL_ParseClientdata (int bits)
 	i = MSG_ReadShort ();
 	if (cl.stats[STAT_AMMO] != i)
 	{
-		HUD_Change_time = Sys_FloatTime() + 6;
+		HUD_Change_time = Sys_FloatTime() + 7;
 		cl.stats[STAT_AMMO] = i;
 	}
 
 	i = MSG_ReadShort ();
 	if (cl.stats[STAT_CURRENTMAG] != i)
 	{
-		HUD_Change_time = Sys_FloatTime() + 6;
+		HUD_Change_time = Sys_FloatTime() + 7;
 		cl.stats[STAT_CURRENTMAG] = i;
 	}
 
@@ -989,7 +999,7 @@ void CL_ParseClientdata (int bits)
 	i = MSG_ReadByte ();
 	if (cl.stats[STAT_ACTIVEWEAPON] != i)
 	{
-		HUD_Change_time = Sys_FloatTime() + 6;
+		HUD_Change_time = Sys_FloatTime() + 7;
 		cl.stats[STAT_ACTIVEWEAPON] = i;
 	}
 
@@ -1230,15 +1240,14 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_centerprint:
-			SCR_CenterPrint (MSG_ReadString ());
+			HUD_CenterPrint (MSG_ReadString ());
 			break;
 
 		case svc_useprint:
-			SCR_UsePrint (MSG_ReadByte (),MSG_ReadShort (),MSG_ReadByte ());
+			HUD_UsePrint (MSG_ReadByte (),MSG_ReadShort (),MSG_ReadByte ());
 			break;
-		case svc_maxammo:
-			hud_maxammo_starttime = sv.time;
-			hud_maxammo_endtime = sv.time + 2;
+		case svc_hudtoast:
+			HUD_PowerupToast (MSG_ReadByte ());
 			break;
 
 		case svc_pulse:
@@ -1349,6 +1358,16 @@ void CL_ParseServerMessage (void)
 			cl.scores[i].kills = MSG_ReadShort ();
 			break;
 
+		case svc_updatescorestats:
+			i = MSG_ReadByte ();
+			if (i >= cl.maxclients)
+				Host_Error ("CL_ParseServerMessage: svc_updatescorestats > MAX_SCOREBOARD");
+			cl.scores[i].headshots = MSG_ReadShort ();
+			cl.scores[i].downs = MSG_ReadShort ();
+			cl.scores[i].revives = MSG_ReadShort ();
+			cl.scores[i].ping = MSG_ReadShort ();
+			break;
+
 
 		case svc_particle:
 			R_ParseParticleEffect ();
@@ -1416,14 +1435,14 @@ void CL_ParseServerMessage (void)
 			cl.intermission = 2;
 			cl.completed_time = cl.time;
 			vid.recalc_refdef = true;	// go to full screen
-			SCR_CenterPrint (MSG_ReadString ());
+			HUD_CenterPrint (MSG_ReadString ());
 			break;
 
 		case svc_cutscene:
 			cl.intermission = 3;
 			cl.completed_time = cl.time;
 			vid.recalc_refdef = true;	// go to full screen
-			SCR_CenterPrint (MSG_ReadString ());
+			HUD_CenterPrint (MSG_ReadString ());
 			break;
 
 		case svc_sellscreen:
@@ -1438,12 +1457,11 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_achievement:
-			HUD_Parse_Achievement (MSG_ReadByte());
+			(void)MSG_ReadByte();
 			break;
 
 		case svc_hitmark:
-			if (cl_hitmarkers.value > 0)
-				Hitmark_Time = sv.time + 0.2;
+			HUD_Hitmark(MSG_ReadByte());
 			break;
 
 		case svc_weaponfire:

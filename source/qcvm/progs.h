@@ -154,5 +154,5 @@ void PR_RunError (char *error, ...);
 void ED_PrintEdicts (void);
 void ED_PrintNum (int ent);
 
-//eval_t *GetEdictFieldValue(edict_t *ed, char *field);
+float PR_GetEdictFloat (edict_t *ed, const char *field);
 #define	GETEDICTFIELDVALUE(ed, fieldoffset) (fieldoffset ? (eval_t *)((byte *)&ed->v + fieldoffset) : NULL)

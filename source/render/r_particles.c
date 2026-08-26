@@ -2204,6 +2204,16 @@ QMB_MuzzleFlash(vec3_t org)
                 break;
         }
     }
+
+    dlight_t *muzzleflash_light;
+    muzzleflash_light = CL_AllocDlight(cl.viewentity);
+    VectorCopy(org, muzzleflash_light->origin);
+    muzzleflash_light->die = cl.time + 0.1;
+    muzzleflash_light->radius = 128;
+    muzzleflash_light->color[0] = (float)(color[0]/255.0f);
+    muzzleflash_light->color[1] = (float)(color[1]/255.0f);
+    muzzleflash_light->color[2] = (float)(color[2]/255.0f);
+
 } /* QMB_MuzzleFlash */
 
 void

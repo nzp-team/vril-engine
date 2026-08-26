@@ -103,6 +103,11 @@ typedef struct client_s
 // client known data for deltas
 	int				old_points;
 	int				old_kills;
+	int				old_headshots;
+	int				old_downs;
+	int				old_revives;
+	int				old_ping;
+	double			next_scorestats_update;
 // joe, from ProQuake: allow clients to connect if they don't have the map
 	qboolean	nomap;
 } client_t;

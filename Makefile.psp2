@@ -67,7 +67,7 @@ COMMON_OBJS =	\
 	source/snd_dma.o \
 	source/snd_mem.o \
 	source/snd_mix.o \
-	source/cl_hud.o \
+	source/render/r_hud.o \
 	source/sv_main.o \
 	source/sv_move.o \
 	source/sv_phys.o \

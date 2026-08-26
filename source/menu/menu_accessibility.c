@@ -26,11 +26,14 @@ char 			*hitmarkers_string;
 char 			*colorblind_string;
 char 			*screenflash_string;
 char 			*monthspoof_string;
+char 			*crosshairdot_string;
 
 extern cvar_t 	cl_hitmarkers;
 extern cvar_t 	cl_colorblind;
 extern cvar_t 	scr_whiteflash;
 extern cvar_t 	sv_spoofmonth;
+extern cvar_t 	cl_textopacity;
+extern cvar_t 	cl_crosshairdot;
 
 void Menu_Accessibility_ApplyHitmarkers (void)
 {
@@ -80,6 +83,11 @@ void Menu_Accessibility_ApplyMonthSpoof (void)
     Cvar_SetValue ("sv_spoofmonth", current_monthspoof);
 }
 
+void Menu_Accessibility_ApplyCrosshairDot (void)
+{
+	Cvar_SetValue ("cl_crosshairdot", !cl_crosshairdot.value);
+}
+
 void Menu_Accessibility_ApplySettings (void)
 {
 	// no op
@@ -117,6 +125,12 @@ void Menu_Accessibility_SetStrings (void)
 		screenflash_string = "FORBID WHITE";
 	} else {
 		screenflash_string = "ALLOW WHITE";
+	}
+
+	if ((int)cl_crosshairdot.value == 1) {
+		crosshairdot_string = "ENABLED";
+	} else {
+		crosshairdot_string = "DISABLED";
 	}
 
 	switch((int)sv_spoofmonth.value) {
@@ -183,22 +197,26 @@ void Menu_Accessibility_Draw (void)
 	Menu_DrawOptionButton(1, hitmarkers_string);
 
 	// Text Backdrop
-	// currently not supported
-	Menu_DrawGreyButton(2, "TEXT BACKDROP");
+	Menu_DrawButton(2, 1, "TEXT BACKDROP", "Opacity of backdrop for text elements on HUD.", NULL);
+	Menu_DrawOptionSlider(2, 1, 0, 1, cl_textopacity, "cl_textopacity", false, false, 0.05f);
 
 	// Accessible Colors
-    Menu_DrawButton(3, 1, "ACCESSIBLE COLORS", "Uses enhanced Player colors to improve visibilty.", Menu_Accessibility_ApplyColorblind);
+	Menu_DrawButton(3, 2, "ACCESSIBLE COLORS", "Uses enhanced Player colors to improve visibilty.", Menu_Accessibility_ApplyColorblind);
 	Menu_DrawOptionButton(3, colorblind_string);
 
 	// Screen Flashes
-    Menu_DrawButton(4, 2, "SCREEN FLASHES", "Choose the color of screen flashes.", Menu_Accessibility_ApplyScreenflash);
+	Menu_DrawButton(4, 3, "SCREEN FLASHES", "Choose the color of screen flashes.", Menu_Accessibility_ApplyScreenflash);
 	Menu_DrawOptionButton(4, screenflash_string);
 
 	// Month Spoof
-    Menu_DrawButton(5, 3, "MONTH SPOOF", "Lie to the game about the current Month, if you are host.", Menu_Accessibility_ApplyMonthSpoof);
+	Menu_DrawButton(5, 4, "MONTH SPOOF", "Lie to the game about the current Month, if you are host.", Menu_Accessibility_ApplyMonthSpoof);
 	Menu_DrawOptionButton(5, monthspoof_string);
 
+	// Crosshair Dot
+	Menu_DrawButton(6, 5, "CROSSHAIR DOT", "Add a dot to the middle of the crosshair.", Menu_Accessibility_ApplyCrosshairDot);
+	Menu_DrawOptionButton(6, crosshairdot_string);
+
 	Menu_DrawDivider(-2.5);
-	Menu_DrawButton(-2, 4, "APPLY", "Save & Apply Settings.", Menu_Accessibility_ApplySettings);
-	Menu_DrawButton(-1, 5, "BACK", "Return to Configuration Menu.", Menu_Configuration_Set);
+	Menu_DrawButton(-2, 6, "APPLY", "Save & Apply Settings.", Menu_Accessibility_ApplySettings);
+	Menu_DrawButton(-1, 7, "BACK", "Return to Configuration Menu.", Menu_Configuration_Set);
 }

@@ -39,7 +39,6 @@ R_InitOtherTextures
 */
 void	R_InitOtherTextures (void)
 {
-	sniper_scope = Image_LoadImage ("gfx/hud/scope_256", IMAGE_TGA, 0, true, false);
 
 	zombie_skins[0][0] = loadpcxas4bpp("models/ai/zfull.mdl_0", GU_LINEAR);
 	GL_MarkTextureAsPermanent(zombie_skins[0][0]);

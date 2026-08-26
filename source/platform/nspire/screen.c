@@ -33,7 +33,7 @@ float		oldscreensize, oldfov;
 cvar_t		scr_viewsize = {"viewsize","100", true};
 cvar_t		scr_fov = {"fov","68"};	// 10 - 170
 cvar_t		scr_conspeed = {"scr_conspeed","300"};
-cvar_t		scr_centertime = {"scr_centertime","2"};
+cvar_t		scr_centertime = {"scr_centertime","5"};
 cvar_t		scr_showpause = {"showpause","1"};
 cvar_t		scr_printspeed = {"scr_printspeed","8"};
 cvar_t 		scr_showfps = {"scr_showfps", "1"};
@@ -74,347 +74,6 @@ CENTER PRINTING
 ===============================================================================
 */
 
-char		scr_centerstring[1024];
-float		scr_centertime_start;	// for slow victory printing
-float		scr_centertime_off;
-int			scr_center_lines;
-int			scr_erase_lines;
-int			scr_erase_center;
-
-/*
-==============
-SCR_CenterPrint
-
-Called for important messages that should stay in the center of the screen
-for a few moments
-==============
-*/
-void SCR_CenterPrint (char *str)
-{
-	strncpy (scr_centerstring, str, sizeof(scr_centerstring)-1);
-	scr_centertime_off = scr_centertime.value;
-	scr_centertime_start = cl.time;
-
-// count the number of lines for centering
-	scr_center_lines = 1;
-	while (*str)
-	{
-		if (*str == '\n')
-			scr_center_lines++;
-		str++;
-	}
-}
-
-void SCR_EraseCenterString (void)
-{
-	int		y;
-
-	if (scr_erase_center++ > vid.numpages)
-	{
-		scr_erase_lines = 0;
-		return;
-	}
-
-	if (scr_center_lines <= 4)
-		y = vid.height*0.35;
-	else
-		y = 48;
-
-	scr_copytop = 1;
-	Draw_TileClear (0, y,vid.width, 8*scr_erase_lines);
-}
-
-void SCR_DrawCenterString (void)
-{
-	char	*start;
-	int		l;
-	int		j;
-	int		x, y;
-	int		remaining;
-
-// the finale prints the characters one at a time
-	if (cl.intermission)
-		remaining = scr_printspeed.value * (cl.time - scr_centertime_start);
-	else
-		remaining = 9999;
-
-	scr_erase_center = 0;
-	start = scr_centerstring;
-
-	if (scr_center_lines <= 4)
-		y = vid.height*0.35;
-	else
-		y = 48;
-
-	do	
-	{
-	// scan the width of the line
-		for (l=0 ; l<40 ; l++)
-			if (start[l] == '\n' || !start[l])
-				break;
-		x = (vid.width - getTextWidth(start, 1))/2;
-		for (j=0 ; j<l ; j++)
-		{
-			Draw_Character (x, y, start[j]);	
-
-			// Hooray for variable-spacing!
-			if (start[j] == ' ')
-				x += 4;
-			else if ((int)start[j] < 33 || (int)start[j] > 126)
-				x += 8;
-			else
-				x += (font_kerningamount[(int)(start[j] - 33)] + 1);
-
-			if (!remaining--)
-				return;
-		}
-			
-		y += 8;
-
-		while (*start && *start != '\n')
-			start++;
-
-		if (!*start)
-			break;
-		start++;		// skip the \n
-	} while (1);
-}
-
-void SCR_CheckDrawCenterString (void)
-{
-	scr_copytop = 1;
-	if (scr_center_lines > scr_erase_lines)
-		scr_erase_lines = scr_center_lines;
-
-	scr_centertime_off -= host_frametime;
-	
-	if (scr_centertime_off <= 0 && !cl.intermission)
-		return;
-	if (key_dest != key_game)
-		return;
-
-	SCR_DrawCenterString ();
-}
-
-/*
-===============================================================================
-
-Press somthing printing
-
-===============================================================================
-*/
-
-char		scr_usestring[64];
-char 		scr_usestring2[64];
-float		scr_usetime_off = 0.0f;
-int			button_pic_x;
-
-/*
-==============
-SCR_UsePrint
-
-Similiar to above, but will also print the current button for the action.
-==============
-*/
-
-char *GetPerkName (int perk)
-{
-	switch (perk)
-	{
-		case 1:
-			return "Quick Revive";
-		case 2:
-			return "Juggernog";
-		case 3:
-			return "Speed Cola";
-		case 4:
-			return "Double Tap";
-		case 5:
-			return "Stamin-Up";
-		case 6:
-			return "PhD Flopper";
-		case 7:
-			return "Deadshot Daiquiri";
-		case 8:
-			return "Mule Kick";
-		default:
-			return "NULL";
-	}
-}
-
-void SCR_UsePrint (int type, int cost, int weapon)
-{
-	//naievil -- fixme
-    char s[128];
-	char c[128];
-
-    switch (type)
-	{
-		case 0://clear
-			strcpy(s, "");
-			strcpy(c, "");
-			break;
-		case 1://door
-			strcpy(s, va("Hold     to open Door\n"));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 2://debris
-			strcpy(s, va("Hold     to remove Debris\n"));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 3://ammo
-			strcpy(s, va("Hold     to buy Ammo for %s\n", PR_GetString(sv_player->v.Weapon_Name_Touch)));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 4://weapon
-			strcpy(s, va("Hold     to buy %s\n", PR_GetString(sv_player->v.Weapon_Name_Touch)));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 5://window
-			strcpy(s, va("Hold     to Rebuild Barrier\n"));
-			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 6://box
-			strcpy(s, va("Hold     to for Mystery Box\n"));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 7://box take
-			strcpy(s, va("Hold     for %s\n", PR_GetString(sv_player->v.Weapon_Name_Touch)));
-			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 8://power
-			strcpy(s, "The Power must be Activated first\n");
-			strcpy(c, "");
-			button_pic_x = 100;
-			break;
-		case 9://perk
-			strcpy(s, va("Hold     to buy %s\n", GetPerkName(weapon)));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 10://turn on power
-			strcpy(s, va("Hold     to Turn On the Power\n"));
-			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 11://turn on trap
-			strcpy(s, va("Hold     to Activate the Trap\n"));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 12://PAP
-			strcpy(s, va("Hold     to Pack-a-Punch\n"));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 13://revive
-			strcpy(s, va("Hold     to Fix your Code.. :)\n"));
-			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 14://use teleporter (free)
-			strcpy(s, va("Hold     to use Teleporter\n"));
-			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 15://use teleporter (cost)
-			strcpy(s, va("Hold     to use Teleporter\n"));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 16://tp cooldown
-			strcpy(s, "Teleporter is cooling down\n");
-			strcpy(c, "");
-			button_pic_x = 100;
-			break;
-		case 17://link
-			strcpy(s, va("Hold     to initiate link to pad\n"));
-			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 18://no link
-			strcpy(s, "Link not active\n");
-			strcpy(c, "");
-			button_pic_x = 100;
-			break;
-		case 19://finish link
-			strcpy(s, va("Hold     to link pad with core\n"));
-			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		case 20://buyable ending
-			strcpy(s, va("Hold     to End the Game\n"));
-			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold ", 1);
-			break;
-		default:
-			Con_Printf ("No type defined in engine for useprint\n");
-			break;
-	}
-
-	strncpy (scr_usestring, va(s), sizeof(scr_usestring)-1);
-	strncpy (scr_usestring2, va(c), sizeof(scr_usestring2)-1);
-	scr_usetime_off = 0.1;
-}
-
-
-void SCR_DrawUseString (void)
-{
-	int	y;
-	int x;
-
-	if (cl.stats[STAT_HEALTH] < 0)
-		return;
-// the finale prints the characters one at a time
-
-	y = 160;
-    x = (vid.width - getTextWidth(scr_usestring, 1))/2;
-
-	Draw_ColoredStringCentered(y, scr_usestring, 255, 255, 255, 255, 1);
-	Draw_ColoredStringCentered(y + 10, scr_usestring2, 255, 255, 255, 255, 1);
-
-	if (button_pic_x != 100)
-	{
-		int keys[2];
-		Menu_FindKeysForCommand ("+use", keys);
-		if (keys[0] != -1)
-		{
-			Draw_CharacterRGBA (x + button_pic_x + 4, y, *Key_KeynumToString(keys[0]), 255, 255, 0, 255, 1);
-		}	
-	}		
-}
-
-void SCR_CheckDrawUseString (void)
-{
-	scr_copytop = 1;
-
-	scr_usetime_off -= host_frametime;
-
-	if ((scr_usetime_off <= 0 && !cl.intermission) || key_dest != key_game || cl.stats[STAT_HEALTH] <= 0)
-		return;
-
-	SCR_DrawUseString ();
-}
-
-int GetButtonIcon (char *buttonname)
-{
-	return -1;
-}
-
-//=============================================================================
-
-/*
-====================
-CalcFov
-====================
-*/
 float CalcFov (float fov_x, float width, float height)
 {
         float   a;
@@ -825,7 +484,6 @@ void SCR_BeginLoadingPlaque (void)
 	
 // redraw with no console and the loading plaque
 	Con_ClearNotify ();
-	scr_centertime_off = 0;
 	scr_con_current = 0;
 
 	scr_drawloading = true;
@@ -937,7 +595,6 @@ void SCR_BringDownConsole (void)
 {
 	int		i;
 	
-	scr_centertime_off = 0;
 	
 	for (i=0 ; i<20 && scr_conlines != scr_con_current ; i++)
 		SCR_UpdateScreen ();
@@ -958,7 +615,6 @@ WARNING: be very careful calling this from elsewhere, because the refresh
 needs almost the entire 256k of stack space!
 ==================
 */
-void Draw_Crosshair (void);
 void SCR_UpdateScreen (void)
 {
 	static float	oldscr_viewsize;
@@ -1040,7 +696,6 @@ void SCR_UpdateScreen (void)
 	/*printf("in SCR_UpdateScreen %s:%d\n", __FILE__, __LINE__ );*/
 
 	SCR_SetUpToDrawConsole ();
-	SCR_EraseCenterString ();
 
 	D_DisableBackBufferAccess ();	// for adapters that can't stay mapped in
 									//  for linear writes all the time
@@ -1057,12 +712,8 @@ void SCR_UpdateScreen (void)
 
 	D_EnableBackBufferAccess ();	// of all overlay stuff if drawing directly
 
-	Draw_Crosshair ();
-
 	//muff - to show FPS on screen
 	SCR_DrawFPS ();
-	SCR_CheckDrawCenterString ();
-	SCR_CheckDrawUseString ();
 	HUD_Draw ();
 	SCR_DrawConsole ();
 	Menu_Draw ();
