@@ -26,6 +26,7 @@ char* fps_string;
 char* particles_string;
 char* retro_string;
 char* dithering_string;
+char* ultrawide_string;
 
 qboolean platform_supports_dithering;
 
@@ -36,6 +37,7 @@ extern cvar_t v_gamma;
 extern cvar_t r_runqmbparticles;
 extern cvar_t r_retro;
 extern cvar_t r_dithering;
+extern cvar_t vid_ultrawide_limiter;
 
 void Menu_Video_ApplyShowFPS (void)
 {
@@ -83,6 +85,11 @@ void Menu_Video_ApplyDithering (void)
     }
 
     Cvar_SetValue ("r_dithering", current_dithering);
+}
+
+void Menu_Video_ApplyUltrawide (void)
+{
+    Cvar_SetValue ("vid_ultrawide_limiter", !vid_ultrawide_limiter.value);
 }
 
 void Menu_Configuration_ApplySettings (void)
@@ -135,6 +142,12 @@ void Menu_Video_SetStrings (void)
     } else {
         dithering_string = "DISABLED";
     }
+
+    if ((int)vid_ultrawide_limiter.value == 1) {
+        ultrawide_string = "ENABLED";
+    } else {
+        ultrawide_string = "DISABLED";
+    }
 }
 
 /*
@@ -172,18 +185,22 @@ void Menu_Video_Draw (void)
     Menu_DrawButton (4, video_items++, "GAMMA", "Adjust game Black Level.", NULL);
     Menu_DrawOptionSlider (4, video_items-1, 0, 1, v_gamma, "gamma", false, false, 0.1f);
 
+    // Ultrawide Mode
+    Menu_DrawButton (5, video_items++, "ULTRAWIDE MODE", "Condenses HUD closer to center of Display.", Menu_Video_ApplyUltrawide);
+    Menu_DrawOptionButton (5, ultrawide_string);
+
     // Particles 
-    Menu_DrawButton (5, video_items++, "PARTICLES", "Trade Particle Effects for Performance.", Menu_Video_ApplyParticles);
-    Menu_DrawOptionButton (5, particles_string);
+    Menu_DrawButton (6, video_items++, "PARTICLES", "Trade Particle Effects for Performance.", Menu_Video_ApplyParticles);
+    Menu_DrawOptionButton (6, particles_string);
 
     // Retro (texture filtering)
-    Menu_DrawButton (6, video_items++, "TEXTURE FILTERING", "Choose 3D Environment Filtering Mode.", Menu_Video_ApplyTextureFiltering);
-    Menu_DrawOptionButton (6, retro_string);
+    Menu_DrawButton (7, video_items++, "TEXTURE FILTERING", "Choose 3D Environment Filtering Mode.", Menu_Video_ApplyTextureFiltering);
+    Menu_DrawOptionButton (7, retro_string);
 
     // Dithering 
     if (platform_supports_dithering) {
-        Menu_DrawButton (7, video_items++, "DITHERING", "Toggle Decrease in Color Banding", Menu_Video_ApplyDithering);
-        Menu_DrawOptionButton (7, dithering_string);
+        Menu_DrawButton (8, video_items++, "DITHERING", "Toggle Decrease in Color Banding", Menu_Video_ApplyDithering);
+        Menu_DrawOptionButton (8, dithering_string);
     }
 
     Menu_DrawDivider(-2.5);

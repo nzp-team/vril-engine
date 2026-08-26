@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
 
 See the GNU General Public License for more details.
 
@@ -19,7 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // client.h
 
-#include "../../render/r_entity_fragments.h"
+#pragma once
+
+#include "render/r_entity_fragments.h"
 
 typedef struct
 {
@@ -29,12 +31,17 @@ typedef struct
 	float	forwardmove;
 	float	sidemove;
 	float	upmove;
+#ifdef QUAKE2
+	byte	lightlevel;
+#endif
 } usercmd_t;
 
 typedef struct
 {
 	int		length;
 	char	map[MAX_STYLESTRING];
+	char	average; //johnfitz
+	char	peak; //johnfitz
 } lightstyle_t;
 
 typedef struct
@@ -45,6 +52,9 @@ typedef struct
 	int		maxpoints;
 	int		kills;
 	int		headshots;
+	int		downs;
+	int		revives;
+	int		ping;
 } scoreboard_t;
 
 typedef struct
@@ -68,6 +78,7 @@ typedef enum
 
 #define	NAME_LENGTH	64
 
+
 //
 // client_state_t should hold all pieces of the client state
 //
@@ -84,7 +95,7 @@ typedef struct
 	float	minlight;			// don't add when contributing less
 	int		key;
 	qboolean	dark;			// subtracts light instead of adding
-    vec3_t color;               //LordHavoc Lit. Support
+	vec3_t color; //LordHavoc Lit. Support
     int		type;		        // color
 } dlight_t;
 
@@ -118,9 +129,10 @@ typedef struct
 {
 	cactive_t	state;
 
-// personalization data sent to server
+// personalization data sent to server	
 	char		mapstring[MAX_QPATH];
 	char		spawnparms[MAX_MAPSTRING];	// to restart a level
+
 // demo loop control
 	int			demonum;		// -1 = don't play demos
 	char		demos[MAX_DEMOS][MAX_DEMONAME];		// when not playing
@@ -141,22 +153,11 @@ typedef struct
 	int			signon;			// 0 to SIGNONS
 	struct qsocket_s	*netcon;
 	sizebuf_t	message;		// writing buffer to send to server
-
+	
 } client_static_t;
 
 extern client_static_t	cls;
 
-typedef struct {
-	float lerptime;
-	float framechange;	//marks time of last frame change - for halflife model sequencing.
-	float oldframechange;
-	float lerprate;	//inverse rate...
-	vec3_t origin;
-	vec3_t angles;
-	//trailstate_t *trailstate;	//when to next throw out a trail
-//	trailstate_t *emitstate;    //when to next emit
-	unsigned short frame;
-} lerpents_t;
 //
 // the client_state_t structure is wiped completely at every
 // server signon
@@ -165,7 +166,7 @@ typedef struct
 {
 	int			movemessages;	// since connecting to this server
 								// throw out the first couple, so the player
-								// doesn't accidentally do something the
+								// doesn't accidentally do something the 
 								// first frame
 	usercmd_t	cmd;			// last command sent to the server
 
@@ -186,7 +187,7 @@ typedef struct
 	vec3_t		mviewangles[2];	// during demo playback viewangles is lerped
 								// between these
 	vec3_t		viewangles;
-
+	
 	vec3_t		mvelocity[2];	// update by server, used for lean+bob
 								// (0 is newest)
 	vec3_t		velocity;		// lerped between mvelocity[0] and [1]
@@ -207,20 +208,21 @@ typedef struct
 	qboolean	paused;			// send over by server
 	qboolean	onground;
 	qboolean	inwater;
-
+	
 	int			intermission;	// don't change view angle, full screen, etc
 	int			completed_time;	// latched at intermission start
-
-	double		mtime[2];		// the timestamp of last two messages
+	
+	double		mtime[2];		// the timestamp of last two messages	
 	double		time;			// clients view of time, should be between
 								// servertime and oldservertime to generate
 								// a lerp point for other data
 	double		oldtime;		// previous cl.time, time-oldtime is used
 								// to decay light values and smooth step ups
 	double		ctime;			// joe: copy of cl.time, to avoid incidents caused by rewind
-    double		thundertime;		// R00k
-    double			laser_point_time;
+
+
 	float		last_received_message;	// (realtime) for net trouble icon
+    double			laser_point_time;
 
 //
 // information that is static for the entire time connected to a server
@@ -229,14 +231,12 @@ typedef struct
 	struct sfx_s		*sound_precache[MAX_SOUNDS];
 
 	char		levelname[40];	// for display on solo scoreboard
-	int			viewentity;		// cl_entities[cl.viewentity] = player
+	int			viewentity;		// cl_entitites[cl.viewentity] = player
 	int			maxclients;
 	int			gametype;
 
-	lerpents_t	*lerpents;
-
 // refresh related state
-	struct model_s	*worldmodel;	// cl_entities[0].model
+	struct model_s	*worldmodel;	// cl_entitites[0].model
 	struct efrag_s	*free_efrags;
 	int			num_efrags;
 	int			num_entities;	// held in cl_entities array
@@ -248,6 +248,13 @@ typedef struct
 
 // frag scoreboard
 	scoreboard_t	*scores;		// [cl.maxclients]
+
+#ifdef QUAKE2
+// light level at player's position including dlights
+// this is sent back to the server each frame
+// architectually ugly but it works
+	int			light_level;
+#endif
 } client_state_t;
 
 
@@ -255,7 +262,6 @@ typedef struct
 // cvars
 //
 extern	cvar_t	cl_name;
-extern  cvar_t  cl_maxfps; // dr_mabuse1981: maxfps setting
 
 extern	cvar_t	cl_upspeed;
 extern	float	cl_forwardspeed;
@@ -266,11 +272,8 @@ extern	cvar_t	cl_movespeedkey;
 
 extern	cvar_t	cl_yawspeed;
 extern	cvar_t	cl_pitchspeed;
-extern  cvar_t  r_hlbsponly;
-extern	cvar_t	cl_anglespeedkey;
 
-extern	cvar_t  cl_lightning_zadjust;
-extern	cvar_t  cl_truelightning;
+extern	cvar_t	cl_anglespeedkey;
 
 extern	cvar_t	cl_autofire;
 
@@ -283,16 +286,15 @@ extern	cvar_t	lookstrafe;
 extern	cvar_t	sensitivity;
 extern	cvar_t	in_tolerance;
 extern	cvar_t	in_acceleration;
-extern  cvar_t  in_anub_mode;
-
-extern	cvar_t	in_mlook; //Heffo - mlook cvar
-
-extern	cvar_t	in_aimassist;
+extern 	cvar_t 	in_aimassist;
+extern	cvar_t	ads_center;
+extern	cvar_t	sniper_center;
 
 extern	cvar_t	m_pitch;
 extern	cvar_t	m_yaw;
 extern	cvar_t	m_forward;
 extern	cvar_t	m_side;
+extern 	cvar_t 	in_mlook;
 
 
 #define	MAX_TEMP_ENTITIES	64			// lightning bolts, etc
@@ -369,11 +371,9 @@ typedef struct
 	int		state;			// low bit is down state
 } kbutton_t;
 
-extern	kbutton_t	in_klook;//Heffo - mlook cvar
+extern	kbutton_t	in_klook;
 extern 	kbutton_t 	in_strafe;
 extern 	kbutton_t 	in_speed;
-
-
 
 void CL_InitInput (void);
 void CL_SendCmd (void);
@@ -408,6 +408,7 @@ void CL_TimeDemo_f (void);
 // cl_parse.c
 //
 void CL_ParseServerMessage (void);
+void CL_NewTranslation (int slot);
 
 //
 // view
@@ -418,6 +419,7 @@ void V_StopPitchDrift (void);
 void V_RenderView (void);
 void V_UpdatePalette (void);
 void V_Register (void);
+void V_ParseDamage (void);
 void V_SetContentsColor (int contents);
 
 
@@ -426,5 +428,5 @@ void V_SetContentsColor (int contents);
 //
 void CL_InitTEnts (void);
 void CL_SignonReply (void);
-entity_t *CL_NewTempEntity (void);
+
 qboolean TraceLineN (vec3_t start, vec3_t end, vec3_t impact, vec3_t normal);

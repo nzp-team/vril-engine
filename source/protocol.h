@@ -164,6 +164,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define svc_gamemode		53		// [byte] game mode for client
 #define svc_roundcolor		54 		// [byte] red [byte] green [byte] blue
 #define svc_perkorientation 55		// [byte] Perk orientation for HUD
+#define svc_hudtoast		56		// [byte] power-up toast id
+#define svc_updatescorestats 57	// [byte] client [short] headshots/downs/revives/ping
 
 //
 // client to server
@@ -173,6 +175,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	clc_disconnect	2
 #define	clc_move		3			// [usercmd_t]
 #define	clc_stringcmd	4		// [string] message
+
+#define HITMARK_NORMAL		0
+#define HITMARK_DEATH		1
 
 
 //

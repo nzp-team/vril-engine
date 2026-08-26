@@ -878,6 +878,37 @@ void SV_UpdateToReliableMessages (void)
 		}
 	}
 
+	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+	{
+		int headshots, downs, revives, ping;
+		float total = 0;
+		if (!host_client->active)
+			continue;
+		headshots = (int)PR_GetEdictFloat(host_client->edict, "headshots");
+		downs = (int)PR_GetEdictFloat(host_client->edict, "downs");
+		revives = (int)PR_GetEdictFloat(host_client->edict, "revives");
+		for (j = 0; j < NUM_PING_TIMES; j++)
+			total += host_client->ping_times[j];
+		ping = (int)(total * 1000.0f / NUM_PING_TIMES);
+		if (headshots == host_client->old_headshots && downs == host_client->old_downs &&
+			revives == host_client->old_revives && sv.time < host_client->next_scorestats_update)
+			continue;
+		for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++) {
+			if (!client->active) continue;
+			MSG_WriteByte(&client->message, svc_updatescorestats);
+			MSG_WriteByte(&client->message, i);
+			MSG_WriteShort(&client->message, headshots);
+			MSG_WriteShort(&client->message, downs);
+			MSG_WriteShort(&client->message, revives);
+			MSG_WriteShort(&client->message, ping);
+		}
+		host_client->old_headshots = headshots;
+		host_client->old_downs = downs;
+		host_client->old_revives = revives;
+		host_client->old_ping = ping;
+		host_client->next_scorestats_update = sv.time + 1.0;
+	}
+
 	for (i=0, host_client = svs.clients ; i<svs.maxclients ; i++, host_client++)
 	{
 		if (host_client->old_kills != host_client->edict->v.kills)
@@ -891,7 +922,7 @@ void SV_UpdateToReliableMessages (void)
 				MSG_WriteShort (&client->message, host_client->edict->v.kills);
 			}
 
-			host_client->old_points = host_client->edict->v.points;
+			host_client->old_kills = host_client->edict->v.kills;
 		}
 	}
 

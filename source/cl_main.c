@@ -55,6 +55,13 @@ cvar_t	in_anub_mode = {"in_anub_mode", "0", true};
 cvar_t 	cl_hitmarkers = {"cl_hitmarkers", "1", true};
 cvar_t 	cl_colorblind = {"cl_colorblind", "0", true};
 cvar_t 	cl_textopacity = {"cl_textopacity", "0.20", true};
+cvar_t 	cl_cinematic = {"cl_cinematic", "0", true};
+cvar_t 	vid_ultrawide_limiter = {"vid_ultrawide_limiter", "0", true};
+cvar_t 	cl_crosshairdot = {"cl_crosshairdot", "0", true};
+cvar_t 	scr_serverstopwatch = {"scr_serverstopwatch", "0", true};
+cvar_t 	scr_playerdebuginfo = {"scr_playerdebuginfo", "0", true};
+cvar_t 	scr_playerdebuginfo_x = {"scr_playerdebuginfo_x", "8", true};
+cvar_t 	scr_playerdebuginfo_y = {"scr_playerdebuginfo_y", "8", true};
 cvar_t 	scr_whiteflash = {"scr_whiteflash", "0", true};
 
 //=================================================//
@@ -1046,6 +1053,14 @@ void CL_Init (void)
 
 	Cvar_RegisterVariable (&cl_hitmarkers);
 	Cvar_RegisterVariable (&cl_colorblind);
+	Cvar_RegisterVariable (&cl_textopacity);
+	Cvar_RegisterVariable (&cl_cinematic);
+	Cvar_RegisterVariable (&vid_ultrawide_limiter);
+	Cvar_RegisterVariable (&cl_crosshairdot);
+	Cvar_RegisterVariable (&scr_serverstopwatch);
+	Cvar_RegisterVariable (&scr_playerdebuginfo);
+	Cvar_RegisterVariable (&scr_playerdebuginfo_x);
+	Cvar_RegisterVariable (&scr_playerdebuginfo_y);
 	Cvar_RegisterVariable (&scr_whiteflash);
 
 //	Cvar_RegisterVariable (&cl_autofire);

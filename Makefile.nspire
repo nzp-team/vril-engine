@@ -27,7 +27,7 @@ GCCFLAGS += $(VRILFLAGS) -O3 -DOLD_SCREEN_API -fomit-frame-pointer -D__NSPIRE__ 
 COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/chase.c \
 		source/cl_demo.c \
-		source/cl_hud.c \
+		source/render/r_hud.c \
 		source/cl_input.c \
 		source/cl_main.c \
 		source/cl_parse.c \

@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 cvar_t		gl_max_size = {"gl_max_size", "1024"};
 cvar_t		gl_picmip = {"gl_picmip", "0"};
 
-static int	sniper_scope;
 
 int	char_texture;
 
@@ -253,7 +252,6 @@ void Draw_Init (void)
 	//
 	// get the other pics we need
 	//
-	sniper_scope = Image_LoadImage ("gfx/hud/scope", IMAGE_TGA, 0, true, false);
 
 	Clear_LoadingFill ();
 
@@ -885,130 +883,6 @@ Draw_Crosshair
 extern float crosshair_opacity;
 extern cvar_t cl_crosshair_debug;
 extern qboolean crosshair_pulse_grenade;
-void Draw_Crosshair (void)
-{	
-	if (cl_crosshair_debug.value) {
-		Draw_FillByColor(vid.width/2, 0, 1, 240, 255, 0, 0, 255);
-		Draw_FillByColor(0, vid.height/2, 400, 1, 0, 255, 0, 255);
-	}
-
-	if (cl.stats[STAT_HEALTH] <= 20)
-		return;
-
-	if (cl.stats[STAT_ZOOM] == 2) {
-		Draw_Pic (-39, -15, sniper_scope);
-	}
-
-   	if (Hitmark_Time > sv.time) {
-        Draw_Pic ((vid.width - gltextures[hitmark].width)/2,(vid.height - gltextures[hitmark].height)/2, hitmark);
-	}
-
-	// Make sure to do this after hitmark drawing.
-	if (cl.stats[STAT_ZOOM] == 2 || cl.stats[STAT_ZOOM] == 1)
-		return;
-
-	if (!crosshair_opacity)
-		crosshair_opacity = 255;
-
-	float col;
-
-	if (sv_player->v.facingenemy == 1) {
-		col = 0;
-	} else {
-		col = 255;
-	}
-
-	// crosshair moving
-	if (crosshair_spread_time > sv.time && crosshair_spread_time)
-    {
-        cur_spread = cur_spread + 10;
-		crosshair_opacity = 128;
-
-		if (cur_spread >= CrossHairMaxSpread())
-			cur_spread = CrossHairMaxSpread();
-    }
-	// crosshair not moving
-	else if (crosshair_spread_time < sv.time && crosshair_spread_time)
-    {
-        cur_spread = cur_spread - 4;
-		crosshair_opacity = 255;
-
-		if (cur_spread <= 0) {
-			cur_spread = 0;
-			crosshair_spread_time = 0;
-		}
-    }
-
-	int x_value, y_value;
-    int crosshair_offset;
-
-	// Standard crosshair (+)
-	if (crosshair.value == 1) {
-		crosshair_offset = CrossHairWeapon() + cur_spread;
-		if (CrossHairMaxSpread() < crosshair_offset || croshhairmoving)
-			crosshair_offset = CrossHairMaxSpread();
-
-		if (sv_player->v.view_ofs[2] == 8) {
-			crosshair_offset *= 0.80f;
-		} else if (sv_player->v.view_ofs[2] == -10) {
-			crosshair_offset *= 0.65f;
-		}
-
-		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5f;
-
-		x_value = (vid.width - 3)/2.0f - crosshair_offset_step;
-		y_value = (vid.height - 1)/2.0f;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
-
-		x_value = (vid.width - 3)/2.0f + crosshair_offset_step;
-		y_value = (vid.height - 1)/2.0f;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
-
-		x_value = (vid.width - 1)/2.0f;
-		y_value = (vid.height - 3)/2.0f - crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
-
-		x_value = (vid.width - 1)/2.0f;
-		y_value = (vid.height - 3)/2.0f + crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
-	}
-	// Area of Effect (o)
-	else if (crosshair.value == 2) {
-		Draw_CharacterRGBA((vid.width)/2-4, (vid.height)/2, 'O', 255, (int)col, (int)col, (int)crosshair_opacity, 1);
-	}
-	// Dot crosshair (.)
-	else if (crosshair.value == 3) {
-		Draw_CharacterRGBA((vid.width - 8)/2, (vid.height - 8)/2, '.', 255, (int)col, (int)col, (int)crosshair_opacity, 1);
-	}
-	// Grenade crosshair
-	else if (crosshair.value == 4) {
-		if (crosshair_pulse_grenade) {
-			crosshair_offset_step = 0;
-			cur_spread = 2;
-		}
-
-		crosshair_pulse_grenade = false;
-
-		crosshair_offset = 12 + cur_spread;
-		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5f;
-
-		x_value = (vid.width - 3)/2.0f - crosshair_offset_step;
-		y_value = (vid.height - 1)/2.0f;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
-
-		x_value = (vid.width - 3)/2.0f + crosshair_offset_step;
-		y_value = (vid.height - 1)/2.0f;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, 255, 255, 255);
-
-		x_value = (vid.width - 1)/2.0f;
-		y_value = (vid.height - 3)/2.0f - crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
-
-		x_value = (vid.width - 1)/2.0f;
-		y_value = (vid.height - 3)/2.0f + crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
-	}
-}
 
 
 /*

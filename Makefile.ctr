@@ -76,7 +76,7 @@ COMMON_OBJS =	system.o \
 				test_restart.c \
 				test_qcvm.c \
 				chase.c \
-                cl_hud.c \
+				render/r_hud.c \
 				cl_demo.c \
 				cl_input.c \
 				cl_main.c \

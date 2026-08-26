@@ -382,6 +382,11 @@ void SV_DropClient (qboolean crash)
 	host_client->name[0] = 0;
 	host_client->old_points = -999999;
 	host_client->old_kills = -999999;
+	host_client->old_headshots = -999999;
+	host_client->old_downs = -999999;
+	host_client->old_revives = -999999;
+	host_client->old_ping = -999999;
+	host_client->next_scorestats_update = 0;
 	net_activeconnections--;
 
 // send notification to all clients

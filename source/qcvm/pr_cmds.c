@@ -3374,6 +3374,12 @@ void PF_MaxAmmo(void)
 	MSG_WriteByte(&sv.reliable_datagram, svc_maxammo);
 }
 
+void PF_HUDToast(void)
+{
+	MSG_WriteByte(&sv.reliable_datagram, svc_hudtoast);
+	MSG_WriteByte(&sv.reliable_datagram, (int)G_FLOAT(OFS_PARM0));
+}
+
 /*
 =================
 PF_GrenadePulse
@@ -3986,7 +3992,8 @@ ebfs_builtin_t pr_ebfs_builtins[] =
   { 510, "nzp_setclientmode", PF_SetClientMode },
   { 511, "nzp_setroundcolor", PF_SetRoundColor },
   { 512, "nzp_getmonthofyear", PF_GetMonthOfYear },
-  { 513, "nzp_setperkorientation", PF_SetPerkOrientation }
+  { 513, "nzp_setperkorientation", PF_SetPerkOrientation },
+  { 514, "nzp_hudtoast", PF_HUDToast }
 
 
 // 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  end

@@ -366,7 +366,6 @@ void ShowMessageDialog(const char *message, int enableYesno);
 extern aliashdr_t*	zfull_mdl;
 extern aliashdr_t*	zcfull_mdl;
 extern int			zombie_skins[2][2];
-extern int			sniper_scope;
 
 typedef byte texel;
 

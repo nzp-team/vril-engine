@@ -320,6 +320,14 @@ Done:
 }
 */
 
+float PR_GetEdictFloat (edict_t *ed, const char *field)
+{
+	ddef_t *def = ED_FindField((char *)field);
+	if (!def)
+		return 0;
+	return ((eval_t *)((byte *)&ed->v + def->ofs * 4))->_float;
+}
+
 /*
 ============
 PR_ValueString

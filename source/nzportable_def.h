@@ -266,7 +266,7 @@ typedef struct
 #include "images.h"
 #include "cvar.h"
 
-#include PLATFORM_FILE(screen.h)
+#include "screen.h"
 #include PLATFORM_FILE(net.h)
 
 #include "protocol.h"
@@ -274,9 +274,9 @@ typedef struct
 #include "tests/test_handler.h"
 
 #include PLATFORM_FILE(render.h)
-#include PLATFORM_FILE(client.h)
+#include "client.h"
 
-#include "cl_hud.h"
+#include "render/r_hud.h"
 #include "sound.h"
 
 #include "qcvm/progs.h"
