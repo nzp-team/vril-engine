@@ -185,13 +185,14 @@ HUD_GetPerkName(int perk)
 static int
 HUD_UltrawideOffset(void)
 {
+    int screen_width = (int) vid.width;
     int safe_width;
 
     if (!vid_ultrawide_limiter.value)
         return 0;
 
     safe_width = (vid.height * 4) / 3;
-    return vid.width > safe_width ? (vid.width - safe_width) / 2 : 0;
+    return screen_width > safe_width ? (screen_width - safe_width) / 2 : 0;
 }
 
 static float
@@ -243,7 +244,7 @@ HUD_DrawCenterPrint(void)
 {
     const float transition = 0.25f;
     const float travel     = 4.0f;
-    double elapsed         = Sys_FloatTime() - hud_center_start;
+    float elapsed          = (float) (Sys_FloatTime() - hud_center_start);
     float hold = scr_centertime.value < 0 ? 0 : scr_centertime.value;
     float alpha, offset, t;
     char * start;
@@ -507,9 +508,10 @@ HUD_Waypoint(void)
     int x     = 5 * vid.scale + HUD_UltrawideOffset();
     int y     = 5 * vid.scale;
     int width = 300 * vid.scale;
+    int available_width = (int) vid.width - x * 2;
 
-    if (width > vid.width - x * 2)
-        width = vid.width - x * 2;
+    if (width > available_width)
+        width = available_width;
     Draw_FillByColor(x - 3 * vid.scale, y - 2 * vid.scale, width, 116 * vid.scale,
       0, 0, 0, cl_textopacity.value * 255);
     Draw_ColoredString(x, y, "WAYPOINT MODE", 255, 255, 255, 255, vid.scale);
@@ -592,8 +594,6 @@ HUD_Init(void)
 void
 HUD_NewMap(void)
 {
-    int i;
-
     alphabling = 0;
 
     memset(point_change, 0, sizeof(point_change));
@@ -758,9 +758,10 @@ HUD_EndScreen(void)
     scoreboard_t * score;
     char text[96];
     int i, player, column;
-    qboolean condensed = vid.width <= 320 * vid.scale;
+    int screen_width   = (int) vid.width;
+    qboolean condensed = screen_width <= 320 * vid.scale;
     int panel_width    = (condensed ? 320 : 400) * vid.scale;
-    int panel_x        = (vid.width - panel_width) / 2;
+    int panel_x        = (screen_width - panel_width) / 2;
     int header_y       = 89 * vid.scale;
     int header_height  = 10 * vid.scale;
     int header_gap     = 2 * vid.scale;
@@ -777,9 +778,9 @@ HUD_EndScreen(void)
     const float * stat_widths  = condensed ? condensed_widths : full_widths;
     const char * map_title     = HUD_GetPrettyMapName();
 
-    if (panel_width > vid.width)
-        panel_width = vid.width;
-    panel_x = (vid.width - panel_width) / 2;
+    if (panel_width > screen_width)
+        panel_width = screen_width;
+    panel_x = (screen_width - panel_width) / 2;
 
     HUD_Sortpoints();
 
@@ -1275,6 +1276,7 @@ HUD_DrawRoundIntro(void)
     static float rcolor;
     static float ralpha;
     static float localpha;
+    float frame_time = (float) host_frametime;
     int state = cl.stats[STAT_ROUNDCHANGE];
     int title_alpha;
 
@@ -1293,16 +1295,16 @@ HUD_DrawRoundIntro(void)
     Draw_ColoredStringCentered(85 * vid.scale, "Round", 255,
       (int) (rcolor * 255), (int) (rcolor * 255), title_alpha, 2.0f * vid.scale);
 
-    rcolor -= host_frametime / 2.5f;
+    rcolor -= frame_time / 2.5f;
     if (rcolor < 0) {
         rcolor  = 0;
-        ralpha -= host_frametime / 2.5f;
+        ralpha -= frame_time / 2.5f;
         if (ralpha > 0) {
-            localpha += host_frametime * 0.4f;
+            localpha += frame_time * 0.4f;
             if (localpha > 1) localpha = 1;
         } else {
             ralpha    = 0;
-            localpha -= host_frametime * 0.4f;
+            localpha -= frame_time * 0.4f;
             if (localpha < 0) localpha = 0;
         }
     }
@@ -1325,6 +1327,7 @@ HUD_Rounds(void)
     vec3_t color;
     int alpha = 255;
     int i;
+    float frame_time = (float) host_frametime;
     qboolean state_changed = state != last_state;
 
     if (state_changed) {
@@ -1348,7 +1351,7 @@ HUD_Rounds(void)
 
     switch (state) {
         case 1: // this is the rounds icon at the middle of the screen
-            center_alpha += host_frametime * 500;
+            center_alpha += frame_time * 500;
             if (center_alpha > 255) center_alpha = 255;
             Draw_ColoredStretchPic(round_center_x, round_center_y, sb_round[0], 11 * vid.scale,
               48 * vid.scale, color[0], color[1], color[2], (int) center_alpha);
@@ -1357,9 +1360,9 @@ HUD_Rounds(void)
         case 2: // this is the rounds icon moving from middle
             round_center_x -= (((229.0f / 108.0f) * 2 - 0.2f)
               * ((vid.width - HUD_UltrawideOffset()) / (480.0f * vid.scale)) / 8)
-              * (host_frametime * 250) * vid.scale;
+              * (frame_time * 250) * vid.scale;
             round_center_y += ((2 * (vid.height / (272.0f * vid.scale))) / 8)
-              * (host_frametime * 250) * vid.scale;
+              * (frame_time * 250) * vid.scale;
             if (round_center_x < 3 * vid.scale + HUD_UltrawideOffset())
                 round_center_x = 3 * vid.scale + HUD_UltrawideOffset();
             if (round_center_y > vid.height - 1 - 48 * vid.scale)
@@ -1370,7 +1373,7 @@ HUD_Rounds(void)
 
         case 3: // shift to white
             for (i = 0; i < 3; i++) {
-                shifted_color[i] += (255 - shifted_color[i]) * host_frametime * (100.0f / 60.0f);
+                shifted_color[i] += (255 - shifted_color[i]) * frame_time * (100.0f / 60.0f);
                 if (shifted_color[i] > 255) shifted_color[i] = 255;
             }
             VectorCopy(shifted_color, color);
@@ -1412,7 +1415,7 @@ HUD_Rounds(void)
         case 7: // blink white while fading back
             for (i = 0; i < 3; i++) {
                 shifted_color[i] -= (shifted_color[i] - round_color_target[i])
-                  * host_frametime * 1.5f;
+                  * frame_time * 1.5f;
                 if (shifted_color[i] < round_color_target[i])
                     shifted_color[i] = round_color_target[i];
             }
@@ -1721,7 +1724,7 @@ HUD_AmmoString(void)
     }
     if (!message) { pulse = 1; pulse_down = 1; return; }
     // Blink the text and draw it.
-    pulse += (pulse_down ? -1 : 1) * host_frametime;
+    pulse += (pulse_down ? -1 : 1) * (float) host_frametime;
     if (pulse <= 0.5f) { pulse = 0.5f; pulse_down = 0; }
     if (pulse >= 1) { pulse = 1; pulse_down = 1; }
     HUD_DrawTextBackdrop((vid.width - getTextWidth((char *) message, vid.scale)) / 2,
@@ -1932,7 +1935,7 @@ HUD_Hitmark(int type)
 static void
 HUD_DrawHitmark(void)
 {
-    double remaining;
+    float remaining;
     float alpha;
     int color;
     int size;
@@ -1940,7 +1943,7 @@ HUD_DrawHitmark(void)
     if (!cl_hitmarkers.value || hud_hitmarker_time <= sv.time)
         return;
 
-    remaining = hud_hitmarker_time - sv.time;
+    remaining = (float) (hud_hitmarker_time - sv.time);
     if (hud_hitmarker_type == HITMARK_DEATH) {
         alpha = remaining * 5.0f;
         color = 191;
@@ -2139,14 +2142,14 @@ HUD_PlayerDebugInfo(void)
     speed = sqrtf(cl.velocity[0] * cl.velocity[0] + cl.velocity[1] * cl.velocity[1] + cl.velocity[2] * cl.velocity[2]);
     Draw_FillByColor(x - 4 * vid.scale, y - 4 * vid.scale, 150 * vid.scale,
       (scr_playerdebuginfo.value >= 2 ? 45 : 14) * vid.scale, 0, 0, 0, 191);
-    snprintf(text, sizeof(text), "Speed: %.1f qu/s", speed);
+    snprintf(text, sizeof(text), "Speed: %.1f qu/s", (double) speed);
     Draw_ColoredString(x, y, text, 255, 255, 255, 255, vid.scale);
     if (scr_playerdebuginfo.value >= 2) {
-        snprintf(text, sizeof(text), "Angles: %.1f %.1f %.1f", r_refdef.viewangles[0], r_refdef.viewangles[1],
-          r_refdef.viewangles[2]);
+        snprintf(text, sizeof(text), "Angles: %.1f %.1f %.1f", (double) r_refdef.viewangles[0],
+          (double) r_refdef.viewangles[1], (double) r_refdef.viewangles[2]);
         Draw_ColoredString(x, y + 12 * vid.scale, text, 255, 255, 255, 255, vid.scale);
-        snprintf(text, sizeof(text), "Origin: %.1f %.1f %.1f", r_refdef.vieworg[0], r_refdef.vieworg[1],
-          r_refdef.vieworg[2]);
+        snprintf(text, sizeof(text), "Origin: %.1f %.1f %.1f", (double) r_refdef.vieworg[0],
+          (double) r_refdef.vieworg[1], (double) r_refdef.vieworg[2]);
         Draw_ColoredString(x, y + 24 * vid.scale, text, 255, 255, 255, 255, vid.scale);
     }
 }
