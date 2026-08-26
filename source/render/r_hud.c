@@ -465,7 +465,7 @@ HUD_DrawUsePrint(void)
     x = (vid.width - getTextWidth(hud_usestring, vid.scale)) / 2;
     HUD_DrawTextBackdrop(x, y, hud_usestring, 255, hud_use_type == 22 ? 0 : 255,
       hud_use_type == 22 ? 0 : 255, 255, vid.scale);
-    if (HUD_KeyIcon(hud_use_key) >= 0)
+    if (!strncmp(hud_usestring, "Hold ", 5) && HUD_KeyIcon(hud_use_key) >= 0)
         Draw_ColoredStretchPic(x + hud_use_button_x, y - 4 * vid.scale, HUD_KeyIcon(hud_use_key),
           16 * vid.scale, 16 * vid.scale, 255, 255, 255, 255);
     else if (!strncmp(hud_usestring, "Hold ", 5))

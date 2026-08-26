@@ -3369,11 +3369,6 @@ activates max ammo text in HUD
 nzp_maxammo()
 =================
 */
-void PF_MaxAmmo(void)
-{
-	MSG_WriteByte(&sv.reliable_datagram, svc_maxammo);
-}
-
 void PF_HUDToast(void)
 {
 	MSG_WriteByte(&sv.reliable_datagram, svc_hudtoast);
@@ -3980,7 +3975,7 @@ ebfs_builtin_t pr_ebfs_builtins[] =
   { 494, "crc16", PF_crc16 },
 
   { 500, "songegg", PF_SongEgg },
-  {	501, "nzp_maxammo", PF_MaxAmmo },
+  {	501, "nzp_poweruptoast", PF_HUDToast },
   { 502, "grenade_pulse", PF_GrenadePulse },
   { 503, "nzp_maxai", PF_MaxZombies },
   { 504, "nzp_bettyprompt", PF_BettyPrompt },
@@ -3993,7 +3988,6 @@ ebfs_builtin_t pr_ebfs_builtins[] =
   { 511, "nzp_setroundcolor", PF_SetRoundColor },
   { 512, "nzp_getmonthofyear", PF_GetMonthOfYear },
   { 513, "nzp_setperkorientation", PF_SetPerkOrientation },
-  { 514, "nzp_hudtoast", PF_HUDToast }
 
 
 // 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  end

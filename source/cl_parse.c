@@ -1246,9 +1246,6 @@ void CL_ParseServerMessage (void)
 		case svc_useprint:
 			HUD_UsePrint (MSG_ReadByte (),MSG_ReadShort (),MSG_ReadByte ());
 			break;
-		case svc_maxammo:
-			HUD_PowerupToast (4);
-			break;
 		case svc_hudtoast:
 			HUD_PowerupToast (MSG_ReadByte ());
 			break;
