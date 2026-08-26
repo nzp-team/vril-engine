@@ -151,10 +151,6 @@ static image_t hud_hitmarker;
 static double hud_hitmarker_time;
 static double hud_hitmarker_ignore_time;
 static int hud_hitmarker_type;
-extern int
-CrossHairWeapon(void);
-extern int
-CrossHairMaxSpread(void);
 static void
 HUD_PlayerColor(int player, int * r, int * g, int * b);
 
@@ -244,8 +240,8 @@ HUD_DrawCenterPrint(void)
 {
     const float transition = 0.25f;
     const float travel     = 4.0f;
-    float elapsed          = (float) (Sys_FloatTime() - hud_center_start);
-    float hold = scr_centertime.value < 0 ? 0 : scr_centertime.value;
+    float elapsed = (float) (Sys_FloatTime() - hud_center_start);
+    float hold    = scr_centertime.value < 0 ? 0 : scr_centertime.value;
     float alpha, offset, t;
     char * start;
     char line[41];
@@ -1277,7 +1273,7 @@ HUD_DrawRoundIntro(void)
     static float ralpha;
     static float localpha;
     float frame_time = (float) host_frametime;
-    int state = cl.stats[STAT_ROUNDCHANGE];
+    int state        = cl.stats[STAT_ROUNDCHANGE];
     int title_alpha;
 
     if (state != last_state) {
@@ -1327,7 +1323,7 @@ HUD_Rounds(void)
     vec3_t color;
     int alpha = 255;
     int i;
-    float frame_time = (float) host_frametime;
+    float frame_time       = (float) host_frametime;
     qboolean state_changed = state != last_state;
 
     if (state_changed) {
@@ -1977,6 +1973,134 @@ HUD_DrawSniperScope(void)
     return true;
 }
 
+static int
+HUD_CrosshairSpread(int spread)
+{
+    spread = (int) (spread * 0.68f) + 6;
+    if (cl.perks & 64)
+        spread = (int) (spread * 0.65f);
+    return spread;
+}
+
+static int
+HUD_CrosshairWeapon(void)
+{
+    switch (cl.stats[STAT_ACTIVEWEAPON]) {
+        case W_COLT:
+        case W_BIATCH:
+        case W_357:
+        case W_KILLU: return HUD_CrosshairSpread(22);
+
+        case W_PTRS:
+        case W_PENETRATOR:
+        case W_KAR_SCOPE:
+        case W_HEADCRACKER:
+        case W_KAR:
+        case W_ARMAGEDDON:
+        case W_SPRING:
+        case W_PULVERIZER: return HUD_CrosshairSpread(65);
+
+        case W_MP40:
+        case W_AFTERBURNER:
+        case W_STG:
+        case W_SPATZ:
+        case W_THOMPSON:
+        case W_GIBS:
+        case W_BAR:
+        case W_WIDOW:
+        case W_PPSH:
+        case W_REAPER:
+        case W_RAY:
+        case W_PORTER:
+        case W_TYPE:
+        case W_SAMURAI:
+        case W_FG:
+        case W_IMPELLER:
+        case W_MP5:
+        case W_KOLLIDER: return HUD_CrosshairSpread(10);
+
+        case W_BROWNING:
+        case W_ACCELERATOR:
+        case W_MG:
+        case W_BARRACUDA: return HUD_CrosshairSpread(30);
+
+        case W_SAWNOFF:
+        case W_SNUFF: return HUD_CrosshairSpread(50);
+
+        case W_TRENCH:
+        case W_GUT:
+        case W_DB:
+        case W_BORE: return HUD_CrosshairSpread(35);
+
+        case W_GEWEHR:
+        case W_COMPRESSOR:
+        case W_M1:
+        case W_M1000:
+        case W_M1A1:
+        case W_WIDDER: return HUD_CrosshairSpread(5);
+
+        default: return HUD_CrosshairSpread(0);
+    }
+} /* HUD_CrosshairWeapon */
+
+static int
+HUD_CrosshairMaxSpread(void)
+{
+    switch (cl.stats[STAT_ACTIVEWEAPON]) {
+        case W_COLT:
+        case W_BIATCH:
+        case W_STG:
+        case W_SPATZ:
+        case W_MP40:
+        case W_AFTERBURNER:
+        case W_THOMPSON:
+        case W_GIBS:
+        case W_BAR:
+        case W_WIDOW:
+        case W_357:
+        case W_KILLU:
+        case W_BROWNING:
+        case W_ACCELERATOR:
+        case W_FG:
+        case W_IMPELLER:
+        case W_MP5:
+        case W_KOLLIDER:
+        case W_MG:
+        case W_BARRACUDA:
+        case W_PPSH:
+        case W_REAPER:
+        case W_RAY:
+        case W_PORTER:
+        case W_TYPE:
+        case W_SAMURAI: return HUD_CrosshairSpread(48);
+
+        case W_PTRS:
+        case W_PENETRATOR:
+        case W_KAR_SCOPE:
+        case W_HEADCRACKER:
+        case W_KAR:
+        case W_ARMAGEDDON:
+        case W_SPRING:
+        case W_PULVERIZER: return HUD_CrosshairSpread(75);
+
+        case W_SAWNOFF:
+        case W_SNUFF: return HUD_CrosshairSpread(50);
+
+        case W_DB:
+        case W_BORE:
+        case W_TRENCH:
+        case W_GUT:
+        case W_GEWEHR:
+        case W_COMPRESSOR:
+        case W_M1:
+        case W_M1000:
+        case W_M1A1:
+        case W_WIDDER: return HUD_CrosshairSpread(35);
+
+        default: return HUD_CrosshairSpread(0);
+    }
+} /* HUD_CrosshairMaxSpread */
+
 static void
 HUD_Crosshair(void)
 {
@@ -1999,7 +2123,7 @@ HUD_Crosshair(void)
     if (weapon != last_weapon) {
         last_weapon = weapon;
         cur_spread  = 0;
-        crosshair_offset_step = CrossHairWeapon();
+        crosshair_offset_step = HUD_CrosshairWeapon();
     }
     if (cl_crosshair_debug.value) {
         Draw_FillByColor(cx, 0, 1, vid.height, 255, 0, 0, 128);
@@ -2029,8 +2153,8 @@ HUD_Crosshair(void)
             cur_spread = 2;
         }
         crosshair_pulse_grenade = false;
-        maxspread = CrossHairMaxSpread();
-        spread    = ((int) crosshair.value == 4 ? 12 : CrossHairWeapon()) + (int) cur_spread;
+        maxspread = HUD_CrosshairMaxSpread();
+        spread    = ((int) crosshair.value == 4 ? 12 : HUD_CrosshairWeapon()) + (int) cur_spread;
         if (moving && (int) crosshair.value == 1 && spread < maxspread)
             spread += (maxspread - spread) * 0.5f;
         if ((int) crosshair.value == 1 && spread > maxspread) spread = maxspread;
