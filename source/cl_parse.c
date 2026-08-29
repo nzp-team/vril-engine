@@ -1168,6 +1168,9 @@ void CL_ParseServerMessage (void)
 {
 	int			cmd;
 	int			i;
+	int			useprint_index;
+	int			useprint_red, useprint_green, useprint_blue;
+	char		useprint_text[256];
 
 //
 // if recording demos, copy the message out
@@ -1248,15 +1251,13 @@ void CL_ParseServerMessage (void)
 			HUD_UsePrint (MSG_ReadByte (), MSG_ReadShort ());
 			break;
 		case svc_registeruseprint:
-			int index = MSG_ReadByte ();
-			int red, green, blue;
-			char text[256];
-
-			Q_strncpyz (text, MSG_ReadString (), sizeof(text));
-			red = MSG_ReadByte ();
-			green = MSG_ReadByte ();
-			blue = MSG_ReadByte ();
-			HUD_RegisterUsePrint (index, text, red, green, blue);
+			useprint_index = MSG_ReadByte ();
+			Q_strncpyz (useprint_text, MSG_ReadString (), sizeof(useprint_text));
+			useprint_red = MSG_ReadByte ();
+			useprint_green = MSG_ReadByte ();
+			useprint_blue = MSG_ReadByte ();
+			HUD_RegisterUsePrint (useprint_index, useprint_text, useprint_red,
+				useprint_green, useprint_blue);
 			break;
 		case svc_hudtoast:
 			HUD_PowerupToast (MSG_ReadByte ());
