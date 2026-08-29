@@ -154,30 +154,6 @@ static int hud_hitmarker_type;
 static void
 HUD_PlayerColor(int player, int * r, int * g, int * b);
 
-static const char *
-HUD_GetPerkName(int perk)
-{
-    switch (perk) {
-        case 1: return "Quick Revive";
-
-        case 2: return "Jugger-Nog";
-
-        case 3: return "Speed Cola";
-
-        case 4: return "Double Tap Root Beer";
-
-        case 5: return "Stamin-Up";
-
-        case 6: return "PhD Flopper";
-
-        case 7: return "Deadshot Daiquiri";
-
-        case 8: return "Mule Kick";
-
-        default: return "NULL";
-    }
-}
-
 static int
 HUD_UltrawideOffset(void)
 {
@@ -279,10 +255,16 @@ HUD_DrawCenterPrint(void)
     } while (*start);
 } /* HUD_DrawCenterPrint */
 
-static char hud_usestring[128];
+#define HUD_USEPRINT_COUNT 256
+#define HUD_USEPRINT_LENGTH 256
+
+static char hud_useprint_strings[HUD_USEPRINT_COUNT][HUD_USEPRINT_LENGTH];
+static byte hud_useprint_colors[HUD_USEPRINT_COUNT][3];
+static char hud_usestring[HUD_USEPRINT_LENGTH];
 static char hud_usecost[64];
 static double hud_use_until;
 static int hud_use_button_x;
+static qboolean hud_use_has_button;
 static int hud_use_key;
 static int hud_use_type;
 
@@ -375,74 +357,78 @@ GetGrenadeButtonL(void)
 }
 
 void
-HUD_UsePrint(int type, int cost, int weapon)
+HUD_RegisterUsePrint(int index, const char * text, int red, int green, int blue)
 {
-    const char * button;
-    const char * item = weapon ? HUD_GetPerkName(weapon) : "";
+    if (index < 0 || index >= HUD_USEPRINT_COUNT)
+        return;
+
+    Q_strncpyz(hud_useprint_strings[index], (char *) text,
+      sizeof(hud_useprint_strings[index]));
+    hud_useprint_colors[index][0] = red;
+    hud_useprint_colors[index][1] = green;
+    hud_useprint_colors[index][2] = blue;
+}
+
+static void
+HUD_ExpandUsePrint(const char * source, const char * button, const char * touch)
+{
+    char *out = hud_usestring;
+    size_t remaining = sizeof(hud_usestring);
+
+    hud_use_has_button = false;
+    hud_use_button_x = 0;
+
+    while (*source && remaining > 1) {
+        const char *replacement = NULL;
+
+        if (source[0] == '%' && source[1] == 'b') {
+            replacement = button;
+            if (!hud_use_has_button) {
+                char prefix[HUD_USEPRINT_LENGTH];
+                size_t prefix_length = out - hud_usestring;
+
+                memcpy(prefix, hud_usestring, prefix_length);
+                prefix[prefix_length] = 0;
+                hud_use_button_x = getTextWidth(prefix, vid.scale);
+                hud_use_has_button = true;
+            }
+        } else if (source[0] == '%' && source[1] == 's') {
+            replacement = touch;
+        }
+
+        if (replacement) {
+            while (*replacement && remaining > 1) {
+                *out++ = *replacement++;
+                remaining--;
+            }
+            source += 2;
+        } else {
+            *out++ = *source++;
+            remaining--;
+        }
+    }
+    *out = 0;
+}
+
+void
+HUD_UsePrint(int index, int cost)
+{
+    const char *button;
+    const char *touch = sv_player ? PR_GetString(sv_player->v.useprint_touch) : "";
+
+    if (index < 0 || index >= HUD_USEPRINT_COUNT) {
+        Con_Printf("Useprint index %i out of range\n", index);
+        return;
+    }
 
     hud_use_key = HUD_GetBoundKey("+use");
     button      = HUD_KeyIcon(hud_use_key) >= 0 ? "  " : HUD_UseKeyLabel(hud_use_key);
 
-    hud_usestring[0] = hud_usecost[0] = 0;
-    switch (type) {
-        case 0: break;
-        case 1: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s to open Door", button);
-            break;
-        case 2: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s to remove Debris", button);
-            break;
-        case 3: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s to buy Ammo for %s", button,
-              PR_GetString(sv_player->v.Weapon_Name_Touch));
-            break;
-        case 4: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s to buy %s", button,
-              PR_GetString(sv_player->v.Weapon_Name_Touch));
-            break;
-        case 5: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s to Rebuild Barrier", button);
-            break;
-        case 6: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s for Mystery Box", button);
-            break;
-        case 7: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s for %s", button,
-              PR_GetString(sv_player->v.Weapon_Name_Touch));
-            break;
-        case 8: Q_strncpyz(hud_usestring, "The Power must be Activated first", sizeof(hud_usestring));
-            break;
-        case 9: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s to buy %s", button, item);
-            break;
-        case 10: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s to Turn On the Power", button);
-            break;
-        case 11: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s to Activate the Trap", button);
-            break;
-        case 12: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s to Pack-a-Punch", button);
-            break;
-        case 13: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s to Fix your Code.. :)", button);
-            break;
-        case 14: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s to use Teleporter", button);
-            break;
-        case 15: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s to use Teleporter", button);
-            break;
-        case 16: Q_strncpyz(hud_usestring, "Teleporter is cooling down", sizeof(hud_usestring));
-            break;
-        case 17: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s to initiate link to pad", button);
-            break;
-        case 18: Q_strncpyz(hud_usestring, "Link not active", sizeof(hud_usestring));
-            break;
-        case 19: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s to link pad with core", button);
-            break;
-        case 20: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s to End the Game", button);
-            break;
-        case 21: Q_strncpyz(hud_usestring, "...", sizeof(hud_usestring));
-            break;
-        case 22: Q_strncpyz(hud_usestring, "It doesn't seem to be working..", sizeof(hud_usestring));
-            break;
-        case 23: snprintf(hud_usestring, sizeof(hud_usestring), "Hold %s to Drop the Nuke", button);
-            break;
-        default: Con_Printf("No type defined in engine for useprint\n");
-            return;
-    }
-    if (cost && (type == 1 || type == 2 || type == 3 || type == 4 || type == 6 ||
-      type == 9 || type == 11 || type == 12 || type == 15 || type == 20))
+    hud_usecost[0] = 0;
+    HUD_ExpandUsePrint(hud_useprint_strings[index], button, touch);
+    if (cost > 0)
         snprintf(hud_usecost, sizeof(hud_usecost), "[Cost: %i]", cost);
-    hud_use_button_x = getTextWidth("Hold ", vid.scale);
-    hud_use_type     = type;
+    hud_use_type     = index;
     hud_use_until    = Sys_FloatTime() + 0.1;
     scr_usetime_off  = 0.1f;
 } /* HUD_UsePrint */
@@ -463,12 +449,13 @@ HUD_DrawUsePrint(void)
     scr_usetime_off = (float) (hud_use_until - Sys_FloatTime());
     y = vid.height - 88 * vid.scale;
     x = (vid.width - getTextWidth(hud_usestring, vid.scale)) / 2;
-    HUD_DrawTextBackdrop(x, y, hud_usestring, 255, hud_use_type == 22 ? 0 : 255,
-      hud_use_type == 22 ? 0 : 255, 255, vid.scale);
-    if (!strncmp(hud_usestring, "Hold ", 5) && HUD_KeyIcon(hud_use_key) >= 0)
-        Draw_ColoredStretchPic(x + hud_use_button_x, y - 4 * vid.scale, HUD_KeyIcon(hud_use_key),
+    HUD_DrawTextBackdrop(x, y, hud_usestring, hud_useprint_colors[hud_use_type][0],
+      hud_useprint_colors[hud_use_type][1], hud_useprint_colors[hud_use_type][2], 255, vid.scale);
+    if (hud_use_has_button && HUD_KeyIcon(hud_use_key) >= 0)
+        Draw_ColoredStretchPic(x + hud_use_button_x - 3 * vid.scale, y - 4 * vid.scale,
+          HUD_KeyIcon(hud_use_key),
           16 * vid.scale, 16 * vid.scale, 255, 255, 255, 255);
-    else if (!strncmp(hud_usestring, "Hold ", 5))
+    else if (hud_use_has_button)
         Draw_ColoredString(x + hud_use_button_x, y, (char *) HUD_UseKeyLabel(hud_use_key),
           255, 255, 0, 255, vid.scale);
     if (hud_usecost[0])

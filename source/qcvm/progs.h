@@ -67,8 +67,12 @@ extern	int				pr_edict_size;	// in bytes
 void PR_Init (void);
 
 void PR_ExecuteProgram (func_t fnum);
+struct client_s;
+
 void PR_LoadProgs (void);
 void PR_ResetProgs (void);
+void PR_ClearRegisteredUseprints (void);
+void PR_SendRegisteredUseprints (struct client_s *client);
 void PR_ResetWaypointState (void);
 char *PR_ZoneString (const char *string);
 void PR_UnzoneString (char *string);

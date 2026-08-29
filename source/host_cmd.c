@@ -1007,6 +1007,7 @@ void Host_Spawn_f (void)
 
 // send all current names, colors, and frag counts
 	SZ_Clear (&host_client->message);
+	PR_SendRegisteredUseprints (host_client);
 
 // send time of update
 	MSG_WriteByte (&host_client->message, svc_time);

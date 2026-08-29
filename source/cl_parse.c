@@ -94,7 +94,8 @@ char *svc_strings[] =
 	"svc_roundcolor",
 	"svc_perkorientation",
 	"svc_hudtoast",
-	"svc_updatescorestats"
+	"svc_updatescorestats",
+	"svc_registeruseprint"
 };
 
 //=============================================================================
@@ -1167,6 +1168,9 @@ void CL_ParseServerMessage (void)
 {
 	int			cmd;
 	int			i;
+	int			useprint_index;
+	int			useprint_red, useprint_green, useprint_blue;
+	char		useprint_text[256];
 
 //
 // if recording demos, copy the message out
@@ -1244,7 +1248,16 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_useprint:
-			HUD_UsePrint (MSG_ReadByte (),MSG_ReadShort (),MSG_ReadByte ());
+			HUD_UsePrint (MSG_ReadByte (), MSG_ReadShort ());
+			break;
+		case svc_registeruseprint:
+			useprint_index = MSG_ReadByte ();
+			Q_strncpyz (useprint_text, MSG_ReadString (), sizeof(useprint_text));
+			useprint_red = MSG_ReadByte ();
+			useprint_green = MSG_ReadByte ();
+			useprint_blue = MSG_ReadByte ();
+			HUD_RegisterUsePrint (useprint_index, useprint_text, useprint_red,
+				useprint_green, useprint_blue);
 			break;
 		case svc_hudtoast:
 			HUD_PowerupToast (MSG_ReadByte ());

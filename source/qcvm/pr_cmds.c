@@ -363,18 +363,17 @@ PF_useprint
 
 Print a text depending on what it is fed with
 
-useprint(entity client, float type, float cost, float weapon)
+useprint(entity client, float index, float cost)
 =================
 */
 void PF_useprint (void)
 {
 	client_t	*client;
-	int			entnum, type, cost, weapon;
+	int			entnum, index, cost;
 
 	entnum = G_EDICTNUM(OFS_PARM0);
-	type = G_FLOAT(OFS_PARM1);
+	index = G_FLOAT(OFS_PARM1);
 	cost = G_FLOAT(OFS_PARM2);
-	weapon = G_FLOAT(OFS_PARM3);
 
 
 	if (entnum < 1 || entnum > svs.maxclients)
@@ -386,10 +385,68 @@ void PF_useprint (void)
 	client = &svs.clients[entnum-1];
 
 	MSG_WriteByte (&client->message,svc_useprint);
-	MSG_WriteByte (&client->message,type);
+	MSG_WriteByte (&client->message,index);
 	MSG_WriteShort (&client->message,cost);
-	MSG_WriteByte (&client->message,weapon);
-	//MSG_WriteString (&client->message, s );
+}
+
+static string_t pr_useprint_strings[256];
+static byte pr_useprint_colors[256][3];
+static qboolean pr_useprint_registered[256];
+
+void PR_ClearRegisteredUseprints (void)
+{
+	memset (pr_useprint_registered, 0, sizeof(pr_useprint_registered));
+}
+
+static void PR_WriteUseprintDefinition (client_t *client, int index)
+{
+	MSG_WriteByte (&client->message, svc_registeruseprint);
+	MSG_WriteByte (&client->message, index);
+	MSG_WriteString (&client->message, PR_GetString(pr_useprint_strings[index]));
+	MSG_WriteByte (&client->message, pr_useprint_colors[index][0]);
+	MSG_WriteByte (&client->message, pr_useprint_colors[index][1]);
+	MSG_WriteByte (&client->message, pr_useprint_colors[index][2]);
+}
+
+void PR_SendRegisteredUseprints (client_t *client)
+{
+	int index;
+
+	for (index = 0; index < 256; index++)
+		if (pr_useprint_registered[index])
+			PR_WriteUseprintDefinition (client, index);
+}
+
+void PF_useprint_send (void)
+{
+	client_t *client;
+	int entnum, index;
+	float *color;
+
+	entnum = G_EDICTNUM(OFS_PARM0);
+	index = G_FLOAT(OFS_PARM1);
+	color = G_VECTOR(OFS_PARM3);
+
+	if (entnum < 1 || entnum > svs.maxclients)
+	{
+		Con_Printf ("useprint_send: not a client\n");
+		return;
+	}
+	if (index < 0 || index > 255)
+	{
+		Con_Printf ("useprint_send: index %i out of range\n", index);
+		return;
+	}
+
+	client = &svs.clients[entnum-1];
+	pr_useprint_strings[index] = G_INT(OFS_PARM2);
+	pr_useprint_colors[index][0] = CLAMP(0, color[0] * 255, 255);
+	pr_useprint_colors[index][1] = CLAMP(0, color[1] * 255, 255);
+	pr_useprint_colors[index][2] = CLAMP(0, color[2] * 255, 255);
+	pr_useprint_registered[index] = true;
+
+	if (client->spawned)
+		PR_WriteUseprintDefinition (client, index);
 }
 
 
@@ -3988,6 +4045,7 @@ ebfs_builtin_t pr_ebfs_builtins[] =
   { 511, "nzp_setroundcolor", PF_SetRoundColor },
   { 512, "nzp_getmonthofyear", PF_GetMonthOfYear },
   { 513, "nzp_setperkorientation", PF_SetPerkOrientation },
+  { 514, "useprint_send", PF_useprint_send },
 
 
 // 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  end

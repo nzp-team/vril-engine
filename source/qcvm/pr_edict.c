@@ -1009,8 +1009,11 @@ void ED_LoadFromFile (char *data)
 	edict_t		*ent = NULL;
 	int			inhibit = 0;
 	dfunction_t	*func;
+	dfunction_t	*checkspawn;
+	char			spawnfuncname[256];
 
 	pr_global_struct->time = sv.time;
+	checkspawn = ED_FindFunction("CheckSpawn");
 
 // parse ents
 	while (1)
@@ -1039,8 +1042,21 @@ void ED_LoadFromFile (char *data)
 			continue;
 		}
 
-	// look for the spawn function
-		func = ED_FindFunction(PR_GetString(ent->v.classname));
+		// look for the spawn function
+		snprintf(spawnfuncname, sizeof(spawnfuncname), "spawnfunc_%s",
+			PR_GetString(ent->v.classname));
+		func = ED_FindFunction(spawnfuncname);
+		if (!func)
+			func = ED_FindFunction(PR_GetString(ent->v.classname));
+
+		pr_global_struct->self = EDICT_TO_PROG(ent);
+
+		if (checkspawn)
+		{
+			G_FUNCTION(OFS_PARM0) = func ? func - pr_functions : 0;
+			PR_ExecuteProgram (checkspawn - pr_functions);
+			continue;
+		}
 
 		if (!func)
 		{
@@ -1050,7 +1066,6 @@ void ED_LoadFromFile (char *data)
 			continue;
 		}
 
-		pr_global_struct->self = EDICT_TO_PROG(ent);
 		PR_ExecuteProgram (func - pr_functions);
 	}
 
@@ -1114,6 +1129,7 @@ PR_LoadProgs
 */
 void PR_LoadProgs (void)
 {
+	PR_ClearRegisteredUseprints ();
 	dfunction_t	*f;
 	int		i;
 // 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes/Firestorm  start
@@ -1345,6 +1361,7 @@ void PR_LoadProgs (void)
 
 void PR_ResetProgs (void)
 {
+	PR_ClearRegisteredUseprints ();
 	if (!pr_initial_globals || pr_initial_globals_count != progs->numglobals)
 		Host_Error ("PR_ResetProgs: no initial globals snapshot");
 

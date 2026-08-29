@@ -165,6 +165,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define svc_roundcolor		54 		// [byte] red [byte] green [byte] blue
 #define svc_perkorientation 55		// [byte] Perk orientation for HUD
 #define svc_updatescorestats 56	// [byte] client [short] headshots/downs/revives/ping
+#define svc_registeruseprint 57	// [byte] index [string] text [byte] red green blue
 
 //
 // client to server

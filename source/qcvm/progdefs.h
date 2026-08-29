@@ -160,7 +160,7 @@ typedef struct
 	vec3_t  	Flash_Offset;
 	float   	Flash_Size;
 	string_t	Weapon_Name;
-	string_t 	Weapon_Name_Touch;
+	string_t 	useprint_touch;
 	float   	currentmag2;
 	float		viewmodel_effects;
 	float		viewmodel2_effects;
