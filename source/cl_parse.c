@@ -94,7 +94,8 @@ char *svc_strings[] =
 	"svc_roundcolor",
 	"svc_perkorientation",
 	"svc_hudtoast",
-	"svc_updatescorestats"
+	"svc_updatescorestats",
+	"svc_registeruseprint"
 };
 
 //=============================================================================
@@ -1244,7 +1245,18 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_useprint:
-			HUD_UsePrint (MSG_ReadByte (),MSG_ReadShort (),MSG_ReadByte ());
+			HUD_UsePrint (MSG_ReadByte (), MSG_ReadShort ());
+			break;
+		case svc_registeruseprint:
+			int index = MSG_ReadByte ();
+			int red, green, blue;
+			char text[256];
+
+			Q_strncpyz (text, MSG_ReadString (), sizeof(text));
+			red = MSG_ReadByte ();
+			green = MSG_ReadByte ();
+			blue = MSG_ReadByte ();
+			HUD_RegisterUsePrint (index, text, red, green, blue);
 			break;
 		case svc_hudtoast:
 			HUD_PowerupToast (MSG_ReadByte ());

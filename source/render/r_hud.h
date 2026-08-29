@@ -27,7 +27,8 @@ HUD_Draw(void);
 void
 HUD_CenterPrint(char * str);
 void
-HUD_UsePrint(int type, int cost, int weapon);
+HUD_UsePrint(int index, int cost);
+void HUD_RegisterUsePrint(int index, const char *text, int red, int green, int blue);
 void
 HUD_PowerupToast(int powerup);
 void
