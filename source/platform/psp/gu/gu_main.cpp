@@ -2244,7 +2244,7 @@ void R_RenderScene (void)
 	}
 
 	float farplanedist = (r_refdef.fog_start == 0 || r_refdef.fog_end < 0) ? 4096 : (r_refdef.fog_end + 16); 
-	sceGumPerspective(fovy, fovx, 4, farplanedist);
+	sceGumPerspective(fovy, fovx, clipping::near_clip_distance, farplanedist);
 
 	if (mirror)
 	{
@@ -2294,7 +2294,7 @@ void R_RenderScene (void)
 
 	sceGumMatrixMode(GU_PROJECTION);
 	sceGumLoadIdentity();
-	sceGumPerspective(fovy, fovx, 4, farplanedist);
+	sceGumPerspective(fovy, fovx, clipping::near_clip_distance, farplanedist);
 	sceGumUpdateMatrix();
 	sceGumMatrixMode(GU_MODEL);
 

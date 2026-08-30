@@ -959,6 +959,7 @@ CL_SendCmd
 void CL_SendCmd (void)
 {
 	usercmd_t		cmd;
+	float		move_limit, move_speed;
 
 	if (cls.state != ca_connected)
 		return;
@@ -971,6 +972,21 @@ void CL_SendCmd (void)
 	// allow mice or other external controllers to add to the move
 		if (!in_disable_analog.value)
 			IN_Move (&cmd);
+
+		move_limit = sv_player->v.maxspeed;
+
+		if (waypoint_mode.value)
+			move_limit *= 1.5f;
+
+		if (in_speed.state & 1)
+			move_limit *= cl_movespeedkey.value;
+
+		move_speed = sqrtf(cmd.forwardmove * cmd.forwardmove + cmd.sidemove * cmd.sidemove);
+		if (move_limit > 0.0f && move_speed > move_limit) {
+			float scale = move_limit / move_speed;
+			cmd.forwardmove *= scale;
+			cmd.sidemove *= scale;
+		}
 
 	// send the unreliable message
 		CL_SendMove (&cmd);

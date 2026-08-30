@@ -29,6 +29,8 @@ namespace quake
 {
 	namespace clipping
 	{
+		static const float near_clip_distance = 6.0f;
+
 		// Calculates clipping planes from the GU view and projection matrices.
 		void begin_frame(float regularfov, float wideclippingfov, float screenaspect);
 
