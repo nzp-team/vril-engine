@@ -90,6 +90,9 @@ void IN_Move(usercmd_t *cmd)
 	float tolerance = in_tolerance.value;
 	float acceleration = in_acceleration.value;
 
+	if (key_dest != key_game || cl.paused)
+		return;
+
 	IN_GetAnalogStick(IN_STICK_LEFT, &left);
 	IN_GetAnalogStick(IN_STICK_RIGHT, &right);
 	IN_PlatformMove(cmd);
