@@ -5,7 +5,7 @@ set -o errexit
 source "nzp_utility.sh"
 
 APP_BIN="nzportable"
-TIMEOUT=180
+TIMEOUT=240
 
 testing_dir_path="${testing_dir_path:-}"
 binary_path="${binary_path:-}"

@@ -48,6 +48,7 @@ void SV_Init (void)
 	extern	cvar_t	sv_maxvelocity;
 	extern	cvar_t	sv_gravity;
 	extern	cvar_t	sv_nostep;
+	extern	cvar_t	pm_stepdown;
 	extern	cvar_t	sv_friction;
 	extern	cvar_t	sv_edgefriction;
 	extern	cvar_t	sv_stopspeed;
@@ -66,6 +67,7 @@ void SV_Init (void)
 	Cvar_RegisterVariable (&sv_idealpitchscale);
 	Cvar_RegisterVariable (&sv_aim);
 	Cvar_RegisterVariable (&sv_nostep);
+	Cvar_RegisterVariable (&pm_stepdown);
 	Cvar_RegisterVariable (&sv_maxai);
 	Cvar_RegisterVariable (&sv_gamemode);
 	Cvar_RegisterVariable (&sv_difficulty);
