@@ -44,6 +44,7 @@ cvar_t	sv_stopspeed = {"sv_stopspeed","100"};
 cvar_t	sv_gravity = {"sv_gravity","800",false,true};
 cvar_t	sv_maxvelocity = {"sv_maxvelocity","100000"};
 cvar_t	sv_nostep = {"sv_nostep","0"};
+cvar_t	pm_stepdown = {"pm_stepdown","1"};
 
 #define	MOVE_EPSILON	0.01
 
@@ -971,13 +972,16 @@ Only used by players
 ======================
 */
 #define	STEPSIZE	18
+#define	STEP_EPSILON	0.03125f
 void SV_WalkMove (edict_t *ent)
 {
-	vec3_t		upmove, downmove;
+	vec3_t		upmove, downmove, stepdownend;
 	vec3_t		oldorg, oldvel;
 	vec3_t		nosteporg, nostepvel;
 	int			clip;
 	int			oldonground;
+	qboolean	groundmove;
+	qboolean	steppeddown = false;
 	trace_t		steptrace, downtrace;
 
 //
@@ -988,10 +992,42 @@ void SV_WalkMove (edict_t *ent)
 
 	VectorCopy (ent->v.origin, oldorg);
 	VectorCopy (ent->v.velocity, oldvel);
+	groundmove = oldonground && oldvel[2] <= 0;
+
+	// Fix steps triggering landing animation
+	if (groundmove && pm_stepdown.value)
+	{
+		ent->v.velocity[2] = 0;
+		oldvel[2] = 0;
+	}
 
 	clip = SV_FlyMove (ent, host_frametime, &steptrace);
 
-	if ( !(clip & 2) )
+	// Props to FTEQW for pm_stepdown implementation
+	if (!(clip & 1) && groundmove && pm_stepdown.value
+	&& ent->v.movetype == MOVETYPE_WALK
+	&& !((int)ent->v.flags & FL_WATERJUMP))
+	{
+		VectorCopy (ent->v.origin, stepdownend);
+		stepdownend[2] -= STEPSIZE + STEP_EPSILON;
+		downtrace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs,
+						  stepdownend, MOVE_NORMAL, ent);
+
+		if (!downtrace.startsolid && !downtrace.allsolid
+		&& downtrace.fraction < 1
+		&& downtrace.plane.normal[2] > 0.7f)
+		{
+			float stepdrop = ent->v.origin[2] - downtrace.endpos[2];
+
+			if (stepdrop > STEP_EPSILON)
+				VectorCopy (downtrace.endpos, ent->v.origin);
+			ent->v.flags = (int)ent->v.flags | FL_ONGROUND;
+			ent->v.groundentity = EDICT_TO_PROG(downtrace.ent);
+			steppeddown = stepdrop > STEP_EPSILON;
+		}
+	}
+
+	if ( !(clip & 2) || steppeddown )
 		return;		// move didn't block on a step
 
 	if (!oldonground && ent->v.waterlevel == 0)
@@ -1016,8 +1052,8 @@ void SV_WalkMove (edict_t *ent)
 
 	VectorCopy (vec3_origin, upmove);
 	VectorCopy (vec3_origin, downmove);
-	upmove[2] = STEPSIZE;
-	downmove[2] = -STEPSIZE + oldvel[2]*(float)host_frametime;
+	upmove[2] = STEPSIZE + STEP_EPSILON;
+	downmove[2] = -STEPSIZE - STEP_EPSILON + oldvel[2]*(float)host_frametime;
 
 // move up
 	SV_PushEntity (ent, upmove, vec3_origin);	// FIXME: don't link?
@@ -1048,7 +1084,7 @@ void SV_WalkMove (edict_t *ent)
 
 	if (downtrace.plane.normal[2] > 0.7f)
 	{
-		if (ent->v.solid == SOLID_BSP)
+		if (downtrace.ent && downtrace.ent->v.solid == SOLID_BSP)
 		{
 			ent->v.flags =	(int)ent->v.flags | FL_ONGROUND;
 			ent->v.groundentity = EDICT_TO_PROG(downtrace.ent);
@@ -1117,15 +1153,22 @@ void SV_MonsterWalkMove (edict_t *ent)
 	vec3_t		oldorg, oldvel;
 	vec3_t		nosteporg, nostepvel;
 	int			clip;
+	int			oldonground;
 	trace_t		steptrace, downtrace;
 
 //
 // do a regular slide move unless it looks like you ran into a step
 //
+	oldonground = (int)ent->v.flags & FL_ONGROUND;
 	ent->v.flags = (int)ent->v.flags & ~FL_ONGROUND;
 
 	VectorCopy (ent->v.origin, oldorg);
 	VectorCopy (ent->v.velocity, oldvel);
+	if (oldonground && oldvel[2] <= 0)
+	{
+		ent->v.velocity[2] = 0;
+		oldvel[2] = 0;
+	}
 
 	clip = SV_FlyMove (ent, host_frametime, &steptrace);
 
@@ -1147,8 +1190,8 @@ void SV_MonsterWalkMove (edict_t *ent)
 
 	VectorCopy (vec3_origin, upmove);
 	VectorCopy (vec3_origin, downmove);
-	upmove[2] = STEPSIZE;
-	downmove[2] = -STEPSIZE + oldvel[2]*(float)host_frametime;
+	upmove[2] = STEPSIZE + 2;
+	downmove[2] = -STEPSIZE - 2 + oldvel[2]*(float)host_frametime;
 
 // move up
 	SV_PushMonsterEntity (ent, upmove);	// FIXME: don't link?
@@ -1169,9 +1212,6 @@ void SV_MonsterWalkMove (edict_t *ent)
 		}
 	}*/
 
-// extra friction based on view angle
-	if ( clip & 2 )
-		SV_WallFriction (ent, &steptrace);
 
 // move down
 	downtrace = SV_PushMonsterEntity (ent, downmove);	// FIXME: don't link?

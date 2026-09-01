@@ -982,6 +982,7 @@ V_CalcRefdef
 static float lastUpVelocity;
 static float VerticalOffset;
 static float cVerticalOffset;
+static qboolean viewWasFalling;
 vec3_t CWeaponOffset;//blubs declared this
 vec3_t CWeaponRot;
 
@@ -1008,8 +1009,13 @@ void V_CalcRefdef (void)
 	int			i;
 	vec3_t		forward, right, up;
 	vec3_t		angles;
+	float		stairz = 0;
+	qboolean	stairstep = false;
 
 	static float oldz = 0;
+	static float lastorgz = 0;
+	static float stairvelocity = 0;
+	static qboolean stairsmoothing = false;
 
 	V_DriftPitch ();
 	DropRecoilKick();
@@ -1058,6 +1064,52 @@ void V_CalcRefdef (void)
 
 	V_BoundOffsets ();
 
+	// More fancy stairstep smoothing
+	if ((!cl.onground && cl.velocity[2] > 200)
+	|| fabsf(ent->origin[2] - lastorgz) > 20.0f)
+	{
+		oldz = ent->origin[2];
+		stairvelocity = 0;
+		stairsmoothing = false;
+	}
+	else if (!viewWasFalling
+	&& (cl.onground || (stairsmoothing && cl.velocity[2] <= 0))
+	&& ent->origin[2] != lastorgz)
+	{
+		stairsmoothing = true;
+	}
+
+	if (stairsmoothing)
+	{
+		float steptime = cl.time - cl.oldtime;
+		float acceleration;
+		const float frequency = 12.0f;
+
+		if (steptime < 0)
+			steptime = 0;
+		if (steptime > 0.05f)
+			steptime = 0.05f;
+
+		acceleration = (ent->origin[2] - oldz) * frequency * frequency
+					 - 2.0f * frequency * stairvelocity;
+		stairvelocity += acceleration * steptime;
+		oldz += stairvelocity * steptime;
+		if (fabsf(ent->origin[2] - oldz) < 0.01f
+		&& fabsf(stairvelocity) < 0.01f)
+		{
+			oldz = ent->origin[2];
+			stairvelocity = 0;
+			stairsmoothing = false;
+		}
+	}
+	else
+		oldz = ent->origin[2];
+
+	stairstep = stairsmoothing;
+	stairz = oldz - ent->origin[2];
+	r_refdef.vieworg[2] += stairz;
+	lastorgz = ent->origin[2];
+
 // set up gun position
 	VectorCopy (cl.viewangles, view->angles);
 	//cl.oldviewangles = cl.viewangles;
@@ -1066,8 +1118,7 @@ void V_CalcRefdef (void)
 
 	view->angles[PITCH] = view->angles[PITCH] - cl.gun_kick[PITCH];
 	view->angles[YAW] = view->angles[YAW] + cl.gun_kick[YAW];
-	VectorCopy (ent->origin, view->origin);
-	view->origin[2] += cl.viewheight;
+	VectorCopy (r_refdef.vieworg, view->origin);
 
 	//Storing base location, later to calculate total offset
 		CWeaponOffset[0]= view->origin[0] * -1;
@@ -1079,7 +1130,8 @@ void V_CalcRefdef (void)
 	vec3_t		temp_up,temp_right,temp_forward;
 	AngleVectors (r_refdef.viewangles,temp_forward, temp_right, temp_up);
 	//============================================================ Fall Landing Buffering ============================================================
-	if(lastUpVelocity < cl.velocity[2] - 5)//We've had a dramatic change in velocity
+	if(!stairstep && cl.onground && viewWasFalling
+	&& lastUpVelocity < cl.velocity[2] - 5)//We've actually landed
 	{
 		VerticalOffset = (lastUpVelocity - cl.velocity[2])/25;
 		if(VerticalOffset < -15)
@@ -1088,7 +1140,10 @@ void V_CalcRefdef (void)
 		}
 	}
 
-	cVerticalOffset += (VerticalOffset - cVerticalOffset) * 0.3f;
+	if (stairstep)
+		VerticalOffset = cVerticalOffset = 0;
+	else
+		cVerticalOffset += (VerticalOffset - cVerticalOffset) * 0.3f;
 
 	temp_up[0] *= cVerticalOffset;
 	temp_up[1] *= cVerticalOffset;
@@ -1103,6 +1158,10 @@ void V_CalcRefdef (void)
 		VerticalOffset = 0;
 	}
 	lastUpVelocity = cl.velocity[2];
+	if (!cl.onground && cl.velocity[2] < -100)
+		viewWasFalling = true;
+	else if (cl.onground)
+		viewWasFalling = false;
 
 	//============================================================ Engine-Side Iron Sights ============================================================
 	AngleVectors (r_refdef.viewangles, temp_forward, temp_right, temp_up);
@@ -1195,6 +1254,7 @@ void V_CalcRefdef (void)
 		CWeaponOffset[0] += view->origin[0];
 		CWeaponOffset[1] += view->origin[1];
 		CWeaponOffset[2] += view->origin[2];
+		CWeaponOffset[2] += stairz;
 //I don't know what the comments below this are, but blubs didn't add them...
 
 // fudge position around to keep amount of weapon visible
@@ -1221,27 +1281,6 @@ void V_CalcRefdef (void)
 	//VectorCopy(cl.punchangle,lastPunchAngle);
 
 	VectorAdd (r_refdef.viewangles, cl.gun_kick, r_refdef.viewangles);
-
-	// smooth out stair step ups
-	if (cl.onground && ent->origin[2] - oldz > 0)
-	{
-		float steptime;
-
-		steptime = cl.time - cl.oldtime;
-		if (steptime < 0)
-	//FIXME		I_Error ("steptime < 0");
-			steptime = 0;
-
-		oldz += steptime * 80;
-		if (oldz > ent->origin[2])
-			oldz = ent->origin[2];
-		if (ent->origin[2] - oldz > 12)
-			oldz = ent->origin[2] - 12;
-		r_refdef.vieworg[2] += oldz - ent->origin[2];
-		view->origin[2] += oldz - ent->origin[2];
-	}
-	else
-		oldz = ent->origin[2];
 
 	if (chase_active.value)
 		Chase_Update ();
@@ -1720,5 +1759,3 @@ void V_Init (void)
 	BuildGammaTable (1.0);	// no gamma yet
 	Cvar_RegisterVariable (&v_gamma);
 }
-
-
