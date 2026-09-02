@@ -2,6 +2,9 @@
 #include "sdl_local.h"
 
 #include <errno.h>
+#if defined(_WIN32)
+#include <direct.h>
+#endif
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -56,8 +59,24 @@ void Sys_FileClose(int handle) { fclose(sys_handles[handle]); sys_handles[handle
 void Sys_FileSeek(int handle, int position) { fseek(sys_handles[handle], position, SEEK_SET); }
 int Sys_FileRead(int handle, void *dest, int count) { return (int)fread(dest, 1, count, sys_handles[handle]); }
 int Sys_FileWrite(int handle, void *data, int count) { return (int)fwrite(data, 1, count, sys_handles[handle]); }
-int Sys_FileTime(char *path) { struct stat st; return stat(path, &st) == 0 ? (int)st.st_mtime : -1; }
-void Sys_mkdir(char *path) { mkdir(path, 0777); }
+int Sys_FileTime(char *path) {
+
+	#if defined(_WIN32)
+	struct _stat st;
+	return _stat(path, &st) == 0 ? (int)st.st_mtime : -1;
+	#else
+	struct stat st;
+	return stat(path, &st) == 0 ? (int)st.st_mtime : -1;
+	#endif
+}
+void Sys_mkdir(char *path)
+{ 
+	#if defined(_WIN32)
+	_mkdir(path);
+	#else
+	mkdir(path, 0777);
+	#endif
+}
 void Sys_MakeCodeWriteable(unsigned long startaddr, unsigned long length) { (void)startaddr; (void)length; }
 
 void Sys_PrintSystemInfo(void) { Con_Printf("Vril Engine SDL (%s)\n", SDL_GetPlatform()); }

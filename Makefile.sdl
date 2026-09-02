@@ -13,7 +13,7 @@ CPPFLAGS := -Isource -I$(BUILD) -DGLQUAKE -DPLATFORM_SDL -DPLATFORM_CONFIRM_IS_E
 			-DGL_SILENCE_DEPRECATION -DPLATFORM_DIRECTORY=sdl -DPLATFORM_RENDERER=gl \
 			-DMAX_AI_COUNT=24 -DPLATFORM_INPUT_KBM
 CFLAGS ?= -O2 -g
-CFLAGS += -std=gnu99 -Wall -Wno-unused-variable -Wno-unused-but-set-variable $(shell $(PKG_CONFIG) --cflags sdl2)
+CFLAGS += -std=gnu99 -Wall -Wno-unused-variable -Wno-unused-but-set-variable $(shell $(PKG_CONFIG) --cflags sdl2 | sed 's/-Dmain=SDL_main//')
 ifneq ($(findstring clang,$(shell $(CC) --version)),)
 CFLAGS += -Wno-unknown-warning-option -Wno-unknown-pragmas
 endif
@@ -21,7 +21,10 @@ ifeq ($(WERROR),1)
 CFLAGS += -Werror
 endif
 LDLIBS := $(shell $(PKG_CONFIG) --libs sdl2) -lSDL2_mixer -lm
-ifeq ($(shell uname -s),Darwin)
+TARGET_TRIPLE := $(shell $(CC) -dumpmachine)
+ifneq ($(findstring mingw,$(TARGET_TRIPLE)),)
+LDLIBS += -lopengl32 -lglu32 -lws2_32
+else ifeq ($(shell uname -s),Darwin)
 LDLIBS += -framework OpenGL
 else
 LDLIBS += -lGL -lGLU
