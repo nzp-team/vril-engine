@@ -318,7 +318,8 @@ void CL_AdjustAngles (void)
 	// ==== Aim Assist + ====
 	// cut look speed in half when facing enemy, unless
 	// mag is empty
-	if ((in_aimassist.value) && (sv_player->v.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0) {
+	if (IN_GetActiveDevice() == IN_DEVICE_GAMEPAD && in_aimassist.value &&
+		(sv_player->v.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0) {
 		speed *= 0.5f;
 	}
 	// additionally, slice look speed when ADS/scopes
@@ -592,7 +593,9 @@ void CL_SendMove (usercmd_t *cmd)
 	cl.cmd = *cmd;
 
 	//==== Aim Assist Code ====
-	if((cl.stats[STAT_ZOOM]==1 || cl.stats[STAT_ZOOM]==2) && ((in_aimassist.value) || (cl.perks & 64)))
+	if (IN_GetActiveDevice() == IN_DEVICE_GAMEPAD &&
+		(cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2) &&
+		(in_aimassist.value || (cl.perks & 64)))
 	{
 		if(!zoom_snap)
 		{
@@ -785,4 +788,3 @@ void CL_InitInput (void)
 #endif
 
 }
-
