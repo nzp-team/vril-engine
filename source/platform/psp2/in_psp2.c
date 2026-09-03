@@ -44,6 +44,12 @@ uint64_t rumble_tick = 0;
 SceCtrlData oldanalogs, analogs;
 SceMotionState motionstate;
 
+qboolean IN_PlatformHasMouse(void) { return false; }
+qboolean IN_PlatformHasGamepad(void) { return true; }
+void IN_SetMouseToRelative(bool relative) { (void)relative; }
+void IN_PlatformClearPendingInput(void) {}
+void IN_PlatformMouseMove(usercmd_t *cmd) { (void)cmd; }
+
 void IN_PlatformInit(void)
 {
   Cvar_SetValue("in_anub_mode", 1);

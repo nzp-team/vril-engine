@@ -7,3 +7,6 @@ extern SDL_GLContext sdl_gl_context;
 extern int sdl_window_width;
 extern int sdl_window_height;
 extern qboolean sdl_running;
+void IN_SDLControllerAdded(int device_index);
+void IN_SDLControllerRemoved(SDL_JoystickID instance_id);
+void VID_SDLResize(void);

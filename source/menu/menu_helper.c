@@ -341,7 +341,7 @@ Menu_DrawTitle
 void Menu_DrawTitle (char *title_name, int color)
 {
 	int x_pos = vid.width/64;
-	int y_pos = 5;
+	int y_pos = 5 * vid.scale;
 
 	switch (color) {
 		case MENU_COLOR_WHITE:
@@ -557,6 +557,13 @@ void Menu_DrawButton (int order, int button_index, char* button_name, char* butt
 	if (!current_menu.button[button_index].enabled) {
 		Menu_BuildMenuButtons (button_index, button_name, on_activate);
 	}
+	current_menu.button[button_index].x = 0;
+	current_menu.button[button_index].width = UI_W(141);
+	current_menu.button[button_index].height = UI_H(_CHAR_HEIGHT + 8);
+	if (order < 0)
+		current_menu.button[button_index].y = vid.height - UI_Y(y_pos + _CHAR_HEIGHT + 4);
+	else
+		current_menu.button[button_index].y = UI_Y(y_pos - 4);
 
 	// Active menu buttons
 	// Hovering over button
@@ -571,7 +578,7 @@ void Menu_DrawButton (int order, int button_index, char* button_name, char* butt
 
 		// Draw the bottom screen text for selected button 
 		UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_BOTTOM);
-		Menu_DrawStringCentered (0, big_bar_height - _CHAR_HEIGHT, button_summary, 255, 255, 255, 255);
+		Menu_DrawStringCentered (0, big_bar_height + 4 - _CHAR_HEIGHT, button_summary, 255, 255, 255, 255);
 	} else {
 		// Not hovering over button
 		if (order < 0) {
@@ -733,7 +740,7 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 		// Draw map author
 		UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_BOTTOM);
 		if (custom_maps[index].map_author != NULL) {
-			Menu_DrawStringCentered (vid.width/2, 0 + _CHAR_HEIGHT, custom_maps[index].map_author, 255, 255, 0, 255);		
+			Menu_DrawStringCentered (vid.width/2, 4 + _CHAR_HEIGHT, custom_maps[index].map_author, 255, 255, 0, 255);
 		}
 	}
 }
@@ -748,6 +755,19 @@ void Menu_DrawOptionButton(int order, char* selection_name)
 	Menu_DrawString(x_pos, y_pos, selection_name, 255, 255, 255, 255, vid.scale, 0);
 }
 
+#ifdef PLATFORM_USES_GENERIC_GLYPHS
+void Menu_DrawControllerGlyphPreview(int order)
+{
+	int x = UI_X(260);
+	int y = UI_Y(28 + order * 15);
+	int size = UI_W(10);
+	int keys[4] = {K_BOTTOMFACE, K_RIGHTFACE, K_LEFTFACE, K_TOPFACE};
+	int i;
+	for (i = 0; i < 4; ++i)
+		HUD_DrawKeyIcon(x + i * (size + UI_W(2)), y, keys[i], size, 255);
+}
+#endif
+
 void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, int max_option_value, cvar_t option, char* option_string, qboolean zero_to_one, qboolean draw_option_string, float increment_amount)
 {
 	int y_factor = 15;
@@ -757,6 +777,16 @@ void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, in
 	int slider_box_height = 4;
 
 	int slider_width = 2;
+	menu_button_t *button = &current_menu.button[button_index];
+	button->is_slider = true;
+	button->slider_x = UI_X(x_pos);
+	button->slider_y = UI_Y(y_pos - 5);
+	button->slider_width = UI_W(slider_box_width);
+	button->slider_height = UI_H(slider_box_height + 10);
+	button->slider_min = min_option_value;
+	button->slider_max = max_option_value;
+	button->slider_step = increment_amount;
+	button->slider_cvar = option_string;
 
 	if (Menu_IsButtonHovered(button_index)) {
 		Menu_SetOptionCvar(option, option_string, min_option_value, max_option_value, increment_amount);
@@ -807,7 +837,10 @@ void Menu_DrawOptionKey (int order, char *current_bind)
 			return;
 		}
 
-		Menu_DrawPic (x_pos, y_pos, GetButtonIcon(b), 12, 12);
+		if (IN_GetActiveDevice() == IN_DEVICE_GAMEPAD && GetButtonIcon(b) >= 0)
+			HUD_DrawCommandIcon(UI_X(x_pos), UI_Y(y_pos), b, UI_W(12), 255);
+		else
+			Menu_DrawString(x_pos, y_pos, current_bind, 255, 255, 0, 255, vid.scale, 0);
 	} else {
 		Menu_DrawString(x_pos, y_pos, current_bind, 255, 255, 0, 255, vid.scale, 0);
 	}

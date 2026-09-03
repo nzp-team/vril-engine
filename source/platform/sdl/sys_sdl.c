@@ -1,4 +1,5 @@
 #include "../../nzportable_def.h"
+#include "../../menu/menu_defs.h"
 #include "sdl_local.h"
 
 #include <errno.h>
@@ -142,6 +143,9 @@ void Sys_DefaultConfig(void)
 	Cbuf_AddText("bind a +moveleft\n");
 	Cbuf_AddText("bind d +moveright\n");
 	Cbuf_AddText("bind SPACE +jump\n");
+	Cbuf_AddText("bind BOTTOMFACE +jump\n");
+	Cbuf_AddText("bind RIGHTFACE +aim\n");
+	Cbuf_AddText("bind ZRTRIGGER +attack\n");
 }
 
 
@@ -172,27 +176,102 @@ static int SDL_MouseToQuake(Uint8 button)
 	switch (button) { case SDL_BUTTON_LEFT: return K_MOUSE1; case SDL_BUTTON_RIGHT: return K_MOUSE2; case SDL_BUTTON_MIDDLE: return K_MOUSE3; default: return 0; }
 }
 
+static int SDL_ControllerToQuake(SDL_GameControllerButton button)
+{
+	switch (button) {
+	case SDL_CONTROLLER_BUTTON_A: return K_BOTTOMFACE;
+	case SDL_CONTROLLER_BUTTON_B: return K_RIGHTFACE;
+	case SDL_CONTROLLER_BUTTON_X: return K_LEFTFACE;
+	case SDL_CONTROLLER_BUTTON_Y: return K_TOPFACE;
+	case SDL_CONTROLLER_BUTTON_BACK: return K_SELECT;
+	case SDL_CONTROLLER_BUTTON_START: return K_START;
+	case SDL_CONTROLLER_BUTTON_LEFTSTICK: return K_LTHUMB;
+	case SDL_CONTROLLER_BUTTON_RIGHTSTICK: return K_RTHUMB;
+	case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: return K_LTRIGGER;
+	case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: return K_RTRIGGER;
+	case SDL_CONTROLLER_BUTTON_DPAD_UP: return K_DPAD_UP;
+	case SDL_CONTROLLER_BUTTON_DPAD_DOWN: return K_DPAD_DOWN;
+	case SDL_CONTROLLER_BUTTON_DPAD_LEFT: return K_DPAD_LEFT;
+	case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: return K_DPAD_RIGHT;
+	default: return 0;
+	}
+}
+
+static void SDL_MenuCoordinates(int window_x, int window_y, int *drawable_x, int *drawable_y)
+{
+	int window_width, window_height;
+	SDL_GetWindowSize(sdl_window, &window_width, &window_height);
+	*drawable_x = window_width > 0 ? window_x * (int)vid.width / window_width : window_x;
+	*drawable_y = window_height > 0 ? window_y * (int)vid.height / window_height : window_y;
+}
+
 void Sys_SendKeyEvents(void)
 {
 	SDL_Event event;
+	static qboolean trigger_down[2];
 	while (SDL_PollEvent(&event)) {
 		int key;
 		switch (event.type) {
 		case SDL_QUIT: sdl_running = false; break;
 		case SDL_KEYDOWN: case SDL_KEYUP:
+			if (event.type == SDL_KEYDOWN) { IN_SetActiveDevice(IN_DEVICE_KEYBOARD_MOUSE); Menu_SetInputDevice(IN_DEVICE_KEYBOARD_MOUSE); }
 			key = SDL_KeyToQuake(event.key.keysym.sym);
 			if (key && !event.key.repeat) Key_Event(key, event.type == SDL_KEYDOWN);
 			break;
 		case SDL_MOUSEBUTTONDOWN: case SDL_MOUSEBUTTONUP:
+			if (event.type == SDL_MOUSEBUTTONDOWN) { IN_SetActiveDevice(IN_DEVICE_KEYBOARD_MOUSE); Menu_SetInputDevice(IN_DEVICE_KEYBOARD_MOUSE); }
 			key = SDL_MouseToQuake(event.button.button);
-			if (key) Key_Event(key, event.type == SDL_MOUSEBUTTONDOWN);
+			if (key && (key_dest == key_menu || key_dest == key_menu_pause)) {
+				int x, y;
+				qboolean slider_handled = false;
+				SDL_MenuCoordinates(event.button.x, event.button.y, &x, &y);
+				Menu_MouseMove(x, y);
+				if (key == K_MOUSE1)
+					slider_handled = Menu_MouseButton(x, y, event.type == SDL_MOUSEBUTTONDOWN);
+				if (event.type == SDL_MOUSEBUTTONDOWN && key == K_MOUSE1 && !slider_handled) Menu_ButtonPress();
+			} else if (key) Key_Event(key, event.type == SDL_MOUSEBUTTONDOWN);
 			break;
-		case SDL_MOUSEMOTION: mouse_dx += event.motion.xrel; mouse_dy += event.motion.yrel; break;
+		case SDL_MOUSEMOTION:
+			if (event.motion.xrel || event.motion.yrel) { IN_SetActiveDevice(IN_DEVICE_KEYBOARD_MOUSE); Menu_SetInputDevice(IN_DEVICE_KEYBOARD_MOUSE); }
+			if (key_dest == key_menu || key_dest == key_menu_pause) {
+				int x, y;
+				SDL_MenuCoordinates(event.motion.x, event.motion.y, &x, &y);
+				Menu_MouseMove(x, y);
+			}
+			else { mouse_dx += event.motion.xrel; mouse_dy += event.motion.yrel; }
+			break;
+		case SDL_MOUSEWHEEL:
+			if (key_dest == key_menu || key_dest == key_menu_pause) {
+				if (event.wheel.y > 0) Menu_IncreaseCursor();
+				if (event.wheel.y < 0) Menu_DecreaseCursor();
+			}
+			break;
+		case SDL_CONTROLLERBUTTONDOWN: case SDL_CONTROLLERBUTTONUP:
+			if (event.type == SDL_CONTROLLERBUTTONDOWN) { IN_SetActiveDevice(IN_DEVICE_GAMEPAD); Menu_SetInputDevice(IN_DEVICE_GAMEPAD); }
+			key = SDL_ControllerToQuake(event.cbutton.button);
+			if (key) Key_Event(key, event.type == SDL_CONTROLLERBUTTONDOWN);
+			break;
+		case SDL_CONTROLLERAXISMOTION:
+			if (event.caxis.value > 8192 || event.caxis.value < -8192) { IN_SetActiveDevice(IN_DEVICE_GAMEPAD); Menu_SetInputDevice(IN_DEVICE_GAMEPAD); }
+			if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT ||
+				event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT) {
+				int trigger = event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT ? 0 : 1;
+				qboolean down = event.caxis.value > 16384;
+				if (down != trigger_down[trigger]) {
+					trigger_down[trigger] = down;
+					Key_Event(trigger ? K_ZRTRIGGER : K_ZLTRIGGER, down);
+				}
+			}
+			break;
+		case SDL_CONTROLLERDEVICEADDED: IN_SDLControllerAdded(event.cdevice.which); break;
+		case SDL_CONTROLLERDEVICEREMOVED: IN_SDLControllerRemoved(event.cdevice.which); break;
 		case SDL_WINDOWEVENT:
-			if (event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED) SDL_SetRelativeMouseMode(SDL_TRUE);
+			if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED || event.window.event == SDL_WINDOWEVENT_RESIZED)
+				VID_SDLResize();
 			break;
 		}
 	}
+	SDL_SetRelativeMouseMode((key_dest == key_game && SDL_GetKeyboardFocus() == sdl_window) ? SDL_TRUE : SDL_FALSE);
 }
 
 int main(int argc, char **argv)

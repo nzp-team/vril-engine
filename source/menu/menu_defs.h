@@ -63,6 +63,11 @@ typedef struct menu_button_s {
 	int				index;
 	char			*name;
 	void			(*on_activate)(void);
+	int             x, y, width, height;
+	qboolean        is_slider;
+	int             slider_x, slider_y, slider_width, slider_height;
+	float           slider_min, slider_max, slider_step;
+	char            *slider_cvar;
 } menu_button_t;
 
 typedef struct menu_s {
@@ -247,10 +252,13 @@ char* strtolower(char* s);
 char* strtoupper(char* s);
 void Menu_SetSound (int type);
 void Menu_InitUI (void);
+void Menu_SetInputDevice (in_device_t device);
 int Menu_GetActiveMenuButtons (void);
 void Menu_IncreaseCursor (void);
 void Menu_DecreaseCursor (void);
 void Menu_ButtonPress (void);
+void Menu_MouseMove (int x, int y);
+qboolean Menu_MouseButton (int x, int y, qboolean down);
 void Menu_IncrementSlider (int dir);
 qboolean Menu_IsButtonHovered (int button_index);
 void Menu_ResetMenuButtons (void);
@@ -276,6 +284,9 @@ void Menu_DrawGreyButton (int order, char* button_name);
 void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map_category, char* bsp_name, void *on_activate);
 void Menu_DrawBioButton (int order, int button_index, char* name, char* map, int portrait, vec2_t portrait_coords, void *on_activate);
 void Menu_DrawOptionButton(int order, char* selection_name);
+#ifdef PLATFORM_USES_GENERIC_GLYPHS
+void Menu_DrawControllerGlyphPreview(int order);
+#endif
 void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, int max_option_value, cvar_t option, char* _option_string, qboolean zero_to_one, qboolean draw_option_string, float increment_amount);
 void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficulty, char* info_startround, char* info_magic, char* info_headshotonly, char* info_fastrounds, char* info_hordesize);
 void Menu_DrawOptionKey (int order, char *current_bind);

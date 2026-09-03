@@ -13,8 +13,8 @@ of the License, or (at your option) any later version.
 
 extern qboolean croshhairmoving;
 extern float crosshair_opacity;
-#ifdef PLATFORM_INPUT_GAMEPAD
 extern cvar_t in_anub_mode;
+static in_device_t in_active_device = IN_DEVICE_KEYBOARD_MOUSE;
 
 static float IN_Clamp(float value, float minimum, float maximum)
 {
@@ -24,49 +24,49 @@ static float IN_Clamp(float value, float minimum, float maximum)
 		return maximum;
 	return value;
 }
-#endif
+
+void IN_SetActiveDevice(in_device_t device) { in_active_device = device; }
+in_device_t IN_GetActiveDevice(void) { return in_active_device; }
+
+qboolean IN_KeyMatchesDevice(int key, in_device_t device)
+{
+	qboolean gamepad_key =
+		(key >= K_BOTTOMFACE && key <= K_RTHUMB) ||
+		(key >= K_DPAD_UP && key <= K_DPAD_RIGHT) ||
+		(key >= K_JOY1 && key <= K_JOY4);
+	return device == IN_DEVICE_GAMEPAD ? gamepad_key : !gamepad_key;
+}
+
+qboolean IN_KeyMatchesActiveDevice(int key)
+{
+	return IN_KeyMatchesDevice(key, in_active_device);
+}
 
 void IN_Init(void)
 {
-#ifdef PLATFORM_INPUT_KBM
-	IN_SetMouseToRelative(true);
-#elif defined(PLATFORM_INPUT_GAMEPAD)
-	IN_PlatformInit();
-#endif
+	if (IN_PlatformHasGamepad() && !IN_PlatformHasMouse())
+		IN_SetActiveDevice(IN_DEVICE_GAMEPAD);
+	if (IN_PlatformHasMouse()) IN_SetMouseToRelative(true);
+	if (IN_PlatformHasGamepad()) IN_PlatformInit();
 }
 
 void IN_Shutdown(void)
 {
-#ifdef PLATFORM_INPUT_KBM
-	IN_SetMouseToRelative(false);
-#elif defined(PLATFORM_INPUT_GAMEPAD)
-	IN_PlatformShutdown();
-#endif
+	if (IN_PlatformHasMouse()) IN_SetMouseToRelative(false);
+	if (IN_PlatformHasGamepad()) IN_PlatformShutdown();
 }
-
-#if !defined(PLATFORM_INPUT_GAMEPAD) && !defined(PLATFORM_INPUT_KBM)
-void IN_Move(usercmd_t *cmd)
-{
-	(void)cmd;
-}
-#endif
 
 void IN_Commands(void)
 {
-#ifdef PLATFORM_INPUT_GAMEPAD
-	IN_PlatformCommands();
-#endif
+	if (IN_PlatformHasGamepad()) IN_PlatformCommands();
 }
 
 void IN_ClearPendingInput(void)
 {
 	Key_ClearStates();
-#ifdef PLATFORM_INPUT_KBM
-	IN_PlatformClearPendingInput();
-#endif
+	if (IN_PlatformHasMouse()) IN_PlatformClearPendingInput();
 }
 
-#ifdef PLATFORM_INPUT_GAMEPAD
 static float IN_ShapeAxis(float value, float speed, float tolerance, float acceleration)
 {
 	float magnitude;
@@ -93,10 +93,15 @@ void IN_Move(usercmd_t *cmd)
 	if (key_dest != key_game || cl.paused)
 		return;
 
-	IN_GetAnalogStick(IN_STICK_LEFT, &left);
-	IN_GetAnalogStick(IN_STICK_RIGHT, &right);
-	IN_PlatformMove(cmd);
+	left.x = left.y = right.x = right.y = 0.0f;
+	if (IN_PlatformHasGamepad()) {
+		IN_GetAnalogStick(IN_STICK_LEFT, &left);
+		IN_GetAnalogStick(IN_STICK_RIGHT, &right);
+		IN_PlatformMove(cmd);
+	}
+	if (IN_PlatformHasMouse()) IN_PlatformMouseMove(cmd);
 
+#ifdef PLATFORM_HAS_ONE_ANALOG_STICK
 	if (in_anub_mode.value) {
 		move_stick = left;
 		look_stick = right;
@@ -104,6 +109,10 @@ void IN_Move(usercmd_t *cmd)
 		move_stick = right;
 		look_stick = left;
 	}
+#else
+	move_stick = left;
+	look_stick = right;
+#endif
 
 	speed = sensitivity.value;
 	if (in_aimassist.value && sv_player->v.facingenemy == 1 && cl.stats[STAT_CURRENTMAG] > 0)
@@ -141,4 +150,3 @@ void IN_Move(usercmd_t *cmd)
 		crosshair_opacity = IN_Clamp(crosshair_opacity - 8.0f, 128.0f, 255.0f);
 	}
 }
-#endif

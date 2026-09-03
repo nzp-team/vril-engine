@@ -33,6 +33,12 @@ extern float crosshair_opacity;
 extern cvar_t in_mlook; //Heffo - mlook cvar
 extern cvar_t in_anub_mode;
 
+qboolean IN_PlatformHasMouse(void) { return false; }
+qboolean IN_PlatformHasGamepad(void) { return true; }
+void IN_SetMouseToRelative(bool relative) { (void)relative; }
+void IN_PlatformClearPendingInput(void) {}
+void IN_PlatformMouseMove(usercmd_t *cmd) { (void)cmd; }
+
 void IN_PlatformInit(void)
 {
 	if (new3ds_flag) {

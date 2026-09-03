@@ -65,6 +65,11 @@ image_t b_zrt;
 image_t b_start;
 image_t b_select;
 image_t b_home;
+#ifdef PLATFORM_USES_GENERIC_GLYPHS
+cvar_t cl_controllerglyphs = {"cl_controllerglyphs", "xbox", true};
+static image_t controller_glyphs = -1;
+static char loaded_controller_glyphs[MAX_QPATH];
+#endif
 
 qboolean has_chaptertitle;
 qboolean doubletap_has_damage_buff;
@@ -275,6 +280,8 @@ HUD_GetBoundKey(const char * command)
     size_t len = strlen(command);
 
     for (key = 0; key < 256; key++) {
+		if (!IN_KeyMatchesActiveDevice(key))
+			continue;
         if ((keybindings[key] && !strncmp(keybindings[key], command, len)) ||
           (dtbindings[key] && !strncmp(dtbindings[key], command, len)) ||
           (holdbindings[key] && !strncmp(holdbindings[key], command, len)))
@@ -301,6 +308,43 @@ HUD_UseKeyLabel(int key)
 static image_t
 HUD_KeyIcon(int key)
 {
+#ifdef PLATFORM_USES_GENERIC_GLYPHS
+    switch (key) {
+        case K_BOTTOMFACE: case K_RIGHTFACE: case K_LEFTFACE: case K_TOPFACE:
+        case K_DPAD_UP: case K_DPAD_DOWN: case K_DPAD_LEFT: case K_DPAD_RIGHT:
+        case K_LTHUMB: case K_RTHUMB: case K_LTRIGGER: case K_RTRIGGER:
+        case K_ZLTRIGGER: case K_ZRTRIGGER: case K_START: case K_SELECT:
+        {
+            char identifier[64];
+            int loaded_index;
+            tex_filebase(cl_controllerglyphs.string, identifier);
+            loaded_index = Image_FindImage(identifier);
+
+            if (strcmp(loaded_controller_glyphs, cl_controllerglyphs.string)) {
+                char old_identifier[64];
+                int old_index = -1;
+                if (loaded_controller_glyphs[0]) {
+                    tex_filebase(loaded_controller_glyphs, old_identifier);
+                    old_index = Image_FindImage(old_identifier);
+                }
+                if (old_index >= 0) GL_FreeTextures(old_index);
+                controller_glyphs = -1;
+                loaded_index = Image_FindImage(identifier);
+                Q_strncpyz(loaded_controller_glyphs, cl_controllerglyphs.string,
+                  sizeof(loaded_controller_glyphs));
+            }
+
+            if (loaded_index >= 0) {
+                controller_glyphs = loaded_index;
+            } else {
+                controller_glyphs = Image_LoadImage(
+                  va("gfx/controller_glyphs/%s", cl_controllerglyphs.string), IMAGE_TGA, 0, false, false);
+            }
+            return controller_glyphs;
+        }
+        default: return -1;
+    }
+#else
     switch (key) {
         case K_UPARROW: return b_up;
 
@@ -330,6 +374,47 @@ HUD_KeyIcon(int key)
 
         default: return -1;
     }
+#endif
+}
+
+#ifdef PLATFORM_USES_GENERIC_GLYPHS
+static int HUD_KeyGlyphIndex(int key)
+{
+    switch (key) {
+        case K_BOTTOMFACE: return 0; case K_RIGHTFACE: return 1;
+        case K_LEFTFACE: return 2; case K_TOPFACE: return 3;
+        case K_DPAD_UP: return 4; case K_DPAD_DOWN: return 5;
+        case K_DPAD_LEFT: return 6; case K_DPAD_RIGHT: return 7;
+        case K_LTHUMB: return 8; case K_RTHUMB: return 9;
+        case K_LTRIGGER: return 10; case K_RTRIGGER: return 11;
+        case K_ZLTRIGGER: return 12; case K_ZRTRIGGER: return 13;
+        case K_START: return 14; case K_SELECT: return 15;
+        default: return -1;
+    }
+}
+#endif
+
+qboolean HUD_KeyHasIcon(int key) { return HUD_KeyIcon(key) >= 0; }
+
+void HUD_DrawKeyIcon(int x, int y, int key, int size, int alpha)
+{
+    image_t icon = HUD_KeyIcon(key);
+    if (icon < 0) return;
+#ifdef PLATFORM_USES_GENERIC_GLYPHS
+    {
+        int tile = HUD_KeyGlyphIndex(key);
+        if (tile < 0) return;
+        Draw_SubPic(x, y, icon, (tile % 8) * 0.125f, (tile / 8) * 0.125f,
+          0.125f, 0.125f, size / 256.0f, 255, 255, 255, alpha);
+    }
+#else
+    Draw_ColoredStretchPic(x, y, icon, size, size, 255, 255, 255, alpha);
+#endif
+}
+
+void HUD_DrawCommandIcon(int x, int y, char *command, int size, int alpha)
+{
+    HUD_DrawKeyIcon(x, y, HUD_GetBoundKey(command), size, alpha);
 }
 
 int
@@ -337,7 +422,7 @@ GetButtonIcon(char * command)
 {
     image_t icon = HUD_KeyIcon(HUD_GetBoundKey(command));
 
-    return icon >= 0 ? icon : b_rightface;
+    return icon;
 }
 
 char *
@@ -422,7 +507,7 @@ HUD_UsePrint(int index, int cost)
     }
 
     hud_use_key = HUD_GetBoundKey("+use");
-    button      = HUD_KeyIcon(hud_use_key) >= 0 ? "  " : HUD_UseKeyLabel(hud_use_key);
+    button      = HUD_KeyHasIcon(hud_use_key) ? "  " : HUD_UseKeyLabel(hud_use_key);
 
     hud_usecost[0] = 0;
     HUD_ExpandUsePrint(hud_useprint_strings[index], button, touch);
@@ -451,10 +536,9 @@ HUD_DrawUsePrint(void)
     x = (vid.width - getTextWidth(hud_usestring, vid.scale)) / 2;
     HUD_DrawTextBackdrop(x, y, hud_usestring, hud_useprint_colors[hud_use_type][0],
       hud_useprint_colors[hud_use_type][1], hud_useprint_colors[hud_use_type][2], 255, vid.scale);
-    if (hud_use_has_button && HUD_KeyIcon(hud_use_key) >= 0)
-        Draw_ColoredStretchPic(x + hud_use_button_x - 3 * vid.scale, y - 4 * vid.scale,
-          HUD_KeyIcon(hud_use_key),
-          16 * vid.scale, 16 * vid.scale, 255, 255, 255, 255);
+    if (hud_use_has_button && HUD_KeyHasIcon(hud_use_key))
+        HUD_DrawKeyIcon(x + hud_use_button_x - 3 * vid.scale, y - 4 * vid.scale,
+          hud_use_key, 16 * vid.scale, 255);
     else if (hud_use_has_button)
         Draw_ColoredString(x + hud_use_button_x, y, (char *) HUD_UseKeyLabel(hud_use_key),
           255, 255, 0, 255, vid.scale);
@@ -468,19 +552,19 @@ static void
 HUD_DrawWaypointBinding(int x, int y, const char * command, const char * action)
 {
     int key            = HUD_GetBoundKey(command);
-    image_t icon       = HUD_KeyIcon(key);
+    qboolean has_icon  = HUD_KeyHasIcon(key);
     const char * label = HUD_UseKeyLabel(key);
     char text[128];
     int bind_x;
 
-    if (icon >= 0)
+    if (has_icon)
         snprintf(text, sizeof(text), "Press    to %s", action);
     else
         snprintf(text, sizeof(text), "Press %s to %s", label, action);
     Draw_ColoredString(x, y, text, 255, 255, 255, 255, vid.scale);
     bind_x = x + getTextWidth("Press ", vid.scale);
-    if (icon >= 0)
-        Draw_StretchPic(bind_x, y - 3 * vid.scale, icon, 13 * vid.scale, 13 * vid.scale);
+    if (has_icon)
+        HUD_DrawKeyIcon(bind_x, y - 3 * vid.scale, key, 13 * vid.scale, 255);
     else
         Draw_ColoredString(bind_x, y, (char *) label, 255, 255, 0, 255, vid.scale);
 }
@@ -547,6 +631,10 @@ HUD_Init(void)
     hud_sniper_scope = Image_LoadImage("gfx/hud/scope_nb", IMAGE_TGA, 0, true, false);
     hud_hitmarker    = Image_LoadImage("gfx/hud/hit_marker", IMAGE_TGA, 0, true, false);
 
+#ifdef PLATFORM_USES_GENERIC_GLYPHS
+    Cvar_RegisterVariable(&cl_controllerglyphs);
+    HUD_KeyIcon(K_BOTTOMFACE);
+#else
     b_rightface  = Image_LoadImage("gfx/butticons/rightface", IMAGE_TGA, 0, true, false);
     b_leftface   = Image_LoadImage("gfx/butticons/leftface", IMAGE_TGA, 0, true, false);
     b_bottomface = Image_LoadImage("gfx/butticons/bottomface", IMAGE_TGA, 0, true, false);
@@ -562,6 +650,7 @@ HUD_Init(void)
     b_start      = Image_LoadImage("gfx/butticons/start", IMAGE_TGA, 0, true, false);
     b_select     = Image_LoadImage("gfx/butticons/select", IMAGE_TGA, 0, true, false);
     b_home       = Image_LoadImage("gfx/butticons/home", IMAGE_TGA, 0, true, false);
+#endif
 
     fx_blood_lu = Image_LoadImage("gfx/hud/blood", IMAGE_TGA, 0, true, false);
 
@@ -1800,10 +1889,12 @@ HUD_BettyPrompt(void)
 
     Draw_ColoredStringCentered(60 * vid.scale, str, 255, 255, 255, 255, vid.scale);
     Draw_ColoredStringCentered(72 * vid.scale, str2, 255, 255, 255, 255, vid.scale);
-    Draw_Pic(x + getTextWidth("Double-tap  ", vid.scale) - 4 * vid.scale,
-      60 * vid.scale, GetButtonIcon("+use"));
-    Draw_Pic(x + getTextWidth("Double-tap     then press   ", vid.scale) - 4 * vid.scale,
-      60 * vid.scale, GetButtonIcon("+grenade"));
+    if (GetButtonIcon("+use") >= 0)
+        HUD_DrawCommandIcon(x + getTextWidth("Double-tap  ", vid.scale) - 4 * vid.scale,
+          60 * vid.scale, "+use", 12 * vid.scale, 255);
+    if (GetButtonIcon("+grenade") >= 0)
+        HUD_DrawCommandIcon(x + getTextWidth("Double-tap     then press   ", vid.scale) - 4 * vid.scale,
+          60 * vid.scale, "+grenade", 12 * vid.scale, 255);
 }
 
 /*
@@ -2096,7 +2187,7 @@ HUD_Crosshair(void)
     static float opacity   = 255;
     int weapon = cl.stats[STAT_ACTIVEWEAPON];
     int color  = sv_player && sv_player->v.facingenemy ? 0 : 255;
-    int spread, maxspread, thickness, length;
+    int spread, pixel_spread, maxspread, thickness, length;
     int cx = vid.width / 2;
     int cy = vid.height / 2;
     qboolean moving = croshhairmoving || fabsf(cl.velocity[0]) > 1 || fabsf(cl.velocity[1]) > 1;
@@ -2148,17 +2239,17 @@ HUD_Crosshair(void)
         if ((int) crosshair.value == 1 && spread > maxspread) spread = maxspread;
         if (sv_player->v.view_ofs[2] == 8) spread *= 0.80f;
         else if (sv_player->v.view_ofs[2] == -10) spread *= 0.65f;
-        spread *= 1.875f;
         crosshair_offset_step += (spread - crosshair_offset_step) * ((int) crosshair.value == 4 ? 0.05f : 0.5f);
         spread = (int) crosshair_offset_step;
+        pixel_spread = (int) (spread * vid.scale);
         if (cl_crosshairdot.value && (int) crosshair.value == 1) {
             int dot = vid.scale >= 1 ? (int) vid.scale : 1;
             Draw_FillByColor(cx - dot / 2, cy - dot / 2, dot, dot, 255, color, color, opacity);
         }
-        Draw_FillByColor(cx - thickness / 2, cy - spread - length, thickness, length, 255, color, color, opacity);
-        Draw_FillByColor(cx - thickness / 2, cy + spread, thickness, length, 255, color, color, opacity);
-        Draw_FillByColor(cx - spread - length, cy - thickness / 2, length, thickness, 255, color, color, opacity);
-        Draw_FillByColor(cx + spread, cy - thickness / 2, length, thickness, 255, color, color, opacity);
+        Draw_FillByColor(cx - thickness / 2, cy - pixel_spread - length, thickness, length, 255, color, color, opacity);
+        Draw_FillByColor(cx - thickness / 2, cy + pixel_spread, thickness, length, 255, color, color, opacity);
+        Draw_FillByColor(cx - pixel_spread - length, cy - thickness / 2, length, thickness, 255, color, color, opacity);
+        Draw_FillByColor(cx + pixel_spread, cy - thickness / 2, length, thickness, 255, color, color, opacity);
     } else if ((int) crosshair.value == 2) {
         Draw_CharacterRGBA(cx - 4 * vid.scale, cy - 4 * vid.scale, 'O', 255, color, color, opacity, vid.scale);
     } else if ((int) crosshair.value == 3) {

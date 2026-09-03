@@ -214,7 +214,7 @@ static void LoadingScreen_DrawSkipPrompt(double elapsed)
 	Draw_ColoredString(prompt_x, prompt_y, "Press ", 255, 255, 255, alpha, vid.scale);
 
 	if (confirm_icon > 0)
-		Draw_ColoredStretchPic(prompt_x + press_width, prompt_y - (2 * vid.scale), confirm_icon, middle_width, middle_width, 255, 255, 255, alpha);
+		HUD_DrawKeyIcon(prompt_x + press_width, prompt_y - (2 * vid.scale), MENU_KEY_CONFIRM, middle_width, alpha);
 	else
 		Draw_ColoredString(prompt_x + press_width, prompt_y, (char *)confirm_name, 255, 255, 0, alpha, vid.scale);
 

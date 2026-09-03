@@ -4,6 +4,9 @@
 extern int mouse_dx;
 extern int mouse_dy;
 
+qboolean IN_PlatformHasMouse(void) { return true; }
+qboolean IN_PlatformHasGamepad(void) { return true; }
+
 void IN_SetMouseToRelative(bool relative)
 {
 	if (relative)
@@ -18,7 +21,7 @@ void IN_PlatformClearPendingInput(void)
 	mouse_dy = 0;
 }
 
-void IN_Move(usercmd_t *cmd)
+void IN_PlatformMouseMove(usercmd_t *cmd)
 {
 	(void)cmd;
 
@@ -30,5 +33,53 @@ void IN_Move(usercmd_t *cmd)
 		if (cl.viewangles[PITCH] > 80) cl.viewangles[PITCH] = 80;
 		if (cl.viewangles[PITCH] < -70) cl.viewangles[PITCH] = -70;
 		mouse_dx = mouse_dy = 0;
+	}
+}
+
+static SDL_GameController *sdl_controller;
+
+void IN_PlatformInit(void)
+{
+	int i;
+	Cvar_SetValue("in_anub_mode", 1);
+	for (i = 0; i < SDL_NumJoysticks(); ++i) {
+		if (SDL_IsGameController(i)) {
+			sdl_controller = SDL_GameControllerOpen(i);
+			if (sdl_controller) break;
+		}
+	}
+}
+
+void IN_PlatformShutdown(void)
+{
+	if (sdl_controller) SDL_GameControllerClose(sdl_controller);
+	sdl_controller = NULL;
+}
+
+void IN_PlatformCommands(void) {}
+void IN_PlatformMove(usercmd_t *cmd) { (void)cmd; }
+
+void IN_GetAnalogStick(in_analog_stick_id_t stick, in_analog_stick_t *value)
+{
+	SDL_GameControllerAxis xaxis = stick == IN_STICK_LEFT ? SDL_CONTROLLER_AXIS_LEFTX : SDL_CONTROLLER_AXIS_RIGHTX;
+	SDL_GameControllerAxis yaxis = stick == IN_STICK_LEFT ? SDL_CONTROLLER_AXIS_LEFTY : SDL_CONTROLLER_AXIS_RIGHTY;
+	value->x = value->y = 0.0f;
+	if (!sdl_controller) return;
+	value->x = SDL_GameControllerGetAxis(sdl_controller, xaxis) / 32767.0f;
+	value->y = -SDL_GameControllerGetAxis(sdl_controller, yaxis) / 32767.0f;
+}
+
+void IN_SDLControllerAdded(int device_index)
+{
+	if (!sdl_controller && SDL_IsGameController(device_index))
+		sdl_controller = SDL_GameControllerOpen(device_index);
+}
+
+void IN_SDLControllerRemoved(SDL_JoystickID instance_id)
+{
+	if (sdl_controller && SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(sdl_controller)) == instance_id) {
+		SDL_GameControllerClose(sdl_controller);
+		sdl_controller = NULL;
+		IN_PlatformInit();
 	}
 }
