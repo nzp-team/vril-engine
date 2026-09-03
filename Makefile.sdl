@@ -11,7 +11,7 @@ TARGET ?= $(BUILD)/nzportable
 DATA_DIR ?= build/data
 CPPFLAGS := -Isource -I$(BUILD) -DGLQUAKE -DPLATFORM_SDL -DPLATFORM_CONFIRM_IS_ENTER \
 			-DGL_SILENCE_DEPRECATION -DPLATFORM_DIRECTORY=sdl -DPLATFORM_RENDERER=gl \
-			-DMAX_AI_COUNT=24 -DPLATFORM_USES_GENERIC_GLYPHS
+			-DMAX_AI_COUNT=24 -DPLATFORM_USES_GENERIC_GLYPHS -DPLATFORM_SUPPORTS_HIGH_FRAMERATES
 CFLAGS ?= -O2 -g
 CFLAGS += -std=gnu99 -Wall -Wno-unused-variable -Wno-unused-but-set-variable $(shell $(PKG_CONFIG) --cflags sdl2 | sed 's/-Dmain=SDL_main//')
 ifneq ($(findstring clang,$(shell $(CC) --version)),)

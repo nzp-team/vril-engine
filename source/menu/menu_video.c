@@ -175,7 +175,11 @@ void Menu_Video_Draw (void)
 
     // Max FPS
     Menu_DrawButton (2, video_items++, "MAX FPS", "Sets the max FPS Value.", NULL);
+#ifdef PLATFORM_SUPPORTS_HIGH_FRAMERATES
+    Menu_DrawOptionSlider (2, video_items-1, 5, 500, cl_maxfps, "cl_maxfps", true, true, 5.0f);
+#else
     Menu_DrawOptionSlider (2, video_items-1, 5, 60, cl_maxfps, "cl_maxfps", true, true, 5.0f);
+#endif // PLATFORM_SUPPORTS_HIGH_FRAMERATES
 
     // Field of View
     Menu_DrawButton (3, video_items++, "FIELD OF VIEW", "Change Camera Field of View", NULL);
