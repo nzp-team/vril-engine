@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../nzportable_def.h"
 
+#include <stdint.h>
+
 dprograms_t		*progs;
 dfunction_t		*pr_functions;
 dstatement_t	*pr_statements;
@@ -1520,9 +1522,14 @@ char *PR_GetString(int num)
 
 int PR_SetString(char *s) 
 {
+	uintptr_t address = (uintptr_t)s;
+	uintptr_t strings_address = (uintptr_t)pr_strings;
+	uintptr_t offset;
     int i;
 
-    if (s - pr_strings < 0 || s - pr_strings > pr_strings_size - 2) {
+	if (pr_strings_size < 2
+		|| address < strings_address
+		|| (offset = address - strings_address) > (uintptr_t)(pr_strings_size - 2)) {
         for (i = 0; i < num_prstr; i++)
             if (pr_strtbl[i] == s) break;
         if (i < num_prstr) return -i - 1;
@@ -1534,5 +1541,5 @@ int PR_SetString(char *s)
         num_prstr++;
         return -num_prstr;
     }
-    return (int)(s - pr_strings);
+	return (int)offset;
 }
