@@ -119,19 +119,14 @@ jobs:
         run: |
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
           make -f Makefile.sdl WERROR=1 -j$(nproc) \
-            CROSS_COMPILE="${TRIPLET}-"
+            CROSS_COMPILE="${TRIPLET}-" \
             BUILD="build/sdl/${ARCH}" \
-            TARGET="build/sdl/${ARCH}/nzportable.exe"
-      - name: Add DLLs to distributables
-        run: |
-          mkdir -p dist
-          cp build/sdl/nzportable.exe dist/
-          cp /opt/mingw-deps/bin/*.dll dist/
+            TARGET="build/sdl/${ARCH}/nzportable.exe" \
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-${{ matrix.arch }}-nzp-sdl
-          path: dist/
+          path: ./build/sdl/${{ matrix.arch }}/nzportable.exe
   Compile-EBOOT:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest

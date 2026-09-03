@@ -1,5 +1,10 @@
 #include "../../nzportable_def.h"
 
+// when statically linking this on windows,
+// our sdl version already provides this.. so on windows,
+// we can simply ignore this or the compiler blows up, which is fine
+// because functionally it is the same
+#if !defined(_WIN32)
 size_t SDL_strlcpy(char *dst, const char *src, size_t size)
 {
 	size_t length = strlen(src);
@@ -17,3 +22,4 @@ size_t SDL_strlcat(char *dst, const char *src, size_t size)
 	if (used == size) return size + strlen(src);
 	return used + SDL_strlcpy(dst + used, src, size - used);
 }
+#endif
