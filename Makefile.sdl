@@ -24,7 +24,18 @@ endif
 LDLIBS := $(shell $(PKG_CONFIG) --libs sdl2) -lSDL2_mixer -lm
 TARGET_TRIPLE := $(shell $(CC) -dumpmachine)
 ifneq ($(findstring mingw,$(TARGET_TRIPLE)),)
-LDLIBS += -lopengl32 -lglu32 -lws2_32
+LDLIBS += -static \
+	-lopengl32 \
+	-lglu32 \
+	-lws2_32 \
+	-lsetupapi \
+	-lole32 \
+	-loleaut32 \
+	-limm32 \
+	-lversion \
+	-lcfgmgr32 \
+	-lwinmm \
+	-luuid
 else ifeq ($(shell uname -s),Darwin)
 LDLIBS += -framework OpenGL
 else
