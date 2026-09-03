@@ -487,10 +487,12 @@ void CL_ParseServerInfo (void)
 // local state
 	cl_entities[0].model = cl.worldmodel = cl.model_precache[1];
 
-	R_NewMap ();
+	if (!vid_headless)
+		R_NewMap ();
 
 	Hunk_Check ();		// make sure nothing is hurt
-	HUD_NewMap ();
+	if (!vid_headless)
+		HUD_NewMap ();
 	LoadingScreen_MarkPrecacheComplete();
 
 	noclip_anglehack = false;		// noclip is turned off at start

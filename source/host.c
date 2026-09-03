@@ -21,6 +21,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "nzportable_def.h"
 
+#ifdef PLATFORM_SDL
+extern qboolean sdl_running;
+#endif
+
 #ifdef __PSP__
 #include "platform/psp/thread.h"
 #include <pspsysevent.h>
@@ -57,6 +61,8 @@ byte		*host_colormap;
 
 cvar_t	host_framerate = {"host_framerate","0"};	// set for slow motion
 cvar_t	host_speeds = {"host_speeds","0"};			// set for running times
+cvar_t	vid_renderer = {"vid_renderer", "gl"};
+qboolean vid_headless;
 
 cvar_t	sys_ticrate = {"sys_ticrate","0.05"};
 cvar_t	serverprofile = {"serverprofile","0"};
@@ -150,11 +156,19 @@ Host_FindMaxClients
 void	Host_FindMaxClients (void)
 {
 	int		i;
+	int		renderer;
 
 	svs.maxclients = 1;
 
 	i = COM_CheckParm ("-dedicated");
-	if (i)
+	renderer = COM_CheckParm ("+vid_renderer");
+	vid_headless = renderer && renderer + 1 < com_argc
+		&& !Q_strcasecmp(com_argv[renderer + 1], "headless");
+	if (!i && vid_headless)
+	{
+		cls.state = ca_disconnected;
+	}
+	else if (i)
 	{
 		cls.state = ca_dedicated;
 		if (i != (com_argc - 1))
@@ -205,6 +219,7 @@ void Host_InitLocal (void)
 
 	Cvar_RegisterVariable (&host_framerate);
 	Cvar_RegisterVariable (&host_speeds);
+	Cvar_RegisterVariable (&vid_renderer);
 
 	Cvar_RegisterVariable (&sys_ticrate);
 	Cvar_RegisterVariable (&serverprofile);
@@ -628,6 +643,10 @@ void _Host_Frame (float time)
 
 // process console commands
 	Cbuf_Execute ();
+#ifdef PLATFORM_SDL
+	if (!sdl_running)
+		return;
+#endif
 
 	NET_Poll();
 
@@ -645,6 +664,10 @@ void _Host_Frame (float time)
 	Host_GetConsoleCommands ();
 	if (sv.active)
 		Host_ServerFrame ();
+#ifdef PLATFORM_SDL
+	if (!sdl_running)
+		return;
+#endif
 //-------------------
 //
 // client operations
@@ -871,29 +894,30 @@ void Host_Init (quakeparms_t *parms)
 	R_InitTextures ();		// needed even for dedicated servers
 	if (cls.state != ca_dedicated)
 	{
-		host_basepal = (byte *)COM_LoadHunkFile ("gfx/palette.lmp");
-		if (!host_basepal)
-			Sys_Error ("Couldn't load gfx/palette.lmp");
+		if (!vid_headless)
+		{
+			host_basepal = (byte *)COM_LoadHunkFile ("gfx/palette.lmp");
+			if (!host_basepal)
+				Sys_Error ("Couldn't load gfx/palette.lmp");
 
-		host_colormap = (byte *)COM_LoadHunkFile ("gfx/colormap.lmp");
-		if (!host_colormap)
-			Sys_Error ("Couldn't load gfx/colormap.lmp");
+			host_colormap = (byte *)COM_LoadHunkFile ("gfx/colormap.lmp");
+			if (!host_colormap)
+				Sys_Error ("Couldn't load gfx/colormap.lmp");
 
-		VID_Init (host_basepal);
-		Draw_Init ();
-		SCR_Init ();
-		R_Init ();
-		HUD_Init ();
-		// Moved to after VID_Init to get screen width/height
-		// in order to set menu scaling
-		// and after HUD_Init to get button pics
-		Menu_Init ();
-		S_Init ();
-		Music_Init ();
+			VID_Init (host_basepal);
+			Draw_Init ();
+			SCR_Init ();
+			R_Init ();
+			HUD_Init ();
+			Menu_Init ();
+			S_Init ();
+			Music_Init ();
+		}
 		CL_Init ();
 		IN_Init ();
 	}
-	Preload();
+	if (cls.state != ca_dedicated && !vid_headless)
+		Preload();
 	Cbuf_InsertText ("exec nzp.rc\n");
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
@@ -903,7 +927,8 @@ void Host_Init (quakeparms_t *parms)
 #ifdef __WII__
 	VIDEO_SetBlack(false);
 #endif
-	Menu_Main_Set();
+	if (cls.state != ca_dedicated && !vid_headless)
+		Menu_Main_Set();
 	Sys_Printf ("========Nazi Zombies Portable Initialized=========\n");	
 }
 

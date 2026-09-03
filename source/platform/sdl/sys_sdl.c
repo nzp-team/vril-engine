@@ -16,6 +16,17 @@ static FILE *sys_handles[MAX_HANDLES];
 qboolean isDedicated;
 qboolean sdl_running = true;
 
+static qboolean SDL_ArgumentsRequestHeadless(int argc, char **argv)
+{
+	int i;
+
+	for (i = 1; i + 1 < argc; ++i)
+		if (!strcmp(argv[i], "+vid_renderer") &&
+			!Q_strcasecmp(argv[i + 1], "headless"))
+			return true;
+	return false;
+}
+
 static int Sys_FindHandle(void)
 {
 	int i;
@@ -82,7 +93,7 @@ void Sys_MakeCodeWriteable(unsigned long startaddr, unsigned long length) { (voi
 
 void Sys_PrintSystemInfo(void) { Con_Printf("Vril Engine SDL (%s)\n", SDL_GetPlatform()); }
 void Sys_Printf(char *fmt, ...) { va_list args; va_start(args, fmt); vfprintf(stdout, fmt, args); va_end(args); }
-void Sys_SystemError(char *error) { fprintf(stderr, "Vril Engine: %s\n", error); SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Vril Engine", error, sdl_window); SDL_Quit(); exit(1); }
+void Sys_SystemError(char *error) { fprintf(stderr, "Vril Engine: %s\n", error); if (SDL_WasInit(SDL_INIT_VIDEO)) SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Vril Engine", error, sdl_window); SDL_Quit(); exit(1); }
 void Sys_Quit(void) { sdl_running = false; }
 double Sys_FloatTime(void) { static Uint64 start; Uint64 now = SDL_GetPerformanceCounter(); if (!start) start = now; return (double)(now - start) / SDL_GetPerformanceFrequency(); }
 char *Sys_ConsoleInput(void) { return NULL; }
@@ -247,6 +258,8 @@ void Sys_SendKeyEvents(void)
 {
 	SDL_Event event;
 	static qboolean trigger_down[2];
+	if (!SDL_WasInit(SDL_INIT_EVENTS))
+		return;
 	while (SDL_PollEvent(&event)) {
 		int key;
 		switch (event.type) {
@@ -343,7 +356,8 @@ int main(int argc, char **argv)
 		Startup_FreeArguments(&startup);
 		return 1;
 	}
-	headless_test = TestHandler_ArgumentsAllowHeadless(startup.argc, startup.argv);
+	headless_test = TestHandler_ArgumentsAllowHeadless(startup.argc, startup.argv) ||
+		SDL_ArgumentsRequestHeadless(startup.argc, startup.argv);
 	if (SDL_Init(headless_test ? SDL_INIT_TIMER :
 		(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER)) != 0) {
 		fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());

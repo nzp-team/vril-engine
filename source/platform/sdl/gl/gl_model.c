@@ -410,6 +410,11 @@ void Mod_LoadTextures (lump_t *l)
 		for (j=0 ; j<MIPLEVELS ; j++)
 			tx->offsets[j] = mt->offsets[j] + sizeof(texture_t) - sizeof(miptex_t);
 		
+		if (cls.state == ca_dedicated || vid_headless)
+		{
+			loading_cur_step++;
+			continue;
+		}
 
 		if (loadmodel->bspversion != HL_BSPVERSION && !strncmp(mt->name,"sky",3)) {	
 			R_InitSky (mt);
@@ -1645,6 +1650,22 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 		Sys_Error ("Invalid # of skins: %d\n", numskins);
 
 	s = pheader->skinwidth * pheader->skinheight;
+	if (cls.state == ca_dedicated || vid_headless)
+	{
+		for (i = 0; i < numskins; ++i)
+		{
+			if (pskintype->type == ALIAS_SKIN_SINGLE)
+				pskintype = (daliasskintype_t *)((byte *)(pskintype + 1) + s);
+			else
+			{
+				pinskingroup = (daliasskingroup_t *)(pskintype + 1);
+				groupskins = LittleLong(pinskingroup->numskins);
+				pinskinintervals = (daliasskininterval_t *)(pinskingroup + 1);
+				pskintype = (daliasskintype_t *)((byte *)(pinskinintervals + groupskins) + s * groupskins);
+			}
+		}
+		return pskintype;
+	}
 
 	//
 	// General texture override stuff.
@@ -1954,16 +1975,17 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	pspriteframe->left = origin[0];
 	pspriteframe->right = width + origin[0];
 
-	// HACK HACK HACK
-	snprintf(name, 128, "%s.spr_%i", loadmodel->name, framenum);
-
-	COM_StripExtension(loadmodel->name, sprite);
-	snprintf(sprite2, 128, "%s.spr_%i", sprite, framenum);
-	pspriteframe->gl_texturenum = Image_LoadImage(sprite2, IMAGE_TGA, 0, true, false);
-
-	if (pspriteframe->gl_texturenum < 0) // did not find a matching TGA...
+	if (cls.state != ca_dedicated && !vid_headless)
 	{
-		pspriteframe->gl_texturenum = GL_LoadTexture (sprite2, width, height, (byte *)(pinframe + 1), false, true, 1, true);
+		// HACK HACK HACK
+		snprintf(name, 128, "%s.spr_%i", loadmodel->name, framenum);
+
+		COM_StripExtension(loadmodel->name, sprite);
+		snprintf(sprite2, 128, "%s.spr_%i", sprite, framenum);
+		pspriteframe->gl_texturenum = Image_LoadImage(sprite2, IMAGE_TGA, 0, true, false);
+
+		if (pspriteframe->gl_texturenum < 0) // did not find a matching TGA...
+			pspriteframe->gl_texturenum = GL_LoadTexture (sprite2, width, height, (byte *)(pinframe + 1), false, true, 1, true);
 	}
 
 	return (void *)((byte *)pinframe + sizeof (dspriteframe_t) + size);
