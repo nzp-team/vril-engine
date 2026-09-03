@@ -10,3 +10,5 @@ extern qboolean sdl_running;
 void IN_SDLControllerAdded(int device_index);
 void IN_SDLControllerRemoved(SDL_JoystickID instance_id);
 void VID_SDLResize(void);
+void VID_SetFullscreen(qboolean fullscreen);
+void VID_SetVSync(qboolean vsync);

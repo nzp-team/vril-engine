@@ -27,6 +27,14 @@ char* particles_string;
 char* retro_string;
 char* dithering_string;
 char* ultrawide_string;
+#ifdef PLATFORM_SUPPORTS_VIDEO_OPTIONS
+char* fullscreen_string;
+char* vsync_string;
+extern cvar_t vid_fullscreen;
+extern cvar_t r_vsync;
+void VID_SetFullscreen(qboolean fullscreen);
+void VID_SetVSync(qboolean vsync);
+#endif
 
 qboolean platform_supports_dithering;
 
@@ -92,6 +100,18 @@ void Menu_Video_ApplyUltrawide (void)
     Cvar_SetValue ("vid_ultrawide_limiter", !vid_ultrawide_limiter.value);
 }
 
+#ifdef PLATFORM_SUPPORTS_VIDEO_OPTIONS
+void Menu_Video_ApplyFullscreen (void)
+{
+    VID_SetFullscreen(!vid_fullscreen.value);
+}
+
+void Menu_Video_ApplyVSync (void)
+{
+    VID_SetVSync(!r_vsync.value);
+}
+#endif
+
 void Menu_Configuration_ApplySettings (void)
 {
     // no op
@@ -148,6 +168,11 @@ void Menu_Video_SetStrings (void)
     } else {
         ultrawide_string = "DISABLED";
     }
+
+#ifdef PLATFORM_SUPPORTS_VIDEO_OPTIONS
+    fullscreen_string = vid_fullscreen.value ? "ENABLED" : "DISABLED";
+    vsync_string = r_vsync.value ? "ENABLED" : "DISABLED";
+#endif
 }
 
 /*
@@ -206,6 +231,14 @@ void Menu_Video_Draw (void)
         Menu_DrawButton (8, video_items++, "DITHERING", "Toggle Decrease in Color Banding", Menu_Video_ApplyDithering);
         Menu_DrawOptionButton (8, dithering_string);
     }
+
+#ifdef PLATFORM_SUPPORTS_VIDEO_OPTIONS
+    Menu_DrawButton (8, video_items++, "FULLSCREEN", "Toggle desktop fullscreen mode.", Menu_Video_ApplyFullscreen);
+    Menu_DrawOptionButton (8, fullscreen_string);
+
+    Menu_DrawButton (9, video_items++, "VSYNC", "Synchronize frames to the display refresh rate.", Menu_Video_ApplyVSync);
+    Menu_DrawOptionButton (9, vsync_string);
+#endif
 
     Menu_DrawDivider(-2.5);
 	Menu_DrawButton(-2, video_items++, "APPLY", "Save & Apply Settings.", Menu_Configuration_ApplySettings);
