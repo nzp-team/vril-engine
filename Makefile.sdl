@@ -14,7 +14,7 @@ CPPFLAGS := -Isource -I$(BUILD) -DGLQUAKE -DPLATFORM_SDL -DPLATFORM_CONFIRM_IS_E
 			-DMAX_AI_COUNT=24 -DPLATFORM_USES_GENERIC_GLYPHS -DPLATFORM_SUPPORTS_HIGH_FRAMERATES \
 			-DPLATFORM_SUPPORTS_VIDEO_OPTIONS
 CFLAGS ?= -O2 -g
-CFLAGS += -std=gnu99 -Wall -Wno-unused-variable -Wno-unused-but-set-variable $(shell $(PKG_CONFIG) --cflags sdl2 | sed 's/-Dmain=SDL_main//')
+CFLAGS += -std=gnu99 -Wall -fno-strict-aliasing -Wno-unused-variable -Wno-unused-but-set-variable $(shell $(PKG_CONFIG) --cflags sdl2 | sed 's/-Dmain=SDL_main//')
 ifneq ($(findstring clang,$(shell $(CC) --version)),)
 CFLAGS += -Wno-unknown-warning-option -Wno-unknown-pragmas
 endif
