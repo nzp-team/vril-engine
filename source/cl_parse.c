@@ -1168,6 +1168,7 @@ void CL_ParseServerMessage (void)
 {
 	int			cmd;
 	int			i;
+	int			useprint_cost;
 	int			useprint_index;
 	int			useprint_red, useprint_green, useprint_blue;
 	char		useprint_text[256];
@@ -1248,7 +1249,9 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_useprint:
-			HUD_UsePrint (MSG_ReadByte (), MSG_ReadShort ());
+			useprint_index = MSG_ReadByte ();
+			useprint_cost = MSG_ReadShort ();
+			HUD_UsePrint (useprint_index, useprint_cost);
 			break;
 		case svc_registeruseprint:
 			useprint_index = MSG_ReadByte ();
