@@ -91,10 +91,12 @@ void VID_SetVSync(qboolean vsync)
 
 void GL_EndRendering(void)
 {
-	if (!!vid_fullscreen.value != sdl_fullscreen)
-		VID_SetFullscreen(!!vid_fullscreen.value);
-	if (!!r_vsync.value != sdl_vsync)
-		VID_SetVSync(!!r_vsync.value);
+	int fullscreen = vid_fullscreen.value != 0.0f;
+	int vsync = r_vsync.value != 0.0f;
+	if (fullscreen != sdl_fullscreen)
+		VID_SetFullscreen(fullscreen);
+	if (vsync != sdl_vsync)
+		VID_SetVSync(vsync);
 	SDL_GL_SwapWindow(sdl_window);
 }
 
