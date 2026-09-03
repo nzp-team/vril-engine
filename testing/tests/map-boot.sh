@@ -17,6 +17,7 @@ PLATFORM="$1"
 CONTENT_DIR="$2"
 MODE="$3"
 WORKING_DIR="$4"
+REFERENCE_PLATFORM="$5"
 
 source "setup/${PLATFORM}.sh"
 
@@ -31,7 +32,7 @@ function run_mapboot_test()
 
     local any_map_failed="0"
     local working_dir="${WORKING_DIR}"
-    local content_path="${CONTENT_DIR}/${PLATFORM}${MODE:+-$MODE}"
+    local content_path="${CONTENT_DIR}/${REFERENCE_PLATFORM}${MODE:+-$MODE}"
     local captured_image="$(capture_path)"
     local launch_log="${WORKING_DIR}/launch.log"
     local failed_maps=()

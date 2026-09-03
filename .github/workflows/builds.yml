@@ -61,6 +61,77 @@ jobs:
         with:
           name: linux-${{ matrix.arch }}-nzp-sdl
           path: ./build/sdl/${{ matrix.arch }}/nzportable
+  Compile-Windows:
+    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
+    name: Compile Windows (${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86
+            triplet: i686-w64-mingw32
+          - arch: x86_64
+            triplet: x86_64-w64-mingw32
+    container:
+      image: debian:12
+    steps:
+      - name: Install cross toolchain
+        env:
+          COMPILER: ${{ matrix.compiler }}
+        run: |
+          apt-get update
+          apt-get install -y \
+            make \
+            git \
+            pkg-config \
+            mingw-w64-tools \
+            wget \
+            tar \
+            "${{ matrix.arch == 'x86' && 'gcc-mingw-w64-i686' || 'gcc-mingw-w64-x86-64' }}"
+      - name: Install Windows SDL dependencies
+        env:
+          TRIPLET: ${{ matrix.triplet }}
+          SDL2_VER: 2.32.10
+          SDL2_MIXER_VER: 2.8.2
+        run: |
+          mkdir -p /opt/mingw-deps
+          cd /tmp
+          # get the latest SDL2 version
+          wget -q https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VER}/SDL2-devel-${SDL2_VER}-mingw.tar.gz
+          tar xf SDL2-devel-${SDL2_VER}-mingw.tar.gz
+          cp -r SDL2-${SDL2_VER}/${TRIPLET}/* /opt/mingw-deps/
+          # get the latest SDL2_Mixer version
+          wget -q https://github.com/libsdl-org/SDL_mixer/releases/download/release-${SDL2_MIXER_VER}/SDL2_mixer-devel-${SDL2_MIXER_VER}-mingw.tar.gz
+          tar xf SDL2_mixer-devel-${SDL2_MIXER_VER}-mingw.tar.gz
+          cp -r SDL2_mixer-${SDL2_MIXER_VER}/${TRIPLET}/* /opt/mingw-deps/
+          # the upstream .pc files hardcode an absolute value build-server path..
+          # we have to rewrite it to our actual extraction location
+          sed -i "s|^prefix=.*|prefix=/opt/mingw-deps|" /opt/mingw-deps/lib/pkgconfig/*.pc
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build
+        env:
+          ARCH: ${{ matrix.arch }}
+          TRIPLET: ${{ matrix.triplet }}
+          PKG_CONFIG_PATH: /opt/mingw-deps/lib/pkgconfig
+          PKG_CONFIG_LIBDIR: /opt/mingw-deps/lib/pkgconfig
+        run: |
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          make -f Makefile.sdl WERROR=1 -j$(nproc) \
+            CROSS_COMPILE="${TRIPLET}-"
+            BUILD="build/sdl/${ARCH}" \
+            TARGET="build/sdl/${ARCH}/nzportable.exe"
+      - name: Add DLLs to distributables
+        run: |
+          mkdir -p dist
+          cp build/sdl/nzportable.exe dist/
+          cp /opt/mingw-deps/bin/*.dll dist/
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}-nzp-sdl
+          path: dist/
   Compile-EBOOT:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
@@ -309,6 +380,70 @@ jobs:
             echo "[Failure Artifact](${ARTIFACT_URL})"
             echo ""
           } >> "${GITHUB_STEP_SUMMARY}"
+  Pull-Request-Test-Windows:
+    if: github.event_name == 'pull_request'
+    name: Windows ${{ matrix.arch }} Pull Request Tests
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86
+            runner: ubuntu-24.04
+            native_arch: amd64
+            deb_arch: i386
+          - arch: x86_64
+            runner: ubuntu-24.04
+            native_arch: amd64
+            deb_arch: amd64
+    runs-on: ${{ matrix.runner }}
+    container:
+      image: debian:12
+      options: --shm-size=8192m
+    needs: [Compile-Windows]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}-nzp-sdl
+          path: testing/working/windows-artifact
+      - name: Install compatibility libraries
+        if: matrix.deb_arch != matrix.native_arch
+        env:
+          DEB_ARCH: ${{ matrix.deb_arch }}
+        run: |
+          dpkg --add-architecture "${DEB_ARCH}"
+          apt-get update
+          apt-get install -y \
+            "libgl1:${DEB_ARCH}" "libgl1-mesa-dri:${DEB_ARCH}" "libglu1-mesa:${DEB_ARCH}" \
+            "libsdl2-2.0-0:${DEB_ARCH}" "libsdl2-mixer-2.0-0:${DEB_ARCH}"
+      - name: Run All
+        run: |
+          cd ./testing
+          ./run_tests.sh --platform windows --test all --content "$(pwd)/validate" --working-dir working/ --binary "$(pwd)/working/windows-artifact/nzportable.exe" --reference-platform linux
+      - name: Upload Failure Artifact
+        id: windows_failure_artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}-pr-failures
+          path: testing/working/fail/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Add Failure Summary
+        if: failure() && steps.windows_failure_artifact.outputs.artifact-url != ''
+        env:
+          ARTIFACT_URL: ${{ steps.windows_failure_artifact.outputs.artifact-url }}
+        run: |
+          {
+            echo "## Windows ${{ matrix.arch }} PR Test Failed"
+            echo ""
+            cat testing/working/fail/summary.md
+            echo ""
+            echo "[Failure Artifact](${ARTIFACT_URL})"
+            echo ""
+          } >> "${GITHUB_STEP_SUMMARY}"
   Pull-Request-Test-PSP2000:
     if: github.event_name == 'pull_request'
     name: PSP-2000 Pull Request Tests
@@ -356,7 +491,7 @@ jobs:
   Unify-and-Release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: [Compile-Linux, Compile-EBOOT, Compile-3DSX, Compile-TNS, Compile-VPK, Compile-NRO]
+    needs: [Compile-Linux, Compile-Windows, Compile-EBOOT, Compile-3DSX, Compile-TNS, Compile-VPK, Compile-NRO]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -378,6 +513,8 @@ jobs:
           zip -r -j linux-x86_64-nzp-sdl.zip linux-x86_64-nzp-sdl/*
           zip -r -j linux-arm64-nzp-sdl.zip linux-arm64-nzp-sdl/*
           zip -r -j linux-armhf-nzp-sdl.zip linux-armhf-nzp-sdl/*
+          zip -r -j windows-x86-nzp-sdl.zip windows-x86-nzp-sdl/*
+          zip -r -j windows-x86_64-nzp-sdl.zip windows-x86_64-nzp-sdl/*
       - name: Generate Build Date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d-%H-%M-%S')"
@@ -397,7 +534,7 @@ jobs:
           tag_name: bleeding-edge
           release_name: Automated Release ${{ steps.date.outputs.date }}
           body: |
-            This is a **bleeding edge** NZ:P PSP/PSVITA/3DS/NSPIRE/Linux release, stability is not guarenteed.
+            This is a **bleeding edge** NZ:P PSP/PSVITA/3DS/NSPIRE/PC release, stability is not guarenteed.
 
             To install:
             - Grab the .ZIP archive for your platform
@@ -405,7 +542,7 @@ jobs:
             - PS VITA: Install `nzportable.vpk` using VitaShell.
             - 3DS: Extract `nzportable.3dsx` to `/3ds/nzportable/`.
             - NSPIRE: Sync `nzportable.tns` to `/`.
-            - Linux: Extract the archive for your CPU architecture and run `nzportable`.
+            - PC: Extract the archive for your CPU architecture and run `nzportable`.
           draft: true
           prerelease: false
       - name: Upload PSP Archive
@@ -488,6 +625,24 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./linux-armhf-nzp-sdl.zip
           asset_name: linux-armhf-nzp-sdl.zip
+          asset_content_type: application/zip
+      - name: Upload Windows x86 Archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./windows-x86-nzp-sdl.zip
+          asset_name: windows-x86-nzp-sdl.zip
+          asset_content_type: application/zip
+      - name: Upload Windows x86_64 Archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./windows-x86_64-nzp-sdl.zip
+          asset_name: windows-x86_64-nzp-sdl.zip
           asset_content_type: application/zip
       - name: Publish Release
         uses: StuYarrow/publish-release@v1

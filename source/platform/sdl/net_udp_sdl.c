@@ -18,14 +18,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 // net_udp.c
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
 
 #include "../../nzportable_def.h"
 #include "net_udp.h"
 
+#if !defined(_WIN32)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#endif
 
 #include <sys/fcntl.h>
 #include <unistd.h>
@@ -45,13 +52,35 @@ static unsigned long myAddr;
 
 int UDP_Init (void)
 {
+	#if defined(_WIN32)
+	WSADATA wsaData;
+
+	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+		return -1;
+	#endif
+
 	struct qsockaddr addr;
 	char *colon;
 
 	if (COM_CheckParm ("-noudp"))
 		return -1;
 
-	myAddr = gethostid();
+	#if defined(_WIN32)
+		{
+			char hostname[256];
+			struct hostent *hostentry;
+
+			gethostname(hostname, sizeof(hostname));
+
+			hostentry = gethostbyname(hostname);
+			if (hostentry && hostentry->h_addr_list[0])
+				myAddr = *(unsigned long *)hostentry->h_addr_list[0];
+			else
+				myAddr = inet_addr("127.0.0.1");
+		}
+	#else
+		myAddr = gethostid();
+	#endif
 
 	// if the quake hostname isn't set, set it to the machine name
 	if (strcmp(hostname.string, "UNNAMED") == 0)
@@ -121,9 +150,15 @@ int UDP_OpenSocket (int port)
 	if ((newsocket = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 		return -1;
 
+	#if defined(_WIN32)
+	u_long mode = 1;
+	if (ioctlsocket(newsocket, FIONBIO, &mode) != 0)
+		goto ErrorReturn;
+	#else
 	int flags = fcntl(newsocket, F_GETFL, 0);
 	if ( fcntl(newsocket, F_SETFL, flags | O_NONBLOCK) == -1)
 		goto ErrorReturn;
+	#endif
 
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -136,7 +171,11 @@ int UDP_OpenSocket (int port)
 	return newsocket;
 
 ErrorReturn:
+	#if defined(_WIN32)
+	closesocket(newsocket);
+	#else
 	close (newsocket);
+	#endif
 	return -1;
 }
 
@@ -237,7 +276,7 @@ int UDP_Read (int socket, byte *buf, int len, struct qsockaddr *addr)
 	int addrlen = sizeof (struct qsockaddr);
 	int ret;
 
-	ret = recvfrom (socket, buf, len, 0, (struct sockaddr *)addr, (socklen_t*)&addrlen);
+	ret = recvfrom(socket, (char *)buf, len, 0, (struct sockaddr *)addr, (socklen_t*)&addrlen);
 	if (ret == -1 )
 		return 0;
 	return ret;
@@ -248,8 +287,13 @@ int UDP_Read (int socket, byte *buf, int len, struct qsockaddr *addr)
 int UDP_MakeSocketBroadcastCapable (int socket)
 {
 	int enabled = 1;
+	#if defined(_WIN32)
+	if (setsockopt(socket, SOL_SOCKET, SO_BROADCAST, (const char *)&enabled, sizeof(enabled)) == SOCKET_ERROR)
+		return -1;
+	#else
 	if (setsockopt(socket, SOL_SOCKET, SO_BROADCAST, &enabled, sizeof(enabled)) == -1)
 		return -1;
+	#endif
 	net_broadcastsocket = socket;
 	return 0;
 }
@@ -282,7 +326,7 @@ int UDP_Write (int socket, byte *buf, int len, struct qsockaddr *addr)
 {
 	int ret;
 
-	ret = sendto (socket, buf, len, 0, (struct sockaddr *)addr, sizeof(struct qsockaddr));
+	ret = sendto (socket, (const char *)buf, len, 0, (struct sockaddr *)addr, sizeof(struct qsockaddr));
 	if (ret == -1 )
 		return 0;
 	return ret;

@@ -38,6 +38,7 @@ while true; do
         -g | --generate ) TEST="generate-source"; shift 1 ;;
         -c | --content ) CONTENT_DIR="$2"; shift 2 ;;
         -w | --working-dir ) WORKING_DIR="$2"; shift 2 ;;
+        -r | --reference-platform ) REFERENCE_PLATFORM="$2"; shift 2 ;;
         -m | --mode ) MODE="$2"; shift 2 ;;
         -h | --help ) print_help; exit 0 ;;
         -- ) shift; break ;;
@@ -111,7 +112,7 @@ function run_test()
             set +o errexit
             (
                 set -o errexit
-                source "./tests/${pretty_sh}.sh" "${PLATFORM}" "${CONTENT_DIR}" "${MODE}" "${WORKING_DIR}"
+                source "./tests/${pretty_sh}.sh" "${PLATFORM}" "${CONTENT_DIR}" "${MODE}" "${WORKING_DIR}" "${REFERENCE_PLATFORM}"
             )
             local test_status=$?
             set -o errexit
@@ -137,7 +138,7 @@ function run_test()
         rm -f "${combined_summary}" "${summary}"
     else
         echo "$(pwd)"
-        source "./tests/${TEST}.sh" "${PLATFORM}" "${CONTENT_DIR}" "${MODE}" "${WORKING_DIR}"
+        source "./tests/${TEST}.sh" "${PLATFORM}" "${CONTENT_DIR}" "${MODE}" "${WORKING_DIR}" "${REFERENCE_PLATFORM}"
     fi
 }
 
@@ -167,6 +168,11 @@ function main()
     # Default validation content if not set
     if [[ -z "${CONTENT_DIR}" ]]; then
         CONTENT_DIR="${dir}/validate"
+    fi
+
+    # Default reference platform to execute platform
+    if [[ -z "${REFERENCE_PLATFORM}" ]]; then
+        REFERENCE_PLATFORM="${PLATFORM}"
     fi
     
     # Default working dir if not set
