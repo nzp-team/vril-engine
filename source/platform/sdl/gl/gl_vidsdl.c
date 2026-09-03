@@ -44,6 +44,24 @@ void GL_BeginRendering(int *x, int *y, int *width, int *height)
 	sdl_window_height = *height;
 }
 
+void VID_SDLResize(void)
+{
+	int width, height;
+	if (!sdl_window) return;
+	SDL_GL_GetDrawableSize(sdl_window, &width, &height);
+	if (width < 1 || height < 1 || (width == (int)vid.width && height == (int)vid.height)) return;
+	sdl_window_width = width;
+	sdl_window_height = height;
+	vid.width = vid.maxwarpwidth = width;
+	vid.height = vid.maxwarpheight = height;
+	vid.aspect = ((float)height / width) * (320.0f / 240.0f);
+	vid.scale = height / STD_UI_HEIGHT;
+	if (vid.scale < 1) vid.scale = 1;
+	vid.conwidth = width;
+	vid.conheight = height;
+	vid.recalc_refdef = true;
+}
+
 void GL_EndRendering(void) { SDL_GL_SwapWindow(sdl_window); }
 
 void VID_SetPalette(unsigned char *palette)
@@ -92,6 +110,7 @@ void VID_Init(unsigned char *palette)
 	sdl_gl_context = SDL_GL_CreateContext(sdl_window);
 	if (!sdl_gl_context) Sys_Error("SDL_GL_CreateContext: %s", SDL_GetError());
 	SDL_GL_SetSwapInterval(COM_CheckParm("-novsync") ? 0 : 1);
+	SDL_GL_GetDrawableSize(sdl_window, &sdl_window_width, &sdl_window_height);
 
 	Cvar_RegisterVariable(&gl_ztrick);
 	vid.maxwarpwidth = vid.width = sdl_window_width;
@@ -102,6 +121,7 @@ void VID_Init(unsigned char *palette)
 	vid.conheight = 480;
 	vid.aspect = ((float)vid.height / vid.width) * (320.0f / 240.0f);
 	vid.scale = vid.height / STD_UI_HEIGHT;
+	if (vid.scale < 1) vid.scale = 1;
 	vid.numpages = 2;
 	GL_Init();
 	Check_Gamma(palette);
