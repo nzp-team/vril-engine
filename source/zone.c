@@ -632,11 +632,12 @@ void *Z_Malloc (int size)
     orig_size -= sizeof(memblock_t);
     orig_size -= sizeof(int); /* ZONEID marker */
 
-    Z_Free(ptr);
     ret = Z_TagMalloc(size, 1);
     if (!ret) Sys_Error("%s: failed on allocation of %i bytes", __func__, size);
-    if (ret != ptr) memmove(ret, ptr, MIN(orig_size, size));
+
+	memcpy(ret, ptr, MIN(orig_size, size));
     if (size > orig_size) memset((byte *)ret + orig_size, 0, size - orig_size);
+	Z_Free(ptr);
     return ret;
 }
 

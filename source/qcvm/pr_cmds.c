@@ -389,12 +389,20 @@ void PF_useprint (void)
 	MSG_WriteShort (&client->message,cost);
 }
 
-static string_t pr_useprint_strings[256];
+static char *pr_useprint_strings[256];
 static byte pr_useprint_colors[256][3];
 static qboolean pr_useprint_registered[256];
 
 void PR_ClearRegisteredUseprints (void)
 {
+	int index;
+
+	for (index = 0; index < 256; index++)
+	{
+		if (pr_useprint_strings[index])
+			Z_Free (pr_useprint_strings[index]);
+		pr_useprint_strings[index] = NULL;
+	}
 	memset (pr_useprint_registered, 0, sizeof(pr_useprint_registered));
 }
 
@@ -402,7 +410,7 @@ static void PR_WriteUseprintDefinition (client_t *client, int index)
 {
 	MSG_WriteByte (&client->message, svc_registeruseprint);
 	MSG_WriteByte (&client->message, index);
-	MSG_WriteString (&client->message, PR_GetString(pr_useprint_strings[index]));
+	MSG_WriteString (&client->message, pr_useprint_strings[index]);
 	MSG_WriteByte (&client->message, pr_useprint_colors[index][0]);
 	MSG_WriteByte (&client->message, pr_useprint_colors[index][1]);
 	MSG_WriteByte (&client->message, pr_useprint_colors[index][2]);
@@ -420,6 +428,7 @@ void PR_SendRegisteredUseprints (client_t *client)
 void PF_useprint_send (void)
 {
 	client_t *client;
+	char *text, *text_copy;
 	int entnum, index;
 	float *color;
 
@@ -439,7 +448,11 @@ void PF_useprint_send (void)
 	}
 
 	client = &svs.clients[entnum-1];
-	pr_useprint_strings[index] = G_INT(OFS_PARM2);
+	text = G_STRING(OFS_PARM2);
+	text_copy = Z_Strdup(text);
+	if (pr_useprint_strings[index])
+		Z_Free(pr_useprint_strings[index]);
+	pr_useprint_strings[index] = text_copy;
 	pr_useprint_colors[index][0] = CLAMP(0, color[0] * 255, 255);
 	pr_useprint_colors[index][1] = CLAMP(0, color[1] * 255, 255);
 	pr_useprint_colors[index][2] = CLAMP(0, color[2] * 255, 255);
