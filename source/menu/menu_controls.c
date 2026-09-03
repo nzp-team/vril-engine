@@ -34,6 +34,10 @@ extern cvar_t	in_acceleration;
 extern cvar_t	in_tolerance;
 extern cvar_t	in_anub_mode;
 extern cvar_t	m_pitch;
+#ifdef PLATFORM_USES_GENERIC_GLYPHS
+extern cvar_t    cl_controllerglyphs;
+static char     *controller_glyphs_string;
+#endif
 
 /*
 ===============
@@ -117,6 +121,26 @@ void Menu_Controls_ApplySettings (void)
     Menu_SetSound(MENU_SND_ENTER);
 }
 
+#ifdef PLATFORM_USES_GENERIC_GLYPHS
+static void Menu_Controls_ApplyControllerGlyphs(void)
+{
+	const char *next = "xbox";
+	if (!strcmp(cl_controllerglyphs.string, "xbox")) next = "sony";
+	else if (!strcmp(cl_controllerglyphs.string, "sony")) next = "nintendo";
+	else if (!strcmp(cl_controllerglyphs.string, "nintendo")) next = "generic";
+	Cvar_Set("cl_controllerglyphs", (char *)next);
+}
+
+static void Menu_Controls_SetControllerGlyphString(void)
+{
+	if (!strcmp(cl_controllerglyphs.string, "xbox")) controller_glyphs_string = "MICROSOFT";
+	else if (!strcmp(cl_controllerglyphs.string, "sony")) controller_glyphs_string = "SONY";
+	else if (!strcmp(cl_controllerglyphs.string, "nintendo")) controller_glyphs_string = "NINTENDO";
+	else if (!strcmp(cl_controllerglyphs.string, "generic")) controller_glyphs_string = "GENERIC";
+	else controller_glyphs_string = cl_controllerglyphs.string;
+}
+#endif
+
 /*
 ===============
 Menu_Controls_Draw
@@ -153,6 +177,13 @@ void Menu_Controls_Draw (void)
 	// Look Inversion
 	Menu_DrawButton (controls_buttons++, controls_index++, "INVERT LOOK", "Invert Y-Axis Camera Input.", Menu_Controls_ApplyLookInversion);
 	Menu_DrawOptionButton (controls_buttons-1, invert_string);
+
+#ifdef PLATFORM_USES_GENERIC_GLYPHS
+	Menu_Controls_SetControllerGlyphString();
+	Menu_DrawButton(controls_buttons++, controls_index++, "CONTROLLER GLYPHS", "Change the controller glyph tilemap.", Menu_Controls_ApplyControllerGlyphs);
+	Menu_DrawOptionButton(controls_buttons-1, controller_glyphs_string);
+	Menu_DrawControllerGlyphPreview(controls_buttons-1);
+#endif
 
 #ifdef PLATFORM_HAS_ONE_ANALOG_STICK
 	// Anub tolerance

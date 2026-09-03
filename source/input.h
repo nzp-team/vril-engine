@@ -31,12 +31,21 @@ void IN_Move (usercmd_t *cmd);
 
 void IN_ClearPendingInput(void);
 
-#ifdef PLATFORM_INPUT_KBM
+typedef enum {
+	IN_DEVICE_KEYBOARD_MOUSE,
+	IN_DEVICE_GAMEPAD
+} in_device_t;
+
+void IN_SetActiveDevice(in_device_t device);
+in_device_t IN_GetActiveDevice(void);
+qboolean IN_KeyMatchesDevice(int key, in_device_t device);
+qboolean IN_KeyMatchesActiveDevice(int key);
+qboolean IN_PlatformHasMouse(void);
+qboolean IN_PlatformHasGamepad(void);
 void IN_SetMouseToRelative(bool relative);
 void IN_PlatformClearPendingInput(void);
-#endif
+void IN_PlatformMouseMove(usercmd_t *cmd);
 
-#ifdef PLATFORM_INPUT_GAMEPAD
 typedef enum {
 	IN_STICK_LEFT,
 	IN_STICK_RIGHT
@@ -53,7 +62,6 @@ void IN_PlatformInit(void);
 void IN_PlatformShutdown(void);
 void IN_PlatformCommands(void);
 void IN_PlatformMove(usercmd_t *cmd);
-#endif
 
 #ifdef PLATFORM_KEYBOARD_SYSTEM
 void IN_OpenOSKeyboard (void);

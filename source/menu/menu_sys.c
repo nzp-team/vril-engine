@@ -28,6 +28,7 @@ int				MENU_KEY_DELETE = -1;
 int				MENU_KEY_SAVE_INPUT = -1;
 
 qboolean    	menu_sound_playing;
+static int      menu_drag_slider = -1;
 
 extern image_t 	b_topface;
 extern image_t 	b_bottomface;
@@ -36,6 +37,9 @@ extern image_t 	b_rightface;
 
 image_t Menu_GetConfirmIcon(void)
 {
+#ifdef PLATFORM_USES_GENERIC_GLYPHS
+	return HUD_KeyHasIcon(MENU_KEY_CONFIRM) ? 1 : -1;
+#else
 	switch (MENU_KEY_CONFIRM)
 	{
 	case K_BOTTOMFACE:
@@ -49,6 +53,7 @@ image_t Menu_GetConfirmIcon(void)
 	default:
 		return -1;
 	}
+#endif
 }
 
 // Set stock map attributes
@@ -204,28 +209,31 @@ int UI_H(int h)
     return (ret);
 }
 
-void Menu_InitUI (void)
+void Menu_SetInputDevice (in_device_t device)
 {
-	current_frame.point_x = 0;
-	current_frame.point_y = 0;
-
-	// Add platform-specific menu enter keys
-#ifdef PLATFORM_CONFIRM_IS_ENTER
+	if (device == IN_DEVICE_KEYBOARD_MOUSE) {
 	MENU_KEY_CONFIRM = K_ENTER;
 	MENU_KEY_BACK = K_ESCAPE;
 	MENU_KEY_DELETE = K_DELETE;
 	MENU_KEY_SAVE_INPUT = K_TAB;
-#elif PLATFORM_CONFIRM_FLIPPED
+	} else {
+#ifdef PLATFORM_CONFIRM_FLIPPED
 	MENU_KEY_CONFIRM = K_RIGHTFACE;
 	MENU_KEY_BACK = K_BOTTOMFACE;
-	MENU_KEY_DELETE = K_TOPFACE;
-	MENU_KEY_SAVE_INPUT = K_LEFTFACE;
 #else
 	MENU_KEY_CONFIRM = K_BOTTOMFACE;
 	MENU_KEY_BACK = K_RIGHTFACE;
+#endif
 	MENU_KEY_DELETE = K_TOPFACE;
 	MENU_KEY_SAVE_INPUT = K_LEFTFACE;
-#endif
+	}
+}
+
+void Menu_InitUI (void)
+{
+	current_frame.point_x = 0;
+	current_frame.point_y = 0;
+	Menu_SetInputDevice(IN_GetActiveDevice());
 
 	// Set OSK button images
 	// these are currently the only
@@ -290,6 +298,56 @@ void Menu_ButtonPress (void)
 			}
 		}
 	}
+}
+
+void Menu_MouseMove (int x, int y)
+{
+	int i;
+	if (key_dest != key_menu && key_dest != key_menu_pause) return;
+	if (menu_drag_slider >= 0) {
+		menu_button_t *slider = &current_menu.button[menu_drag_slider];
+		float position = (float)(x - slider->slider_x) / slider->slider_width;
+		float value;
+		if (position < 0.0f) position = 0.0f;
+		if (position > 1.0f) position = 1.0f;
+		value = slider->slider_min + position * (slider->slider_max - slider->slider_min);
+		if (slider->slider_step > 0.0f)
+			value = slider->slider_min + floorf((value - slider->slider_min) / slider->slider_step + 0.5f) * slider->slider_step;
+		Cvar_SetValue(slider->slider_cvar, value);
+		return;
+	}
+	for (i = 0; i < MAX_MENU_BUTTONS; ++i) {
+		menu_button_t *button = &current_menu.button[i];
+		if (!button->enabled) break;
+		if ((x >= button->x && x < button->x + button->width &&
+			y >= button->y && y < button->y + button->height) ||
+			(button->is_slider && x >= button->slider_x && x <= button->slider_x + button->slider_width &&
+			y >= button->slider_y && y < button->slider_y + button->slider_height)) {
+			if (current_menu.cursor != i) {
+				current_menu.cursor = i;
+				Menu_SetSound(MENU_SND_NAVIGATE);
+			}
+			return;
+		}
+	}
+}
+
+qboolean Menu_MouseButton (int x, int y, qboolean down)
+{
+	menu_button_t *button;
+	if (!down) {
+		qboolean was_dragging = menu_drag_slider >= 0;
+		menu_drag_slider = -1;
+		return was_dragging;
+	}
+	if (current_menu.cursor < 0 || current_menu.cursor >= MAX_MENU_BUTTONS) return false;
+	button = &current_menu.button[current_menu.cursor];
+	if (!button->enabled || !button->is_slider || x < button->slider_x ||
+		x > button->slider_x + button->slider_width || y < button->slider_y ||
+		y >= button->slider_y + button->slider_height) return false;
+	menu_drag_slider = current_menu.cursor;
+	Menu_MouseMove(x, y);
+	return true;
 }
 
 void Menu_SetPreviousMenu (void)
@@ -360,27 +418,31 @@ void Menu_KeyInput (int key)
 	switch (key)
 	{
 	case K_DOWNARROW:
+	case K_DPAD_DOWN:
 		Menu_DecreaseCursor();
 		break;
 
 	case K_UPARROW:
+	case K_DPAD_UP:
 		Menu_IncreaseCursor();
 		break;
 
 	case K_LEFTARROW:
+	case K_DPAD_LEFT:
 		Menu_IncrementSlider(key);
 		break;
 
 	case K_RIGHTARROW:
+	case K_DPAD_RIGHT:
 		Menu_IncrementSlider(key);
 		break;
 	}
 
-	if(key == MENU_KEY_CONFIRM) {
+	if(key == MENU_KEY_CONFIRM || key == K_ENTER || key == K_BOTTOMFACE) {
 		Menu_ButtonPress();
 	}
 
-	if(key == MENU_KEY_BACK) {
+	if(key == MENU_KEY_BACK || key == K_ESCAPE || key == K_RIGHTFACE) {
 		Menu_SetPreviousMenu();
 	}
 }
@@ -398,6 +460,8 @@ void Menu_FindKeysForCommand (char *command, int *twokeys)
 
 	for (j=0 ; j<256 ; j++)
 	{
+		if (!IN_KeyMatchesActiveDevice(j))
+			continue;
 		b = keybindings[j];
 		if (!b)
 			continue;
@@ -421,6 +485,8 @@ void Menu_UnbindCommand (char *command)
 
 	for (j=0 ; j<256 ; j++)
 	{
+		if (!IN_KeyMatchesActiveDevice(j))
+			continue;
 		b = keybindings[j];
 		if (!b)
 			continue;

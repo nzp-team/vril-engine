@@ -30,6 +30,9 @@ void SCR_SizeUp (void);
 void SCR_SizeDown (void);
 void SCR_BringDownConsole (void);
 int GetButtonIcon (char *buttonname);
+qboolean HUD_KeyHasIcon(int key);
+void HUD_DrawKeyIcon(int x, int y, int key, int size, int alpha);
+void HUD_DrawCommandIcon(int x, int y, char *command, int size, int alpha);
 char *GetGrenadeButtonL();
 char *GetUseButtonL();
 

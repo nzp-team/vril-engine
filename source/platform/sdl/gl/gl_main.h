@@ -73,6 +73,7 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qboolean update);
 int Image_FindImage (const char *identifier);
 void GL_UnloadTextures ();
+void GL_FreeTextures (int texnum);
 
 typedef struct
 {

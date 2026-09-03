@@ -53,6 +53,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define K_LTHUMB        144
 #define K_RTHUMB        145
 
+// Distinct gamepad D-pad keys
+#define K_DPAD_UP       146
+#define K_DPAD_DOWN     147
+#define K_DPAD_LEFT     148
+#define K_DPAD_RIGHT    149
+
 // NSpire Extras
 #define K_CTRL          153
 #define K_SHIFT         155

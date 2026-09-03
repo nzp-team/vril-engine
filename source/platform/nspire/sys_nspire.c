@@ -29,6 +29,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 void Sys_NSpireInput( void );
 
+qboolean IN_PlatformHasMouse(void) { return false; }
+qboolean IN_PlatformHasGamepad(void) { return false; }
+void IN_SetMouseToRelative(bool relative) { (void)relative; }
+void IN_PlatformClearPendingInput(void) {}
+void IN_PlatformMouseMove(usercmd_t *cmd) { (void)cmd; }
+void IN_GetAnalogStick(in_analog_stick_id_t stick, in_analog_stick_t *value) { (void)stick; value->x = value->y = 0; }
+void IN_PlatformInit(void) {}
+void IN_PlatformShutdown(void) {}
+void IN_PlatformCommands(void) {}
+void IN_PlatformMove(usercmd_t *cmd) { (void)cmd; }
+
 qboolean			isDedicated = false;
 
 void *p_nspire_stack_redirect = NULL;

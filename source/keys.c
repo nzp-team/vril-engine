@@ -92,6 +92,10 @@ keyname_t keynames[] =
 	{"SELECT", K_SELECT},
 	{"LTHUMB", K_LTHUMB},
 	{"RTHUMB", K_RTHUMB},
+	{"DPAD_UP", K_DPAD_UP},
+	{"DPAD_DOWN", K_DPAD_DOWN},
+	{"DPAD_LEFT", K_DPAD_LEFT},
+	{"DPAD_RIGHT", K_DPAD_RIGHT},
 
 	{"CTRL", K_CTRL},
 	{"SHIFT", K_SHIFT},
@@ -778,6 +782,10 @@ void Key_Init (void)
 	consolekeys[K_SELECT] = true;
 	consolekeys[K_LTHUMB] = true;
 	consolekeys[K_RTHUMB] = true;
+	consolekeys[K_DPAD_UP] = true;
+	consolekeys[K_DPAD_DOWN] = true;
+	consolekeys[K_DPAD_LEFT] = true;
+	consolekeys[K_DPAD_RIGHT] = true;
 	consolekeys[K_PLUS] = true;
 	consolekeys[K_MINUS] = true;
 
