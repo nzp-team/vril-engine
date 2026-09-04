@@ -916,13 +916,9 @@ void Key_Event (int key, qboolean down)
 		holdstart[key] = Sys_FloatTime();
 		holdfired[key] = false;
 
-		// Special functionality: when +use is a hold action and there's a useprint,
-		// and we have a different action on the same button for normal bind, make
-		// it activate on-release instead of on-press.
-		defernormal[key] = key_dest == key_game && scr_usetime_off > 0 &&
-			!cl.intermission && cl.stats[STAT_HEALTH] > 0 &&
-			!strncmp(holdbindings[key], "+use", 4) &&
-			(holdbindings[key][4] == 0 || holdbindings[key][4] == ' ' || holdbindings[key][4] == ';');
+		// A key with both bindings is a tap/hold pair. Delay the normal action
+		// until release; if the hold threshold is reached, run only the hold action.
+		defernormal[key] = keybindings[key] && *keybindings[key];
 	}
 	lastkey = key;
 
