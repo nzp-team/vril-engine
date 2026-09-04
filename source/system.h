@@ -21,4 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 void Sys_PrintError(const char *function_name, const char *source_file, int line_number, char *message, ...);
 
+extern qboolean vid_headless;
+
 #define Sys_Error(message, ...) Sys_PrintError(__func__, __FILE__, __LINE__, message, ##__VA_ARGS__)

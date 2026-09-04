@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../nzportable_def.h"
 
+#include <ctype.h>
+
 #ifdef __WII__
 #include <ogc/lwp_watchdog.h>
 #include <wiiuse/wpad.h>
@@ -1124,6 +1126,11 @@ void PF_localcmd (void)
 	char	*str;
 
 	str = G_STRING(OFS_PARM0);
+	if (vid_headless && !Q_strcasecmp(str, "quit\n"))
+	{
+		Sys_Quit();
+		return;
+	}
 	Cbuf_AddText (str);
 }
 
@@ -1213,6 +1220,128 @@ PF_dprint
 void PF_dprint (void)
 {
 	Con_DPrintf ("%s",PF_VarString(0));
+}
+
+/* FTE/DarkPlaces console output, used by SSQC test harnesses. */
+void PF_print (void)
+{
+	Con_Printf("%s", PF_VarString(0));
+}
+
+void PF_gettime (void)
+{
+	G_FLOAT(OFS_RETURN) = (float)Sys_FloatTime();
+}
+
+#define PR_SPRINTF_BUFFERS 64
+static char pr_sprintf_buffers[PR_SPRINTF_BUFFERS][PR_MAX_TEMPSTRING];
+static unsigned int pr_sprintf_buffer_index;
+
+static void PF_sprintf_append(char **out, size_t *remaining, const char *text)
+{
+	size_t length;
+
+	if (*remaining <= 1)
+		return;
+	length = strlen(text);
+	if (length >= *remaining)
+		length = *remaining - 1;
+	memcpy(*out, text, length);
+	*out += length;
+	*remaining -= length;
+	**out = 0;
+}
+
+/*
+ * DP_QC_SPRINTF.  QC arguments occupy three globals apiece regardless of
+ * their type.  This covers the scalar/string conversions used by NZ:P QC,
+ * while preserving normal printf flags, widths, and precisions.
+ */
+void PF_sprintf (void)
+{
+	const char *format = G_STRING(OFS_PARM0);
+	char *result = pr_sprintf_buffers[pr_sprintf_buffer_index++ % PR_SPRINTF_BUFFERS];
+	char *out = result;
+	size_t remaining = PR_MAX_TEMPSTRING;
+	int argument = 1;
+
+	result[0] = 0;
+	while (*format && remaining > 1)
+	{
+		char conversion[32];
+		char rendered[512];
+		char *spec;
+		char code;
+		qboolean integer_argument = false;
+
+		if (*format != '%')
+		{
+			*out++ = *format++;
+			*out = 0;
+			--remaining;
+			continue;
+		}
+		if (format[1] == '%')
+		{
+			*out++ = '%';
+			*out = 0;
+			remaining--;
+			format += 2;
+			continue;
+		}
+
+		spec = conversion;
+		*spec++ = *format++;
+		while (*format && strchr("-+ #0", *format) && spec < conversion + sizeof(conversion) - 3)
+			*spec++ = *format++;
+		while (*format && isdigit((unsigned char)*format) && spec < conversion + sizeof(conversion) - 3)
+			*spec++ = *format++;
+		if (*format == '.' && spec < conversion + sizeof(conversion) - 3)
+		{
+			*spec++ = *format++;
+			while (*format && isdigit((unsigned char)*format) && spec < conversion + sizeof(conversion) - 3)
+				*spec++ = *format++;
+		}
+		if (*format == 'l')
+		{
+			integer_argument = true;
+			format++;
+		}
+		else if (*format == 'h')
+			format++;
+		code = *format ? *format++ : 0;
+		if (!code || argument >= pr_argc)
+			break;
+
+		if (code == 's' || code == 'S')
+		{
+			*spec++ = 's';
+			*spec = 0;
+			snprintf(rendered, sizeof(rendered), conversion,
+				G_STRING(OFS_PARM0 + argument * 3));
+		}
+		else if (code == 'd' || code == 'c' || code == 'x' || code == 'X')
+		{
+			*spec++ = code;
+			*spec = 0;
+			snprintf(rendered, sizeof(rendered), conversion,
+				integer_argument ? G_INT(OFS_PARM0 + argument * 3) :
+				(int)G_FLOAT(OFS_PARM0 + argument * 3));
+		}
+		else if (strchr("eEfFgG", code))
+		{
+			*spec++ = code;
+			*spec = 0;
+			snprintf(rendered, sizeof(rendered), conversion,
+				(double)G_FLOAT(OFS_PARM0 + argument * 3));
+		}
+		else
+			snprintf(rendered, sizeof(rendered), "%%%c", code);
+
+		PF_sprintf_append(&out, &remaining, rendered);
+		argument++;
+	}
+	G_INT(OFS_RETURN) = PR_SetString(result);
 }
 
 char	pr_string_temp[PR_MAX_TEMPSTRING];	// 2001-10-25 Enhanced temp string handling by Maddes
@@ -2733,9 +2862,6 @@ void PF_precache_sound (void)
 	char	*s;
 	int		i;
 
-	if (sv.state != ss_loading)
-		PR_RunError ("PF_Precache_*: Precache can only be done in spawn functions");
-
 	s = G_STRING(OFS_PARM0);
 	G_INT(OFS_RETURN) = G_INT(OFS_PARM0);
 	PR_CheckEmptyString (s);
@@ -2758,9 +2884,6 @@ void PF_precache_model (void)
 {
 	char	*s;
 	int		i;
-
-	if (sv.state != ss_loading)
-		PR_RunError ("PF_Precache_*: Precache can only be done in spawn functions");
 
 	s = G_STRING(OFS_PARM0);
 	G_INT(OFS_RETURN) = G_INT(OFS_PARM0);
@@ -4043,6 +4166,10 @@ ebfs_builtin_t pr_ebfs_builtins[] =
   { 442, "argv", PF_ArgV },
   { 480, "strtolower", PF_strtolower },
   { 494, "crc16", PF_crc16 },
+
+  { 339, "print", PF_print },
+  { 519, "gettime", PF_gettime },
+  { 627, "sprintf", PF_sprintf },
 
   { 500, "songegg", PF_SongEgg },
   {	501, "nzp_poweruptoast", PF_HUDToast },
