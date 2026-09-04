@@ -233,6 +233,8 @@ extern cvar_t 			sv_headshotonly;
 extern cvar_t 			sv_maxai;
 extern cvar_t 			sv_fastrounds;
 
+extern int menu_paus_submenu;
+
 /*
 ===========================================================================
 ===========================================================================
@@ -307,6 +309,7 @@ void Menu_DrawStringCentered (int x, int y, char* text, int r, int g, int b, int
 
 void Menu_StockMaps_Set (void);
 void Menu_Pause_Set(void);
+void Menu_Resume(void);
 void Menu_Keys_Set(void);
 void Menu_Video_Set(void);
 void Menu_Restart_Set(void);

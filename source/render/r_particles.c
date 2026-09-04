@@ -1415,7 +1415,9 @@ R_DrawParticles(void)
     VectorNegate(billboard[2], billboard[0]);
     VectorNegate(billboard[3], billboard[1]);
 
-    // glDepthMask (GL_TRUE);
+    // Particles test against world depth but must not write it. Dense effects
+    // such as the flamethrower otherwise leave later geometry occluded on PSP.
+    Hyena_DepthMask(HYE_FALSE);
 
     Hyena_EnableCapability(HYE_BLEND);
     Hyena_SetTextureMode(HYE_MODULATE);
@@ -1657,7 +1659,7 @@ R_DrawParticles(void)
     Hyena_SetTextureMode(HYE_REPLACE);
     Hyena_SetShadeMode(HYE_SMOOTH);
 
-    // glDepthMask (GL_FALSE);
+    Hyena_DepthMask(HYE_TRUE);
     // glDisable (GL_BLEND);
     // glBlendFunc (HYE_SRC_ALPHA, HYE_ONE_MINUS_SRC_ALPHA);
     // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);

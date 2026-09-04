@@ -471,6 +471,7 @@ void SV_ReadClientMove (usercmd_t *move)
 	host_client->edict->v.button6 = (bits & 64)>>1;
 	host_client->edict->v.button7 = (bits & 128)>>1;
 	host_client->edict->v.button8 = (bits & 256)>>1;
+	host_client->edict->v.button9 = (bits & 512)>>1;
 
 	i = MSG_ReadByte ();
 	if (i)

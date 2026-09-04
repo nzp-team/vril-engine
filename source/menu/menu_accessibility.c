@@ -27,6 +27,7 @@ char 			*colorblind_string;
 char 			*screenflash_string;
 char 			*monthspoof_string;
 char 			*crosshairdot_string;
+char 			*meleedive_string;
 
 extern cvar_t 	cl_hitmarkers;
 extern cvar_t 	cl_colorblind;
@@ -34,6 +35,8 @@ extern cvar_t 	scr_whiteflash;
 extern cvar_t 	sv_spoofmonth;
 extern cvar_t 	cl_textopacity;
 extern cvar_t 	cl_crosshairdot;
+extern cvar_t 	cl_viewbob;
+extern cvar_t 	cl_meleedive;
 
 void Menu_Accessibility_ApplyHitmarkers (void)
 {
@@ -88,6 +91,11 @@ void Menu_Accessibility_ApplyCrosshairDot (void)
 	Cvar_SetValue ("cl_crosshairdot", !cl_crosshairdot.value);
 }
 
+void Menu_Accessibility_ApplyMeleeDive (void)
+{
+	Cvar_SetValue("cl_meleedive", !cl_meleedive.value);
+}
+
 void Menu_Accessibility_ApplySettings (void)
 {
 	// no op
@@ -132,6 +140,8 @@ void Menu_Accessibility_SetStrings (void)
 	} else {
 		crosshairdot_string = "DISABLED";
 	}
+
+	meleedive_string = cl_meleedive.value ? "ENABLED" : "DISABLED";
 
 	switch((int)sv_spoofmonth.value) {
 		case 0:
@@ -216,7 +226,15 @@ void Menu_Accessibility_Draw (void)
 	Menu_DrawButton(6, 5, "CROSSHAIR DOT", "Add a dot to the middle of the crosshair.", Menu_Accessibility_ApplyCrosshairDot);
 	Menu_DrawOptionButton(6, crosshairdot_string);
 
+	// Camera Bob
+	Menu_DrawButton(7, 6, "CAMERA BOB", "Scale for Camera Bob and Roll.", NULL);
+	Menu_DrawOptionSlider(7, 1, 0, 1, cl_viewbob, "cl_viewbob", false, false, 0.05f);
+
+	// Melee Dive Shortcut
+	Menu_DrawButton(8, 7, "SPRINT MELEE DIVE", "Dive when Melee while Sprinting.", Menu_Accessibility_ApplyMeleeDive);
+	Menu_DrawOptionButton(8, meleedive_string);
+
 	Menu_DrawDivider(-2.5);
-	Menu_DrawButton(-2, 6, "APPLY", "Save & Apply Settings.", Menu_Accessibility_ApplySettings);
-	Menu_DrawButton(-1, 7, "BACK", "Return to Configuration Menu.", Menu_Configuration_Set);
+	Menu_DrawButton(-2, 8, "APPLY", "Save & Apply Settings.", Menu_Accessibility_ApplySettings);
+	Menu_DrawButton(-1, 9, "BACK", "Return to Configuration Menu.", Menu_Configuration_Set);
 }
