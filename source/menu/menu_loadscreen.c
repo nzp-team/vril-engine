@@ -198,13 +198,15 @@ static void LoadingScreen_LoadImage(void)
 
 static void LoadingScreen_DrawSkipPrompt(double elapsed)
 {
+	const int confirm_key = MENU_KEY_CONFIRM >= 0 ? MENU_KEY_CONFIRM :
+	  (IN_GetActiveDevice() == IN_DEVICE_GAMEPAD ? K_BOTTOMFACE : K_ENTER);
 	const int padding = 4 * vid.scale;
 	const int gap = 3 * vid.scale;
 	const int prompt_y = vid.height - (5 * _CHAR_HEIGHT * vid.scale);
 	const int press_width = getTextWidth("Press ", vid.scale);
 	const int skip_width = getTextWidth("to skip", vid.scale);
-	const image_t confirm_icon = Menu_GetConfirmIcon();
-	const char *confirm_name = Key_KeynumToString(MENU_KEY_CONFIRM);
+	const image_t confirm_icon = HUD_KeyHasIcon(confirm_key) ? 1 : -1;
+	const char *confirm_name = Key_KeynumToString(confirm_key);
 	const int middle_width = confirm_icon > 0 ? 12 * vid.scale : getTextWidth((char *)confirm_name, vid.scale);
 	const int prompt_width = press_width + middle_width + gap + skip_width;
 	const int prompt_x = vid.width - prompt_width - (8 * vid.scale);
@@ -214,7 +216,7 @@ static void LoadingScreen_DrawSkipPrompt(double elapsed)
 	Draw_ColoredString(prompt_x, prompt_y, "Press ", 255, 255, 255, alpha, vid.scale);
 
 	if (confirm_icon > 0)
-		HUD_DrawKeyIcon(prompt_x + press_width, prompt_y - (2 * vid.scale), MENU_KEY_CONFIRM, middle_width, alpha);
+		HUD_DrawKeyIcon(prompt_x + press_width, prompt_y - (2 * vid.scale), confirm_key, middle_width, alpha);
 	else
 		Draw_ColoredString(prompt_x + press_width, prompt_y, (char *)confirm_name, 255, 255, 0, alpha, vid.scale);
 
@@ -283,7 +285,7 @@ qboolean LoadingScreen_Key(int key, qboolean down)
 	}
 
 	if (!loading_waiting_for_input || !LoadingScreen_ReadyToContinue() ||
-		key != MENU_KEY_CONFIRM)
+		(key != MENU_KEY_CONFIRM && key != K_BOTTOMFACE && key != K_ENTER))
 		return false;
 
 	if (down)

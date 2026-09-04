@@ -191,7 +191,7 @@ void Con_CheckResize (void)
 	int		i, j, width, oldwidth, oldtotallines, numlines, numchars;
 	char	tbuf[CON_TEXTSIZE];
 
-	width = (vid.width >> 3) - 2;
+	width = (int)(vid.width / (8 * (vid.scale > 0 ? vid.scale : 1))) - 2;
 
 	if (width == con_linewidth)
 		return;
@@ -591,7 +591,8 @@ void Con_DrawNotify (void)
 			scr_copytop = 1;
 
 			for (x = 0 ; x < con_linewidth ; x++)
-				Draw_Character ( (x+1)<<3, v, text[x]);
+				Draw_CharacterRGBA(((x + 1) << 3) * vid.scale, v * vid.scale,
+				  text[x], 255, 255, 255, 255, vid.scale);
 
 			v += 8;
 		}
@@ -605,13 +606,13 @@ void Con_DrawNotify (void)
 	
 		x = 0;
 		
-		Draw_String (8, v, "say:");
+		Draw_ColoredString(8 * vid.scale, v * vid.scale, "say:", 255, 255, 255, 255, vid.scale);
 		while(chat_buffer[x])
 		{
-			Draw_Character ( (x+5)<<3, v, chat_buffer[x]);
+			Draw_CharacterRGBA(((x + 5) << 3) * vid.scale, v * vid.scale, chat_buffer[x], 255, 255, 255, 255, vid.scale);
 			x++;
 		}
-		Draw_Character ( (x+5)<<3, v, 10+((int)((float)realtime*con_cursorspeed)&1));
+		Draw_CharacterRGBA(((x + 5) << 3) * vid.scale, v * vid.scale, 10 + ((int)((float)realtime * con_cursorspeed) & 1), 255, 255, 255, 255, vid.scale);
 		v += 8;
 	}
 	

@@ -37,18 +37,21 @@ keydest_t	key_dest;
 
 int			key_count;			// incremented every key event
 
-char		*keybindings[256];
-char		*dtbindings[256];
-char		*holdbindings[256];
-qboolean	consolekeys[256];	// if true, can't be rebound while in console
-qboolean	menubound[256];	// if true, can't be rebound while in menu
-int			keyshift[256];		// key to map to if shift held down in console
-int			key_repeats[256];	// if > 1, it is autorepeating
-qboolean	keydown[256];
-static double holdstart[256];
-static qboolean holdfired[256];
-static qboolean defernormal[256];
-static qboolean dtfired[256];
+char		*keybindings[MAX_KEYS];
+char		*dtbindings[MAX_KEYS];
+char		*holdbindings[MAX_KEYS];
+qboolean	consolekeys[MAX_KEYS];	// if true, can't be rebound while in console
+qboolean	menubound[MAX_KEYS];	// if true, can't be rebound while in menu
+int			keyshift[MAX_KEYS];		// key to map to if shift held down in console
+int			key_repeats[MAX_KEYS];	// if > 1, it is autorepeating
+qboolean	keydown[MAX_KEYS];
+static double holdstart[MAX_KEYS];
+static qboolean holdfired[MAX_KEYS];
+static qboolean defernormal[MAX_KEYS];
+static qboolean dtfired[MAX_KEYS];
+
+static int (*platform_string_to_keynum)(const char *name);
+static const char *(*platform_keynum_to_string)(int keynum);
 
 #define HOLD_BIND_TIME 0.2
 
@@ -98,10 +101,21 @@ keyname_t keynames[] =
 	{"DPAD_RIGHT", K_DPAD_RIGHT},
 
 	{"CTRL", K_CTRL},
+	{"ALT", K_ALT},
 	{"SHIFT", K_SHIFT},
 	{"VAR", K_VAR},
 	{"TAB", K_TAB},
 	{"DELETE", K_DELETE},
+	{"HOME", K_HOME},
+	{"END", K_END},
+	{"PGUP", K_PGUP},
+	{"PGDN", K_PGDN},
+	{"INS", K_INSERT},
+	{"PAUSE", K_PAUSE},
+	{"CAPSLOCK", K_CAPSLOCK},
+	{"NUMLOCK", K_NUMLOCK},
+	{"SCROLLLOCK", K_SCROLLLOCK},
+	{"PRINTSCREEN", K_PRINTSCREEN},
 
 	{"TOUCH", K_TOUCH},
 	{"TOUCH1", K_TOUCHACTION1},
@@ -113,6 +127,10 @@ keyname_t keynames[] =
 	{"MOUSE1", K_MOUSE1},
 	{"MOUSE2", K_MOUSE2},
 	{"MOUSE3", K_MOUSE3},
+	{"MOUSE4", K_MOUSE4},
+	{"MOUSE5", K_MOUSE5},
+	{"MWHEELUP", K_MWHEELUP},
+	{"MWHEELDOWN", K_MWHEELDOWN},
 	
 	{"SPACE", K_SPACE},
 
@@ -390,6 +408,8 @@ int Key_StringToKeynum (char *str)
 		if (!Q_strcasecmp(str,kn->name))
 			return kn->keynum;
 	}
+	if (platform_string_to_keynum)
+		return platform_string_to_keynum(str);
 	return -1;
 }
 
@@ -420,7 +440,19 @@ char *Key_KeynumToString (int keynum)
 		if (keynum == kn->keynum)
 			return kn->name;
 
+	if (platform_keynum_to_string) {
+		const char *name = platform_keynum_to_string(keynum);
+		if (name && *name)
+			return (char *)name;
+	}
+
 	return "<UNKNOWN KEYNUM>";
+}
+
+void Key_SetPlatformKeyConversion(int (*string_to_keynum)(const char *name), const char *(*keynum_to_string)(int keynum))
+{
+	platform_string_to_keynum = string_to_keynum;
+	platform_keynum_to_string = keynum_to_string;
 }
 
 
@@ -529,7 +561,7 @@ void Key_Unbindall_f (void)
 {
 	int		i;
 	
-	for (i=0 ; i<256 ; i++)
+	for (i=0 ; i<MAX_KEYS ; i++)
 		if (keybindings[i])
 			Key_SetBinding (i, "");
 }
@@ -665,7 +697,7 @@ void Key_WriteBindings (FILE *f)
 {
 	int		i;
 
-	for (i=0 ; i<256 ; i++)
+	for (i=0 ; i<MAX_KEYS ; i++)
 		if (keybindings[i])
 			if (*keybindings[i])
 				fprintf (f, "bind \"%s\" \"%s\"\n", Key_KeynumToString(i), keybindings[i]);
@@ -682,7 +714,7 @@ void Key_WriteDTBindings (FILE *f)
 {
 	int		i;
 
-	for (i=0 ; i<256 ; i++)
+	for (i=0 ; i<MAX_KEYS ; i++)
 		if (dtbindings[i])
 			if (*dtbindings[i])
 				fprintf (f, "binddt \"%s\" \"%s\"\n", Key_KeynumToString(i), dtbindings[i]);
@@ -700,7 +732,7 @@ void Key_WriteHoldBindings (FILE *f)
 {
 	int i;
 
-	for (i = 0; i < 256; i++)
+	for (i = 0; i < MAX_KEYS; i++)
 		if (holdbindings[i] && *holdbindings[i])
 			fprintf (f, "bindhold \"%s\" \"%s\"\n", Key_KeynumToString(i), holdbindings[i]);
 }
@@ -731,7 +763,7 @@ void Key_UpdateHoldBindings (void)
 	int key;
 	double now = Sys_FloatTime();
 
-	for (key = 0; key < 256; key++) {
+	for (key = 0; key < MAX_KEYS; key++) {
 		if (keydown[key] && holdstart[key] && !holdfired[key] &&
 			now - holdstart[key] >= HOLD_BIND_TIME) {
 			Key_RunBinding (holdbindings[key], key);
@@ -790,6 +822,7 @@ void Key_Init (void)
 	consolekeys[K_MINUS] = true;
 
 	consolekeys[K_CTRL] = true;
+	consolekeys[K_ALT] = true;
 	consolekeys[K_SHIFT] = true;
 	consolekeys[K_VAR] = true;
 	consolekeys[K_TAB] = true;
@@ -806,6 +839,10 @@ void Key_Init (void)
 	consolekeys[K_MOUSE1] = true;
 	consolekeys[K_MOUSE2] = true;
 	consolekeys[K_MOUSE3] = true;
+	consolekeys[K_MOUSE4] = true;
+	consolekeys[K_MOUSE5] = true;
+	consolekeys[K_MWHEELUP] = true;
+	consolekeys[K_MWHEELDOWN] = true;
 
 	consolekeys[K_JOY1] = true;
 	consolekeys[K_JOY2] = true;
@@ -814,7 +851,7 @@ void Key_Init (void)
 
 	consolekeys[K_SELECT] = true;
 
-	for (i=0 ; i<256 ; i++)
+	for (i=0 ; i<MAX_KEYS ; i++)
 		keyshift[i] = i;
 	for (i='a' ; i<='z' ; i++)
 		keyshift[i] = i - 'a' + 'A';
@@ -866,6 +903,9 @@ void Key_Event (int key, qboolean down)
 {
 	char	*kb;
 	char	cmd[1024];
+
+	if (key < 0 || key >= MAX_KEYS)
+		return;
 
 	if (LoadingScreen_Key(key, down))
 		return;
@@ -1086,7 +1126,7 @@ void Key_ClearStates (void)
 {
 	int		i;
 
-	for (i=0 ; i<256 ; i++) {
+	for (i=0 ; i<MAX_KEYS ; i++) {
 		keydown[i] = false;
 		key_repeats[i] = 0;
 		holdstart[i] = 0;

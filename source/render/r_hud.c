@@ -279,7 +279,7 @@ HUD_GetBoundKey(const char * command)
     int key;
     size_t len = strlen(command);
 
-    for (key = 0; key < 256; key++) {
+    for (key = 0; key < MAX_KEYS; key++) {
 		if (!IN_KeyMatchesActiveDevice(key))
 			continue;
         if ((keybindings[key] && !strncmp(keybindings[key], command, len)) ||
@@ -532,7 +532,7 @@ HUD_DrawUsePrint(void)
         return;
     }
     scr_usetime_off = (float) (hud_use_until - Sys_FloatTime());
-    y = vid.height - 88 * vid.scale;
+    y = vid.height - 74 * vid.scale;
     x = (vid.width - getTextWidth(hud_usestring, vid.scale)) / 2;
     HUD_DrawTextBackdrop(x, y, hud_usestring, hud_useprint_colors[hud_use_type][0],
       hud_useprint_colors[hud_use_type][1], hud_useprint_colors[hud_use_type][2], 255, vid.scale);
@@ -1800,7 +1800,7 @@ HUD_AmmoString(void)
     if (pulse <= 0.5f) { pulse = 0.5f; pulse_down = 0; }
     if (pulse >= 1) { pulse = 1; pulse_down = 1; }
     HUD_DrawTextBackdrop((vid.width - getTextWidth((char *) message, vid.scale)) / 2,
-      vid.height / 2 + 40 * vid.scale, message, r, g, b, pulse * 255, vid.scale);
+      vid.height - 88 * vid.scale, message, r, g, b, pulse * 255, vid.scale);
 }
 
 /*******************

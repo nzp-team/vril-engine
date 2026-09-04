@@ -57,7 +57,7 @@ kbutton_t	in_up, in_down;
 
 int			in_impulse;
 
-
+cvar_t cl_meleedive = {"cl_meleedive", "1", true};
 
 void KeyDown (kbutton_t *b)
 {
@@ -327,7 +327,7 @@ void CL_AdjustAngles (void)
 		speed *= 0.5f;
 	else if (cl.stats[STAT_ZOOM] == 2)
 		speed *= 0.25f;
-	
+
 	cl_sensitivity = sensitivity.value;
 
 	if (!(in_strafe.state & 1))
@@ -707,6 +707,9 @@ void CL_SendMove (usercmd_t *cmd)
 		bits |= 256;
 	in_aim.state &= ~2; 
 
+	if (cl_meleedive.value)
+		bits |= 512;
+
     MSG_WriteLong (&buf, bits);
 
     MSG_WriteByte (&buf, in_impulse);
@@ -739,6 +742,8 @@ CL_InitInput
 */
 void CL_InitInput (void)
 {
+	Cvar_RegisterVariable(&cl_meleedive);
+
 	Cmd_AddCommand ("+moveup",IN_UpDown);
 	Cmd_AddCommand ("-moveup",IN_UpUp);
 	Cmd_AddCommand ("+movedown",IN_DownDown);

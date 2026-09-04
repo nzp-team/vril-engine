@@ -143,9 +143,9 @@ void Sys_DefaultConfig(void)
 	Cbuf_AddText("bind a +moveleft\n");
 	Cbuf_AddText("bind d +moveright\n");
 	Cbuf_AddText("bind SPACE +jump\n");
-	Cbuf_AddText("bind BOTTOMFACE +jump\n");
-	Cbuf_AddText("bind RIGHTFACE +aim\n");
-	Cbuf_AddText("bind ZRTRIGGER +attack\n");
+	Cbuf_AddText("bind MWHEELUP +switch\n");
+	Cbuf_AddText("bind MWHEELDOWN +switch\n");
+	Cbuf_AddText("bind ` toggleconsole\n");
 }
 
 
@@ -164,16 +164,54 @@ static int SDL_KeyToQuake(SDL_Keycode key)
 	case SDLK_F4: return K_AUX4; case SDLK_F5: return K_AUX5; case SDLK_F6: return K_AUX6;
 	case SDLK_F7: return K_AUX7; case SDLK_F8: return K_AUX8; case SDLK_F9: return K_AUX9;
 	case SDLK_F10: return K_AUX10; case SDLK_F11: return K_AUX11; case SDLK_F12: return K_AUX12;
+	case SDLK_F13: return K_AUX13; case SDLK_F14: return K_AUX14; case SDLK_F15: return K_AUX15;
+	case SDLK_F16: return K_AUX16; case SDLK_F17: return K_AUX17; case SDLK_F18: return K_AUX18;
+	case SDLK_F19: return K_AUX19; case SDLK_F20: return K_AUX20; case SDLK_F21: return K_AUX21;
+	case SDLK_F22: return K_AUX22; case SDLK_F23: return K_AUX23; case SDLK_F24: return K_AUX24;
 	case SDLK_LSHIFT: case SDLK_RSHIFT: return K_SHIFT;
 	case SDLK_LCTRL: case SDLK_RCTRL: return K_CTRL;
+	case SDLK_LALT: case SDLK_RALT: return K_ALT;
+	case SDLK_HOME: return K_HOME; case SDLK_END: return K_END;
+	case SDLK_PAGEUP: return K_PGUP; case SDLK_PAGEDOWN: return K_PGDN;
+	case SDLK_INSERT: return K_INSERT; case SDLK_PAUSE: return K_PAUSE;
+	case SDLK_CAPSLOCK: return K_CAPSLOCK; case SDLK_NUMLOCKCLEAR: return K_NUMLOCK;
+	case SDLK_SCROLLLOCK: return K_SCROLLLOCK; case SDLK_PRINTSCREEN: return K_PRINTSCREEN;
+	case SDLK_KP_9: return K_KP_9; case SDLK_KP_PERIOD: return K_KP_PERIOD;
+	case SDLK_KP_DIVIDE: return K_KP_DIVIDE; case SDLK_KP_MULTIPLY: return K_KP_MULTIPLY;
+	case SDLK_KP_MINUS: return K_KP_MINUS; case SDLK_KP_PLUS: return K_KP_PLUS;
+	case SDLK_KP_EQUALS: return K_KP_EQUALS;
+	case SDLK_APPLICATION: return K_APPLICATION; case SDLK_POWER: return K_POWER;
+	case SDLK_HELP: return K_HELP; case SDLK_MENU: return K_MENU; case SDLK_SELECT: return K_SELECT_KEY;
+	case SDLK_STOP: return K_STOP; case SDLK_AGAIN: return K_AGAIN; case SDLK_UNDO: return K_UNDO;
+	case SDLK_CUT: return K_CUT; case SDLK_COPY: return K_COPY; case SDLK_PASTE: return K_PASTE;
+	case SDLK_FIND: return K_FIND; case SDLK_MUTE: return K_MUTE; case SDLK_VOLUMEUP: return K_VOLUMEUP;
+	case SDLK_VOLUMEDOWN: return K_VOLUMEDOWN; case SDLK_SYSREQ: return K_SYSREQ; case SDLK_CLEAR: return K_CLEAR;
 	case SDLK_SPACE: return K_SPACE;
-	default: return key >= 32 && key < 127 ? (int)key : 0;
+	default:
+		if (key >= 32 && key < 127) return (int)key;
+		{
+			SDL_Scancode scancode = SDL_GetScancodeFromKey(key);
+			return scancode != SDL_SCANCODE_UNKNOWN ? K_SDL_SCANCODE_BASE + scancode : 0;
+		}
 	}
+}
+
+static int SDL_StringToKeynum(const char *name)
+{
+	SDL_Scancode scancode = SDL_GetScancodeFromName(name);
+	return scancode != SDL_SCANCODE_UNKNOWN ? K_SDL_SCANCODE_BASE + scancode : -1;
+}
+
+static const char *SDL_KeynumToString(int keynum)
+{
+	if (keynum < K_SDL_SCANCODE_BASE || keynum >= MAX_KEYS)
+		return NULL;
+	return SDL_GetScancodeName((SDL_Scancode)(keynum - K_SDL_SCANCODE_BASE));
 }
 
 static int SDL_MouseToQuake(Uint8 button)
 {
-	switch (button) { case SDL_BUTTON_LEFT: return K_MOUSE1; case SDL_BUTTON_RIGHT: return K_MOUSE2; case SDL_BUTTON_MIDDLE: return K_MOUSE3; default: return 0; }
+	switch (button) { case SDL_BUTTON_LEFT: return K_MOUSE1; case SDL_BUTTON_RIGHT: return K_MOUSE2; case SDL_BUTTON_MIDDLE: return K_MOUSE3; case SDL_BUTTON_X1: return K_MOUSE4; case SDL_BUTTON_X2: return K_MOUSE5; default: return 0; }
 }
 
 static int SDL_ControllerToQuake(SDL_GameControllerButton button)
@@ -215,13 +253,18 @@ void Sys_SendKeyEvents(void)
 		case SDL_QUIT: sdl_running = false; break;
 		case SDL_KEYDOWN: case SDL_KEYUP:
 			if (event.type == SDL_KEYDOWN) { IN_SetActiveDevice(IN_DEVICE_KEYBOARD_MOUSE); Menu_SetInputDevice(IN_DEVICE_KEYBOARD_MOUSE); }
+			if (event.type == SDL_KEYDOWN && !event.key.repeat &&
+				event.key.keysym.sym == SDLK_BACKQUOTE && key_dest == key_menu) {
+				Con_ToggleConsole_f();
+				break;
+			}
 			key = SDL_KeyToQuake(event.key.keysym.sym);
 			if (key && !event.key.repeat) Key_Event(key, event.type == SDL_KEYDOWN);
 			break;
 		case SDL_MOUSEBUTTONDOWN: case SDL_MOUSEBUTTONUP:
 			if (event.type == SDL_MOUSEBUTTONDOWN) { IN_SetActiveDevice(IN_DEVICE_KEYBOARD_MOUSE); Menu_SetInputDevice(IN_DEVICE_KEYBOARD_MOUSE); }
 			key = SDL_MouseToQuake(event.button.button);
-			if (key && (key_dest == key_menu || key_dest == key_menu_pause)) {
+			if (key && !in_bind && (key_dest == key_menu || key_dest == key_menu_pause)) {
 				int x, y;
 				qboolean slider_handled = false;
 				SDL_MenuCoordinates(event.button.x, event.button.y, &x, &y);
@@ -241,17 +284,22 @@ void Sys_SendKeyEvents(void)
 			else { mouse_dx += event.motion.xrel; mouse_dy += event.motion.yrel; }
 			break;
 		case SDL_MOUSEWHEEL:
-			if (key_dest == key_menu || key_dest == key_menu_pause) {
+			if (in_bind || (key_dest != key_menu && key_dest != key_menu_pause)) {
+				key = event.wheel.y > 0 ? K_MWHEELUP : event.wheel.y < 0 ? K_MWHEELDOWN : 0;
+				if (key) { Key_Event(key, true); Key_Event(key, false); }
+			} else {
 				if (event.wheel.y > 0) Menu_IncreaseCursor();
 				if (event.wheel.y < 0) Menu_DecreaseCursor();
 			}
 			break;
 		case SDL_CONTROLLERBUTTONDOWN: case SDL_CONTROLLERBUTTONUP:
+			IN_SDLControllerActivated(event.cbutton.which);
 			if (event.type == SDL_CONTROLLERBUTTONDOWN) { IN_SetActiveDevice(IN_DEVICE_GAMEPAD); Menu_SetInputDevice(IN_DEVICE_GAMEPAD); }
 			key = SDL_ControllerToQuake(event.cbutton.button);
 			if (key) Key_Event(key, event.type == SDL_CONTROLLERBUTTONDOWN);
 			break;
 		case SDL_CONTROLLERAXISMOTION:
+			IN_SDLControllerActivated(event.caxis.which);
 			if (event.caxis.value > 8192 || event.caxis.value < -8192) { IN_SetActiveDevice(IN_DEVICE_GAMEPAD); Menu_SetInputDevice(IN_DEVICE_GAMEPAD); }
 			if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT ||
 				event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT) {
@@ -302,6 +350,7 @@ int main(int argc, char **argv)
 		Startup_FreeArguments(&startup);
 		return 1;
 	}
+	Key_SetPlatformKeyConversion(SDL_StringToKeynum, SDL_KeynumToString);
 	parms.membase = Startup_AllocateHeap(&startup, DEFAULT_MEMORY_MB * 1024 * 1024,
 		&heap_size, startup_error, sizeof(startup_error));
 	if (!parms.membase) {

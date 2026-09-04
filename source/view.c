@@ -45,6 +45,7 @@ cvar_t	scr_ofsz = {"scr_ofsz","0", false};
 
 cvar_t	cl_rollspeed = {"cl_rollspeed", "200"};
 cvar_t	cl_rollangle = {"cl_rollangle", "2.0"};
+cvar_t	cl_viewbob = {"cl_viewbob", "1", true};
 
 cvar_t	cl_bob = {"cl_bob","0.02", false};
 cvar_t	cl_bobcycle = {"cl_bobcycle","0.06", false};
@@ -110,7 +111,7 @@ float V_CalcRoll (vec3_t angles, vec3_t velocity)
 	else
 		side = value;
 
-	return side*sign;
+	return side * sign * cl_viewbob.value;
 
 }
 
@@ -180,7 +181,7 @@ float V_CalcBob (float speed,float which)//0 = regular, 1 = side bobbing
 
 	}
 
-	return bob;
+	return bob * cl_viewbob.value;
 }
 
 //===================================================== View Bobbing =====================================================
@@ -285,7 +286,7 @@ float V_CalcVBob(float speed, float which)
 			canStep = 1;
 		}
 	}
-	return bob;
+	return bob * cl_viewbob.value;
 }
 
 //=============================================================================
@@ -1737,6 +1738,7 @@ void V_Init (void)
 	Cvar_RegisterVariable (&scr_ofsz);
 	Cvar_RegisterVariable (&cl_rollspeed);
 	Cvar_RegisterVariable (&cl_rollangle);
+	Cvar_RegisterVariable (&cl_viewbob);
 	Cvar_RegisterVariable (&cl_bob);
 	Cvar_RegisterVariable (&cl_bobcycle);
 	Cvar_RegisterVariable (&cl_bobup);

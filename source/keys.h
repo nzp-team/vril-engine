@@ -59,6 +59,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define K_DPAD_LEFT     148
 #define K_DPAD_RIGHT    149
 
+#define K_ALT           150
+#define K_HOME          151
+#define K_END           152
+
 // NSpire Extras
 #define K_CTRL          153
 #define K_SHIFT         155
@@ -78,6 +82,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define K_MOUSE1        165
 #define K_MOUSE2        166
 #define K_MOUSE3        167
+#define K_MOUSE4        168
+#define K_MOUSE5        169
+#define K_MWHEELUP      170
+#define K_MWHEELDOWN    171
+#define K_PGUP          172
+#define K_PGDN          173
+#define K_INSERT        174
+#define K_PAUSE         175
+#define K_CAPSLOCK      176
+#define K_NUMLOCK       177
+#define K_SCROLLLOCK    178
+#define K_PRINTSCREEN   179
 
 // Joystick buttons
 #define	K_JOY1			184
@@ -89,6 +105,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define K_MINUS         189
 
 #define K_SPACE         190
+
+#define K_KP_0          191
+#define K_KP_1          192
+#define K_KP_2          193
+#define K_KP_3          194
+#define K_KP_4          195
+#define K_KP_5          196
+#define K_KP_6          197
+#define K_KP_7          198
+#define K_KP_8          199
+#define K_KP_9          200
+#define K_KP_PERIOD     201
+#define K_KP_DIVIDE     202
+#define K_KP_MULTIPLY   203
+#define K_KP_MINUS      204
+#define K_KP_PLUS       205
+#define K_KP_EQUALS     206
 
 // aux keys are for multi-buttoned joysticks to generate so they can use
 // the normal binding process
@@ -127,19 +160,41 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	K_AUX31			237
 #define	K_AUX32			238
 
+#define K_APPLICATION   239
+#define K_POWER         240
+#define K_HELP          241
+#define K_MENU          242
+#define K_SELECT_KEY    243
+#define K_STOP          244
+#define K_AGAIN         245
+#define K_UNDO          246
+#define K_CUT           247
+#define K_COPY          248
+#define K_PASTE         249
+#define K_FIND          250
+#define K_MUTE          251
+#define K_VOLUMEUP      252
+#define K_VOLUMEDOWN    253
+#define K_SYSREQ        254
+#define K_CLEAR         255
+
+#define K_SDL_SCANCODE_BASE 256
+#define MAX_KEYS            768
+
 typedef enum {key_game, key_console, key_message, key_menu, key_menu_pause} keydest_t;
 
 extern keydest_t	    key_dest;
-extern char             *keybindings[256];
-extern char             *dtbindings[256];
-extern char             *holdbindings[256];
-extern	int		        key_repeats[256];
+extern char             *keybindings[MAX_KEYS];
+extern char             *dtbindings[MAX_KEYS];
+extern char             *holdbindings[MAX_KEYS];
+extern	int		        key_repeats[MAX_KEYS];
 extern	int		        key_count;			// incremented every key event
 extern	int		        key_lastpress;
-extern qboolean	        keydown[256];
+extern qboolean	        keydown[MAX_KEYS];
 
 void Key_Event (int key, qboolean down);
 void Key_Init (void);
+void Key_SetPlatformKeyConversion(int (*string_to_keynum)(const char *name), const char *(*keynum_to_string)(int keynum));
 void Key_WriteBindings (FILE *f);
 void Key_WriteDTBindings (FILE *f);
 void Key_WriteHoldBindings (FILE *f);

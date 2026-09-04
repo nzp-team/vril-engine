@@ -389,9 +389,9 @@ void Menu_IncrementSlider (int dir)
 
 		if (current_menu.cursor == i) {
 			Menu_SetSound(MENU_SND_NAVIGATE);
-			if (dir == K_LEFTARROW) {
+			if (dir == K_LEFTARROW || dir == K_DPAD_LEFT) {
 				current_menu.slider_pressed = -1;
-			} else if (dir == K_RIGHTARROW) {
+			} else if (dir == K_RIGHTARROW || dir == K_DPAD_RIGHT) {
 				current_menu.slider_pressed = 1;
 			}
 			break;
@@ -442,8 +442,12 @@ void Menu_KeyInput (int key)
 		Menu_ButtonPress();
 	}
 
-	if(key == MENU_KEY_BACK || key == K_ESCAPE || key == K_RIGHTFACE) {
-		Menu_SetPreviousMenu();
+	if(key == MENU_KEY_BACK || key == K_ESCAPE || key == K_RIGHTFACE ||
+		(key == K_START && key_dest == key_menu_pause)) {
+		if (m_state == m_pause && menu_paus_submenu == 0)
+			Menu_Resume();
+		else
+			Menu_SetPreviousMenu();
 	}
 }
 
@@ -458,7 +462,7 @@ void Menu_FindKeysForCommand (char *command, int *twokeys)
 	l = strlen(command);
 	count = 0;
 
-	for (j=0 ; j<256 ; j++)
+	for (j=0 ; j<MAX_KEYS ; j++)
 	{
 		if (!IN_KeyMatchesActiveDevice(j))
 			continue;
@@ -483,7 +487,7 @@ void Menu_UnbindCommand (char *command)
 
 	l = strlen(command);
 
-	for (j=0 ; j<256 ; j++)
+	for (j=0 ; j<MAX_KEYS ; j++)
 	{
 		if (!IN_KeyMatchesActiveDevice(j))
 			continue;
