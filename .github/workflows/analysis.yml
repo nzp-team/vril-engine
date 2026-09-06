@@ -1,0 +1,18 @@
+name: Analyze
+on: [pull_request]
+jobs:
+  Clang-Static-Analysis:
+    name: Clang Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Clang and Dependencies
+        run: |
+          apt-get update
+          apt-get install -y make git pkg-config clang \
+            clang-tools libsdl2-dev libsdl2-mixer-dev \
+            libgl-dev libglu1-mesa-dev
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run scan-build
+        run: |
+          scan-build --status-bugs make -f Makefile.sdl CC=clang
