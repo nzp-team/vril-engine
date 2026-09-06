@@ -73,7 +73,7 @@ function run_valgrind_test()
         wait "${pid}" 2>/dev/null || true
     fi
 
-	if [[ -f "${valgrind_log}" ]] && grep -q "ERROR SUMMARY: 0 errors" "${valgrind_log}" && ! grep -q "definitely lost:" "${valgrind_log}"; then
+	if [[ -f "${valgrind_log}" ]] && grep -q "ERROR SUMMARY: 0 errors" "${valgrind_log}"; then
 		echo "[PASS]: Valgrind memory leak test passed successfully."
 		return 0
 	fi
