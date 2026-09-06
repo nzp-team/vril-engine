@@ -16,3 +16,15 @@ jobs:
       - name: Run scan-build
         run: |
           scan-build --status-bugs make -f Makefile.sdl CC=clang
+  Cppcheck-Static-Anaylsis:
+    name: Cppcheck Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install cppcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cppcheck
+      - name: Checkout
+        uses: actions/checkout@v4
+        run: |
+          cppcheck --error-exitcode=1 .
