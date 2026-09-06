@@ -7,8 +7,8 @@ jobs:
     steps:
       - name: Install Clang and Dependencies
         run: |
-          apt-get update
-          apt-get install -y make git pkg-config clang \
+          sudo apt-get update
+          sudo apt-get install -y make git pkg-config clang \
             clang-tools libsdl2-dev libsdl2-mixer-dev \
             libgl-dev libglu1-mesa-dev
       - name: Checkout
