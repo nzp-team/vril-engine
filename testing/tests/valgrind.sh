@@ -26,7 +26,7 @@ function run_valgrind_test()
 		return
 	fi
 
-    if [[ "$(uname -m)" != "x86_64" ]]; then
+    if [ -n "$(dpkg --print-foreign-architectures)" ]; then
         return
     fi
 

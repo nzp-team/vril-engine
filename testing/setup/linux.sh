@@ -16,9 +16,8 @@ export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true
 function install_dependencies()
 {
 	print_info "Installing Linux test dependencies.."
-	dpkg --add-architecture i386
 	apt-get update -y
-	apt-get install -y libc6-dbg:i386 valgrind:i386 valgrind ffmpeg libgl1 libgl1-mesa-dri libglu1-mesa libsdl2-2.0-0 libsdl2-mixer-2.0-0 unzip wget xauth xvfb
+	apt-get install -y valgrind ffmpeg libgl1 libgl1-mesa-dri libglu1-mesa libsdl2-2.0-0 libsdl2-mixer-2.0-0 unzip wget xauth xvfb
 }
 
 function obtain_nzportable()
