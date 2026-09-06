@@ -17,7 +17,7 @@ function install_dependencies()
 {
 	print_info "Installing Linux test dependencies.."
 	apt-get update -y
-	apt-get install -y ffmpeg libgl1 libgl1-mesa-dri libglu1-mesa libsdl2-2.0-0 libsdl2-mixer-2.0-0 unzip wget xauth xvfb
+	apt-get install -y valgrind ffmpeg libgl1 libgl1-mesa-dri libglu1-mesa libsdl2-2.0-0 libsdl2-mixer-2.0-0 unzip wget xauth xvfb
 }
 
 function obtain_nzportable()
@@ -51,7 +51,13 @@ function begin_setup()
 
 function run_nzportable()
 {
-	echo "env --chdir=${working_dir}/nzportable SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a timeout ${TIMEOUT} ./${APP_BIN} -basedir ${working_dir}/nzportable -condebug -nosound -nocdaudio"
+	local with_valgrind="$4"
+	
+	if [ "$with_valgrind" = "1" ]; then
+		echo "env --chdir=${working_dir}/nzportable SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a valgrind --leak-check=full --log-file=${working_dir}/valgrind_report.log ./${APP_BIN} -basedir ${working_dir}/nzportable -condebug -nosound -nocdaudio"
+	else
+		echo "env --chdir=${working_dir}/nzportable SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a timeout ${TIMEOUT} ./${APP_BIN} -basedir ${working_dir}/nzportable -condebug -nosound -nocdaudio"
+	fi
 }
 
 function capture_path()

@@ -28,4 +28,4 @@ jobs:
         uses: actions/checkout@v4
       - name: Run Cppcheck
         run: |
-          cppcheck --error-exitcode=1 .
+          cppcheck --force --error-exitcode=1 .
