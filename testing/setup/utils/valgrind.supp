@@ -1,0 +1,46 @@
+{
+   ignore_sdl2_leaks
+   Memcheck:Leak
+   match-leak-kinds: definite,possible,indirect,reachable
+   ...
+   obj:*/libSDL2*.so*
+}
+
+{
+   ignore_dbus_leaks
+   Memcheck:Leak
+   match-leak-kinds: definite,possible,indirect,reachable
+   ...
+   obj:*/libdbus-1.so*
+}
+
+{
+   ignore_gldispatch_leaks
+   Memcheck:Leak
+   match-leak-kinds: definite,possible,indirect,reachable
+   ...
+   obj:*/libGLdispatch.so*
+}
+
+{
+   ignore_opengl_leaks
+   Memcheck:Leak
+   match-leak-kinds: definite,possible,indirect,reachable
+   ...
+   obj:*/libOpenGL.so*
+}
+
+{
+   ignore_libgl_leaks
+   Memcheck:Leak
+   match-leak-kinds: definite,possible,indirect,reachable
+   ...
+   obj:*/libGL.so*
+}
+
+{
+   ignore_dl_init_leaks
+   Memcheck:Leak
+   match-leak-kinds: definite,possible,indirect,reachable
+   fun:_dl_init
+}
