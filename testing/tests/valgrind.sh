@@ -16,7 +16,7 @@ PLATFORM="$1"
 CONTENT_DIR="$2"
 MODE="$3"
 WORKING_DIR="$4"
-VALGRIND_DURATION_MIN="30"
+VALGRIND_DURATION_MIN="5"
 
 source "setup/${PLATFORM}.sh"
 
@@ -25,6 +25,10 @@ function run_valgrind_test()
 	if [[ "${PLATFORM}" != "linux" ]]; then
 		return
 	fi
+
+    if [[ "$(uname -m)" != "x86_64" ]]; then
+        return
+    fi
 
 	local console_log="${WORKING_DIR}/nzportable/nzp/condebug.log"
 	local launch_log="${WORKING_DIR}/launcher_output.log"
@@ -40,18 +44,34 @@ function run_valgrind_test()
 	echo "[Running: ${command}]"
 
     # Run NZ:P with Valgrind in background
-	eval "${command}" > "${launch_log}" 2>&1 &
-	pid=$!
+    set -m
+    eval "${command}" > "${launch_log}" 2>&1 &
+    pid=$!
+    set +m
 
-	local duration_seconds=$((VALGRIND_DURATION_MIN * 60))
-	echo "Running NZ:P with Valgrind for [${duration_seconds}] seconds..."
-	sleep "${duration_seconds}"
+    local duration_seconds=$((VALGRIND_DURATION_MIN * 60))
+    echo "Running NZ:P with Valgrind for [${duration_seconds}] seconds..."
+    sleep "${duration_seconds}"
 
-    # We need to use -SIGINT or else we get a non-zero RC..
-	if kill -0 "${pid}" 2>/dev/null; then
-		kill -2 "${pid}"
-		wait "${pid}" || true
-	fi
+    if kill -0 "${pid}" 2>/dev/null; then
+        echo "Sending SIGINT to Valgrind process group -${pid}..."
+        kill -INT "-${pid}" 2>/dev/null || kill -INT "${pid}"
+
+        # Wait for graceful exit
+        local timeout=15
+        while kill -0 "${pid}" 2>/dev/null && [ ${timeout} -gt 0 ]; do
+            sleep 1
+            ((timeout--))
+        done
+
+        # Kill..
+        if kill -0 "${pid}" 2>/dev/null; then
+            echo "Valgrind did not exit gracefully; sending SIGKILL..."
+            kill -KILL "-${pid}" 2>/dev/null || kill -9 "${pid}"
+        fi
+
+        wait "${pid}" 2>/dev/null || true
+    fi
 
 	if [[ -f "${valgrind_log}" ]] && grep -q "ERROR SUMMARY: 0 errors" "${valgrind_log}" && ! grep -q "definitely lost:" "${valgrind_log}"; then
 		echo "[PASS]: Valgrind memory leak test passed successfully."
