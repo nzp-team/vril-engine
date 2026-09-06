@@ -20,11 +20,12 @@ jobs:
     name: Cppcheck Static Analysis
     runs-on: ubuntu-latest
     steps:
-      - name: Install cppcheck
+      - name: Install Cppcheck
         run: |
           sudo apt-get update
           sudo apt-get install -y cppcheck
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Run Cppcheck
         run: |
           cppcheck --error-exitcode=1 .
