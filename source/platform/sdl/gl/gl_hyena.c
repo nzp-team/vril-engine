@@ -106,7 +106,7 @@ Hyena_DrawVertices(vertex_t * vertices, int count, int texture_precision, int ve
     (void) vertex_precision;
 
     for (i = 0; i < count; ++i) { vertices[i].xyz.x = vertices[i].xyz.x * hyena_scale[0] + hyena_translation[0]; vertices[i].xyz.y = vertices[i].xyz.y * hyena_scale[1] + hyena_translation[1]; vertices[i].xyz.z = vertices[i].xyz.z * hyena_scale[2] + hyena_translation[2]; }
-    glBindBuffer(GL_ARRAY_BUFFER, 0); glEnableClientState(GL_VERTEX_ARRAY); glVertexPointer(3, GL_FLOAT, sizeof(*vertices), &vertices[0].xyz);
+    glEnableClientState(GL_VERTEX_ARRAY); glVertexPointer(3, GL_FLOAT, sizeof(*vertices), &vertices[0].xyz);
     if (textured) { glEnableClientState(GL_TEXTURE_COORD_ARRAY); glTexCoordPointer(2, GL_FLOAT, sizeof(*vertices), &vertices[0].uv); }
     glDrawArrays(mode, 0, count); if (textured) glDisableClientState(GL_TEXTURE_COORD_ARRAY); glDisableClientState(GL_VERTEX_ARRAY);
     free(vertices);
@@ -117,7 +117,6 @@ void Hyena_EndVertices(void){ }
 void Hyena_DrawAliasBatch(const alias_batch_t *batch)
 {
     if (!batch->num_indices) return;
-    glBindBuffer(GL_ARRAY_BUFFER, 0); glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glEnableClientState(GL_VERTEX_ARRAY); glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glVertexPointer(3, GL_SHORT, sizeof(*batch->vertices), batch->vertices[0].xyz);
     glTexCoordPointer(2, GL_FLOAT, sizeof(*batch->vertices), batch->vertices[0].uv);
@@ -142,7 +141,6 @@ void Hyena_DrawSurfaceFan(const float *source, int count, int stride,
         Hyena_DrawVertices(vertices, count, HYE_TEXTURE_32BITFLOAT, HYE_VERTEX_32BITFLOAT);
         Hyena_EndVertices(); return;
     }
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glEnableClientState(GL_VERTEX_ARRAY); glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glVertexPointer(3, GL_FLOAT, stride * sizeof(float), source);
     glTexCoordPointer(2, GL_FLOAT, stride * sizeof(float), source + texture_offset);
