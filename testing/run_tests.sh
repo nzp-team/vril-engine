@@ -20,14 +20,14 @@ source "nzp_utility.sh"
 function print_help()
 {
     echo "Usage: run_tests.sh --platform psp --test map-boot --content /path/to/validate/"
-    echo "-p (--platform) : Platform to run tests for. Looks in setup directory."
-    echo "-t (--test)     : Test to run. Use \"all\" to run all tests. Looks in tests directory."
-    echo "-c (--content)  : Path to validate directory for content comparison."
-    echo "-b (--binary)   : Optional path to Vril engine binary to test under instead of nightly."
-    echo "-g (--generate) : Generates master bitmaps of all maps to compare against."
+    echo "-p (--platform)    : Platform to run tests for. Looks in setup directory."
+    echo "-t (--test)        : Test to run. Use \"all\" to run all tests. Looks in tests directory."
+    echo "-c (--content)     : Path to validate directory for content comparison."
+    echo "-b (--binary)      : Optional path to Vril engine binary to test under instead of nightly."
+    echo "-g (--generate)    : Generates master bitmaps of all maps to compare against."
     echo "-w (--working-dir) : Working directory for testing (persistent if mounted). Defaults to /working."
-    echo "-m (--mode)     : Extra mode flag to pass into test scripts."
-    echo "-h (--help)     : Displays this message."
+    echo "-m (--mode)        : Extra mode flag to pass into test scripts."
+    echo "-h (--help)        : Displays this message."
 }
 
 while true; do

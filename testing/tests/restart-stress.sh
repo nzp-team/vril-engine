@@ -17,7 +17,7 @@ source "setup/${PLATFORM}.sh"
 
 function run_restart_stress_test()
 {
-	local console_log="${WORKING_DIR}/nzportable/nzp/condebug.log"
+	local console_log="$(test_game_path)/nzp/condebug.log"
 	local launch_log="${WORKING_DIR}/restart-stress.log"
 	local command
 	local exit_status

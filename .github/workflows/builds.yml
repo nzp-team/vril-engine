@@ -194,7 +194,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ctr-nzp-3dsx
-          path: ./build/3ds/bin/nzportable.3dsx
+          path: ./build/ctr/bin/nzportable.3dsx
   Compile-TNS:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
@@ -264,9 +264,59 @@ jobs:
             path: |
               ./build/nx/bin/nzportable.nro
               ./build/nx/bin/nzportable.nacp
-  Pull-Request-Test-PSP1000:
+  Pull-Request-Test-3DS:
     if: github.event_name == 'pull_request'
-    name: PSP-1000 Pull Request Tests
+    name: ${{ matrix.mode }} 3DS Pull Request Tests
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [old, new]
+    runs-on: ubuntu-24.04
+    container:
+      image: ubuntu:24.04
+      options: --shm-size=8192m
+    needs: [Compile-3DSX]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download 3DS Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ctr-nzp-3dsx
+          path: testing/working/ctr-artifact
+      - name: Run All
+        run: |
+          cd ./testing
+          ./run_tests.sh --platform ctr --test all --content "$(pwd)/validate" --working-dir working/ --mode ${{ matrix.mode }} --binary "$(pwd)/working/ctr-artifact/nzportable.3dsx"
+      - name: Upload Failure Artifact
+        id: ctr_failure_artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ctr-${{ matrix.mode }}-pr-failures
+          path: testing/working/fail/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Add Failure Summary
+        if: failure() && steps.ctr_failure_artifact.outputs.artifact-url != ''
+        env:
+          ARTIFACT_URL: ${{ steps.ctr_failure_artifact.outputs.artifact-url }}
+        run: |
+          {
+            echo "## ${{ matrix.mode }} 3DS PR Test Failed"
+            echo ""
+            cat testing/working/fail/summary.md
+            echo ""
+            echo "[Failure Artifact](${ARTIFACT_URL})"
+            echo ""
+          } >> "${GITHUB_STEP_SUMMARY}"
+  Pull-Request-Test-PSP:
+    if: github.event_name == 'pull_request'
+    name: PSP ${{ matrix.mode }} Pull Request Tests
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [fat, slim]
     runs-on: ubuntu-latest
     container:
       image: ubuntu:24.04
@@ -285,23 +335,23 @@ jobs:
       - name: Run All
         run: |
           cd ./testing
-          ./run_tests.sh --platform psp --test all --content "$(pwd)/validate" --working-dir working/ --mode fat --binary /psp-nzp-eboot/EBOOT.PBP
+          ./run_tests.sh --platform psp --test all --content "$(pwd)/validate" --working-dir working/ --mode ${{ matrix.mode }} --binary /psp-nzp-eboot/EBOOT.PBP
       - name: Upload Failure Artifact
-        id: psp_1000_failure_artifact
+        id: psp_failure_artifact
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: psp-1000-pr-failures
+          name: psp-${{ matrix.mode }}-pr-failures
           path: testing/working/fail/
           if-no-files-found: ignore
           retention-days: 14
       - name: Add Image Comparison Failure Summary
-        if: failure() && steps.psp_1000_failure_artifact.outputs.artifact-url != ''
+        if: failure() && steps.psp_failure_artifact.outputs.artifact-url != ''
         env:
-          ARTIFACT_URL: ${{ steps.psp_1000_failure_artifact.outputs.artifact-url }}
+          ARTIFACT_URL: ${{ steps.psp_failure_artifact.outputs.artifact-url }}
         run: |
           {
-            echo "## PSP 1000 PR Test Failed"
+            echo "## PSP ${{ matrix.mode }} PR Test Failed"
             echo ""
             cat testing/working/fail/summary.md
             echo ""
@@ -438,50 +488,6 @@ jobs:
         run: |
           {
             echo "## Windows ${{ matrix.arch }} PR Test Failed"
-            echo ""
-            cat testing/working/fail/summary.md
-            echo ""
-            echo "[Failure Artifact](${ARTIFACT_URL})"
-            echo ""
-          } >> "${GITHUB_STEP_SUMMARY}"
-  Pull-Request-Test-PSP2000:
-    if: github.event_name == 'pull_request'
-    name: PSP-2000 Pull Request Tests
-    runs-on: ubuntu-latest
-    container:
-      image: ubuntu:24.04
-      options: --shm-size=8192m
-    needs: [Compile-EBOOT]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Wait for GitHub to keep up..
-        run: sleep 2s
-        shell: bash
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: /
-      - name: Run All
-        run: |
-          cd ./testing
-          ./run_tests.sh --platform psp --test all --content "$(pwd)/validate" --working-dir working/ --mode slim --binary /psp-nzp-eboot/EBOOT.PBP
-      - name: Upload Failure Artifact
-        id: psp_2000_failure_artifact
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: psp-2000-pr-failures
-          path: testing/working/fail/
-          if-no-files-found: ignore
-          retention-days: 14
-      - name: Add Image Comparison Failure Summary
-        if: failure() && steps.psp_2000_failure_artifact.outputs.artifact-url != ''
-        env:
-          ARTIFACT_URL: ${{ steps.psp_2000_failure_artifact.outputs.artifact-url }}
-        run: |
-          {
-            echo "## PSP 2000 PR Test Failed"
             echo ""
             cat testing/working/fail/summary.md
             echo ""
