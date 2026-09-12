@@ -27,16 +27,7 @@ static unsigned short *r_alias_indices;
 static int r_alias_vertex_capacity;
 static int r_alias_index_capacity;
 
-void
-R_DrawAliasCommands(const int *commands, const trivertx_t *pose1,
-  const trivertx_t *pose2, float blend, qboolean packed_static,
-  int command_words)
-{
-    Hyena_DrawAliasCommands(commands, pose1, pose2, blend,
-      packed_static, command_words);
-}
-
-void
+static void
 R_BuildAliasBatch(const int *commands, const trivertx_t *pose1,
   const trivertx_t *pose2, float blend, alias_batch_t *batch)
 {
@@ -44,7 +35,6 @@ R_BuildAliasBatch(const int *commands, const trivertx_t *pose1,
     int count, vertex_count = 0, index_count = 0;
     int vertex_base = 0, index = 0;
 
-    memset(batch, 0, sizeof(*batch));
     while ((count = *scan++) != 0) {
         if (count < 0)
             count = -count;
@@ -103,4 +93,23 @@ R_BuildAliasBatch(const int *commands, const trivertx_t *pose1,
             pose2 += count;
         vertex_base += count;
     }
+}
+
+void
+R_DrawAliasCommands(const int *commands, const trivertx_t *pose1,
+  const trivertx_t *pose2, float blend, qboolean packed_static,
+  int command_words)
+{
+    alias_batch_t batch;
+
+    memset(&batch, 0, sizeof(batch));
+    batch.commands = commands;
+    batch.pose1 = pose1;
+    batch.pose2 = pose2;
+    batch.blend = blend;
+    batch.packed_static = packed_static;
+    batch.command_words = command_words;
+    if (!command_words)
+        R_BuildAliasBatch(commands, pose1, pose2, blend, &batch);
+    Hyena_DrawAliasBatch(&batch);
 }

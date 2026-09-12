@@ -269,24 +269,20 @@ void Hyena_DrawVertices(vertex_t *vertices, int count, int texture_precision, in
 	free(vertices);
 }
 void Hyena_EndVertices(void) {}
-void Hyena_DrawAliasCommands(const int *commands, const trivertx_t *pose1,
-  const trivertx_t *pose2, float blend, qboolean packed_static, int command_words)
+void Hyena_DrawAliasBatch(const alias_batch_t *batch)
 {
-    alias_batch_t batch;
     vertex_t *vertices;
     int i;
-    (void)packed_static; (void)command_words;
-    R_BuildAliasBatch(commands, pose1, pose2, blend, &batch);
-    if (!batch.num_indices) return;
-    vertices = Hyena_AllocateMemoryForVertices(batch.num_indices);
-    for (i = 0; i < batch.num_indices; ++i) {
-        const alias_vertex_t *in = &batch.vertices[batch.indices[i]];
+    if (!batch->num_indices) return;
+    vertices = Hyena_AllocateMemoryForVertices(batch->num_indices);
+    for (i = 0; i < batch->num_indices; ++i) {
+        const alias_vertex_t *in = &batch->vertices[batch->indices[i]];
         Hyena_2DTextureCoord(&vertices[i], in->uv[0], in->uv[1]);
         Hyena_VertexXYZ(&vertices[i], in->xyz[0] / 128.0f,
           in->xyz[1] / 128.0f, in->xyz[2] / 128.0f);
     }
     Hyena_BeginVertices(HYE_TRIANGLES);
-    Hyena_DrawVertices(vertices, batch.num_indices, HYE_TEXTURE_32BITFLOAT,
+    Hyena_DrawVertices(vertices, batch->num_indices, HYE_TEXTURE_32BITFLOAT,
       HYE_VERTEX_32BITFLOAT);
     Hyena_EndVertices();
 }

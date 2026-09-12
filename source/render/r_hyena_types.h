@@ -50,6 +50,12 @@ typedef struct {
     unsigned short *indices;
     int num_vertices;
     int num_indices;
+    const int *commands;
+    const trivertx_t *pose1;
+    const trivertx_t *pose2;
+    float blend;
+    qboolean packed_static;
+    int command_words;
 } alias_batch_t;
 
 typedef byte col_t[4];

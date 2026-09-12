@@ -117,18 +117,14 @@ Hyena_DrawVertices(vertex_t * vertices, int count, int texture_precision, int ve
 
 void Hyena_EndVertices(void){ }
 
-void Hyena_DrawAliasCommands(const int *commands, const trivertx_t *pose1,
-  const trivertx_t *pose2, float blend, qboolean packed_static, int command_words)
+void Hyena_DrawAliasBatch(const alias_batch_t *batch)
 {
-    alias_batch_t batch;
-    (void)packed_static; (void)command_words;
-    R_BuildAliasBatch(commands, pose1, pose2, blend, &batch);
-    if (!batch.num_indices) return;
+    if (!batch->num_indices) return;
     glEnableClientState(GL_VERTEX_ARRAY); glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glVertexPointer(3, GL_SHORT, sizeof(*batch.vertices), batch.vertices[0].xyz);
-    glTexCoordPointer(2, GL_FLOAT, sizeof(*batch.vertices), batch.vertices[0].uv);
+    glVertexPointer(3, GL_SHORT, sizeof(*batch->vertices), batch->vertices[0].xyz);
+    glTexCoordPointer(2, GL_FLOAT, sizeof(*batch->vertices), batch->vertices[0].uv);
     glPushMatrix(); glScalef(1.0f / 128.0f, 1.0f / 128.0f, 1.0f / 128.0f);
-    glDrawElements(GL_TRIANGLES, batch.num_indices, GL_UNSIGNED_SHORT, batch.indices);
+    glDrawElements(GL_TRIANGLES, batch->num_indices, GL_UNSIGNED_SHORT, batch->indices);
     glPopMatrix();
     glDisableClientState(GL_TEXTURE_COORD_ARRAY); glDisableClientState(GL_VERTEX_ARRAY);
 }

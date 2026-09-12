@@ -233,24 +233,25 @@ Hyena_DrawVertices(vertex_t * vertices, int num_vertices, int texture_precision,
 }
 
 void
-Hyena_DrawAliasCommands(const int *commands, const trivertx_t *pose1,
-  const trivertx_t *pose2, float blend, qboolean packed_static,
-  int command_words)
+Hyena_DrawAliasBatch(const alias_batch_t *batch)
 {
     typedef struct { int uv, xyz; } packed_vertex_t;
+    const int *commands = batch->commands;
+    const trivertx_t *pose1 = batch->pose1;
+    const trivertx_t *pose2 = batch->pose2;
     packed_vertex_t *output = NULL;
     int count, output_index = 0;
 
-    if (!packed_static)
+    if (!batch->packed_static)
         output = (packed_vertex_t *)sceGuGetMemory(sizeof(*output) *
-          command_words * (pose2 ? 2 : 1));
+          batch->command_words * (pose2 ? 2 : 1));
 
     while ((count = *commands++) != 0) {
         int mode = count < 0 ? GU_TRIANGLE_FAN : GU_TRIANGLE_STRIP;
         int i;
         if (count < 0)
             count = -count;
-        if (packed_static) {
+        if (batch->packed_static) {
             sceGuDrawArray(mode, GU_TEXTURE_16BIT | GU_VERTEX_8BIT,
               count, 0, commands);
             commands += count * 2;
@@ -265,8 +266,8 @@ Hyena_DrawAliasCommands(const int *commands, const trivertx_t *pose1,
             }
         }
         if (pose2) {
-            sceGuMorphWeight(0, 1.0f - blend);
-            sceGuMorphWeight(1, blend);
+            sceGuMorphWeight(0, 1.0f - batch->blend);
+            sceGuMorphWeight(1, batch->blend);
         }
         sceGuDrawArray(mode, GU_TEXTURE_16BIT | GU_VERTEX_8BIT |
           (pose2 ? GU_VERTICES(2) : 0), count, 0,

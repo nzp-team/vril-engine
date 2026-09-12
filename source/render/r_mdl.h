@@ -30,8 +30,6 @@ extern "C" {
 void R_DrawAliasCommands(const int *commands, const trivertx_t *pose1,
   const trivertx_t *pose2, float blend, qboolean packed_static,
   int command_words);
-void R_BuildAliasBatch(const int *commands, const trivertx_t *pose1,
-  const trivertx_t *pose2, float blend, alias_batch_t *batch);
 
 #ifdef __cplusplus
 }
