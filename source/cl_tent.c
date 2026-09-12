@@ -132,7 +132,7 @@ CL_ParseTEnt
 void CL_ParseTEnt (void)
 {
 	int		type;
-	vec3_t	pos;
+	vec3_t	pos, impact_dir;
 	dlight_t	*dl;
 	//int		rnd;
 	int		colorStart, colorLength;
@@ -224,10 +224,11 @@ void CL_ParseTEnt (void)
 		dl->radius = 65;
 		dl->die = cl.time + 0.3;
 		dl->decay = 300;
-		dl->color[0] = 0;
-		dl->color[1] = 255;
-		dl->color[2] = 0; 
-		R_RunParticleEffect (pos, vec3_origin, 0, 256);
+		dl->color[0] = 0.24f;
+		dl->color[1] = 2.0f;
+		dl->color[2] = 0.48f;
+		VectorSubtract(r_refdef.vieworg, pos, impact_dir);
+		R_RunParticleEffect (pos, impact_dir, 0, 256);
 		//S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 0.5); // NZPFIXME - add raygun hum
 		break;
 	case TE_RAYSPLASHRED:
@@ -239,10 +240,11 @@ void CL_ParseTEnt (void)
 		dl->radius = 65;
 		dl->die = cl.time + 0.3;
 		dl->decay = 300;
-		dl->color[0] = 255;
-		dl->color[1] = 0;
-		dl->color[2] = 0; 
-		R_RunParticleEffect (pos, vec3_origin, 0, 512);
+		dl->color[0] = 2.0f;
+		dl->color[1] = 0.20f;
+		dl->color[2] = 0.62f;
+		VectorSubtract(r_refdef.vieworg, pos, impact_dir);
+		R_RunParticleEffect (pos, impact_dir, 0, 512);
 		//S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 0.5); // NZPFIXME - add raygun hum
 		break;
 	case TE_TAREXPLOSION:			// tarbaby explosion
@@ -523,5 +525,3 @@ void CL_UpdateTEnts (void)
 	}
 
 }
-
-

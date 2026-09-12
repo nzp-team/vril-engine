@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // server.h
 
+#include "entity_effects.h"
+
 typedef struct
 {
 	int			maxclients;
@@ -163,24 +165,6 @@ typedef struct client_s
 #define	FL_PARTIALGROUND		1024	// not all corners are valid
 #define	FL_WATERJUMP			2048	// player jumping out of water
 #define	FL_JUMPRELEASED			4096	// for jump debouncing
-
-// entity effects
-
-#define	EF_BLUELIGHT			1
-#define	EF_MUZZLEFLASH 			2
-#define	EF_BRIGHTLIGHT 			4
-#define	EF_REDLIGHT 			8
-#define	EF_ORANGELIGHT			16
-#define	EF_GREENLIGHT			32
-#define	EF_PINKLIGHT			64				// formerly EF_LIGHT
-#define	EF_NODRAW				128
-#define EF_LIMELIGHT			256				// formerly EF_BRIGHTFIELD
-#define EF_FULLBRIGHT			512
-#define EF_CYANLIGHT			1024			// formerly EF_DARKLIGHT
-#define EF_YELLOWLIGHT			2048			// formerly EF_DARKFIELD
-#define EF_PURPLELIGHT    		4096
-#define EF_RAYRED	 			8196			// red trail for porter x2
-#define EF_RAYGREEN  			16384			// green trail for ray gun
 
 #define	SPAWNFLAG_NOT_EASY			256
 #define	SPAWNFLAG_NOT_MEDIUM		512

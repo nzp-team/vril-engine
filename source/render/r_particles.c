@@ -25,6 +25,15 @@
 
 #define ABSOLUTE_MIN_PARTICLES 64
 #define ABSOLUTE_MAX_PARTICLES 6144
+#define RAY_RING_START_SIZE 1.25f
+#define RAY_RING_PARTICLE_START_SIZE 0.75f
+#define RAY_RING_PARTICLE_GROWTH 6.0f
+#define RAY_RING_LIFETIME 0.65f
+#define RAY_RING_GROWTH 28.0f
+#define RAY_RING_SEGMENTS 32
+#define RAY_MUZZLE_RING_PARTICLE_GROWTH 3.0f
+#define RAY_MUZZLE_RING_RADIAL_SPEED 6.0f
+#define RAY_MUZZLE_RING_SEGMENTS 20
 
 extern int decal_blood1, decal_blood2, decal_blood3, decal_q3blood, decal_burn, decal_mark, decal_glow;
 
@@ -68,6 +77,8 @@ typedef enum {
     p_muzzleflash2,
     p_muzzleflash3,
     p_q3flame,
+    p_rayringpart,
+    p_raymuzzleringpart,
     num_particletypes
 } part_type_t;
 
@@ -456,7 +467,7 @@ R_InitParticles(void)
     loading_cur_step++;
     SCR_UpdateScreen();
 
-    max_s = max_t = 128.0;
+    max_s = max_t = 256.0;
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
     particleimage = Image_LoadImage("textures/particles/flame", IMAGE_TGA, 1, true, false);
@@ -466,7 +477,7 @@ R_InitParticles(void)
         return;
     }
 
-    ADD_PARTICLE_TEXTURE(ptex_q3flame, particleimage, 0, 1, 0, 0, 64, 64);
+    ADD_PARTICLE_TEXTURE(ptex_q3flame, particleimage, 0, 1, 0, 0, 256, 256);
     loading_cur_step++;
     SCR_UpdateScreen();
 
@@ -587,7 +598,8 @@ R_InitParticles(void)
     ADD_PARTICLE_TYPE(p_trailpart, pd_billboard, HYE_SRC_ALPHA, HYE_ONE_MINUS_SRC_ALPHA, ptex_generic, 230, 0, 0,
       pm_static, 0);
     ADD_PARTICLE_TYPE(p_smoke, pd_billboard, HYE_SRC_ALPHA, HYE_ONE, ptex_smoke, 140, 3, 0, pm_normal, 0);
-    ADD_PARTICLE_TYPE(p_raysmoke, pd_billboard, HYE_SRC_ALPHA, HYE_ONE, ptex_smoke, 140, 3, 0, pm_normal, 0);
+    ADD_PARTICLE_TYPE(p_raysmoke, pd_billboard, HYE_SRC_ALPHA, HYE_ONE_MINUS_SRC_ALPHA, ptex_smoke, 190, 3, 0,
+      pm_normal, 0);
     ADD_PARTICLE_TYPE(p_dpfire, pd_billboard, HYE_SRC_ALPHA, HYE_ONE_MINUS_SRC_ALPHA, ptex_dpsmoke, 144, 0, 0, pm_die,
       0);
 
@@ -655,7 +667,12 @@ R_InitParticles(void)
     loading_cur_step++;
     SCR_UpdateScreen();
 
-    ADD_PARTICLE_TYPE(p_q3flame, pd_billboard, HYE_SRC_ALPHA, HYE_ONE, ptex_q3flame, 180, 0.66, 0, pm_nophysics, 0);
+    ADD_PARTICLE_TYPE(p_q3flame, pd_billboard, HYE_SRC_ALPHA, HYE_ONE_MINUS_SRC_ALPHA, ptex_q3flame, 64,
+      12.0f / 9.8f, 0, pm_nophysics, 0);
+    ADD_PARTICLE_TYPE(p_rayringpart, pd_billboard, HYE_SRC_ALPHA, HYE_ONE_MINUS_SRC_ALPHA, ptex_generic, 230, 0, 0,
+      pm_nophysics, 0);
+    ADD_PARTICLE_TYPE(p_raymuzzleringpart, pd_billboard, HYE_SRC_ALPHA, HYE_ONE_MINUS_SRC_ALPHA, ptex_generic, 230,
+      0, 0, pm_nophysics, -1);
 
     loading_cur_step++;
     SCR_UpdateScreen();
@@ -681,13 +698,23 @@ R_InitParticles(void)
         _p->bounces    = 0;                    \
         VectorCopy(_color, _p->color);
 
-__inline static void
+static void
+QMB_RandomDirection(vec3_t dir)
+{
+    do {
+        dir[0] = (rand() % 201) - 100;
+        dir[1] = (rand() % 201) - 100;
+        dir[2] = (rand() % 201) - 100;
+    } while (!VectorNormalize(dir));
+}
+
+__inline static particle_t *
 AddParticle(part_type_t type, vec3_t org, int count, float size, float time, col_t col, vec3_t dir)
 {
     byte * color;
     int i, j;
     float tempSize; // stage;
-    particle_t * p;
+    particle_t * p, *last = NULL;
     particle_type_t * pt;
 
     if (!qmb_initialized)
@@ -703,6 +730,7 @@ AddParticle(part_type_t type, vec3_t org, int count, float size, float time, col
         color = col ? col : ColorForParticle(type);
 
         INIT_NEW_PARTICLE(pt, p, color, size, time);
+        last = p;
 
         switch (type) {
             case p_spark:
@@ -716,20 +744,33 @@ AddParticle(part_type_t type, vec3_t org, int count, float size, float time, col
             case p_rayspark:
                 p->size = 1.175f;
                 VectorCopy(org, p->org);
-                tempSize  = size * 2;
-                p->vel[0] = (int) (rand() % (int) tempSize) - (int) ((int) tempSize / 6);
-                p->vel[1] = (int) (rand() % (int) tempSize) - (int) ((int) tempSize / 6);
-                p->vel[2] = /*(rand() % (int)tempSize) - (*/ (int) tempSize;
+                QMB_RandomDirection(p->vel);
+                VectorScale(p->vel, size * (2.4f + (rand() % 81) / 100.0f), p->vel);
                 break;
             case p_raysmoke:
-                for (j = 0 ; j < 3 ; j++)
-                    p->org[j] = org[j] + ((rand() & 31) - 16) / 2.0f;
+            {
+                vec3_t smoke_direction;
+                float radial_speed;
 
-                p->vel[0] = ((rand() % 10) + 2);
-                p->vel[1] = ((rand() % 10) + 2);
-                p->vel[2] = ((rand() % 10) + 2) * 5;
-                p->growth = 7.5;
+                for (j = 0 ; j < 3 ; j++)
+                    p->org[j] = org[j] + ((rand() % 7) - 3);
+
+                VectorCopy(dir, smoke_direction);
+                if (VectorNormalize(smoke_direction)) {
+                    do {
+                        QMB_RandomDirection(p->vel);
+                    } while (DotProduct(p->vel, smoke_direction) < 0);
+                    VectorMA(p->org, 2.0f, smoke_direction, p->org);
+                } else {
+                    QMB_RandomDirection(p->vel);
+                }
+
+                radial_speed = 90.0f + (rand() % 16);
+                VectorScale(p->vel, radial_speed, p->vel);
+
+                p->growth = 24.0f;
                 break;
+            }
             case p_smoke:
                 for (j = 0 ; j < 3 ; j++)
                     p->org[j] = org[j] + ((rand() & 31) - 16) / 2.0f;
@@ -876,12 +917,12 @@ AddParticle(part_type_t type, vec3_t org, int count, float size, float time, col
                     p->vel[j] = (rand() % 6) - 3;
                 break;
 
-            case p_q3flame: // shpuld
-                VectorCopy(org, p->org);
-                p->vel[0] = (rand() & 3) - 2;
-                p->vel[1] = (rand() & 3) - 2;
-                p->vel[2] = (rand() & 2);
-                p->growth = 6;
+            case p_q3flame:
+                QMB_RandomDirection(p->vel);
+                VectorAdd(org, dir, p->org);
+                VectorMA(p->org, 8, p->vel, p->org);
+                VectorClear(p->vel);
+                p->growth = 50;
                 break;
 
             case p_torch_flame:
@@ -900,6 +941,18 @@ AddParticle(part_type_t type, vec3_t org, int count, float size, float time, col
                 p->growth = -1.5;
                 break;
 
+            case p_rayringpart:
+                VectorCopy(org, p->org);
+                VectorCopy(dir, p->vel);
+                p->growth = RAY_RING_PARTICLE_GROWTH;
+                break;
+
+            case p_raymuzzleringpart:
+                VectorCopy(org, p->org);
+                VectorCopy(dir, p->vel);
+                p->growth = RAY_MUZZLE_RING_PARTICLE_GROWTH;
+                break;
+
             case p_streaktrail:
             case p_lightningbeam:
                 VectorCopy(org, p->org);
@@ -914,6 +967,8 @@ AddParticle(part_type_t type, vec3_t org, int count, float size, float time, col
                 break;
         }
     }
+
+    return last;
 } /* AddParticle */
 
 __inline static void
@@ -1146,13 +1201,6 @@ QMB_UpdateParticles(void)
                 case p_streaktrail:// R00k
                 case p_lightningbeam:
                     p->color[3] = p->bounces * ((p->die - particle_time) / (p->die - p->start));
-                    break;
-
-                // shpuld
-                case p_q3flame:
-                    p->color[3] = pt->startalpha * ((p->die - particle_time) / (p->die - p->start));
-                    p->color[0] = p->color[1] = p->color[2] = pt->startalpha
-                      * ((p->die - particle_time) / (p->die - p->start));
                     break;
 
                 default:
@@ -1906,7 +1954,7 @@ QMB_RunParticleEffect(vec3_t org, vec3_t dir, int col, int count)
     if (!r_runqmbparticles.value)
         return;
 
-    col_t color;
+    col_t color, smoke_color;
     vec3_t neworg, newdir;
     int i, j, particlecount;
     int contents; // R00k Added
@@ -1932,11 +1980,11 @@ QMB_RunParticleEffect(vec3_t org, vec3_t dir, int col, int count)
         return;
     } else if (col == 111) { // we will use this color for flames
         color[0] = color[1] = color[2] = 255;
-        AddParticle(p_q3flame, org, 3, 3, 2, color, dir);
+        AddParticle(p_q3flame, org, 6, 24, 1.5f, color, dir);
         return;
     } else if (col == 112) { // we will use this color for big flames
         color[0] = color[1] = color[2] = 255;
-        AddParticle(p_q3flame, org, 3, 6, 2, color, dir);
+        AddParticle(p_q3flame, org, 6, 48, 1.5f, color, dir);
         return;
     }
 
@@ -2013,18 +2061,24 @@ QMB_RunParticleEffect(vec3_t org, vec3_t dir, int col, int count)
             }
             break;
         case 256:
-            color[0] = 0;
+            color[0] = 30;
             color[1] = 255;
-            color[2] = 0;
-            AddParticle(p_raysmoke, org, 3, 25, 1.225f + ((rand() % 10) - 2) / 40.0f, color, zerodir);
-            AddParticle(p_rayspark, org, 12, 75, 0.6f, color, zerodir);
+            color[2] = 60;
+            smoke_color[0] = 60;
+            smoke_color[1] = 255;
+            smoke_color[2] = 110;
+            AddParticle(p_raysmoke, org, 10, 36, 1.225f + ((rand() % 10) - 2) / 40.0f, smoke_color, dir);
+            AddParticle(p_rayspark, org, 12, 90, 0.45f, color, dir);
             break;
         case 512:
             color[0] = 255;
-            color[1] = 0;
-            color[2] = 0;
-            AddParticle(p_raysmoke, org, 3, 25, 1.225f + ((rand() % 10) - 2) / 40.0f, color, zerodir);
-            AddParticle(p_rayspark, org, 12, 75, 0.6f, color, zerodir);
+            color[1] = 35;
+            color[2] = 80;
+            smoke_color[0] = 255;
+            smoke_color[1] = 62;
+            smoke_color[2] = 95;
+            AddParticle(p_raysmoke, org, 10, 36, 1.225f + ((rand() % 10) - 2) / 40.0f, smoke_color, dir);
+            AddParticle(p_rayspark, org, 12, 90, 0.45f, color, dir);
             break;
         default:
             /*
@@ -2128,8 +2182,49 @@ pap_detr(int weapon)
 
 // R00k added particle muzzleflashes
 qboolean red_or_blue_pap;
+
+static void
+R_SpawnParticleRing(part_type_t type, vec3_t center, vec3_t axis, col_t color, float radius, float radial_speed,
+  float particle_size, float lifetime, float start_delay, int segments)
+{
+    vec3_t forward, ring_right, ring_up;
+    int segment;
+
+    VectorCopy(axis, forward);
+    if (!VectorNormalize(forward))
+        VectorCopy(vpn, forward);
+
+    if (fabsf(forward[2]) < 0.9f) {
+        ring_right[0] = -forward[1];
+        ring_right[1] = forward[0];
+        ring_right[2] = 0;
+    } else {
+        ring_right[0] = 0;
+        ring_right[1] = -forward[2];
+        ring_right[2] = forward[1];
+    }
+    VectorNormalize(ring_right);
+    CrossProduct(forward, ring_right, ring_up);
+
+    for (segment = 0; segment < segments; ++segment) {
+        float angle = (2.0f * HYE_PI * segment) / segments;
+        vec3_t radial, org, velocity;
+        particle_t *p;
+
+        VectorScale(ring_right, cosf(angle), radial);
+        VectorMA(radial, sinf(angle), ring_up, radial);
+        VectorMA(center, radius, radial, org);
+        VectorScale(radial, radial_speed, velocity);
+        p = AddParticle(type, org, 1, particle_size, lifetime, color, velocity);
+        if (p) {
+            p->start += start_delay;
+            p->die += start_delay;
+        }
+    }
+}
+
 void
-QMB_MuzzleFlash(vec3_t org)
+QMB_MuzzleFlash(vec3_t org, vec3_t muzzle_axis)
 {
     double frametime = fabs(cl.time - cl.oldtime);
     col_t color;
@@ -2160,14 +2255,16 @@ QMB_MuzzleFlash(vec3_t org)
     // Weapon overrides for muzzleflash color
     switch (cl.stats[STAT_ACTIVEWEAPON]) {
         case W_RAY:
-            color[0] = 0;
+        case W_RAYMK2:
+            color[0] = 30;
             color[1] = 255;
-            color[2] = 0;
+            color[2] = 60;
             break;
         case W_PORTER:
+        case W_PORTERMK2:
             color[0] = 255;
-            color[1] = 0;
-            color[2] = 0;
+            color[1] = 35;
+            color[2] = 80;
             break;
         case W_TESLA:
             color[0] = 22;
@@ -2191,19 +2288,31 @@ QMB_MuzzleFlash(vec3_t org)
         if (size == 0 || cl.stats[STAT_ZOOM] == 2)
             return;
 
-        switch (rand() % 3) {
-            case 0:
-                AddParticle(p_muzzleflash, org, 1, size, timemod * (float) frametime, color, zerodir);
-                break;
-            case 1:
-                AddParticle(p_muzzleflash2, org, 1, size, timemod * (float) frametime, color, zerodir);
-                break;
-            case 2:
-                AddParticle(p_muzzleflash3, org, 1, size, timemod * (float) frametime, color, zerodir);
-                break;
-            default:
-                AddParticle(p_muzzleflash, org, 1, size, timemod * (float) frametime, color, zerodir);
-                break;
+        if (cl.stats[STAT_ACTIVEWEAPON] == W_RAY || cl.stats[STAT_ACTIVEWEAPON] == W_PORTER) {
+            vec3_t ring_center;
+            int ring;
+
+            for (ring = 0; ring < 3; ++ring) {
+                VectorMA(org, 1.5f + ring * 5.5f, muzzle_axis, ring_center);
+                R_SpawnParticleRing(p_raymuzzleringpart, ring_center, muzzle_axis, color, 0.20f + ring * 0.80f,
+                  RAY_MUZZLE_RING_RADIAL_SPEED + ring * 2.0f, 0.20f + ring * 0.18f, 0.60f, ring * 0.07f,
+                  RAY_MUZZLE_RING_SEGMENTS);
+            }
+        } else {
+            switch (rand() % 3) {
+                case 0:
+                    AddParticle(p_muzzleflash, org, 1, size, timemod * (float) frametime, color, zerodir);
+                    break;
+                case 1:
+                    AddParticle(p_muzzleflash2, org, 1, size, timemod * (float) frametime, color, zerodir);
+                    break;
+                case 2:
+                    AddParticle(p_muzzleflash3, org, 1, size, timemod * (float) frametime, color, zerodir);
+                    break;
+                default:
+                    AddParticle(p_muzzleflash, org, 1, size, timemod * (float) frametime, color, zerodir);
+                    break;
+            }
         }
     }
 
@@ -2217,6 +2326,16 @@ QMB_MuzzleFlash(vec3_t org)
     muzzleflash_light->color[2] = (float)(color[2]/255.0f);
 
 } /* QMB_MuzzleFlash */
+
+static void
+R_SpawnRayRing(vec3_t start, vec3_t end, col_t color)
+{
+    vec3_t axis;
+
+    VectorSubtract(end, start, axis);
+    R_SpawnParticleRing(p_rayringpart, end, axis, color, RAY_RING_START_SIZE, RAY_RING_GROWTH,
+      RAY_RING_PARTICLE_START_SIZE, RAY_RING_LIFETIME, 0, RAY_RING_SEGMENTS);
+}
 
 void
 R_RocketTrail(vec3_t start, vec3_t end, trail_type_t type)
@@ -2297,15 +2416,27 @@ R_RocketTrail(vec3_t start, vec3_t end, trail_type_t type)
             AddParticleTrail(p_smoke, start, end, 0.8, 0.825, NULL);
             break;
         case RAYGREEN_TRAIL:
-            color[0] = 0;
+            color[0] = 30;
             color[1] = 255;
-            color[2] = 0;
-            AddParticleTrail(p_alphatrail, start, end, 8, 0.6, color);
+            color[2] = 60;
+            R_SpawnRayRing(start, end, color);
             break;
         case RAYRED_TRAIL:
             color[0] = 255;
-            color[1] = 0;
-            color[2] = 0;
+            color[1] = 35;
+            color[2] = 80;
+            R_SpawnRayRing(start, end, color);
+            break;
+        case RAYBEAMGREEN_TRAIL:
+            color[0] = 30;
+            color[1] = 255;
+            color[2] = 60;
+            AddParticleTrail(p_alphatrail, start, end, 8, 0.6, color);
+            break;
+        case RAYBEAMRED_TRAIL:
+            color[0] = 255;
+            color[1] = 35;
+            color[2] = 80;
             AddParticleTrail(p_alphatrail, start, end, 8, 0.6, color);
             break;
         case ROCKET_TRAIL:

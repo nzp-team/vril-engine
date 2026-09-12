@@ -323,31 +323,6 @@ void Sky_Init (void);
 void R_ClearSkyBox (void);
 void R_DrawSkyBox (void);
 
-//-----------------------------------------------------
-void QMB_InitParticles (void);
-void QMB_ClearParticles (void);
-void QMB_DrawParticles (void);
-void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count);
-void QMB_RocketTrail (vec3_t start, vec3_t end, trail_type_t type);
-void QMB_BlobExplosion (vec3_t org);
-void QMB_ParticleExplosion (vec3_t org);
-void QMB_LavaSplash (vec3_t org);
-void QMB_TeleportSplash (vec3_t org);
-void QMB_InfernoFlame (vec3_t org);
-void QMB_StaticBubble (entity_t *ent);
-void QMB_ColorMappedExplosion (vec3_t org, int colorStart, int colorLength);
-void QMB_TorchFlame (vec3_t org);
-void QMB_FlameGt (vec3_t org, float size, float time);
-void QMB_BigTorchFlame (vec3_t org);
-void QMB_ShamblerCharge (vec3_t org);
-void QMB_LightningBeam (vec3_t start, vec3_t end);
-//void QMB_GenSparks (vec3_t org, byte col[3], float count, float size, float life);
-void QMB_EntityParticles (entity_t *ent);
-void QMB_MuzzleFlash (vec3_t org);
-void QMB_MuzzleFlashLG (vec3_t org);
-
-extern	qboolean	qmb_initialized;
-
 void R_SpawnDecal (vec3_t center, vec3_t normal, vec3_t tangent, int tex, int size, int isbsp);
 void R_SpawnDecalStatic(vec3_t org, int tex, int size);
 void R_SpawnDecalBSP (vec3_t org, char *texname, int size);

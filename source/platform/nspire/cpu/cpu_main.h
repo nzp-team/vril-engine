@@ -47,8 +47,6 @@ extern cvar_t 	r_part_muzzleflash;
 
 extern cvar_t	gl_polyblend;
 
-extern qboolean qmb_initialized;
-
 extern int decal_blood1, decal_blood2, decal_blood3, decal_q3blood, decal_burn, decal_mark, decal_glow;
 
 /*
@@ -86,9 +84,6 @@ half-life Render Modes. Crow_bar
 
 void R_SpawnDecalStatic (vec3_t org, int tex, int size);
 void R_SpawnDecal(vec3_t org, vec3_t normal, vec3_t tangent, int tex, int size, int is_persistent);
-
-void QMB_LightningBeam (vec3_t start, vec3_t end);
-void QMB_MuzzleFlash (vec3_t org);
 
 void Sky_LoadSkyBox(char* name);
 
