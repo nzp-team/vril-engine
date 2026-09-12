@@ -1231,7 +1231,8 @@ void R_DrawEntitiesOnList (void)
 		}
 	}
 
-	qsort(batches, num_batches, sizeof(batches[0]), R_CompareAliasBatches);
+	if (num_batches > 1)
+		qsort(batches, num_batches, sizeof(batches[0]), R_CompareAliasBatches);
 	doZHack = 0;
 	int zHackCount = 0;
 	for (i = 0; i < num_batches; i++) {
