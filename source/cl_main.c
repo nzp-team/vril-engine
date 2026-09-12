@@ -79,6 +79,51 @@ dlight_t		cl_dlights[MAX_DLIGHTS];
 
 modelindex_t		cl_modelindex[NUM_MODELINDEX];
 
+#define RAY_EFFECT_GRACE_TIME 0.10
+#define RAY_EFFECT_RING_SPACING_SQUARED (96.0f * 96.0f)
+
+typedef struct
+{
+	qboolean active;
+	qboolean emitted;
+	double start_time;
+	vec3_t last_ring_origin;
+} ray_effect_state_t;
+
+static ray_effect_state_t ray_effect_states[MAX_EDICTS];
+
+static qboolean
+CL_ShouldSpawnRayRing(int entnum, entity_t *ent)
+{
+	ray_effect_state_t *state = &ray_effect_states[entnum];
+
+	if (!(ent->effects & (EF_RAYGREEN | EF_RAYRED)) || (ent->effects & EF_RAYBEAM))
+	{
+		state->active = false;
+		return false;
+	}
+
+	if (!state->active || cl.time < state->start_time)
+	{
+		state->active = true;
+		state->emitted = false;
+		state->start_time = cl.time;
+		VectorCopy (ent->origin, state->last_ring_origin);
+		return false;
+	}
+
+	if (cl.time - state->start_time < RAY_EFFECT_GRACE_TIME)
+		return false;
+
+	if (state->emitted &&
+		VectorDistanceSquared(ent->origin, state->last_ring_origin) < RAY_EFFECT_RING_SPACING_SQUARED)
+		return false;
+
+	state->emitted = true;
+	VectorCopy (ent->origin, state->last_ring_origin);
+	return true;
+}
+
 int				cl_numvisedicts;
 entity_t		*cl_visedicts[MAX_VISEDICTS];
 int				cl_numstaticbrushmodels;
@@ -106,6 +151,7 @@ void CL_ClearState (void)
 // clear other arrays
 	memset (cl_efrags, 0, sizeof(cl_efrags));
 	memset (cl_entities, 0, sizeof(cl_entities));
+	memset (ray_effect_states, 0, sizeof(ray_effect_states));
 	memset (cl_dlights, 0, sizeof(cl_dlights));
 	memset (cl_lightstyle, 0, sizeof(cl_lightstyle));
 	memset (cl_temp_entities, 0, sizeof(cl_temp_entities));
@@ -483,6 +529,9 @@ float CL_LerpPoint (void)
 
 
 extern cvar_t scr_fov;
+#ifndef SOFTWARE_RENDERER
+extern cvar_t scr_fov_viewmodel;
+#endif
 
 float 	mdlflag_poweruprotate_duration 	= 0.0f;
 float 	mdlflag_poweruprotate_starttime = 0.0f;
@@ -552,6 +601,7 @@ void CL_RelinkEntities (void)
 	float		frac, f, d;
 	vec3_t		delta;
 	vec3_t		oldorg;
+	qboolean	emit_ray_ring;
     //model_t		*model;
 	dlight_t	*dl;
     //vec3_t		smokeorg, smokeorg2;
@@ -588,6 +638,7 @@ void CL_RelinkEntities (void)
 	{
 		if (!ent->model)
 		{
+			ray_effect_states[i].active = false;
 			continue;
 		}
 
@@ -595,6 +646,7 @@ void CL_RelinkEntities (void)
 		if (ent->msgtime != cl.mtime[0])
 		{
 			ent->model = NULL;
+			ray_effect_states[i].active = false;
             // fenix@io.com: model transform interpolation
             ent->frame_start_time     = 0;
             ent->translate_start_time = 0;
@@ -694,12 +746,17 @@ void CL_RelinkEntities (void)
 				right_offset	= right_offset/1000;
 				up_offset		= up_offset/1000;
 				forward_offset  = forward_offset/1000;
+#ifndef SOFTWARE_RENDERER
+				if (scr_fov_viewmodel.value)
+					forward_offset *= (1.0f / tanf (DEG2RAD (scr_fov.value / 2.0f))) *
+						scr_fov_viewmodel.value / 90.0f;
+#endif
 				
 				VectorMA (start, forward_offset, v_forward ,smokeorg);
 				VectorMA (smokeorg, up_offset, v_up ,smokeorg);
 				VectorMA (smokeorg, right_offset, v_right ,smokeorg);
 				VectorAdd(smokeorg,CWeaponOffset,smokeorg);
-				QMB_MuzzleFlash (smokeorg);
+				QMB_MuzzleFlash (smokeorg, v_forward);
 			}
 
 		}
@@ -803,29 +860,37 @@ void CL_RelinkEntities (void)
 			dl->color[2] = 1;
 		}
 
-		if (ent->effects & EF_RAYGREEN)
+		emit_ray_ring = CL_ShouldSpawnRayRing(i, ent);
+
+		if ((ent->effects & EF_RAYGREEN) && emit_ray_ring)
 		{
-			R_RocketTrail (oldorg, ent->origin, 12);
+			R_RocketTrail (oldorg, ent->origin, RAYGREEN_TRAIL);
 			dl = CL_AllocDlight (i);
 			VectorCopy (ent->origin, dl->origin);
 			dl->radius = 25;
 			dl->die = cl.time + 0.01;
-	        dl->color[0] = 0;
-			dl->color[1] = 255;
-			dl->color[2] = 0;
+			dl->color[0] = 0.24f;
+			dl->color[1] = 2.0f;
+			dl->color[2] = 0.48f;
 		}
 
-		if (ent->effects & EF_RAYRED)
+		if ((ent->effects & EF_RAYRED) && emit_ray_ring)
 		{
-			R_RocketTrail (oldorg, ent->origin, 13);
+			R_RocketTrail (oldorg, ent->origin, RAYRED_TRAIL);
 			dl = CL_AllocDlight (i);
 			VectorCopy (ent->origin, dl->origin);
 			dl->radius = 25;
 			dl->die = cl.time + 0.01;
-	        dl->color[0] = 255;
-			dl->color[1] = 0;
-			dl->color[2] = 0;
+			dl->color[0] = 2.0f;
+			dl->color[1] = 0.20f;
+			dl->color[2] = 0.62f;
 		}
+
+		if ((ent->effects & EF_RAYBEAMGREEN) == EF_RAYBEAMGREEN)
+			R_RocketTrail (oldorg, ent->origin, RAYBEAMGREEN_TRAIL);
+
+		if ((ent->effects & EF_RAYBEAMRED) == EF_RAYBEAMRED)
+			R_RocketTrail (oldorg, ent->origin, RAYBEAMRED_TRAIL);
 
 		if (!strcmp(ent->model->name, "progs/flame2.mdl"))
 		{

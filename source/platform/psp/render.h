@@ -155,28 +155,5 @@ void R_InitSky (byte *mt);	// called at level load
 
 void R_NewMap (void);
 
-// particles
-
-typedef enum trail_type_s
-{
-	ROCKET_TRAIL, GRENADE_TRAIL, BLOOD_TRAIL, TRACER1_TRAIL, SLIGHT_BLOOD_TRAIL,NAIL_TRAIL,
-	TRACER2_TRAIL, VOOR_TRAIL, ALT_ROCKET_TRAIL, LAVA_TRAIL, BUBBLE_TRAIL, NEHAHRA_SMOKE,
-	RAYGREEN_TRAIL, RAYRED_TRAIL
-} trail_type_t;
-
-void R_ParseParticleEffect (void);
-void R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count);
-void R_RocketTrail (vec3_t start, vec3_t end, trail_type_t type);
-
-
-void R_DarkFieldParticles (entity_t *ent);
-void R_EntityParticles (entity_t *ent);
-void R_BlobExplosion (vec3_t org);
-void R_ParticleExplosion (vec3_t org);
-void R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength);
-void R_LavaSplash (vec3_t org);
-void R_TeleportSplash (vec3_t org);
-
 void D_InitCaches (void *buffer, int size);
 void R_SetVrect (vrect_t *pvrect, vrect_t *pvrectin, int lineadj);
-

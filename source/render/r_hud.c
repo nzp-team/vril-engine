@@ -2091,6 +2091,8 @@ HUD_CrosshairWeapon(void)
         case W_REAPER:
         case W_RAY:
         case W_PORTER:
+        case W_RAYMK2:
+        case W_PORTERMK2:
         case W_TYPE:
         case W_SAMURAI:
         case W_FG:
@@ -2150,6 +2152,8 @@ HUD_CrosshairMaxSpread(void)
         case W_REAPER:
         case W_RAY:
         case W_PORTER:
+        case W_RAYMK2:
+        case W_PORTERMK2:
         case W_TYPE:
         case W_SAMURAI: return HUD_CrosshairSpread(48);
 

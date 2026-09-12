@@ -224,6 +224,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define W_SPRING 58
 #define W_PULVERIZER 59
 
+#define W_RAYMK2	   60
+#define W_PORTERMK2	   61
+
 #define W_NOWEP   420
 
 //===========================================
@@ -270,10 +273,12 @@ typedef struct
 #include PLATFORM_FILE(net.h)
 
 #include "protocol.h"
+#include "entity_effects.h"
 #include "cmd.h"
 #include "tests/test_handler.h"
 
 #include PLATFORM_FILE(render.h)
+#include "render/r_particles.h"
 #include "client.h"
 
 #include "render/r_hud.h"

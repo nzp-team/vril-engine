@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../modelgen.h"
 #include "../../../spritegn.h"
+#include "../../../entity_effects.h"
 
 #ifdef PSP_VFPU
 #include <pspmath.h>
@@ -38,24 +39,6 @@ d*_t structures are on-disk representations
 m*_t structures are in-memory
 
 */
-
-// entity effects
-
-#define	EF_BLUELIGHT			1
-#define	EF_MUZZLEFLASH 			2
-#define	EF_BRIGHTLIGHT 			4
-#define	EF_REDLIGHT 			8
-#define	EF_ORANGELIGHT			16
-#define	EF_GREENLIGHT			32
-#define	EF_PINKLIGHT			64				// formerly EF_LIGHT
-#define	EF_NODRAW				128
-#define EF_LIMELIGHT			256				// formerly EF_BRIGHTFIELD
-#define EF_FULLBRIGHT			512
-#define EF_CYANLIGHT			1024			// formerly EF_DARKLIGHT
-#define EF_YELLOWLIGHT			2048			// formerly EF_DARKFIELD
-#define EF_PURPLELIGHT    		4096
-#define EF_RAYRED	 			8196			// red trail for porter x2
-#define EF_RAYGREEN  			16384			// green trail for ray gun
 
 /*
 ==============================================================================
