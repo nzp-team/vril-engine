@@ -18,6 +18,9 @@ void Thread_UpdateSound(vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
         }
     }
 
+    if (index < 0)
+        return;
+
     snd_thread_struct[index].origin[0] = origin[0];
     snd_thread_struct[index].origin[1] = origin[1];
     snd_thread_struct[index].origin[2] = origin[2];

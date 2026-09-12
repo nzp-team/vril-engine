@@ -153,6 +153,8 @@ static inline eval_t *PR_VM_PointerAddress (int pointer, void *globals,
 {
 	if (PR_VM_IsGlobalPointer(pointer))
 		return (eval_t *)((byte *)globals + PR_VM_GlobalPointerOffset(pointer));
+	if (!entities)
+		return NULL;
 	return (eval_t *)((byte *)entities + pointer);
 }
 

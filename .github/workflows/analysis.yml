@@ -1,0 +1,31 @@
+name: Analyze
+on: [pull_request]
+jobs:
+  Clang-Static-Analysis:
+    name: Clang Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Clang and Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make git pkg-config clang \
+            clang-tools libsdl2-dev libsdl2-mixer-dev \
+            libgl-dev libglu1-mesa-dev
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run scan-build
+        run: |
+          scan-build --status-bugs make -f Makefile.sdl CC=clang
+  Cppcheck-Static-Anaylsis:
+    name: Cppcheck Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Cppcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cppcheck
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run Cppcheck
+        run: |
+          cppcheck --force --error-exitcode=1 .

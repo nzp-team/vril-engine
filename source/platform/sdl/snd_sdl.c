@@ -35,7 +35,7 @@ qboolean SNDDMA_Init(void)
 	shm->samples = SDL_DMA_SAMPLES;
 	shm->samplepos = 0;
 	shm->submission_chunk = 1;
-	shm->buffer = calloc(SDL_DMA_SAMPLES, sizeof(short));
+	shm->buffer = calloc(SDL_DMA_SAMPLES * (shm->samplebits / 8), sizeof(*shm->buffer));
 	if (!shm->buffer) { SDL_CloseAudioDevice(audio_device); audio_device = 0; return false; }
 	SDL_PauseAudioDevice(audio_device, 0);
 	return true;

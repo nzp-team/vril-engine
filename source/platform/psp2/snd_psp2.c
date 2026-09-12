@@ -58,6 +58,8 @@ qboolean SNDDMA_Init(void)
 	snd_initialized = 0;
 
 	audiobuffer = malloc(AUDIOSIZE);
+	if (!audiobuffer)
+		Sys_Error("SNDDMA_Init: out of memory");
 	memset(audiobuffer, 0, AUDIOSIZE);
 
 	/* Fill the audio DMA information block */

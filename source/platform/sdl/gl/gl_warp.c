@@ -71,7 +71,7 @@ void SubdividePolygon (int numverts, float *verts)
 	glpoly_t	*poly;
 	float	s, t;
 
-	if (numverts > 60)
+	if (numverts < 3 || numverts > 60)
 		Sys_Error ("numverts = %i", numverts);
 
 	BoundPoly (numverts, verts, mins, maxs);
@@ -725,12 +725,12 @@ void R_InitSky (miptex_t *mt)
 	int			layer_width, layer_pixels;
 	byte		*src;
 	unsigned	*trans;
-	unsigned	transpix;
+	unsigned    transpix = 0;
 	int			r, g, b;
 	unsigned	*rgba;
 
 	src = (byte *)mt + mt->offsets[0];
-	sky_is_layered = mt->width == mt->height * 2;
+	sky_is_layered = mt->height > 0 && mt->width == mt->height * 2;
 	if (!sky_is_layered)
 		return;
 

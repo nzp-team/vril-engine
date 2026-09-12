@@ -473,6 +473,8 @@ void SCR_ScreenShot_f (void)
 
 
 	buffer = malloc(glwidth*glheight*3 + 18);
+	if (!buffer)
+		Sys_Error("SCR_ScreenShot_f: out of memory");
 	memset (buffer, 0, 18);
 	buffer[2] = 2;		// uncompressed type
 	buffer[12] = glwidth&255;

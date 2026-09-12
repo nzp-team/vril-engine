@@ -86,7 +86,7 @@ int m_return_state;
 extern int m_state;
 qboolean m_return_onerror;
 char m_return_reason[32];
-//extern static cvar_t	*cvar_vars;
+extern cvar_t	*cvar_vars;
 
 // JPG - recognize ip:port
 void Strip_Port(char *ch)
@@ -1012,8 +1012,8 @@ static qsocket_t *_Datagram_CheckNewConnections (void)
 				return NULL;
 			var = var->next;
 		}
-		/*else
-			var = cvar_vars;*/
+		else
+			var = cvar_vars;
 
 		// search for the next server cvar
 		while (var)

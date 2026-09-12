@@ -325,8 +325,8 @@ void Menu_CustomMaps_MapFinder (void)
 	Dir_Close(dir); // Close the handle (pointer)
 #else
 	// Parse the pak file and find maps
-	char pakfile[MAX_OSPATH];
-	snprintf (pakfile, MAX_OSPATH+MAX_QPATH, "%s/%snzp.pak%s", com_gamedir, FILE_SPECIAL_PREFIX, FILE_SPECIAL_SUFFIX);
+	char pakfile[sizeof(com_gamedir) + sizeof("/" FILE_SPECIAL_PREFIX "nzp.pak" FILE_SPECIAL_SUFFIX)];
+	snprintf (pakfile, sizeof(pakfile), "%s/%snzp.pak%s", com_gamedir, FILE_SPECIAL_PREFIX, FILE_SPECIAL_SUFFIX);
 	//snprintf (pakfile, MAX_OSPATH+MAX_QPATH, "%s/nzp.pak", com_gamedir);
 
 	PakDir *pak = Pak_Open(pakfile);

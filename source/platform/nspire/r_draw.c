@@ -955,10 +955,6 @@ void R_RenderFace (msurface_t *fa, int clipflags)
 // FIXME: faster to do in screen space?
 // FIXME: share clipped edges?
 
-		if( lindex == 9149 )
-		{
-			lindex = lindex;
-		}
 
 	if (makeleftedge)
 	{

@@ -910,6 +910,8 @@ void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipm
 	qboolean	noalpha;
 	int			p;
 	unsigned 	*trans = malloc(width*height*4);
+	if (!trans)
+		Sys_Error("GL_Upload8: out of memory");
 
 	s = width*height;
 	// if there are no transparent pixels, make it a 3 component

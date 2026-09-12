@@ -410,7 +410,6 @@ DecalClipLeaf(decal_t * dec, mleaf_t * leaf)
     vec3_t newVertex[64], t3;
     msurface_t ** surf;
 
-    c    = leaf->nummarksurfaces;
     surf = leaf->firstmarksurface;
 
     // for all surfaces in the leaf

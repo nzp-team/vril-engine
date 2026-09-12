@@ -820,7 +820,7 @@ returns false if error
 static qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s)
 {
 	int		i;
-	char	string[128];
+	char	string[128] = {0};
 	ddef_t	*def;
 	char	*v, *w;
 	char	*end;
@@ -848,10 +848,15 @@ static qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s)
 			for (i = 0; i < 3 && (w <= end); i++) // ericw -- added (w <= end) check
 			{
 			// set v to the next space (or 0 byte), and change that char to a 0 byte
-				while (*v && *v != ' ')
+				while (v < end && *v != ' ')
 					v++;
 				*v = 0;
 				((float *)d)[i] = atof (w);
+				if (v == end)
+				{
+					i++;
+					break;
+				}
 				w = v = v+1;
 			}
 			// ericw -- fill remaining elements to 0 in case we hit the end of string

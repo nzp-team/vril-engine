@@ -406,6 +406,8 @@ QMB_AllocParticles(void)
     }
 
     particles = (particle_t *) malloc(r_numparticles * sizeof(particle_t));
+    if (!particles)
+        Sys_Error("QMB_AllocParticles: out of memory");
 }
 
 void
@@ -468,7 +470,6 @@ R_InitParticles(void)
     loading_cur_step++;
     SCR_UpdateScreen();
 
-    max_s = max_t = 64.0;
 
     // FIXME: Replace these temp functions when loadtextureimage is unified.
     particleimage = Image_LoadImage("textures/particles/inferno", IMAGE_TGA, 1, true, false);
@@ -925,8 +926,6 @@ AddParticleTrail(part_type_t type, vec3_t start, vec3_t end, float size, float t
     particle_t * p;
     particle_type_t * pt;
 
-    count = 0;
-
     if (!qmb_initialized)
         Sys_Error("QMB particle added without initialization");
 
@@ -1070,6 +1069,7 @@ R_ClearParticles(void)
         return;
 
     free(particles);      // free
+    particles = NULL;
     QMB_AllocParticles(); // and alloc again
     particle_count = 0;
     memset(particles, 0, r_numparticles * sizeof(particle_t));
@@ -2702,7 +2702,6 @@ R_EntityParticles(entity_t * ent)
         angle = (float) cl.time * avelocities[i][1];
         sp    = sinf(angle);
         cp    = cosf(angle);
-        angle = (float) cl.time * avelocities[i][2];
 
         forward[0] = cp * cy;
         forward[1] = cp * sy;

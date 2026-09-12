@@ -89,10 +89,10 @@ void Log(const char *format, ...) {
 	int done;
 	va_start(arg, format);
 	char msg[512];
-	done = vsprintf(msg, format, arg);
+	done = vsnprintf(msg, sizeof(msg) - 1, format, arg);
 	va_end(arg);
 	int i;
-	sprintf(msg, "%s\n", msg);
+	strcat(msg, "\n");
 	FILE* f = NULL;
 	if (is_uma0) f = fopen("uma0:/data/nzp/log.txt", "a+");
 	else f = fopen("ux0:/data/nzp/log.txt", "a+");
@@ -255,8 +255,10 @@ void Sys_SystemError(char *error)
 	FILE* f = NULL;
 	if (is_uma0) f = fopen("uma0:/data/nzp/log.txt", "a+");
 	else f = fopen("ux0:/data/nzp/log.txt", "a+");
-	fwrite(error, 1, strlen(error), f);
-	fclose(f);
+	if (f) {
+		fwrite(error, 1, strlen(error), f);
+		fclose(f);
+	}
 	Sys_Quit();
 }
 
@@ -692,7 +694,8 @@ int quake_main (unsigned int argc, void* argv){
 		if (key_dest == key_console)
 		{
 			if (old_char != 0) Key_Event(old_char, false);
-			SceCtrlData tmp_pad, oldpad;
+			SceCtrlData tmp_pad;
+			static SceCtrlData oldpad;
 			sceCtrlPeekBufferPositive(0, &tmp_pad, 1);
 			if (isKeyboard)
 			{

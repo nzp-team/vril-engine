@@ -170,15 +170,8 @@ void CDAudio_Play(byte track, bool looping)
 {
 	CDAudio_Stop();
 	char fname[256];
-	sprintf (fname, "%s/%s/cdtracks/track", host_parms.basedir, (mod_path == NULL) ? GAMENAME : mod_path);
-	if (track < 100){
-		sprintf(fname, "%s0", fname);
-		if (track < 10){
-			sprintf(fname, "%s0", fname);
-		}
-	}
-	sprintf(fname,"%s%d",fname,track);
-	char tmp[256];
+	snprintf(fname, sizeof(fname), "%s/%s/cdtracks/track%03u", host_parms.basedir, (mod_path == NULL) ? GAMENAME : mod_path, (unsigned)track);
+	char tmp[260];
 	sprintf(tmp,"%s.ogg",fname);
 		
 	FILE* fd = fopen(tmp,"rb");
@@ -188,6 +181,10 @@ void CDAudio_Play(byte track, bool looping)
 	}
 	if (fd == NULL) return;
 	DecodedMusic* memblock = (DecodedMusic*)malloc(sizeof(DecodedMusic));
+	if (!memblock) {
+		fclose(fd);
+		return;
+	}
 	memblock->handle = fd;
 	memblock->pauseTrigger = false;
 	memblock->closeTrigger = false;

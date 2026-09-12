@@ -577,7 +577,7 @@ typedef unsigned char validate_uint32[sizeof(stbi__uint32)==4 ? 1 : -1];
 #endif
 
 #ifndef STBI_REALLOC_SIZED
-#define STBI_REALLOC_SIZED(p,oldsz,newsz) STBI_REALLOC(p,newsz)
+#define STBI_REALLOC_SIZED(p,oldsz,newsz) ((void)(oldsz), STBI_REALLOC(p,newsz))
 #endif
 
 // x86/x64 detection
@@ -1856,7 +1856,7 @@ stbi_inline static int stbi__extend_receive(stbi__jpeg *j, int n)
    int sgn;
    if (j->code_bits < n) stbi__grow_buffer_unsafe(j);
 
-   sgn = (stbi__int32)j->code_buffer >> 31; // sign bit is always in MSB
+   sgn = -(int)(j->code_buffer >> 31); // sign bit is always in MSB
    k = stbi_lrot(j->code_buffer, n);
    STBI_ASSERT(n >= 0 && n < (int) (sizeof(stbi__bmask)/sizeof(*stbi__bmask)));
    j->code_buffer = k & ~stbi__bmask[n];
@@ -3978,7 +3978,7 @@ static int stbi__compute_huffman_codes(stbi__zbuf *a)
 {
    static stbi_uc length_dezigzag[19] = { 16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15 };
    stbi__zhuffman z_codelength;
-   stbi_uc lencodes[286+32+137];//padding for maximum single op
+   stbi_uc lencodes[286+32+137] = {0};//padding for maximum single op
    stbi_uc codelength_sizes[19];
    int i,n;
 
@@ -5380,8 +5380,8 @@ static void *stbi__tga_load(stbi__context *s, int *x, int *y, int *comp, int req
    int tga_palette_start = stbi__get16le(s);
    int tga_palette_len = stbi__get16le(s);
    int tga_palette_bits = stbi__get8(s);
-   int tga_x_origin = stbi__get16le(s);
-   int tga_y_origin = stbi__get16le(s);
+   stbi__get16le(s); // x origin (unused)
+   stbi__get16le(s); // y origin (unused)
    int tga_width = stbi__get16le(s);
    int tga_height = stbi__get16le(s);
    int tga_bits_per_pixel = stbi__get8(s);
@@ -5558,8 +5558,9 @@ static void *stbi__tga_load(stbi__context *s, int *x, int *y, int *comp, int req
 
    //   the things I do to get rid of an error message, and yet keep
    //   Microsoft's C compilers happy... [8^(
-   tga_palette_start = tga_palette_len = tga_palette_bits =
-         tga_x_origin = tga_y_origin = 0;
+   STBI_NOTUSED(tga_palette_start);
+   STBI_NOTUSED(tga_palette_len);
+   STBI_NOTUSED(tga_palette_bits);
    //   OK, done
    return tga_data;
 }

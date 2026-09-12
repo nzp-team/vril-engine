@@ -420,7 +420,11 @@ extern "C" void SCR_ScreenShot_f (void)
 	{
         name[12] = i/10 + '0';
 		name[13] = i%10 + '0';
-		snprintf (checkname, 258, "%s/%s", com_gamedir, name);
+		if (!COM_BuildFilePath(checkname, sizeof(checkname), com_gamedir, name))
+		{
+			Con_Printf ("SCR_ScreenShot_f: path too long\n");
+			return;
+		}
 		if (Sys_FileTime(checkname) == -1)
 			break;	// file doesn't exist
 	}

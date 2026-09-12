@@ -1050,7 +1050,6 @@ extern"C"
 {
  #include "font.c"
 }
-,.,.,
 static int fontwidthtab[128] =
 {
 	10, 10, 10, 10,

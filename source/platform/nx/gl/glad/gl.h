@@ -99,8 +99,10 @@ extern "C" {
 
   #ifdef GLAD_INTERNAL_HAVE_WINAPIFAMILY
     #include <winapifamily.h>
+    #ifdef WINAPI_FAMILY_PARTITION
     #if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) && WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
       #define GLAD_PLATFORM_UWP 1
+    #endif
     #endif
   #endif
 

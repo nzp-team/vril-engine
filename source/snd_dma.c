@@ -141,14 +141,13 @@ void S_Startup (void)
 	return;
 #endif
 
-	int		rc;
 
 	if (!snd_initialized)
 		return;
 
 	if (!fakedma)
 	{
-		if (!(rc = SNDDMA_Init()))
+		if (!SNDDMA_Init())
 		{
 			Con_Printf("S_Startup: SNDDMA_Init failed.\n");
 			sound_started = 0;
