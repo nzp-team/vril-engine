@@ -1208,7 +1208,7 @@ The filename will be prefixed by the current game directory
 ============
 */
 
-static qboolean COM_BuildFilePath (char *path, size_t size, const char *directory, const char *filename)
+qboolean COM_BuildFilePath (char *path, size_t size, const char *directory, const char *filename)
 {
 	size_t directory_length = strlen(directory);
 	size_t filename_length = strlen(filename);

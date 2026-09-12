@@ -86,7 +86,7 @@ int m_return_state;
 extern int m_state;
 qboolean m_return_onerror;
 char m_return_reason[32];
-//extern static cvar_t	*cvar_vars;
+extern static cvar_t	*cvar_vars;
 
 // JPG - recognize ip:port
 void Strip_Port(char *ch)
