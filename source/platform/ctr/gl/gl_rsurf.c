@@ -454,8 +454,10 @@ void R_RenderBrushPoly (msurface_t *fa)
 
 	if (fa->flags & SURF_DRAWSKY)
 	{	
-		if (strcmp(skybox_name, "") == 0)
+		if (!skybox_name[0] && sky_is_layered)
 			EmitBothSkyLayers (fa);
+		else if (!skybox_name[0])
+			EmitFlatSkyPolys (fa);
 		return;
 	}
 		

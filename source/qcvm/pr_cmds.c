@@ -1219,6 +1219,9 @@ PF_dprint
 */
 void PF_dprint (void)
 {
+	if (sys_testmode.value > 0)
+		return;
+
 	Con_DPrintf ("%s",PF_VarString(0));
 }
 

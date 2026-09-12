@@ -32,8 +32,10 @@ function run_generation()
 
     local any_map_failed="0"
     local working_dir="${WORKING_DIR}"
+    local console_log="$(test_game_path)/nzp/condebug.log"
     local content_path="${CONTENT_DIR}/${PLATFORM}${MODE:+-$MODE}"
     local captured_image="$(capture_path)"
+    local launch_log="${WORKING_DIR}/generate-source.log"
     
     mkdir -p "${content_path}"
 
@@ -43,8 +45,8 @@ function run_generation()
         # Get the BSP basename so we can add it to our setup.ini.
         local pretty_bsp=$(basename ${bsp} .bsp)
 
-        # Remove the console log.
-        rm -rf ${working_dir}/nzportable/nzp/condebug.log
+        # Remove output from the previous map.
+        rm -f "${console_log}" "${captured_image}"
 
         # Write the platform launch configuration used to load the BSP.
         write_test_setup "${pretty_bsp}"
@@ -53,28 +55,35 @@ function run_generation()
         print_info "Loading Nazi Zombies: Portable via [${EMULATOR_BIN}] with map [${pretty_bsp}].."
         local command=$(run_nzportable "1" "${CONTENT_DIR}/blank.png" "${MODE}")
         echo "[${command}]"
-        ${command} > /dev/null 2>&1 || true
+        ${command} > "${launch_log}" 2>&1 || map_failed="1"
+        [[ -s "${captured_image}" ]] || map_failed="1"
 
         # Validate that we were able to enter the server.
-        cat ${working_dir}/nzportable/nzp/condebug.log | grep "Server spawned." || map_failed="1"
-        
-        while read -r host_error; do
-            echo "[ERROR]: ${host_error}"
+        if [[ ! -f "${console_log}" ]]; then
             map_failed="1"
-        done < <(grep "Host_Error" ${working_dir}/nzportable/nzp/condebug.log)
+        else
+            grep "Server spawned." "${console_log}" || map_failed="1"
+            while read -r host_error; do
+                echo "[ERROR]: ${host_error}"
+                map_failed="1"
+            done < <(grep "Host_Error" "${console_log}" || true)
+        fi
 
         if [[ "${map_failed}" -ne "0" ]]; then
-            echo "[ERROR]: FAILED to spawn a server using map [${pretty_bsp}]!"
-            echo "         Last 15 lines of console log follows"
+            echo "[ERROR]: FAILED to generate a capture for map [${pretty_bsp}]!"
+            echo "         Launcher output and last 15 lines of console log follow"
             echo "-----"
-            cat ${working_dir}/nzportable/nzp/condebug.log | tail -n 15
+            cat "${launch_log}"
+            mkdir -p "${WORKING_DIR}/fail/generate-source"
+            cp "${launch_log}" "${WORKING_DIR}/fail/generate-source/${pretty_bsp}_launcher.log"
+            cp "${console_log}" "${WORKING_DIR}/fail/generate-source/${pretty_bsp}_console.log" 2>/dev/null || true
+            tail -n 15 "${console_log}" || true
             echo ""
             echo "-----"
             any_map_failed="1"
         else
             echo "[PASS]: SUCCESSFULLY spawned server using map [${pretty_bsp}]!"
-            local move_command="mv ${captured_image} ${content_path}/${pretty_bsp}.bmp"
-            ${move_command}
+            mv "${captured_image}" "${content_path}/${pretty_bsp}.bmp"
         fi
     done
 

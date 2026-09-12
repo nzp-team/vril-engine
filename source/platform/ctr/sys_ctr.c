@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "circle_pad_pro.h"
 
 #include <3ds.h>
+#include <GL/picaGL.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -305,7 +306,78 @@ void Sys_LowFPPrecision (void)
 
 void Sys_CaptureScreenshot(void)
 {
-	Sys_Error("Not implemented!");
+	FILE *file;
+	byte *pixels;
+	byte *framebuffer;
+	byte header[54] = {0};
+	int width = vid.width * (gfxIsWide() ? 2 : 1);
+	int height = vid.height;
+	int row_size = (width * 3 + 3) & ~3;
+	int image_size = row_size * height;
+	int x, y;
+	const char *filename = new3ds_flag ? "capture-new.bmp" : "capture-old.bmp";
+
+	if (width <= 0 || height <= 0)
+		Sys_Error("Could not capture screenshot before video initialization");
+
+	pixels = calloc(1, image_size);
+	if (!pixels)
+		Sys_Error("Could not allocate screenshot buffer");
+
+	// picaGL does not implement glReadPixels. Transfer the rendered top screen
+	// to its BGR framebuffer, then wait before reading the rotated columns.
+	glFinish();
+	framebuffer = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL);
+	pglSwapBuffersEx(1, 0);
+	glFinish();
+	GSPGPU_InvalidateDataCache(framebuffer, width * height * 3);
+	for (y = 0; y < height; y++)
+		for (x = 0; x < width; x++)
+			memcpy(pixels + y * row_size + x * 3,
+				framebuffer + (x * height + y) * 3, 3);
+
+	file = fopen(filename, "wb");
+	if (!file)
+	{
+		free(pixels);
+		Sys_Error("Could not open %s: %s", filename, strerror(errno));
+	}
+
+	header[0] = 'B';
+	header[1] = 'M';
+	header[2] = (byte)((54 + image_size) & 0xff);
+	header[3] = (byte)((54 + image_size) >> 8);
+	header[4] = (byte)((54 + image_size) >> 16);
+	header[5] = (byte)((54 + image_size) >> 24);
+	header[10] = 54;
+	header[14] = 40;
+	header[18] = (byte)(width & 0xff);
+	header[19] = (byte)(width >> 8);
+	header[22] = (byte)(height & 0xff);
+	header[23] = (byte)(height >> 8);
+	header[26] = 1;
+	header[28] = 24;
+	header[34] = (byte)(image_size & 0xff);
+	header[35] = (byte)(image_size >> 8);
+	header[36] = (byte)(image_size >> 16);
+	header[37] = (byte)(image_size >> 24);
+	if (fwrite(header, 1, sizeof(header), file) != sizeof(header) ||
+		fwrite(pixels, 1, image_size, file) != (size_t)image_size)
+	{
+		fclose(file);
+		remove(filename);
+		free(pixels);
+		Sys_Error("Could not write screenshot %s", filename);
+	}
+
+	if (fclose(file))
+	{
+		remove(filename);
+		free(pixels);
+		Sys_Error("Could not close screenshot %s", filename);
+	}
+	free(pixels);
+	Con_Printf("Wrote %s\n", filename);
 }
 
 //=============================================================================
@@ -315,6 +387,11 @@ int main (int argc, char **argv)
 {
 	static float time, oldtime;
 	static quakeparms_t parms;
+	startup_arguments_t startup;
+	const char *base_directory;
+	char startup_error[256];
+	int testmode_parm;
+	size_t heap_size;
 	new3ds_flag = false;
 
 	osSetSpeedupEnable(true);
@@ -331,20 +408,31 @@ int main (int argc, char **argv)
 	CFGU_GetSystemModel(&model);
 	cfguExit();
 	
-	if(model != CFG_MODEL_2DS && new3ds_flag == true)
-		gfxSetWide(true);
-	
 	chdir("sdmc:/3ds/nzportable");
 
-	if (new3ds_flag == true)
-		parms.memsize = QUAKE_HUNK_MB_NEW3DS * 1024 * 1024;
-	else
-		parms.memsize = QUAKE_HUNK_MB * 1024 * 1024;
-	
-	parms.membase = malloc(parms.memsize);
-	parms.basedir = ".";
+	if (!Startup_LoadArguments(&startup, argc, argv, "setup.ini", startup_error, sizeof(startup_error)))
+		Sys_Error("Startup: %s", startup_error);
 
-	COM_InitArgv (argc, argv);
+	if (!Startup_GetBaseDirectory(&startup, ".", &base_directory, startup_error, sizeof(startup_error)))
+		Sys_Error("Startup: %s", startup_error);
+
+	parms.membase = Startup_AllocateHeap(&startup,
+		(new3ds_flag ? QUAKE_HUNK_MB_NEW3DS : QUAKE_HUNK_MB) * 1024 * 1024,
+		&heap_size, startup_error, sizeof(startup_error));
+	if (!parms.membase)
+		Sys_Error("Startup: %s", startup_error);
+	parms.memsize = (int)heap_size;
+	parms.basedir = (char *)base_directory;
+
+	COM_InitArgv(startup.argc, startup.argv);
+
+	// Select the test resolution before picaGL allocates its render targets.
+	testmode_parm = COM_CheckParm("+sys_testmode");
+	if (testmode_parm && testmode_parm + 1 < com_argc &&
+		Q_atof(com_argv[testmode_parm + 1]) > 0)
+		gfxSetWide(false);
+	else
+		gfxSetWide(model != CFG_MODEL_2DS && new3ds_flag);
 
 	parms.argc = com_argc;
 	parms.argv = com_argv;
@@ -369,7 +457,13 @@ int main (int argc, char **argv)
 		oldtime = time;
 	}
 
-	if (circlepadpro_flag) cppExit();
-	
+	if (circlepadpro_flag)
+		cppExit();
+	if (host_initialized)
+		Host_Shutdown();
+
+	free(parms.membase);
+	Startup_FreeArguments(&startup);
+
 	return 0;
 }

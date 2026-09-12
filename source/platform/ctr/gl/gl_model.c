@@ -187,6 +187,8 @@ void Mod_ClearAll (void)
 
 	GL_UnloadTextures ();
 
+	sky_is_layered = false;
+
 	//purge old sky textures
 	for (i=0; i<5; i++)
 		skyimage[i] = -1;

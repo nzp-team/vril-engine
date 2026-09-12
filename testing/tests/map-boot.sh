@@ -32,6 +32,7 @@ function run_mapboot_test()
 
     local any_map_failed="0"
     local working_dir="${WORKING_DIR}"
+    local game_path="$(test_game_path)"
     local content_path="${CONTENT_DIR}/${REFERENCE_PLATFORM}${MODE:+-$MODE}"
     local captured_image="$(capture_path)"
     local launch_log="${WORKING_DIR}/launch.log"
@@ -47,7 +48,7 @@ function run_mapboot_test()
         local pretty_bsp=$(basename ${bsp} .bsp) 
 
         # Remove the console log.
-        rm -rf ${working_dir}/nzportable/nzp/condebug.log
+        rm -f "${game_path}/nzp/condebug.log" "${captured_image}"
 
         # Write the platform launch configuration used to load the BSP.
         write_test_setup "${pretty_bsp}"
@@ -59,7 +60,7 @@ function run_mapboot_test()
         ${command} > "${launch_log}" 2>&1 || emulator_failed="1"
 
         # Validate that we were able to enter the server.
-        local console_log="${working_dir}/nzportable/nzp/condebug.log"
+        local console_log="${game_path}/nzp/condebug.log"
         if [[ ! -f "${console_log}" ]] || ! grep -q "Server spawned." "${console_log}"; then
             map_failed="1"
         fi

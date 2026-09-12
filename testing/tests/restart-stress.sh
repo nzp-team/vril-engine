@@ -17,7 +17,7 @@ source "setup/${PLATFORM}.sh"
 
 function run_restart_stress_test()
 {
-	local console_log="${WORKING_DIR}/nzportable/nzp/condebug.log"
+	local console_log="$(test_game_path)/nzp/condebug.log"
 	local launch_log="${WORKING_DIR}/restart-stress.log"
 	local command
 	local exit_status
@@ -29,8 +29,8 @@ function run_restart_stress_test()
 	touch "${console_log}"
 	write_test_setup "ndu" "2"
 
-	# Allow for 100 five-second intervals plus startup overhead.
-	TIMEOUT=600
+	# Allow for 100 five-second intervals, map reloads, and emulator overhead.
+	TIMEOUT=1800
 	command=$(run_nzportable "0" "" "${MODE}")
 	echo "[${command}]"
 
@@ -52,7 +52,7 @@ function run_restart_stress_test()
 		return
 	fi
 
-	echo "[ERROR]: Same-map restart stress test failed."
+	echo "[ERROR]: Same-map restart stress test failed (exit status: ${exit_status})."
 	mkdir -p "${WORKING_DIR}/fail/restart-stress"
 	cp "${launch_log}" "${WORKING_DIR}/fail/restart-stress/launcher.log" || true
 	if [[ -f "${console_log}" ]]; then

@@ -10,7 +10,7 @@ TOPDIR ?= $(CURDIR)
 include $(DEVKITARM)/3ds_rules
 
 TARGET		:=	nzportable
-BUILD		:=	build
+BUILD		:=	build/ctr
 SOURCES		:=	source source/qcvm source/tests
 #DATA		:=	data
 INCLUDES	:=	include
@@ -60,10 +60,10 @@ LIBDIRS	:= $(CTRULIB) $(DEVKITPRO)/picaGL $(PORTLIBS)
 # no real need to edit anything past this point unless you need to add additional
 # rules for different file extensions
 #---------------------------------------------------------------------------------
-ifneq ($(BUILD),$(notdir $(CURDIR)))
+ifneq ($(notdir $(BUILD)),$(notdir $(CURDIR)))
 #---------------------------------------------------------------------------------
 
-export OUTPUT	:=	$(CURDIR)/$(TARGET)
+export OUTPUT	:=	$(CURDIR)/$(BUILD)/bin/$(TARGET)
 export TOPDIR	:=	$(CURDIR)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
@@ -71,6 +71,7 @@ export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
 COMMON_OBJS =	system.o \
+				startup.c \
 				test_handler.c \
 				test_map_boot.c \
 				test_restart.c \
@@ -208,7 +209,7 @@ else
 endif
 
 ifeq ($(strip $(NO_SMDH)),)
-	export _3DSXFLAGS += --smdh=$(CURDIR)/$(TARGET).smdh
+	export _3DSXFLAGS += --smdh=$(OUTPUT).smdh
 endif
 
 ifneq ($(ROMFS),)
@@ -232,16 +233,8 @@ $(BUILD):
 	@mkdir -p $(BUILD)/platform/ctr/gl
 	@mkdir -p $(BUILD)/render
 	@mkdir -p $(BUILD)/menu
+	@mkdir -p $(BUILD)/bin
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile.ctr
-	@mkdir -p $(BUILD)/3ds
-	@mkdir -p $(BUILD)/3ds/bin/
-	@mv $(BUILD)/*.o $(BUILD)/3ds/
-	@mv $(BUILD)/*.d $(BUILD)/3ds/
-	@mv $(BUILD)/platform/ctr $(BUILD)/3ds/
-	@mv $(BUILD)/render $(BUILD)/3ds/
-	@mv $(BUILD)/$(TARGET).lst $(BUILD)/3ds/
-	@mv $(BUILD)/$(TARGET).map $(BUILD)/3ds/
-	@mv $(TARGET).* $(BUILD)/3ds/bin/
 
 #---------------------------------------------------------------------------------
 clean:
