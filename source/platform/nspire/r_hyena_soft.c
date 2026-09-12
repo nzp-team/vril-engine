@@ -244,15 +244,22 @@ void Hyena_2DTextureCoord(vertex_t *vertex, float u, float v) { vertex->uv.u = u
 void Hyena_VertexXYZ(vertex_t *vertex, float x, float y, float z) { vertex->xyz.x = x; vertex->xyz.y = y; vertex->xyz.z = z; }
 void Hyena_DrawVertices(vertex_t *vertices, int count, int texture_precision, int vertex_precision)
 {
-	int i;
+	int i, first, step;
 	(void)vertex_precision;
 	hyena_draw_textured = texture_precision != HYE_TEXTURE_NOTEXTURE;
-	if (hyena_vertex_mode == HYE_TRIANGLE_FAN && count >= 3) for (i = 1; i + 1 < count; ++i) {
+	first = hyena_vertex_mode == HYE_TRIANGLES ? 0 : 1;
+	step = hyena_vertex_mode == HYE_TRIANGLES ? 3 : 1;
+	if (count >= 3) for (i = first; i + 1 < count; i += step) {
 		hyena_viewvert_t triangle[3], clipped[4];
 		int clipped_count, j;
-		Hyena_TransformVertex(&vertices[0], &triangle[0]);
-		Hyena_TransformVertex(&vertices[i], &triangle[1]);
-		Hyena_TransformVertex(&vertices[i + 1], &triangle[2]);
+		int strip_odd = hyena_vertex_mode == HYE_TRIANGLE_STRIP && ((i - 1) & 1);
+		int i0 = hyena_vertex_mode == HYE_TRIANGLES ? i :
+			(hyena_vertex_mode == HYE_TRIANGLE_STRIP ? (strip_odd ? i : i - 1) : 0);
+		int i1 = strip_odd ? i - 1 : i;
+		int i2 = i + 1;
+		Hyena_TransformVertex(&vertices[i0], &triangle[0]);
+		Hyena_TransformVertex(&vertices[i1], &triangle[1]);
+		Hyena_TransformVertex(&vertices[i2], &triangle[2]);
 		clipped_count = Hyena_ClipNear(triangle, 3, clipped);
 		for (j = 1; j + 1 < clipped_count; ++j) {
 			hyena_viewvert_t clipped_triangle[3] = {clipped[0], clipped[j], clipped[j + 1]};
@@ -262,6 +269,43 @@ void Hyena_DrawVertices(vertex_t *vertices, int count, int texture_precision, in
 	free(vertices);
 }
 void Hyena_EndVertices(void) {}
+void Hyena_DrawAliasCommands(const int *commands, const trivertx_t *pose1,
+  const trivertx_t *pose2, float blend, qboolean packed_static, int command_words)
+{
+    alias_batch_t batch;
+    vertex_t *vertices;
+    int i;
+    (void)packed_static; (void)command_words;
+    R_BuildAliasBatch(commands, pose1, pose2, blend, &batch);
+    if (!batch.num_indices) return;
+    vertices = Hyena_AllocateMemoryForVertices(batch.num_indices);
+    for (i = 0; i < batch.num_indices; ++i) {
+        const alias_vertex_t *in = &batch.vertices[batch.indices[i]];
+        Hyena_2DTextureCoord(&vertices[i], in->uv[0], in->uv[1]);
+        Hyena_VertexXYZ(&vertices[i], in->xyz[0] / 128.0f,
+          in->xyz[1] / 128.0f, in->xyz[2] / 128.0f);
+    }
+    Hyena_BeginVertices(HYE_TRIANGLES);
+    Hyena_DrawVertices(vertices, batch.num_indices, HYE_TEXTURE_32BITFLOAT,
+      HYE_VERTEX_32BITFLOAT);
+    Hyena_EndVertices();
+}
+void Hyena_DrawSurfaceFan(const float *source, int count, int stride,
+  int texture_offset, qboolean warp, double time)
+{
+    vertex_t *vertices = Hyena_AllocateMemoryForVertices(count);
+    int i;
+    for (i = 0; i < count; ++i) {
+        const float *in = source + i * stride;
+        Hyena_2DTextureCoord(&vertices[i], in[texture_offset], in[texture_offset + 1]);
+        Hyena_VertexXYZ(&vertices[i],
+          in[0] + (warp ? 8*sinf(in[1]*0.05f+(float)time)*sinf(in[2]*0.05f+(float)time) : 0),
+          in[1] + (warp ? 8*sinf(in[0]*0.05f+(float)time)*sinf(in[2]*0.05f+(float)time) : 0), in[2]);
+    }
+    Hyena_BeginVertices(HYE_TRIANGLE_FAN);
+    Hyena_DrawVertices(vertices, count, HYE_TEXTURE_32BITFLOAT, HYE_VERTEX_32BITFLOAT);
+    Hyena_EndVertices();
+}
 void Hyena_SetShadeMode(int mode) { (void)mode; }
 void Hyena_SetBlendFunction(int source, int destination) { (void)source; hyena_destination_blend = destination; }
 void Hyena_SetDepthRange(float near_value, float far_value) { hyena_depth_near = near_value; hyena_depth_far = far_value; }

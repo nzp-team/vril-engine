@@ -39,6 +39,19 @@ typedef struct {
     vertex_xyz_t xyz;
 } vertex_t;
 
+typedef struct {
+    float uv[2];
+    short xyz[3];
+    short pad;
+} alias_vertex_t;
+
+typedef struct {
+    alias_vertex_t *vertices;
+    unsigned short *indices;
+    int num_vertices;
+    int num_indices;
+} alias_batch_t;
+
 typedef byte col_t[4];
 
 // MARK: Booleans
@@ -70,6 +83,8 @@ typedef byte col_t[4];
 
 #define HYE_QUADS        0
 #define HYE_TRIANGLE_FAN 1
+#define HYE_TRIANGLES    2
+#define HYE_TRIANGLE_STRIP 3
 
 // MARK: Vertex Precision
 

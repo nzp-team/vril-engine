@@ -471,8 +471,19 @@ int	lastposenum;
 GL_DrawAliasFrame -- johnfitz -- rewritten to support colored light, lerping, entalpha, multitexture, and r_drawflat
 =============
 */
-static int GL_AliasTriangleIndex (qboolean fan, int triangle, int corner)
+typedef struct
 {
+ GLfloat xyz[3];
+} gl_alias_vertex_t;
+
+static gl_alias_vertex_t *gl_alias_vertices;
+static int gl_alias_vertex_capacity;
+
+static int GL_AliasSourceIndex (qboolean fan, int output_index)
+{
+	int triangle, corner;
+	triangle = output_index / 3;
+	corner = output_index % 3;
 	if (fan)
 		return corner ? triangle + corner : 0;
 	if ((triangle & 1) && corner < 2)
@@ -480,57 +491,47 @@ static int GL_AliasTriangleIndex (qboolean fan, int triangle, int corner)
 	return triangle + corner;
 }
 
-static void GL_AliasTexCoord (const int *commands, int index)
+static int GL_AliasTriangleVertexCount (const aliashdr_t *paliashdr)
 {
-	float u, v;
-	memcpy (&u, &commands[index * 2], sizeof(u));
-	memcpy (&v, &commands[index * 2 + 1], sizeof(v));
-	glTexCoord2f (u, v);
+	const int *commands = (const int *)((const byte *)paliashdr + paliashdr->commands);
+	int count, total = 0;
+	while ((count = *commands++) != 0) {
+		if (count < 0)
+			count = -count;
+		total += 3 * (count - 2);
+		commands += count * 2;
+	}
+	return total;
+}
+
+static gl_alias_vertex_t *GL_AllocAliasVertices (int count)
+{
+	if (count > gl_alias_vertex_capacity) {
+		gl_alias_vertex_t *vertices = realloc(gl_alias_vertices, count * sizeof(*vertices));
+		if (!vertices)
+			Sys_Error("GL_AllocAliasVertices: out of memory");
+		gl_alias_vertices = vertices;
+		gl_alias_vertex_capacity = count;
+	}
+	return gl_alias_vertices;
+}
+
+static void GL_DrawAliasShadowVertices (int count)
+{
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, sizeof(*gl_alias_vertices), gl_alias_vertices[0].xyz);
+	glDrawArrays(GL_TRIANGLES, 0, count);
+	glDisableClientState(GL_VERTEX_ARRAY);
 }
 
 void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum)
 {
-	trivertx_t *verts;
-	trivertx_t *primitive_verts;
-	int		*commands;
-	int		*primitive_commands;
-	int		count, triangle, corner, index;
-	qboolean fan;
-
-	verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
+	trivertx_t *verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
+	int *commands = (int *)((byte *)paliashdr + paliashdr->commands);
 	verts += posenum * paliashdr->poseverts;
-	commands = (int *)((byte *)paliashdr + paliashdr->commands);
-
 	glColor4f(lightcolor[0]/255, lightcolor[1]/255, lightcolor[2]/255, 1.0f);
-
-	while (1)
-	{
-		// get the vertex count and primitive type
-		count = *commands++;
-		if (!count)
-			break;		// done
-
-		fan = count < 0;
-		if (fan)
-			count = -count;
-		primitive_commands = commands;
-		primitive_verts = verts;
-
-		glBegin (GL_TRIANGLES);
-		for (triangle = 0; triangle < count - 2; triangle++)
-		{
-			for (corner = 0; corner < 3; corner++)
-			{
-				index = GL_AliasTriangleIndex (fan, triangle, corner);
-				GL_AliasTexCoord (primitive_commands, index);
-				glVertex3f (primitive_verts[index].v[0], primitive_verts[index].v[1], primitive_verts[index].v[2]);
-			}
-		}
-
-		glEnd ();
-		commands += count * 2;
-		verts += count;
-	}
+	R_DrawAliasCommands(commands, verts, NULL, 0.0f, false, 0);
 }
 
 
@@ -545,67 +546,15 @@ fenix@io.com: model animation interpolation
 int lastposenum0;
 void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float blend)
 {
-	// if (r_showtris.value)
-	// {
-	// 	GL_DrawAliasBlendedWireFrame(paliashdr, pose1, pose2, blend);
-	// 	return;
-	// }
-	trivertx_t* verts1;
-	trivertx_t* verts2;
-	trivertx_t* primitive_verts1;
-	trivertx_t* primitive_verts2;
-	vec3_t	  d;
-	int		*commands;
-	int		*primitive_commands;
-	int		count, triangle, corner, index;
-	qboolean fan;
-
+	trivertx_t *verts1 = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
+	trivertx_t *verts2 = verts1;
+	int *commands = (int *)((byte *)paliashdr + paliashdr->commands);
 	lastposenum0 = pose1;
-	lastposenum  = pose2;
-
-	verts1 = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
-	verts2 = verts1;
-
+	lastposenum = pose2;
 	verts1 += pose1 * paliashdr->poseverts;
 	verts2 += pose2 * paliashdr->poseverts;
-
-	commands = (int *)((byte *)paliashdr + paliashdr->commands);
-
 	glColor4f(lightcolor[0]/255, lightcolor[1]/255, lightcolor[2]/255, 1.0f);
-
-	while (1)
-	{
-		// get the vertex count and primitive type
-		count = *commands++;
-		if (!count)
-			break;		// done
-
-		fan = count < 0;
-		if (fan)
-			count = -count;
-		primitive_commands = commands;
-		primitive_verts1 = verts1;
-		primitive_verts2 = verts2;
-
-		glBegin (GL_TRIANGLES);
-		for (triangle = 0; triangle < count - 2; triangle++)
-		{
-			for (corner = 0; corner < 3; corner++)
-			{
-				index = GL_AliasTriangleIndex (fan, triangle, corner);
-				GL_AliasTexCoord (primitive_commands, index);
-				VectorSubtract(primitive_verts2[index].v, primitive_verts1[index].v, d);
-				glVertex3f (primitive_verts1[index].v[0] + (blend * d[0]),
-					primitive_verts1[index].v[1] + (blend * d[1]),
-					primitive_verts1[index].v[2] + (blend * d[2]));
-			}
-		}
-
-		glEnd ();
-		commands += count * 2;
-		verts1 += count;
-		verts2 += count;
-	}
+	R_DrawAliasCommands(commands, verts1, verts2, blend, false, 0);
 }
 
 /*
@@ -622,8 +571,10 @@ void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 	int		*order;
 	vec3_t	point;
 	float	height, lheight;
-	int		count, triangle, corner, index;
+	int		count, index, output_index = 0;
 	qboolean fan;
+	int draw_count = GL_AliasTriangleVertexCount(paliashdr);
+	gl_alias_vertex_t *draw_vertices = GL_AllocAliasVertices(draw_count);
 
 	lheight = currententity->origin[2] - lightspot[2];
 
@@ -645,26 +596,20 @@ void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 			count = -count;
 		primitive_verts = verts;
 
-		glBegin (GL_TRIANGLES);
-		for (triangle = 0; triangle < count - 2; triangle++)
-		{
-			for (corner = 0; corner < 3; corner++)
-			{
-				index = GL_AliasTriangleIndex (fan, triangle, corner);
-				point[0] = primitive_verts[index].v[0] * paliashdr->scale[0] + paliashdr->scale_origin[0];
-				point[1] = primitive_verts[index].v[1] * paliashdr->scale[1] + paliashdr->scale_origin[1];
-				point[2] = primitive_verts[index].v[2] * paliashdr->scale[2] + paliashdr->scale_origin[2];
-				point[0] -= shadevector[0]*(point[2]+lheight);
-				point[1] -= shadevector[1]*(point[2]+lheight);
-				point[2] = height;
-				glVertex3fv (point);
-			}
+		int primitive_draw_count = 3 * (count - 2);
+		for (index = 0; index < primitive_draw_count; index++, output_index++) {
+			int source_index = GL_AliasSourceIndex(fan, index);
+			point[0] = primitive_verts[source_index].v[0] * paliashdr->scale[0] + paliashdr->scale_origin[0];
+			point[1] = primitive_verts[source_index].v[1] * paliashdr->scale[1] + paliashdr->scale_origin[1];
+			point[2] = primitive_verts[source_index].v[2] * paliashdr->scale[2] + paliashdr->scale_origin[2];
+			draw_vertices[output_index].xyz[0] = point[0] - shadevector[0] * (point[2] + lheight);
+			draw_vertices[output_index].xyz[1] = point[1] - shadevector[1] * (point[2] + lheight);
+			draw_vertices[output_index].xyz[2] = height;
 		}
-
-		glEnd ();
 		order += count * 2;
 		verts += count;
 	}	
+	GL_DrawAliasShadowVertices(draw_count);
 }
 
 
@@ -1227,84 +1172,83 @@ void R_DrawAliasModel (entity_t *e)
 R_DrawEntitiesOnList
 =============
 */
+typedef struct
+{
+	int visedict;
+	int texture;
+	qboolean transparent;
+} alias_batch_entry_t;
+
+static int R_CompareAliasBatches (const void *left, const void *right)
+{
+	const alias_batch_entry_t *a = left;
+	const alias_batch_entry_t *b = right;
+	if (a->transparent != b->transparent)
+		return a->transparent - b->transparent;
+	if (a->texture != b->texture)
+		return a->texture - b->texture;
+	return a->visedict - b->visedict;
+}
+
 void R_DrawEntitiesOnList (void)
 {
-	int		i;
+	alias_batch_entry_t batches[MAX_VISEDICTS];
+	int i, num_batches = 0;
+	int anim = (int)(cl.time * 10) & 3;
 
 	if (!r_drawentities.value)
 		return;
 
-	int zHackCount = 0;
-	doZHack = 0;
-	char specChar;
-
-	// draw sprites seperately, because of alpha blending
-	for (i=0 ; i<cl_numvisedicts ; i++)
-	{
+	for (i = 0; i < cl_numvisedicts; i++) {
+		aliashdr_t *paliashdr;
+		char specChar;
 		currententity = cl_visedicts[i];
-
-		specChar = currententity->model->name[strlen(currententity->model->name)-5];
-
-		if(specChar == '(' || specChar == '^')//skip heads and arms: it's faster to do this than a strcmp...
-		{
+		if (!currententity->model)
 			continue;
-		}
-		doZHack = 0;
-		if(specChar == '%')
-		{
-			if(zHackCount > 5 || ((currententity->z_head != 0) && (currententity->z_larm != 0) && (currententity->z_rarm != 0)))
-			{
-				doZHack = 1;
-			}
-			else
-			{
-				zHackCount ++;//drawing zombie piece by piece.
-			}
-		}
-
-		switch (currententity->model->type)
-		{
+		specChar = currententity->model->name[strlen(currententity->model->name)-5];
+		if (specChar == '(' || specChar == '^')
+			continue;
+		switch (currententity->model->type) {
 		case mod_alias:
-			if(specChar == '$')//This is for smooth alpha, draw in the following loop, not this one
-			{
-				continue;
-			}
-			R_DrawAliasModel (currententity);
+			paliashdr = (aliashdr_t *)Mod_Extradata(currententity->model);
+			batches[num_batches].visedict = i;
+			batches[num_batches].texture = specChar == '%' ? zombie_skins[currententity->skinnum & 3] :
+				paliashdr->gl_texturenum[currententity->skinnum][anim];
+			batches[num_batches].transparent = specChar == '$';
+			num_batches++;
 			break;
-
 		case mod_brush:
 			R_DrawBrushModel (currententity);
 			break;
-
+		case mod_sprite:
+			batches[num_batches].visedict = i;
+			batches[num_batches].texture = R_GetSpriteFrame(currententity)->gl_texturenum;
+			batches[num_batches].transparent = true;
+			num_batches++;
+			break;
 		default:
 			break;
 		}
-		doZHack = 0;
 	}
 
-	for (i=0 ; i<cl_numvisedicts ; i++)
-	{
-		currententity = cl_visedicts[i];
-
-		if(!(currententity->model))
-		{
-			continue;
-		}
-
+	qsort(batches, num_batches, sizeof(batches[0]), R_CompareAliasBatches);
+	doZHack = 0;
+	int zHackCount = 0;
+	for (i = 0; i < num_batches; i++) {
+		char specChar;
+		currententity = cl_visedicts[batches[i].visedict];
 		specChar = currententity->model->name[strlen(currententity->model->name)-5];
-
-		switch (currententity->model->type)
-		{
-		case mod_sprite:
-			R_DrawSpriteModel (currententity);
-			break;
-		case mod_alias:
-			if(specChar == '$')//mdl model with blended alpha
-			{
-					R_DrawTransparentAliasModel(currententity);
-			}
-			break;
-		default: break;
+		if (currententity->model->type == mod_sprite) {
+			R_DrawSpriteModel(currententity);
+		} else if (batches[i].transparent) {
+			R_DrawTransparentAliasModel(currententity);
+		} else {
+			doZHack = specChar == '%' && (zHackCount > 5 ||
+				(currententity->z_head && currententity->z_larm && currententity->z_rarm));
+			if (specChar == '%' && !doZHack)
+				zHackCount++;
+			R_DrawAliasModel(currententity);
+			doZHack = 0;
 		}
 	}
 }
@@ -1586,7 +1530,6 @@ void MYgluPerspective( GLdouble fovy, GLdouble aspect,
 
    glFrustum( xmin, xmax, ymin, ymax, zNear, zFar );
 }
-
 
 /*
 =============

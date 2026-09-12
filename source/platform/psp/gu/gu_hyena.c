@@ -83,6 +83,12 @@ Hyena_ResolveVertexMode(int mode)
         case HYE_TRIANGLE_FAN:
             gu_mode = GU_TRIANGLE_FAN;
             break;
+        case HYE_TRIANGLES:
+            gu_mode = GU_TRIANGLES;
+            break;
+        case HYE_TRIANGLE_STRIP:
+            gu_mode = GU_TRIANGLE_STRIP;
+            break;
         default:
             Sys_Error("Received mode capability [%d]\n", mode);
             break;
@@ -224,6 +230,60 @@ Hyena_DrawVertices(vertex_t * vertices, int num_vertices, int texture_precision,
     } else {
         sceGuDrawArray(current_vertex_mode, gu_texture_precision | gu_vertex_precision, num_vertices, 0, vertices);
     }
+}
+
+void
+Hyena_DrawAliasCommands(const int *commands, const trivertx_t *pose1,
+  const trivertx_t *pose2, float blend, qboolean packed_static,
+  int command_words)
+{
+    typedef struct { int uv, xyz; } packed_vertex_t;
+    packed_vertex_t *output = NULL;
+    int count, output_index = 0;
+
+    if (!packed_static)
+        output = (packed_vertex_t *)sceGuGetMemory(sizeof(*output) *
+          command_words * (pose2 ? 2 : 1));
+
+    while ((count = *commands++) != 0) {
+        int mode = count < 0 ? GU_TRIANGLE_FAN : GU_TRIANGLE_STRIP;
+        int i;
+        if (count < 0)
+            count = -count;
+        if (packed_static) {
+            sceGuDrawArray(mode, GU_TEXTURE_16BIT | GU_VERTEX_8BIT,
+              count, 0, commands);
+            commands += count * 2;
+            continue;
+        }
+        for (i = 0; i < count; ++i) {
+            output[output_index].uv = *commands++;
+            output[output_index++].xyz = ((const int *)pose1[i].v)[0];
+            if (pose2) {
+                output[output_index].uv = commands[-1];
+                output[output_index++].xyz = ((const int *)pose2[i].v)[0];
+            }
+        }
+        if (pose2) {
+            sceGuMorphWeight(0, 1.0f - blend);
+            sceGuMorphWeight(1, blend);
+        }
+        sceGuDrawArray(mode, GU_TEXTURE_16BIT | GU_VERTEX_8BIT |
+          (pose2 ? GU_VERTICES(2) : 0), count, 0,
+          &output[output_index - count * (pose2 ? 2 : 1)]);
+        pose1 += count;
+        if (pose2)
+            pose2 += count;
+    }
+}
+
+void
+Hyena_DrawSurfaceFan(const float *vertices, int count, int stride,
+  int texture_offset, qboolean warp, double time)
+{
+    (void)stride; (void)texture_offset; (void)warp; (void)time;
+    sceGuDrawArray(GU_TRIANGLE_FAN, GU_TEXTURE_32BITF | GU_VERTEX_32BITF,
+      count, 0, vertices);
 }
 
 void

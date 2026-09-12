@@ -150,6 +150,8 @@ COMMON_OBJS =	system.o \
 				platform/ctr/gl/gl_model.c \
 				render/r_entity_fragments.c \
 				render/r_light.c \
+				render/r_mdl.c \
+				render/r_surface.c \
 				platform/ctr/gl/gl_rmain.c \
 				platform/ctr/gl/gl_rmisc.c \
 				platform/ctr/gl/gl_rsurf.c \

@@ -93,6 +93,8 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/platform/nspire/r_draw.c \
 		source/platform/nspire/r_edge.c \
 		source/render/r_entity_fragments.c \
+		source/render/r_mdl.c \
+		source/render/r_surface.c \
 		source/platform/nspire/r_light.c \
 		source/platform/nspire/r_main.c \
 		source/platform/nspire/r_misc.c \
