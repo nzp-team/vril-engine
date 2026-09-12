@@ -1548,18 +1548,24 @@ char *W_substring (char *p, int offset, int length)
 
 void W_stov (char *v, vec3_t out)
 {
-	int i;
-	vec3_t d;
+    int i;
+    vec3_t d = {0.0f, 0.0f, 0.0f};
 
-	for (i=0; i<3; i++)
-	{
-		while(v && (v[0] == ' ' || v[0] == '\'')) //skip unneeded data
-			v++;
-		d[i] = atof(v);
-		while (v && v[0] != ' ') // skip to next space
-			v++;
-	}
-	VectorCopy (d, out);
+    for (i = 0; i < 3; i++)
+    {
+        while (v && (*v == ' ' || *v == '\''))
+            v++;
+
+        if (!v || *v == '\0')
+            break;
+
+        d[i] = (float)atof(v);
+
+        while (*v && *v != ' ')
+            v++;
+    }
+
+    VectorCopy (d, out);
 }
 
 

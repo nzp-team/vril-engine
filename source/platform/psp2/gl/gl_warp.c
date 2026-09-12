@@ -725,7 +725,7 @@ void R_InitSky (miptex_t *mt)
 	int			layer_width, layer_pixels;
 	byte		*src;
 	unsigned	*trans;
-	unsigned	transpix;
+	unsigned    transpix = 0;
 	int			r, g, b;
 	unsigned	*rgba;
 
