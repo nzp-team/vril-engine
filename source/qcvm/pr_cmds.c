@@ -716,7 +716,7 @@ break()
 void PF_break (void)
 {
 Con_Printf ("break statement\n");
-*(int *)-4 = 0;	// dump to debugger
+abort();	// dump to debugger
 //	PR_RunError ("break statement");
 }
 
@@ -2083,6 +2083,11 @@ qboolean ofs_tracebox(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int ty
 //
 int get_closest_waypoint(int entnum) {
 	edict_t *ent = EDICT_NUM(entnum);
+	const int waypoint_count = n_waypoints;
+	if (waypoint_count <= 0)
+		return -1;
+	if (waypoint_count > MAX_WAYPOINTS)
+		Sys_Error("Invalid waypoint count: %d", waypoint_count);
 
 	vec3_t ent_mins;
 	vec3_t ent_maxs;
@@ -2093,17 +2098,18 @@ int get_closest_waypoint(int entnum) {
 
 	// Get all waypoint indices sorted by distance to ent
 	argsort_entry_t waypoint_sort_values[MAX_WAYPOINTS];
-	for(int i = 0; i < n_waypoints; i++) {
+	for(int i = 0; i < waypoint_count; i++) {
 		waypoint_sort_values[i].index = i;
 		waypoint_sort_values[i].value = VectorDistanceSquared(waypoints[i].origin, ent->v.origin);
 	}
-	qsort(waypoint_sort_values, n_waypoints, sizeof(argsort_entry_t), argsort_comparator);
+	if (waypoint_count > 1)
+		qsort(waypoint_sort_values, waypoint_count, sizeof(argsort_entry_t), argsort_comparator);
 
 	
 
 	int best_waypoint_idx = -1;
 	// Sweep through waypoints from closest to farthest, stop when we can tracebox to one
-	for(int i = 0; i < n_waypoints; i++) {
+	for(int i = 0; i < waypoint_count; i++) {
 		int waypoint_idx = waypoint_sort_values[i].index;
 
 		if(ofs_tracebox(ent->v.origin, ent_mins, ent_maxs, waypoints[waypoint_idx].origin, MOVE_NOMONSTERS, ent)) {

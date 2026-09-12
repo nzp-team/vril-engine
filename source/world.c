@@ -740,14 +740,12 @@ reenter:
 		/*we impacted the back of the node, so flip the plane*/
 		trace->plane.dist = -plane->dist;
 		VectorNegate(plane->normal, trace->plane.normal);
-		midf = (t1 + (float)DIST_EPSILON) / (t1 - t2);
 	}
 	else
 	{
 		/*we impacted the front of the node*/
 		trace->plane.dist = plane->dist;
 		VectorCopy(plane->normal, trace->plane.normal);
-		midf = (t1 - (float)DIST_EPSILON) / (t1 - t2);
 	}
 
 	t1 = DoublePrecisionDotProduct (trace->plane.normal, ctx->start) - (double)trace->plane.dist;

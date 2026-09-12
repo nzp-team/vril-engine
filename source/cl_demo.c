@@ -117,7 +117,11 @@ int CL_GetMessage (void)
 		VectorCopy (cl.mviewangles[0], cl.mviewangles[1]);
 		for (i=0 ; i<3 ; i++)
 		{
-			r = Sys_FileRead(cls.demofile, &f, 4) / 4;
+			if (Sys_FileRead(cls.demofile, &f, 4) != 4)
+			{
+				CL_StopPlayback ();
+				return 0;
+			}
 			cl.mviewangles[0][i] = LittleFloat (f);
 		}
 		

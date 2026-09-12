@@ -305,7 +305,10 @@ test_status_t Test_QCVM_Start(void)
 	value.f = PR_VM_LogicalOr(entity, zero);
 	failures += Test_QCVM_Expect("entity -> OP_OR -> OP_IF", value.bits != 0, 1);
 	value.f = PR_VM_LogicalAnd(negative_three, entity);
-	value.f = PR_VM_LogicalOr(value.bits, zero);
+	{
+		int and_bits = value.bits;
+		value.f = PR_VM_LogicalOr(and_bits, zero);
+	}
 	failures += Test_QCVM_Expect("OP_AND -> OP_OR -> OP_IF", value.bits != 0, 1);
 	a._float = 5.0f;
 	b._float = 3.0f;

@@ -688,7 +688,9 @@ void Menu_DrawMapButton (int order, int button_index, int usermap_index, int map
 
 	// Don't modify map_name_pretty memory location
 	// create a copy for uppercase drawing
-	final_name = malloc(MAX_QPATH);
+	final_name = malloc(strlen(button_name) + 1);
+	if (!final_name)
+		Sys_Error("Menu_DrawMapButton: out of memory");
 	strcpy(final_name, button_name);
 	strtoupper(final_name);
 

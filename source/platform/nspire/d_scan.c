@@ -583,9 +583,9 @@ void D_DrawSpans8 (espan_t *pspan)
 			if( !i_right_to_left )
 			{
 				f16_steps = llmull_s24( ( f16_send - s ), i_count_reciproc );
-				f16_steps -= f16_steps >> 31;
+				f16_steps += (f16_steps < 0);
 				f16_stept = llmull_s24( ( f16_tend - t ), i_count_reciproc );
-				f16_stept -= f16_stept >> 31;
+				f16_stept += (f16_stept < 0);
 				f16_ps = f16_sstart = s;
 				f16_pt = f16_tstart = t;
 #if !CALCG_FIXED
@@ -605,9 +605,9 @@ void D_DrawSpans8 (espan_t *pspan)
 			else
 			{
 				f16_steps = llmull_s24( ( s - f16_send ), i_count_reciproc );
-				f16_steps -= f16_steps >> 31;
+				f16_steps += (f16_steps < 0);
 				f16_stept = llmull_s24( ( t - f16_tend ), i_count_reciproc );
-				f16_stept -= f16_stept >> 31;
+				f16_stept += (f16_stept < 0);
 
 				f16_ps = f16_sstart = f16_send;
 				f16_pt = f16_tstart = f16_tend;

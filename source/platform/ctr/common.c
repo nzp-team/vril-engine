@@ -1261,7 +1261,7 @@ void COM_WriteFile (char *filename, void *data, int len)
 	int             handle;
 	char    name[MAX_OSPATH];
 	
-	snprintf(name, MAX_OSPATH + 1, "%s/%s", com_gamedir, filename);
+	snprintf(name, sizeof(name), "%s/%s", com_gamedir, filename);
 
 	handle = Sys_FileOpenWrite (name);
 	if (handle == -1)
@@ -1366,7 +1366,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 	for ( ; search ; search = search->next)
 	{             
 		// check a file in the directory tree
-		snprintf (netpath, MAX_OSPATH * 2, "%s/%s", search->filename, filename);
+		snprintf (netpath, sizeof(netpath), "%s/%s", search->filename, filename);
 		
 		findtime = Sys_FileTime (netpath);
 		if (findtime == -1 && COM_ResolveCaseInsensitivePath(netpath, sizeof(netpath), search->filename, filename))

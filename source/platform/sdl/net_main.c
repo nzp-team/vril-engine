@@ -724,13 +724,20 @@ int NET_SendToAll(sizebuf_t *data, int blocktime)
 	double		start;
 	int			i;
 	int			count = 0;
-	qboolean	state1 [MAX_SCOREBOARD];
-	qboolean	state2 [MAX_SCOREBOARD];
+	const int client_count = svs.maxclients;
+	qboolean	state1 [MAX_SCOREBOARD] = {0};
+	qboolean	state2 [MAX_SCOREBOARD] = {0};
 
-	for (i=0, host_client = svs.clients ; i<svs.maxclients ; i++, host_client++)
+	if (client_count < 0 || client_count > MAX_SCOREBOARD)
+		Sys_Error("NET_SendToAll: invalid client count %d", client_count);
+
+	for (i=0, host_client = svs.clients ; i<client_count ; i++, host_client++)
 	{
 		if (!host_client->netconnection)
+		{
+			state1[i] = state2[i] = true;
 			continue;
+		}
 		if (host_client->active)
 		{
 			if (host_client->netconnection->driver == 0)
@@ -755,7 +762,7 @@ int NET_SendToAll(sizebuf_t *data, int blocktime)
 	while (count)
 	{
 		count = 0;
-		for (i=0, host_client = svs.clients ; i<svs.maxclients ; i++, host_client++)
+		for (i=0, host_client = svs.clients ; i<client_count ; i++, host_client++)
 		{
 			if (! state1[i])
 			{

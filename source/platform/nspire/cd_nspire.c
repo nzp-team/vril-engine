@@ -4,6 +4,7 @@
 
 int CDAudio_Init(void)
 {
+	return 0;
 }
 
 void CDAudio_Play(byte track, qboolean looping)

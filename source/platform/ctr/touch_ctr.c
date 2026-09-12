@@ -47,7 +47,15 @@ void Touch_Init(){
   fseek(texture, 0, SEEK_END);
   int size = ftell(texture);
   fseek(texture, 0, SEEK_SET);
+  if (size < 320 * 240 * (int)sizeof(*touchOverlay)) {
+    fclose(texture);
+    Sys_Error("Invalid touch overlay size");
+  }
   touchOverlay = malloc(size);
+  if (!touchOverlay) {
+    fclose(texture);
+    Sys_Error("Could not allocate touch overlay");
+  }
   fread(touchOverlay, 1, size, texture);
   fclose(texture);
 }

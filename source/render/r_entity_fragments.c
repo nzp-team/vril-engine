@@ -187,7 +187,7 @@ R_StoreEfrags(efrag_t ** ppefrag)
     entity_t * pent;
     efrag_t * pefrag;
 
-    while ((pefrag = *ppefrag) != NULL) {
+    for (pefrag = *ppefrag; pefrag != NULL; pefrag = pefrag->leafnext) {
         pent = pefrag->entity;
 
         if ((pent->visframe != r_framecount) && (cl_numvisedicts < MAX_VISEDICTS)) {
@@ -195,6 +195,5 @@ R_StoreEfrags(efrag_t ** ppefrag)
             pent->visframe = r_framecount;
         }
 
-        ppefrag = &pefrag->leafnext;
     }
 }

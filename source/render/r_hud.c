@@ -833,7 +833,7 @@ HUD_EndScreen(void)
     int screen_width   = (int) vid.width;
     qboolean condensed = screen_width <= 320 * vid.scale;
     int panel_width    = (condensed ? 320 : 400) * vid.scale;
-    int panel_x        = (screen_width - panel_width) / 2;
+    int panel_x;
     int header_y       = 89 * vid.scale;
     int header_height  = 10 * vid.scale;
     int header_gap     = 2 * vid.scale;
@@ -2237,8 +2237,8 @@ HUD_Crosshair(void)
         if (moving && (int) crosshair.value == 1 && spread < maxspread)
             spread += (maxspread - spread) * 0.5f;
         if ((int) crosshair.value == 1 && spread > maxspread) spread = maxspread;
-        if (sv_player->v.view_ofs[2] == 8) spread *= 0.80f;
-        else if (sv_player->v.view_ofs[2] == -10) spread *= 0.65f;
+        if (sv_player && sv_player->v.view_ofs[2] == 8) spread *= 0.80f;
+        else if (sv_player && sv_player->v.view_ofs[2] == -10) spread *= 0.65f;
         crosshair_offset_step += (spread - crosshair_offset_step) * ((int) crosshair.value == 4 ? 0.05f : 0.5f);
         spread = (int) crosshair_offset_step;
         pixel_spread = (int) (spread * vid.scale);

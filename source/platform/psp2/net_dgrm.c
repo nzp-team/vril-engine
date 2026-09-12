@@ -1012,8 +1012,8 @@ static qsocket_t *_Datagram_CheckNewConnections (void)
 				return NULL;
 			var = var->next;
 		}
-		/*else
-			var = cvar_vars;*/
+		else
+			var = cvar_vars;
 
 		// search for the next server cvar
 		while (var)

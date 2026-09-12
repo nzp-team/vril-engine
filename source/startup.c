@@ -120,7 +120,7 @@ Startup_LoadArguments(startup_arguments_t * arguments, int argc, char ** argv,
     }
 
     // Prioritize actual CLI arguments if provided
-    for (i = 1; i < argc; ++i) {
+    for (i = 1; argv && i < argc; ++i) {
         if (argv[i] && !Startup_AddArgument(arguments, argv[i], error, error_size))
             return 0;
     }

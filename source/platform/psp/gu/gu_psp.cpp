@@ -420,7 +420,7 @@ extern "C" void SCR_ScreenShot_f (void)
 	{
         name[12] = i/10 + '0';
 		name[13] = i%10 + '0';
-		snprintf (checkname, 258, "%s/%s", com_gamedir, name);
+		snprintf (checkname, sizeof(checkname), "%s/%s", com_gamedir, name);
 		if (Sys_FileTime(checkname) == -1)
 			break;	// file doesn't exist
 	}
