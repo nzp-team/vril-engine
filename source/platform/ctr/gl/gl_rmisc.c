@@ -234,6 +234,7 @@ void R_Init (void)
 	Cvar_RegisterVariable (&r_flametype);
 	Cvar_RegisterVariable (&r_model_brightness);
 	Cvar_RegisterVariable (&r_skyfog);
+	Cvar_RegisterVariable (&r_skycolor);
 
 	Cvar_RegisterVariable (&r_flatlightstyles);
 

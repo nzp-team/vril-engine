@@ -18,7 +18,7 @@ EMULATOR_BIN="azahar/AppRun"
 APP_BIN="nzportable.3dsx"
 
 # How many seconds to wait before time out
-TIMEOUT=240
+TIMEOUT=600
 
 # The Azahar release we download and use.
 azahar_version="2126.0"
@@ -35,7 +35,7 @@ function install_dependencies
 {
 	print_info "Installing Nintendo 3DS dependencies.."
 	apt-get update -y
-	apt-get install -y ffmpeg libegl1 libfontconfig1 libgl1 libgl1-mesa-dri \
+	apt-get install -y --no-install-recommends ca-certificates ffmpeg libegl1 libfontconfig1 libgl1 libgl1-mesa-dri \
 		libglu1-mesa libgtk-3-0 libxcb-cursor0 libxkbcommon-x11-0 \
 		python3 squashfs-tools unzip wget xauth xvfb
 }

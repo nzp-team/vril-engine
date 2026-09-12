@@ -1602,7 +1602,8 @@ void Load_Waypoint_NZPBETA() {
 	}
 
 	i = 0;
-	Con_DPrintf("Loading BETA waypoints\n");
+	if (sys_testmode.value <= 0)
+		Con_DPrintf("Loading BETA waypoints\n");
 
 	vec3_t way_origin;
 
@@ -1648,7 +1649,8 @@ void Load_Waypoint_NZPBETA() {
 		waypoints[waypoint_idx].used = 1;
 		waypoints[waypoint_idx].open = 1;
 	}
-	Con_DPrintf("Total waypoints: %i, num parsed: %i\n", max_waypoint_idx, n_waypoints_parsed);
+	if (sys_testmode.value <= 0)
+		Con_DPrintf("Total waypoints: %i, num parsed: %i\n", max_waypoint_idx, n_waypoints_parsed);
 	// Store in global `n_waypoints`
 	n_waypoints = max_waypoint_idx;
 	
@@ -1661,17 +1663,18 @@ void Load_Waypoint_NZPBETA() {
 			float dist = VecLength2(waypoints[s].origin, waypoints[i].origin);
 			waypoints[i].dist[p] = dist;
 		}
-		Con_DPrintf("Waypoint (%i)\n target1: (%i, %f),\n target2: (%i, %f),\n target3: (%i, %f),\n target4: (%i, %f),\n target5: (%i, %f),\n target6: (%i, %f),\n target7: (%i, %f),\n target8: (%i, %f)\n",
-			i,
-			waypoints[i].target[0], (double)waypoints[i].dist[0],
-			waypoints[i].target[1], (double)waypoints[i].dist[1],
-			waypoints[i].target[2], (double)waypoints[i].dist[2],
-			waypoints[i].target[3], (double)waypoints[i].dist[3],
-			waypoints[i].target[4], (double)waypoints[i].dist[4],
-			waypoints[i].target[5], (double)waypoints[i].dist[5],
-			waypoints[i].target[6], (double)waypoints[i].dist[6],
-			waypoints[i].target[7], (double)waypoints[i].dist[7]
-		);
+		if (sys_testmode.value <= 0)
+			Con_DPrintf("Waypoint (%i)\n target1: (%i, %f),\n target2: (%i, %f),\n target3: (%i, %f),\n target4: (%i, %f),\n target5: (%i, %f),\n target6: (%i, %f),\n target7: (%i, %f),\n target8: (%i, %f)\n",
+				i,
+				waypoints[i].target[0], (double)waypoints[i].dist[0],
+				waypoints[i].target[1], (double)waypoints[i].dist[1],
+				waypoints[i].target[2], (double)waypoints[i].dist[2],
+				waypoints[i].target[3], (double)waypoints[i].dist[3],
+				waypoints[i].target[4], (double)waypoints[i].dist[4],
+				waypoints[i].target[5], (double)waypoints[i].dist[5],
+				waypoints[i].target[6], (double)waypoints[i].dist[6],
+				waypoints[i].target[7], (double)waypoints[i].dist[7]
+			);
 	}
 	W_fclose(h);
 }
@@ -1760,7 +1763,8 @@ void Load_Waypoint () {
 	h = W_fopen();
 
 	if (h == -1) {
-		Con_DPrintf("No waypoint file (%s/maps/%s.way) found, trying beta format..\n", com_gamedir, sv.name);
+		if (sys_testmode.value <= 0)
+			Con_DPrintf("No waypoint file (%s/maps/%s.way) found, trying beta format..\n", com_gamedir, sv.name);
 		Load_Waypoint_NZPBETA();
 		cleanup_waypoints();
 		return;
@@ -1771,10 +1775,12 @@ void Load_Waypoint () {
 	// Keep track of the waypoint with the highest index we've loaded
 	int max_waypoint_idx = -1;
 	int n_waypoints_parsed = 0;
-	Con_DPrintf("Loading waypoints\n");
+	if (sys_testmode.value <= 0)
+		Con_DPrintf("Loading waypoints\n");
 	while (1) {
 		if (strncmp(W_fgets (h), "Waypoint", 8)) {
-			Con_DPrintf("Last waypoint\n");
+			if (sys_testmode.value <= 0)
+				Con_DPrintf("Last waypoint\n");
 			break;
 		}
 		else {
@@ -1814,22 +1820,24 @@ void Load_Waypoint () {
 			W_fgets (h);
 			W_fgets (h);
 			waypoints[i].used = 1;
-			Con_DPrintf("Waypoint (%i), tag: %s, open: %i, target1: %i, target2: %i, target3: %i, target4: %i, target5: %i, target6: %i, target7: %i, target8: %i\n",
-				i,
-				waypoints[i].special,
-				waypoints[i].open,
-				waypoints[i].target[0],
-				waypoints[i].target[1],
-				waypoints[i].target[2],
-				waypoints[i].target[3],
-				waypoints[i].target[4],
-				waypoints[i].target[5],
-				waypoints[i].target[6],
-				waypoints[i].target[7]
-			);
+			if (sys_testmode.value <= 0)
+				Con_DPrintf("Waypoint (%i), tag: %s, open: %i, target1: %i, target2: %i, target3: %i, target4: %i, target5: %i, target6: %i, target7: %i, target8: %i\n",
+					i,
+					waypoints[i].special,
+					waypoints[i].open,
+					waypoints[i].target[0],
+					waypoints[i].target[1],
+					waypoints[i].target[2],
+					waypoints[i].target[3],
+					waypoints[i].target[4],
+					waypoints[i].target[5],
+					waypoints[i].target[6],
+					waypoints[i].target[7]
+				);
 		}
 	}
-	Con_DPrintf("Total waypoints: %i, num parsed: %i\n", max_waypoint_idx, n_waypoints_parsed);
+	if (sys_testmode.value <= 0)
+		Con_DPrintf("Total waypoints: %i, num parsed: %i\n", max_waypoint_idx, n_waypoints_parsed);
 	// Store in global `n_waypoints`
 	n_waypoints = max_waypoint_idx;
 	
@@ -1842,17 +1850,18 @@ void Load_Waypoint () {
 			float dist = VecLength2(waypoints[s].origin, waypoints[i].origin);
 			waypoints[i].dist[p] = dist;
 		}
-		Con_DPrintf("Waypoint (%i)\n target1: (%i, %f),\n target2: (%i, %f),\n target3: (%i, %f),\n target4: (%i, %f),\n target5: (%i, %f),\n target6: (%i, %f),\n target7: (%i, %f),\n target8: (%i, %f)\n",
-			i,
-			waypoints[i].target[0], (double)waypoints[i].dist[0],
-			waypoints[i].target[1], (double)waypoints[i].dist[1],
-			waypoints[i].target[2], (double)waypoints[i].dist[2],
-			waypoints[i].target[3], (double)waypoints[i].dist[3],
-			waypoints[i].target[4], (double)waypoints[i].dist[4],
-			waypoints[i].target[5], (double)waypoints[i].dist[5],
-			waypoints[i].target[6], (double)waypoints[i].dist[6],
-			waypoints[i].target[7], (double)waypoints[i].dist[7]
-		);
+		if (sys_testmode.value <= 0)
+			Con_DPrintf("Waypoint (%i)\n target1: (%i, %f),\n target2: (%i, %f),\n target3: (%i, %f),\n target4: (%i, %f),\n target5: (%i, %f),\n target6: (%i, %f),\n target7: (%i, %f),\n target8: (%i, %f)\n",
+				i,
+				waypoints[i].target[0], (double)waypoints[i].dist[0],
+				waypoints[i].target[1], (double)waypoints[i].dist[1],
+				waypoints[i].target[2], (double)waypoints[i].dist[2],
+				waypoints[i].target[3], (double)waypoints[i].dist[3],
+				waypoints[i].target[4], (double)waypoints[i].dist[4],
+				waypoints[i].target[5], (double)waypoints[i].dist[5],
+				waypoints[i].target[6], (double)waypoints[i].dist[6],
+				waypoints[i].target[7], (double)waypoints[i].dist[7]
+			);
 	}
 	W_fclose(h);
 	//Z_Free (w_string_temp);

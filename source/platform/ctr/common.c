@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../../nzportable_def.h"
 
+#include <dirent.h>
+
 #define NUM_SAFE_ARGVS  7
 
 static char     *largv[MAX_NUM_ARGVS + NUM_SAFE_ARGVS + 1];
@@ -1195,6 +1197,65 @@ COM_WriteFile
 The filename will be prefixed by the current game directory
 ============
 */
+static qboolean COM_JoinPath(char *dest, size_t dest_size, const char *directory, const char *filename)
+{
+	size_t directory_length = strlen(directory);
+	size_t filename_length = strlen(filename);
+
+	if (directory_length + 1 + filename_length + 1 > dest_size)
+		return false;
+
+	memcpy(dest, directory, directory_length);
+	dest[directory_length] = '/';
+	memcpy(dest + directory_length + 1, filename, filename_length + 1);
+	return true;
+}
+
+static qboolean COM_ResolveCaseInsensitivePath(char *resolved, size_t resolved_size, const char *directory, const char *filename)
+{
+	char relative[MAX_OSPATH];
+	char current[MAX_OSPATH];
+	char joined[MAX_OSPATH];
+	char *component, *next;
+
+	strncpy(relative, filename, sizeof(relative) - 1);
+	relative[sizeof(relative) - 1] = 0;
+	strncpy(current, directory, sizeof(current) - 1);
+	current[sizeof(current) - 1] = 0;
+
+	for (component = strtok_r(relative, "/", &next); component; component = strtok_r(NULL, "/", &next))
+	{
+		DIR *dir = opendir(current);
+		struct dirent *entry;
+		qboolean found = false;
+
+		if (!dir)
+			return false;
+
+		while ((entry = readdir(dir)) != NULL)
+		{
+			if (!Q_strcasecmp(entry->d_name, component))
+			{
+				if (COM_JoinPath(joined, sizeof(joined), current, entry->d_name))
+				{
+					strcpy(current, joined);
+					found = true;
+				}
+				break;
+			}
+		}
+
+		closedir(dir);
+		if (!found)
+			return false;
+	}
+
+	if (strlen(current) >= resolved_size)
+		return false;
+	strcpy(resolved, current);
+	return true;
+}
+
 void COM_WriteFile (char *filename, void *data, int len)
 {
 	int             handle;
@@ -1308,6 +1369,8 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 		snprintf (netpath, MAX_OSPATH * 2, "%s/%s", search->filename, filename);
 		
 		findtime = Sys_FileTime (netpath);
+		if (findtime == -1 && COM_ResolveCaseInsensitivePath(netpath, sizeof(netpath), search->filename, filename))
+			findtime = Sys_FileTime(netpath);
 		if (findtime == -1)
 			continue;
 			
