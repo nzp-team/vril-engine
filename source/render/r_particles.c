@@ -397,7 +397,7 @@ R_ParseParticleEffect(void)
             particle_types[count].DstBlend   = (_DstBlend); \
             particle_types[count].texture    = (_texture); \
             particle_types[count].startalpha = (_startalpha); \
-            particle_types[count].grav       = 9.8 * (_grav); \
+            particle_types[count].grav       = 9.8f * (_grav); \
             particle_types[count].accel      = (_accel); \
             particle_types[count].move       = (_move); \
             particle_types[count].custom     = (_custom); \

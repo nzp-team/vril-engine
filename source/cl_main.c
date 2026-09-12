@@ -529,7 +529,9 @@ float CL_LerpPoint (void)
 
 
 extern cvar_t scr_fov;
+#ifndef SOFTWARE_RENDERER
 extern cvar_t scr_fov_viewmodel;
+#endif
 
 float 	mdlflag_poweruprotate_duration 	= 0.0f;
 float 	mdlflag_poweruprotate_starttime = 0.0f;
@@ -744,9 +746,11 @@ void CL_RelinkEntities (void)
 				right_offset	= right_offset/1000;
 				up_offset		= up_offset/1000;
 				forward_offset  = forward_offset/1000;
+#ifndef SOFTWARE_RENDERER
 				if (scr_fov_viewmodel.value)
 					forward_offset *= (1.0f / tanf (DEG2RAD (scr_fov.value / 2.0f))) *
 						scr_fov_viewmodel.value / 90.0f;
+#endif
 				
 				VectorMA (start, forward_offset, v_forward ,smokeorg);
 				VectorMA (smokeorg, up_offset, v_up ,smokeorg);
