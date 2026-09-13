@@ -231,9 +231,13 @@ void Menu_SetInputDevice (in_device_t device)
 
 void Menu_InitUI (void)
 {
+	in_device_t device = IN_GetActiveDevice();
+
 	current_frame.point_x = 0;
 	current_frame.point_y = 0;
-	Menu_SetInputDevice(IN_GetActiveDevice());
+	if (IN_PlatformHasGamepad() && !IN_PlatformHasMouse())
+		device = IN_DEVICE_GAMEPAD;
+	Menu_SetInputDevice(device);
 
 	// Set OSK button images
 	// these are currently the only
@@ -438,11 +442,11 @@ void Menu_KeyInput (int key)
 		break;
 	}
 
-	if(key == MENU_KEY_CONFIRM || key == K_ENTER || key == K_BOTTOMFACE) {
+	if(key == MENU_KEY_CONFIRM || key == K_ENTER) {
 		Menu_ButtonPress();
 	}
 
-	if(key == MENU_KEY_BACK || key == K_ESCAPE || key == K_RIGHTFACE ||
+	if(key == MENU_KEY_BACK || key == K_ESCAPE ||
 		(key == K_START && key_dest == key_menu_pause)) {
 		if (m_state == m_pause && menu_paus_submenu == 0)
 			Menu_Resume();

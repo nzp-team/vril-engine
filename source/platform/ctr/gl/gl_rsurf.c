@@ -297,44 +297,12 @@ Warp the vertex coordinates
 */
 void DrawGLWaterPoly (glpoly_t *p)
 {
-	int		i;
-	float	*v;
-	vec3_t	nv;
-
-	glBegin (GL_TRIANGLE_FAN);
-	v = p->verts[0];
-	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
-	{
-		glTexCoord2f (v[3], v[4]);
-
-		nv[0] = v[0] + 8*sinf(v[1]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
-		nv[1] = v[1] + 8*sinf(v[0]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
-		nv[2] = v[2];
-
-		glVertex3fv (nv);
-	}
-	glEnd ();
+	R_DrawSurfaceFan(p->verts[0], p->numverts, VERTEXSIZE, 3, true, realtime);
 }
 
 void DrawGLWaterPolyLightmap (glpoly_t *p)
 {
-	int		i;
-	float	*v;
-	vec3_t	nv;
-
-	glBegin (GL_TRIANGLE_FAN);
-	v = p->verts[0];
-	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
-	{
-		glTexCoord2f (v[5], v[6]);
-
-		nv[0] = v[0] + 8*sinf(v[1]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
-		nv[1] = v[1] + 8*sinf(v[0]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
-		nv[2] = v[2];
-
-		glVertex3fv (nv);
-	}
-	glEnd ();
+	R_DrawSurfaceFan(p->verts[0], p->numverts, VERTEXSIZE, 5, true, realtime);
 }
 
 /*
@@ -344,39 +312,13 @@ DrawGLPoly
 */
 void DrawGLPoly (glpoly_t *p)
 {
-	int		i;
-	float	*v;
-
-	glBegin (GL_POLYGON);
-	v = p->verts[0];
-	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
-	{
-		glTexCoord2f (v[3], v[4]);
-		glVertex3fv (v);
-	}
-	glEnd ();
+	R_DrawSurfaceFan(p->verts[0], p->numverts, VERTEXSIZE, 3, false, 0);
 }
 
 // rbaldwin2 -- This is based on DrawGLWaterPolyLightmap and designed to be cheaper
 void DrawGLPolyLightmap (glpoly_t *p)
 {
-	int		i;
-	float	*v;
-	vec3_t	nv;
-
-	glBegin (GL_TRIANGLE_FAN);
-	v = p->verts[0];
-	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
-	{
-		glTexCoord2f (v[5], v[6]);
-
-		nv[0] = v[0];
-		nv[1] = v[1];
-		nv[2] = v[2];
-
-		glVertex3fv (nv);
-	}
-	glEnd ();
+	R_DrawSurfaceFan(p->verts[0], p->numverts, VERTEXSIZE, 5, false, 0);
 }
 
 /*
@@ -469,7 +411,7 @@ void R_RenderBrushPoly (msurface_t *fa)
 		glEnable(GL_ALPHA_TEST);
 		glAlphaFunc(GL_GREATER, 0xaa);
 		glEnable(GL_MODULATE);
-		glColor4f(1, 1, 1, 1);
+		Hyena_SetColor(1, 1, 1, 1);
 	}
 
 	if (fa->flags & SURF_DRAWTURB)
@@ -624,7 +566,7 @@ void R_DrawWaterSurfaces (void)
 
 	if (r_wateralpha.value < 1.0f) {
 		glEnable (GL_BLEND);
-		glColor4f (1,1,1,r_wateralpha.value);
+		Hyena_SetColor(1, 1, 1, r_wateralpha.value);
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	}
 
@@ -666,7 +608,7 @@ void R_DrawWaterSurfaces (void)
 	if (r_wateralpha.value < 1.0f) {
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
-		glColor4f (1,1,1,1);
+		Hyena_SetColor(1, 1, 1, 1);
 		glDisable (GL_BLEND);
 	}
 
@@ -1389,4 +1331,3 @@ void GL_BuildLightmaps (void)
 		lightmap_index[i] = GL_LoadLMTexture (lm_name, BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+(i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes), false);
 	}
 }
-

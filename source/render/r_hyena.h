@@ -50,6 +50,9 @@ Hyena_VertexXYZ(vertex_t * vertex, float x, float y, float z);
 /** @brief Draws and releases the current vertex batch. */
 void
 Hyena_DrawVertices(vertex_t * vertices, int num_vertices, int texture_precision, int vertex_precision);
+void Hyena_DrawAliasBatch(const alias_batch_t *batch);
+void Hyena_DrawSurfaceFan(const float *vertices, int count, int stride,
+  int texture_offset, qboolean warp, double time);
 /** @brief Ends the current vertex batch. */
 void
 Hyena_EndVertices(void);

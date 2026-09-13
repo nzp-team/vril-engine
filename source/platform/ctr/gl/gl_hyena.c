@@ -4,6 +4,76 @@
 static int hyena_vertex_mode;
 static vec3_t hyena_translation;
 static vec3_t hyena_scale;
+static float hyena_color[4] = { 1, 1, 1, 1 };
+static short *hyena_alias_positions;
+static float *hyena_alias_texcoords;
+static float *hyena_alias_colors;
+static int hyena_alias_capacity;
+static float *hyena_surface_positions;
+static float *hyena_surface_texcoords;
+static float *hyena_surface_colors;
+static unsigned short *hyena_surface_indices;
+static int hyena_surface_capacity;
+
+static void
+Hyena_ReserveAliasVertices(int count)
+{
+    short *positions;
+    float *texcoords;
+    float *colors;
+
+    if (count <= hyena_alias_capacity)
+        return;
+    positions = realloc(hyena_alias_positions,
+      count * 3 * sizeof(*hyena_alias_positions));
+    if (!positions)
+        Sys_Error("Hyena_ReserveAliasVertices: out of memory");
+    hyena_alias_positions = positions;
+    texcoords = realloc(hyena_alias_texcoords,
+      count * 2 * sizeof(*hyena_alias_texcoords));
+    if (!texcoords)
+        Sys_Error("Hyena_ReserveAliasVertices: out of memory");
+    hyena_alias_texcoords = texcoords;
+    colors = realloc(hyena_alias_colors,
+      count * 4 * sizeof(*hyena_alias_colors));
+    if (!colors)
+        Sys_Error("Hyena_ReserveAliasVertices: out of memory");
+    hyena_alias_colors = colors;
+    hyena_alias_capacity = count;
+}
+
+static void
+Hyena_ReserveSurfaceVertices(int count)
+{
+    float *positions;
+    float *texcoords;
+    float *colors;
+    unsigned short *indices;
+
+    if (count <= hyena_surface_capacity)
+        return;
+    positions = realloc(hyena_surface_positions,
+      count * 3 * sizeof(*hyena_surface_positions));
+    if (!positions)
+        Sys_Error("Hyena_ReserveSurfaceVertices: out of memory");
+    hyena_surface_positions = positions;
+    texcoords = realloc(hyena_surface_texcoords,
+      count * 2 * sizeof(*hyena_surface_texcoords));
+    if (!texcoords)
+        Sys_Error("Hyena_ReserveSurfaceVertices: out of memory");
+    hyena_surface_texcoords = texcoords;
+    colors = realloc(hyena_surface_colors,
+      count * 4 * sizeof(*hyena_surface_colors));
+    if (!colors)
+        Sys_Error("Hyena_ReserveSurfaceVertices: out of memory");
+    hyena_surface_colors = colors;
+    indices = realloc(hyena_surface_indices,
+      (count - 2) * 3 * sizeof(*hyena_surface_indices));
+    if (!indices)
+        Sys_Error("Hyena_ReserveSurfaceVertices: out of memory");
+    hyena_surface_indices = indices;
+    hyena_surface_capacity = count;
+}
 
 static GLenum
 Hyena_ResolveCapability(int capability)
@@ -30,6 +100,10 @@ Hyena_SetTextureMode(int mode)
 void
 Hyena_SetColor(float r, float g, float b, float a)
 {
+    hyena_color[0] = r;
+    hyena_color[1] = g;
+    hyena_color[2] = b;
+    hyena_color[3] = a;
     glColor4f(r, g, b, a);
 }
 
@@ -128,6 +202,91 @@ Hyena_DrawVertices(vertex_t * vertices, int count, int texture_precision, int ve
 }
 
 void Hyena_EndVertices(void){ }
+
+void
+Hyena_DrawAliasBatch(const alias_batch_t *batch)
+{
+    int i;
+
+    if (!batch->num_indices)
+        return;
+    Hyena_ReserveAliasVertices(batch->num_vertices);
+    for (i = 0; i < batch->num_vertices; ++i) {
+        hyena_alias_positions[i * 3] = batch->vertices[i].xyz[0];
+        hyena_alias_positions[i * 3 + 1] = batch->vertices[i].xyz[1];
+        hyena_alias_positions[i * 3 + 2] = batch->vertices[i].xyz[2];
+        hyena_alias_texcoords[i * 2] = batch->vertices[i].uv[0];
+        hyena_alias_texcoords[i * 2 + 1] = batch->vertices[i].uv[1];
+        hyena_alias_colors[i * 4] = hyena_color[0];
+        hyena_alias_colors[i * 4 + 1] = hyena_color[1];
+        hyena_alias_colors[i * 4 + 2] = hyena_color[2];
+        hyena_alias_colors[i * 4 + 3] = hyena_color[3];
+    }
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+    glVertexPointer(3, GL_SHORT, 0, hyena_alias_positions);
+    glTexCoordPointer(2, GL_FLOAT, 0, hyena_alias_texcoords);
+    glColorPointer(4, GL_FLOAT, 0, hyena_alias_colors);
+    glPushMatrix();
+    glScalef(1.0f / 128.0f, 1.0f / 128.0f, 1.0f / 128.0f);
+    glDrawElements(GL_TRIANGLES, batch->num_indices, GL_UNSIGNED_SHORT,
+      batch->indices);
+    glPopMatrix();
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_VERTEX_ARRAY);
+}
+
+void
+Hyena_DrawSurfaceFan(const float *source, int count, int stride,
+  int texture_offset, qboolean warp, double time)
+{
+    int i;
+    int num_indices;
+
+    if (count < 3)
+        return;
+    Hyena_ReserveSurfaceVertices(count);
+    for (i = 0; i < count; ++i) {
+        const float *vertex = source + i * stride;
+        float x = vertex[0];
+        float y = vertex[1];
+
+        if (warp) {
+            x += 8 * sinf(vertex[1] * 0.05f + (float)time) *
+              sinf(vertex[2] * 0.05f + (float)time);
+            y += 8 * sinf(vertex[0] * 0.05f + (float)time) *
+              sinf(vertex[2] * 0.05f + (float)time);
+        }
+        hyena_surface_positions[i * 3] = x;
+        hyena_surface_positions[i * 3 + 1] = y;
+        hyena_surface_positions[i * 3 + 2] = vertex[2];
+        hyena_surface_texcoords[i * 2] = vertex[texture_offset];
+        hyena_surface_texcoords[i * 2 + 1] = vertex[texture_offset + 1];
+        hyena_surface_colors[i * 4] = hyena_color[0];
+        hyena_surface_colors[i * 4 + 1] = hyena_color[1];
+        hyena_surface_colors[i * 4 + 2] = hyena_color[2];
+        hyena_surface_colors[i * 4 + 3] = hyena_color[3];
+    }
+    num_indices = 3 * (count - 2);
+    for (i = 0; i < count - 2; ++i) {
+        hyena_surface_indices[i * 3] = 0;
+        hyena_surface_indices[i * 3 + 1] = i + 1;
+        hyena_surface_indices[i * 3 + 2] = i + 2;
+    }
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+    glVertexPointer(3, GL_FLOAT, 0, hyena_surface_positions);
+    glTexCoordPointer(2, GL_FLOAT, 0, hyena_surface_texcoords);
+    glColorPointer(4, GL_FLOAT, 0, hyena_surface_colors);
+    glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT,
+      hyena_surface_indices);
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_VERTEX_ARRAY);
+}
 
 void
 Hyena_SetShadeMode(int mode)

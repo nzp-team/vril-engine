@@ -285,7 +285,7 @@ qboolean LoadingScreen_Key(int key, qboolean down)
 	}
 
 	if (!loading_waiting_for_input || !LoadingScreen_ReadyToContinue() ||
-		(key != MENU_KEY_CONFIRM && key != K_BOTTOMFACE && key != K_ENTER))
+		(key != MENU_KEY_CONFIRM && key != K_ENTER))
 		return false;
 
 	if (down)

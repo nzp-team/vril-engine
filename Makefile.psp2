@@ -81,6 +81,8 @@ COMMON_OBJS =	\
 	source/render/r_entity_fragments.o \
 	source/render/r_color_quantization.o \
 	source/render/r_light.o \
+	source/render/r_mdl.o \
+	source/render/r_surface.o \
 	source/render/r_particles.o \
 	source/render/r_decals.o \
 	source/platform/psp2/gl/gl_hyena.o \

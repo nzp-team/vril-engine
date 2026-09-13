@@ -298,52 +298,12 @@ Warp the vertex coordinates
 */
 void DrawGLWaterPoly (glpoly_t *p)
 {
-	int		i, j, index;
-	float	*v;
-	vec3_t	nv;
-
-	glBegin (GL_TRIANGLES);
-	for (i=1 ; i<p->numverts-1 ; i++)
-	{
-		for (j=0 ; j<3 ; j++)
-		{
-			index = (j == 0) ? 0 : i + j - 1;
-			v = p->verts[index];
-			glTexCoord2f (v[3], v[4]);
-
-			nv[0] = v[0] + 8*sinf(v[1]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
-			nv[1] = v[1] + 8*sinf(v[0]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
-			nv[2] = v[2];
-
-			glVertex3fv (nv);
-		}
-	}
-	glEnd ();
+	R_DrawSurfaceFan(p->verts[0], p->numverts, VERTEXSIZE, 3, true, realtime);
 }
 
 void DrawGLWaterPolyLightmap (glpoly_t *p)
 {
-	int		i, j, index;
-	float	*v;
-	vec3_t	nv;
-
-	glBegin (GL_TRIANGLES);
-	for (i=1 ; i<p->numverts-1 ; i++)
-	{
-		for (j=0 ; j<3 ; j++)
-		{
-			index = (j == 0) ? 0 : i + j - 1;
-			v = p->verts[index];
-			glTexCoord2f (v[5], v[6]);
-
-		nv[0] = v[0] + 8*sinf(v[1]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
-		nv[1] = v[1] + 8*sinf(v[0]*0.05f+(float)realtime)*sinf(v[2]*0.05f+(float)realtime);
-		nv[2] = v[2];
-
-			glVertex3fv (nv);
-		}
-	}
-	glEnd ();
+	R_DrawSurfaceFan(p->verts[0], p->numverts, VERTEXSIZE, 5, true, realtime);
 }
 
 /*
@@ -353,47 +313,13 @@ DrawGLPoly
 */
 void DrawGLPoly (glpoly_t *p)
 {
-	int		i, j, index;
-	float	*v;
-
-	glBegin (GL_TRIANGLES);
-	for (i=1 ; i<p->numverts-1 ; i++)
-	{
-		for (j=0 ; j<3 ; j++)
-		{
-			index = (j == 0) ? 0 : i + j - 1;
-			v = p->verts[index];
-			glTexCoord2f (v[3], v[4]);
-			glVertex3fv (v);
-		}
-	}
-	glEnd ();
+	R_DrawSurfaceFan(p->verts[0], p->numverts, VERTEXSIZE, 3, false, 0);
 }
 
 // rbaldwin2 -- This is based on DrawGLWaterPolyLightmap and designed to be cheaper
 void DrawGLPolyLightmap (glpoly_t *p)
 {
-	int		i, j, index;
-	float	*v;
-	vec3_t	nv;
-
-	glBegin (GL_TRIANGLES);
-	for (i=1 ; i<p->numverts-1 ; i++)
-	{
-		for (j=0 ; j<3 ; j++)
-		{
-			index = (j == 0) ? 0 : i + j - 1;
-			v = p->verts[index];
-			glTexCoord2f (v[5], v[6]);
-
-		nv[0] = v[0];
-		nv[1] = v[1];
-		nv[2] = v[2];
-
-			glVertex3fv (nv);
-		}
-	}
-	glEnd ();
+	R_DrawSurfaceFan(p->verts[0], p->numverts, VERTEXSIZE, 5, false, 0);
 }
 
 /*

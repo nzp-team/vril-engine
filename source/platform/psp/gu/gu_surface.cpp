@@ -440,20 +440,15 @@ static inline void DrawGLPolyLM (glpoly_t * poly)
 	}
 	else
 	{
-		// Draw the poly directly.
-		sceGuDrawArray(
-			GU_TRIANGLE_FAN,
-			GU_TEXTURE_32BITF | GU_VERTEX_32BITF ,
-			poly->numclippedverts, 0, poly->display_list_verts);
+		R_DrawSurfaceFan((const float *)poly->display_list_verts,
+			poly->numclippedverts, 5, 0, false, 0);
 	}
 }
 
 static inline void DrawGLPoly (glpoly_t * poly)
 {
-	sceGuDrawArray(
-			GU_TRIANGLE_FAN,
-			GU_TEXTURE_32BITF | GU_VERTEX_32BITF,
-			poly->numclippedverts, 0, poly->display_list_verts);
+	R_DrawSurfaceFan((const float *)poly->display_list_verts,
+		poly->numclippedverts, 5, 0, false, 0);
 }
 
 static inline void DrawTrisPoly (glpoly_t *p) //Crow_bar

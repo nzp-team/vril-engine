@@ -490,47 +490,11 @@ static void GL_AliasTexCoord (const int *commands, int index)
 
 void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum)
 {
-	trivertx_t *verts;
-	trivertx_t *primitive_verts;
-	int		*commands;
-	int		*primitive_commands;
-	int		count, triangle, corner, index;
-	qboolean fan;
-
-	verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
+	trivertx_t *verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
+	int *commands = (int *)((byte *)paliashdr + paliashdr->commands);
 	verts += posenum * paliashdr->poseverts;
-	commands = (int *)((byte *)paliashdr + paliashdr->commands);
-
 	glColor4f(lightcolor[0]/255, lightcolor[1]/255, lightcolor[2]/255, 1.0f);
-
-	while (1)
-	{
-		// get the vertex count and primitive type
-		count = *commands++;
-		if (!count)
-			break;		// done
-
-		fan = count < 0;
-		if (fan)
-			count = -count;
-		primitive_commands = commands;
-		primitive_verts = verts;
-
-		glBegin (GL_TRIANGLES);
-		for (triangle = 0; triangle < count - 2; triangle++)
-		{
-			for (corner = 0; corner < 3; corner++)
-			{
-				index = GL_AliasTriangleIndex (fan, triangle, corner);
-				GL_AliasTexCoord (primitive_commands, index);
-				glVertex3f (primitive_verts[index].v[0], primitive_verts[index].v[1], primitive_verts[index].v[2]);
-			}
-		}
-
-		glEnd ();
-		commands += count * 2;
-		verts += count;
-	}
+	R_DrawAliasCommands(commands, verts, NULL, 0.0f, false, 0);
 }
 
 
@@ -545,67 +509,15 @@ fenix@io.com: model animation interpolation
 int lastposenum0;
 void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float blend)
 {
-	// if (r_showtris.value)
-	// {
-	// 	GL_DrawAliasBlendedWireFrame(paliashdr, pose1, pose2, blend);
-	// 	return;
-	// }
-	trivertx_t* verts1;
-	trivertx_t* verts2;
-	trivertx_t* primitive_verts1;
-	trivertx_t* primitive_verts2;
-	vec3_t	  d;
-	int		*commands;
-	int		*primitive_commands;
-	int		count, triangle, corner, index;
-	qboolean fan;
-
+	trivertx_t *verts1 = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
+	trivertx_t *verts2 = verts1;
+	int *commands = (int *)((byte *)paliashdr + paliashdr->commands);
 	lastposenum0 = pose1;
-	lastposenum  = pose2;
-
-	verts1 = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
-	verts2 = verts1;
-
+	lastposenum = pose2;
 	verts1 += pose1 * paliashdr->poseverts;
 	verts2 += pose2 * paliashdr->poseverts;
-
-	commands = (int *)((byte *)paliashdr + paliashdr->commands);
-
 	glColor4f(lightcolor[0]/255, lightcolor[1]/255, lightcolor[2]/255, 1.0f);
-
-	while (1)
-	{
-		// get the vertex count and primitive type
-		count = *commands++;
-		if (!count)
-			break;		// done
-
-		fan = count < 0;
-		if (fan)
-			count = -count;
-		primitive_commands = commands;
-		primitive_verts1 = verts1;
-		primitive_verts2 = verts2;
-
-		glBegin (GL_TRIANGLES);
-		for (triangle = 0; triangle < count - 2; triangle++)
-		{
-			for (corner = 0; corner < 3; corner++)
-			{
-				index = GL_AliasTriangleIndex (fan, triangle, corner);
-				GL_AliasTexCoord (primitive_commands, index);
-				VectorSubtract(primitive_verts2[index].v, primitive_verts1[index].v, d);
-				glVertex3f (primitive_verts1[index].v[0] + (blend * d[0]),
-					primitive_verts1[index].v[1] + (blend * d[1]),
-					primitive_verts1[index].v[2] + (blend * d[2]));
-			}
-		}
-
-		glEnd ();
-		commands += count * 2;
-		verts1 += count;
-		verts2 += count;
-	}
+	R_DrawAliasCommands(commands, verts1, verts2, blend, false, 0);
 }
 
 /*

@@ -30,6 +30,8 @@
 #include "r_entity_fragments.h"
 #include "r_light.h"
 #include "r_fog.h"
+#include "r_mdl.h"
+#include "r_surface.h"
 
 void R_InitDecals(void);
 void R_ClearDecals(void);
