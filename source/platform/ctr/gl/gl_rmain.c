@@ -476,7 +476,8 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum)
 	trivertx_t *verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
 	int *commands = (int *)((byte *)paliashdr + paliashdr->commands);
 	verts += posenum * paliashdr->poseverts;
-	glColor4f(lightcolor[0]/255, lightcolor[1]/255, lightcolor[2]/255, 1.0f);
+	Hyena_SetColor(lightcolor[0]/255, lightcolor[1]/255,
+	  lightcolor[2]/255, 1.0f);
 	R_DrawAliasCommands(commands, verts, NULL, 0.0f, false, 0);
 }
 
@@ -499,7 +500,8 @@ void GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, floa
 	lastposenum = pose2;
 	verts1 += pose1 * paliashdr->poseverts;
 	verts2 += pose2 * paliashdr->poseverts;
-	glColor4f(lightcolor[0]/255, lightcolor[1]/255, lightcolor[2]/255, 1.0f);
+	Hyena_SetColor(lightcolor[0]/255, lightcolor[1]/255,
+	  lightcolor[2]/255, 1.0f);
 	R_DrawAliasCommands(commands, verts1, verts2, blend, false, 0);
 }
 
@@ -1716,13 +1718,13 @@ void R_Mirror (void)
 
 	glLoadMatrixf (r_base_world_matrix);
 
-	glColor4f (1,1,1,r_mirroralpha.value);
+	Hyena_SetColor(1, 1, 1, r_mirroralpha.value);
 	s = cl.worldmodel->textures[mirrortexturenum]->texturechain;
 	for ( ; s ; s=s->texturechain)
 		R_RenderBrushPoly (s);
 	cl.worldmodel->textures[mirrortexturenum]->texturechain = NULL;
 	glDisable (GL_BLEND);
-	glColor4f (1,1,1,1);
+	Hyena_SetColor(1, 1, 1, 1);
 }
 
 /*

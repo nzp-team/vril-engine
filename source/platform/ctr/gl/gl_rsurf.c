@@ -411,7 +411,7 @@ void R_RenderBrushPoly (msurface_t *fa)
 		glEnable(GL_ALPHA_TEST);
 		glAlphaFunc(GL_GREATER, 0xaa);
 		glEnable(GL_MODULATE);
-		glColor4f(1, 1, 1, 1);
+		Hyena_SetColor(1, 1, 1, 1);
 	}
 
 	if (fa->flags & SURF_DRAWTURB)
@@ -566,7 +566,7 @@ void R_DrawWaterSurfaces (void)
 
 	if (r_wateralpha.value < 1.0f) {
 		glEnable (GL_BLEND);
-		glColor4f (1,1,1,r_wateralpha.value);
+		Hyena_SetColor(1, 1, 1, r_wateralpha.value);
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	}
 
@@ -608,7 +608,7 @@ void R_DrawWaterSurfaces (void)
 	if (r_wateralpha.value < 1.0f) {
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
-		glColor4f (1,1,1,1);
+		Hyena_SetColor(1, 1, 1, 1);
 		glDisable (GL_BLEND);
 	}
 
