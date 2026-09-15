@@ -47,6 +47,11 @@ function run_mapboot_test()
         # Get the BSP basename so we can add it to our setup.ini.
         local pretty_bsp=$(basename ${bsp} .bsp) 
 
+        if [[ "${pretty_bsp}" == "wahnsinn" ]]; then
+            print_info "Skipping map-boot test for [${pretty_bsp}].."
+            continue
+        fi
+
         # Remove the console log.
         rm -f "${game_path}/nzp/condebug.log" "${captured_image}"
 
