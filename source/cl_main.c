@@ -723,6 +723,13 @@ void CL_RelinkEntities (void)
 
 		if (ent->effects & EF_MUZZLEFLASH)
 		{
+#ifdef PLATFORM_SUPPORTS_LIGHTBAR
+			if (i == cl.viewentity) {
+				int red, green, blue;
+				QMB_MuzzleFlashColor(&red, &green, &blue);
+				IN_TriggerLightbarMuzzleFlash(red, green, blue);
+			}
+#endif
 
 			if (i == cl.viewentity && qmb_initialized && r_part_muzzleflash.value)
 			{
@@ -1078,6 +1085,28 @@ void CL_SendCmd (void)
 		Host_Error ("CL_WriteToServer: lost server connection");
 
 	SZ_Clear (&cls.message);
+}
+
+/*
+=================
+CL_PlayerColor
+=================
+*/
+void CL_PlayerColor(int player, int *red, int *green, int *blue)
+{
+	static const byte colors[8][3] = {
+		{255, 255, 255}, {0, 117, 179}, {235, 189, 0}, {0, 230, 33},
+		{255, 145, 163}, {204, 51, 140}, {107, 209, 209}, {255, 222, 33}
+	};
+	static const byte colorblind[8][3] = {
+		{255, 255, 255}, {99, 194, 237}, {237, 107, 0}, {0, 176, 133},
+		{255, 117, 138}, {186, 74, 138}, {92, 214, 245}, {219, 199, 64}
+	};
+	const byte (*palette)[3] = cl_colorblind.value ? colorblind : colors;
+	int index = player & 7;
+	*red = palette[index][0];
+	*green = palette[index][1];
+	*blue = palette[index][2];
 }
 
 /*

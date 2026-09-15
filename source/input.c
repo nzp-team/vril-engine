@@ -16,6 +16,21 @@ extern float crosshair_opacity;
 extern cvar_t in_anub_mode;
 static in_device_t in_active_device = IN_DEVICE_KEYBOARD_MOUSE;
 
+#ifdef PLATFORM_SUPPORTS_GYRO
+cvar_t in_gyro_mode = {"in_gyro_mode", "0", true};
+cvar_t in_gyro_sensitivity_x = {"in_gyro_sensitivity_x", "1.0", true};
+cvar_t in_gyro_sensitivity_y = {"in_gyro_sensitivity_y", "1.0", true};
+cvar_t in_gyro_zoom_scaling = {"in_gyro_zoom_scaling", "1", true};
+#endif
+#ifdef PLATFORM_SUPPORTS_RUMBLE
+cvar_t in_rumble = {"in_rumble", "1", true};
+#endif
+#ifdef PLATFORM_SUPPORTS_LIGHTBAR
+cvar_t in_lightbar = {"in_lightbar", "1", true};
+static double in_lightbar_muzzleflash_time;
+static byte in_lightbar_muzzleflash_color[3];
+#endif
+
 static float IN_Clamp(float value, float minimum, float maximum)
 {
 	if (value < minimum)
@@ -44,11 +59,85 @@ qboolean IN_KeyMatchesActiveDevice(int key)
 
 void IN_Init(void)
 {
+#ifdef PLATFORM_SUPPORTS_GYRO
+	Cvar_RegisterVariable(&in_gyro_mode);
+	Cvar_RegisterVariable(&in_gyro_sensitivity_x);
+	Cvar_RegisterVariable(&in_gyro_sensitivity_y);
+	Cvar_RegisterVariable(&in_gyro_zoom_scaling);
+#endif
+#ifdef PLATFORM_SUPPORTS_RUMBLE
+	Cvar_RegisterVariable(&in_rumble);
+#endif
+#ifdef PLATFORM_SUPPORTS_LIGHTBAR
+	Cvar_RegisterVariable(&in_lightbar);
+#endif
 	if (IN_PlatformHasGamepad() && !IN_PlatformHasMouse())
 		IN_SetActiveDevice(IN_DEVICE_GAMEPAD);
 	if (IN_PlatformHasMouse()) IN_SetMouseToRelative(true);
 	if (IN_PlatformHasGamepad()) IN_PlatformInit();
 }
+
+#ifdef PLATFORM_SUPPORTS_RUMBLE
+void IN_StartRumble(int low_frequency, int high_frequency, int duration)
+{
+	if (!in_rumble.value || duration <= 0)
+		return;
+	IN_PlatformRumble((unsigned short)IN_Clamp(low_frequency, 0, 65535),
+		(unsigned short)IN_Clamp(high_frequency, 0, 65535),
+		(unsigned int)duration);
+}
+#endif
+
+#ifdef PLATFORM_SUPPORTS_LIGHTBAR
+void IN_TriggerLightbarMuzzleFlash(int red, int green, int blue)
+{
+	if (red == 255 && green == 255 && blue == 255) {
+		red = 255;
+		green = 160;
+		blue = 32;
+	}
+	in_lightbar_muzzleflash_color[0] = (byte)IN_Clamp(red, 0, 255);
+	in_lightbar_muzzleflash_color[1] = (byte)IN_Clamp(green, 0, 255);
+	in_lightbar_muzzleflash_color[2] = (byte)IN_Clamp(blue, 0, 255);
+	in_lightbar_muzzleflash_time = realtime + 0.1;
+}
+
+void IN_UpdateLightbar(void)
+{
+	int red, green, blue;
+	int player = cl.viewentity > 0 ? cl.viewentity - 1 : 0;
+	float damage_mix = 0.0f;
+
+	if (!in_lightbar.value) {
+		IN_PlatformSetLightbar(0, 0, 0);
+		return;
+	}
+	if (realtime < in_lightbar_muzzleflash_time) {
+		IN_PlatformSetLightbar(in_lightbar_muzzleflash_color[0],
+			in_lightbar_muzzleflash_color[1], in_lightbar_muzzleflash_color[2]);
+		return;
+	}
+
+	CL_PlayerColor(player, &red, &green, &blue);
+	if (cl.stats[STAT_HEALTH] > 0 && cl.stats[STAT_HEALTH] < 100) {
+		int pulse_value, pulse_add;
+		if (cl.stats[STAT_HEALTH] < 50) {
+			pulse_value = abs(((int)(realtime * 100) & 100) - 50);
+			pulse_add = 50;
+		} else {
+			pulse_value = abs(((int)(realtime * 50) & 20) - 10);
+			pulse_add = 10;
+		}
+		damage_mix = (200.0f - ((cl.stats[STAT_HEALTH] + pulse_value)
+			/ (100.0f + pulse_add)) * 255.0f) / 255.0f;
+		damage_mix = IN_Clamp(damage_mix, 0.0f, 1.0f);
+	}
+	red = (int)(red + (255 - red) * damage_mix);
+	green = (int)(green * (1.0f - damage_mix));
+	blue = (int)(blue * (1.0f - damage_mix));
+	IN_PlatformSetLightbar((byte)red, (byte)green, (byte)blue);
+}
+#endif
 
 void IN_Shutdown(void)
 {
@@ -59,6 +148,9 @@ void IN_Shutdown(void)
 void IN_Commands(void)
 {
 	if (IN_PlatformHasGamepad()) IN_PlatformCommands();
+#ifdef PLATFORM_SUPPORTS_LIGHTBAR
+	IN_UpdateLightbar();
+#endif
 }
 
 void IN_ClearPendingInput(void)
@@ -100,6 +192,29 @@ void IN_Move(usercmd_t *cmd)
 		IN_PlatformMove(cmd);
 	}
 	if (IN_PlatformHasMouse()) IN_PlatformMouseMove(cmd);
+
+#ifdef PLATFORM_SUPPORTS_GYRO
+	if ((int)in_gyro_mode.value == 1 || ((int)in_gyro_mode.value == 2 && (cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2))) {
+		float gyro_x, gyro_y;
+
+		if (IN_PlatformGetGyro(&gyro_x, &gyro_y)) {
+			const float radians_to_degrees = 57.2957795131f;
+			float gyro_scale = 1.0f;
+
+			if (in_gyro_zoom_scaling.value) {
+				if (cl.stats[STAT_ZOOM] == 1)
+					gyro_scale = 0.5f;
+				else if (cl.stats[STAT_ZOOM] == 2)
+					gyro_scale = 0.25f;
+			}
+
+			V_StopPitchDrift();
+			cl.viewangles[YAW] += gyro_y * radians_to_degrees * in_gyro_sensitivity_x.value * gyro_scale * (float)host_frametime;
+			cl.viewangles[PITCH] -= gyro_x * radians_to_degrees * in_gyro_sensitivity_y.value * (m_pitch.value > 0 ? -1.0f : 1.0f) * gyro_scale * (float)host_frametime;
+			cl.viewangles[PITCH] = IN_Clamp(cl.viewangles[PITCH], -70.0f, 80.0f);
+		}
+	}
+#endif
 
 #ifdef PLATFORM_HAS_ONE_ANALOG_STICK
 	if (in_anub_mode.value) {

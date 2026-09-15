@@ -74,6 +74,7 @@ void QMB_ShamblerCharge (vec3_t org);
 void QMB_LightningBeam (vec3_t start, vec3_t end);
 void QMB_EntityParticles (entity_t *ent);
 void QMB_MuzzleFlash (vec3_t org, vec3_t muzzle_axis);
+void QMB_MuzzleFlashColor (int *red, int *green, int *blue);
 void QMB_MuzzleFlashLG (vec3_t org);
 
 extern qboolean qmb_initialized;

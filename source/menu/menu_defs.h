@@ -47,6 +47,7 @@ extern int				m_previous_state;
 #define	m_slist			21
 #define m_bindings		22
 #define m_bios 			23
+#define m_gyro			24
 ///////////////////////////
 ///////////////////////////
 ///////////////////////////
@@ -289,7 +290,7 @@ void Menu_DrawOptionButton(int order, char* selection_name);
 #ifdef PLATFORM_USES_GENERIC_GLYPHS
 void Menu_DrawControllerGlyphPreview(int order);
 #endif
-void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, int max_option_value, cvar_t option, char* _option_string, qboolean zero_to_one, qboolean draw_option_string, float increment_amount);
+void Menu_DrawOptionSlider(int order, int button_index, float min_option_value, float max_option_value, cvar_t option, char* _option_string, qboolean zero_to_one, qboolean draw_option_string, float increment_amount);
 void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficulty, char* info_startround, char* info_magic, char* info_headshotonly, char* info_fastrounds, char* info_hordesize);
 void Menu_DrawOptionKey (int order, char *current_bind);
 void Menu_DrawBuildDate ();
@@ -323,6 +324,9 @@ void Menu_Bios_Set(void);
 void Menu_Video_Set (void);
 void Menu_Audio_Set (void);
 void Menu_Controls_Set (void);
+#ifdef PLATFORM_SUPPORTS_GYRO
+void Menu_Gyro_Set (void);
+#endif
 void Menu_Bindings_Set (void);
 void Menu_Accessibility_Set (void);
 

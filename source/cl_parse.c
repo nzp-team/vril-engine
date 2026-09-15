@@ -1133,16 +1133,20 @@ void CL_ParseServerMessage (void)
 			lock_viewmodel = MSG_ReadByte();
 			break;
 
-		case svc_rumble:
-#ifdef __WII__
-			Wiimote_Rumble ((int)MSG_ReadShort(), (int)MSG_ReadShort(), (int)MSG_ReadShort());
+		case svc_rumble: {
+#ifdef PLATFORM_SUPPORTS_RUMBLE
+			int low_frequency = MSG_ReadShort();
+			int high_frequency = MSG_ReadShort();
+			int duration = MSG_ReadShort();
+			IN_StartRumble(low_frequency, high_frequency, duration);
 #else
-			// These platforms don't use this.
+			// We still need to read rumble messages for the protocol.
 			MSG_ReadShort();
 			MSG_ReadShort();
 			MSG_ReadShort();
 #endif
 			break;
+		}
 
 		case svc_screenflash:
 			screenflash_color = MSG_ReadByte();

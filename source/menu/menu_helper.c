@@ -770,7 +770,7 @@ void Menu_DrawControllerGlyphPreview(int order)
 }
 #endif
 
-void Menu_DrawOptionSlider(int order, int button_index, int min_option_value, int max_option_value, cvar_t option, char* option_string, qboolean zero_to_one, qboolean draw_option_string, float increment_amount)
+void Menu_DrawOptionSlider(int order, int button_index, float min_option_value, float max_option_value, cvar_t option, char* option_string, qboolean zero_to_one, qboolean draw_option_string, float increment_amount)
 {
 	int y_factor = 15;
 	int x_pos = 165; 
