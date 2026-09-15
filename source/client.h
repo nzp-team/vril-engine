@@ -396,6 +396,8 @@ void CL_BaseMove (usercmd_t *cmd);
 float CL_KeyState (kbutton_t *key);
 char *Key_KeynumToString (int keynum);
 
+void CL_PlayerColor(int player, int *red, int *green, int *blue);
+
 //
 // cl_demo.c
 //

@@ -31,6 +31,132 @@ extern float crosshair_opacity;
 extern cvar_t in_mlook; //Heffo - mlook cvar
 extern cvar_t in_anub_mode;
 
+typedef struct {
+	HidNpadIdType id;
+	HidNpadStyleTag style;
+	HidSixAxisSensorHandle gyro[2];
+	HidVibrationDeviceHandle rumble[2];
+	int gyro_count;
+	int rumble_count;
+} nx_motion_device_t;
+
+static nx_motion_device_t nx_motion;
+static double nx_rumble_stop_time;
+
+extern PadState pad;
+
+static void IN_NXSendRumble(float low, float high);
+
+static HidNpadStyleTag IN_NXActiveStyle(HidNpadIdType *id)
+{
+	u32 styles;
+
+	if (padIsNpadActive(&pad, HidNpadIdType_No1)) {
+		*id = HidNpadIdType_No1;
+		styles = hidGetNpadStyleSet(*id);
+		if (styles & HidNpadStyleTag_NpadFullKey)
+			return HidNpadStyleTag_NpadFullKey;
+		if (styles & HidNpadStyleTag_NpadJoyDual)
+			return HidNpadStyleTag_NpadJoyDual;
+		if (styles & HidNpadStyleTag_NpadJoyRight)
+			return HidNpadStyleTag_NpadJoyRight;
+		if (styles & HidNpadStyleTag_NpadJoyLeft)
+			return HidNpadStyleTag_NpadJoyLeft;
+	}
+
+	if (padIsHandheld(&pad)) {
+		*id = HidNpadIdType_Handheld;
+		return HidNpadStyleTag_NpadHandheld;
+	}
+
+	*id = HidNpadIdType_No1;
+	return 0;
+}
+
+static void IN_NXStopGyro(void)
+{
+	int i;
+	for (i = 0; i < nx_motion.gyro_count; ++i)
+		hidStopSixAxisSensor(nx_motion.gyro[i]);
+	nx_motion.gyro_count = 0;
+}
+
+static qboolean IN_NXRefreshDevice(void)
+{
+	HidNpadIdType id;
+	HidNpadStyleTag style = IN_NXActiveStyle(&id);
+
+	if (style == nx_motion.style && (!style || nx_motion.id == id))
+		return style != 0;
+
+	IN_NXSendRumble(0.0f, 0.0f);
+	IN_NXStopGyro();
+	nx_motion.rumble_count = 0;
+	nx_motion.style = style;
+	nx_motion.id = id;
+	return style != 0;
+}
+
+static qboolean IN_NXBindGyro(void)
+{
+	int count;
+	int i;
+
+	if (!IN_NXRefreshDevice())
+		return false;
+
+	if (nx_motion.gyro_count)
+		return true;
+
+	count = nx_motion.style == HidNpadStyleTag_NpadJoyDual ? 2 : 1;
+
+	if (R_FAILED(hidGetSixAxisSensorHandles(nx_motion.gyro, count, nx_motion.id, nx_motion.style)))
+		return false;
+
+	for (i = 0; i < count; ++i) {
+		if (R_FAILED(hidStartSixAxisSensor(nx_motion.gyro[i]))) {
+			IN_NXStopGyro();
+			return false;
+		}
+		nx_motion.gyro_count++;
+	}
+
+	return true;
+}
+
+static qboolean IN_NXBindRumble(void)
+{
+	int count;
+
+	if (!IN_NXRefreshDevice())
+		return false;
+	if (nx_motion.rumble_count)
+		return true;
+
+	count = (nx_motion.style == HidNpadStyleTag_NpadJoyLeft || nx_motion.style == HidNpadStyleTag_NpadJoyRight) ? 1 : 2;
+	if (R_FAILED(hidInitializeVibrationDevices(nx_motion.rumble, count,
+		nx_motion.id, nx_motion.style)))
+		return false;
+
+	nx_motion.rumble_count = count;
+	return true;
+}
+
+static void IN_NXSendRumble(float low, float high)
+{
+	HidVibrationValue values[2];
+	int i;
+
+	for (i = 0; i < nx_motion.rumble_count; ++i) {
+		values[i].amp_low = low;
+		values[i].freq_low = 160.0f;
+		values[i].amp_high = high;
+		values[i].freq_high = 320.0f;
+	}
+	if (nx_motion.rumble_count)
+		hidSendVibrationValues(nx_motion.rumble, values, nx_motion.rumble_count);
+}
+
 qboolean IN_PlatformHasMouse(void) { return false; }
 qboolean IN_PlatformHasGamepad(void) { return true; }
 void IN_SetMouseToRelative(bool relative) { (void)relative; }
@@ -39,20 +165,54 @@ void IN_PlatformMouseMove(usercmd_t *cmd) { (void)cmd; }
 
 void IN_PlatformInit(void)
 {
+	memset(&nx_motion, 0, sizeof(nx_motion));
 	Cvar_SetValue("in_anub_mode", 1);
 }
 
 void IN_PlatformShutdown(void)
 {
-
+	IN_NXSendRumble(0.0f, 0.0f);
+	IN_NXStopGyro();
 }
 
 void IN_PlatformCommands(void)
 {
-
+	if (nx_rumble_stop_time && Sys_FloatTime() >= nx_rumble_stop_time) {
+		IN_NXSendRumble(0.0f, 0.0f);
+		nx_rumble_stop_time = 0.0;
+	}
 }
 
-extern PadState pad;
+qboolean IN_PlatformGetGyro(float *x, float *y)
+{
+	HidSixAxisSensorState state;
+	const float revolutions_to_radians = 2.0f * (float)M_PI;
+	int sensor = 0;
+
+	*x = *y = 0.0f;
+	if (!IN_NXBindGyro())
+		return false;
+
+	if (nx_motion.style == HidNpadStyleTag_NpadJoyDual && (padGetAttributes(&pad) & HidNpadAttribute_IsRightConnected))
+		sensor = 1;
+	if (!hidGetSixAxisSensorStates(nx_motion.gyro[sensor], &state, 1))
+		return false;
+
+	*x = -state.angular_velocity.x * revolutions_to_radians;
+	*y = (nx_motion.style == HidNpadStyleTag_NpadJoyDual
+		? state.angular_velocity.z : state.angular_velocity.y)
+		* revolutions_to_radians;
+	return true;
+}
+
+void IN_PlatformRumble(unsigned short low_frequency, unsigned short high_frequency, unsigned int duration)
+{
+	if (!IN_NXBindRumble())
+		return;
+	IN_NXSendRumble((float)low_frequency / 65535.0f, (float)high_frequency / 65535.0f);
+	nx_rumble_stop_time = Sys_FloatTime() + (double)duration / 1000.0;
+}
+
 void IN_GetAnalogStick(in_analog_stick_id_t stick, in_analog_stick_t *value)
 {
 	HidAnalogStickState state = padGetStickPos(&pad, stick == IN_STICK_LEFT ? 0 : 1);

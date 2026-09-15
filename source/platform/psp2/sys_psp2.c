@@ -49,7 +49,6 @@ int old_char;
 extern int setup_cursor;
 extern int lanConfig_cursor;
 int isKeyboard;
-extern uint64_t rumble_tick;
 extern cvar_t psvita_touchmode;
 cvar_t vid_vsync = {"vid_vsync", "1", true};
 extern int scr_width;
@@ -441,7 +440,6 @@ bool CheckForMod(char* dir)
 	return ret;
 }
 
-void IN_StopRumble (void);
 #ifndef sceKernelChangeThreadVfpException
 int sceKernelChangeThreadVfpException(SceUInt32 clear, SceUInt32 set);
 #endif
@@ -666,11 +664,6 @@ int quake_main (unsigned int argc, void* argv){
 		// Prevent screen power-off
 		sceKernelPowerTick(0);
 
-		// Rumble effect managing (PSTV only)
-		if (rumble_tick != 0) {
-			if (sceKernelGetProcessTimeWide() - rumble_tick > 500000) IN_StopRumble(); // 0.5 sec
-		}
-		
 		// AdHoc Message Dialog
 		if (netcheck_dialog_running == 1) {
 			SceCommonDialogStatus status = sceNetCheckDialogGetStatus();

@@ -156,9 +156,6 @@ static image_t hud_hitmarker;
 static double hud_hitmarker_time;
 static double hud_hitmarker_ignore_time;
 static int hud_hitmarker_type;
-static void
-HUD_PlayerColor(int player, int * r, int * g, int * b);
-
 static int
 HUD_UltrawideOffset(void)
 {
@@ -891,7 +888,7 @@ HUD_EndScreen(void)
         int values[5];
         player = pointsort[i];
         score  = &cl.scores[player];
-        HUD_PlayerColor(player, &r, &g, &b);
+        CL_PlayerColor(player, &r, &g, &b);
 
         // Fill
         Draw_FillByColor(panel_x, row_y, panel_width, row_height, 0, 0, 0, 204);
@@ -976,26 +973,6 @@ HUD_Parse_Point_Change(int points, int negative, int player, int unused_y)
     next_point_change  = (next_point_change + 1) % MAX_POINT_ELEMENTS;
 }
 
-static void
-HUD_PlayerColor(int player, int * r, int * g, int * b)
-{
-    static const byte colors[8][3] = {
-        { 255, 255, 255 }, { 0,   117, 179  }, { 235, 189, 0   }, { 0,   230, 33 },
-        { 255, 145, 163 }, { 204, 51,  140  }, { 107, 209, 209 }, { 255, 222, 33 }
-    };
-    static const byte colorblind[8][3] = {
-        { 255, 255, 255 }, { 99,  194, 237  }, { 237, 107, 0   }, { 0,   176, 133 },
-        { 255, 117, 138 }, { 186, 74,  138  }, { 92,  214, 245 }, { 219, 199, 64  }
-    };
-
-    const byte(*palette)[3] = cl_colorblind.value ? colorblind : colors;
-    int index = player & 7;
-
-    *r = palette[index][0];
-    *g = palette[index][1];
-    *b = palette[index][2];
-}
-
 void
 HUD_Points(void)
 {
@@ -1023,7 +1000,7 @@ HUD_Points(void)
         f = s->points;
         Draw_StretchPic(x, y, sb_moneyback, 64 * vid.scale, 16 * vid.scale);
         xplus = getTextWidth(va("%i", f), vid.scale);
-        HUD_PlayerColor(k, &r, &g, &b);
+        CL_PlayerColor(k, &r, &g, &b);
         HUD_DrawTextBackdrop((((64 * vid.scale) - xplus) / 2) + x, y + (3 * vid.scale),
           va("%i", f), r, g, b, 255, vid.scale);
 

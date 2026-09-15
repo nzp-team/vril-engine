@@ -40,6 +40,31 @@ void IN_PlatformMouseMove(usercmd_t *cmd)
 static SDL_GameController *sdl_controllers[MAX_SDL_CONTROLLERS];
 static SDL_GameController *sdl_controller;
 
+void IN_PlatformSetLightbar(byte red, byte green, byte blue)
+{
+	if (sdl_controller && SDL_GameControllerHasLED(sdl_controller))
+		SDL_GameControllerSetLED(sdl_controller, red, green, blue);
+}
+
+qboolean IN_PlatformGetGyro(float *x, float *y)
+{
+	float data[3];
+	*x = *y = 0.0f;
+	if (!sdl_controller || !SDL_GameControllerHasSensor(sdl_controller, SDL_SENSOR_GYRO))
+		return false;
+	if (SDL_GameControllerGetSensorData(sdl_controller, SDL_SENSOR_GYRO, data, 3) != 0)
+		return false;
+	*x = data[0];
+	*y = data[1];
+	return true;
+}
+
+void IN_PlatformRumble(unsigned short low_frequency, unsigned short high_frequency, unsigned int duration)
+{
+	if (sdl_controller)
+		SDL_GameControllerRumble(sdl_controller, low_frequency, high_frequency, duration);
+}
+
 static void IN_SDLOpenController(int device_index)
 {
 	int i;
@@ -51,6 +76,8 @@ static void IN_SDLOpenController(int device_index)
 	for (i = 0; i < MAX_SDL_CONTROLLERS; ++i) {
 		if (!sdl_controllers[i]) {
 			sdl_controllers[i] = controller;
+			if (SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO))
+				SDL_GameControllerSetSensorEnabled(controller, SDL_SENSOR_GYRO, SDL_TRUE);
 			if (!sdl_controller) sdl_controller = controller;
 			return;
 		}

@@ -63,6 +63,22 @@ void IN_PlatformShutdown(void);
 void IN_PlatformCommands(void);
 void IN_PlatformMove(usercmd_t *cmd);
 
+#ifdef PLATFORM_SUPPORTS_GYRO
+qboolean IN_PlatformGetGyro(float *x, float *y);
+#endif
+
+#ifdef PLATFORM_SUPPORTS_RUMBLE
+void IN_StartRumble(int low_frequency, int high_frequency, int duration);
+void IN_PlatformRumble(unsigned short low_frequency,
+	unsigned short high_frequency, unsigned int duration);
+#endif
+
+#ifdef PLATFORM_SUPPORTS_LIGHTBAR
+void IN_UpdateLightbar(void);
+void IN_TriggerLightbarMuzzleFlash(int red, int green, int blue);
+void IN_PlatformSetLightbar(byte red, byte green, byte blue);
+#endif
+
 #ifdef PLATFORM_KEYBOARD_SYSTEM
 void IN_OpenOSKeyboard (void);
 #endif

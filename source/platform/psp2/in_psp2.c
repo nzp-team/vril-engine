@@ -22,16 +22,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <vitasdk.h>
 
 cvar_t m_filter = {"m_filter", "0", true};
-cvar_t pstv_rumble = {"pstv_rumble", "1", true};
 cvar_t retrotouch = {"retrotouch", "0", true};
 cvar_t psvita_touchmode = {"psvita_touchmode", "0", true};
 cvar_t psvita_front_sensitivity_x = {"psvita_front_sensitivity_x", "1", true};
 cvar_t psvita_front_sensitivity_y = {"psvita_front_sensitivity_y", "0.5", true};
 cvar_t psvita_back_sensitivity_x = {"psvita_back_sensitivity_x", "1", true};
 cvar_t psvita_back_sensitivity_y = {"psvita_back_sensitivity_y", "0.5", true};
-cvar_t motioncam = {"motioncam", "0", true};
-cvar_t motion_horizontal_sensitivity = {"motion_horizontal_sensitivity", "0", true};
-cvar_t motion_vertical_sensitivity = {"motion_vertical_sensitivity", "0", true};
 
 extern void Log (const char *format, ...);
 
@@ -40,9 +36,28 @@ extern void Log (const char *format, ...);
 extern bool croshhairmoving;
 extern float crosshair_opacity;
 
-uint64_t rumble_tick = 0;
 SceCtrlData oldanalogs, analogs;
-SceMotionState motionstate;
+static double rumble_stop_time;
+
+static int IN_PSP2ControllerType(void)
+{
+	SceCtrlPortInfo info;
+	memset(&info, 0, sizeof(info));
+	if (sceCtrlGetControllerPortInfo(&info) < 0)
+		return SCE_CTRL_TYPE_UNPAIRED;
+	return info.port[1];
+}
+
+static void IN_PSP2SetRumble(byte small, byte large)
+{
+	SceCtrlActuator actuator;
+	if (IN_PSP2ControllerType() == SCE_CTRL_TYPE_UNPAIRED)
+		return;
+	memset(&actuator, 0, sizeof(actuator));
+	actuator.small = small;
+	actuator.large = large;
+	sceCtrlSetActuator(1, &actuator);
+}
 
 qboolean IN_PlatformHasMouse(void) { return false; }
 qboolean IN_PlatformHasGamepad(void) { return true; }
@@ -53,50 +68,55 @@ void IN_PlatformMouseMove(usercmd_t *cmd) { (void)cmd; }
 void IN_PlatformInit(void)
 {
   Cvar_SetValue("in_anub_mode", 1);
-  Cvar_RegisterVariable (&m_filter);
-  Cvar_RegisterVariable (&retrotouch);
-  Cvar_RegisterVariable (&pstv_rumble);
-  Cvar_RegisterVariable(&psvita_touchmode);
+	Cvar_RegisterVariable (&m_filter);
+	Cvar_RegisterVariable (&retrotouch);
+	Cvar_RegisterVariable(&psvita_touchmode);
 
-  Cvar_RegisterVariable (&motioncam);
-  Cvar_RegisterVariable (&motion_horizontal_sensitivity);
-  Cvar_RegisterVariable (&motion_vertical_sensitivity);
+	//Touchscreen sensitivity
+	Cvar_RegisterVariable(&psvita_front_sensitivity_x);
+	Cvar_RegisterVariable(&psvita_front_sensitivity_y);
+	Cvar_RegisterVariable(&psvita_back_sensitivity_x);
+	Cvar_RegisterVariable(&psvita_back_sensitivity_y);
 
-  //Touchscreen sensitivity
-  Cvar_RegisterVariable(&psvita_front_sensitivity_x);
-  Cvar_RegisterVariable(&psvita_front_sensitivity_y);
-  Cvar_RegisterVariable(&psvita_back_sensitivity_x);
-  Cvar_RegisterVariable(&psvita_back_sensitivity_y);
-
-  sceMotionReset();
-  sceMotionStartSampling();
+	sceMotionReset();
+	sceMotionStartSampling();
 }
 
 void IN_PlatformShutdown(void)
 {
+	IN_PSP2SetRumble(0, 0);
+	sceMotionStopSampling();
 }
 
 void IN_PlatformCommands(void)
 {
+	if (rumble_stop_time && Sys_FloatTime() >= rumble_stop_time) {
+		IN_PSP2SetRumble(0, 0);
+		rumble_stop_time = 0.0;
+	}
 }
 
-void IN_StartRumble (void)
+qboolean IN_PlatformGetGyro(float *x, float *y)
 {
-	if (!pstv_rumble.value) return;
-	SceCtrlActuator handle;
-	handle.small = 100;
-	handle.large = 100;
-	sceCtrlSetActuator(1, &handle);
-	rumble_tick = sceKernelGetProcessTimeWide();
+	SceMotionState state;
+	*x = *y = 0.0f;
+	if (sceMotionGetState(&state) < 0)
+		return false;
+	*x = -state.angularVelocity.x;
+	*y = state.angularVelocity.y;
+	return true;
 }
 
-void IN_StopRumble (void)
+void IN_PlatformRumble(unsigned short low_frequency, unsigned short high_frequency, unsigned int duration)
 {
-	SceCtrlActuator handle;
-	handle.small = 0;
-	handle.large = 0;
-	sceCtrlSetActuator(1, &handle);
-	rumble_tick = 0;
+	IN_PSP2SetRumble((byte)(high_frequency / 257), (byte)(low_frequency / 257));
+	rumble_stop_time = Sys_FloatTime() + (double)duration / 1000.0;
+}
+
+void IN_PlatformSetLightbar(byte red, byte green, byte blue)
+{
+	if (IN_PSP2ControllerType() == SCE_CTRL_TYPE_DS4)
+		sceCtrlSetLightBar(1, red, green, blue);
 }
 
 // void IN_RescaleAnalog(int *x, int *y, int dead) {

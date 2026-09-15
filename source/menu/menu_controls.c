@@ -38,6 +38,18 @@ extern cvar_t	m_pitch;
 extern cvar_t    cl_controllerglyphs;
 static char     *controller_glyphs_string;
 #endif
+#ifdef PLATFORM_SUPPORTS_GYRO
+extern cvar_t in_gyro_mode;
+extern cvar_t in_gyro_sensitivity_x;
+extern cvar_t in_gyro_sensitivity_y;
+extern cvar_t in_gyro_zoom_scaling;
+static char *gyro_mode_string;
+static char *gyro_zoom_scaling_string;
+#endif
+#ifdef PLATFORM_SUPPORTS_RUMBLE
+extern cvar_t in_rumble;
+static char *rumble_string;
+#endif
 
 /*
 ===============
@@ -75,7 +87,46 @@ void Menu_Controls_SetStrings (void)
 		anub_string = "LOOK";
 	}
 #endif
+
+#ifdef PLATFORM_SUPPORTS_GYRO
+	switch ((int)in_gyro_mode.value) {
+		case 1: gyro_mode_string = "ENABLED"; break;
+		case 2: gyro_mode_string = "ADS ONLY"; break;
+	default: gyro_mode_string = "DISABLED"; break;
+	}
+	gyro_zoom_scaling_string = in_gyro_zoom_scaling.value ? "ENABLED" : "DISABLED";
+#endif
+#ifdef PLATFORM_SUPPORTS_RUMBLE
+	rumble_string = in_rumble.value ? "ENABLED" : "DISABLED";
+#endif
 }
+
+#ifdef PLATFORM_SUPPORTS_GYRO
+static void Menu_Controls_ApplyGyroMode(void)
+{
+	int mode = (int)in_gyro_mode.value + 1;
+	Cvar_SetValue("in_gyro_mode", mode > 2 ? 0 : mode);
+}
+
+static void Menu_Controls_ApplyGyroZoomScaling(void)
+{
+	Cvar_SetValue("in_gyro_zoom_scaling", in_gyro_zoom_scaling.value ? 0 : 1);
+}
+
+void Menu_Gyro_Set(void)
+{
+	Menu_ResetMenuButtons();
+	m_previous_state = m_controls;
+	m_state = m_gyro;
+}
+#endif
+
+#ifdef PLATFORM_SUPPORTS_RUMBLE
+static void Menu_Controls_ApplyRumble(void)
+{
+	Cvar_SetValue("in_rumble", in_rumble.value ? 0 : 1);
+}
+#endif
 
 void Menu_Controls_ApplyAimAssist (void)
 {
@@ -195,6 +246,15 @@ void Menu_Controls_Draw (void)
 	Menu_DrawOptionButton (controls_buttons-1, anub_string);
 #endif
 
+#ifdef PLATFORM_SUPPORTS_RUMBLE
+	Menu_DrawButton(controls_buttons++, controls_index++, "RUMBLE", "Enable Game Pad Vibration.", Menu_Controls_ApplyRumble);
+	Menu_DrawOptionButton(controls_buttons-1, rumble_string);
+#endif
+
+#ifdef PLATFORM_SUPPORTS_GYRO
+	Menu_DrawButton(controls_buttons++, controls_index++, "GYROSCOPE", "Configure Gyroscope.", Menu_Gyro_Set);
+#endif
+
 	// Bindings
 	Menu_DrawButton (controls_buttons++, controls_index++, "BINDINGS", "Change Input Bindings.", Menu_Bindings_Set);
 
@@ -202,3 +262,30 @@ void Menu_Controls_Draw (void)
 	Menu_DrawButton(-2, controls_index++, "APPLY", "Save & Apply Settings.", Menu_Controls_ApplySettings);
 	Menu_DrawButton (-1, controls_index, "BACK", "Return to Main Menu.", Menu_Configuration_Set);
 }
+
+#ifdef PLATFORM_SUPPORTS_GYRO
+void Menu_Gyro_Draw(void)
+{
+	int gyro_index = 0;
+	int gyro_buttons = 1;
+
+	Menu_DrawCustomBackground(true);
+	Menu_DrawTitle("GYRO-AIM OPTIONS", MENU_COLOR_WHITE);
+	Menu_DrawMapPanel();
+	Menu_Controls_SetStrings();
+
+	Menu_DrawButton(gyro_buttons++, gyro_index++, "MODE", "Toggle Gyroscope behavior.", Menu_Controls_ApplyGyroMode);
+	Menu_DrawOptionButton(gyro_buttons-1, gyro_mode_string);
+
+	Menu_DrawButton(gyro_buttons++, gyro_index++, "X-AXIS SENSITIVITY", "Adjust horizontal Gyroscope sensitivity.", NULL);
+	Menu_DrawOptionSlider(gyro_buttons-1, gyro_index-1, 0.5f, 5.0f, in_gyro_sensitivity_x, "in_gyro_sensitivity_x", false, true, 0.25f);
+
+	Menu_DrawButton(gyro_buttons++, gyro_index++, "Y-AXIS SENSITIVITY", "Adjust vertical Gyroscope sensitivity.", NULL);
+	Menu_DrawOptionSlider(gyro_buttons-1, gyro_index-1, 0.5f, 5.0f, in_gyro_sensitivity_y, "in_gyro_sensitivity_y", false, true, 0.25f);
+
+	Menu_DrawButton(gyro_buttons++, gyro_index++, "ADS DAMPENING", "Reduce Gyroscope sensitivity in ADS.", Menu_Controls_ApplyGyroZoomScaling);
+	Menu_DrawOptionButton(gyro_buttons-1, gyro_zoom_scaling_string);
+
+	Menu_DrawButton(-1, gyro_index, "BACK", "Return to Control Options.", Menu_Controls_Set);
+}
+#endif

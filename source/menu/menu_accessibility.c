@@ -28,6 +28,9 @@ char 			*screenflash_string;
 char 			*monthspoof_string;
 char 			*crosshairdot_string;
 char 			*meleedive_string;
+#ifdef PLATFORM_SUPPORTS_LIGHTBAR
+static char     *lightbar_string;
+#endif
 
 extern cvar_t 	cl_hitmarkers;
 extern cvar_t 	cl_colorblind;
@@ -37,6 +40,9 @@ extern cvar_t 	cl_textopacity;
 extern cvar_t 	cl_crosshairdot;
 extern cvar_t 	cl_viewbob;
 extern cvar_t 	cl_meleedive;
+#ifdef PLATFORM_SUPPORTS_LIGHTBAR
+extern cvar_t in_lightbar;
+#endif
 
 void Menu_Accessibility_ApplyHitmarkers (void)
 {
@@ -96,6 +102,13 @@ void Menu_Accessibility_ApplyMeleeDive (void)
 	Cvar_SetValue("cl_meleedive", !cl_meleedive.value);
 }
 
+#ifdef PLATFORM_SUPPORTS_LIGHTBAR
+static void Menu_Accessibility_ApplyLightbar(void)
+{
+	Cvar_SetValue("in_lightbar", in_lightbar.value ? 0 : 1);
+}
+#endif
+
 void Menu_Accessibility_ApplySettings (void)
 {
 	// no op
@@ -142,6 +155,9 @@ void Menu_Accessibility_SetStrings (void)
 	}
 
 	meleedive_string = cl_meleedive.value ? "ENABLED" : "DISABLED";
+#ifdef PLATFORM_SUPPORTS_LIGHTBAR
+	lightbar_string = in_lightbar.value ? "ENABLED" : "DISABLED";
+#endif
 
 	switch((int)sv_spoofmonth.value) {
 		case 0:
@@ -234,7 +250,17 @@ void Menu_Accessibility_Draw (void)
 	Menu_DrawButton(8, 7, "SPRINT MELEE DIVE", "Dive when Melee while Sprinting.", Menu_Accessibility_ApplyMeleeDive);
 	Menu_DrawOptionButton(8, meleedive_string);
 
+#ifdef PLATFORM_SUPPORTS_LIGHTBAR
+	Menu_DrawButton(9, 8, "GAMEPAD LIGHTBAR", "Enable Light Bar feedback.", Menu_Accessibility_ApplyLightbar);
+	Menu_DrawOptionButton(9, lightbar_string);
+#endif
+
 	Menu_DrawDivider(-2.5);
+#ifdef PLATFORM_SUPPORTS_LIGHTBAR
+	Menu_DrawButton(-2, 9, "APPLY", "Save & Apply Settings.", Menu_Accessibility_ApplySettings);
+	Menu_DrawButton(-1, 10, "BACK", "Return to Configuration Menu.", Menu_Configuration_Set);
+#else
 	Menu_DrawButton(-2, 8, "APPLY", "Save & Apply Settings.", Menu_Accessibility_ApplySettings);
 	Menu_DrawButton(-1, 9, "BACK", "Return to Configuration Menu.", Menu_Configuration_Set);
+#endif
 }
