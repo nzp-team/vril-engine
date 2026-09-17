@@ -82,7 +82,7 @@ char *svc_strings[] =
     "svc_bspdecal", //42     // [string] name [byte] decal_size [coords] pos
     "svc_achievement",
 	"svc_songegg",
-	"svc_maxammo",
+	"svc_hudtoast",
 	"svc_pulse",
 	"svc_bettyprompt",
 	"svc_playername",
@@ -93,9 +93,9 @@ char *svc_strings[] =
 	"svc_gamemode",
 	"svc_roundcolor",
 	"svc_perkorientation",
-	"svc_hudtoast",
 	"svc_updatescorestats",
-	"svc_registeruseprint"
+	"svc_registeruseprint",
+	"svc_hudconfig"
 };
 
 //=============================================================================
@@ -1107,8 +1107,12 @@ void CL_ParseServerMessage (void)
 			HUD_RegisterUsePrint (useprint_index, useprint_text, useprint_red,
 				useprint_green, useprint_blue);
 			break;
+		case svc_hudconfig:
+			int index = MSG_ReadByte();
+			HUD_Configure(index, MSG_ReadString());
+			break;
 		case svc_hudtoast:
-			HUD_PowerupToast (MSG_ReadByte ());
+			HUD_PowerupToast (MSG_ReadString ());
 			break;
 
 		case svc_pulse:

@@ -1150,6 +1150,21 @@ void PF_cvar (void)
 	G_FLOAT(OFS_RETURN) = Cvar_VariableValue (str);
 }
 
+void PF_strstrofs(void)
+{
+	const char *text = G_STRING(OFS_PARM0);
+	const char *match = G_STRING(OFS_PARM1);
+	int start = (int)G_FLOAT(OFS_PARM2);
+	const char *found;
+	if (start < 0) start = 0;
+	if ((size_t)start > strlen(text)) {
+		G_FLOAT(OFS_RETURN) = -1;
+		return;
+	}
+	found = strstr(text + start, match);
+	G_FLOAT(OFS_RETURN) = found ? (float)(found - text) : -1;
+}
+
 /*
 =================
 PF_cvar_set
@@ -1157,6 +1172,12 @@ PF_cvar_set
 float cvar (string)
 =================
 */
+
+void PF_cvar_string (void)
+{
+	G_INT(OFS_RETURN) = PR_SetString(Cvar_VariableString(G_STRING(OFS_PARM0)));
+}
+
 void PF_cvar_set (void)
 {
 	char	*var, *val;
@@ -3573,8 +3594,39 @@ nzp_maxammo()
 */
 void PF_HUDToast(void)
 {
+	const char *text = G_STRING(OFS_PARM0);
+	if (!*text) return;
 	MSG_WriteByte(&sv.reliable_datagram, svc_hudtoast);
-	MSG_WriteByte(&sv.reliable_datagram, (int)G_FLOAT(OFS_PARM0));
+	MSG_WriteString(&sv.reliable_datagram, text);
+}
+
+static char pr_hudconfig[32][64];
+static qboolean pr_hudconfig_set[32];
+
+void PR_ClearHUDConfig(void)
+{
+	memset(pr_hudconfig_set, 0, sizeof(pr_hudconfig_set));
+}
+
+void PF_HUDConfig(void)
+{
+	int index = G_FLOAT(OFS_PARM0);
+	const char *value = G_STRING(OFS_PARM1);
+	if (index < 0 || index >= 32 || strlen(value) >= sizeof(pr_hudconfig[0]))
+		PR_RunError("Invalid HUD configuration");
+	snprintf(pr_hudconfig[index], sizeof(pr_hudconfig[index]), "%s", value);
+	pr_hudconfig_set[index] = true;
+}
+
+void PR_SendHUDConfig(client_t *client)
+{
+	int index;
+	for (index = 0; index < 32; index++) {
+		if (!pr_hudconfig_set[index]) continue;
+		MSG_WriteByte(&client->message, svc_hudconfig);
+		MSG_WriteByte(&client->message, index);
+		MSG_WriteString(&client->message, pr_hudconfig[index]);
+	}
 }
 
 /*
@@ -4093,8 +4145,6 @@ ebfs_builtin_t pr_ebfs_builtins[] =
 
 	{ 102, "cvar_find", PF_cvar_find },		// 2001-09-16 New BuiltIn Function: cvar_find() by Maddes
 
-	{ 103, "cvar_string", PF_cvar_string },	// 2001-09-16 New BuiltIn Function: cvar_string() by Maddes
-
 	{ 105, "cvar_free", PF_cvar_free },		// 2001-09-18 New BuiltIn Function: cvar_free() by Maddes
 
 	{ 106, "NVS_InitSVCMsg", PF_NVS_InitSVCMsg },	// 2000-05-02 NVS SVC by Maddes
@@ -4105,6 +4155,8 @@ ebfs_builtin_t pr_ebfs_builtins[] =
 
 	{ 109, "ftoe", PF_ftoe },	// 2001-09-25 New BuiltIn Function: ftoe() by Maddes
 */
+
+  	{ 103, "cvar_string", PF_cvar_string },
 
 // 2001-09-20 QuakeC file access by FrikaC/Maddes  start
 // not implemented yet
@@ -4132,6 +4184,8 @@ ebfs_builtin_t pr_ebfs_builtins[] =
 	{ 120, "strtrim", PF_strtrim },
 	{   0, "zone", PF_strzone },		// 0 indicates that this entry is just for remapping (because of name and number change)
 	{   0, "unzone", PF_strunzone },
+
+	{ 221, "strstrofs", PF_strstrofs },
 
 // 2001-09-20 QuakeC string manipulation by FrikaC/Maddes  end
 
@@ -4195,6 +4249,7 @@ ebfs_builtin_t pr_ebfs_builtins[] =
   { 512, "nzp_getmonthofyear", PF_GetMonthOfYear },
   { 513, "nzp_setperkorientation", PF_SetPerkOrientation },
   { 514, "useprint_send", PF_useprint_send },
+  { 515, "nzp_hudconfig", PF_HUDConfig },
 
 
 // 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  end

@@ -74,6 +74,8 @@ void PR_ResetProgs (void);
 void PR_ClearRegisteredUseprints (void);
 void PR_SendRegisteredUseprints (struct client_s *client);
 void PR_ResetWaypointState (void);
+void PR_ClearHUDConfig (void);
+void PR_SendHUDConfig (struct client_s *client);
 char *PR_ZoneString (const char *string);
 void PR_UnzoneString (char *string);
 void PR_Profile_f (void);

@@ -30,7 +30,10 @@ void
 HUD_UsePrint(int index, int cost);
 void HUD_RegisterUsePrint(int index, const char *text, int red, int green, int blue);
 void
-HUD_PowerupToast(int powerup);
+HUD_PowerupToast(const char *text);
+
+void
+HUD_Configure(int index, const char *value);
 void
 HUD_Hitmark(int type);
 void
