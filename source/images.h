@@ -1,6 +1,8 @@
 void tex_filebase (char *in, char *out);
 byte* Image_LoadPixels (char* filename, int image_format);
 int Image_LoadImage(char* filename, int image_format, int filter, bool keep, bool mipmap);
+int Image_LoadImageWithIdentifier(char *filename, char *identifier, int image_format,
+  int filter, bool keep, bool mipmap);
 int loadrgbafrompal (char* name, int width, int height, byte* data);
 int loadskyboxsideimage (char* filename, int image_format, bool keep, int filter);
 int loadpcxas4bpp (char* filename, int filter);
