@@ -1110,7 +1110,7 @@ void CL_ParseServerMessage (void)
 			break;
 		case svc_hudconfig:
 			hud_config_index = MSG_ReadByte();
-			HUD_Configure(index, MSG_ReadString());
+			HUD_Configure(hud_config_index, MSG_ReadString());
 			break;
 		case svc_hudtoast:
 			HUD_PowerupToast (MSG_ReadString ());
