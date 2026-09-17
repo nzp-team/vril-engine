@@ -1175,7 +1175,7 @@ float cvar (string)
 
 void PF_cvar_string (void)
 {
-	G_INT(OFS_RETURN) = PR_SetString(Cvar_VariableString(G_STRING(OFS_PARM0)));
+	G_INT(OFS_RETURN) = PR_SetString((char *)Cvar_VariableString(G_STRING(OFS_PARM0)));
 }
 
 void PF_cvar_set (void)
@@ -3597,7 +3597,7 @@ void PF_HUDToast(void)
 	const char *text = G_STRING(OFS_PARM0);
 	if (!*text) return;
 	MSG_WriteByte(&sv.reliable_datagram, svc_hudtoast);
-	MSG_WriteString(&sv.reliable_datagram, text);
+	MSG_WriteString(&sv.reliable_datagram, (char *)text);
 }
 
 static char pr_hudconfig[32][64];
