@@ -668,6 +668,7 @@ void
 HUD_Configure(int index, const char *value)
 {
     image_t *picture = NULL;
+    image_t loaded;
     if (strlen(value) >= 64) return;
     if (index == 0) {
         perk_orientation = !strcmp(value, "cw") ? HUD_PERK_ORI_CW : 0;
@@ -710,7 +711,18 @@ HUD_Configure(int index, const char *value)
         case 31: picture = &sb_moneyback_condensed; break;
         default: return;
     }
-    *picture = *value ? Image_LoadImage((char *)value, IMAGE_TGA, 0, false, false) : -1;
+    if (!*value) {
+        *picture = -1;
+        return;
+    }
+
+    loaded = Image_LoadImageWithIdentifier((char *)value, (char *)value,
+      IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, true, false);
+    if (loaded < 0) {
+        Con_Printf("Couldn't load configured HUD image %s\n", value);
+        return;
+    }
+    *picture = loaded;
 }
 
 void

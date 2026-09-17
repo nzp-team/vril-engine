@@ -233,24 +233,20 @@ byte* Image_LoadPixels(char* filename, int image_format)
 	return NULL;					
 }
 
-image_t Image_LoadImage(char* filename, int image_format, int filter, bool keep, bool mipmap)
+image_t Image_LoadImageWithIdentifier(char *filename, char *identifier, int image_format,
+  int filter, bool keep, bool mipmap)
 {
 	int texture_index;
 	byte *data;
-	char texname[64] = {0};
 
-	if (filename == NULL) return -1;
-
-	// create a unique identifier
-	tex_filebase (filename, texname);
-
-	if (texname[0] == '\0') {
+	if (filename == NULL || identifier == NULL || identifier[0] == '\0'
+	  || strlen(identifier) >= 64) {
 		Con_DPrintf("bad texture %s\n", filename);
 		return -1;
 	}
 
 	// does the texture already exist?
-	texture_index = Image_FindImage(texname);
+	texture_index = Image_FindImage(identifier);
 	if (texture_index >= 0) {
 		return texture_index;
 	}
@@ -272,21 +268,30 @@ image_t Image_LoadImage(char* filename, int image_format, int filter, bool keep,
 	==================
 	*/
 #ifdef __PSP__
-	texture_index = GL_LoadImages (texname, image_width, image_height, data, true, filter, 0, 4, keep);
+	texture_index = GL_LoadImages (identifier, image_width, image_height, data, true, filter, 0, 4, keep);
 #elif __NSPIRE__
 	qboolean transparenttoblack = (qboolean)filter;
-	texture_index = Soft_LoadTexture (texname, image_width, image_height, data, transparenttoblack, keep);
+	texture_index = Soft_LoadTexture (identifier, image_width, image_height, data, transparenttoblack, keep);
 #else
-	texture_index = GL_LoadTexture (texname, image_width, image_height, data, mipmap, true, 4, keep);
+	texture_index = GL_LoadTexture (identifier, image_width, image_height, data, mipmap, true, 4, keep);
 #endif
 
 	if(texture_index < 0) {
-		Sys_Error("Image_LoadImage: failed to upload texture %s\n", texname);
+		Sys_Error("Image_LoadImage: failed to upload texture %s\n", identifier);
 	}
 
 	free(data);
 
 	return texture_index;
+}
+
+image_t Image_LoadImage(char* filename, int image_format, int filter, bool keep, bool mipmap)
+{
+	char texname[64] = {0};
+
+	if (filename == NULL) return -1;
+	tex_filebase (filename, texname);
+	return Image_LoadImageWithIdentifier(filename, texname, image_format, filter, keep, mipmap);
 }
 
 // used on PSP
