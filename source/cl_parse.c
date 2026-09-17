@@ -1016,6 +1016,7 @@ void CL_ParseServerMessage (void)
 	int			useprint_cost;
 	int			useprint_index;
 	int			useprint_red, useprint_green, useprint_blue;
+	int 		hud_config_index;
 	char		useprint_text[256];
 
 //
@@ -1108,7 +1109,7 @@ void CL_ParseServerMessage (void)
 				useprint_green, useprint_blue);
 			break;
 		case svc_hudconfig:
-			int index = MSG_ReadByte();
+			hud_config_index = MSG_ReadByte();
 			HUD_Configure(index, MSG_ReadString());
 			break;
 		case svc_hudtoast:
