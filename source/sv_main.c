@@ -35,6 +35,7 @@ cvar_t 	sv_startround = {"sv_startround", "0", true};
 cvar_t 	sv_magic = {"sv_magic", "1", true};
 cvar_t 	sv_headshotonly = {"sv_headshotonly", "0", true};
 cvar_t 	sv_fastrounds = {"sv_fastrounds", "0", true};
+cvar_t  sv_gameconfig = {"sv_gameconfig", "", true};
 cvar_t 	sv_spoofmonth = {"sv_spoofmonth", "0", true};
 
 /*
@@ -75,6 +76,7 @@ void SV_Init (void)
 	Cvar_RegisterVariable (&sv_magic);
 	Cvar_RegisterVariable (&sv_headshotonly);
 	Cvar_RegisterVariable (&sv_fastrounds);
+	Cvar_RegisterVariable (&sv_gameconfig);
 	Cvar_RegisterVariable (&sv_spoofmonth);
 
 	Cvar_SetValue("sv_maxai", MAX_AI_COUNT);

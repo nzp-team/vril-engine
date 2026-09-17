@@ -30,6 +30,7 @@
 image_t sb_round[5];
 image_t sb_round_num[10];
 image_t sb_moneyback;
+image_t sb_moneyback_condensed;
 image_t instapic;
 image_t x2pic;
 image_t revivepic;
@@ -74,6 +75,8 @@ static char loaded_controller_glyphs[MAX_QPATH];
 qboolean has_chaptertitle;
 qboolean doubletap_has_damage_buff;
 int current_gamemode;
+
+static int hud_tally_until = 11;
 
 void
 HUD_Scoreboard_Down(void);
@@ -611,6 +614,7 @@ HUD_Init(void)
     }
 
     sb_moneyback = Image_LoadImage("gfx/hud/moneyback", IMAGE_TGA, 0, true, false);
+    sb_moneyback_condensed = Image_LoadImage("gfx/hud/moneyback_condensed", IMAGE_TGA, 0, true, false);
     instapic     = Image_LoadImage("gfx/hud/in_kill", IMAGE_TGA, 0, true, false);
     x2pic        = Image_LoadImage("gfx/hud/2x", IMAGE_TGA, 0, true, false);
 
@@ -661,6 +665,55 @@ HUD_Init(void)
  * ===============
  */
 void
+HUD_Configure(int index, const char *value)
+{
+    image_t *picture = NULL;
+    if (strlen(value) >= 64) return;
+    if (index == 0) {
+        perk_orientation = !strcmp(value, "cw") ? HUD_PERK_ORI_CW : 0;
+        return;
+    }
+    if (index == 1) {
+        hud_tally_until = atoi(value);
+        return;
+    }
+    switch (index) {
+        case 2: picture = &revivepic; break;
+        case 3: picture = &jugpic; break;
+        case 4: picture = &speedpic; break;
+        case 5: picture = &doublepic; break;
+        case 6: picture = &doublepic2; break;
+        case 7: picture = &staminpic; break;
+        case 8: picture = &floppic; break;
+        case 9: picture = &deadpic; break;
+        case 10: picture = &mulepic; break;
+        case 11: picture = &instapic; break;
+        case 12: picture = &x2pic; break;
+        case 13: picture = &sb_round[0]; break;
+        case 14: picture = &sb_round[1]; break;
+        case 15: picture = &sb_round[2]; break;
+        case 16: picture = &sb_round[3]; break;
+        case 17: picture = &sb_round[4]; break;
+        case 18: picture = &sb_round_num[0]; break;
+        case 19: picture = &sb_round_num[1]; break;
+        case 20: picture = &sb_round_num[2]; break;
+        case 21: picture = &sb_round_num[3]; break;
+        case 22: picture = &sb_round_num[4]; break;
+        case 23: picture = &sb_round_num[5]; break;
+        case 24: picture = &sb_round_num[6]; break;
+        case 25: picture = &sb_round_num[7]; break;
+        case 26: picture = &sb_round_num[8]; break;
+        case 27: picture = &sb_round_num[9]; break;
+        case 28: picture = &fragpic; break;
+        case 29: picture = &bettypic; break;
+        case 30: picture = &sb_moneyback; break;
+        case 31: picture = &sb_moneyback_condensed; break;
+        default: return;
+    }
+    *picture = *value ? Image_LoadImage((char *)value, IMAGE_TGA, 0, false, false) : -1;
+}
+
+void
 HUD_NewMap(void)
 {
     alphabling = 0;
@@ -699,6 +752,7 @@ HUD_NewMap(void)
     perk_order[7]         = 0;
     cl.perks              = 0;
     perk_orientation      = 0;
+    hud_tally_until       = 11;
     current_perk_order    = 0;
     crosshair_spread_time = 0;
     crosshair_offset_step = 0;
@@ -998,7 +1052,7 @@ HUD_Points(void)
         // draw background
 
         f = s->points;
-        Draw_StretchPic(x, y, sb_moneyback, 64 * vid.scale, 16 * vid.scale);
+        Draw_StretchPic(x, y, k == cl.viewentity - 1 ? sb_moneyback : sb_moneyback_condensed, 64 * vid.scale, 16 * vid.scale);
         xplus = getTextWidth(va("%i", f), vid.scale);
         CL_PlayerColor(k, &r, &g, &b);
         HUD_DrawTextBackdrop((((64 * vid.scale) - xplus) / 2) + x, y + (3 * vid.scale),
@@ -1200,44 +1254,20 @@ HUD_WorldText(int alpha)
  * HUD_MaxAmmo
  * ===============
  */
-static int hud_toast_powerup = 4;
+static char hud_toast_text[1024];
 
 void
-HUD_PowerupToast(int powerup)
+HUD_PowerupToast(const char *text)
 {
-    hud_toast_powerup     = powerup;
-    hud_maxammo_starttime = sv.time;
-    hud_maxammo_endtime   = sv.time + 2;
-}
-
-static const char *
-HUD_PowerupToastText(int powerup)
-{
-    switch (powerup) {
-        case 0: return "Ka-Boom!";
-
-        case 1: return "Insta-kill!";
-
-        case 2: return "Double Points!";
-
-        case 3: return "Carpenter!";
-
-        case 4: return "Max Ammo!";
-
-        case 5: return "Random Perk!";
-
-        case 6: return "Weapon Upgrade!";
-
-        case 7: return "Bonus Points!";
-
-        default: return "";
-    }
+    snprintf(hud_toast_text, sizeof(hud_toast_text), "%s", text);
+    hud_maxammo_starttime = cl.time;
+    hud_maxammo_endtime = cl.time + 2;
 }
 
 void
 HUD_MaxAmmo(void)
 {
-    const char * maxammo_string = HUD_PowerupToastText(hud_toast_powerup);
+    const char * maxammo_string = hud_toast_text;
 
     int start_y = 55 * vid.scale;
     int end_y   = 45 * vid.scale;
@@ -1250,11 +1280,11 @@ HUD_MaxAmmo(void)
     double start_time, end_time;
 
     // For the first 0.5s, stay still while we fade in
-    if (hud_maxammo_endtime > sv.time + 1.5) {
+    if (hud_maxammo_endtime > cl.time + 1.5) {
         start_time = hud_maxammo_starttime;
         end_time   = hud_maxammo_starttime + 0.5;
 
-        text_alpha = (sv.time - start_time) / (end_time - start_time);
+        text_alpha = (cl.time - start_time) / (end_time - start_time);
         pos_y      = start_y;
     }
     // For the remaining 1.5s, fade out while we fly upwards.
@@ -1262,7 +1292,7 @@ HUD_MaxAmmo(void)
         start_time = hud_maxammo_starttime + 0.5;
         end_time   = hud_maxammo_endtime;
 
-        float percent_time = (sv.time - start_time) / (end_time - start_time);
+        float percent_time = (cl.time - start_time) / (end_time - start_time);
 
         pos_y      = start_y + diff_y * percent_time;
         text_alpha = 1 - percent_time;
@@ -1284,7 +1314,7 @@ HUD_DrawRoundCounter(int round, const vec3_t color, int alpha)
 
     if (round <= 0) return;
 
-    if (round <= 10) {
+    if (round < hud_tally_until) {
         int groups    = round / 5;
         int remainder = round % 5;
         for (i = 0; i < groups; i++) {
@@ -1402,8 +1432,7 @@ HUD_Rounds(void)
         case 1: // this is the rounds icon at the middle of the screen
             center_alpha += frame_time * 500;
             if (center_alpha > 255) center_alpha = 255;
-            Draw_ColoredStretchPic(round_center_x, round_center_y, sb_round[0], 11 * vid.scale,
-              48 * vid.scale, color[0], color[1], color[2], (int) center_alpha);
+            Draw_ColoredStretchPic(round_center_x, round_center_y, hud_tally_until > 1 ? sb_round[0] : sb_round_num[1], (hud_tally_until > 1 ? 11 : 32) * vid.scale, 48 * vid.scale, color[0], color[1], color[2], (int) center_alpha);
             return;
 
         case 2: // this is the rounds icon moving from middle
@@ -1416,8 +1445,7 @@ HUD_Rounds(void)
                 round_center_x = 3 * vid.scale + HUD_UltrawideOffset();
             if (round_center_y > vid.height - 1 - 48 * vid.scale)
                 round_center_y = vid.height - 1 - 48 * vid.scale;
-            Draw_ColoredStretchPic(round_center_x, round_center_y, sb_round[0], 11 * vid.scale,
-              48 * vid.scale, color[0], color[1], color[2], 255);
+            Draw_ColoredStretchPic(round_center_x, round_center_y, hud_tally_until > 1 ? sb_round[0] : sb_round_num[1], (hud_tally_until > 1 ? 11 : 32) * vid.scale, 48 * vid.scale, color[0], color[1], color[2], 255);
             return;
 
         case 3: // shift to white
