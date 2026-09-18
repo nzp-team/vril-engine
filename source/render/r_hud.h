@@ -71,8 +71,16 @@ extern double screenflash_starttime;
 
 extern vec3_t round_color_target;
 
-#define HUD_PERK_ORI_DEFAULT 0
-#define HUD_PERK_ORI_CW      1
+#define HUD_PERK_ORI_DEFAULT        0
+#define HUD_PERK_ORI_CW             1
+#define HUD_PERK_ORI_WAW            2
+#define HUD_PERK_ORI_BO3            3
+
+#define HUD_SCORE_ORI_LEFT          0
+#define HUD_SCORE_ORI_RIGHT         1
+
+#define HUD_ROUND_ORI_BOTTOM_LEFT   0
+#define HUD_ROUND_ORI_TOP_RIGHT     1
 
 //
 // Types of screen-flashes.

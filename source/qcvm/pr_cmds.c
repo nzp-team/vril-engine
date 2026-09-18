@@ -3600,8 +3600,9 @@ void PF_HUDToast(void)
 	MSG_WriteString(&sv.reliable_datagram, (char *)text);
 }
 
-static char pr_hudconfig[32][64];
-static qboolean pr_hudconfig_set[32];
+#define MAX_HUD_CONFIGS 35
+static char pr_hudconfig[MAX_HUD_CONFIGS][64];
+static qboolean pr_hudconfig_set[MAX_HUD_CONFIGS];
 
 void PR_ClearHUDConfig(void)
 {
@@ -3612,7 +3613,7 @@ void PF_HUDConfig(void)
 {
 	int index = G_FLOAT(OFS_PARM0);
 	const char *value = G_STRING(OFS_PARM1);
-	if (index < 0 || index >= 32 || strlen(value) >= sizeof(pr_hudconfig[0]))
+	if (index < 0 || index >= MAX_HUD_CONFIGS || strlen(value) >= sizeof(pr_hudconfig[0]))
 		PR_RunError("Invalid HUD configuration");
 	snprintf(pr_hudconfig[index], sizeof(pr_hudconfig[index]), "%s", value);
 	pr_hudconfig_set[index] = true;
@@ -3621,7 +3622,7 @@ void PF_HUDConfig(void)
 void PR_SendHUDConfig(client_t *client)
 {
 	int index;
-	for (index = 0; index < 32; index++) {
+	for (index = 0; index < MAX_HUD_CONFIGS; index++) {
 		if (!pr_hudconfig_set[index]) continue;
 		MSG_WriteByte(&client->message, svc_hudconfig);
 		MSG_WriteByte(&client->message, index);
