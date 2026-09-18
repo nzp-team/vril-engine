@@ -1081,6 +1081,7 @@ void ED_LoadFromFile (char *data)
 
 func_t	EndFrame;
 void PR_InitStringTable(void);
+static void PR_ForgetString(char *value);
 static float *pr_initial_globals;
 static int pr_initial_globals_count;
 
@@ -1124,6 +1125,8 @@ void PR_UnzoneString (char *value)
 {
 	pr_zoned_string_t *string = ((pr_zoned_string_t *)value) - 1;
 
+	PR_ForgetString(value);
+
 	*string->prev = string->next;
 	if (string->next)
 		string->next->prev = string->prev;
@@ -1137,6 +1140,7 @@ PR_LoadProgs
 void PR_LoadProgs (void)
 {
 	PR_ClearRegisteredUseprints ();
+	PR_ClearHUDConfig ();
 	dfunction_t	*f;
 	int		i;
 // 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes/Firestorm  start
@@ -1369,6 +1373,7 @@ void PR_LoadProgs (void)
 void PR_ResetProgs (void)
 {
 	PR_ClearRegisteredUseprints ();
+	PR_ClearHUDConfig ();
 	if (!pr_initial_globals || pr_initial_globals_count != progs->numglobals)
 		Host_Error ("PR_ResetProgs: no initial globals snapshot");
 
@@ -1479,6 +1484,15 @@ static char **pr_strtbl = NULL;
 static int pr_strtbl_size;
 static int num_prstr;
 
+static void PR_ForgetString(char *value)
+{
+    int i;
+    for (i = 0; i < num_prstr; i++) {
+        if (pr_strtbl[i] == value) pr_strtbl[i] = NULL;
+	}
+}
+
+
 void PR_InitStringTable(void) 
 {
     if (pr_strtbl) {
@@ -1497,6 +1511,8 @@ char *PR_GetString(int num)
         s = pr_strings + num;
 	} else if (num < 0 && num >= -num_prstr) {
         s = pr_strtbl[-num - 1];
+        if (!s)
+			Host_Error("PR_GetString: freed string handle %d", num);
 	} else {
 		const char *function_name = "<outside QCVM>";
 		int opcode = -1;
@@ -1530,14 +1546,21 @@ int PR_SetString(char *s)
 	uintptr_t address = (uintptr_t)s;
 	uintptr_t strings_address = (uintptr_t)pr_strings;
 	uintptr_t offset;
-    int i;
+    int i, vacant = -1;
 
+    if (!s) 
+		return 0;
 	if (pr_strings_size < 2
 		|| address < strings_address
 		|| (offset = address - strings_address) > (uintptr_t)(pr_strings_size - 2)) {
-        for (i = 0; i < num_prstr; i++)
-            if (pr_strtbl[i] == s) break;
-        if (i < num_prstr) return -i - 1;
+        for (i = 0; i < num_prstr; i++) {
+            if (pr_strtbl[i] == s) return -i - 1;
+            if (!pr_strtbl[i] && vacant < 0) vacant = i;
+        }
+        if (vacant >= 0) {
+            pr_strtbl[vacant] = s;
+            return -vacant - 1;
+        }
         if (num_prstr == pr_strtbl_size) {
             pr_strtbl_size += PR_STRTBL_CHUNK;
             pr_strtbl = Z_Realloc(pr_strtbl, pr_strtbl_size * sizeof(char *));
