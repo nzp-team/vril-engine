@@ -77,6 +77,8 @@ qboolean doubletap_has_damage_buff;
 int current_gamemode;
 
 static int hud_tally_until = 11;
+static int hud_round_orientation;
+static qboolean hud_round_skip_intro;
 
 void
 HUD_Scoreboard_Down(void);
@@ -92,6 +94,7 @@ double hud_maxammo_endtime;
 int perk_order[8];
 int current_perk_order;
 int perk_orientation;
+int score_orientation;
 
 double crosshair_spread_time;
 float cur_spread;
@@ -671,7 +674,32 @@ HUD_Configure(int index, const char *value)
     image_t loaded;
     if (strlen(value) >= 64) return;
     if (index == 0) {
-        perk_orientation = !strcmp(value, "cw") ? HUD_PERK_ORI_CW : 0;
+        if (!strcmp(value, "cw")) {
+            perk_orientation = HUD_PERK_ORI_CW;
+        } else if (!strcmp(value, "waw")) {
+            perk_orientation = HUD_PERK_ORI_WAW;
+        } else if (!strcmp(value, "bo3")) {
+            perk_orientation = HUD_PERK_ORI_BO3;
+        } else {
+            perk_orientation = HUD_PERK_ORI_DEFAULT;
+        }
+        return;
+    }
+    if (index == 32) {
+        if (!strcmp(value, "right")) {
+            score_orientation = HUD_SCORE_ORI_RIGHT;
+        } else {
+            score_orientation = HUD_SCORE_ORI_LEFT;
+        }
+        return;
+    }
+    if (index == 33) {
+        hud_round_orientation = !strcmp(value, "top_right")
+          ? HUD_ROUND_ORI_TOP_RIGHT : HUD_ROUND_ORI_BOTTOM_LEFT;
+        return;
+    }
+    if (index == 34) {
+        hud_round_skip_intro = atoi(value) != 0;
         return;
     }
     if (index == 1) {
@@ -764,6 +792,9 @@ HUD_NewMap(void)
     perk_order[7]         = 0;
     cl.perks              = 0;
     perk_orientation      = 0;
+    score_orientation     = 0;
+    hud_round_orientation = HUD_ROUND_ORI_BOTTOM_LEFT;
+    hud_round_skip_intro  = false;
     hud_tally_until       = 11;
     current_perk_order    = 0;
     crosshair_spread_time = 0;
@@ -1030,9 +1061,11 @@ HUD_Parse_Point_Change(int points, int negative, int player, int unused_y)
     memset(change, 0, sizeof(*change));
     change->difference = negative ? -points : points;
     change->player     = player;
-    // Black Ops uses 20..59 horizontal and -14..15 vertical pixels at 640x480.
-    // Vril's HUD coordinates use a 320x240 base, so those distances are halved.
     change->travel_x   = (10.0f + random_x * 19.5f) * vid.scale;
+
+    if (score_orientation == HUD_SCORE_ORI_RIGHT)
+        change->travel_x *= -1;
+
     change->travel_y   = (-7.0f + random_y * 14.5f) * vid.scale;
     change->start_time = Sys_FloatTime();
     change->occupied   = true;
@@ -1054,12 +1087,23 @@ HUD_Points(void)
 
 
     x = 6 * vid.scale + HUD_UltrawideOffset();
+
+    if (score_orientation == HUD_SCORE_ORI_RIGHT) {
+        x = vid.width - (6 * vid.scale) - (64 * vid.scale) - HUD_UltrawideOffset();
+    }
+
     for (i = 0 ; i < l ; i++) {
         k = pointsort[i];
         s = &cl.scores[k];
         if (!s->name[0])
             continue;
         y = vid.height - (72 * vid.scale) - (k * 18 * vid.scale);
+
+        if (score_orientation == HUD_SCORE_ORI_LEFT && perk_orientation == HUD_PERK_ORI_WAW)
+            y -= 20 * vid.scale;
+
+        if (score_orientation == HUD_SCORE_ORI_LEFT && hud_round_orientation == HUD_ROUND_ORI_TOP_RIGHT)
+            y = vid.height - (18 * vid.scale) - (k * 18 * vid.scale);
 
         // draw background
 
@@ -1104,7 +1148,16 @@ HUD_Point_Change(void)
         progress = elapsed / 0.5f;
         alpha    = elapsed < 0.25f ? 1.0f : 1.0f - ((elapsed - 0.25f) / 0.25f);
         base_x   = 70 * vid.scale + HUD_UltrawideOffset();
+
+        if (score_orientation == HUD_SCORE_ORI_RIGHT) {
+            base_x = vid.width - (70 * vid.scale) - HUD_UltrawideOffset() - (10 * vid.scale);
+        }
+
         base_y   = vid.height - (69 * vid.scale) - change->player * (18 * vid.scale);
+
+        if (score_orientation == HUD_SCORE_ORI_LEFT && hud_round_orientation == HUD_ROUND_ORI_TOP_RIGHT)
+            base_y = vid.height - (18 * vid.scale) - change->player * (18 * vid.scale);
+
         x        = base_x + (int) (change->travel_x * progress);
         y        = base_y + (int) (change->travel_y * progress);
         if (change->difference < 0)
@@ -1318,11 +1371,46 @@ HUD_MaxAmmo(void)
 *    HUD_Rounds    *
 *******************/
 
+static int
+HUD_RoundCounterWidth(int round)
+{
+    if (round < hud_tally_until) {
+        int marks = round / 5 + round % 5;
+        int width = round / 5 * 60 + round % 5 * 11;
+        if (marks > 1) width += (marks - 1) * 3;
+        return width * vid.scale;
+    }
+    {
+        char digits[12];
+        int count;
+        snprintf(digits, sizeof(digits), "%i", round);
+        count = strlen(digits);
+        return (32 + (count - 1) * 24) * vid.scale;
+    }
+}
+
+static int
+HUD_RoundCounterX(int round)
+{
+    if (hud_round_orientation == HUD_ROUND_ORI_TOP_RIGHT)
+        return vid.width - HUD_UltrawideOffset() - 5 * vid.scale
+          - HUD_RoundCounterWidth(round);
+    return 5 * vid.scale + HUD_UltrawideOffset();
+}
+
+static int
+HUD_RoundCounterY(void)
+{
+    if (hud_round_orientation == HUD_ROUND_ORI_TOP_RIGHT)
+        return 4 * vid.scale;
+    return vid.height - 48 * vid.scale - 4;
+}
+
 static void
 HUD_DrawRoundCounter(int round, const vec3_t color, int alpha)
 {
-    int i, x = 5 * vid.scale + HUD_UltrawideOffset();
-    int y = vid.height - 48 * vid.scale - 4;
+    int i, x = HUD_RoundCounterX(round);
+    int y = HUD_RoundCounterY();
 
     if (round <= 0) return;
 
@@ -1415,6 +1503,7 @@ HUD_Rounds(void)
     static double endroundchange;
     static vec3_t shifted_color;
     int state = cl.stats[STAT_ROUNDCHANGE];
+    int displayed_round = cl.stats[STAT_ROUNDS];
     vec3_t color;
     int alpha = 255;
     int i;
@@ -1437,26 +1526,50 @@ HUD_Rounds(void)
         }
     }
 
-    HUD_DrawRoundIntro();
+    if (!hud_round_skip_intro)
+        HUD_DrawRoundIntro();
     VectorCopy(round_color_target, color);
+
+    if (hud_round_skip_intro && displayed_round <= 0)
+        displayed_round = 1;
 
     switch (state) {
         case 1: // this is the rounds icon at the middle of the screen
+            if (hud_round_skip_intro) {
+                HUD_DrawRoundCounter(displayed_round, color, 255);
+                return;
+            }
             center_alpha += frame_time * 500;
             if (center_alpha > 255) center_alpha = 255;
             Draw_ColoredStretchPic(round_center_x, round_center_y, hud_tally_until > 1 ? sb_round[0] : sb_round_num[1], (hud_tally_until > 1 ? 11 : 32) * vid.scale, 48 * vid.scale, color[0], color[1], color[2], (int) center_alpha);
             return;
 
         case 2: // this is the rounds icon moving from middle
-            round_center_x -= (((229.0f / 108.0f) * 2 - 0.2f)
+            if (hud_round_skip_intro) {
+                HUD_DrawRoundCounter(displayed_round, color, 255);
+                return;
+            }
+            if (hud_round_orientation == HUD_ROUND_ORI_TOP_RIGHT) {
+                round_center_x += (((229.0f / 108.0f) * 2 - 0.2f)
+                  * ((vid.width - HUD_UltrawideOffset()) / (480.0f * vid.scale)) / 8)
+                  * (frame_time * 250) * vid.scale;
+                round_center_y -= ((2 * (vid.height / (272.0f * vid.scale))) / 8)
+                  * (frame_time * 250) * vid.scale;
+                if (round_center_x > HUD_RoundCounterX(cl.stats[STAT_ROUNDS]))
+                    round_center_x = HUD_RoundCounterX(cl.stats[STAT_ROUNDS]);
+                if (round_center_y < HUD_RoundCounterY())
+                    round_center_y = HUD_RoundCounterY();
+            } else {
+                round_center_x -= (((229.0f / 108.0f) * 2 - 0.2f)
               * ((vid.width - HUD_UltrawideOffset()) / (480.0f * vid.scale)) / 8)
               * (frame_time * 250) * vid.scale;
-            round_center_y += ((2 * (vid.height / (272.0f * vid.scale))) / 8)
-              * (frame_time * 250) * vid.scale;
-            if (round_center_x < 3 * vid.scale + HUD_UltrawideOffset())
-                round_center_x = 3 * vid.scale + HUD_UltrawideOffset();
-            if (round_center_y > vid.height - 1 - 48 * vid.scale)
-                round_center_y = vid.height - 1 - 48 * vid.scale;
+                round_center_y += ((2 * (vid.height / (272.0f * vid.scale))) / 8)
+                  * (frame_time * 250) * vid.scale;
+                if (round_center_x < 3 * vid.scale + HUD_UltrawideOffset())
+                    round_center_x = 3 * vid.scale + HUD_UltrawideOffset();
+                if (round_center_y > vid.height - 1 - 48 * vid.scale)
+                    round_center_y = vid.height - 1 - 48 * vid.scale;
+            }
             Draw_ColoredStretchPic(round_center_x, round_center_y, hud_tally_until > 1 ? sb_round[0] : sb_round_num[1], (hud_tally_until > 1 ? 11 : 32) * vid.scale, 48 * vid.scale, color[0], color[1], color[2], 255);
             return;
 
@@ -1513,7 +1626,7 @@ HUD_Rounds(void)
         default:
             break;
     }
-    HUD_DrawRoundCounter(cl.stats[STAT_ROUNDS], color, alpha);
+    HUD_DrawRoundCounter(displayed_round, color, alpha);
 } /* HUD_Rounds */
 
 /*
@@ -1626,11 +1739,92 @@ HUD_DrawPerksCenter(void)
 } /* HUD_DrawPerksCenter */
 
 void
+HUD_DrawPerksAboveRound(void)
+{
+    int scale;
+    int gap;
+    int x, y;
+
+    scale = 16 * vid.scale;
+    gap   = 3 * vid.scale;
+
+    // Double-Tap 2.0 specialty icon
+    int double_tap_icon;
+    if (doubletap_has_damage_buff)
+        double_tap_icon = doublepic2;
+    else
+        double_tap_icon = doublepic;
+
+    y = (vid.height - 48 * vid.scale - 4) - ((scale + gap));
+    x = 5 * vid.scale + HUD_UltrawideOffset();
+
+    for (int i = 0; i < 8; i++) {
+        if (!perk_order[i])
+            continue;
+
+        if (perk_order[i] == P_JUG) { Draw_StretchPic(x, y, jugpic, scale, scale); }
+        if (perk_order[i] == P_DOUBLE) { Draw_StretchPic(x, y, double_tap_icon, scale, scale); }
+        if (perk_order[i] == P_SPEED) { Draw_StretchPic(x, y, speedpic, scale, scale); }
+        if (perk_order[i] == P_REVIVE) { Draw_StretchPic(x, y, revivepic, scale, scale); }
+        if (perk_order[i] == P_FLOP) { Draw_StretchPic(x, y, floppic, scale, scale); }
+        if (perk_order[i] == P_STAMIN) { Draw_StretchPic(x, y, staminpic, scale, scale); }
+        if (perk_order[i] == P_DEAD) { Draw_StretchPic(x, y, deadpic, scale, scale); }
+        if (perk_order[i] == P_MULE) { Draw_StretchPic(x, y, mulepic, scale, scale); }
+        x += scale + gap;
+    }
+} /* HUD_DrawPerksAboveRound */
+
+void
+HUD_DrawPerksRightOfRound(void)
+{
+    int scale;
+    int gap;
+    int x, y;
+
+    scale = 16 * vid.scale;
+    gap   = 3 * vid.scale;
+
+    // Double-Tap 2.0 specialty icon
+    int double_tap_icon;
+    if (doubletap_has_damage_buff)
+        double_tap_icon = doublepic2;
+    else
+        double_tap_icon = doublepic;
+
+    y = vid.height - (vid.scale * 2) - (scale + gap);
+    x = 70 * vid.scale + HUD_UltrawideOffset();
+
+    if (hud_tally_until > 6 && hud_round_orientation == HUD_ROUND_ORI_BOTTOM_LEFT)
+        x += 70 * vid.scale;
+
+    for (int i = 0; i < 8; i++) {
+        if (!perk_order[i])
+            continue;
+
+        if (perk_order[i] == P_JUG) { Draw_StretchPic(x, y, jugpic, scale, scale); }
+        if (perk_order[i] == P_DOUBLE) { Draw_StretchPic(x, y, double_tap_icon, scale, scale); }
+        if (perk_order[i] == P_SPEED) { Draw_StretchPic(x, y, speedpic, scale, scale); }
+        if (perk_order[i] == P_REVIVE) { Draw_StretchPic(x, y, revivepic, scale, scale); }
+        if (perk_order[i] == P_FLOP) { Draw_StretchPic(x, y, floppic, scale, scale); }
+        if (perk_order[i] == P_STAMIN) { Draw_StretchPic(x, y, staminpic, scale, scale); }
+        if (perk_order[i] == P_DEAD) { Draw_StretchPic(x, y, deadpic, scale, scale); }
+        if (perk_order[i] == P_MULE) { Draw_StretchPic(x, y, mulepic, scale, scale); }
+        x += scale + gap;
+    }
+} /* HUD_DrawPerksRightOfRound */
+
+void
 HUD_Perks(void)
 {
     switch (perk_orientation) {
         case HUD_PERK_ORI_CW:
             HUD_DrawPerksCenter();
+            break;
+        case HUD_PERK_ORI_WAW:
+            HUD_DrawPerksAboveRound();
+            break;
+        case HUD_PERK_ORI_BO3:
+            HUD_DrawPerksRightOfRound();
             break;
         default:
             HUD_DrawPerksDefault();
@@ -1652,7 +1846,7 @@ HUD_Powerups(void)
 
     scale = 26 * vid.scale;
 
-    if (perk_orientation == HUD_PERK_ORI_CW)
+    if (perk_orientation == HUD_PERK_ORI_CW || perk_orientation == HUD_PERK_ORI_BO3)
         y -= (10 * vid.scale);
 
     if (cl.stats[STAT_X2])
