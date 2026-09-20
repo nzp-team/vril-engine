@@ -496,7 +496,7 @@ void
 HUD_UsePrint(int index, int cost)
 {
     const char *button;
-    const char *touch = sv_player ? PR_GetString(sv_player->v.useprint_touch) : "";
+    const char *touch = sv_player ? cl.touchstring : "";
 
     if (index < 0 || index >= HUD_USEPRINT_COUNT) {
         Con_Printf("Useprint index %i out of range\n", index);
@@ -1833,7 +1833,7 @@ HUD_Weapon(void)
     int x;
     int y = vid.height - (40 * vid.scale);
 
-    strcpy(str, PR_GetString(sv_player->v.Weapon_Name));
+    strcpy(str, cl.weaponname);
     if (strcmp(str, last_weapon_name)) {
         Q_strncpyz(last_weapon_name, str, sizeof(last_weapon_name));
         weapon_name_time = Sys_FloatTime() + 3;
@@ -2265,7 +2265,7 @@ HUD_GunGame(void)
         sprintf(weapon_id, "You've passed all weapons!");
         sprintf(point_info, "The Winner can choose to End the Game");
     } else {
-        sprintf(weapon_id, "%s [%d/32]", PR_GetString(sv_player->v.Weapon_Name), cl.stats[STAT_GUNGAME_IDX] + 1);
+        sprintf(weapon_id, "%s [%d/32]", cl.weaponname, cl.stats[STAT_GUNGAME_IDX] + 1);
         sprintf(point_info, "[%d] Score until next Weapon", cl.stats[STAT_GUNGAME_SCOREGOAL] - client_points);
     }
 

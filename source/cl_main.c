@@ -1045,7 +1045,7 @@ void CL_SendCmd (void)
 		if (!in_disable_analog.value)
 			IN_Move (&cmd);
 
-		move_limit = sv_player->v.maxspeed;
+		move_limit = cl.maxspeed;
 
 		if (waypoint_mode.value)
 			move_limit *= 1.5f;
