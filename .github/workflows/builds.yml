@@ -331,9 +331,9 @@ jobs:
         run: |
           git clone --recursive https://github.com/nzp-team/spawn-zone-tool.git test-dependencies/spawn-zone-tool
           python3 -m pip install -r test-dependencies/spawn-zone-tool/requirements.txt --break-system-packages
-          bash test-dependencies/assets/tools/compile-wads.sh
-          bash test-dependencies/assets/tools/compile-maps.sh --full --zone-tool-path "${GITHUB_WORKSPACE}/test-dependencies/spawn-zone-tool"
-          bash test-dependencies/assets/tools/assemble-assets.sh
+          bash "${GITHUB_WORKSPACE}/test-dependencies/assets/tools/compile-wads.sh"
+          bash "${GITHUB_WORKSPACE}/test-dependencies/assets/tools/compile-maps.sh" --full --zone-tool-path "${GITHUB_WORKSPACE}/test-dependencies/spawn-zone-tool"
+          bash "${GITHUB_WORKSPACE}/test-dependencies/assets/tools/assemble-assets.sh"
           mkdir -p test-overrides/assets/{linux,windows,psp,ctr}
           unzip -oq test-dependencies/assets/tmp/pc-nzp-assets.zip -d test-overrides/assets/pc-package
           cp -a test-overrides/assets/pc-package/nzp/. test-overrides/assets/linux/
