@@ -733,9 +733,6 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	if (ent->v.facingenemy)
 		bits |= SU_FACINGENEMY;
 
-	if (ent->v.Weapon_Name_Touch)
-		bits |= SU_TOUCHSTRING;
-
 	if ( (int)ent->v.flags & FL_ONGROUND)
 		bits |= SU_ONGROUND;
 

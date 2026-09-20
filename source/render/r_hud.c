@@ -1206,8 +1206,8 @@ void
 HUD_PowerupToast(int powerup)
 {
     hud_toast_powerup     = powerup;
-    hud_maxammo_starttime = sv.time;
-    hud_maxammo_endtime   = sv.time + 2;
+    hud_maxammo_starttime = cl.time;
+    hud_maxammo_endtime   = cl.time + 2;
 }
 
 static const char *

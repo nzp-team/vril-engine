@@ -1152,9 +1152,6 @@ void CL_ParseServerMessage (void)
 			useprint_cost = MSG_ReadShort ();
 			HUD_UsePrint (useprint_index, useprint_cost);
 			break;
-		case svc_maxammo:
-			hud_maxammo_starttime = cl.time;
-			hud_maxammo_endtime = cl.time + 2;
 		case svc_registeruseprint:
 			useprint_index = MSG_ReadByte ();
 			Q_strncpyz (useprint_text, MSG_ReadString (), sizeof(useprint_text));
