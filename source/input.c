@@ -231,7 +231,7 @@ void IN_Move(usercmd_t *cmd)
 
 	speed = sensitivity.value;
 	if (IN_GetActiveDevice() == IN_DEVICE_GAMEPAD && in_aimassist.value &&
-		sv_player->v.facingenemy == 1 && cl.stats[STAT_CURRENTMAG] > 0)
+		cl.facingenemy == 1 && cl.stats[STAT_CURRENTMAG] > 0)
 		speed *= 0.5f;
 	if (cl.stats[STAT_ZOOM] == 1)
 		speed *= 0.5f;
@@ -246,7 +246,7 @@ void IN_Move(usercmd_t *cmd)
 		* look_y * (float)host_frametime;
 	cl.viewangles[PITCH] = IN_Clamp(cl.viewangles[PITCH], -70.0f, 80.0f);
 
-	cl_backspeed = cl_forwardspeed = cl_sidespeed = sv_player->v.maxspeed;
+	cl_backspeed = cl_forwardspeed = cl_sidespeed = cl.maxspeed;
 	cl_sidespeed *= 0.8f;
 	cl_backspeed *= 0.7f;
 	move_x = IN_ShapeAxis(move_stick.x, cl_sidespeed, tolerance, acceleration);

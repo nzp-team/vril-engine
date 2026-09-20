@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../../nzportable_def.h"
 #include "errno.h"
-#include "net_dgrm.h"
+#include "../../net_dgrm.h"
 #include <vitasdk.h>
 
 #define DEBUG
@@ -35,7 +35,6 @@ int tex_cache = 0;
 
 int antialiasing;
 uint8_t netcheck_dialog_running;
-uint8_t proto_idx;
 extern int gl_ssaa;
 extern int m_state;
 

@@ -66,10 +66,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	SU_ONGROUND		(1<<10)		// no data follows, the bit is it
 #define	SU_INWATER		(1<<11)		// no data follows, the bit is it
 #define	SU_WEAPONFRAME	(1<<12)
-#define	SU_WEAPON		(1<<14)
-#define	SU_PRIGRENADES	(1<<15)
-#define	SU_SECGRENADES	(1<<16)
 #define	SU_GRENADES		(1<<13)
+#define	SU_WEAPON		(1<<14)
+// NZ:P Protocol 115 extension
+#define SU_EXTENDBYTE	(1<<15)
+#define	SU_PRIGRENADES	(1<<16)
+#define	SU_SECGRENADES	(1<<17)
+#define SU_FACINGENEMY	(1<<18)
+#define SU_TOUCHSTRING	(1<<19)
+#define SU_MAXSPEED		(1<<20)
+#define SU_PLACE1		(1<<21)
+#define SU_PLACE2		(1<<22)
 
 // a sound with no channel is a local only sound
 #define	SND_VOLUME		(1<<0)		// a byte

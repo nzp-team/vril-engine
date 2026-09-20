@@ -362,6 +362,8 @@ void Host_Connect_f (void)
 {
 	char	name[MAX_QPATH];
 
+	key_dest = key_game;
+
 	cls.demonum = -1;		// stop demo loop in case this fails
 	if (cls.demoplayback)
 	{

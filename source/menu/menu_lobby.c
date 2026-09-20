@@ -202,7 +202,7 @@ void Menu_Lobby_Draw (void)
         }
     } else if (lobby_delta < 0 && menu_lobby_countdown != 0) {
         // Start a match!
-        Menu_LoadMap(current_selected_bsp);
+        Menu_LoadMap(current_selected_bsp, true);
         Menu_Lobby_StopCountdown();
     }
 }

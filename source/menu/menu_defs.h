@@ -48,6 +48,7 @@ extern int				m_previous_state;
 #define m_bindings		22
 #define m_bios 			23
 #define m_gyro			24
+#define m_network		25
 ///////////////////////////
 ///////////////////////////
 ///////////////////////////
@@ -278,7 +279,7 @@ qboolean Menu_IsStockMap (char *bsp_name);
 void Menu_CustomMaps_MapFinder (void);
 int Menu_UserMapSupportsGameSettings (char *bsp_name);
 void Map_SetDefaultValues (void);
-void Menu_LoadMap (char *selected_map);
+void Menu_LoadMap (char *selected_map, qboolean is_solo_match);
 void Menu_ExitMap (void);
 void Menu_DrawCustomBackground (qboolean draw_images);
 void Menu_DrawTitle (char *title_name, int color);
@@ -329,6 +330,7 @@ void Menu_Gyro_Set (void);
 #endif
 void Menu_Bindings_Set (void);
 void Menu_Accessibility_Set (void);
+void Menu_Network_Set (void);
 
 // Platform specifics
 char *LoadingScreen_ReturnTip(void);

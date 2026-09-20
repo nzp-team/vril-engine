@@ -40,6 +40,7 @@ void Menu_Gyro_Draw (void);
 #endif
 void Menu_Bindings_Draw (void);
 void Menu_Accessibility_Draw (void);
+void Menu_Network_Draw (void);
 
 menu_t			current_menu;
 menu_button_t	current_menu_buttons[MAX_MENU_BUTTONS];
@@ -274,6 +275,10 @@ void Menu_Draw (void)
 
 	case m_bios:
 		Menu_Bios_Draw ();
+		break;
+
+	case m_network:
+		Menu_Network_Draw ();
 		break;
 
 	default:

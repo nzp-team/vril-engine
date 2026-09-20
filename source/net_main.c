@@ -19,8 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // net_main.c
 
-#include "../../nzportable_def.h"
-#include "../../net_vcr.h"
+#include "nzportable_def.h"
+#include "net_vcr.h"
 
 cvar_t	net_messagetimeout = {"net_messagetimeout","300"};
 cvar_t	hostname = {"hostname", "UNNAMED"};

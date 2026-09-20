@@ -81,7 +81,7 @@ int UDP_Init (void)
 	if (colon)
 		*colon = 0;
 
-	Con_Printf("UDP Initialized\n");
+	Con_Printf("UDP Initialized as IP %s\n", my_tcpip_address);
 	tcpipAvailable = true;
 
 	return net_controlsocket;
