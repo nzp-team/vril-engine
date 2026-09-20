@@ -1111,8 +1111,7 @@ HUD_Points(void)
         Draw_StretchPic(x, y, k == cl.viewentity - 1 ? sb_moneyback : sb_moneyback_condensed, 64 * vid.scale, 16 * vid.scale);
         xplus = getTextWidth(va("%i", f), vid.scale);
         CL_PlayerColor(k, &r, &g, &b);
-        HUD_DrawTextBackdrop((((64 * vid.scale) - xplus) / 2) + x, y + (3 * vid.scale),
-          va("%i", f), r, g, b, 255, vid.scale);
+        HUD_DrawTextBackdrop((((64 * vid.scale) - xplus) / 2) + x, y + (4 * vid.scale), va("%i", f), r, g, b, 255, vid.scale);
 
         if (hud_last_points_valid[k] && hud_last_points[k] != f)
             HUD_Parse_Point_Change(abs(f - hud_last_points[k]), f < hud_last_points[k], k, 0);
@@ -1458,6 +1457,7 @@ HUD_DrawRoundIntro(void)
     float frame_time = (float) host_frametime;
     int state        = cl.stats[STAT_ROUNDCHANGE];
     int title_alpha;
+    vec3_t title_color;
 
     if (state != last_state) {
         last_state = state;
@@ -1471,8 +1471,10 @@ HUD_DrawRoundIntro(void)
         return;
 
     title_alpha = (int) (ralpha * 255);
-    Draw_ColoredStringCentered(85 * vid.scale, "Round", 255,
-      (int) (rcolor * 255), (int) (rcolor * 255), title_alpha, 2.0f * vid.scale);
+    title_color[0] = CLAMP(0, round_color_target[0] * 1.5f, 255);
+    title_color[1] = CLAMP(0, round_color_target[1] * 1.5f, 255);
+    title_color[2] = CLAMP(0, round_color_target[2] * 1.5f, 255);
+    Draw_ColoredStringCentered(85 * vid.scale, "Round", (int) (title_color[0] + (255 - title_color[0]) * rcolor), (int) (title_color[1] + (255 - title_color[1]) * rcolor), (int) (title_color[2] + (255 - title_color[2]) * rcolor), title_alpha, 2.0f * vid.scale);
 
     rcolor -= frame_time / 2.5f;
     if (rcolor < 0) {

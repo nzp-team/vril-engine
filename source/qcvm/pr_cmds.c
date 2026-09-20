@@ -3697,9 +3697,9 @@ void PF_SetRoundColor(void)
 
 	color = G_VECTOR(OFS_PARM0);
 	MSG_WriteByte(&sv.reliable_datagram, svc_roundcolor);
-	MSG_WriteCoord(&sv.reliable_datagram, color[0] * 4.0f);
-	MSG_WriteCoord(&sv.reliable_datagram, color[1] * 4.0f);
-	MSG_WriteCoord(&sv.reliable_datagram, color[2] * 4.0f);
+	MSG_WriteCoord(&sv.reliable_datagram, color[0]);
+	MSG_WriteCoord(&sv.reliable_datagram, color[1]);
+	MSG_WriteCoord(&sv.reliable_datagram, color[2]);
 }
 
 void PF_GetMonthOfYear(void)
