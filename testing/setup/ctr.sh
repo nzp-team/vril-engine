@@ -107,6 +107,7 @@ function begin_setup()
 	fi
 
 	obtain_nzportable;
+	apply_content_overrides;
 	configure_azahar "${MODE}"
 
 	print_info "Done setting up for Nintendo 3DS testing!"

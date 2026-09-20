@@ -45,6 +45,7 @@ function begin_setup()
 	mkdir -p "${working_dir}"
 	install_dependencies
 	obtain_nzportable
+	apply_content_overrides
 	cd "${testing_dir_path}"
 	print_info "Done setting up Linux testing!"
 }

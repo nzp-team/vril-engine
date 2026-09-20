@@ -58,3 +58,26 @@ function test_game_path()
 {
 	echo "${working_dir}/nzportable"
 }
+
+#
+# apply_content_overrides
+# ---
+# Applies assets or QuakeC overlays if requested in Pull Request.
+#
+function apply_content_overrides
+{
+	local game_directory="${working_dir}/nzportable/nzp"
+
+	if [[ -n "${ASSETS_OVERRIDE_DIRECTORY:-}" && -d "${ASSETS_OVERRIDE_DIRECTORY}" ]]; then
+		print_info "Applying assets ref: [${ASSETS_OVERRIDE_DIRECTORY}].."
+		mkdir -p "${game_directory}"
+		find "${game_directory}" -depth -mindepth 1 ! -path "${game_directory}/progs.dat" -delete
+		cp -a "${ASSETS_OVERRIDE_DIRECTORY}/." "${game_directory}/"
+	fi
+
+	if [[ -n "${QUAKEC_OVERRIDE_FILE:-}" && -f "${QUAKEC_OVERRIDE_FILE}" ]]; then
+		print_info "Applying QuakeC ref: [${QUAKEC_OVERRIDE_FILE}].."
+		mkdir -p "${game_directory}"
+		cp "${QUAKEC_OVERRIDE_FILE}" "${game_directory}/progs.dat"
+	fi
+}

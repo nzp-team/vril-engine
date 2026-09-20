@@ -14,6 +14,12 @@ CTR/RVL: Conform to DevkitPro code standards
 Ideally you should also use this standard for your commit names too. They'll likely be squashed on merge if they do not conform.
 -->
 
+<!--
+Uncomment to run Vril PR tests with specific component branches or commits (will use your own forks if you are an external contributor):
+# quakec_ref=main
+# assets_ref=main
+-->
+
 ### Description of Changes
 ---
 <!-- Replace this text with an overview of your changes made in this Pull Request. Please use your best judgement here, do not be verbose to the point that you are giving an exact step-by-step of your workflow, but do not undersell the changes made. If this Pull Request addresses an open issue, you should reference that too. -->
