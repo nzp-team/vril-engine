@@ -1,5 +1,8 @@
 name: Build
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
 jobs:
   Compile-Linux:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
@@ -264,6 +267,111 @@ jobs:
             path: |
               ./build/nx/bin/nzportable.nro
               ./build/nx/bin/nzportable.nacp
+  prepare-pr-test-content:
+    if: github.event_name == 'pull_request'
+    name: Prepare Pull Request Test Content
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      has_overrides: ${{ steps.dependencies.outputs.has_overrides }}
+      quakec_ref: ${{ steps.dependencies.outputs.quakec_ref }}
+      assets_ref: ${{ steps.dependencies.outputs.assets_ref }}
+    steps:
+      - name: Resolve dependency overrides
+        id: dependencies
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_HEAD_OWNER: ${{ github.event.pull_request.head.repo.owner.login }}
+        run: |
+          quakec_ref=$(sed -nE 's/^[[:space:]]*quakec_ref=([^[:space:]]+)[[:space:]]*$/\1/p' <<< "${PR_BODY}" | head -n 1)
+          assets_ref=$(sed -nE 's/^[[:space:]]*assets_ref=([^[:space:]]+)[[:space:]]*$/\1/p' <<< "${PR_BODY}" | head -n 1)
+          {
+            echo "quakec_ref=${quakec_ref}"
+            echo "assets_ref=${assets_ref}"
+            echo "quakec_repository=${PR_HEAD_OWNER}/quakec"
+            echo "assets_repository=${PR_HEAD_OWNER}/assets"
+            if [[ -n "${quakec_ref}" || -n "${assets_ref}" ]]; then
+              echo "has_overrides=true"
+            else
+              echo "has_overrides=false"
+            fi
+          } >> "${GITHUB_OUTPUT}"
+      - name: Checkout QuakeC
+        if: steps.dependencies.outputs.quakec_ref != ''
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.dependencies.outputs.quakec_repository }}
+          ref: ${{ steps.dependencies.outputs.quakec_ref }}
+          path: test-dependencies/quakec
+          persist-credentials: false
+      - name: Checkout assets
+        if: steps.dependencies.outputs.assets_ref != ''
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.dependencies.outputs.assets_repository }}
+          ref: ${{ steps.dependencies.outputs.assets_ref }}
+          path: test-dependencies/assets
+          persist-credentials: false
+      - name: Install content build dependencies
+        if: steps.dependencies.outputs.has_overrides == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git libicu-dev python3 python3-pip unzip wget zip
+          wget -q https://raw.githubusercontent.com/nzp-team/QCHashTableGenerator/main/requirements.txt
+          python3 -m pip install -r requirements.txt --break-system-packages
+      - name: Build QuakeC override
+        if: steps.dependencies.outputs.quakec_ref != ''
+        run: |
+          bash test-dependencies/quakec/tools/qc-compiler-gnu.sh
+          mkdir -p test-overrides/quakec
+          cp test-dependencies/quakec/build/standard/progs.dat test-overrides/quakec/progs.dat
+      - name: Build assets override
+        if: steps.dependencies.outputs.assets_ref != ''
+        run: |
+          git clone --recursive https://github.com/nzp-team/spawn-zone-tool.git test-dependencies/spawn-zone-tool
+          python3 -m pip install -r test-dependencies/spawn-zone-tool/requirements.txt --break-system-packages
+          bash test-dependencies/assets/tools/compile-wads.sh
+          bash test-dependencies/assets/tools/compile-maps.sh --full --zone-tool-path "${GITHUB_WORKSPACE}/test-dependencies/spawn-zone-tool"
+          bash test-dependencies/assets/tools/assemble-assets.sh
+          mkdir -p test-overrides/assets/{linux,windows,psp,ctr}
+          unzip -oq test-dependencies/assets/tmp/pc-nzp-assets.zip -d test-overrides/assets/pc-package
+          cp -a test-overrides/assets/pc-package/nzp/. test-overrides/assets/linux/
+          cp -a test-overrides/assets/pc-package/nzp/. test-overrides/assets/windows/
+          unzip -oq test-dependencies/assets/tmp/psp-nzp-assets.zip -d test-overrides/assets/psp-package
+          cp -a test-overrides/assets/psp-package/nzportable/nzp/. test-overrides/assets/psp/
+          unzip -oq test-dependencies/assets/tmp/3ds-nzp-assets.zip -d test-overrides/assets/ctr-package
+          cp -a test-overrides/assets/ctr-package/nzportable/nzp/. test-overrides/assets/ctr/
+          rm -rf test-overrides/assets/pc-package test-overrides/assets/psp-package \
+            test-overrides/assets/ctr-package
+      - name: Log repository overrides
+        env:
+          QUAKEC_REF: ${{ steps.dependencies.outputs.quakec_ref }}
+          QUAKEC_REPOSITORY: ${{ steps.dependencies.outputs.quakec_repository }}
+          ASSETS_REF: ${{ steps.dependencies.outputs.assets_ref }}
+          ASSETS_REPOSITORY: ${{ steps.dependencies.outputs.assets_repository }}
+        run: |
+          {
+            echo "### Vril Pull Request Test Overrides"
+            echo
+            if [[ -n "${QUAKEC_REF}" ]]; then
+              echo "* QuakeC: \`${QUAKEC_REPOSITORY}@$(git -C test-dependencies/quakec rev-parse HEAD)\` (requested \`${QUAKEC_REF}\`)"
+            else
+              echo "* QuakeC: N/A"
+            fi
+            if [[ -n "${ASSETS_REF}" ]]; then
+              echo "* Assets: \`${ASSETS_REPOSITORY}@$(git -C test-dependencies/assets rev-parse HEAD)\` (requested \`${ASSETS_REF}\`)"
+            else
+              echo "* Assets: N/A"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+      - name: Upload test content overrides
+        if: steps.dependencies.outputs.has_overrides == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-test-content-overrides
+          path: test-overrides/
+          retention-days: 1
   Pull-Request-Test-3DS:
     if: github.event_name == 'pull_request'
     name: ${{ matrix.mode }} 3DS Pull Request Tests
@@ -275,7 +383,7 @@ jobs:
     container:
       image: ubuntu:24.04
       options: --shm-size=8192m
-    needs: [Compile-3DSX]
+    needs: [Compile-3DSX, prepare-pr-test-content]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -284,7 +392,16 @@ jobs:
         with:
           name: ctr-nzp-3dsx
           path: testing/working/ctr-artifact
+      - name: Download Test Content Overrides
+        if: needs['prepare-pr-test-content'].outputs.has_overrides == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-test-content-overrides
+          path: testing/overrides
       - name: Run All
+        env:
+          ASSETS_OVERRIDE_DIRECTORY: ${{ github.workspace }}/testing/overrides/assets/ctr
+          QUAKEC_OVERRIDE_FILE: ${{ github.workspace }}/testing/overrides/quakec/progs.dat
         run: |
           cd ./testing
           ./run_tests.sh --platform ctr --test all --content "$(pwd)/validate" --working-dir working/ --mode ${{ matrix.mode }} --binary "$(pwd)/working/ctr-artifact/nzportable.3dsx"
@@ -321,7 +438,7 @@ jobs:
     container:
       image: ubuntu:24.04
       options: --shm-size=8192m
-    needs: [Compile-EBOOT]
+    needs: [Compile-EBOOT, prepare-pr-test-content]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -331,8 +448,18 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
-          path: /
+          name: psp-nzp-eboot
+          path: /psp-nzp-eboot
+      - name: Download Test Content Overrides
+        if: needs['prepare-pr-test-content'].outputs.has_overrides == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-test-content-overrides
+          path: testing/overrides
       - name: Run All
+        env:
+          ASSETS_OVERRIDE_DIRECTORY: ${{ github.workspace }}/testing/overrides/assets/psp
+          QUAKEC_OVERRIDE_FILE: ${{ github.workspace }}/testing/overrides/quakec/progs.dat
         run: |
           cd ./testing
           ./run_tests.sh --platform psp --test all --content "$(pwd)/validate" --working-dir working/ --mode ${{ matrix.mode }} --binary /psp-nzp-eboot/EBOOT.PBP
@@ -385,7 +512,7 @@ jobs:
     container:
       image: debian:12
       options: --shm-size=8192m
-    needs: [Compile-Linux]
+    needs: [Compile-Linux, prepare-pr-test-content]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -394,6 +521,12 @@ jobs:
         with:
           name: linux-${{ matrix.arch }}-nzp-sdl
           path: testing/working/linux-artifact
+      - name: Download Test Content Overrides
+        if: needs['prepare-pr-test-content'].outputs.has_overrides == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-test-content-overrides
+          path: testing/overrides
       - name: Install compatibility libraries
         if: matrix.deb_arch != matrix.native_arch
         env:
@@ -405,6 +538,9 @@ jobs:
             "libgl1:${DEB_ARCH}" "libgl1-mesa-dri:${DEB_ARCH}" "libglu1-mesa:${DEB_ARCH}" \
             "libsdl2-2.0-0:${DEB_ARCH}" "libsdl2-mixer-2.0-0:${DEB_ARCH}"
       - name: Run All
+        env:
+          ASSETS_OVERRIDE_DIRECTORY: ${{ github.workspace }}/testing/overrides/assets/linux
+          QUAKEC_OVERRIDE_FILE: ${{ github.workspace }}/testing/overrides/quakec/progs.dat
         run: |
           cd ./testing
           ./run_tests.sh --platform linux --test all --content "$(pwd)/validate" --working-dir working/ --binary "$(pwd)/working/linux-artifact/nzportable"
@@ -449,7 +585,7 @@ jobs:
     container:
       image: debian:12
       options: --shm-size=8192m
-    needs: [Compile-Windows]
+    needs: [Compile-Windows, prepare-pr-test-content]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -458,6 +594,12 @@ jobs:
         with:
           name: windows-${{ matrix.arch }}-nzp-sdl
           path: testing/working/windows-artifact
+      - name: Download Test Content Overrides
+        if: needs['prepare-pr-test-content'].outputs.has_overrides == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-test-content-overrides
+          path: testing/overrides
       - name: Install compatibility libraries
         if: matrix.deb_arch != matrix.native_arch
         env:
@@ -469,6 +611,9 @@ jobs:
             "libgl1:${DEB_ARCH}" "libgl1-mesa-dri:${DEB_ARCH}" "libglu1-mesa:${DEB_ARCH}" \
             "libsdl2-2.0-0:${DEB_ARCH}" "libsdl2-mixer-2.0-0:${DEB_ARCH}"
       - name: Run All
+        env:
+          ASSETS_OVERRIDE_DIRECTORY: ${{ github.workspace }}/testing/overrides/assets/windows
+          QUAKEC_OVERRIDE_FILE: ${{ github.workspace }}/testing/overrides/quakec/progs.dat
         run: |
           cd ./testing
           ./run_tests.sh --platform windows --test all --content "$(pwd)/validate" --working-dir working/ --binary "$(pwd)/working/windows-artifact/nzportable.exe" --reference-platform linux

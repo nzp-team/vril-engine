@@ -110,6 +110,7 @@ function begin_setup()
     fi
 
     obtain_nzportable;
+    apply_content_overrides;
 
     print_info "Done setting up for PlayStation Portable testing!"
 }
