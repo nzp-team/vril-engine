@@ -91,12 +91,12 @@ void GL_FreeTextures (int texnum)
 	if (texnum < 0) return;
 
 	gltexture_t *glt = &gltextures[texnum];
+	if (glt->used == false) return;
+	if (glt->keep) return;
 	if (glt->gl_id == current_gl_id) {
 		glBindTexture(GL_TEXTURE_2D, 0);
 		current_gl_id = 0;
 	}
-	if (glt->used == false) return;
-	if (glt->keep) return;
 
 	glDeleteTextures(1, &glt->gl_id);
 	glt->gl_id = -1;
