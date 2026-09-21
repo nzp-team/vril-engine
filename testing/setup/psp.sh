@@ -17,7 +17,7 @@ source "nzp_utility.sh"
 EMULATOR_BIN="PPSSPPHeadless"
 
 # How many seconds to wait before time out
-TIMEOUT=240
+TIMEOUT=480
 
 # The PPSSPP branch we checkout and use.
 ppsspp_version="v1.17.1"

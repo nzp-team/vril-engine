@@ -106,6 +106,18 @@ function run_mapboot_test()
             echo "[PASS]: SUCCESSFULLY spawned server using map [${pretty_bsp}]!"
         fi
 
+        if [[ ! -s "${captured_image}" ]]; then
+            echo "[ERROR]: Exited without producing a screenshot for map [${pretty_bsp}]."
+            echo "         This is probably a timeout."
+            any_map_failed="1"
+            failed_maps+=("${pretty_bsp}")
+            failure_details+=("- \`${pretty_bsp}\`: timed out before producing a screenshot")
+            mkdir -p "${WORKING_DIR}/fail/map-boot"
+            cp "${launch_log}" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_launcher.log" || true
+            cp "${console_log}" "${WORKING_DIR}/fail/map-boot/${pretty_bsp}_console.log" || true
+            continue
+        fi
+
         ffmpeg -nostdin -y -i "${content_path}/${pretty_bsp}.bmp" -i "${captured_image}" -filter_complex \
         "[0:v][1:v]psnr=stats_file=psnr_stats.log[psnr_out]; \
         [0:v][1:v]blend=all_mode='difference'[diff_out]" \
