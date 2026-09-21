@@ -596,6 +596,14 @@ HUD_Waypoint(void)
     HUD_DrawWaypointBinding(x, y + 108 * vid.scale, "impulse 24", "Save Waypoints");
 }
 
+static image_t
+HUD_LoadConfigImage(const char *path)
+{
+    char identifier[64];
+    snprintf(identifier, sizeof(identifier), "%s", path);
+    return Image_LoadImageWithIdentifier(identifier, identifier, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, true, false);
+}
+
 /*
  * ===============
  * HUD_Init
@@ -609,31 +617,31 @@ HUD_Init(void)
     has_chaptertitle = false;
 
     for (i = 0 ; i < 5 ; i++) {
-        sb_round[i] = Image_LoadImage(va("gfx/hud/r%i", i + 1), IMAGE_TGA, 0, true, false);
+        sb_round[i] = HUD_LoadConfigImage(va("gfx/hud/r%i", i + 1));
     }
 
     for (i = 0 ; i < 10 ; i++) {
-        sb_round_num[i] = Image_LoadImage(va("gfx/hud/r_num%i", i), IMAGE_TGA, 0, true, false);
+        sb_round_num[i] = HUD_LoadConfigImage(va("gfx/hud/r_num%i", i));
     }
 
-    sb_moneyback = Image_LoadImage("gfx/hud/moneyback", IMAGE_TGA, 0, true, false);
-    sb_moneyback_condensed = Image_LoadImage("gfx/hud/moneyback_condensed", IMAGE_TGA, 0, true, false);
-    instapic     = Image_LoadImage("gfx/hud/in_kill", IMAGE_TGA, 0, true, false);
-    x2pic        = Image_LoadImage("gfx/hud/2x", IMAGE_TGA, 0, true, false);
+    sb_moneyback = HUD_LoadConfigImage("gfx/hud/moneyback");
+    sb_moneyback_condensed = HUD_LoadConfigImage("gfx/hud/moneyback_condensed");
+    instapic = HUD_LoadConfigImage("gfx/hud/in_kill");
+    x2pic = HUD_LoadConfigImage("gfx/hud/2x");
 
-    revivepic        = Image_LoadImage("gfx/hud/revive", IMAGE_TGA, 0, true, false);
-    jugpic           = Image_LoadImage("gfx/hud/jug", IMAGE_TGA, 0, true, false);
-    floppic          = Image_LoadImage("gfx/hud/flopper", IMAGE_TGA, 0, true, false);
-    staminpic        = Image_LoadImage("gfx/hud/stamin", IMAGE_TGA, 0, true, false);
-    doublepic        = Image_LoadImage("gfx/hud/double", IMAGE_TGA, 0, true, false);
-    doublepic2       = Image_LoadImage("gfx/hud/double2", IMAGE_TGA, 0, true, false);
-    speedpic         = Image_LoadImage("gfx/hud/speed", IMAGE_TGA, 0, true, false);
-    deadpic          = Image_LoadImage("gfx/hud/dead", IMAGE_TGA, 0, true, false);
-    mulepic          = Image_LoadImage("gfx/hud/mule", IMAGE_TGA, 0, true, false);
-    fragpic          = Image_LoadImage("gfx/hud/frag", IMAGE_TGA, 0, true, false);
-    bettypic         = Image_LoadImage("gfx/hud/betty", IMAGE_TGA, 0, true, false);
+    revivepic = HUD_LoadConfigImage("gfx/hud/revive");
+    jugpic = HUD_LoadConfigImage("gfx/hud/jug");
+    floppic = HUD_LoadConfigImage("gfx/hud/flopper");
+    staminpic = HUD_LoadConfigImage("gfx/hud/stamin");
+    doublepic = HUD_LoadConfigImage("gfx/hud/double");
+    doublepic2 = HUD_LoadConfigImage("gfx/hud/double2");
+    speedpic = HUD_LoadConfigImage("gfx/hud/speed");
+    deadpic = HUD_LoadConfigImage("gfx/hud/dead");
+    mulepic = HUD_LoadConfigImage("gfx/hud/mule");
+    fragpic = HUD_LoadConfigImage("gfx/hud/frag");
+    bettypic = HUD_LoadConfigImage("gfx/hud/betty");
     hud_sniper_scope = Image_LoadImage("gfx/hud/scope_nb", IMAGE_TGA, 0, true, false);
-    hud_hitmarker    = Image_LoadImage("gfx/hud/hit_marker", IMAGE_TGA, 0, true, false);
+    hud_hitmarker = Image_LoadImage("gfx/hud/hit_marker", IMAGE_TGA, 0, true, false);
 
 #ifdef PLATFORM_USES_GENERIC_GLYPHS
     Cvar_RegisterVariable(&cl_controllerglyphs);
