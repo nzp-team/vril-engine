@@ -122,6 +122,8 @@ COMMON_OBJS =	system.o \
 				platform/ctr/net_main.c \
 				net_vcr.c \
 				pr_cmds.c \
+				pr_json.c \
+				cJSON.c \
 				pr_edict.c \
 				pr_exec.c \
 				sv_main.c \

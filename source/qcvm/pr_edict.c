@@ -1141,6 +1141,7 @@ void PR_LoadProgs (void)
 {
 	PR_ClearRegisteredUseprints ();
 	PR_ClearHUDConfig ();
+	PR_JSONClear ();
 	dfunction_t	*f;
 	int		i;
 // 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes/Firestorm  start
@@ -1374,6 +1375,7 @@ void PR_ResetProgs (void)
 {
 	PR_ClearRegisteredUseprints ();
 	PR_ClearHUDConfig ();
+	PR_JSONClear ();
 	if (!pr_initial_globals || pr_initial_globals_count != progs->numglobals)
 		Host_Error ("PR_ResetProgs: no initial globals snapshot");
 

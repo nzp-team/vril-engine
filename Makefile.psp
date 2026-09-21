@@ -89,6 +89,8 @@ COMMON_OBJS = \
 	source/platform/psp/net_main.o \
 	source/net_vcr.o \
 	source/qcvm/pr_cmds.o \
+	source/qcvm/pr_json.o \
+	source/qcvm/cJSON.o \
 	source/qcvm/pr_edict.o \
 	source/qcvm/pr_exec.o \
 	source/snd_dma.o \
