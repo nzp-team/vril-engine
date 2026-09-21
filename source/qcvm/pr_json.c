@@ -309,7 +309,7 @@ void PF_json_parse_file(void)
 void PF_json_free(void)
 {
 	cJSON *node;
-	int document;
+	int document = 0;
 
 	node = PR_JSONNode((int)G_FLOAT(OFS_PARM0), &document);
 	if (!node || node != pr_json_documents[document].root) return;
@@ -360,7 +360,7 @@ void PF_json_find_object_child(void)
 {
 	cJSON *node;
 	cJSON *child;
-	int document;
+	int document = 0;
 
 	node = PR_JSONNode((int)G_FLOAT(OFS_PARM0), &document);
 	child = cJSON_IsObject(node) ? cJSON_GetObjectItemCaseSensitive(node, G_STRING(OFS_PARM1)) : NULL;
@@ -377,7 +377,7 @@ void PF_json_get_child_at_index(void)
 {
 	cJSON *node;
 	cJSON *child;
-	int document;
+	int document = 0;
 
 	node = PR_JSONNode((int)G_FLOAT(OFS_PARM0), &document);
 	child = cJSON_IsArray(node) || cJSON_IsObject(node) ? cJSON_GetArrayItem(node, (int)G_FLOAT(OFS_PARM1)) : NULL;
