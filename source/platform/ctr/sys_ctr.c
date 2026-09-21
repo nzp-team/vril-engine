@@ -462,6 +462,10 @@ int main (int argc, char **argv)
 	if (host_initialized)
 		Host_Shutdown();
 
+	// Stop the GSP event thread before libctru frees the heap its stack lives in,
+	// otherwise exiting via HOME menu -> Close data-aborts (Sys_Quit already does this).
+	gfxExit();
+
 	free(parms.membase);
 	Startup_FreeArguments(&startup);
 
