@@ -203,13 +203,14 @@ When the client is taking a long time to load stuff, send keepalive messages
 so the server doesn't disconnect.
 ==================
 */
+static byte	net_olddata[NET_MAXMESSAGE];
 void CL_KeepaliveMessage (void)
 {
 	double	time;
 	static double lastmsg;//BLUBSFIX, this was a float
 	int		ret;
 	sizebuf_t	old;
-	byte		olddata[8192];
+	byte olddata[NET_MAXMESSAGE];
 
 	if (sv.active)
 	{
@@ -719,9 +720,16 @@ CL_ParseClientdata
 Server information pertaining to this client only
 ==================
 */
-void CL_ParseClientdata (int bits)
+void CL_ParseClientdata (void)
 {
 	int		i, s;
+	int		bits;
+
+	//johnfitz -- read bits here isntead of in CL_ParseServerMessage()
+	bits = (unsigned short)MSG_ReadShort ();
+
+	if (bits & SU_EXTENDBYTE)
+		bits |= (MSG_ReadByte() << 16);
 
 	if (bits & SU_VIEWHEIGHT)
 		cl.viewheight = MSG_ReadChar ();
@@ -733,6 +741,9 @@ void CL_ParseClientdata (int bits)
 	else
 		cl.idealpitch = 0;
 
+	// Flash_Offset
+	for(i = 0; i < 3; i++)
+		cl.flash_offset[i] = MSG_ReadFloat();
 
 	if (bits & SU_PERKS)
 		i = MSG_ReadLong ();
@@ -778,6 +789,28 @@ void CL_ParseClientdata (int bits)
 			cl.mvelocity[0][i] = 0;
 	}
 
+	if (bits & SU_MAXSPEED)
+		cl.maxspeed = MSG_ReadFloat();
+	else
+		cl.maxspeed = 0;
+
+	if (bits & SU_FACINGENEMY)
+		cl.facingenemy = MSG_ReadByte();
+	else
+		cl.facingenemy = 0;
+
+	if (bits & SU_TOUCHSTRING) {
+		size_t len = MSG_ReadByte();
+
+		for(i = 0; i < 32; i++) {
+			cl.touchstring[i] = 0;
+		}
+
+		for(i = 0; i < len; i++) {
+			cl.touchstring[i] = MSG_ReadChar();
+		}
+	}
+
 	if (bits & SU_WEAPONFRAME)
 		cl.stats[STAT_WEAPONFRAME] = MSG_ReadByte ();
 	else
@@ -795,7 +828,7 @@ void CL_ParseClientdata (int bits)
 
 
 	if (bits & SU_GRENADES)
-		i = MSG_ReadLong ();
+		i = MSG_ReadByte ();
 	else
 		i = 0;
 
@@ -805,7 +838,7 @@ void CL_ParseClientdata (int bits)
 		cl.stats[STAT_GRENADES] = i;
 	}
 
-	i = MSG_ReadShort ();
+	i = MSG_ReadByte ();
 	if (cl.stats[STAT_PRIGRENADES] != i)
 	{
 		HUD_Change_time = Sys_FloatTime() + 7;
@@ -813,25 +846,25 @@ void CL_ParseClientdata (int bits)
 	}
 
 
-	i = MSG_ReadShort ();
+	i = MSG_ReadByte ();
 	if (cl.stats[STAT_SECGRENADES] != i)
 	{
 		HUD_Change_time = Sys_FloatTime() + 7;
 		cl.stats[STAT_SECGRENADES] = i;
 	}
 
-	i = MSG_ReadShort ();
+	i = MSG_ReadByte ();
 	if (cl.stats[STAT_HEALTH] != i)
 		cl.stats[STAT_HEALTH] = i;
 
-	i = MSG_ReadShort ();
+	i = MSG_ReadByte ();
 	if (cl.stats[STAT_AMMO] != i)
 	{
 		HUD_Change_time = Sys_FloatTime() + 7;
 		cl.stats[STAT_AMMO] = i;
 	}
 
-	i = MSG_ReadShort ();
+	i = MSG_ReadByte ();
 	if (cl.stats[STAT_CURRENTMAG] != i)
 	{
 		HUD_Change_time = Sys_FloatTime() + 7;
@@ -847,6 +880,27 @@ void CL_ParseClientdata (int bits)
 	{
 		HUD_Change_time = Sys_FloatTime() + 7;
 		cl.stats[STAT_ACTIVEWEAPON] = i;
+	}
+
+	// Other weapon stats
+	if (bits & SU_WEAPON) {
+		// Weapon Name
+		size_t len = MSG_ReadByte();
+
+		for(i = 0; i < 32; i++) {
+			cl.weaponname[i] = 0;
+		}
+
+		for(i = 0; i < len; i++) {
+			cl.weaponname[i] = MSG_ReadChar();
+		}
+
+		// Weapon ADS Offset
+		for(i = 0; i < 3; i++)
+			cl.ads_offset[i] = MSG_ReadFloat();
+
+		// Muzzle flash size
+		cl.flash_size = MSG_ReadByte();
 	}
 
 	i = MSG_ReadByte ();
@@ -881,7 +935,7 @@ void CL_ParseClientdata (int bits)
 	if (cl.stats[STAT_WEAPON2FRAME] != i)
 		cl.stats[STAT_WEAPON2FRAME] = i;
 
-	i = MSG_ReadShort ();
+	i = MSG_ReadByte ();
 	if (cl.stats[STAT_CURRENTMAG2] != i)
 		cl.stats[STAT_CURRENTMAG2] = i;
 
@@ -962,7 +1016,7 @@ void CL_ParseWeaponFire (void)
 {
 	vec3_t		kick;
 	return_time = (double)6/MSG_ReadLong ();
-	crosshair_spread_time = return_time + sv.time;
+	crosshair_spread_time = return_time + cl.time;
 
 	kick[0] = MSG_ReadCoord()/5;
 	kick[1] = MSG_ReadCoord()/5;
@@ -1071,8 +1125,8 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_clientdata:
-			i = MSG_ReadShort ();
-			CL_ParseClientdata (i);
+			//johnfitz -- removed bits parameter, we will read this inside CL_ParseClientdata()
+			CL_ParseClientdata (); 
 			break;
 
 		case svc_version:
@@ -1150,21 +1204,21 @@ void CL_ParseServerMessage (void)
 
 		case svc_screenflash:
 			screenflash_color = MSG_ReadByte();
-			screenflash_duration = sv.time + MSG_ReadByte();
+			screenflash_duration = cl.time + MSG_ReadByte();
 			screenflash_type = MSG_ReadByte();
 			screenflash_worktime = 0;
-			screenflash_starttime = sv.time;
+			screenflash_starttime = cl.time;
 
 			if (screenflash_color == SCREENFLASH_COLOR_WHITE && scr_whiteflash.value == 1)
 				screenflash_color = SCREENFLASH_COLOR_BLACK;
 			break;
 
 		case svc_bettyprompt:
-			bettyprompt_time = sv.time + 4;
+			bettyprompt_time = cl.time + 4;
 			break;
 
 		case svc_playername:
-			nameprint_time = sv.time + 11;
+			nameprint_time = cl.time + 11;
 			strcpy(player_name, MSG_ReadString());
 			break;
 

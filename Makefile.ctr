@@ -115,6 +115,7 @@ COMMON_OBJS =	system.o \
 				menu/menu_loadscreen.c \
 				menu/menu_bios.c \
 				menu/menu_credits.c \
+				menu/menu_network.c \
 				platform/ctr/net_dgrm.c \
 				platform/ctr/net_udpctr.c \
 				net_loop.c \

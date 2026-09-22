@@ -319,7 +319,7 @@ void CL_AdjustAngles (void)
 	// cut look speed in half when facing enemy, unless
 	// mag is empty
 	if (IN_GetActiveDevice() == IN_DEVICE_GAMEPAD && in_aimassist.value &&
-		(sv_player->v.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0) {
+		(cl.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0) {
 		speed *= 0.5f;
 	}
 	// additionally, slice look speed when ADS/scopes
@@ -387,7 +387,7 @@ void CL_BaseMove (usercmd_t *cmd)
 	Q_memset (cmd, 0, sizeof(*cmd));
 
 	// cypress - we handle movespeed in QC now.
-	cl_backspeed = cl_forwardspeed = cl_sidespeed = sv_player->v.maxspeed;
+	cl_backspeed = cl_forwardspeed = cl_sidespeed = cl.maxspeed;
 
 	// Throttle side and back speeds
 	cl_sidespeed *= 0.8f;
@@ -486,6 +486,8 @@ extern qboolean aimsnap;
 #endif
 void CL_Aim_Snap(void)
 {
+// TODO - Aim Snapping compat with multiplayer
+#ifdef __PSP__
 	edict_t *z,*bz,*player;
 	int znum;
 	trace_t trace;
@@ -503,7 +505,8 @@ void CL_Aim_Snap(void)
 
 	//Equation = origin + bbox vertical offset - 20
 
-	player = EDICT_NUM(cl.viewentity);
+	Con_Printf("looking for player edict num\n");
+	player = EDICT_NUM((cl.viewentity)-1);
 	VectorCopy(player->v.origin,pOrg);
 	pOrg[2] += vofs;
 
@@ -512,6 +515,7 @@ void CL_Aim_Snap(void)
 	else
     	znum = EN_Find(0,"ai_zombie");
 
+	Con_Printf("looking for zombie edict num\n");
 	z = EDICT_NUM(znum);
 	VectorCopy(z->v.origin,zOrg);
 	zOrg[2] += z->v.maxs[2];//Setting to top of zomb ent
@@ -562,6 +566,7 @@ void CL_Aim_Snap(void)
 		aimsnap = false;
 #endif
 	}
+#endif
 }
 
 

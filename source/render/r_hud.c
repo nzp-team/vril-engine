@@ -496,7 +496,7 @@ void
 HUD_UsePrint(int index, int cost)
 {
     const char *button;
-    const char *touch = sv_player ? PR_GetString(sv_player->v.useprint_touch) : "";
+    const char *touch = sv_player ? cl.touchstring : "";
 
     if (index < 0 || index >= HUD_USEPRINT_COUNT) {
         Con_Printf("Useprint index %i out of range\n", index);
@@ -1206,8 +1206,8 @@ void
 HUD_PowerupToast(int powerup)
 {
     hud_toast_powerup     = powerup;
-    hud_maxammo_starttime = sv.time;
-    hud_maxammo_endtime   = sv.time + 2;
+    hud_maxammo_starttime = cl.time;
+    hud_maxammo_endtime   = cl.time + 2;
 }
 
 static const char *
@@ -1250,11 +1250,11 @@ HUD_MaxAmmo(void)
     double start_time, end_time;
 
     // For the first 0.5s, stay still while we fade in
-    if (hud_maxammo_endtime > sv.time + 1.5) {
+    if (hud_maxammo_endtime > cl.time + 1.5) {
         start_time = hud_maxammo_starttime;
         end_time   = hud_maxammo_starttime + 0.5;
 
-        text_alpha = (sv.time - start_time) / (end_time - start_time);
+        text_alpha = (cl.time - start_time) / (end_time - start_time);
         pos_y      = start_y;
     }
     // For the remaining 1.5s, fade out while we fly upwards.
@@ -1262,7 +1262,7 @@ HUD_MaxAmmo(void)
         start_time = hud_maxammo_starttime + 0.5;
         end_time   = hud_maxammo_endtime;
 
-        float percent_time = (sv.time - start_time) / (end_time - start_time);
+        float percent_time = (cl.time - start_time) / (end_time - start_time);
 
         pos_y      = start_y + diff_y * percent_time;
         text_alpha = 1 - percent_time;
@@ -1644,7 +1644,7 @@ HUD_ProgressBar(void)
     float progressbar;
 
     if (cl.progress_bar) {
-        progressbar = 100 - ((cl.progress_bar - sv.time) * 10);
+        progressbar = 100 - ((cl.progress_bar - cl.time) * 10);
         if (progressbar >= 100)
             progressbar = 100;
         Draw_FillByColor((vid.width) / 2 - 51, vid.height * 0.75 - 1, 102, 5, 0, 0, 0, 100);
@@ -1833,7 +1833,7 @@ HUD_Weapon(void)
     int x;
     int y = vid.height - (40 * vid.scale);
 
-    strcpy(str, PR_GetString(sv_player->v.Weapon_Name));
+    strcpy(str, cl.weaponname);
     if (strcmp(str, last_weapon_name)) {
         Q_strncpyz(last_weapon_name, str, sizeof(last_weapon_name));
         weapon_name_time = Sys_FloatTime() + 3;
@@ -1884,8 +1884,8 @@ HUD_PlayerName(void)
 {
     int alpha = 255;
 
-    if (nameprint_time - sv.time < 1)
-        alpha = (int) ((nameprint_time - sv.time) * 255);
+    if (nameprint_time - cl.time < 1)
+        alpha = (int) ((nameprint_time - cl.time) * 255);
 
     Draw_ColoredString(70 * vid.scale, vid.height - (70 * vid.scale), player_name, 255, 255, 255, alpha, vid.scale);
 }
@@ -1976,11 +1976,11 @@ HUD_Hitmark(int type)
 {
     if (type == HITMARK_DEATH) {
         hud_hitmarker_type        = HITMARK_DEATH;
-        hud_hitmarker_time        = sv.time + 0.2;
-        hud_hitmarker_ignore_time = sv.time + 0.2;
-    } else if (hud_hitmarker_ignore_time <= sv.time) {
+        hud_hitmarker_time        = cl.time + 0.2;
+        hud_hitmarker_ignore_time = cl.time + 0.2;
+    } else if (hud_hitmarker_ignore_time <= cl.time) {
         hud_hitmarker_type = HITMARK_NORMAL;
-        hud_hitmarker_time = sv.time + 0.3;
+        hud_hitmarker_time = cl.time + 0.3;
     }
 }
 
@@ -1992,10 +1992,10 @@ HUD_DrawHitmark(void)
     int color;
     int size;
 
-    if (!cl_hitmarkers.value || hud_hitmarker_time <= sv.time)
+    if (!cl_hitmarkers.value || hud_hitmarker_time <= cl.time)
         return;
 
-    remaining = (float) (hud_hitmarker_time - sv.time);
+    remaining = (float) (hud_hitmarker_time - cl.time);
     if (hud_hitmarker_type == HITMARK_DEATH) {
         alpha = remaining * 5.0f;
         color = 191;
@@ -2189,7 +2189,7 @@ HUD_Crosshair(void)
         Draw_FillByColor(cx, 0, 1, vid.height, 255, 0, 0, 128);
         Draw_FillByColor(0, cy, vid.width, 1, 0, 255, 0, 128);
     }
-    if (crosshair_spread_time > sv.time && crosshair_spread_time) {
+    if (crosshair_spread_time > cl.time && crosshair_spread_time) {
         cur_spread += 10;
     } else {
         cur_spread -= 4;
@@ -2265,7 +2265,7 @@ HUD_GunGame(void)
         sprintf(weapon_id, "You've passed all weapons!");
         sprintf(point_info, "The Winner can choose to End the Game");
     } else {
-        sprintf(weapon_id, "%s [%d/32]", PR_GetString(sv_player->v.Weapon_Name), cl.stats[STAT_GUNGAME_IDX] + 1);
+        sprintf(weapon_id, "%s [%d/32]", cl.weaponname, cl.stats[STAT_GUNGAME_IDX] + 1);
         sprintf(point_info, "[%d] Score until next Weapon", cl.stats[STAT_GUNGAME_SCOREGOAL] - client_points);
     }
 
@@ -2351,7 +2351,7 @@ HUD_Draw(void)
 
     if (key_dest == key_menu_pause) {
         // Make sure we still draw the screen flash.
-        if (screenflash_duration > sv.time)
+        if (screenflash_duration > cl.time)
             HUD_Screenflash();
         return;
     }
@@ -2367,13 +2367,13 @@ HUD_Draw(void)
     }
 
     if (cl_cinematic.value) {
-        if (screenflash_duration > sv.time)
+        if (screenflash_duration > cl.time)
             HUD_Screenflash();
         return;
     }
 
     // We shouldn't draw anything during the game intro fade.
-    if (screenflash_color == SCREENFLASH_COLOR_BLACK && screenflash_duration > sv.time) {
+    if (screenflash_color == SCREENFLASH_COLOR_BLACK && screenflash_duration > cl.time) {
         HUD_Screenflash();
         return;
     }
@@ -2382,7 +2382,7 @@ HUD_Draw(void)
         HUD_EndScreen();
 
         // Make sure we still draw the screen flash.
-        if (screenflash_duration > sv.time)
+        if (screenflash_duration > cl.time)
             HUD_Screenflash();
 
         return;
@@ -2395,22 +2395,22 @@ HUD_Draw(void)
         HUD_Points();
         HUD_Point_Change();
 
-        if (screenflash_duration > sv.time)
+        if (screenflash_duration > cl.time)
             HUD_Screenflash();
 
         return;
     }
 
-    if (bettyprompt_time > sv.time)
+    if (bettyprompt_time > cl.time)
         HUD_BettyPrompt();
 
-    if (nameprint_time > sv.time)
+    if (nameprint_time > cl.time)
         HUD_PlayerName();
 
     HUD_Blood();
     HUD_Crosshair();
     if (cl.stats[STAT_ZOOM] == 2) {
-        if (screenflash_duration > sv.time)
+        if (screenflash_duration > cl.time)
             HUD_Screenflash();
         return;
     }
@@ -2431,7 +2431,7 @@ HUD_Draw(void)
     }
     HUD_Points();
     HUD_Point_Change();
-    if (hud_maxammo_endtime > sv.time)
+    if (hud_maxammo_endtime > cl.time)
         HUD_MaxAmmo();
 
     switch (current_gamemode) {
@@ -2442,6 +2442,6 @@ HUD_Draw(void)
     HUD_PlayerDebugInfo();
 
     // This should always come last!
-    if (screenflash_duration > sv.time)
+    if (screenflash_duration > cl.time)
         HUD_Screenflash();
 } /* HUD_Draw */

@@ -114,11 +114,12 @@ COMMON_OBJS =	system.o \
 				menu/menu_loadscreen.c \
 				menu/menu_bios.c \
 				menu/menu_credits.c \
-				platform/nx/net_dgrm.c \
+				menu/menu_network.c \
+				net_dgrm.c \
 				platform/nx/net_udpnx.c \
 				net_loop.c \
 				platform/nx/net_bsd.c \
-				platform/nx/net_main.c \
+				net_main.c \
 				net_vcr.c \
 				pr_cmds.c \
 				pr_edict.c \

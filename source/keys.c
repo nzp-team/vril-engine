@@ -550,7 +550,7 @@ void Key_Unbind_f (void)
 	
 	b = Key_StringToKeynum (Cmd_Argv(1));
 	if (b==-1) {
-		Con_Printf ("\"%s\" isn't a valid key\n", Cmd_Argv(1));
+		//Con_Printf ("\"%s\" isn't a valid key\n", Cmd_Argv(1));
 		return;
 	}
 
@@ -585,7 +585,7 @@ void Key_Bind_f (void)
 	}
 	b = Key_StringToKeynum (Cmd_Argv(1));
 	if (b==-1) {
-		Con_Printf ("\"%s\" isn't a valid key\n", Cmd_Argv(1));
+		//Con_Printf ("\"%s\" isn't a valid key\n", Cmd_Argv(1));
 		return;
 	}
 
@@ -626,7 +626,7 @@ void Key_Binddt_f (void)
 	}
 	b = Key_StringToKeynum (Cmd_Argv(1));
 	if (b==-1) {
-		Con_Printf ("\"%s\" isn't a valid key\n", Cmd_Argv(1));
+		//Con_Printf ("\"%s\" isn't a valid key\n", Cmd_Argv(1));
 		return;
 	}
 
@@ -667,7 +667,7 @@ static void Key_BindHold_f (void)
 	}
 	b = Key_StringToKeynum (Cmd_Argv(1));
 	if (b == -1) {
-		Con_Printf ("\"%s\" isn't a valid key\n", Cmd_Argv(1));
+		//Con_Printf ("\"%s\" isn't a valid key\n", Cmd_Argv(1));
 		return;
 	}
 	if (c == 2) {

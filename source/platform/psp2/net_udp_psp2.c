@@ -189,7 +189,7 @@ static void *net_memory = NULL;
 
 int UDP_Init (void)
 {
-	Log("UDP_Init called...");
+	//Log("UDP_Init called...");
 	struct hostent *local;
 	char	buff[15];
 	struct qsockaddr addr;
@@ -234,7 +234,7 @@ int UDP_Init (void)
 		sceAppUtilInit(&init_param, &boot_param);
 		char nick[SCE_SYSTEM_PARAM_USERNAME_MAXSIZE];
 		sceAppUtilSystemParamGetString(SCE_SYSTEM_PARAM_ID_USERNAME, nick, SCE_SYSTEM_PARAM_USERNAME_MAXSIZE);
-		Cvar_Set ("hostname", nick);
+		Cvar_Set ("name", nick);
 	}
 
 	if ((net_controlsocket = UDP_OpenSocket (0)) == -1)
@@ -261,7 +261,7 @@ int UDP_Init (void)
 
 void UDP_Shutdown (void)
 {
-	Log("UDP_Shutdown");
+	//Log("UDP_Shutdown");
 	UDP_Listen (false);
 	UDP_CloseSocket (net_controlsocket);
 	//sceNetCtlTerm();
@@ -273,7 +273,7 @@ void UDP_Shutdown (void)
 
 void UDP_Listen (qboolean state)
 {
-	Log("UDP_Listen");
+	//Log("UDP_Listen");
 	// enable listening
 	if (state)
 	{
@@ -295,7 +295,7 @@ void UDP_Listen (qboolean state)
 
 int UDP_OpenSocket (int port)
 {
-	Log("UDP_OpenSocket(%ld)",port);
+	//Log("UDP_OpenSocket(%ld)",port);
 	int newsocket;
 	struct sockaddr_in address;
 	uint32_t _true = true;
@@ -324,7 +324,7 @@ ErrorReturn:
 
 int UDP_CloseSocket (int socket)
 {
-	Log("UDP_CloseSocket");
+	//Log("UDP_CloseSocket");
 	if (socket == net_broadcastsocket)
 		net_broadcastsocket = 0;
 	return close(socket);
@@ -382,7 +382,7 @@ static int PartialIPAddress (char *in, struct qsockaddr *hostaddr)
 	else
 		port = net_hostport;
 	
-	Log("PartialIPAddress(%s): port: %ld",in,port);
+	//Log("PartialIPAddress(%s): port: %ld",in,port);
 	hostaddr->sa_family = SCE_NET_AF_INET;
 	((struct sockaddr_in *)hostaddr)->sin_port = sceNetHtons((short)port);
 	((struct sockaddr_in *)hostaddr)->sin_addr.s_addr = (myAddr & sceNetHtonl(mask)) | sceNetHtonl(addr);
@@ -393,7 +393,7 @@ static int PartialIPAddress (char *in, struct qsockaddr *hostaddr)
 
 int UDP_Connect (int socket, struct qsockaddr *addr)
 {
-	Log("UDP_Connect");
+	//Log("UDP_Connect");
 	return 0;
 }
 
@@ -401,7 +401,7 @@ int UDP_Connect (int socket, struct qsockaddr *addr)
 
 int UDP_CheckNewConnections (void)
 {
-	Log("UDP_CheckNewConnections");
+	//Log("UDP_CheckNewConnections");
 	char buf[4096];
 	
 	if (net_acceptsocket == -1)
@@ -421,7 +421,7 @@ int UDP_Read (int socket, byte *buf, int len, struct qsockaddr *addr)
 	int ret;
 	
 	ret = recvfrom(socket, buf, len, 0, (struct sockaddr *)addr, &addrlen);
-	Log("UDP_Read returned %ld",ret);
+	//Log("UDP_Read returned %ld",ret);
 	if (ret == SCE_NET_ERROR_EAGAIN || ret == SCE_NET_ERROR_ECONNREFUSED)
 		return 0;
 	else if (ret < 0)
@@ -434,7 +434,7 @@ int UDP_Read (int socket, byte *buf, int len, struct qsockaddr *addr)
 int UDP_MakeSocketBroadcastCapable (int socket)
 {
 	int				i = 1;
-	Log("UDP_MakeSocketBroadcastCapable");
+	//Log("UDP_MakeSocketBroadcastCapable");
 	// make this socket broadcast capable
 	if (setsockopt(socket, SOL_SOCKET, SO_BROADCAST, (char *)&i, sizeof(i)) < 0)
 		return -1;
@@ -447,7 +447,7 @@ int UDP_MakeSocketBroadcastCapable (int socket)
 
 int UDP_Broadcast (int socket, byte *buf, int len)
 {
-	Log("UDP_Broadcast");
+	//Log("UDP_Broadcast");
 	int ret;
 
 	if (socket != net_broadcastsocket)
@@ -472,7 +472,7 @@ int UDP_Write (int socket, byte *buf, int len, struct qsockaddr *addr)
 	int ret;
 
 	ret = sendto(socket, buf, len, 0, (struct sockaddr *)addr, sizeof(struct qsockaddr));
-	Log("UDP_Write returned %ld",ret);
+	//Log("UDP_Write returned %ld",ret);
 	if (ret == SCE_NET_ERROR_EAGAIN)
 		return 0;
 	else if (ret < 0)
@@ -489,7 +489,7 @@ char *UDP_AddrToString (struct qsockaddr *addr)
 
 	haddr = sceNetNtohl(((struct sockaddr_in *)addr)->sin_addr.s_addr);
 	sprintf(buffer, "%d.%d.%d.%d:%d", (haddr >> 24) & 0xff, (haddr >> 16) & 0xff, (haddr >> 8) & 0xff, haddr & 0xff, sceNetNtohs(((struct sockaddr_in *)addr)->sin_port));
-	Log("UDP_AddrToString returned %s",buffer);
+	//Log("UDP_AddrToString returned %s",buffer);
 	return buffer;
 }
 
@@ -497,7 +497,7 @@ char *UDP_AddrToString (struct qsockaddr *addr)
 
 int UDP_StringToAddr (char *string, struct qsockaddr *addr)
 {
-	Log("UDP_StringToAddr(%s)",string);
+	//Log("UDP_StringToAddr(%s)",string);
 	int ha1, ha2, ha3, ha4, hp;
 	int ipaddr;
 
@@ -514,13 +514,13 @@ int UDP_StringToAddr (char *string, struct qsockaddr *addr)
 
 int UDP_GetSocketAddr (int socket, struct qsockaddr *addr)
 {
-	Log("UDP_GetSocketAddr");
+	//Log("UDP_GetSocketAddr");
 	int addrlen = sizeof(struct qsockaddr);
 	unsigned int a, tmp;
 
 	memset(addr, 0, sizeof(struct qsockaddr));
 	int ret = getsockname(socket, (struct sockaddr *)addr, &addrlen);
-	Log("getsockname returned %ld", ret);
+	//Log("getsockname returned %ld", ret);
 	a = ((struct sockaddr_in *)addr)->sin_addr.s_addr;
 	sceNetInetPton(SCE_NET_AF_INET, "127.0.0.1", &tmp);
 	if (a == 0 || a == tmp)
@@ -541,7 +541,7 @@ int UDP_GetNameFromAddr (struct qsockaddr *addr, char *name)
 
 int UDP_GetAddrFromName(char *name, struct qsockaddr *addr)
 {
-	Log("UDP_GetAddrFromName(%s)",name);
+	//Log("UDP_GetAddrFromName(%s)",name);
 	struct hostent *hostentry;
 
 	if (name[0] >= '0' && name[0] <= '9')
@@ -563,21 +563,21 @@ int UDP_GetAddrFromName(char *name, struct qsockaddr *addr)
 int UDP_AddrCompare (struct qsockaddr *addr1, struct qsockaddr *addr2)
 {
 	if (addr1->sa_family != addr2->sa_family){
-		Log("UDP_AddrCompare returned -1 (1st case)");
+		//Log("UDP_AddrCompare returned -1 (1st case)");
 		return -1;
 	}
 	
 	if (((struct sockaddr_in *)addr1)->sin_addr.s_addr != ((struct sockaddr_in *)addr2)->sin_addr.s_addr){
-		Log("UDP_AddrCompare returned -1 (2nd case)");
+		//Log("UDP_AddrCompare returned -1 (2nd case)");
 		return -1;
 	}
 	
 	if (((struct sockaddr_in *)addr1)->sin_port != ((struct sockaddr_in *)addr2)->sin_port){
-		Log("UDP_AddrCompare returned 1");
+		//Log("UDP_AddrCompare returned 1");
 		return 1;
 	}
 	
-	Log("UDP_AddrCompare returned 0");
+	//Log("UDP_AddrCompare returned 0");
 	return 0;
 }
 
@@ -585,14 +585,14 @@ int UDP_AddrCompare (struct qsockaddr *addr1, struct qsockaddr *addr2)
 
 int UDP_GetSocketPort (struct qsockaddr *addr)
 {
-	Log("UDP_GetSocketPort");
+	//Log("UDP_GetSocketPort");
 	return sceNetNtohs(((struct sockaddr_in *)addr)->sin_port);
 }
 
 
 int UDP_SetSocketPort (struct qsockaddr *addr, int port)
 {
-	Log("UDP_SetSocketPort");
+	//Log("UDP_SetSocketPort");
 	((struct sockaddr_in *)addr)->sin_port = sceNetHtons(port);
 	return 0;
 }

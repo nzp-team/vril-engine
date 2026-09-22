@@ -1457,8 +1457,10 @@ void PR_Init (void)
 
 inline edict_t *EDICT_NUM(int n)
 {
-	if (n < 0 || n >= sv.max_edicts)
-		Sys_Error ("bad number %i", n);
+	if (n < 0 || n >= sv.max_edicts) {
+		Sys_Error ("bad number %i sv.max_edicts %i\n", n, sv.max_edicts);
+	}
+		
 	return (edict_t *)((byte *)sv.edicts+ (n)*pr_edict_size);
 }
 

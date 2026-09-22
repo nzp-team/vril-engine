@@ -746,9 +746,9 @@ void CL_RelinkEntities (void)
 				smokeorg[2] += cl.viewheight; // account for beta maps
 				VectorCopy(smokeorg,start);
 
-				right_offset	 = sv_player->v.Flash_Offset[0];
-				up_offset		 = sv_player->v.Flash_Offset[1];
-				forward_offset 	 = sv_player->v.Flash_Offset[2];
+				right_offset	 = cl.flash_offset[0];
+				up_offset		 = cl.flash_offset[1];
+				forward_offset 	 = cl.flash_offset[2];
 				 
 				right_offset	= right_offset/1000;
 				up_offset		= up_offset/1000;
@@ -1045,7 +1045,7 @@ void CL_SendCmd (void)
 		if (!in_disable_analog.value)
 			IN_Move (&cmd);
 
-		move_limit = sv_player->v.maxspeed;
+		move_limit = cl.maxspeed;
 
 		if (waypoint_mode.value)
 			move_limit *= 1.5f;

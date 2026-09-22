@@ -500,8 +500,12 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg, qboolean nomap)
 				if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i]&7) ))
 					break;
 			}
+
+			// always update PVS regardless of visible ents in frustrum
+
 			if (i == ent->num_leafs)
 				continue;		// not visible
+				
             // joe, from ProQuake: don't send updates if the client doesn't have the map
 			if (nomap)
 				continue;
@@ -723,6 +727,12 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	if (ent->v.perks)
 		bits |= SU_PERKS;
 
+	if (ent->v.maxspeed)
+		bits |= SU_MAXSPEED;
+
+	if (ent->v.facingenemy)
+		bits |= SU_FACINGENEMY;
+
 	if ( (int)ent->v.flags & FL_ONGROUND)
 		bits |= SU_ONGROUND;
 
@@ -743,8 +753,10 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	if (ent->v.weaponskin)
 		bits |= SU_WEAPONSKIN;
 
-	// if (ent->v.weapon)
-	// 	bits |= SU_WEAPON;
+	if ((int)ent->v.weapon != ent->last_weapon) {
+		bits |= SU_WEAPON;
+		ent->last_weapon = (int)ent->v.weapon; // cypress -- don't network a bunch of weapon shit. also, why is this a float?
+	}
 
 	//if (ent->v.perks)
 	//	bits |= SU_PERKS;
@@ -752,23 +764,26 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	if (ent->v.primary_grenades)
 		bits |= SU_PRIGRENADES;
 
-	//Think this is out of range of a short
-	//if (ent->v.secondary_grenades)
-	//	bits |= SU_SECGRENADES;
-
 	if (ent->v.grenades)
 		bits |= SU_GRENADES;
+
+	if (bits >= 65536) bits |= SU_EXTENDBYTE;
 
 // send the data
 
 	MSG_WriteByte (msg, svc_clientdata);
 	MSG_WriteShort (msg, bits);
 
+	if (bits & SU_EXTENDBYTE) MSG_WriteByte(msg, bits>>16);
+
 	if (bits & SU_VIEWHEIGHT)
 		MSG_WriteChar (msg, ent->v.view_ofs[2]);
 
 	if (bits & SU_IDEALPITCH)
 		MSG_WriteChar (msg, ent->v.idealpitch);
+
+	for(i = 0; i < 3; i++)
+		MSG_WriteFloat(msg, ent->v.Flash_Offset[i]);
 
 	if (bits & SU_PERKS)
 		MSG_WriteLong (msg, ent->v.perks);
@@ -781,6 +796,25 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 			MSG_WriteChar (msg, ent->v.velocity[i]/16);
 	}
 
+	if (bits & SU_MAXSPEED)
+		MSG_WriteFloat (msg, ent->v.maxspeed);
+
+	if (bits & SU_FACINGENEMY) {
+		MSG_WriteByte (msg, ent->v.facingenemy);
+	}
+		
+	// FIXME: I don't really like forcing a pass of 32 bytes per frame whenever
+	// we touch a weapon or something. Kinda lame.
+	if (bits & SU_TOUCHSTRING) {
+		size_t len = 32;
+		if (strlen(cl.touchstring) < 32)
+			len = strlen(cl.touchstring);
+
+		MSG_WriteByte(msg, len);
+		for(i = 0; i < len; i++) {
+			MSG_WriteChar(msg, (cl.touchstring)[i]);
+		}
+	}
 
 	if (bits & SU_WEAPONFRAME)
 		MSG_WriteByte (msg, ent->v.weaponframe);
@@ -790,16 +824,36 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	MSG_WriteShort (msg, SV_ModelIndex(PR_GetString(ent->v.weaponmodel)));
 
 	if (bits & SU_GRENADES)
-		MSG_WriteLong (msg, ent->v.grenades);
+		MSG_WriteByte (msg, ent->v.grenades);
 
-	MSG_WriteShort (msg, ent->v.primary_grenades);
-	MSG_WriteShort (msg, ent->v.secondary_grenades);
-	MSG_WriteShort (msg, ent->v.health);
-	MSG_WriteShort (msg, ent->v.currentammo);
-	MSG_WriteShort (msg, ent->v.currentmag);
+	MSG_WriteByte (msg, ent->v.primary_grenades);
+	MSG_WriteByte (msg, ent->v.secondary_grenades);
+	MSG_WriteByte (msg, ent->v.health);
+	MSG_WriteByte (msg, ent->v.currentammo);
+	MSG_WriteByte (msg, ent->v.currentmag);
 	MSG_WriteByte (msg, ent->v.zoom);
-
 	MSG_WriteByte (msg, ent->v.weapon);
+	// Cypress -- SU_WEAPON exchanges are now a lot more involved, so they only
+	// happen if absolutely necessary.
+	if (bits & SU_WEAPON) {
+		// Weapon Name
+		size_t len = 32; // hard-coded 32 character limit, deal with it.
+		if (strlen(cl.weaponname) < 32)
+			len = strlen(cl.weaponname);
+
+		MSG_WriteByte(msg, len);
+		for(i = 0; i < len; i++) {
+			MSG_WriteChar(msg, (cl.weaponname)[i]);
+		}
+
+		// Weapon ADS Offset
+		for(i = 0; i < 3; i++) {
+			MSG_WriteFloat(msg, ent->v.ADS_Offset[i]);
+		}	
+
+		// Muzzle flash size
+		MSG_WriteByte(msg, ent->v.Flash_Size);
+	}
 	MSG_WriteByte (msg, pr_global_struct->rounds);
 	MSG_WriteByte (msg, pr_global_struct->rounds_change);
 	MSG_WriteByte (msg, ent->v.x2_icon);
@@ -808,7 +862,7 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	MSG_WriteShort (msg, SV_ModelIndex(PR_GetString(ent->v.weapon2model)));
 	MSG_WriteByte (msg, ent->v.weapon2skin);
 	MSG_WriteByte (msg, ent->v.weapon2frame);
-	MSG_WriteShort (msg, ent->v.currentmag2);
+	MSG_WriteByte (msg, ent->v.currentmag2);
 	MSG_WriteShort (msg, ent->v.viewmodel_effects);
 	MSG_WriteShort (msg, ent->v.viewmodel2_effects);
 
@@ -1239,6 +1293,7 @@ void SV_SpawnServer (char *server)
 // set up the new server
 //
 	Host_ClearMemory ();
+	Cbuf_AddText ("cd stop\n");
 
 	memset (&sv, 0, sizeof(sv));
 

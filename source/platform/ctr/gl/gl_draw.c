@@ -724,7 +724,6 @@ extern float crosshair_opacity;
 extern cvar_t cl_crosshair_debug;
 extern qboolean crosshair_pulse_grenade;
 
-
 /*
 ================
 Draw_FadeScreen

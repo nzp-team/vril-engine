@@ -114,7 +114,7 @@ void Map_SetDefaultValues (void)
 	Cvar_SetValue("sv_fastrounds", 0);
 }
 
-void Menu_LoadMap (char *selected_map)
+void Menu_LoadMap (char *selected_map, qboolean is_solo_match)
 {
 	int i;
 	char map_command[64];
@@ -124,7 +124,7 @@ void Menu_LoadMap (char *selected_map)
 			break;
 	}
 
-	map_loadname = current_selected_bsp;
+	map_loadname = selected_map;
     map_loadname_pretty = custom_maps[i].map_name_pretty;
 
 	key_dest = key_game;
@@ -132,6 +132,15 @@ void Menu_LoadMap (char *selected_map)
 		Cbuf_AddText ("disconnect\n");
 	}
 	snprintf (map_command, sizeof(map_command), "map %s\n", map_loadname);
+
+	if (!is_solo_match) {
+		Cbuf_AddText("coop 1\n");
+		Cbuf_AddText("maxplayers 4\n");
+	} else {
+		Cbuf_AddText ("coop 0\n");
+		Cbuf_AddText ("maxplayers 1\n");
+	}
+	
 	Cbuf_AddText (map_command);
 	LoadingScreen_Begin(map_loadname);
 }

@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "../../nzportable_def.h"
 #include "../../net_loop.h"
-#include "net_dgrm.h"
+#include "../../net_dgrm.h"
 
 net_driver_t net_drivers[MAX_NET_DRIVERS] =
 {
