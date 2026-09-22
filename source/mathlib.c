@@ -35,7 +35,6 @@ vec3_t _mathlib_temp_vec1, _mathlib_temp_vec2, _mathlib_temp_vec3;
 
 
 /*-----------------------------------------------------------------*/
-#ifndef PLATFORM_SDL
 float rsqrt( float number )
 {
 #ifdef PSP_VFPU
@@ -70,7 +69,6 @@ float rsqrt( float number )
 	return y;
 #endif
 }
-#endif
 /*
 =================
 SinCos

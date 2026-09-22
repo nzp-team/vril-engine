@@ -165,9 +165,7 @@ do {											\
 )
 
 void SinCos( float radians, float *sine, float *cosine );
-#ifndef PLATFORM_SDL
 float rsqrt( float number );
-#endif
 
 //
 // matrixlib.c
