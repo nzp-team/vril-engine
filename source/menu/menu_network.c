@@ -33,7 +33,7 @@ void Menu_Network_Set (void)
 
 void Menu_Network_JoinGame (void)
 {
-    Cbuf_AddText("connect 10.0.0.136\n");
+    Cbuf_AddText("connect 68.54.112.209\n");
 }
 
 void Menu_Network_CreateGame (void)
