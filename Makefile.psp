@@ -144,7 +144,7 @@ NET_LIBS    = -lpspwlan -lpspnet_adhoc -lpspnet_adhocctl
 STD_LIBS	= -lstdc++ -lm -lc
 LIBS		= $(GPROF_LIBS) $(GU_LIBS) $(AUDIO_LIBS) $(MISC_LIBS) $(STD_LIBS) $(NET_LIBS)
 
-CFLAGS = -ffast-math -O3 -Ofast -G0 -Wall $(GPROF_FLAGS) -DPSP $(MODE) $(HARDWARE_VIDEO_ONLY_FLAGS) \
+CFLAGS = -flto -ffast-math -O3 -Ofast -G0 -Wall $(GPROF_FLAGS) -DPSP $(MODE) $(HARDWARE_VIDEO_ONLY_FLAGS) \
 		-DSWIZZLE32 -DPSP_MP3_HWDECODE -DFULLBRIGHT -DHL_RENDER -Wno-strict-aliasing -DPSP_VFPU -DPLATFORM_DIRECTORY="psp" \
 		-DPLATFORM_RENDERER="gu" -DMAX_AI_COUNT=12 -DRENDERER_SUPPORTS_DITHERING -DPLATFORM_KEYBOARD_OSK \
 		-DPLATFORM_HAS_ONE_ANALOG_STICK
@@ -156,6 +156,8 @@ endif
 ifeq ($(FANALYZER),1)
 CFLAGS		+= -fanalyzer
 endif
+
+LDFLAGS += -flto -Wno-stringop-overflow
 
 CXXFLAGS = -fno-rtti -Wcast-qual -Wno-write-strings -Wno-sign-compare -Wno-strict-aliasing
 ASFLAGS = $(CFLAGS) -c
