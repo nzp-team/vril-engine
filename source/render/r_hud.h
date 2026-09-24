@@ -30,7 +30,10 @@ void
 HUD_UsePrint(int index, int cost);
 void HUD_RegisterUsePrint(int index, const char *text, int red, int green, int blue);
 void
-HUD_PowerupToast(int powerup);
+HUD_PowerupToast(const char *text);
+
+void
+HUD_Configure(int index, const char *value);
 void
 HUD_Hitmark(int type);
 void
@@ -68,8 +71,16 @@ extern double screenflash_starttime;
 
 extern vec3_t round_color_target;
 
-#define HUD_PERK_ORI_DEFAULT 0
-#define HUD_PERK_ORI_CW      1
+#define HUD_PERK_ORI_DEFAULT        0
+#define HUD_PERK_ORI_CW             1
+#define HUD_PERK_ORI_WAW            2
+#define HUD_PERK_ORI_BO3            3
+
+#define HUD_SCORE_ORI_LEFT          0
+#define HUD_SCORE_ORI_RIGHT         1
+
+#define HUD_ROUND_ORI_BOTTOM_LEFT   0
+#define HUD_ROUND_ORI_TOP_RIGHT     1
 
 //
 // Types of screen-flashes.

@@ -85,6 +85,8 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/platform/nspire/net_nspire.c \
 		source/net_vcr.c \
 		source/qcvm/pr_cmds.c \
+		source/qcvm/pr_json.c \
+		source/qcvm/cJSON.c \
 		source/qcvm/pr_edict.c \
 		source/qcvm/pr_exec.c \
 		source/platform/nspire/r_aclip.c \
