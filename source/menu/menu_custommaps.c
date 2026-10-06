@@ -359,7 +359,7 @@ void Menu_Preload_Custom_Images(void)
 			// custom map is loaded and has a menu image
 			// load with linear filtering on psp
 			int menu_image = Image_LoadImage(custom_maps[i].map_thumbnail_path, IMAGE_PNG | IMAGE_TGA | IMAGE_JPG, 1, false, false);
-			if (menu_image > 0) {
+			if (menu_image >= 0) {
 				menu_usermap_image[i] = menu_image;
 				num_custom_images++;
 			}

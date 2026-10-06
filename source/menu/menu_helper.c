@@ -143,11 +143,7 @@ void Menu_ExitMap (void)
 	// Disconnect from server
 	Cbuf_AddText("disconnect\n");
 	// Unload textures
-#ifdef __PSP__
-	GL_UnloadAllTextures();
-#elif defined(__3DS__) || defined (__PSP2__)
-	GL_UnloadTextures();
-#endif
+	Hyena_DestroyTextures();
 	// Enter main menu
 	Menu_Main_Set();
 }
@@ -268,7 +264,7 @@ void Menu_DrawSubPic (int x, int y, int pic, float s, float t, float s_coord_siz
 {
 	UI_Align (&x, &y);
 
-	if (pic > 0) {
+	if (pic >= 0) {
 		Draw_SubPic(x, y, pic, s, t, s_coord_size, t_coord_size, scale, r, g, b, a);
 	}
 }

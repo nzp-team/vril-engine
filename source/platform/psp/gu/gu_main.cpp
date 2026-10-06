@@ -38,7 +38,6 @@ extern "C" void V_CalcBlend (void);
 
 void R_DrawDecals (void);
 void R_RenderDecals (void);
-void R_MarkLeaves (void);
 // void QMB_LetItRain(void);
 void QMB_LaserSight (void);
 void VID_SetPaletteH2();
@@ -108,7 +107,6 @@ cvar_t  cl_loadmapcfg         = {"cl_loadmapcfg",             "0",true}; //Load 
 cvar_t	r_restexf             = {"r_restexf",                 "0",true}; //texture resampler setup
 cvar_t  r_texcompr            = {"r_texcompr",                "5",true}; //texture compression setup (default DXT5) warning DXT1 conflicted with switches palettes
 cvar_t  r_maxrange            = {"r_maxrange",             "4096"}; //render distance
-cvar_t	r_skydis              = {"r_skydis",               "2560",true};
 cvar_t  r_skyfog              = {"r_skyfog",                  "1",true};
 cvar_t	r_caustics            = {"r_caustics",                "1",true};
 cvar_t	r_detail              = {"r_detail",                  "1",true};
@@ -129,14 +127,12 @@ cvar_t	r_particles_simple    = {"r_particles_simple",        "0",true};
 cvar_t	gl_keeptjunctions     = {"gl_keeptjunctions",         "0"};
 cvar_t	r_waterripple         = {"r_waterripple",             "2",true};
 cvar_t	r_waterwarp           = {"r_waterwarp",               "1",true};
-cvar_t	r_fastsky             = {"r_fastsky",                 "1",true};
 cvar_t  r_skycolor            = {"r_skycolor",         "64 64 70",true};
 cvar_t  r_showbboxes          = {"r_showbboxes",              "0"};
 cvar_t  r_showbboxes_full     = {"r_showbboxes_full",         "0",true};
 cvar_t	r_showtris            = {"r_showtris",                "0"};
 cvar_t	r_showtris_full       = {"r_showtris_full",           "0",true};
 cvar_t	r_polyblend	          = {"r_polyblend",               "1",true};
-cvar_t r_skyfogblend = {"r_skyfogblend", "0.6", true}; 
 
 //QMB
 cvar_t  r_explosiontype     = {"r_explosiontype",    "0",true};
@@ -695,7 +691,7 @@ void R_DrawSpriteModel (entity_t *e)
 		filter = true;
 
 	// Bind the texture.
-	GL_Bind(frame->gl_texturenum);
+	Hyena_BindTexture(frame->gl_texturenum);
 
 	sceGuEnable(GU_BLEND);
 	sceGuDepthMask(GU_TRUE);
@@ -1184,7 +1180,7 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	sceGumUpdateMatrix();
 	IgnoreInterpolatioFrame(e, paliashdr);
 	anim = (int)(cl.time*10) & 3;
-	GL_Bind(paliashdr->gl_texturenum[e->skinnum][anim]);
+	Hyena_BindTexture(paliashdr->gl_texturenum[e->skinnum][anim]);
 	//Rendering block
 	if (r_i_model_animation.value)
 	{
@@ -1432,7 +1428,7 @@ void R_DrawAliasModel (entity_t *e)
 	//	i = e - cl_entities;
 	//	if (i >= 1 && i<=cl.maxclients /*&& !strcmp (e->model->name, "models/player.mdl")*/)
 	//	{
-	//	    GL_Bind(playertextures - 1 + i);
+	//	    Hyena_BindTexture(playertextures - 1 + i);
 	//	}
 	//}
 
@@ -1462,7 +1458,7 @@ void R_DrawAliasModel (entity_t *e)
 	IgnoreInterpolatioFrame(e, paliashdr);
 
 	anim = (int)(cl.time*10) & 3;
-	GL_Bind(paliashdr->gl_texturenum[e->skinnum][anim]);
+	Hyena_BindTexture(paliashdr->gl_texturenum[e->skinnum][anim]);
 
 	//===================================================================================================== 80% at this point
 	//Rendering block
@@ -1626,7 +1622,7 @@ R_DrawEntitiesOnList
 =============
 */
 // The values in these are indices in current frame cl_visedicts, pointing to first entity of linked list
-extern int numgltextures;
+
 short entity_batches[MAX_GLTEXTURES];
 short trans_entity_batches[MAX_GLTEXTURES];
 // are human rights btw
@@ -2167,7 +2163,7 @@ void R_RenderScene (void)
 	sceGuDisable(GU_ALPHA_TEST);
 	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 
-	R_MarkLeaves ();	// done here so we know if we're in water
+	R_MarkLeaves(false, mirror);	// done here so we know if we're in water
 	Fog_EnableGFog (); //johnfitz
 	R_DrawWorld ();		// adds static entities to the list
 	S_ExtraUpdate ();	// don't let sound get messed up if going slow
@@ -2185,7 +2181,6 @@ void R_RenderScene (void)
 R_Clear
 =============
 */
-extern char	skybox_name[32];
 void R_Clear (void)
 {
     if(r_refdef.fog_end > 0 && r_skyfog.value)
@@ -2314,7 +2309,11 @@ void R_RenderView (void)
     //Crow_bar fixed
 	if (r_speeds.value)
 	{
+		int base_batches, lightmap_batches, base_indices, lightmap_indices;
+		R_WorldBatchStats (&base_batches, &lightmap_batches, &base_indices, &lightmap_indices);
 		Con_Printf ("%4i world poly\n",  c_brush_polys);
 		Con_Printf ("%4i entity poly\n",  c_alias_polys);
+		Con_Printf ("%i/%i world batches  %i/%i indices\n",
+			base_batches, lightmap_batches, base_indices, lightmap_indices);
 	}
 }

@@ -23,12 +23,52 @@
 #ifndef _R_SURFACE_H_
 #define _R_SURFACE_H_
 
+#include <stddef.h>
+
+typedef struct {
+    float uv[2];
+    float lightmap_uv[2];
+    float xyz[3];
+} world_vertex_t;
+
+// Describes the model loader's retained polygon layout, without changing its storage.
+typedef struct {
+    size_t   vertices_offset;
+    int      stride, position_offset, uv_offset, lightmap_offset;
+    size_t   clipped_vertices_offset, clipped_count_offset;
+    int      unbatched_flags, unlit_flags;
+    int      frustum_planes;
+    qboolean alpha_test_all;
+    cvar_t * lightmap_debug, * wireframe;
+} r_world_layout_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void R_DrawSurfaceFan(const float *vertices, int count, int stride,
-  int texture_offset, qboolean warp, double time);
+void
+R_DrawSurfaceFan(const float * vertices, int count, int stride,
+  int position_offset, int texture_offset, qboolean warp, double time);
+
+void
+R_ClearLightmapChains(void);
+void
+R_ChainLightmap(msurface_t * surface);
+void
+R_UpdateSurfaceLightmap(msurface_t * surface);
+void
+R_BlendLightmaps(void);
+void
+R_BuildWorldBatch(const r_world_layout_t * layout);
+void
+R_WorldBatchStats(int * base_batches, int * lightmap_batches,
+  int * base_indices, int * lightmap_indices);
+int
+R_UploadLightmap(int index);
+void
+R_MarkVisibleLeaves(model_t * model, mleaf_t * leaf, int frame, qboolean all_visible);
+void
+R_MarkLeaves(qboolean all_visible, qboolean mirror_view);
 
 #ifdef __cplusplus
 }

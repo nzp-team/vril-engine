@@ -721,6 +721,7 @@ void SCR_UpdateScreen (void)
 	if(scr_loadscreen.value) {
 		Menu_DrawLoadScreen();
 	}
+	Draw_Flush();
 
 	//Draw_LoadingFill();
 	D_DisableBackBufferAccess ();	// for adapters that can't stay mapped in

@@ -45,7 +45,10 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/platform/nspire/d_init.c \
 		source/platform/nspire/d_modech.c \
 		source/platform/nspire/d_polyse.c \
-		source/platform/nspire/draw.c \
+		source/render/r_draw.c \
+		source/render/r_texture.c \
+		source/render/r_pixels.c \
+		source/render/r_dxt.c \
 		source/platform/nspire/d_scan.c \
 		source/platform/nspire/d_scan_nspirec.c \
 		source/platform/nspire/d_sky.c \
@@ -143,7 +146,7 @@ _build_info.h:
 
 %.o: %.c
 	$(GCC) $(GCCFLAGS) -c $< -o $@
-	
+
 %.o: %.S
 	$(AS) -c $< -o $@
 

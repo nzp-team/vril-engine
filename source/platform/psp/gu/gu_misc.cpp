@@ -28,8 +28,6 @@ extern "C"
 #include "../../../nzportable_def.h"
 }
 
-void GL_InitTextureUsage ();
-
 qboolean	r_loadq3player = false;
 
 /*
@@ -40,8 +38,8 @@ R_InitOtherTextures
 void	R_InitOtherTextures (void)
 {
 
-	zombie_skins[0][0] = loadpcxas4bpp("models/ai/zfull.mdl_0", GU_LINEAR);
-	GL_MarkTextureAsPermanent(zombie_skins[0][0]);
+	zombie_skins[0][0] = loadpcxas4bpp("models/ai/zfull.mdl_0", HYE_FILTER_LINEAR);
+	Hyena_KeepTexture(zombie_skins[0][0]);
 
 	// PSP PHAT: Only have 1 Zombie skin.. this saves 192kB of VRAM, well worth it.
 	if (psp_system_model == PSP_MODEL_PHAT) {
@@ -49,12 +47,12 @@ void	R_InitOtherTextures (void)
 		zombie_skins[1][0] = zombie_skins[0][0];
 		zombie_skins[1][1] = zombie_skins[0][0];
 	} else {
-		zombie_skins[0][1] = loadpcxas4bpp("models/ai/zfull.mdl_1", GU_LINEAR);
-		zombie_skins[1][0] = loadpcxas4bpp("models/ai/zfull.mdl_2", GU_LINEAR);
-		zombie_skins[1][1] = loadpcxas4bpp("models/ai/zfull.mdl_3", GU_LINEAR);
-		GL_MarkTextureAsPermanent(zombie_skins[0][1]);
-		GL_MarkTextureAsPermanent(zombie_skins[1][0]);
-		GL_MarkTextureAsPermanent(zombie_skins[1][1]);
+		zombie_skins[0][1] = loadpcxas4bpp("models/ai/zfull.mdl_1", HYE_FILTER_LINEAR);
+		zombie_skins[1][0] = loadpcxas4bpp("models/ai/zfull.mdl_2", HYE_FILTER_LINEAR);
+		zombie_skins[1][1] = loadpcxas4bpp("models/ai/zfull.mdl_3", HYE_FILTER_LINEAR);
+		Hyena_KeepTexture(zombie_skins[0][1]);
+		Hyena_KeepTexture(zombie_skins[1][0]);
+		Hyena_KeepTexture(zombie_skins[1][1]);
 	}
 
 }
@@ -69,7 +67,7 @@ void	R_InitTextures (void)
 	int		x,y, m;
 	byte	*dest;
 
-	GL_InitTextureUsage ();
+	Hyena_InitTextureStorage();
 
 // create a simple checkerboard texture for the default
 	r_notexture_mip = static_cast<texture_t*>(Hunk_AllocName (sizeof(texture_t) + 16*16+8*8+4*4+2*2, "notexture"));
@@ -262,6 +260,8 @@ model_t* Mod_FindName(char* name);
 
 void R_Init (void)
 {
+    R_InitFallbackTextures();
+    Sky_Configure(psp_system_model != PSP_MODEL_PHAT, true, false);
 	Cmd_AddCommand ("timerefresh",     R_TimeRefresh_f);
 	Cmd_AddCommand ("envmap",          R_Envmap_f);
 	Cmd_AddCommand ("pointfile",       R_ReadPointFile_f);
@@ -273,7 +273,6 @@ void R_Init (void)
 	Cvar_RegisterVariable (&r_restexf);
 	Cvar_RegisterVariable (&r_texcompr);
 	Cvar_RegisterVariable (&r_skyfog);
-    Cvar_RegisterVariable (&r_skydis);
     Cvar_RegisterVariable (&r_caustics);
 	Cvar_RegisterVariable (&r_detail);
     Cvar_RegisterVariable (&r_detail_mipmaps);
@@ -303,9 +302,7 @@ void R_Init (void)
     Cvar_RegisterVariable (&r_i_model_animation);
     Cvar_RegisterVariable (&r_i_model_transform);
 
-	Cvar_RegisterVariable (&r_fastsky);
 	Cvar_RegisterVariable (&r_skycolor);
-	Cvar_RegisterVariable (&r_skyfogblend);
 
 	Cvar_RegisterVariable (&r_loadq3models);
     Cvar_RegisterVariable (&r_farclip);
@@ -382,15 +379,11 @@ void R_NewMap (void)
 	Sky_NewMap (); //johnfitz -- skybox in worldspawn
     Fog_ParseWorldspawn ();
 
-	// identify sky texture
-	skytexturenum = -1;
 	mirrortexturenum = -1;
 	for (i=0 ; i<cl.worldmodel->numtextures ; i++)
 	{
 		if (!cl.worldmodel->textures[i])
 			continue;
-		if (!strncmp(cl.worldmodel->textures[i]->name,"sky",3) )
-			skytexturenum = i;
 		if (!strncmp(cl.worldmodel->textures[i]->name,"window02_1",10) )//reminder 
 		//if (!strncmp(cl.worldmodel->textures[i]->name,"3tiles_grey_64",10) )//reminder "window02_1"
 			mirrortexturenum = i;

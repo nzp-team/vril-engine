@@ -73,7 +73,6 @@ cvar_t	teamplay = {"teamplay","0",false,true};
 
 cvar_t	samelevel = {"samelevel","0"};
 
-cvar_t	show_fps = {"show_fps","0", true};	// set for running times - muff
 #ifndef __WII__
 cvar_t	cl_maxfps = {"cl_maxfps", "30", true}; // dr_mabuse1981: maxfps setting
 #endif // __WII__ creates a timing issue within Dolphin emu - and vsync is always on anyhow
@@ -81,8 +80,6 @@ cvar_t	cl_maxfps = {"cl_maxfps", "30", true}; // dr_mabuse1981: maxfps setting
 #ifdef __PSP__
 cvar_t	show_bat = {"show_bat","0"};	// test
 #endif // __PSP__
-
-int			fps_count;
 
 cvar_t	developer = {"developer","0"};
 
@@ -228,7 +225,6 @@ void Host_InitLocal (void)
     Cvar_RegisterVariable (&show_bat); // Crow_bar battery info
 #endif // __PSP__
 
-	Cvar_RegisterVariable (&show_fps); // muff
 #ifndef __WII__
 	Cvar_RegisterVariable (&cl_maxfps); // dr_mabuse1981: maxfps setting
 #endif
@@ -504,6 +500,7 @@ void Host_ClearMemory (void)
 {
 	Con_DPrintf ("Clearing memory\n");
 
+	R_ClearAliasTopologyCache ();
 	Mod_ClearAll ();
 
 	if (host_hunklevel)
@@ -717,8 +714,6 @@ void _Host_Frame (float time)
 	// Debug log free memory
 	// if ((host_framecount % 120) == 0) Con_Printf ("%.2fkB free \n", pspSdkTotalFreeUserMemSize()/1024.f);
 
-	//frame speed counter
-	fps_count++;//muff
 	host_framecount++;
 }
 
