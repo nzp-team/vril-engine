@@ -1623,8 +1623,8 @@ R_DrawEntitiesOnList
 */
 // The values in these are indices in current frame cl_visedicts, pointing to first entity of linked list
 
-short entity_batches[MAX_GLTEXTURES];
-short trans_entity_batches[MAX_GLTEXTURES];
+short entity_batches[HYENA_MAX_TEXTURES];
+short trans_entity_batches[HYENA_MAX_TEXTURES];
 // are human rights btw
 
 void R_DrawEntitiesOnList (void)

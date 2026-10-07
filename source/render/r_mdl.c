@@ -249,12 +249,12 @@ R_AliasTopology(const int * commands)
         topology->num_vertices += count;
         topology->num_indices  += 3 * (count - 2);
     }
-    if (topology->num_vertices) {
-        topology->uvs     = malloc(topology->num_vertices * 2 * sizeof(*topology->uvs));
-        topology->indices = malloc(topology->num_indices * sizeof(*topology->indices));
-        if (!topology->uvs || !topology->indices)
-            Sys_Error("R_AliasTopology: out of memory");
-    }
+    if (!topology->num_vertices)
+        return topology;
+    topology->uvs     = malloc(topology->num_vertices * 2 * sizeof(*topology->uvs));
+    topology->indices = malloc(topology->num_indices * sizeof(*topology->indices));
+    if (!topology->uvs || !topology->indices)
+        Sys_Error("R_AliasTopology: out of memory");
     while ((count = *commands++) != 0) {
         qboolean fan = count < 0;
         int i;

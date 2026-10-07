@@ -883,6 +883,7 @@ Hyena_DrawIndexedTriangles(const hyena_colored_vertex_t * vertices, int vertex_c
 
 struct hyena_buffer_s {
     const void * data;
+    void *       allocation;
     qboolean     owned;
     int          target;
     size_t       size;
@@ -904,8 +905,8 @@ Hyena_CreateBuffer(int target, const void * data, size_t size)
 void
 Hyena_UpdateBuffer(hyena_buffer_t * buffer, const void * data, size_t size)
 {
-    if (buffer->owned)
-        free((void *) buffer->data);
+    free(buffer->allocation);
+    buffer->allocation = NULL;
     buffer->size  = size;
     buffer->owned = buffer->target == HYE_ARRAY_BUFFER;
     if (buffer->owned) {
@@ -914,12 +915,13 @@ Hyena_UpdateBuffer(hyena_buffer_t * buffer, const void * data, size_t size)
             Sys_Error("Hyena_UpdateBuffer: out of memory");
         if (data)
             memcpy(copy, data, size);
+        buffer->allocation = copy;
         buffer->data = copy;
     } else {
         buffer->data = data;
     }
     if (data)
-        sceKernelDcacheWritebackRange((void *) buffer->data, size);
+        sceKernelDcacheWritebackRange(const_cast<void *>(buffer->data), size);
 }
 
 void
@@ -928,8 +930,7 @@ Hyena_DestroyBuffer(hyena_buffer_t * buffer)
     if (!buffer)
         return;
 
-    if (buffer->owned)
-        free((void *) buffer->data);
+    free(buffer->allocation);
     free(buffer);
 }
 
@@ -1130,14 +1131,14 @@ Hyena_SetCurrentColor(float r, float g, float b, float a)
 void *
 Hyena_MapBuffer(hyena_buffer_t * buffer)
 {
-    return (void *) buffer->data;
+    return buffer->allocation;
 }
 
 void
 Hyena_UnmapBuffer(hyena_buffer_t * buffer)
 {
     // GU reads RAM asynchronously; publish writes before submitting the buffer.
-    sceKernelDcacheWritebackRange((void *) buffer->data, buffer->size);
+    sceKernelDcacheWritebackRange(buffer->allocation, buffer->size);
 }
 
 void
@@ -1152,7 +1153,7 @@ Hyena_SetPalette(const unsigned int * rgba, int count)
     }
     hyena_current_palette = rgba;
     sceGuClutMode(GU_PSM_8888, 0, 0xff, 0);
-    sceKernelDcacheWritebackRange((void *) rgba, count * sizeof(*rgba));
+    sceKernelDcacheWritebackRange(const_cast<unsigned int *>(rgba), count * sizeof(*rgba));
     sceGuClutLoad(count / 8, rgba);
     reloaded_pallete = 1;
     // Legacy indexed texture binds restore the default palette when needed.

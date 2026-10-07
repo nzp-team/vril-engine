@@ -21,6 +21,14 @@
 #include "../../../render/r_texture.h"
 #include "../../../render/r_pixels.h"
 
+// Blargh, Windows (or minGW?)
+#ifndef GL_UNSIGNED_SHORT_4_4_4_4
+#define GL_UNSIGNED_SHORT_4_4_4_4 0x8033
+#endif
+#ifndef GL_UNSIGNED_SHORT_5_5_5_1
+#define GL_UNSIGNED_SHORT_5_5_5_1 0x8034
+#endif
+
 static int hyena_vertex_mode;
 static vec3_t hyena_translation;
 static vec3_t hyena_scale;
@@ -138,14 +146,23 @@ Hyena_EndVertices(void)
 static void
 Hyena_Reserve2DVertices(int count)
 {
+    void * resized;
+
     if (count <= hyena_2d_capacity)
         return;
 
-    hyena_2d_positions = realloc(hyena_2d_positions, count * 3 * sizeof(*hyena_2d_positions));
-    hyena_2d_texcoords = realloc(hyena_2d_texcoords, count * 2 * sizeof(*hyena_2d_texcoords));
-    hyena_2d_colors    = realloc(hyena_2d_colors, count * 4 * sizeof(*hyena_2d_colors));
-    if (!hyena_2d_positions || !hyena_2d_texcoords || !hyena_2d_colors)
+    resized = realloc(hyena_2d_positions, count * 3 * sizeof(*hyena_2d_positions));
+    if (!resized)
         Sys_Error("Hyena_Reserve2DVertices: out of memory");
+    hyena_2d_positions = resized;
+    resized = realloc(hyena_2d_texcoords, count * 2 * sizeof(*hyena_2d_texcoords));
+    if (!resized)
+        Sys_Error("Hyena_Reserve2DVertices: out of memory");
+    hyena_2d_texcoords = resized;
+    resized = realloc(hyena_2d_colors, count * 4 * sizeof(*hyena_2d_colors));
+    if (!resized)
+        Sys_Error("Hyena_Reserve2DVertices: out of memory");
+    hyena_2d_colors = resized;
     hyena_2d_capacity = count;
 }
 

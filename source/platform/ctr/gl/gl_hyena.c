@@ -146,14 +146,23 @@ Hyena_EndVertices(void)
 static void
 Hyena_Reserve2DVertices(int count)
 {
+    void * resized;
+
     if (count <= hyena_2d_capacity)
         return;
 
-    hyena_2d_positions = realloc(hyena_2d_positions, count * 3 * sizeof(*hyena_2d_positions));
-    hyena_2d_texcoords = realloc(hyena_2d_texcoords, count * 2 * sizeof(*hyena_2d_texcoords));
-    hyena_2d_colors    = realloc(hyena_2d_colors, count * 4 * sizeof(*hyena_2d_colors));
-    if (!hyena_2d_positions || !hyena_2d_texcoords || !hyena_2d_colors)
+    resized = realloc(hyena_2d_positions, count * 3 * sizeof(*hyena_2d_positions));
+    if (!resized)
         Sys_Error("Hyena_Reserve2DVertices: out of memory");
+    hyena_2d_positions = resized;
+    resized = realloc(hyena_2d_texcoords, count * 2 * sizeof(*hyena_2d_texcoords));
+    if (!resized)
+        Sys_Error("Hyena_Reserve2DVertices: out of memory");
+    hyena_2d_texcoords = resized;
+    resized = realloc(hyena_2d_colors, count * 4 * sizeof(*hyena_2d_colors));
+    if (!resized)
+        Sys_Error("Hyena_Reserve2DVertices: out of memory");
+    hyena_2d_colors = resized;
     hyena_2d_capacity = count;
 }
 
@@ -629,11 +638,13 @@ Hyena_SetArrays(const hyena_arrays_t * arrays)
         static byte * colors;
         static int capacity;
         byte color[4];
+        byte * resized;
         int i;
         if (arrays->count > capacity) {
-            colors = realloc(colors, arrays->count * 4);
-            if (!colors)
+            resized = realloc(colors, arrays->count * 4);
+            if (!resized)
                 Sys_Error("Hyena: out of color array memory");
+            colors = resized;
             capacity = arrays->count;
         }
         for (i = 0; i < 4; ++i)
@@ -722,15 +733,26 @@ Hyena_DrawArrays(int mode, const hyena_arrays_t * arrays, int count)
         static int capacity;
         const byte * xyz = Hyena_ArrayPointer(&arrays->position);
         const byte * uv  = Hyena_ArrayPointer(&arrays->uv);
+        void * resized;
         int i;
 
         if (count > capacity) {
-            positions = realloc(positions, count * 3 * sizeof(float));
-            texcoords = realloc(texcoords, count * 2 * sizeof(float));
-            colors    = realloc(colors, count * 4 * sizeof(float));
-            indices   = realloc(indices, (count - 2) * 3 * sizeof(*indices));
-            if (!positions || !texcoords || !colors || !indices)
+            resized = realloc(positions, count * 3 * sizeof(float));
+            if (!resized)
                 Sys_Error("Hyena: out of array memory");
+            positions = resized;
+            resized = realloc(texcoords, count * 2 * sizeof(float));
+            if (!resized)
+                Sys_Error("Hyena: out of array memory");
+            texcoords = resized;
+            resized = realloc(colors, count * 4 * sizeof(float));
+            if (!resized)
+                Sys_Error("Hyena: out of array memory");
+            colors = resized;
+            resized = realloc(indices, (count - 2) * 3 * sizeof(*indices));
+            if (!resized)
+                Sys_Error("Hyena: out of array memory");
+            indices = resized;
             capacity = count;
         }
 

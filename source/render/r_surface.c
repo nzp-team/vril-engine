@@ -41,10 +41,18 @@ R_DrawSurfaceFan(const float * source, int count, int stride,
     if (warp) {
         // Reuse planar scratch; picaGL can submit it without another interleaving copy.
         if (count > capacity) {
-            warped_positions = realloc(warped_positions, count * 3 * sizeof(float));
-            warped_uvs       = realloc(warped_uvs, count * 2 * sizeof(float));
-            if (!warped_positions || !warped_uvs)
+            float * resized = realloc(warped_positions, count * 3 * sizeof(float));
+            if (!resized) {
                 Sys_Error("R_DrawSurfaceFan: out of memory");
+                return;
+            }
+            warped_positions = resized;
+            resized = realloc(warped_uvs, count * 2 * sizeof(float));
+            if (!resized) {
+                Sys_Error("R_DrawSurfaceFan: out of memory");
+                return;
+            }
+            warped_uvs = resized;
             capacity = count;
         }
         for (i = 0; i < count; ++i) {

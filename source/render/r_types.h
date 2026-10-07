@@ -15,6 +15,8 @@
 #ifndef _R_TYPES_H_
 #define _R_TYPES_H_
 
+#define HYENA_MAX_TEXTURES 1024
+
 // Two-dimensional texture coordinate.
 
 typedef struct {

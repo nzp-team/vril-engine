@@ -20,8 +20,6 @@
 #ifndef _R_TEXTURE_H_
 #define _R_TEXTURE_H_
 
-#define HYENA_MAX_TEXTURES 1024
-
 typedef struct {
     char     identifier[MAX_QPATH];
     int      width, height, original_width, original_height;
