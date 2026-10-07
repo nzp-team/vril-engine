@@ -362,6 +362,12 @@ R_DestroyWorldBatch(void)
 }
 
 void
+R_ClearWorldBatchCache(void)
+{
+    R_DestroyWorldBatch();
+}
+
+void
 R_BuildWorldBatch(const r_world_layout_t * layout)
 {
     world_vertex_t * vertices;

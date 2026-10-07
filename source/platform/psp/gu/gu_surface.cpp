@@ -65,7 +65,10 @@ int			allocated[MAX_LIGHTMAPS][BLOCK_WIDTH];
 
 // the lightmap texture data needs to be kept in
 // main memory so texsubimage can update properly
-byte		*lightmaps;
+#define LIGHTMAP_STATIC_SIZE (MAX_LIGHTMAPS * BLOCK_WIDTH * BLOCK_HEIGHT)
+static byte lightmap_storage[LIGHTMAP_STATIC_SIZE];
+static byte *lightmap_pages[MAX_LIGHTMAPS];
+static int lightmap_static_pages;
 int 		lightmap_index[MAX_LIGHTMAPS];
 
 glpoly_t	*caustics_polys = NULL;
@@ -614,7 +617,7 @@ int R_UploadLightmap(int i)
         lightmap_rectchange[i].h = 0;
         snprintf(name, sizeof(name), "lightmap%d", i);
         lightmap_index[i] = Hyena_LoadLightmap(name, BLOCK_WIDTH, BLOCK_HEIGHT,
-            lightmaps + i * BLOCK_WIDTH * BLOCK_HEIGHT * LIGHTMAP_BYTES,
+            lightmap_pages[i],
             LIGHTMAP_BYTES == 1 ? HYE_TEXTURE_INDEX8 : HYE_TEXTURE_RGBA8, true);
     }
     return lightmap_index[i];
@@ -655,7 +658,7 @@ R_UpdateSurfaceLightmap(msurface_t *surface)
         rect->w = surface->light_s - rect->l + smax;
     if (rect->h + rect->t < surface->light_t + tmax)
         rect->h = surface->light_t - rect->t + tmax;
-    base = lightmaps + surface->lightmaptexturenum * LIGHTMAP_BYTES * BLOCK_WIDTH * BLOCK_HEIGHT;
+    base = lightmap_pages[surface->lightmaptexturenum];
     base += surface->light_t * BLOCK_WIDTH * LIGHTMAP_BYTES + surface->light_s * LIGHTMAP_BYTES;
     R_BuildLightMap(surface, base, BLOCK_WIDTH * LIGHTMAP_BYTES);
 }
@@ -1196,7 +1199,7 @@ static void GL_BuildSurfaceLightmap (msurface_t *surf)
 {
 	byte	*base;
 
-	base = lightmaps + surf->lightmaptexturenum*LIGHTMAP_BYTES*BLOCK_WIDTH*BLOCK_HEIGHT;
+	base = lightmap_pages[surf->lightmaptexturenum];
 	base += (surf->light_t * BLOCK_WIDTH + surf->light_s) * LIGHTMAP_BYTES;
 	R_BuildLightMap (surf, base, BLOCK_WIDTH*LIGHTMAP_BYTES);
 }
@@ -1214,14 +1217,16 @@ void GL_BuildLightmaps (void)
 {
 	int		i, j;
 	model_t	*m;
-	size_t atlas_size;
+	size_t page_size;
+	int pages;
 
 	//Con_Printf ("Lightmap surfaces = %i\n", MAX_LIGHTMAPS);
 	//Con_Printf ("Lightmap bytes = %i\n", LIGHTMAP_BYTES);
 
 	memset (allocated, 0, sizeof(allocated));
-	free(lightmaps);
-	lightmaps = NULL;
+	for (i=lightmap_static_pages ; i<MAX_LIGHTMAPS ; i++)
+		free(lightmap_pages[i]);
+	memset(lightmap_pages, 0, sizeof(lightmap_pages));
 
 	r_framecount = 1;		// no dlightcache
 
@@ -1244,15 +1249,20 @@ void GL_BuildLightmaps (void)
 			GL_CreateSurfaceLightmap (m->surfaces + i);
 	}
 
-	for (i=0 ; i<MAX_LIGHTMAPS && allocated[i][0] ; i++)
+	for (pages=0 ; pages<MAX_LIGHTMAPS && allocated[pages][0] ; pages++)
 		;
-	atlas_size = (size_t)i * BLOCK_WIDTH * BLOCK_HEIGHT * LIGHTMAP_BYTES;
-	if (atlas_size)
+	page_size = BLOCK_WIDTH * BLOCK_HEIGHT * LIGHTMAP_BYTES;
+	lightmap_static_pages = LIGHTMAP_STATIC_SIZE / page_size;
+	for (i=0 ; i<pages ; i++)
 	{
-		lightmaps = (byte *)malloc(atlas_size);
-		if (!lightmaps)
-			Sys_Error("Out of lightmap atlas memory\n");
-		memset(lightmaps, 0, atlas_size);
+		if (i < lightmap_static_pages)
+			lightmap_pages[i] = lightmap_storage + i * page_size;
+		else
+			lightmap_pages[i] = (byte *)malloc(page_size);
+		if (!lightmap_pages[i])
+			Sys_Error("Out of lightmap atlas memory (%i pages of %lu bytes)\n",
+				pages, (unsigned long)page_size);
+		memset(lightmap_pages[i], 0, page_size);
 	}
 
 	for (j=1 ; j<MAX_MODELS ; j++)
@@ -1295,7 +1305,7 @@ void GL_BuildLightmaps (void)
             lightmap_rectchange[i].h = 0;
 
             sprintf(lm_name,"lightmap%d",i);
-            lightmap_index[i] = Hyena_LoadLightmap(lm_name, BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+(i*BLOCK_WIDTH*BLOCK_HEIGHT*LIGHTMAP_BYTES), LIGHTMAP_BYTES == 1 ? HYE_TEXTURE_INDEX8 : HYE_TEXTURE_RGBA8, true);
+            lightmap_index[i] = Hyena_LoadLightmap(lm_name, BLOCK_WIDTH, BLOCK_HEIGHT, lightmap_pages[i], LIGHTMAP_BYTES == 1 ? HYE_TEXTURE_INDEX8 : HYE_TEXTURE_RGBA8, true);
 	}
 	{
         const r_world_layout_t layout = { offsetof(glpoly_t, verts), 5, 2, 0, -1,

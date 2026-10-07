@@ -61,6 +61,8 @@ R_BlendLightmaps(void);
 void
 R_BuildWorldBatch(const r_world_layout_t * layout);
 void
+R_ClearWorldBatchCache(void);
+void
 R_WorldBatchStats(int * base_batches, int * lightmap_batches,
   int * base_indices, int * lightmap_indices);
 int

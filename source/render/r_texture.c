@@ -24,7 +24,7 @@
 
 // Optional compact colored lightmaps. Keep full precision by default.
 
-cvar_t hyena_lightmap_16bit = { "hyena_lightmap_16bit", "0", true };
+cvar_t hyena_lightmap_16bit = { "hyena_lightmap_16bit", "1", true };
 
 hyena_texture_t * hyena_textures;
 static int hyena_texture_capacity;
