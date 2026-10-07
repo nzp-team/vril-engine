@@ -147,14 +147,19 @@ COMMON_OBJS =	system.o \
 				render/r_particles.c \
 				platform/nx/gl/gl_hyena.c \
 				render/r_decals.c \
-				platform/nx/gl/gl_draw.c \
+				render/r_texture.c \
+				render/r_pixels.c \
+				render/r_dxt.c \
 				render/r_fog.c \
 				platform/nx/gl/gl_mesh.c \
 				platform/nx/gl/gl_model.c \
 				render/r_entity_fragments.c \
 				render/r_light.c \
+				render/r_draw.c \
 				render/r_mdl.c \
 				render/r_surface.c \
+				render/r_sky.c \
+				render/r_world.c \
 				platform/nx/gl/gl_rmain.c \
 				platform/nx/gl/gl_rmisc.c \
 				platform/nx/gl/gl_rsurf.c \
@@ -164,8 +169,8 @@ COMMON_OBJS =	system.o \
 				crypter.c
 
 CFILES		:=	$(COMMON_OBJS)
-CPPFILES	:=	
-SFILES		:=	
+CPPFILES	:=
+SFILES		:=
 PICAFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.v.pica)))
 SHLISTFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.shlist)))
 #BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))

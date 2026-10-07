@@ -55,25 +55,7 @@ extern	int		texture_mode;
 
 extern	double	gldepthmin, gldepthmax;
 
-typedef struct
-{
-	GLuint 			gl_id; // real GL texture object
-	int				texnum;
-	char			identifier[64];
-	int				width, height, original_width, original_height;
-	int				bpp;
-	qboolean		mipmap;
-	qboolean		used;
-	qboolean		keep;
-} gltexture_t;
 
-void GL_Upload32 (GLuint gl_id, unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha);
-void GL_Upload8 (GLuint gl_id, byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
-int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel, qboolean keep);
-int GL_LoadLMTexture (char *identifier, int width, int height, byte *data, qboolean update);
-int Image_FindImage (const char *identifier);
-void GL_UnloadTextures ();
-void GL_FreeTextures (int texnum);
 
 typedef struct
 {
@@ -211,7 +193,6 @@ extern	qboolean	envmap;
 extern	int	cnttextures[2];
 extern	int	particletexture;
 
-extern	int	skytexturenum;		// index in cl.loadmodel, not gl texture object
 
 extern	cvar_t	r_norefresh;
 extern	cvar_t	r_drawentities;
@@ -262,7 +243,6 @@ extern 	cvar_t	r_dithering;
 extern	cvar_t	gl_clear;
 extern	cvar_t	gl_cull;
 extern	cvar_t	gl_poly;
-extern	cvar_t	gl_texsort;
 extern	cvar_t	gl_smoothmodels;
 extern	cvar_t	gl_affinemodels;
 extern	cvar_t	gl_polyblend;
@@ -272,11 +252,7 @@ extern	cvar_t	gl_flashblend;
 extern	cvar_t	gl_nocolors;
 extern	cvar_t	gl_doubleeyes;
 
-extern	int		gl_lightmap_format;
-extern	int		gl_solid_format;
-extern	int		gl_alpha_format;
 
-extern	cvar_t	gl_max_size;
 extern	cvar_t	gl_playermip;
 
 extern	int			mirrortexturenum;	// quake texturenum, not gltexturenum
@@ -291,10 +267,8 @@ extern	const char *gl_version;
 extern	const char *gl_extensions;
 
 #define	MAX_LIGHTMAPS	128
-extern  int	skyimage[5]; // Where sky images are stored
 extern  int	lightmap_index[MAX_LIGHTMAPS]; // Where lightmaps are stored
 
-void GL_Bind (int texnum);
 
 // Multitexture
 #define    TEXTURE0_SGIS				0x835E
@@ -309,7 +283,6 @@ typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
 extern lpMTexFUNC qglMTexCoord2fSGIS;
 extern lpSelTexFUNC qglSelectTextureSGIS;
 
-extern qboolean gl_mtexable;
 
 void R_DrawBrushModel (entity_t *e);
 void R_DrawWorld (void);
@@ -320,29 +293,20 @@ void R_InitParticles (void);
 void R_ClearParticles (void);
 qboolean R_CullBox (vec3_t emins, vec3_t emaxs);
 void R_RotateForEntity (entity_t *e, unsigned char scale);
-void R_ClearSkyBox (void);
-void R_DrawSkyBox (void);
 
 void V_CalcBlend (void);
 
 void GL_SubdivideSurface (msurface_t *fa);
 void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr);
 void GL_BuildLightmaps (void);
-void GL_Set2D (void);
 
 void EmitWaterPolys (msurface_t *fa);
-void EmitSkyPolys (msurface_t *fa);
-void EmitFlatSkyPolys (msurface_t *fa);
 void EmitReflectivePolys (msurface_t *fa);
 void EmitScrollPolys (msurface_t *fa);
-void EmitBothSkyLayers (msurface_t *fa);
 
 void R_StoreEfrags (efrag_t **ppefrag);
 
-void Sky_Init (void);
-void Sky_NewMap (void);
 
-void Sky_LoadSkyBox(char* name);
 
 void R_SpawnDecal (vec3_t center, vec3_t normal, vec3_t tangent, int tex, int size, int isbsp);
 void R_SpawnDecalStatic (vec3_t org, int tex, int size);

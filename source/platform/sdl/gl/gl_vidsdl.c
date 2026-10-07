@@ -16,7 +16,6 @@ int texture_mode = GL_LINEAR;
 double gldepthmin, gldepthmax;
 cvar_t gl_ztrick = {"gl_ztrick", "0"};
 qboolean isPermedia = true;
-qboolean gl_mtexable = false;
 static float vid_gamma = 1.0f;
 static int sdl_fullscreen = -1;
 static int sdl_vsync = -1;
@@ -93,6 +92,7 @@ void GL_EndRendering(void)
 {
 	int fullscreen = vid_fullscreen.value != 0.0f;
 	int vsync = r_vsync.value != 0.0f;
+	Draw_Flush();
 	if (fullscreen != sdl_fullscreen)
 		VID_SetFullscreen(fullscreen);
 	if (vsync != sdl_vsync)

@@ -23,16 +23,33 @@
 #ifndef _R_MDL_H_
 #define _R_MDL_H_
 
+typedef struct {
+    short *                positions;
+    const float *          uvs;
+    const unsigned short * indices;
+    int                    num_vertices;
+    int                    num_indices;
+    const int *            commands;
+    const trivertx_t *     pose1;
+    const trivertx_t *     pose2;
+    float                  blend;
+    qboolean               packed_static;
+    int                    command_words;
+} alias_batch_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void R_DrawAliasCommands(const int *commands, const trivertx_t *pose1,
-  const trivertx_t *pose2, float blend, qboolean packed_static,
+void
+R_DrawAliasCommands(const int * commands, const trivertx_t * pose1,
+  const trivertx_t * pose2, float blend, qboolean packed_static,
   int command_words);
+void
+R_ClearAliasTopologyCache(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // ifndef _R_MDL_H_

@@ -68,7 +68,6 @@ texture_t	*r_notexture_mip;
 int		d_lightstylevalue[256];	// 8.8 fraction of base light value
 
 
-void R_MarkLeaves (void);
 
 cvar_t	r_norefresh = {"r_norefresh","0"};
 cvar_t	r_drawentities = {"r_drawentities","1"};
@@ -87,7 +86,6 @@ cvar_t	r_skycolor = {"r_skycolor", "64 64 70", true};
 cvar_t	gl_finish = {"gl_finish","0"};
 cvar_t	gl_clear = {"gl_clear","0"};
 cvar_t	gl_cull = {"gl_cull","1"};
-cvar_t	gl_texsort = {"gl_texsort","1"};
 cvar_t	gl_smoothmodels = {"gl_smoothmodels","1"};
 cvar_t	gl_affinemodels = {"gl_affinemodels","0"};
 cvar_t	gl_polyblend = {"gl_polyblend","1"};
@@ -400,7 +398,7 @@ void R_DrawSpriteModel (entity_t *e)
 
 	glColor3f (1,1,1);
 
-  	GL_Bind(frame->gl_texturenum);
+	Hyena_BindTexture(frame->gl_texturenum);
 
 	Fog_DisableGFog ();
 
@@ -830,7 +828,7 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	glScalef (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
 
 	anim = (int)(cl.time*10) & 3;
-	GL_Bind(paliashdr->gl_texturenum[e->skinnum][anim]);
+	Hyena_BindTexture(paliashdr->gl_texturenum[e->skinnum][anim]);
 
 	if (gl_smoothmodels.value)
 		glShadeModel (GL_SMOOTH);
@@ -1049,27 +1047,27 @@ void R_DrawAliasModel (entity_t *e)
 		switch(e->skinnum)
 		{
 			case 0:
-				GL_Bind(zombie_skins[0]);
+				Hyena_BindTexture(zombie_skins[0]);
 				break;
 			case 1:
-				GL_Bind(zombie_skins[1]);
+				Hyena_BindTexture(zombie_skins[1]);
 				break;
 			case 2:
-				GL_Bind(zombie_skins[2]);
+				Hyena_BindTexture(zombie_skins[2]);
 				break;
 			case 3:
-				GL_Bind(zombie_skins[3]);
+				Hyena_BindTexture(zombie_skins[3]);
 				break;
 			default: //out of bounds? assuming 0
 				Con_Printf("Zombie tex out of bounds: Tex[%i]\n",e->skinnum);
-				GL_Bind(zombie_skins[0]);
+				Hyena_BindTexture(zombie_skins[0]);
 				break;
 		}
 	}
 	else
 	{
 		anim = (int)(cl.time*10) & 3;
-		GL_Bind(paliashdr->gl_texturenum[e->skinnum][anim]);
+		Hyena_BindTexture(paliashdr->gl_texturenum[e->skinnum][anim]);
 	}
 
 	if (gl_smoothmodels.value)
@@ -1581,7 +1579,7 @@ void R_RenderScene (void)
 
 	R_SetupGL ();
 
-	R_MarkLeaves ();	// done here so we know if we're in water
+	R_MarkLeaves(r_novis.value != 0, mirror);	// done here so we know if we're in water
 
 	R_DrawWorld ();		// adds static entities to the list
 
@@ -1602,10 +1600,7 @@ R_Clear
 void R_Clear (void)
 {
 	qboolean clear_color = gl_clear.value;
-	extern char skybox_name[32];
-	extern qboolean sky_is_layered;
-
-	if (!skybox_name[0] && !sky_is_layered)
+	if (!skybox_name[0])
 	{
 		int r = 64, g = 64, b = 70;
 		sscanf(r_skycolor.string, "%d %d %d", &r, &g, &b);
@@ -1776,8 +1771,12 @@ void R_RenderView (void)
 
 	if (r_speeds.value)
 	{
+		int base_batches, lightmap_batches, base_indices, lightmap_indices;
 //		glFinish ();
 		time2 = Sys_FloatTime ();
-		Con_Printf ("%3i ms  %4i wpoly %4i epoly\n", (int)((time2-time1)*1000), c_brush_polys, c_alias_polys); 
+		R_WorldBatchStats (&base_batches, &lightmap_batches, &base_indices, &lightmap_indices);
+		Con_Printf ("%3i ms  %4i wpoly %4i epoly  %i/%i world batches  %i/%i indices\n",
+			(int)((time2-time1)*1000), c_brush_polys, c_alias_polys,
+			base_batches, lightmap_batches, base_indices, lightmap_indices);
 	}
 }

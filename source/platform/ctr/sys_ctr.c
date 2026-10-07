@@ -37,10 +37,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // we don't need a very big stack. this seems to work fine
 u32 __stacksize__ = 256*1024;
 
-// linear heap is where PicaGL stores 
-// textures, unless able to store in VRAM
-u32 __ctru_linear_heap_size = 20 * 1024 * 1024;
-
 bool new3ds_flag;
 bool circlepadpro_flag;
 

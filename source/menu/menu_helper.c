@@ -47,12 +47,19 @@ void Menu_LoadPics ()
 
 image_t Menu_PickBackground (void)
 {
-	// No custom images
-	if (num_custom_images == 0) return menu_bk;
+	int choice, i;
 
-	int i = (rand() % num_custom_images);
+	if (num_custom_images == 0)
+		return menu_bk;
 
-    return (image_t)menu_usermap_image[i];
+	choice = rand() % num_custom_images;
+	for (i = 0; i < num_user_maps; i++) {
+		if (menu_usermap_image[i] < 0)
+			continue;
+		if (choice-- == 0)
+			return menu_usermap_image[i];
+	}
+	return menu_bk;
 }
 
 void Menu_InitStockMaps (void)
@@ -143,11 +150,7 @@ void Menu_ExitMap (void)
 	// Disconnect from server
 	Cbuf_AddText("disconnect\n");
 	// Unload textures
-#ifdef __PSP__
-	GL_UnloadAllTextures();
-#elif defined(__3DS__) || defined (__PSP2__)
-	GL_UnloadTextures();
-#endif
+	Hyena_DestroyTextures();
 	// Enter main menu
 	Menu_Main_Set();
 }
@@ -268,7 +271,7 @@ void Menu_DrawSubPic (int x, int y, int pic, float s, float t, float s_coord_siz
 {
 	UI_Align (&x, &y);
 
-	if (pic > 0) {
+	if (pic >= 0) {
 		Draw_SubPic(x, y, pic, s, t, s_coord_size, t_coord_size, scale, r, g, b, a);
 	}
 }

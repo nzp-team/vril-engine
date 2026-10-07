@@ -67,7 +67,7 @@ image_t b_start;
 image_t b_select;
 image_t b_home;
 #ifdef PLATFORM_USES_GENERIC_GLYPHS
-cvar_t cl_controllerglyphs = {"cl_controllerglyphs", "xbox", true};
+cvar_t cl_controllerglyphs       = { "cl_controllerglyphs", "xbox", true };
 static image_t controller_glyphs = -1;
 static char loaded_controller_glyphs[MAX_QPATH];
 #endif
@@ -263,7 +263,7 @@ HUD_DrawCenterPrint(void)
     } while (*start);
 } /* HUD_DrawCenterPrint */
 
-#define HUD_USEPRINT_COUNT 256
+#define HUD_USEPRINT_COUNT  256
 #define HUD_USEPRINT_LENGTH 256
 
 static char hud_useprint_strings[HUD_USEPRINT_COUNT][HUD_USEPRINT_LENGTH];
@@ -283,8 +283,8 @@ HUD_GetBoundKey(const char * command)
     size_t len = strlen(command);
 
     for (key = 0; key < MAX_KEYS; key++) {
-		if (!IN_KeyMatchesActiveDevice(key))
-			continue;
+        if (!IN_KeyMatchesActiveDevice(key))
+            continue;
         if ((keybindings[key] && !strncmp(keybindings[key], command, len)) ||
           (dtbindings[key] && !strncmp(dtbindings[key], command, len)) ||
           (holdbindings[key] && !strncmp(holdbindings[key], command, len)))
@@ -311,28 +311,27 @@ HUD_UseKeyLabel(int key)
 static image_t
 HUD_KeyIcon(int key)
 {
-#ifdef PLATFORM_USES_GENERIC_GLYPHS
+    #ifdef PLATFORM_USES_GENERIC_GLYPHS
     switch (key) {
         case K_BOTTOMFACE: case K_RIGHTFACE: case K_LEFTFACE: case K_TOPFACE:
         case K_DPAD_UP: case K_DPAD_DOWN: case K_DPAD_LEFT: case K_DPAD_RIGHT:
         case K_LTHUMB: case K_RTHUMB: case K_LTRIGGER: case K_RTRIGGER:
-        case K_ZLTRIGGER: case K_ZRTRIGGER: case K_START: case K_SELECT:
-        {
+        case K_ZLTRIGGER: case K_ZRTRIGGER: case K_START: case K_SELECT: {
             char identifier[64];
             int loaded_index;
             tex_filebase(cl_controllerglyphs.string, identifier);
-            loaded_index = Image_FindImage(identifier);
+            loaded_index = Hyena_FindTexture(identifier);
 
             if (strcmp(loaded_controller_glyphs, cl_controllerglyphs.string)) {
                 char old_identifier[64];
                 int old_index = -1;
                 if (loaded_controller_glyphs[0]) {
                     tex_filebase(loaded_controller_glyphs, old_identifier);
-                    old_index = Image_FindImage(old_identifier);
+                    old_index = Hyena_FindTexture(old_identifier);
                 }
-                if (old_index >= 0) GL_FreeTextures(old_index);
+                if (old_index >= 0) Hyena_DestroyTexture(old_index);
                 controller_glyphs = -1;
-                loaded_index = Image_FindImage(identifier);
+                loaded_index      = Hyena_FindTexture(identifier);
                 Q_strncpyz(loaded_controller_glyphs, cl_controllerglyphs.string,
                   sizeof(loaded_controller_glyphs));
             }
@@ -341,13 +340,13 @@ HUD_KeyIcon(int key)
                 controller_glyphs = loaded_index;
             } else {
                 controller_glyphs = Image_LoadImage(
-                  va("gfx/controller_glyphs/%s", cl_controllerglyphs.string), IMAGE_TGA, 0, false, false);
+                    va("gfx/controller_glyphs/%s", cl_controllerglyphs.string), IMAGE_TGA, 0, false, false);
             }
             return controller_glyphs;
         }
         default: return -1;
     }
-#else
+    #else  /* ifdef PLATFORM_USES_GENERIC_GLYPHS */
     switch (key) {
         case K_UPARROW: return b_up;
 
@@ -377,45 +376,76 @@ HUD_KeyIcon(int key)
 
         default: return -1;
     }
-#endif
-}
+    #endif /* ifdef PLATFORM_USES_GENERIC_GLYPHS */
+} /* HUD_KeyIcon */
 
 #ifdef PLATFORM_USES_GENERIC_GLYPHS
-static int HUD_KeyGlyphIndex(int key)
+static int
+HUD_KeyGlyphIndex(int key)
 {
     switch (key) {
-        case K_BOTTOMFACE: return 0; case K_RIGHTFACE: return 1;
-        case K_LEFTFACE: return 2; case K_TOPFACE: return 3;
-        case K_DPAD_UP: return 4; case K_DPAD_DOWN: return 5;
-        case K_DPAD_LEFT: return 6; case K_DPAD_RIGHT: return 7;
-        case K_LTHUMB: return 8; case K_RTHUMB: return 9;
-        case K_LTRIGGER: return 10; case K_RTRIGGER: return 11;
-        case K_ZLTRIGGER: return 12; case K_ZRTRIGGER: return 13;
-        case K_START: return 14; case K_SELECT: return 15;
+        case K_BOTTOMFACE: return 0;
+
+        case K_RIGHTFACE: return 1;
+
+        case K_LEFTFACE: return 2;
+
+        case K_TOPFACE: return 3;
+
+        case K_DPAD_UP: return 4;
+
+        case K_DPAD_DOWN: return 5;
+
+        case K_DPAD_LEFT: return 6;
+
+        case K_DPAD_RIGHT: return 7;
+
+        case K_LTHUMB: return 8;
+
+        case K_RTHUMB: return 9;
+
+        case K_LTRIGGER: return 10;
+
+        case K_RTRIGGER: return 11;
+
+        case K_ZLTRIGGER: return 12;
+
+        case K_ZRTRIGGER: return 13;
+
+        case K_START: return 14;
+
+        case K_SELECT: return 15;
+
         default: return -1;
     }
-}
-#endif
+} /* HUD_KeyGlyphIndex */
 
-qboolean HUD_KeyHasIcon(int key) { return HUD_KeyIcon(key) >= 0; }
+#endif /* ifdef PLATFORM_USES_GENERIC_GLYPHS */
 
-void HUD_DrawKeyIcon(int x, int y, int key, int size, int alpha)
+qboolean HUD_KeyHasIcon(int key){ return HUD_KeyIcon(key) >= 0; }
+
+void
+HUD_DrawKeyIcon(int x, int y, int key, int size, int alpha)
 {
     image_t icon = HUD_KeyIcon(key);
+
     if (icon < 0) return;
-#ifdef PLATFORM_USES_GENERIC_GLYPHS
+
+    #ifdef PLATFORM_USES_GENERIC_GLYPHS
     {
         int tile = HUD_KeyGlyphIndex(key);
         if (tile < 0) return;
+
         Draw_SubPic(x, y, icon, (tile % 8) * 0.125f, (tile / 8) * 0.125f,
           0.125f, 0.125f, size / 256.0f, 255, 255, 255, alpha);
     }
-#else
+    #else
     Draw_ColoredStretchPic(x, y, icon, size, size, 255, 255, 255, alpha);
-#endif
+    #endif
 }
 
-void HUD_DrawCommandIcon(int x, int y, char *command, int size, int alpha)
+void
+HUD_DrawCommandIcon(int x, int y, char * command, int size, int alpha)
 {
     HUD_DrawKeyIcon(x, y, HUD_GetBoundKey(command), size, alpha);
 }
@@ -433,7 +463,7 @@ GetUseButtonL(void)
 {
     int key = HUD_GetBoundKey("+use");
 
-    return HUD_KeyIcon(key) >= 0 ? "  " : (char *) HUD_UseKeyLabel(key);
+    return HUD_KeyIcon(key) >= 0 ? "    " : (char *) HUD_UseKeyLabel(key);
 }
 
 char *
@@ -441,7 +471,7 @@ GetGrenadeButtonL(void)
 {
     int key = HUD_GetBoundKey("+grenade");
 
-    return HUD_KeyIcon(key) >= 0 ? "  " : (char *) HUD_UseKeyLabel(key);
+    return HUD_KeyIcon(key) >= 0 ? "    " : (char *) HUD_UseKeyLabel(key);
 }
 
 void
@@ -460,14 +490,14 @@ HUD_RegisterUsePrint(int index, const char * text, int red, int green, int blue)
 static void
 HUD_ExpandUsePrint(const char * source, const char * button, const char * touch)
 {
-    char *out = hud_usestring;
+    char * out       = hud_usestring;
     size_t remaining = sizeof(hud_usestring);
 
     hud_use_has_button = false;
-    hud_use_button_x = 0;
+    hud_use_button_x   = 0;
 
     while (*source && remaining > 1) {
-        const char *replacement = NULL;
+        const char * replacement = NULL;
 
         if (source[0] == '%' && source[1] == 'b') {
             replacement = button;
@@ -477,8 +507,8 @@ HUD_ExpandUsePrint(const char * source, const char * button, const char * touch)
 
                 memcpy(prefix, hud_usestring, prefix_length);
                 prefix[prefix_length] = 0;
-                hud_use_button_x = getTextWidth(prefix, vid.scale);
-                hud_use_has_button = true;
+                hud_use_button_x      = getTextWidth(prefix, vid.scale);
+                hud_use_has_button    = true;
             }
         } else if (source[0] == '%' && source[1] == 's') {
             replacement = touch;
@@ -496,13 +526,13 @@ HUD_ExpandUsePrint(const char * source, const char * button, const char * touch)
         }
     }
     *out = 0;
-}
+} /* HUD_ExpandUsePrint */
 
 void
 HUD_UsePrint(int index, int cost)
 {
-    const char *button;
-    const char *touch = sv_player ? PR_GetString(sv_player->v.useprint_touch) : "";
+    const char * button;
+    const char * touch = sv_player ? PR_GetString(sv_player->v.useprint_touch) : "";
 
     if (index < 0 || index >= HUD_USEPRINT_COUNT) {
         Con_Printf("Useprint index %i out of range\n", index);
@@ -516,9 +546,9 @@ HUD_UsePrint(int index, int cost)
     HUD_ExpandUsePrint(hud_useprint_strings[index], button, touch);
     if (cost > 0)
         snprintf(hud_usecost, sizeof(hud_usecost), "[Cost: %i]", cost);
-    hud_use_type     = index;
-    hud_use_until    = Sys_FloatTime() + 0.1;
-    scr_usetime_off  = 0.1f;
+    hud_use_type    = index;
+    hud_use_until   = Sys_FloatTime() + 0.1;
+    scr_usetime_off = 0.1f;
 } /* HUD_UsePrint */
 
 /************************
@@ -554,7 +584,7 @@ HUD_DrawUsePrint(void)
 static void
 HUD_DrawWaypointBinding(int x, int y, const char * command, const char * action)
 {
-    int key            = HUD_GetBoundKey(command);
+    int key = HUD_GetBoundKey(command);
     qboolean has_icon  = HUD_KeyHasIcon(key);
     const char * label = HUD_UseKeyLabel(key);
     char text[128];
@@ -597,9 +627,10 @@ HUD_Waypoint(void)
 }
 
 static image_t
-HUD_LoadConfigImage(const char *path)
+HUD_LoadConfigImage(const char * path)
 {
     char identifier[64];
+
     snprintf(identifier, sizeof(identifier), "%s", path);
     return Image_LoadImageWithIdentifier(identifier, identifier, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, true, false);
 }
@@ -627,42 +658,43 @@ HUD_Init(void)
     sb_moneyback = HUD_LoadConfigImage("gfx/hud/moneyback");
     sb_moneyback_condensed = HUD_LoadConfigImage("gfx/hud/moneyback_condensed");
     instapic = HUD_LoadConfigImage("gfx/hud/in_kill");
-    x2pic = HUD_LoadConfigImage("gfx/hud/2x");
+    x2pic    = HUD_LoadConfigImage("gfx/hud/2x");
 
-    revivepic = HUD_LoadConfigImage("gfx/hud/revive");
-    jugpic = HUD_LoadConfigImage("gfx/hud/jug");
-    floppic = HUD_LoadConfigImage("gfx/hud/flopper");
-    staminpic = HUD_LoadConfigImage("gfx/hud/stamin");
-    doublepic = HUD_LoadConfigImage("gfx/hud/double");
-    doublepic2 = HUD_LoadConfigImage("gfx/hud/double2");
-    speedpic = HUD_LoadConfigImage("gfx/hud/speed");
-    deadpic = HUD_LoadConfigImage("gfx/hud/dead");
-    mulepic = HUD_LoadConfigImage("gfx/hud/mule");
-    fragpic = HUD_LoadConfigImage("gfx/hud/frag");
-    bettypic = HUD_LoadConfigImage("gfx/hud/betty");
+    revivepic        = HUD_LoadConfigImage("gfx/hud/revive");
+    jugpic           = HUD_LoadConfigImage("gfx/hud/jug");
+    floppic          = HUD_LoadConfigImage("gfx/hud/flopper");
+    staminpic        = HUD_LoadConfigImage("gfx/hud/stamin");
+    doublepic        = HUD_LoadConfigImage("gfx/hud/double");
+    doublepic2       = HUD_LoadConfigImage("gfx/hud/double2");
+    speedpic         = HUD_LoadConfigImage("gfx/hud/speed");
+    deadpic          = HUD_LoadConfigImage("gfx/hud/dead");
+    mulepic          = HUD_LoadConfigImage("gfx/hud/mule");
+    fragpic          = HUD_LoadConfigImage("gfx/hud/frag");
+    bettypic         = HUD_LoadConfigImage("gfx/hud/betty");
     hud_sniper_scope = Image_LoadImage("gfx/hud/scope_nb", IMAGE_TGA, 0, true, false);
-    hud_hitmarker = Image_LoadImage("gfx/hud/hit_marker", IMAGE_TGA, 0, true, false);
+    hud_hitmarker    = Image_LoadImage("gfx/hud/hit_marker", IMAGE_TGA, 0, true, false);
 
-#ifdef PLATFORM_USES_GENERIC_GLYPHS
+    #ifdef PLATFORM_USES_GENERIC_GLYPHS
     Cvar_RegisterVariable(&cl_controllerglyphs);
     HUD_KeyIcon(K_BOTTOMFACE);
-#else
-    b_rightface  = Image_LoadImage("gfx/butticons/rightface", IMAGE_TGA, 0, true, false);
-    b_leftface   = Image_LoadImage("gfx/butticons/leftface", IMAGE_TGA, 0, true, false);
-    b_bottomface = Image_LoadImage("gfx/butticons/bottomface", IMAGE_TGA, 0, true, false);
-    b_topface    = Image_LoadImage("gfx/butticons/topface", IMAGE_TGA, 0, true, false);
-    b_left       = Image_LoadImage("gfx/butticons/left", IMAGE_TGA, 0, true, false);
-    b_right      = Image_LoadImage("gfx/butticons/right", IMAGE_TGA, 0, true, false);
-    b_up         = Image_LoadImage("gfx/butticons/up", IMAGE_TGA, 0, true, false);
-    b_down       = Image_LoadImage("gfx/butticons/down", IMAGE_TGA, 0, true, false);
-    b_lt         = Image_LoadImage("gfx/butticons/lt", IMAGE_TGA, 0, true, false);
-    b_rt         = Image_LoadImage("gfx/butticons/rt", IMAGE_TGA, 0, true, false);
-    b_zlt        = Image_LoadImage("gfx/butticons/zlt", IMAGE_TGA, 0, true, false);
-    b_zrt        = Image_LoadImage("gfx/butticons/zrt", IMAGE_TGA, 0, true, false);
-    b_start      = Image_LoadImage("gfx/butticons/start", IMAGE_TGA, 0, true, false);
-    b_select     = Image_LoadImage("gfx/butticons/select", IMAGE_TGA, 0, true, false);
-    b_home       = Image_LoadImage("gfx/butticons/home", IMAGE_TGA, 0, true, false);
-#endif
+    #else
+    const int icon_formats = IMAGE_TGA | IMAGE_PNG;
+    b_rightface  = Image_LoadImage("gfx/butticons/rightface", icon_formats, 0, true, false);
+    b_leftface   = Image_LoadImage("gfx/butticons/leftface", icon_formats, 0, true, false);
+    b_bottomface = Image_LoadImage("gfx/butticons/bottomface", icon_formats, 0, true, false);
+    b_topface    = Image_LoadImage("gfx/butticons/topface", icon_formats, 0, true, false);
+    b_left       = Image_LoadImage("gfx/butticons/left", icon_formats, 0, true, false);
+    b_right      = Image_LoadImage("gfx/butticons/right", icon_formats, 0, true, false);
+    b_up         = Image_LoadImage("gfx/butticons/up", icon_formats, 0, true, false);
+    b_down       = Image_LoadImage("gfx/butticons/down", icon_formats, 0, true, false);
+    b_lt         = Image_LoadImage("gfx/butticons/lt", icon_formats, 0, true, false);
+    b_rt         = Image_LoadImage("gfx/butticons/rt", icon_formats, 0, true, false);
+    b_zlt        = Image_LoadImage("gfx/butticons/zlt", icon_formats, 0, true, false);
+    b_zrt        = Image_LoadImage("gfx/butticons/zrt", icon_formats, 0, true, false);
+    b_start      = Image_LoadImage("gfx/butticons/start", icon_formats, 0, true, false);
+    b_select     = Image_LoadImage("gfx/butticons/select", icon_formats, 0, true, false);
+    b_home       = Image_LoadImage("gfx/butticons/home", icon_formats, 0, true, false);
+    #endif /* ifdef PLATFORM_USES_GENERIC_GLYPHS */
 
     fx_blood_lu = Image_LoadImage("gfx/hud/blood", IMAGE_TGA, 0, true, false);
 
@@ -676,11 +708,13 @@ HUD_Init(void)
  * ===============
  */
 void
-HUD_Configure(int index, const char *value)
+HUD_Configure(int index, const char * value)
 {
-    image_t *picture = NULL;
+    image_t * picture = NULL;
     image_t loaded;
+
     if (strlen(value) >= 64) return;
+
     if (index == 0) {
         if (!strcmp(value, "cw")) {
             perk_orientation = HUD_PERK_ORI_CW;
@@ -702,8 +736,8 @@ HUD_Configure(int index, const char *value)
         return;
     }
     if (index == 33) {
-        hud_round_orientation = !strcmp(value, "top_right")
-          ? HUD_ROUND_ORI_TOP_RIGHT : HUD_ROUND_ORI_BOTTOM_LEFT;
+        hud_round_orientation = !strcmp(value, "top_right") ?
+          HUD_ROUND_ORI_TOP_RIGHT : HUD_ROUND_ORI_BOTTOM_LEFT;
         return;
     }
     if (index == 34) {
@@ -715,36 +749,66 @@ HUD_Configure(int index, const char *value)
         return;
     }
     switch (index) {
-        case 2: picture = &revivepic; break;
-        case 3: picture = &jugpic; break;
-        case 4: picture = &speedpic; break;
-        case 5: picture = &doublepic; break;
-        case 6: picture = &doublepic2; break;
-        case 7: picture = &staminpic; break;
-        case 8: picture = &floppic; break;
-        case 9: picture = &deadpic; break;
-        case 10: picture = &mulepic; break;
-        case 11: picture = &instapic; break;
-        case 12: picture = &x2pic; break;
-        case 13: picture = &sb_round[0]; break;
-        case 14: picture = &sb_round[1]; break;
-        case 15: picture = &sb_round[2]; break;
-        case 16: picture = &sb_round[3]; break;
-        case 17: picture = &sb_round[4]; break;
-        case 18: picture = &sb_round_num[0]; break;
-        case 19: picture = &sb_round_num[1]; break;
-        case 20: picture = &sb_round_num[2]; break;
-        case 21: picture = &sb_round_num[3]; break;
-        case 22: picture = &sb_round_num[4]; break;
-        case 23: picture = &sb_round_num[5]; break;
-        case 24: picture = &sb_round_num[6]; break;
-        case 25: picture = &sb_round_num[7]; break;
-        case 26: picture = &sb_round_num[8]; break;
-        case 27: picture = &sb_round_num[9]; break;
-        case 28: picture = &fragpic; break;
-        case 29: picture = &bettypic; break;
-        case 30: picture = &sb_moneyback; break;
-        case 31: picture = &sb_moneyback_condensed; break;
+        case 2: picture = &revivepic;
+            break;
+        case 3: picture = &jugpic;
+            break;
+        case 4: picture = &speedpic;
+            break;
+        case 5: picture = &doublepic;
+            break;
+        case 6: picture = &doublepic2;
+            break;
+        case 7: picture = &staminpic;
+            break;
+        case 8: picture = &floppic;
+            break;
+        case 9: picture = &deadpic;
+            break;
+        case 10: picture = &mulepic;
+            break;
+        case 11: picture = &instapic;
+            break;
+        case 12: picture = &x2pic;
+            break;
+        case 13: picture = &sb_round[0];
+            break;
+        case 14: picture = &sb_round[1];
+            break;
+        case 15: picture = &sb_round[2];
+            break;
+        case 16: picture = &sb_round[3];
+            break;
+        case 17: picture = &sb_round[4];
+            break;
+        case 18: picture = &sb_round_num[0];
+            break;
+        case 19: picture = &sb_round_num[1];
+            break;
+        case 20: picture = &sb_round_num[2];
+            break;
+        case 21: picture = &sb_round_num[3];
+            break;
+        case 22: picture = &sb_round_num[4];
+            break;
+        case 23: picture = &sb_round_num[5];
+            break;
+        case 24: picture = &sb_round_num[6];
+            break;
+        case 25: picture = &sb_round_num[7];
+            break;
+        case 26: picture = &sb_round_num[8];
+            break;
+        case 27: picture = &sb_round_num[9];
+            break;
+        case 28: picture = &fragpic;
+            break;
+        case 29: picture = &bettypic;
+            break;
+        case 30: picture = &sb_moneyback;
+            break;
+        case 31: picture = &sb_moneyback_condensed;
+            break;
         default: return;
     }
     if (!*value) {
@@ -752,14 +816,14 @@ HUD_Configure(int index, const char *value)
         return;
     }
 
-    loaded = Image_LoadImageWithIdentifier((char *)value, (char *)value,
-      IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, true, false);
+    loaded = Image_LoadImageWithIdentifier((char *) value, (char *) value,
+        IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, 0, true, false);
     if (loaded < 0) {
         Con_Printf("Couldn't load configured HUD image %s\n", value);
         return;
     }
     *picture = loaded;
-}
+} /* HUD_Configure */
 
 void
 HUD_NewMap(void)
@@ -936,11 +1000,11 @@ HUD_EndScreen(void)
     qboolean condensed = screen_width <= 320 * vid.scale;
     int panel_width    = (condensed ? 320 : 400) * vid.scale;
     int panel_x;
-    int header_y       = 89 * vid.scale;
-    int header_height  = 10 * vid.scale;
-    int header_gap     = 2 * vid.scale;
-    int row_height     = 11 * vid.scale;
-    float text_scale   = vid.scale;
+    int header_y      = 89 * vid.scale;
+    int header_height = 10 * vid.scale;
+    int header_gap    = 2 * vid.scale;
+    int row_height    = 11 * vid.scale;
+    float text_scale  = vid.scale;
     static const char * full_headers[]      = { "Score", "Kills", "Downs", "Revives", "Headshots" };
     static const char * condensed_headers[] = { "PTS", "K", "D", "R", "HS" };
     static const float condensed_offsets[]  = { -44.0f, 2.0f, 42.0f, 82.0f, 123.0f };
@@ -1116,10 +1180,12 @@ HUD_Points(void)
         // draw background
 
         f = s->points;
-        Draw_StretchPic(x, y, k == cl.viewentity - 1 ? sb_moneyback : sb_moneyback_condensed, 64 * vid.scale, 16 * vid.scale);
+        Draw_StretchPic(x, y, k == cl.viewentity - 1 ? sb_moneyback : sb_moneyback_condensed, 64 * vid.scale,
+          16 * vid.scale);
         xplus = getTextWidth(va("%i", f), vid.scale);
         CL_PlayerColor(k, &r, &g, &b);
-        HUD_DrawTextBackdrop((((64 * vid.scale) - xplus) / 2) + x, y + (4 * vid.scale), va("%i", f), r, g, b, 255, vid.scale);
+        HUD_DrawTextBackdrop((((64 * vid.scale) - xplus) / 2) + x, y + (4 * vid.scale), va("%i", f), r, g, b, 255,
+          vid.scale);
 
         if (hud_last_points_valid[k] && hud_last_points[k] != f)
             HUD_Parse_Point_Change(abs(f - hud_last_points[k]), f < hud_last_points[k], k, 0);
@@ -1160,19 +1226,19 @@ HUD_Point_Change(void)
             base_x = vid.width - (70 * vid.scale) - HUD_UltrawideOffset() - (10 * vid.scale);
         }
 
-        base_y   = vid.height - (69 * vid.scale) - change->player * (18 * vid.scale);
+        base_y = vid.height - (69 * vid.scale) - change->player * (18 * vid.scale);
 
         if (score_orientation == HUD_SCORE_ORI_LEFT && hud_round_orientation == HUD_ROUND_ORI_TOP_RIGHT)
             base_y = vid.height - (18 * vid.scale) - change->player * (18 * vid.scale);
 
-        x        = base_x + (int) (change->travel_x * progress);
-        y        = base_y + (int) (change->travel_y * progress);
+        x = base_x + (int) (change->travel_x * progress);
+        y = base_y + (int) (change->travel_y * progress);
         if (change->difference < 0)
             Draw_ColoredString(x, y, va("%i", change->difference), 255, 0, 0, alpha * 255, vid.scale);
         else
             Draw_ColoredString(x, y, va("+%i", change->difference), 255, 255, 0, alpha * 255, vid.scale);
     }
-}
+} /* HUD_Point_Change */
 
 /*
  * ==================
@@ -1329,11 +1395,11 @@ HUD_WorldText(int alpha)
 static char hud_toast_text[1024];
 
 void
-HUD_PowerupToast(const char *text)
+HUD_PowerupToast(const char * text)
 {
     snprintf(hud_toast_text, sizeof(hud_toast_text), "%s", text);
     hud_maxammo_starttime = cl.time;
-    hud_maxammo_endtime = cl.time + 2;
+    hud_maxammo_endtime   = cl.time + 2;
 }
 
 void
@@ -1401,7 +1467,8 @@ HUD_RoundCounterX(int round)
 {
     if (hud_round_orientation == HUD_ROUND_ORI_TOP_RIGHT)
         return vid.width - HUD_UltrawideOffset() - 5 * vid.scale
-          - HUD_RoundCounterWidth(round);
+               - HUD_RoundCounterWidth(round);
+
     return 5 * vid.scale + HUD_UltrawideOffset();
 }
 
@@ -1410,6 +1477,7 @@ HUD_RoundCounterY(void)
 {
     if (hud_round_orientation == HUD_ROUND_ORI_TOP_RIGHT)
         return 4 * vid.scale;
+
     return vid.height - 48 * vid.scale - 4;
 }
 
@@ -1478,11 +1546,13 @@ HUD_DrawRoundIntro(void)
     if (state != 1 && state != 2)
         return;
 
-    title_alpha = (int) (ralpha * 255);
+    title_alpha    = (int) (ralpha * 255);
     title_color[0] = CLAMP(0, round_color_target[0] * 1.5f, 255);
     title_color[1] = CLAMP(0, round_color_target[1] * 1.5f, 255);
     title_color[2] = CLAMP(0, round_color_target[2] * 1.5f, 255);
-    Draw_ColoredStringCentered(85 * vid.scale, "Round", (int) (title_color[0] + (255 - title_color[0]) * rcolor), (int) (title_color[1] + (255 - title_color[1]) * rcolor), (int) (title_color[2] + (255 - title_color[2]) * rcolor), title_alpha, 2.0f * vid.scale);
+    Draw_ColoredStringCentered(85 * vid.scale, "Round", (int) (title_color[0] + (255 - title_color[0]) * rcolor),
+      (int) (title_color[1] + (255 - title_color[1]) * rcolor),
+      (int) (title_color[2] + (255 - title_color[2]) * rcolor), title_alpha, 2.0f * vid.scale);
 
     rcolor -= frame_time / 2.5f;
     if (rcolor < 0) {
@@ -1551,7 +1621,9 @@ HUD_Rounds(void)
             }
             center_alpha += frame_time * 500;
             if (center_alpha > 255) center_alpha = 255;
-            Draw_ColoredStretchPic(round_center_x, round_center_y, hud_tally_until > 1 ? sb_round[0] : sb_round_num[1], (hud_tally_until > 1 ? 11 : 32) * vid.scale, 48 * vid.scale, color[0], color[1], color[2], (int) center_alpha);
+            Draw_ColoredStretchPic(round_center_x, round_center_y, hud_tally_until > 1 ? sb_round[0] : sb_round_num[1],
+              (hud_tally_until > 1 ? 11 : 32) * vid.scale, 48 * vid.scale, color[0], color[1], color[2],
+              (int) center_alpha);
             return;
 
         case 2: // this is the rounds icon moving from middle
@@ -1571,8 +1643,8 @@ HUD_Rounds(void)
                     round_center_y = HUD_RoundCounterY();
             } else {
                 round_center_x -= (((229.0f / 108.0f) * 2 - 0.2f)
-              * ((vid.width - HUD_UltrawideOffset()) / (480.0f * vid.scale)) / 8)
-              * (frame_time * 250) * vid.scale;
+                  * ((vid.width - HUD_UltrawideOffset()) / (480.0f * vid.scale)) / 8)
+                  * (frame_time * 250) * vid.scale;
                 round_center_y += ((2 * (vid.height / (272.0f * vid.scale))) / 8)
                   * (frame_time * 250) * vid.scale;
                 if (round_center_x < 3 * vid.scale + HUD_UltrawideOffset())
@@ -1580,7 +1652,8 @@ HUD_Rounds(void)
                 if (round_center_y > vid.height - 1 - 48 * vid.scale)
                     round_center_y = vid.height - 1 - 48 * vid.scale;
             }
-            Draw_ColoredStretchPic(round_center_x, round_center_y, hud_tally_until > 1 ? sb_round[0] : sb_round_num[1], (hud_tally_until > 1 ? 11 : 32) * vid.scale, 48 * vid.scale, color[0], color[1], color[2], 255);
+            Draw_ColoredStretchPic(round_center_x, round_center_y, hud_tally_until > 1 ? sb_round[0] : sb_round_num[1],
+              (hud_tally_until > 1 ? 11 : 32) * vid.scale, 48 * vid.scale, color[0], color[1], color[2], 255);
             return;
 
         case 3: // shift to white
@@ -2465,7 +2538,7 @@ HUD_Crosshair(void)
         if (sv_player && sv_player->v.view_ofs[2] == 8) spread *= 0.80f;
         else if (sv_player && sv_player->v.view_ofs[2] == -10) spread *= 0.65f;
         crosshair_offset_step += (spread - crosshair_offset_step) * ((int) crosshair.value == 4 ? 0.05f : 0.5f);
-        spread = (int) crosshair_offset_step;
+        spread       = (int) crosshair_offset_step;
         pixel_spread = (int) (spread * vid.scale);
         if (cl_crosshairdot.value && (int) crosshair.value == 1) {
             int dot = vid.scale >= 1 ? (int) vid.scale : 1;

@@ -151,7 +151,6 @@ void R_RenderView (void);		// must set r_refdef first
 void R_DrawLine(vec3_t start,vec3_t end, vec3_t rgb);//blubs added this
 
 void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect);
-void R_InitSky (byte *mt);	// called at level load
 
 void R_NewMap (void);
 

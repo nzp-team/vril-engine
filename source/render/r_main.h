@@ -24,7 +24,7 @@
 #ifndef _RENDER_MAIN_H_
 #define _RENDER_MAIN_H_
 
-#include "r_hyena_types.h"
+#include "r_types.h"
 #include "r_hyena.h"
 #include "r_color_quantization.h"
 #include "r_entity_fragments.h"
@@ -32,6 +32,7 @@
 #include "r_fog.h"
 #include "r_mdl.h"
 #include "r_surface.h"
+#include "r_sky.h"
 
 void R_InitDecals(void);
 void R_ClearDecals(void);

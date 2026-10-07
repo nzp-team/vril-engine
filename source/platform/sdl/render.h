@@ -144,7 +144,6 @@ void R_InitTextures (void);
 void R_RenderView (void);		// must set r_refdef first
 void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect);
 								// called whenever r_refdef or vid change
-void R_InitSky (struct miptex_s *mt);	// called at level load
 
 void R_NewMap (void);
 

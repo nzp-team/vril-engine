@@ -55,8 +55,6 @@ int		mod_numknown;
 
 cvar_t gl_subdivide_size = {"gl_subdivide_size", "128", true};
 
-extern int solidskytexture;
-extern int alphaskytexture;
 
 /*
 ===============
@@ -212,14 +210,8 @@ void Mod_ClearAll (void)
 
 	ent_file = NULL; //~~~~
 
-	GL_UnloadAllTextures();
-
-	solidskytexture	= -1;
-	alphaskytexture	= -1;
-
-	//purge old sky textures
-	for (i=0; i<5; i++)
-		skyimage[i] = -1;
+	Hyena_DestroyTextures();
+	Sky_ClearTextures();
 
 	//purge old lightmaps
 	for (i=0; i<MAX_LIGHTMAPS; i++)
@@ -420,7 +412,6 @@ model_t *Mod_ForName (char *name, qboolean crash)
 */
 
 byte	*mod_base;
-int GL_LoadTexturePixels (byte *data, char *identifier, int width, int height, int mode);
 
 #define ISSKYTEX(name)		((name)[0] == 's' && (name)[1] == 'k' && (name)[2] == 'y')
 
@@ -478,13 +469,14 @@ void Mod_LoadTextures (lump_t *l)
 
 		tx = static_cast<texture_t*>(Hunk_AllocName (sizeof(texture_t) , loadname ));
 
-		const std::size_t buffer_size = pixels;
+		const bool is_sky = !strncmp(mt->name, "sky", 3);
+		byte* tx_pixels = NULL;
 
-        byte* tx_pixels = static_cast<byte*>(memalign(16, buffer_size));
-
-		if (!tx_pixels)
+		if (!is_sky)
 		{
-			Sys_Error("BrushTex: Out of RAM for loading textures\n");
+			tx_pixels = static_cast<byte*>(memalign(16, pixels));
+			if (!tx_pixels)
+				Sys_Error("BrushTex: Out of RAM for loading textures\n");
 		}
 		loadmodel->textures[i] = tx;
 
@@ -494,17 +486,16 @@ void Mod_LoadTextures (lump_t *l)
 		tx->height = mt->height;
 		for (j=0 ; j<MIPLEVELS ; j++)
 			tx->offsets[j] = mt->offsets[j] + sizeof(texture_t) - sizeof(miptex_t);
-		// the pixels immediately follow the structures
-		memcpy_vfpu( tx_pixels, mt+1, pixels);
+		if (!is_sky)
+			memcpy_vfpu(tx_pixels, mt + 1, pixels);
 
 		int level = 0;
 		if (r_mipmaps.value > 0)
 			level = 3;
 
-    //if (loadmodel->isworldmodel && loadmodel->bspversion != HL_BSPVERSION && ISSKYTEX(tx->name))
-    if (loadmodel->bspversion != HL_BSPVERSION)
+	if (is_sky)
 	{
-		R_InitSky (tx_pixels);
+		tx->gl_texturenum = -1;
  	}
 	else
 	{
@@ -536,7 +527,7 @@ void Mod_LoadTextures (lump_t *l)
 			tx->gl_texturenum = Image_LoadImage (texname, IMAGE_TGA | IMAGE_PNG | IMAGE_JPG, GU_LINEAR, false, true);
 			if(tx->gl_texturenum < 0)
 			{
-				tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(tx_pixels), true, GU_LINEAR, level);
+				tx->gl_texturenum = Image_LoadTexture(mt->name, tx->width, tx->height, (byte *)(tx_pixels), HYE_TEXTURE_INDEX8, HYE_FILTER_LINEAR, level, true, false, true);
 			}
 /*
 		          //Crow_bar mult detail textures
@@ -556,7 +547,7 @@ void Mod_LoadTextures (lump_t *l)
 
 				// load the fullbright pixels version of the texture
 				tx->fullbright =
-			        GL_LoadTexture (fbr_mask_name, tx->width, tx->height, (byte *)(tx_pixels), true, GU_LINEAR, level);
+			        Image_LoadTexture(fbr_mask_name, tx->width, tx->height, (byte *)(tx_pixels), HYE_TEXTURE_INDEX8, HYE_FILTER_LINEAR, level, true, false, true);
 			}
 			else
 				tx->fullbright = -1; // because 0 is a potentially valid texture number
@@ -670,12 +661,11 @@ void Mod_LoadLighting (lump_t *l)
 {
 	if (COM_CheckParm ("-lm_1"))
 		LIGHTMAP_BYTES = 1;
-	else if (COM_CheckParm ("-lm_2"))
-		LIGHTMAP_BYTES = 2;
-	else if (COM_CheckParm ("-lm_3"))
-		LIGHTMAP_BYTES = 3;
 	else
-        LIGHTMAP_BYTES = 4;
+		LIGHTMAP_BYTES = 4;
+	// Hyena packs RGBA lightmaps for -lm_2 on upload.
+	if (COM_CheckParm("-lm_2"))
+		Cvar_SetValue("hyena_lightmap_16bit", 1);
 
 	loadmodel->lightdata = NULL;
 	
@@ -749,12 +739,11 @@ void Mod_HL_LoadLighting (lump_t *l)
 {
 	if (COM_CheckParm ("-lm_1"))
 		LIGHTMAP_BYTES = 1;
-	else if (COM_CheckParm ("-lm_2"))
-		LIGHTMAP_BYTES = 2;
-	else if (COM_CheckParm ("-lm_3"))
-		LIGHTMAP_BYTES = 3;
 	else
-    LIGHTMAP_BYTES = 4;
+		LIGHTMAP_BYTES = 4;
+	// Hyena packs RGBA lightmaps for -lm_2 on upload.
+	if (COM_CheckParm("-lm_2"))
+		Cvar_SetValue("hyena_lightmap_16bit", 1);
 
 	if (!l->filelen)
 	{
@@ -1099,8 +1088,6 @@ void Mod_LoadFaces (lump_t *l)
 		// Sky textures.
 		if (tex_name[0] == 's' && tex_name[1] == 'k' && tex_name[2] == 'y') {
 			out->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
-
-			GL_Surface(out); // Don't cut up polygon for warps
 			continue;
 		}
 		// Turbulent.
@@ -2006,7 +1993,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] = 
 			pheader->gl_texturenum[i][1] = 
 			pheader->gl_texturenum[i][2] =
-			pheader->gl_texturenum[i][3] = is_viewmodel ? Image_LoadImage (model2, IMAGE_TGA | IMAGE_PCX, GU_LINEAR, false, false) : loadpcxas4bpp(model2, GU_LINEAR);
+			pheader->gl_texturenum[i][3] = is_viewmodel ? Image_LoadImage (model2, IMAGE_TGA | IMAGE_PCX, GU_LINEAR, false, false) : loadpcxas4bpp(model2, HYE_FILTER_LINEAR);
 
 			if (pheader->gl_texturenum[i][0] < 0)//try again for external tga model textures
 			{
@@ -2022,8 +2009,11 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					pheader->gl_texturenum[i][1] =
 					pheader->gl_texturenum[i][2] =
 					pheader->gl_texturenum[i][3] = is_viewmodel
-						? GL_LoadTexture (name, pheader->skinwidth,pheader->skinheight, (byte *)(pskintype), true, GU_LINEAR, 0)
-						: GL_LoadTexture8to4(name, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1), (byte*)d_8to24table, GU_LINEAR, 4, NULL);
+						? Image_LoadTexture(name, pheader->skinwidth, pheader->skinheight, (byte *)(pskintype), HYE_TEXTURE_INDEX8, HYE_FILTER_LINEAR, 0, true, true, true)
+						: Hyena_LoadPalettedTexture(name, pheader->skinwidth,
+						  pheader->skinheight, (byte *)(pskintype + 1),
+						  (byte *)d_8to24table, 4, NULL, HYE_FILTER_LINEAR, 0, true,
+						  true);
 				}
 			}
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
@@ -2043,14 +2033,17 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 				Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
 				COM_StripExtension(loadmodel->name, model);
 				snprintf(model2, 128, "%s_%i_%i", model, i, j);
-				pheader->gl_texturenum[i][j&3] = is_viewmodel ? Image_LoadImage (model2, IMAGE_PCX, GU_LINEAR, false, false) : loadpcxas4bpp(model2, GU_LINEAR);
+				pheader->gl_texturenum[i][j&3] = is_viewmodel ? Image_LoadImage (model2, IMAGE_PCX, GU_LINEAR, false, false) : loadpcxas4bpp(model2, HYE_FILTER_LINEAR);
 				
 				if (pheader->gl_texturenum[i][j&3] < 0)// did not find a matching TGA...
 				{
 					snprintf (name, 128, "%s_%i_%i", loadmodel->name, i, j);
 					pheader->gl_texturenum[i][j&3] = is_viewmodel
-						? GL_LoadTexture (name, pheader->skinwidth,pheader->skinheight, (byte *)(pskintype), true, GU_LINEAR, 0)
-						: GL_LoadTexture8to4(name, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype+1), (byte*)d_8to24table, GU_LINEAR, 4, NULL);
+						? Image_LoadTexture(name, pheader->skinwidth, pheader->skinheight, (byte *)(pskintype), HYE_TEXTURE_INDEX8, HYE_FILTER_LINEAR, 0, true, true, true)
+						: Hyena_LoadPalettedTexture(name, pheader->skinwidth,
+						  pheader->skinheight, (byte *)(pskintype + 1),
+						  (byte *)d_8to24table, 4, NULL, HYE_FILTER_LINEAR, 0, true,
+						  true);
 				}
 				pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
 			}
@@ -2294,13 +2287,13 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum, 
 		pspriteframe->gl_texturenum = Image_LoadImage (sprite2, IMAGE_TGA, GU_LINEAR, true, false);
 		if (pspriteframe->gl_texturenum < 0)// did not find a matching TGA...
 		{
-			pspriteframe->gl_texturenum = GL_LoadTexture (sprite2, width, height, (byte *)(pinframe + 1), true, GU_LINEAR, 0);
+			pspriteframe->gl_texturenum = Image_LoadTexture(sprite2, width, height, (byte *)(pinframe + 1), HYE_TEXTURE_INDEX8, HYE_FILTER_LINEAR, 0, true, true, true);
 		}
 	}
 	else if (version == SPRITE32_VERSION)
 	{
 		size *= 4;
-		pspriteframe->gl_texturenum = GL_LoadImages (sprite2, width, height, (byte *)(pinframe + 1), true, GU_LINEAR, 0, 4, true);
+		pspriteframe->gl_texturenum = Image_LoadTexture(sprite2, width, height, (byte *)(pinframe + 1), HYE_TEXTURE_RGBA8, HYE_FILTER_LINEAR, 0, true, true, true);
 	}
 	else
 	{

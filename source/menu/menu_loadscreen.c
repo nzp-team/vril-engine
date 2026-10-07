@@ -191,7 +191,7 @@ static void LoadingScreen_LoadImage(void)
 		return;
 	}
 
-	lscreen_image = Image_FindImage(lscreen_identifier);
+	lscreen_image = Hyena_FindTexture(lscreen_identifier);
 	if (lscreen_image < 0)
 		lscreen_image = Image_LoadImage(lscreen_path, lscreen_format, 0, false, false);
 }

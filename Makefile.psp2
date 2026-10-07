@@ -83,14 +83,19 @@ COMMON_OBJS =	\
 	source/render/r_entity_fragments.o \
 	source/render/r_color_quantization.o \
 	source/render/r_light.o \
+	source/render/r_draw.o \
+	source/render/r_texture.o \
+	source/render/r_pixels.o \
+	source/render/r_dxt.o \
 	source/render/r_mdl.o \
 	source/render/r_surface.o \
+	source/render/r_sky.o \
+	source/render/r_world.o \
 	source/render/r_particles.o \
 	source/render/r_decals.o \
 	source/platform/psp2/gl/gl_hyena.o \
 	source/images.o \
 	source/platform/psp2/sys_psp2.o \
-	source/platform/psp2/gl/gl_draw.o \
 	source/platform/psp2/gl/gl_mesh.o \
 	source/platform/psp2/gl/gl_model.o \
 	source/platform/psp2/gl/gl_rmain.o \
@@ -115,7 +120,7 @@ COMMON_OBJS =	\
 	source/platform/psp2/gl/gl_vidpsp2.o \
 	source/platform/psp2/neon_mathfun.o \
 	source/crypter.o
-	
+
 CPPSOURCES	:= source/audiodec
 
 CPPFILES := $(foreach dir,$(CPPSOURCES),$(wildcard $(dir)/*.cpp))
@@ -144,6 +149,7 @@ endif
 CXXFLAGS  = $(CFLAGS) -fno-exceptions -std=gnu++11 \
 			-Wno-write-strings -Wno-sign-compare -Wno-strict-aliasing
 ASFLAGS = $(CFLAGS)
+LDFLAGS = -Wl,--defsym=__sce_headroom=0x10000
 
 .PHONY: all clean
 all: _build_info.h $(VPK)
@@ -168,11 +174,11 @@ $(VPK): $(VELF)
 %_f.h:
 	@mkdir -p $(BUILD)/$(@D)
 	psp2cgc -profile sce_fp_psp2 $(@:_f.h=_f.cg) -Wperf -fastprecision -O3 -o $(BUILD)/$(@:_f.h=_f.gxp)
-	
+
 %_v.h:
 	@mkdir -p $(BUILD)/$(@D)
 	psp2cgc -profile sce_vp_psp2 $(@:_v.h=_v.cg) -Wperf -fastprecision -O3 -o $(BUILD)/$(@:_v.h=_v.gxp)
-	
+
 $(VELF): $(ELF)
 	cp $< $(BUILD)/$(TARGET).unstripped.elf
 	$(PREFIX)-strip -g $<
@@ -180,7 +186,7 @@ $(VELF): $(ELF)
 
 $(ELF): $(OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(GCCFLAGS) $(CXXFLAGS) $^ $(LIBS) -o $@
+	$(CXX) $(GCCFLAGS) $(CXXFLAGS) $(LDFLAGS) $^ $(LIBS) -o $@
 
 $(BUILD)/%.o: %.c _build_info.h
 	@mkdir -p $(@D)
