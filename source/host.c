@@ -501,7 +501,9 @@ void Host_ClearMemory (void)
 	Con_DPrintf ("Clearing memory\n");
 
 	R_ClearAliasTopologyCache ();
+#ifndef SOFTWARE_RENDERER
 	R_ClearWorldBatchCache ();
+#endif
 	Mod_ClearAll ();
 
 	if (host_hunklevel)
