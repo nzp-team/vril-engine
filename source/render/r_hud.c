@@ -678,21 +678,22 @@ HUD_Init(void)
     Cvar_RegisterVariable(&cl_controllerglyphs);
     HUD_KeyIcon(K_BOTTOMFACE);
     #else
-    b_rightface  = Image_LoadImage("gfx/butticons/rightface", IMAGE_TGA, 0, true, false);
-    b_leftface   = Image_LoadImage("gfx/butticons/leftface", IMAGE_TGA, 0, true, false);
-    b_bottomface = Image_LoadImage("gfx/butticons/bottomface", IMAGE_TGA, 0, true, false);
-    b_topface    = Image_LoadImage("gfx/butticons/topface", IMAGE_TGA, 0, true, false);
-    b_left       = Image_LoadImage("gfx/butticons/left", IMAGE_TGA, 0, true, false);
-    b_right      = Image_LoadImage("gfx/butticons/right", IMAGE_TGA, 0, true, false);
-    b_up         = Image_LoadImage("gfx/butticons/up", IMAGE_TGA, 0, true, false);
-    b_down       = Image_LoadImage("gfx/butticons/down", IMAGE_TGA, 0, true, false);
-    b_lt         = Image_LoadImage("gfx/butticons/lt", IMAGE_TGA, 0, true, false);
-    b_rt         = Image_LoadImage("gfx/butticons/rt", IMAGE_TGA, 0, true, false);
-    b_zlt        = Image_LoadImage("gfx/butticons/zlt", IMAGE_TGA, 0, true, false);
-    b_zrt        = Image_LoadImage("gfx/butticons/zrt", IMAGE_TGA, 0, true, false);
-    b_start      = Image_LoadImage("gfx/butticons/start", IMAGE_TGA, 0, true, false);
-    b_select     = Image_LoadImage("gfx/butticons/select", IMAGE_TGA, 0, true, false);
-    b_home       = Image_LoadImage("gfx/butticons/home", IMAGE_TGA, 0, true, false);
+    const int icon_formats = IMAGE_TGA | IMAGE_PNG;
+    b_rightface  = Image_LoadImage("gfx/butticons/rightface", icon_formats, 0, true, false);
+    b_leftface   = Image_LoadImage("gfx/butticons/leftface", icon_formats, 0, true, false);
+    b_bottomface = Image_LoadImage("gfx/butticons/bottomface", icon_formats, 0, true, false);
+    b_topface    = Image_LoadImage("gfx/butticons/topface", icon_formats, 0, true, false);
+    b_left       = Image_LoadImage("gfx/butticons/left", icon_formats, 0, true, false);
+    b_right      = Image_LoadImage("gfx/butticons/right", icon_formats, 0, true, false);
+    b_up         = Image_LoadImage("gfx/butticons/up", icon_formats, 0, true, false);
+    b_down       = Image_LoadImage("gfx/butticons/down", icon_formats, 0, true, false);
+    b_lt         = Image_LoadImage("gfx/butticons/lt", icon_formats, 0, true, false);
+    b_rt         = Image_LoadImage("gfx/butticons/rt", icon_formats, 0, true, false);
+    b_zlt        = Image_LoadImage("gfx/butticons/zlt", icon_formats, 0, true, false);
+    b_zrt        = Image_LoadImage("gfx/butticons/zrt", icon_formats, 0, true, false);
+    b_start      = Image_LoadImage("gfx/butticons/start", icon_formats, 0, true, false);
+    b_select     = Image_LoadImage("gfx/butticons/select", icon_formats, 0, true, false);
+    b_home       = Image_LoadImage("gfx/butticons/home", icon_formats, 0, true, false);
     #endif /* ifdef PLATFORM_USES_GENERIC_GLYPHS */
 
     fx_blood_lu = Image_LoadImage("gfx/hud/blood", IMAGE_TGA, 0, true, false);

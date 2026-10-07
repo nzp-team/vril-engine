@@ -47,12 +47,19 @@ void Menu_LoadPics ()
 
 image_t Menu_PickBackground (void)
 {
-	// No custom images
-	if (num_custom_images == 0) return menu_bk;
+	int choice, i;
 
-	int i = (rand() % num_custom_images);
+	if (num_custom_images == 0)
+		return menu_bk;
 
-    return (image_t)menu_usermap_image[i];
+	choice = rand() % num_custom_images;
+	for (i = 0; i < num_user_maps; i++) {
+		if (menu_usermap_image[i] < 0)
+			continue;
+		if (choice-- == 0)
+			return menu_usermap_image[i];
+	}
+	return menu_bk;
 }
 
 void Menu_InitStockMaps (void)

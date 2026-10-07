@@ -1181,8 +1181,7 @@ GL_CreateSurfaceLightmap
 */
 static void GL_CreateSurfaceLightmap (msurface_t *surf)
 {
-	int		smax, tmax;//, s, t, l, i;
-	byte	*base;
+	int		smax, tmax;
 
     if (surf->flags & (SURF_DRAWSKY|SURF_DRAWTURB))
 		return;
@@ -1191,11 +1190,15 @@ static void GL_CreateSurfaceLightmap (msurface_t *surf)
 	tmax = (surf->extents[1]>>4)+1;
 
 	surf->lightmaptexturenum = AllocBlock (smax, tmax, &surf->light_s, &surf->light_t);
+}
 
-    base = lightmaps + surf->lightmaptexturenum*LIGHTMAP_BYTES*BLOCK_WIDTH*BLOCK_HEIGHT;
+static void GL_BuildSurfaceLightmap (msurface_t *surf)
+{
+	byte	*base;
+
+	base = lightmaps + surf->lightmaptexturenum*LIGHTMAP_BYTES*BLOCK_WIDTH*BLOCK_HEIGHT;
 	base += (surf->light_t * BLOCK_WIDTH + surf->light_s) * LIGHTMAP_BYTES;
 	R_BuildLightMap (surf, base, BLOCK_WIDTH*LIGHTMAP_BYTES);
-
 }
 
 
@@ -1211,18 +1214,14 @@ void GL_BuildLightmaps (void)
 {
 	int		i, j;
 	model_t	*m;
+	size_t atlas_size;
 
 	//Con_Printf ("Lightmap surfaces = %i\n", MAX_LIGHTMAPS);
 	//Con_Printf ("Lightmap bytes = %i\n", LIGHTMAP_BYTES);
 
 	memset (allocated, 0, sizeof(allocated));
-	// Allocate the CPU atlas for the selected source format.
-	size_t atlas_size = MAX_LIGHTMAPS * BLOCK_WIDTH * BLOCK_HEIGHT * LIGHTMAP_BYTES;
-	byte *atlas = (byte *)realloc(lightmaps, atlas_size);
-	if (!atlas)
-		Sys_Error("Out of lightmap atlas memory\n");
-	lightmaps = atlas;
-	memset(lightmaps, 0, atlas_size);
+	free(lightmaps);
+	lightmaps = NULL;
 
 	r_framecount = 1;		// no dlightcache
 
@@ -1241,12 +1240,35 @@ void GL_BuildLightmaps (void)
 		if (m->name[0] == '*')
 			continue;
 
+		for (i=0 ; i<m->numsurfaces ; i++)
+			GL_CreateSurfaceLightmap (m->surfaces + i);
+	}
+
+	for (i=0 ; i<MAX_LIGHTMAPS && allocated[i][0] ; i++)
+		;
+	atlas_size = (size_t)i * BLOCK_WIDTH * BLOCK_HEIGHT * LIGHTMAP_BYTES;
+	if (atlas_size)
+	{
+		lightmaps = (byte *)malloc(atlas_size);
+		if (!lightmaps)
+			Sys_Error("Out of lightmap atlas memory\n");
+		memset(lightmaps, 0, atlas_size);
+	}
+
+	for (j=1 ; j<MAX_MODELS ; j++)
+	{
+		m = cl.model_precache[j];
+		if (!m)
+			break;
+		if (m->name[0] == '*')
+			continue;
+
 		r_pcurrentvertbase = m->vertexes;
 		currentmodel = m;
 		for (i=0 ; i<m->numsurfaces ; i++)
 		{
-			// todo: investigate why this is done even for turb/sky
-			GL_CreateSurfaceLightmap (m->surfaces + i);
+			if (!(m->surfaces[i].flags & (SURF_DRAWSKY | SURF_DRAWTURB)))
+				GL_BuildSurfaceLightmap (m->surfaces + i);
 			if ( m->surfaces[i].flags & SURF_DRAWTURB )
 				continue;
 

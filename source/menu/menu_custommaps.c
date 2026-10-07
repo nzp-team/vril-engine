@@ -352,6 +352,8 @@ void Menu_Preload_Custom_Images(void)
 {
 	// Reset number of custom images before each load
 	num_custom_images = 0;
+	for (int i = 0; i < num_user_maps; i++)
+		menu_usermap_image[i] = -1;
 
     // Pre-load all custom map menu images to use in the background
 	for (int i = 0; i < num_user_maps; i++) {
