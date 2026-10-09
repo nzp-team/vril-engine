@@ -52,66 +52,31 @@ jobs:
           tests=$(find testing/tests -maxdepth 1 -type f -name '*.sh' ! -name 'generate-source.sh' | sed -E 's@.*/([^/]+)\.sh$@\1@' | jq -Rsc 'split("\n") | map(select(length > 0)) | sort')
           test "$tests" != '[]' && echo "tests=$tests" >> "$GITHUB_OUTPUT"
 
-  Compile-Linux:
+  Compile-Linux-Toolbox:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     name: Compile Linux (${{ matrix.arch }})
-    runs-on: ubuntu-latest
+    needs: resolve-toolbox
     strategy:
       fail-fast: false
       matrix:
         include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+            host_arch: x86_64
+            binary: build/sdl/nzportable
           - arch: x86
-            deb_arch: i386
-            triplet: i686-linux-gnu
-            lib_triplet: i386-linux-gnu
-            compiler: gcc-i686-linux-gnu
+            runner: ubuntu-24.04
+            host_arch: x86_64
+            binary: build/sdl/x86/nzportable
           - arch: arm64
-            deb_arch: arm64
-            triplet: aarch64-linux-gnu
-            lib_triplet: aarch64-linux-gnu
-            compiler: gcc-aarch64-linux-gnu
+            runner: ubuntu-24.04
+            host_arch: x86_64
+            binary: build/sdl/arm64/nzportable
           - arch: armhf
-            deb_arch: armhf
-            triplet: arm-linux-gnueabihf
-            lib_triplet: arm-linux-gnueabihf
-            compiler: gcc-arm-linux-gnueabihf
-    container:
-      image: debian:12
-    steps:
-      - name: Install cross toolchain
-        env:
-          DEB_ARCH: ${{ matrix.deb_arch }}
-          COMPILER: ${{ matrix.compiler }}
-        run: |
-          if [ "${DEB_ARCH}" != "amd64" ]; then
-            dpkg --add-architecture "${DEB_ARCH}"
-          fi
-          apt-get update
-          apt-get install -y make git pkg-config "${COMPILER}" \
-            "libsdl2-dev:${DEB_ARCH}" "libsdl2-mixer-dev:${DEB_ARCH}" \
-            "libgl-dev:${DEB_ARCH}" "libglu1-mesa-dev:${DEB_ARCH}"
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build
-        env:
-          ARCH: ${{ matrix.arch }}
-          TRIPLET: ${{ matrix.triplet }}
-          PKG_CONFIG_LIBDIR: /usr/lib/${{ matrix.lib_triplet }}/pkgconfig:/usr/share/pkgconfig
-        run: |
-          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-          make -f Makefile.sdl WERROR=1 -j$(nproc) \
-            BUILD="build/sdl/${ARCH}" \
-            CROSS_COMPILE="${TRIPLET}-"
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-${{ matrix.arch }}-nzp-sdl
-          path: ./build/sdl/${{ matrix.arch }}/nzportable
-  Compile-Linux-x86_64:
-    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-    name: Compile Linux (x86_64)
-    needs: resolve-toolbox
-    runs-on: ubuntu-latest
+            runner: ubuntu-24.04
+            host_arch: x86_64
+            binary: build/sdl/armhf/nzportable
+    runs-on: ${{ matrix.runner }}
     container:
       image: ${{ needs.resolve-toolbox.outputs.image }}
     defaults:
@@ -121,7 +86,7 @@ jobs:
       - name: Toolbox Fetch
         env:
           TOOLBOX_HOST_OS: Linux
-          TOOLBOX_HOST_ARCH: x86_64
+          TOOLBOX_HOST_ARCH: ${{ matrix.host_arch }}
         run: /entrypoint.sh fetch
       - name: Select Vril commit
         env:
@@ -143,12 +108,12 @@ jobs:
             echo "Vril commit: \`$VRIL_SHA\`" >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Build
-        run: /entrypoint.sh build-vril --target linux-x86_64 -- WERROR=1
+        run: /entrypoint.sh build-vril --target linux-${{ matrix.arch }} -- WERROR=1
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-x86_64-nzp-sdl
-          path: /workspace/repos/vril-engine/build/sdl/nzportable
+          name: linux-${{ matrix.arch }}-nzp-sdl
+          path: /workspace/repos/vril-engine/${{ matrix.binary }}
           if-no-files-found: error
   Compile-Windows:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
@@ -571,83 +536,6 @@ jobs:
             echo "[Failure Artifact](${ARTIFACT_URL})"
             echo ""
           } >> "${GITHUB_STEP_SUMMARY}"
-  Pull-Request-Test-Linux:
-    if: github.event_name == 'pull_request'
-    name: Linux ${{ matrix.arch }} Pull Request Tests
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x86
-            runner: ubuntu-24.04
-            native_arch: amd64
-            deb_arch: i386
-          - arch: arm64
-            runner: ubuntu-24.04-arm
-            native_arch: arm64
-            deb_arch: arm64
-          - arch: armhf
-            runner: ubuntu-24.04-arm
-            native_arch: arm64
-            deb_arch: armhf
-    runs-on: ${{ matrix.runner }}
-    container:
-      image: debian:12
-      options: --shm-size=8192m
-    needs: [Compile-Linux, prepare-pr-test-content]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Download Linux Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-${{ matrix.arch }}-nzp-sdl
-          path: testing/working/linux-artifact
-      - name: Download Test Content Overrides
-        if: needs['prepare-pr-test-content'].outputs.has_overrides == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: pr-test-content-overrides
-          path: testing/overrides
-      - name: Install compatibility libraries
-        if: matrix.deb_arch != matrix.native_arch
-        env:
-          DEB_ARCH: ${{ matrix.deb_arch }}
-        run: |
-          dpkg --add-architecture "${DEB_ARCH}"
-          apt-get update
-          apt-get install -y \
-            "libgl1:${DEB_ARCH}" "libgl1-mesa-dri:${DEB_ARCH}" "libglu1-mesa:${DEB_ARCH}" \
-            "libsdl2-2.0-0:${DEB_ARCH}" "libsdl2-mixer-2.0-0:${DEB_ARCH}"
-      - name: Run All
-        env:
-          ASSETS_OVERRIDE_DIRECTORY: ${{ github.workspace }}/testing/overrides/assets/linux
-          QUAKEC_OVERRIDE_FILE: ${{ github.workspace }}/testing/overrides/quakec/progs.dat
-        run: |
-          cd ./testing
-          ./run_tests.sh --platform linux --test all --content "$(pwd)/validate" --working-dir working/ --binary "$(pwd)/working/linux-artifact/nzportable"
-      - name: Upload Failure Artifact
-        id: linux_failure_artifact
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-${{ matrix.arch }}-pr-failures
-          path: testing/working/fail/
-          if-no-files-found: ignore
-          retention-days: 14
-      - name: Add Failure Summary
-        if: failure() && steps.linux_failure_artifact.outputs.artifact-url != ''
-        env:
-          ARTIFACT_URL: ${{ steps.linux_failure_artifact.outputs.artifact-url }}
-        run: |
-          {
-            echo "## Linux ${{ matrix.arch }} PR Test Failed"
-            echo ""
-            cat testing/working/fail/summary.md
-            echo ""
-            echo "[Failure Artifact](${ARTIFACT_URL})"
-            echo ""
-          } >> "${GITHUB_STEP_SUMMARY}"
   prepare-toolbox-test-content:
     if: github.event_name == 'pull_request'
     name: Prepare Toolbox Test Content
@@ -717,11 +605,11 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  Pull-Request-Test-Linux-x86_64:
+  Pull-Request-Test-Linux-Toolbox:
     if: github.event_name == 'pull_request'
-    name: Linux x86_64 ${{ matrix.test }} Pull Request Test
-    needs: [resolve-toolbox, discover-tests, Compile-Linux-x86_64, prepare-toolbox-test-content]
-    runs-on: ubuntu-24.04
+    name: Linux ${{ matrix.arch }} ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-Linux-Toolbox, prepare-toolbox-test-content]
+    runs-on: ${{ contains(fromJSON('["arm64","armhf"]'), matrix.arch) && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     container:
       image: ${{ needs.resolve-toolbox.outputs.image }}
       options: --shm-size=8192m
@@ -729,6 +617,7 @@ jobs:
       fail-fast: false
       matrix:
         test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+        arch: [x86_64, x86, arm64, armhf]
     defaults:
       run:
         shell: bash
@@ -736,7 +625,7 @@ jobs:
       - name: Toolbox Fetch
         env:
           TOOLBOX_HOST_OS: Linux
-          TOOLBOX_HOST_ARCH: x86_64
+          TOOLBOX_HOST_ARCH: ${{ contains(fromJSON('["arm64","armhf"]'), matrix.arch) && 'arm64' || 'x86_64' }}
         run: /entrypoint.sh fetch
       - name: Select Vril PR merge commit
         env:
@@ -753,7 +642,7 @@ jobs:
       - name: Download Linux Artifact
         uses: actions/download-artifact@v4
         with:
-          name: linux-x86_64-nzp-sdl
+          name: linux-${{ matrix.arch }}-nzp-sdl
           path: /workspace/vril-test-artifact
       - name: Download Test Content Overrides
         if: needs['prepare-toolbox-test-content'].outputs.has_overrides == 'true'
@@ -772,7 +661,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: linux-x86_64-${{ matrix.test }}-pr-failures
+          name: linux-${{ matrix.arch }}-${{ matrix.test }}-pr-failures
           path: /workspace/repos/vril-engine/testing/working/fail/
           if-no-files-found: ignore
           retention-days: 14
@@ -782,7 +671,7 @@ jobs:
           ARTIFACT_URL: ${{ steps.linux_x86_64_failure_artifact.outputs.artifact-url }}
         run: |
           {
-            echo "## Linux x86_64 ${{ matrix.test }} PR Test Failed"
+            echo "## Linux ${{ matrix.arch }} ${{ matrix.test }} PR Test Failed"
             echo ""
             cat /workspace/repos/vril-engine/testing/working/fail/summary.md
             echo ""
@@ -865,7 +754,7 @@ jobs:
   Unify-and-Release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: [Compile-Linux, Compile-Windows, Compile-EBOOT, Compile-3DSX, Compile-TNS, Compile-VPK, Compile-NRO]
+    needs: [Compile-Linux-Toolbox, Compile-Windows, Compile-EBOOT, Compile-3DSX, Compile-TNS, Compile-VPK, Compile-NRO]
     steps:
       - name: Checkout
         uses: actions/checkout@v2

@@ -51,7 +51,11 @@ function map_boot_arguments
 {
 	local map_name="${1}"
 	local test_mode="${2:-1}"
-	echo "+developer 1 +nosound 1 -condebug +show_fps 0 +r_retro 1 +host_framerate 0.05 +sys_testmode ${test_mode} +map ${map_name}"
+	local test_arguments=""
+	if [[ "${test_mode}" != "0" ]]; then
+		test_arguments=" +sys_testmode ${test_mode}"
+	fi
+	echo "+developer 1 +nosound 1 -condebug +show_fps 0 +r_retro 1 +host_framerate 0.05${test_arguments} +map ${map_name}"
 }
 
 function test_game_path()

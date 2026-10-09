@@ -26,9 +26,12 @@ function run_valgrind_test()
 		return
 	fi
 
-    if [ -n "$(dpkg --print-foreign-architectures)" ]; then
-        return
-    fi
+    local binary="${WORKING_DIR}/nzportable/nzportable"
+    case "$(uname -m)" in
+        x86_64) file "${binary}" | grep -q 'x86-64' || return ;;
+        aarch64) file "${binary}" | grep -qi 'aarch64' || return ;;
+        *) return ;;
+    esac
 
 	local console_log="${WORKING_DIR}/nzportable/nzp/condebug.log"
 	local launch_log="${WORKING_DIR}/launcher_output.log"
