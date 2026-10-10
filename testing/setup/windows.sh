@@ -34,7 +34,6 @@ function obtain_nzportable()
 	fi
 
 	cp "${binary_path}" "${working_dir}/nzportable/${APP_BIN}"
-	cp "$(dirname "${binary_path}")"/*.dll "${working_dir}/nzportable/"
 	chmod +x "${working_dir}/nzportable/${APP_BIN}"
 }
 
