@@ -47,7 +47,7 @@ function run_nzportable()
 	local with_valgrind="$4"
 	
 	if [ "$with_valgrind" = "1" ]; then
-		echo "env --chdir=${working_dir}/nzportable SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a valgrind --leak-check=full --suppressions=${testing_dir_path}/setup/utils/valgrind.supp --log-file=${working_dir}/valgrind_report.log ./${APP_BIN} -basedir ${working_dir}/nzportable -condebug -nosound -nocdaudio"
+		echo "env --chdir=${working_dir}/nzportable SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=softpipe xvfb-run -a valgrind --leak-check=full --suppressions=${testing_dir_path}/setup/utils/valgrind.supp --log-file=${working_dir}/valgrind_report.log ./${APP_BIN} -basedir ${working_dir}/nzportable -condebug -nosound -nocdaudio"
 	else
 		echo "env --chdir=${working_dir}/nzportable SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a timeout ${TIMEOUT} ./${APP_BIN} -basedir ${working_dir}/nzportable -condebug -nosound -nocdaudio"
 	fi
