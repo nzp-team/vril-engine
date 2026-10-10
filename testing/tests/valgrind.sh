@@ -27,10 +27,14 @@ function run_valgrind_test()
 	fi
 
     local binary="${WORKING_DIR}/nzportable/nzportable"
-    case "$(uname -m)" in
-        x86_64) file "${binary}" | grep -q 'x86-64' || return ;;
-        aarch64) file "${binary}" | grep -qi 'aarch64' || return ;;
-        *) return ;;
+    local binary_info
+    binary_info=$(file -b "${binary}")
+    case "$(uname -m):${binary_info}" in
+        x86_64:*"ELF 64-bit"*"x86-64"* | aarch64:*"ELF 64-bit"*"aarch64"*) ;;
+        *)
+            echo "[SKIP]: Valgrind requires a native 64-bit Linux binary."
+            return
+            ;;
     esac
 
 	local console_log="${WORKING_DIR}/nzportable/nzp/condebug.log"
