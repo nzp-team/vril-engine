@@ -1540,7 +1540,7 @@ string substring (string, float, float)
 */
 void PF_substring (void)
 {
-	int		offset, length;
+	int		offset, length, copy_length;
 	int		maxoffset;		// 2001-10-25 Enhanced temp string handling by Maddes
 	char	*p;
 
@@ -1564,8 +1564,11 @@ void PF_substring (void)
 		length = 0;
 
 	p += offset;
-	strncpy(pr_string_temp, p, length);
-	pr_string_temp[length]=0;
+	copy_length = maxoffset - offset;
+	if (copy_length > length)
+		copy_length = length;
+	memmove(pr_string_temp, p, copy_length);
+	pr_string_temp[copy_length] = 0;
 
 	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
 }

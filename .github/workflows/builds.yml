@@ -49,6 +49,8 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$PR_MERGE_SHA"
           test "$(git rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
+          echo "Vril PR head: \`$PR_HEAD_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Tested merge commit: \`$PR_MERGE_SHA\`" >> "$GITHUB_STEP_SUMMARY"
           tests=$(find testing/tests -maxdepth 1 -type f -name '*.sh' ! -name 'generate-source.sh' | sed -E 's@.*/([^/]+)\.sh$@\1@' | jq -Rsc 'split("\n") | map(select(length > 0)) | sort')
           test "$tests" != '[]' && echo "tests=$tests" >> "$GITHUB_OUTPUT"
 
@@ -100,12 +102,9 @@ jobs:
             git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
             test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$VRIL_SHA"
             test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
-            echo "Vril PR head: \`$PR_HEAD_SHA\`" >> "$GITHUB_STEP_SUMMARY"
-            echo "Tested merge commit: \`$VRIL_SHA\`" >> "$GITHUB_STEP_SUMMARY"
           else
             git -C /workspace/repos/vril-engine fetch origin main
             git -C /workspace/repos/vril-engine checkout --detach "$VRIL_SHA"
-            echo "Vril commit: \`$VRIL_SHA\`" >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Build
         run: /entrypoint.sh build-vril --target linux-${{ matrix.arch }} -- WERROR=1
@@ -218,7 +217,6 @@ jobs:
             git -C /workspace/repos/vril-engine fetch origin main
             git -C /workspace/repos/vril-engine checkout --detach "$VRIL_SHA"
           fi
-          echo "Vril commit: \`$(git -C /workspace/repos/vril-engine rev-parse HEAD)\`" >> "$GITHUB_STEP_SUMMARY"
       - name: Build
         run: /entrypoint.sh build-vril --target psp -- WERROR=1
       - name: Upload Artifact
@@ -229,46 +227,44 @@ jobs:
           if-no-files-found: error
   Compile-3DSX:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
-    outputs:
-      o3ds_link: ${{ steps.zip.outputs.zip }}
+    name: Compile 3DS
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
     container:
-      image: devkitpro/devkitarm
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - uses: actions/checkout@v2
-      - name: Install Packages and update picaGL
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - name: Select Vril commit
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          VRIL_REF: ${{ github.ref }}
+          VRIL_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          apt-get update && apt-get install -y git
-          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-          git clone https://github.com/masterfeizz/picaGL.git
-          cd picaGL
-          git checkout revamp
-          mkdir clean
-          make install
-      - name: Build and install mpg123
-        run: |
-          curl -LO https://downloads.sourceforge.net/project/mpg123/mpg123/1.32.3/mpg123-1.32.3.tar.bz2
-          tar xf mpg123-1.32.3.tar.bz2
-          cd mpg123-1.32.3
-          ./configure --host=arm-none-eabi \
-            --prefix=$DEVKITPRO/portlibs/3ds \
-            --disable-shared \
-            --enable-static \
-            --with-cpu=generic_fpu \
-            CC=$DEVKITARM/bin/arm-none-eabi-gcc \
-            CFLAGS="-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft -D_3DS"
-          make -k || true
-          make -k install || true
-          cp src/libmpg123/mpg123.h $DEVKITPRO/portlibs/3ds/include/
+          if [ "$EVENT_NAME" = pull_request ]; then
+            git -C /workspace/repos/vril-engine fetch origin "$VRIL_REF"
+            git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
+            test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$VRIL_SHA"
+            test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
+          else
+            git -C /workspace/repos/vril-engine fetch origin main
+            git -C /workspace/repos/vril-engine checkout --detach "$VRIL_SHA"
+          fi
       - name: Build
-        working-directory: ./
-        run: |
-          make -f Makefile.ctr WERROR=1
+        run: /entrypoint.sh build-vril --target 3ds -- WERROR=1
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ctr-nzp-3dsx
-          path: ./build/ctr/bin/nzportable.3dsx
+          path: /workspace/repos/vril-engine/build/ctr/bin/nzportable.3dsx
+          if-no-files-found: error
   Compile-TNS:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
@@ -442,59 +438,78 @@ jobs:
           retention-days: 1
   Pull-Request-Test-3DS:
     if: github.event_name == 'pull_request'
-    name: ${{ matrix.mode }} 3DS Pull Request Tests
+    name: 3DS ${{ matrix.mode }} ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-3DSX, prepare-toolbox-test-content]
     strategy:
       fail-fast: false
       matrix:
         mode: [old, new]
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
     runs-on: ubuntu-24.04
     container:
-      image: ubuntu:24.04
+      image: ${{ needs.resolve-toolbox.outputs.image }}
       options: --shm-size=8192m
-    needs: [Compile-3DSX, prepare-pr-test-content]
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - name: Select Vril PR merge commit
+        env:
+          PR_MERGE_REF: ${{ github.ref }}
+          PR_MERGE_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git -C /workspace/repos/vril-engine fetch origin "$PR_MERGE_REF"
+          git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
+          test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$PR_MERGE_SHA"
+          test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
       - name: Download 3DS Artifact
         uses: actions/download-artifact@v4
         with:
           name: ctr-nzp-3dsx
-          path: testing/working/ctr-artifact
+          path: /workspace/vril-test-artifact
       - name: Download Test Content Overrides
-        if: needs['prepare-pr-test-content'].outputs.has_overrides == 'true'
+        if: needs['prepare-toolbox-test-content'].outputs.has_overrides == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: pr-test-content-overrides
-          path: testing/overrides
-      - name: Run All
+          name: toolbox-pr-test-content-overrides
+          path: /workspace/vril-test-overrides
+      - name: Run test
         env:
-          ASSETS_OVERRIDE_DIRECTORY: ${{ github.workspace }}/testing/overrides/assets/ctr
-          QUAKEC_OVERRIDE_FILE: ${{ github.workspace }}/testing/overrides/quakec/progs.dat
-        run: |
-          cd ./testing
-          ./run_tests.sh --platform ctr --test all --content "$(pwd)/validate" --working-dir working/ --mode ${{ matrix.mode }} --binary "$(pwd)/working/ctr-artifact/nzportable.3dsx"
+          ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/ctr
+          QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+          CTR_MODE: ${{ matrix.mode }}
+          VRIL_TEST: ${{ matrix.test }}
+        run: /entrypoint.sh test-vril --platform ctr --test "$VRIL_TEST" --mode "$CTR_MODE" --binary /workspace/vril-test-artifact/nzportable.3dsx
       - name: Upload Failure Artifact
         id: ctr_failure_artifact
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: ctr-${{ matrix.mode }}-pr-failures
-          path: testing/working/fail/
+          name: ctr-${{ matrix.mode }}-${{ matrix.test }}-pr-failures
+          path: /workspace/repos/vril-engine/testing/working/fail/
           if-no-files-found: ignore
           retention-days: 14
       - name: Add Failure Summary
         if: failure() && steps.ctr_failure_artifact.outputs.artifact-url != ''
         env:
           ARTIFACT_URL: ${{ steps.ctr_failure_artifact.outputs.artifact-url }}
+          CTR_MODE: ${{ matrix.mode }}
+          VRIL_TEST: ${{ matrix.test }}
         run: |
           {
-            echo "## ${{ matrix.mode }} 3DS PR Test Failed"
+            echo "## 3DS $CTR_MODE $VRIL_TEST PR Test Failed"
             echo ""
-            cat testing/working/fail/summary.md
+            cat /workspace/repos/vril-engine/testing/working/fail/summary.md
             echo ""
-            echo "[Failure Artifact](${ARTIFACT_URL})"
+            echo "[Failure Artifact]($ARTIFACT_URL)"
             echo ""
-          } >> "${GITHUB_STEP_SUMMARY}"
+          } >> "$GITHUB_STEP_SUMMARY"
   Pull-Request-Test-PSP:
     if: github.event_name == 'pull_request'
     name: PSP ${{ matrix.mode }} ${{ matrix.test }} Pull Request Test
@@ -527,7 +542,6 @@ jobs:
           git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
           test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$PR_MERGE_SHA"
           test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
-          echo "Tested merge commit: \`$PR_MERGE_SHA\`" >> "$GITHUB_STEP_SUMMARY"
       - name: Download PSP Artifact
         uses: actions/download-artifact@v4
         with:
@@ -629,6 +643,8 @@ jobs:
             cp -a /workspace/repos/assets/tmp/pc/nzp/. /workspace/vril-test-overrides/assets/linux/
             mkdir -p /workspace/vril-test-overrides/assets/psp
             cp -a /workspace/repos/assets/tmp/psp/nzportable/nzp/. /workspace/vril-test-overrides/assets/psp/
+            mkdir -p /workspace/vril-test-overrides/assets/ctr
+            cp -a /workspace/repos/assets/tmp/ctr/nzportable/nzp/. /workspace/vril-test-overrides/assets/ctr/
             echo "Assets override: \`${PR_HEAD_OWNER}/assets@$(git -C /workspace/repos/assets rev-parse HEAD)\`" >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Upload test content overrides
@@ -672,8 +688,6 @@ jobs:
           git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
           test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$PR_MERGE_SHA"
           test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
-          echo "Vril PR head: \`$PR_HEAD_SHA\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "Tested merge commit: \`$PR_MERGE_SHA\`" >> "$GITHUB_STEP_SUMMARY"
       - name: Download Linux Artifact
         uses: actions/download-artifact@v4
         with:
