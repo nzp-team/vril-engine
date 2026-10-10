@@ -117,74 +117,49 @@ jobs:
   Compile-Windows:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     name: Compile Windows (${{ matrix.arch }})
-    runs-on: ubuntu-latest
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - arch: x86
-            triplet: i686-w64-mingw32
-          - arch: x86_64
-            triplet: x86_64-w64-mingw32
+        arch: [x86, x86_64]
     container:
-      image: debian:12
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Install cross toolchain
+      - name: Toolbox Fetch
         env:
-          COMPILER: ${{ matrix.compiler }}
-        run: |
-          apt-get update
-          apt-get install -y \
-            make \
-            git \
-            pkg-config \
-            mingw-w64-tools \
-            wget \
-            tar \
-            "${{ matrix.arch == 'x86' && 'gcc-mingw-w64-i686' || 'gcc-mingw-w64-x86-64' }}"
-      - name: Install Windows SDL dependencies
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - name: Select Vril commit
         env:
-          TRIPLET: ${{ matrix.triplet }}
-          SDL2_VER: 2.32.10
-          SDL2_MIXER_VER: 2.8.2
+          EVENT_NAME: ${{ github.event_name }}
+          VRIL_REF: ${{ github.ref }}
+          VRIL_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          mkdir -p /opt/mingw-deps
-          cd /tmp
-          # get the latest SDL2 version
-          wget -q https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VER}/SDL2-devel-${SDL2_VER}-mingw.tar.gz
-          tar xf SDL2-devel-${SDL2_VER}-mingw.tar.gz
-          cp -r SDL2-${SDL2_VER}/${TRIPLET}/* /opt/mingw-deps/
-          # get the latest SDL2_Mixer version
-          wget -q https://github.com/libsdl-org/SDL_mixer/releases/download/release-${SDL2_MIXER_VER}/SDL2_mixer-devel-${SDL2_MIXER_VER}-mingw.tar.gz
-          tar xf SDL2_mixer-devel-${SDL2_MIXER_VER}-mingw.tar.gz
-          cp -r SDL2_mixer-${SDL2_MIXER_VER}/${TRIPLET}/* /opt/mingw-deps/
-          # the upstream .pc files hardcode an absolute value build-server path..
-          # we have to rewrite it to our actual extraction location
-          sed -i "s|^prefix=.*|prefix=/opt/mingw-deps|" /opt/mingw-deps/lib/pkgconfig/*.pc
-      - name: Checkout
-        uses: actions/checkout@v4
+          if [ "$EVENT_NAME" = pull_request ]; then
+            git -C /workspace/repos/vril-engine fetch origin "$VRIL_REF"
+            git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
+            test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$VRIL_SHA"
+            test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
+          else
+            git -C /workspace/repos/vril-engine fetch origin main
+            git -C /workspace/repos/vril-engine checkout --detach "$VRIL_SHA"
+          fi
       - name: Build
         env:
           ARCH: ${{ matrix.arch }}
-          TRIPLET: ${{ matrix.triplet }}
-          PKG_CONFIG_PATH: /opt/mingw-deps/lib/pkgconfig
-          PKG_CONFIG_LIBDIR: /opt/mingw-deps/lib/pkgconfig
-        run: |
-          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-          make -f Makefile.sdl WERROR=1 -j$(nproc) \
-            CROSS_COMPILE="${TRIPLET}-"
-            BUILD="build/sdl/${ARCH}" \
-            TARGET="build/sdl/${ARCH}/nzportable.exe"
-      - name: Add DLLs to distributables
-        run: |
-          mkdir -p dist
-          cp build/sdl/nzportable.exe dist/
-          cp /opt/mingw-deps/bin/*.dll dist/
+        run: /entrypoint.sh build-vril --target "windows-$ARCH" -- WERROR=1
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-${{ matrix.arch }}-nzp-sdl
-          path: dist/
+          path: /workspace/repos/vril-engine/build/sdl/windows-${{ matrix.arch }}/nzportable.exe
+          if-no-files-found: error
   Compile-EBOOT:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     name: Compile PSP
@@ -641,6 +616,8 @@ jobs:
             /entrypoint.sh build-assets
             mkdir -p /workspace/vril-test-overrides/assets/linux
             cp -a /workspace/repos/assets/tmp/pc/nzp/. /workspace/vril-test-overrides/assets/linux/
+            mkdir -p /workspace/vril-test-overrides/assets/windows
+            cp -a /workspace/repos/assets/tmp/pc/nzp/. /workspace/vril-test-overrides/assets/windows/
             mkdir -p /workspace/vril-test-overrides/assets/psp
             cp -a /workspace/repos/assets/tmp/psp/nzportable/nzp/. /workspace/vril-test-overrides/assets/psp/
             mkdir -p /workspace/vril-test-overrides/assets/ctr
@@ -729,77 +706,77 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
   Pull-Request-Test-Windows:
     if: github.event_name == 'pull_request'
-    name: Windows ${{ matrix.arch }} Pull Request Tests
+    name: Windows ${{ matrix.arch }} ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-Windows, prepare-toolbox-test-content]
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - arch: x86
-            runner: ubuntu-24.04
-            native_arch: amd64
-            deb_arch: i386
-          - arch: x86_64
-            runner: ubuntu-24.04
-            native_arch: amd64
-            deb_arch: amd64
-    runs-on: ${{ matrix.runner }}
+        arch: [x86, x86_64]
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+    runs-on: ubuntu-24.04
     container:
-      image: debian:12
+      image: ${{ needs.resolve-toolbox.outputs.image }}
       options: --shm-size=8192m
-    needs: [Compile-Windows, prepare-pr-test-content]
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - name: Select Vril PR merge commit
+        env:
+          PR_MERGE_REF: ${{ github.ref }}
+          PR_MERGE_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git -C /workspace/repos/vril-engine fetch origin "$PR_MERGE_REF"
+          git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
+          test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$PR_MERGE_SHA"
+          test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
       - name: Download Windows Artifact
         uses: actions/download-artifact@v4
         with:
           name: windows-${{ matrix.arch }}-nzp-sdl
-          path: testing/working/windows-artifact
+          path: /workspace/vril-test-artifact
       - name: Download Test Content Overrides
-        if: needs['prepare-pr-test-content'].outputs.has_overrides == 'true'
+        if: needs['prepare-toolbox-test-content'].outputs.has_overrides == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: pr-test-content-overrides
-          path: testing/overrides
-      - name: Install compatibility libraries
-        if: matrix.deb_arch != matrix.native_arch
+          name: toolbox-pr-test-content-overrides
+          path: /workspace/vril-test-overrides
+      - name: Run test
         env:
-          DEB_ARCH: ${{ matrix.deb_arch }}
-        run: |
-          dpkg --add-architecture "${DEB_ARCH}"
-          apt-get update
-          apt-get install -y \
-            "libgl1:${DEB_ARCH}" "libgl1-mesa-dri:${DEB_ARCH}" "libglu1-mesa:${DEB_ARCH}" \
-            "libsdl2-2.0-0:${DEB_ARCH}" "libsdl2-mixer-2.0-0:${DEB_ARCH}"
-      - name: Run All
-        env:
-          ASSETS_OVERRIDE_DIRECTORY: ${{ github.workspace }}/testing/overrides/assets/windows
-          QUAKEC_OVERRIDE_FILE: ${{ github.workspace }}/testing/overrides/quakec/progs.dat
-        run: |
-          cd ./testing
-          ./run_tests.sh --platform windows --test all --content "$(pwd)/validate" --working-dir working/ --binary "$(pwd)/working/windows-artifact/nzportable.exe" --reference-platform linux
+          ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/windows
+          QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+          VRIL_TEST: ${{ matrix.test }}
+        run: /entrypoint.sh test-vril --platform windows --test "$VRIL_TEST" --binary /workspace/vril-test-artifact/nzportable.exe --reference-platform linux
       - name: Upload Failure Artifact
         id: windows_failure_artifact
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: windows-${{ matrix.arch }}-pr-failures
-          path: testing/working/fail/
+          name: windows-${{ matrix.arch }}-${{ matrix.test }}-pr-failures
+          path: /workspace/repos/vril-engine/testing/working/fail/
           if-no-files-found: ignore
           retention-days: 14
       - name: Add Failure Summary
         if: failure() && steps.windows_failure_artifact.outputs.artifact-url != ''
         env:
           ARTIFACT_URL: ${{ steps.windows_failure_artifact.outputs.artifact-url }}
+          WINDOWS_ARCH: ${{ matrix.arch }}
+          VRIL_TEST: ${{ matrix.test }}
         run: |
           {
-            echo "## Windows ${{ matrix.arch }} PR Test Failed"
+            echo "## Windows $WINDOWS_ARCH $VRIL_TEST PR Test Failed"
             echo ""
-            cat testing/working/fail/summary.md
+            cat /workspace/repos/vril-engine/testing/working/fail/summary.md
             echo ""
-            echo "[Failure Artifact](${ARTIFACT_URL})"
+            echo "[Failure Artifact]($ARTIFACT_URL)"
             echo ""
-          } >> "${GITHUB_STEP_SUMMARY}"
+          } >> "$GITHUB_STEP_SUMMARY"
   Unify-and-Release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest

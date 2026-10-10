@@ -1,5 +1,6 @@
 #include "../../nzportable_def.h"
 
+#if !defined(_WIN32)
 size_t SDL_strlcpy(char *dst, const char *src, size_t size)
 {
 	size_t length = strlen(src);
@@ -17,3 +18,4 @@ size_t SDL_strlcat(char *dst, const char *src, size_t size)
 	if (used == size) return size + strlen(src);
 	return used + SDL_strlcpy(dst + used, src, size - used);
 }
+#endif

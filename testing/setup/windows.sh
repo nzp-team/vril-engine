@@ -13,14 +13,6 @@ working_dir="${working_dir:-}"
 
 export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true
 
-function install_dependencies()
-{
-	print_info "Installing Windows test dependencies.."
-	dpkg --add-architecture i386
-	apt-get update -y
-	apt-get install -y ffmpeg libgl1 libgl1-mesa-dri libglu1-mesa unzip wget xauth xvfb wine wine64 wine32
-}
-
 function obtain_nzportable()
 {
 	print_info "Obtaining NZ:P content.."
@@ -34,7 +26,6 @@ function obtain_nzportable()
 	fi
 
 	cp "${binary_path}" "${working_dir}/nzportable/${APP_BIN}"
-	cp "$(dirname "${binary_path}")"/*.dll "${working_dir}/nzportable/"
 	chmod +x "${working_dir}/nzportable/${APP_BIN}"
 }
 
@@ -45,11 +36,13 @@ function begin_setup()
 	working_dir="${3}"
 
 	mkdir -p "${working_dir}"
-	install_dependencies
+	if ! command -v wine >/dev/null; then
+		print_error "Toolbox Wine is unavailable!" "1"
+	fi
 	obtain_nzportable
 	apply_content_overrides
 	cd "${testing_dir_path}"
-	print_info "Done setting up Linux testing!"
+	print_info "Done setting up Windows testing!"
 }
 
 function run_nzportable()
