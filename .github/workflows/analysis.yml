@@ -1,31 +1,82 @@
 name: Analyze
-on: [pull_request]
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
 jobs:
+  resolve-toolbox:
+    name: Pull Toolbox
+    runs-on: ubuntu-24.04
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - name: Resolve Toolbox Image
+        id: image
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          toolbox_image=$(sed -nE 's/^[[:space:]]*toolbox_image=([^[:space:]]+)[[:space:]]*$/\1/p' <<< "$PR_BODY" | head -n 1)
+          if [ -n "$toolbox_image" ]; then
+            if [[ ! "$toolbox_image" =~ ^ghcr\.io/[A-Za-z0-9-]+/toolbox(:[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}|@sha256:[0-9a-f]{64})$ ]]; then
+              echo "Invalid Toolbox image: $toolbox_image" >&2
+              exit 1
+            fi
+            image="$toolbox_image"
+          else
+            image='ghcr.io/nzp-team/toolbox:main'
+          fi
+          echo "image=$image" >> "$GITHUB_OUTPUT"
   Clang-Static-Analysis:
     name: Clang Static Analysis
-    runs-on: ubuntu-latest
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
+    container:
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Install Clang and Dependencies
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - name: Select Vril PR merge commit
+        env:
+          PR_MERGE_REF: ${{ github.ref }}
+          PR_MERGE_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          sudo apt-get update
-          sudo apt-get install -y make git pkg-config clang \
-            clang-tools libsdl2-dev libsdl2-mixer-dev \
-            libgl-dev libglu1-mesa-dev
-      - name: Checkout
-        uses: actions/checkout@v4
+          git -C /workspace/repos/vril-engine fetch origin "$PR_MERGE_REF"
+          git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
+          test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$PR_MERGE_SHA"
+          test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
       - name: Run scan-build
-        run: |
-          scan-build --status-bugs make -f Makefile.sdl CC=clang
-  Cppcheck-Static-Anaylsis:
+        run: /entrypoint.sh analyze-vril --mode clang-analysis
+  Cppcheck-Static-Analysis:
     name: Cppcheck Static Analysis
-    runs-on: ubuntu-latest
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
+    container:
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Install Cppcheck
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - name: Select Vril PR merge commit
+        env:
+          PR_MERGE_REF: ${{ github.ref }}
+          PR_MERGE_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          sudo apt-get update
-          sudo apt-get install -y cppcheck
-      - name: Checkout
-        uses: actions/checkout@v4
+          git -C /workspace/repos/vril-engine fetch origin "$PR_MERGE_REF"
+          git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
+          test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$PR_MERGE_SHA"
+          test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
       - name: Run Cppcheck
-        run: |
-          cppcheck --force --error-exitcode=1 .
+        run: /entrypoint.sh analyze-vril --mode cppcheck

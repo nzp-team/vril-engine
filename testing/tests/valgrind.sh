@@ -26,9 +26,16 @@ function run_valgrind_test()
 		return
 	fi
 
-    if [ -n "$(dpkg --print-foreign-architectures)" ]; then
-        return
-    fi
+    local binary="${WORKING_DIR}/nzportable/nzportable"
+    local binary_info
+    binary_info=$(file -b "${binary}")
+    case "$(uname -m):${binary_info}" in
+        x86_64:*"ELF 64-bit"*"x86-64"* | aarch64:*"ELF 64-bit"*"aarch64"*) ;;
+        *)
+            echo "[SKIP]: Valgrind requires a native 64-bit Linux binary."
+            return
+            ;;
+    esac
 
 	local console_log="${WORKING_DIR}/nzportable/nzp/condebug.log"
 	local launch_log="${WORKING_DIR}/launcher_output.log"
