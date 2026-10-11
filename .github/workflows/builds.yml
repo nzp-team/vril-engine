@@ -4,200 +4,242 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
 jobs:
-  Compile-Linux:
+  resolve-toolbox:
+    name: Pull Toolbox
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - name: Resolve Toolbox Image
+        id: image
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          toolbox_image=$(sed -nE 's/^[[:space:]]*toolbox_image=([^[:space:]]+)[[:space:]]*$/\1/p' <<< "$PR_BODY" | head -n 1)
+          if [ -n "$toolbox_image" ]; then
+            if [[ ! "$toolbox_image" =~ ^ghcr\.io/[A-Za-z0-9-]+/toolbox(:[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}|@sha256:[0-9a-f]{64})$ ]]; then
+              echo "Invalid Toolbox image: $toolbox_image" >&2
+              exit 1
+            fi
+            image="$toolbox_image"
+          else
+            image='ghcr.io/nzp-team/toolbox:main'
+          fi
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+          echo "Toolbox Image: \`$image\`" >> "$GITHUB_STEP_SUMMARY"
+
+  discover-tests:
+    if: github.event_name == 'pull_request'
+    name: Discover tests
+    runs-on: ubuntu-24.04
+    outputs:
+      tests: ${{ steps.tests.outputs.tests }}
+    steps:
+      - name: Checkout PR merge commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: List tests
+        id: tests
+        env:
+          PR_MERGE_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$PR_MERGE_SHA"
+          test "$(git rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
+          echo "Vril PR head: \`$PR_HEAD_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Tested merge commit: \`$PR_MERGE_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+          tests=$(find testing/tests -maxdepth 1 -type f -name '*.sh' ! -name 'generate-source.sh' | sed -E 's@.*/([^/]+)\.sh$@\1@' | jq -Rsc 'split("\n") | map(select(length > 0)) | sort')
+          test "$tests" != '[]' && echo "tests=$tests" >> "$GITHUB_OUTPUT"
+
+  Compile-Linux-Toolbox:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     name: Compile Linux (${{ matrix.arch }})
-    runs-on: ubuntu-latest
+    needs: resolve-toolbox
     strategy:
       fail-fast: false
       matrix:
         include:
-          - arch: x86
-            deb_arch: i386
-            triplet: i686-linux-gnu
-            lib_triplet: i386-linux-gnu
-            compiler: gcc-i686-linux-gnu
           - arch: x86_64
-            deb_arch: amd64
-            triplet: x86_64-linux-gnu
-            lib_triplet: x86_64-linux-gnu
-            compiler: gcc-x86-64-linux-gnu
+            runner: ubuntu-24.04
+            host_arch: x86_64
+            binary: build/sdl/nzportable
+          - arch: x86
+            runner: ubuntu-24.04
+            host_arch: x86_64
+            binary: build/sdl/x86/nzportable
           - arch: arm64
-            deb_arch: arm64
-            triplet: aarch64-linux-gnu
-            lib_triplet: aarch64-linux-gnu
-            compiler: gcc-aarch64-linux-gnu
+            runner: ubuntu-24.04
+            host_arch: x86_64
+            binary: build/sdl/arm64/nzportable
           - arch: armhf
-            deb_arch: armhf
-            triplet: arm-linux-gnueabihf
-            lib_triplet: arm-linux-gnueabihf
-            compiler: gcc-arm-linux-gnueabihf
+            runner: ubuntu-24.04
+            host_arch: x86_64
+            binary: build/sdl/armhf/nzportable
+    runs-on: ${{ matrix.runner }}
     container:
-      image: debian:12
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Install cross toolchain
+      - name: Toolbox Fetch
         env:
-          DEB_ARCH: ${{ matrix.deb_arch }}
-          COMPILER: ${{ matrix.compiler }}
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: ${{ matrix.host_arch }}
+        run: /entrypoint.sh fetch
+      - name: Select Vril commit
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          VRIL_REF: ${{ github.ref }}
+          VRIL_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          if [ "${DEB_ARCH}" != "amd64" ]; then
-            dpkg --add-architecture "${DEB_ARCH}"
+          if [ "$EVENT_NAME" = pull_request ]; then
+            git -C /workspace/repos/vril-engine fetch origin "$VRIL_REF"
+            git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
+            test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$VRIL_SHA"
+            test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
+          else
+            git -C /workspace/repos/vril-engine fetch origin main
+            git -C /workspace/repos/vril-engine checkout --detach "$VRIL_SHA"
           fi
-          apt-get update
-          apt-get install -y make git pkg-config "${COMPILER}" \
-            "libsdl2-dev:${DEB_ARCH}" "libsdl2-mixer-dev:${DEB_ARCH}" \
-            "libgl-dev:${DEB_ARCH}" "libglu1-mesa-dev:${DEB_ARCH}"
-      - name: Checkout
-        uses: actions/checkout@v4
       - name: Build
-        env:
-          ARCH: ${{ matrix.arch }}
-          TRIPLET: ${{ matrix.triplet }}
-          PKG_CONFIG_LIBDIR: /usr/lib/${{ matrix.lib_triplet }}/pkgconfig:/usr/share/pkgconfig
-        run: |
-          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-          make -f Makefile.sdl WERROR=1 -j$(nproc) \
-            BUILD="build/sdl/${ARCH}" \
-            CROSS_COMPILE="${TRIPLET}-"
+        run: /entrypoint.sh build-vril --target linux-${{ matrix.arch }} -- WERROR=1
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: linux-${{ matrix.arch }}-nzp-sdl
-          path: ./build/sdl/${{ matrix.arch }}/nzportable
+          path: /workspace/repos/vril-engine/${{ matrix.binary }}
+          if-no-files-found: error
   Compile-Windows:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     name: Compile Windows (${{ matrix.arch }})
-    runs-on: ubuntu-latest
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - arch: x86
-            triplet: i686-w64-mingw32
-          - arch: x86_64
-            triplet: x86_64-w64-mingw32
+        arch: [x86, x86_64]
     container:
-      image: debian:12
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Install cross toolchain
+      - name: Toolbox Fetch
         env:
-          COMPILER: ${{ matrix.compiler }}
-        run: |
-          apt-get update
-          apt-get install -y \
-            make \
-            git \
-            pkg-config \
-            mingw-w64-tools \
-            wget \
-            tar \
-            "${{ matrix.arch == 'x86' && 'gcc-mingw-w64-i686' || 'gcc-mingw-w64-x86-64' }}"
-      - name: Install Windows SDL dependencies
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - name: Select Vril commit
         env:
-          TRIPLET: ${{ matrix.triplet }}
-          SDL2_VER: 2.32.10
-          SDL2_MIXER_VER: 2.8.2
+          EVENT_NAME: ${{ github.event_name }}
+          VRIL_REF: ${{ github.ref }}
+          VRIL_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          mkdir -p /opt/mingw-deps
-          cd /tmp
-          # get the latest SDL2 version
-          wget -q https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VER}/SDL2-devel-${SDL2_VER}-mingw.tar.gz
-          tar xf SDL2-devel-${SDL2_VER}-mingw.tar.gz
-          cp -r SDL2-${SDL2_VER}/${TRIPLET}/* /opt/mingw-deps/
-          # get the latest SDL2_Mixer version
-          wget -q https://github.com/libsdl-org/SDL_mixer/releases/download/release-${SDL2_MIXER_VER}/SDL2_mixer-devel-${SDL2_MIXER_VER}-mingw.tar.gz
-          tar xf SDL2_mixer-devel-${SDL2_MIXER_VER}-mingw.tar.gz
-          cp -r SDL2_mixer-${SDL2_MIXER_VER}/${TRIPLET}/* /opt/mingw-deps/
-          # the upstream .pc files hardcode an absolute value build-server path..
-          # we have to rewrite it to our actual extraction location
-          sed -i "s|^prefix=.*|prefix=/opt/mingw-deps|" /opt/mingw-deps/lib/pkgconfig/*.pc
-      - name: Checkout
-        uses: actions/checkout@v4
+          if [ "$EVENT_NAME" = pull_request ]; then
+            git -C /workspace/repos/vril-engine fetch origin "$VRIL_REF"
+            git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
+            test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$VRIL_SHA"
+            test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
+          else
+            git -C /workspace/repos/vril-engine fetch origin main
+            git -C /workspace/repos/vril-engine checkout --detach "$VRIL_SHA"
+          fi
       - name: Build
         env:
           ARCH: ${{ matrix.arch }}
-          TRIPLET: ${{ matrix.triplet }}
-          PKG_CONFIG_PATH: /opt/mingw-deps/lib/pkgconfig
-          PKG_CONFIG_LIBDIR: /opt/mingw-deps/lib/pkgconfig
-        run: |
-          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-          make -f Makefile.sdl WERROR=1 -j$(nproc) \
-            CROSS_COMPILE="${TRIPLET}-"
-            BUILD="build/sdl/${ARCH}" \
-            TARGET="build/sdl/${ARCH}/nzportable.exe"
-      - name: Add DLLs to distributables
-        run: |
-          mkdir -p dist
-          cp build/sdl/nzportable.exe dist/
-          cp /opt/mingw-deps/bin/*.dll dist/
+        run: /entrypoint.sh build-vril --target "windows-$ARCH" -- WERROR=1
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-${{ matrix.arch }}-nzp-sdl
-          path: dist/
+          path: /workspace/repos/vril-engine/build/sdl/windows-${{ matrix.arch }}/nzportable.exe
+          if-no-files-found: error
   Compile-EBOOT:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
+    name: Compile PSP
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
     container:
-      image: pspdev/pspdev
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - uses: actions/checkout@v2
-      - name: Get container ready
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - name: Select Vril commit
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          VRIL_REF: ${{ github.ref }}
+          VRIL_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          apk add bash zip git gmp mpc1 mpfr4 make
-          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          if [ "$EVENT_NAME" = pull_request ]; then
+            git -C /workspace/repos/vril-engine fetch origin "$VRIL_REF"
+            git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
+            test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$VRIL_SHA"
+            test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
+          else
+            git -C /workspace/repos/vril-engine fetch origin main
+            git -C /workspace/repos/vril-engine checkout --detach "$VRIL_SHA"
+          fi
       - name: Build
-        working-directory: ./
-        run: |
-          psp-pacman -Sy libpspmath --noconfirm
-          make -f Makefile.psp WERROR=1
+        run: /entrypoint.sh build-vril --target psp -- WERROR=1
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: psp-nzp-eboot
-          path: ./build/psp/bin/EBOOT.PBP
+          path: /workspace/repos/vril-engine/build/psp/bin/EBOOT.PBP
+          if-no-files-found: error
   Compile-3DSX:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
-    outputs:
-      o3ds_link: ${{ steps.zip.outputs.zip }}
+    name: Compile 3DS
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
     container:
-      image: devkitpro/devkitarm
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - uses: actions/checkout@v2
-      - name: Install Packages and update picaGL
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - name: Select Vril commit
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          VRIL_REF: ${{ github.ref }}
+          VRIL_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          apt-get update && apt-get install -y git
-          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-          git clone https://github.com/masterfeizz/picaGL.git
-          cd picaGL
-          git checkout revamp
-          mkdir clean
-          make install
-      - name: Build and install mpg123
-        run: |
-          curl -LO https://downloads.sourceforge.net/project/mpg123/mpg123/1.32.3/mpg123-1.32.3.tar.bz2
-          tar xf mpg123-1.32.3.tar.bz2
-          cd mpg123-1.32.3
-          ./configure --host=arm-none-eabi \
-            --prefix=$DEVKITPRO/portlibs/3ds \
-            --disable-shared \
-            --enable-static \
-            --with-cpu=generic_fpu \
-            CC=$DEVKITARM/bin/arm-none-eabi-gcc \
-            CFLAGS="-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft -D_3DS"
-          make -k || true
-          make -k install || true
-          cp src/libmpg123/mpg123.h $DEVKITPRO/portlibs/3ds/include/
+          if [ "$EVENT_NAME" = pull_request ]; then
+            git -C /workspace/repos/vril-engine fetch origin "$VRIL_REF"
+            git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
+            test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$VRIL_SHA"
+            test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
+          else
+            git -C /workspace/repos/vril-engine fetch origin main
+            git -C /workspace/repos/vril-engine checkout --detach "$VRIL_SHA"
+          fi
       - name: Build
-        working-directory: ./
-        run: |
-          make -f Makefile.ctr WERROR=1
+        run: /entrypoint.sh build-vril --target 3ds -- WERROR=1
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ctr-nzp-3dsx
-          path: ./build/ctr/bin/nzportable.3dsx
+          path: /workspace/repos/vril-engine/build/ctr/bin/nzportable.3dsx
+          if-no-files-found: error
   Compile-TNS:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
@@ -244,29 +286,47 @@ jobs:
           name: psp2-nzp-vpk
           path: ./build/psp2/nzportable.vpk
   Compile-NRO:
-      if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-      runs-on: ubuntu-latest
-      container:
-        image: devkitpro/devkita64
-      steps:
-        - name: Checkout
-          uses: actions/checkout@v4
-        - name: Install dependencies
-          run: |
-            apt-get update && apt-get install -y git
-            dkp-pacman -S --needed --noconfirm switch-sdl2_mixer
-            git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-        - name: Build
-          working-directory: ./
-          run: |
-            make -f Makefile.nx WERROR=1 -j$(nproc)
-        - name: Upload Artifact
-          uses: actions/upload-artifact@v4
-          with:
-            name: nx-nzp-nro
-            path: |
-              ./build/nx/bin/nzportable.nro
-              ./build/nx/bin/nzportable.nacp
+    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
+    name: Compile Switch
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
+    container:
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - name: Select Vril commit
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          VRIL_REF: ${{ github.ref }}
+          VRIL_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT_NAME" = pull_request ]; then
+            git -C /workspace/repos/vril-engine fetch origin "$VRIL_REF"
+            git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
+            test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$VRIL_SHA"
+            test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
+          else
+            git -C /workspace/repos/vril-engine fetch origin main
+            git -C /workspace/repos/vril-engine checkout --detach "$VRIL_SHA"
+          fi
+      - name: Build
+        run: /entrypoint.sh build-vril --target switch -- WERROR=1
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nx-nzp-nro
+          path: |
+            /workspace/repos/vril-engine/build/nx/bin/nzportable.nro
+            /workspace/repos/vril-engine/build/nx/bin/nzportable.nacp
+          if-no-files-found: error
   prepare-pr-test-content:
     if: github.event_name == 'pull_request'
     name: Prepare Pull Request Test Content
@@ -334,16 +394,13 @@ jobs:
           bash "${GITHUB_WORKSPACE}/test-dependencies/assets/tools/compile-wads.sh"
           bash "${GITHUB_WORKSPACE}/test-dependencies/assets/tools/compile-maps.sh" --full --zone-tool-path "${GITHUB_WORKSPACE}/test-dependencies/spawn-zone-tool"
           bash "${GITHUB_WORKSPACE}/test-dependencies/assets/tools/assemble-assets.sh"
-          mkdir -p test-overrides/assets/{linux,windows,psp,ctr}
+          mkdir -p test-overrides/assets/{linux,windows,ctr}
           unzip -oq test-dependencies/assets/tmp/pc-nzp-assets.zip -d test-overrides/assets/pc-package
           cp -a test-overrides/assets/pc-package/nzp/. test-overrides/assets/linux/
           cp -a test-overrides/assets/pc-package/nzp/. test-overrides/assets/windows/
-          unzip -oq test-dependencies/assets/tmp/psp-nzp-assets.zip -d test-overrides/assets/psp-package
-          cp -a test-overrides/assets/psp-package/nzportable/nzp/. test-overrides/assets/psp/
           unzip -oq test-dependencies/assets/tmp/3ds-nzp-assets.zip -d test-overrides/assets/ctr-package
           cp -a test-overrides/assets/ctr-package/nzportable/nzp/. test-overrides/assets/ctr/
-          rm -rf test-overrides/assets/pc-package test-overrides/assets/psp-package \
-            test-overrides/assets/ctr-package
+          rm -rf test-overrides/assets/pc-package test-overrides/assets/ctr-package
       - name: Log repository overrides
         env:
           QUAKEC_REF: ${{ steps.dependencies.outputs.quakec_ref }}
@@ -374,275 +431,374 @@ jobs:
           retention-days: 1
   Pull-Request-Test-3DS:
     if: github.event_name == 'pull_request'
-    name: ${{ matrix.mode }} 3DS Pull Request Tests
+    name: 3DS ${{ matrix.mode }} ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-3DSX, prepare-toolbox-test-content]
     strategy:
       fail-fast: false
       matrix:
         mode: [old, new]
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
     runs-on: ubuntu-24.04
     container:
-      image: ubuntu:24.04
+      image: ${{ needs.resolve-toolbox.outputs.image }}
       options: --shm-size=8192m
-    needs: [Compile-3DSX, prepare-pr-test-content]
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - name: Select Vril PR merge commit
+        env:
+          PR_MERGE_REF: ${{ github.ref }}
+          PR_MERGE_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git -C /workspace/repos/vril-engine fetch origin "$PR_MERGE_REF"
+          git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
+          test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$PR_MERGE_SHA"
+          test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
       - name: Download 3DS Artifact
         uses: actions/download-artifact@v4
         with:
           name: ctr-nzp-3dsx
-          path: testing/working/ctr-artifact
+          path: /workspace/vril-test-artifact
       - name: Download Test Content Overrides
-        if: needs['prepare-pr-test-content'].outputs.has_overrides == 'true'
+        if: needs['prepare-toolbox-test-content'].outputs.has_overrides == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: pr-test-content-overrides
-          path: testing/overrides
-      - name: Run All
+          name: toolbox-pr-test-content-overrides
+          path: /workspace/vril-test-overrides
+      - name: Run test
         env:
-          ASSETS_OVERRIDE_DIRECTORY: ${{ github.workspace }}/testing/overrides/assets/ctr
-          QUAKEC_OVERRIDE_FILE: ${{ github.workspace }}/testing/overrides/quakec/progs.dat
-        run: |
-          cd ./testing
-          ./run_tests.sh --platform ctr --test all --content "$(pwd)/validate" --working-dir working/ --mode ${{ matrix.mode }} --binary "$(pwd)/working/ctr-artifact/nzportable.3dsx"
+          ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/ctr
+          QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+          CTR_MODE: ${{ matrix.mode }}
+          VRIL_TEST: ${{ matrix.test }}
+        run: /entrypoint.sh test-vril --platform ctr --test "$VRIL_TEST" --mode "$CTR_MODE" --binary /workspace/vril-test-artifact/nzportable.3dsx
       - name: Upload Failure Artifact
         id: ctr_failure_artifact
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: ctr-${{ matrix.mode }}-pr-failures
-          path: testing/working/fail/
+          name: ctr-${{ matrix.mode }}-${{ matrix.test }}-pr-failures
+          path: /workspace/repos/vril-engine/testing/working/fail/
           if-no-files-found: ignore
           retention-days: 14
       - name: Add Failure Summary
         if: failure() && steps.ctr_failure_artifact.outputs.artifact-url != ''
         env:
           ARTIFACT_URL: ${{ steps.ctr_failure_artifact.outputs.artifact-url }}
+          CTR_MODE: ${{ matrix.mode }}
+          VRIL_TEST: ${{ matrix.test }}
         run: |
           {
-            echo "## ${{ matrix.mode }} 3DS PR Test Failed"
+            echo "## 3DS $CTR_MODE $VRIL_TEST PR Test Failed"
             echo ""
-            cat testing/working/fail/summary.md
+            cat /workspace/repos/vril-engine/testing/working/fail/summary.md
             echo ""
-            echo "[Failure Artifact](${ARTIFACT_URL})"
+            echo "[Failure Artifact]($ARTIFACT_URL)"
             echo ""
-          } >> "${GITHUB_STEP_SUMMARY}"
+          } >> "$GITHUB_STEP_SUMMARY"
   Pull-Request-Test-PSP:
     if: github.event_name == 'pull_request'
-    name: PSP ${{ matrix.mode }} Pull Request Tests
+    name: PSP ${{ matrix.mode }} ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-EBOOT, prepare-toolbox-test-content]
     strategy:
       fail-fast: false
       matrix:
         mode: [fat, slim]
-    runs-on: ubuntu-latest
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+    runs-on: ubuntu-24.04
     container:
-      image: ubuntu:24.04
+      image: ${{ needs.resolve-toolbox.outputs.image }}
       options: --shm-size=8192m
-    needs: [Compile-EBOOT, prepare-pr-test-content]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Wait for GitHub to keep up..
-        run: sleep 2s
+    defaults:
+      run:
         shell: bash
-      - name: Download Artifacts
+    steps:
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - name: Select Vril PR merge commit
+        env:
+          PR_MERGE_REF: ${{ github.ref }}
+          PR_MERGE_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git -C /workspace/repos/vril-engine fetch origin "$PR_MERGE_REF"
+          git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
+          test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$PR_MERGE_SHA"
+          test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
+      - name: Download PSP Artifact
         uses: actions/download-artifact@v4
         with:
           name: psp-nzp-eboot
-          path: /psp-nzp-eboot
+          path: /workspace/vril-test-artifact
       - name: Download Test Content Overrides
-        if: needs['prepare-pr-test-content'].outputs.has_overrides == 'true'
+        if: needs['prepare-toolbox-test-content'].outputs.has_overrides == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: pr-test-content-overrides
-          path: testing/overrides
-      - name: Run All
+          name: toolbox-pr-test-content-overrides
+          path: /workspace/vril-test-overrides
+      - name: Run test
         env:
-          ASSETS_OVERRIDE_DIRECTORY: ${{ github.workspace }}/testing/overrides/assets/psp
-          QUAKEC_OVERRIDE_FILE: ${{ github.workspace }}/testing/overrides/quakec/progs.dat
-        run: |
-          cd ./testing
-          ./run_tests.sh --platform psp --test all --content "$(pwd)/validate" --working-dir working/ --mode ${{ matrix.mode }} --binary /psp-nzp-eboot/EBOOT.PBP
+          ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/psp
+          QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+          PSP_MODE: ${{ matrix.mode }}
+          VRIL_TEST: ${{ matrix.test }}
+        run: /entrypoint.sh test-vril --platform psp --test "$VRIL_TEST" --mode "$PSP_MODE" --binary /workspace/vril-test-artifact/EBOOT.PBP
       - name: Upload Failure Artifact
         id: psp_failure_artifact
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: psp-${{ matrix.mode }}-pr-failures
-          path: testing/working/fail/
+          name: psp-${{ matrix.mode }}-${{ matrix.test }}-pr-failures
+          path: /workspace/repos/vril-engine/testing/working/fail/
           if-no-files-found: ignore
           retention-days: 14
-      - name: Add Image Comparison Failure Summary
+      - name: Add Failure Summary
         if: failure() && steps.psp_failure_artifact.outputs.artifact-url != ''
         env:
           ARTIFACT_URL: ${{ steps.psp_failure_artifact.outputs.artifact-url }}
+          PSP_MODE: ${{ matrix.mode }}
+          VRIL_TEST: ${{ matrix.test }}
         run: |
           {
-            echo "## PSP ${{ matrix.mode }} PR Test Failed"
+            echo "## PSP $PSP_MODE $VRIL_TEST PR Test Failed"
             echo ""
-            cat testing/working/fail/summary.md
+            cat /workspace/repos/vril-engine/testing/working/fail/summary.md
             echo ""
-            echo "[Failure Artifact](${ARTIFACT_URL})"
-            echo ""
-          } >> "${GITHUB_STEP_SUMMARY}"
-  Pull-Request-Test-Linux:
+            echo "[Failure Artifact]($ARTIFACT_URL)"
+          } >> "$GITHUB_STEP_SUMMARY"
+  prepare-toolbox-test-content:
     if: github.event_name == 'pull_request'
-    name: Linux ${{ matrix.arch }} Pull Request Tests
+    name: Prepare Toolbox Test Content
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
+    container:
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+    outputs:
+      has_overrides: ${{ steps.refs.outputs.has_overrides }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Resolve dependency overrides
+        id: refs
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          quakec_ref=$(sed -nE 's/^[[:space:]]*quakec_ref=([^[:space:]]+)[[:space:]]*$/\1/p' <<< "$PR_BODY" | head -n 1)
+          assets_ref=$(sed -nE 's/^[[:space:]]*assets_ref=([^[:space:]]+)[[:space:]]*$/\1/p' <<< "$PR_BODY" | head -n 1)
+          {
+            echo "quakec_ref=$quakec_ref"
+            echo "assets_ref=$assets_ref"
+            if [ -n "$quakec_ref" ] || [ -n "$assets_ref" ]; then
+              echo 'has_overrides=true'
+            else
+              echo 'has_overrides=false'
+            fi
+          } >> "$GITHUB_OUTPUT"
+      - name: Toolbox Fetch
+        if: steps.refs.outputs.has_overrides == 'true'
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - name: Build dependency overrides
+        if: steps.refs.outputs.has_overrides == 'true'
+        env:
+          QUAKEC_REF: ${{ steps.refs.outputs.quakec_ref }}
+          ASSETS_REF: ${{ steps.refs.outputs.assets_ref }}
+          PR_HEAD_OWNER: ${{ github.event.pull_request.head.repo.owner.login }}
+        run: |
+          if [ -n "$QUAKEC_REF" ]; then
+            git -C /workspace/repos/quakec fetch "https://github.com/${PR_HEAD_OWNER}/quakec.git" "$QUAKEC_REF"
+            git -C /workspace/repos/quakec checkout --detach FETCH_HEAD
+            /entrypoint.sh build-quakec
+            mkdir -p /workspace/vril-test-overrides/quakec
+            cp /workspace/repos/quakec/build/standard/progs.dat /workspace/vril-test-overrides/quakec/progs.dat
+            echo "QuakeC override: \`${PR_HEAD_OWNER}/quakec@$(git -C /workspace/repos/quakec rev-parse HEAD)\`" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ -n "$ASSETS_REF" ]; then
+            git -C /workspace/repos/assets fetch "https://github.com/${PR_HEAD_OWNER}/assets.git" "$ASSETS_REF"
+            git -C /workspace/repos/assets checkout --detach FETCH_HEAD
+            /entrypoint.sh build-wads
+            /entrypoint.sh build-map --full
+            /entrypoint.sh build-assets
+            mkdir -p /workspace/vril-test-overrides/assets/linux
+            cp -a /workspace/repos/assets/tmp/pc/nzp/. /workspace/vril-test-overrides/assets/linux/
+            mkdir -p /workspace/vril-test-overrides/assets/windows
+            cp -a /workspace/repos/assets/tmp/pc/nzp/. /workspace/vril-test-overrides/assets/windows/
+            mkdir -p /workspace/vril-test-overrides/assets/psp
+            cp -a /workspace/repos/assets/tmp/psp/nzportable/nzp/. /workspace/vril-test-overrides/assets/psp/
+            mkdir -p /workspace/vril-test-overrides/assets/ctr
+            cp -a /workspace/repos/assets/tmp/ctr/nzportable/nzp/. /workspace/vril-test-overrides/assets/ctr/
+            echo "Assets override: \`${PR_HEAD_OWNER}/assets@$(git -C /workspace/repos/assets rev-parse HEAD)\`" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload test content overrides
+        if: steps.refs.outputs.has_overrides == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: toolbox-pr-test-content-overrides
+          path: /workspace/vril-test-overrides/
+          if-no-files-found: error
+          retention-days: 1
+
+  Pull-Request-Test-Linux-Toolbox:
+    if: github.event_name == 'pull_request'
+    name: Linux ${{ matrix.arch }} ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-Linux-Toolbox, prepare-toolbox-test-content]
+    runs-on: ${{ contains(fromJSON('["arm64","armhf"]'), matrix.arch) && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    container:
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+      options: --shm-size=8192m
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - arch: x86
-            runner: ubuntu-24.04
-            native_arch: amd64
-            deb_arch: i386
-          - arch: x86_64
-            runner: ubuntu-24.04
-            native_arch: amd64
-            deb_arch: amd64
-          - arch: arm64
-            runner: ubuntu-24.04-arm
-            native_arch: arm64
-            deb_arch: arm64
-          - arch: armhf
-            runner: ubuntu-24.04-arm
-            native_arch: arm64
-            deb_arch: armhf
-    runs-on: ${{ matrix.runner }}
-    container:
-      image: debian:12
-      options: --shm-size=8192m
-    needs: [Compile-Linux, prepare-pr-test-content]
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+        arch: [x86_64, x86, arm64, armhf]
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: ${{ contains(fromJSON('["arm64","armhf"]'), matrix.arch) && 'arm64' || 'x86_64' }}
+        run: /entrypoint.sh fetch
+      - name: Select Vril PR merge commit
+        env:
+          PR_MERGE_REF: ${{ github.ref }}
+          PR_MERGE_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git -C /workspace/repos/vril-engine fetch origin "$PR_MERGE_REF"
+          git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
+          test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$PR_MERGE_SHA"
+          test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
       - name: Download Linux Artifact
         uses: actions/download-artifact@v4
         with:
           name: linux-${{ matrix.arch }}-nzp-sdl
-          path: testing/working/linux-artifact
+          path: /workspace/vril-test-artifact
       - name: Download Test Content Overrides
-        if: needs['prepare-pr-test-content'].outputs.has_overrides == 'true'
+        if: needs['prepare-toolbox-test-content'].outputs.has_overrides == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: pr-test-content-overrides
-          path: testing/overrides
-      - name: Install compatibility libraries
-        if: matrix.deb_arch != matrix.native_arch
+          name: toolbox-pr-test-content-overrides
+          path: /workspace/vril-test-overrides
+      - name: Run test
         env:
-          DEB_ARCH: ${{ matrix.deb_arch }}
-        run: |
-          dpkg --add-architecture "${DEB_ARCH}"
-          apt-get update
-          apt-get install -y \
-            "libgl1:${DEB_ARCH}" "libgl1-mesa-dri:${DEB_ARCH}" "libglu1-mesa:${DEB_ARCH}" \
-            "libsdl2-2.0-0:${DEB_ARCH}" "libsdl2-mixer-2.0-0:${DEB_ARCH}"
-      - name: Run All
-        env:
-          ASSETS_OVERRIDE_DIRECTORY: ${{ github.workspace }}/testing/overrides/assets/linux
-          QUAKEC_OVERRIDE_FILE: ${{ github.workspace }}/testing/overrides/quakec/progs.dat
-        run: |
-          cd ./testing
-          ./run_tests.sh --platform linux --test all --content "$(pwd)/validate" --working-dir working/ --binary "$(pwd)/working/linux-artifact/nzportable"
+          ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/linux
+          QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+          VRIL_TEST: ${{ matrix.test }}
+        run: /entrypoint.sh test-vril --platform linux --test "$VRIL_TEST" --binary /workspace/vril-test-artifact/nzportable
       - name: Upload Failure Artifact
-        id: linux_failure_artifact
+        id: linux_x86_64_failure_artifact
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: linux-${{ matrix.arch }}-pr-failures
-          path: testing/working/fail/
+          name: linux-${{ matrix.arch }}-${{ matrix.test }}-pr-failures
+          path: /workspace/repos/vril-engine/testing/working/fail/
           if-no-files-found: ignore
           retention-days: 14
       - name: Add Failure Summary
-        if: failure() && steps.linux_failure_artifact.outputs.artifact-url != ''
+        if: failure() && steps.linux_x86_64_failure_artifact.outputs.artifact-url != ''
         env:
-          ARTIFACT_URL: ${{ steps.linux_failure_artifact.outputs.artifact-url }}
+          ARTIFACT_URL: ${{ steps.linux_x86_64_failure_artifact.outputs.artifact-url }}
         run: |
           {
-            echo "## Linux ${{ matrix.arch }} PR Test Failed"
+            echo "## Linux ${{ matrix.arch }} ${{ matrix.test }} PR Test Failed"
             echo ""
-            cat testing/working/fail/summary.md
+            cat /workspace/repos/vril-engine/testing/working/fail/summary.md
             echo ""
             echo "[Failure Artifact](${ARTIFACT_URL})"
             echo ""
-          } >> "${GITHUB_STEP_SUMMARY}"
+          } >> "$GITHUB_STEP_SUMMARY"
   Pull-Request-Test-Windows:
     if: github.event_name == 'pull_request'
-    name: Windows ${{ matrix.arch }} Pull Request Tests
+    name: Windows ${{ matrix.arch }} ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-Windows, prepare-toolbox-test-content]
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - arch: x86
-            runner: ubuntu-24.04
-            native_arch: amd64
-            deb_arch: i386
-          - arch: x86_64
-            runner: ubuntu-24.04
-            native_arch: amd64
-            deb_arch: amd64
-    runs-on: ${{ matrix.runner }}
+        arch: [x86, x86_64]
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+    runs-on: ubuntu-24.04
     container:
-      image: debian:12
+      image: ${{ needs.resolve-toolbox.outputs.image }}
       options: --shm-size=8192m
-    needs: [Compile-Windows, prepare-pr-test-content]
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - name: Select Vril PR merge commit
+        env:
+          PR_MERGE_REF: ${{ github.ref }}
+          PR_MERGE_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git -C /workspace/repos/vril-engine fetch origin "$PR_MERGE_REF"
+          git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
+          test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$PR_MERGE_SHA"
+          test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
       - name: Download Windows Artifact
         uses: actions/download-artifact@v4
         with:
           name: windows-${{ matrix.arch }}-nzp-sdl
-          path: testing/working/windows-artifact
+          path: /workspace/vril-test-artifact
       - name: Download Test Content Overrides
-        if: needs['prepare-pr-test-content'].outputs.has_overrides == 'true'
+        if: needs['prepare-toolbox-test-content'].outputs.has_overrides == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: pr-test-content-overrides
-          path: testing/overrides
-      - name: Install compatibility libraries
-        if: matrix.deb_arch != matrix.native_arch
+          name: toolbox-pr-test-content-overrides
+          path: /workspace/vril-test-overrides
+      - name: Run test
         env:
-          DEB_ARCH: ${{ matrix.deb_arch }}
-        run: |
-          dpkg --add-architecture "${DEB_ARCH}"
-          apt-get update
-          apt-get install -y \
-            "libgl1:${DEB_ARCH}" "libgl1-mesa-dri:${DEB_ARCH}" "libglu1-mesa:${DEB_ARCH}" \
-            "libsdl2-2.0-0:${DEB_ARCH}" "libsdl2-mixer-2.0-0:${DEB_ARCH}"
-      - name: Run All
-        env:
-          ASSETS_OVERRIDE_DIRECTORY: ${{ github.workspace }}/testing/overrides/assets/windows
-          QUAKEC_OVERRIDE_FILE: ${{ github.workspace }}/testing/overrides/quakec/progs.dat
-        run: |
-          cd ./testing
-          ./run_tests.sh --platform windows --test all --content "$(pwd)/validate" --working-dir working/ --binary "$(pwd)/working/windows-artifact/nzportable.exe" --reference-platform linux
+          ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/windows
+          QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+          VRIL_TEST: ${{ matrix.test }}
+        run: /entrypoint.sh test-vril --platform windows --test "$VRIL_TEST" --binary /workspace/vril-test-artifact/nzportable.exe --reference-platform linux
       - name: Upload Failure Artifact
         id: windows_failure_artifact
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: windows-${{ matrix.arch }}-pr-failures
-          path: testing/working/fail/
+          name: windows-${{ matrix.arch }}-${{ matrix.test }}-pr-failures
+          path: /workspace/repos/vril-engine/testing/working/fail/
           if-no-files-found: ignore
           retention-days: 14
       - name: Add Failure Summary
         if: failure() && steps.windows_failure_artifact.outputs.artifact-url != ''
         env:
           ARTIFACT_URL: ${{ steps.windows_failure_artifact.outputs.artifact-url }}
+          WINDOWS_ARCH: ${{ matrix.arch }}
+          VRIL_TEST: ${{ matrix.test }}
         run: |
           {
-            echo "## Windows ${{ matrix.arch }} PR Test Failed"
+            echo "## Windows $WINDOWS_ARCH $VRIL_TEST PR Test Failed"
             echo ""
-            cat testing/working/fail/summary.md
+            cat /workspace/repos/vril-engine/testing/working/fail/summary.md
             echo ""
-            echo "[Failure Artifact](${ARTIFACT_URL})"
+            echo "[Failure Artifact]($ARTIFACT_URL)"
             echo ""
-          } >> "${GITHUB_STEP_SUMMARY}"
+          } >> "$GITHUB_STEP_SUMMARY"
   Unify-and-Release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: [Compile-Linux, Compile-Windows, Compile-EBOOT, Compile-3DSX, Compile-TNS, Compile-VPK, Compile-NRO]
+    needs: [Compile-Linux-Toolbox, Compile-Windows, Compile-EBOOT, Compile-3DSX, Compile-TNS, Compile-VPK, Compile-NRO]
     steps:
       - name: Checkout
         uses: actions/checkout@v2

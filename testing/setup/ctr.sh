@@ -14,14 +14,11 @@ set -o errexit
 source "nzp_utility.sh"
 
 # Read by our test scripts.
-EMULATOR_BIN="azahar/AppRun"
+EMULATOR_BIN="/opt/azahar/AppRun"
 APP_BIN="nzportable.3dsx"
 
 # How many seconds to wait before time out
 TIMEOUT=600
-
-# The Azahar release we download and use.
-azahar_version="2126.0"
 
 testing_dir_path="${testing_dir_path:-}"
 binary_path="${binary_path:-}"
@@ -30,41 +27,6 @@ working_dir="${working_dir:-}"
 # tzdata will try to display an interactive install prompt by
 # default, so make sure we define our system as non-interactive.
 export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true
-
-function install_dependencies
-{
-	print_info "Installing Nintendo 3DS dependencies.."
-	apt-get update -y
-	apt-get install -y --no-install-recommends ca-certificates ffmpeg libegl1 libfontconfig1 libgl1 libgl1-mesa-dri \
-		libglu1-mesa libgtk-3-0 libxcb-cursor0 libxkbcommon-x11-0 \
-		python3 squashfs-tools unzip wget xauth xvfb
-}
-
-function download_azahar
-{
-	local image_path="${working_dir}/azahar.AppImage"
-	local image_offset
-
-	if [[ ! -f "${image_path}" ]]; then
-		print_info "Downloading Azahar [${azahar_version}].."
-		wget -q -O "${image_path}.tmp" \
-			"https://github.com/azahar-emu/azahar/releases/download/${azahar_version}/azahar.AppImage"
-		mv "${image_path}.tmp" "${image_path}"
-	fi
-
-	# Evil AppImage binary extraction hack, Python edition
-	image_offset=$(python3 - "${image_path}" <<-'PYTHON'
-		import struct
-		import sys
-		with open(sys.argv[1], "rb") as image:
-		    header = image.read(64)
-		assert header[:6] == b"\x7fELF\x02\x01", "Expected a 64-bit little-endian AppImage"
-		print(struct.unpack_from("<Q", header, 40)[0] +
-		      struct.unpack_from("<H", header, 58)[0] * struct.unpack_from("<H", header, 60)[0])
-	PYTHON
-	)
-	unsquashfs -no-progress -offset "${image_offset}" -d "${working_dir}/azahar" "${image_path}"
-}
 
 function obtain_nzportable
 {
@@ -97,13 +59,8 @@ function begin_setup()
 	MODE="$(ctr_mode "${MODE}")"
 	cd "${working_dir}"
 
-	install_dependencies;
-	
-	# Check if we have the emulator already
-	if [[ -f "${working_dir}/${EMULATOR_BIN}" ]]; then
-		print_info "Emulator binary found in [${working_dir}], skipping download.."
-	else
-		download_azahar;
+	if [[ ! -x "${EMULATOR_BIN}" ]]; then
+		print_error "Toolbox Azahar is unavailable at [${EMULATOR_BIN}]!" "1"
 	fi
 
 	obtain_nzportable;
@@ -176,7 +133,7 @@ function test_game_path()
 #
 function run_nzportable()
 {
-	echo "env XDG_CONFIG_HOME=${XDG_CONFIG_HOME} XDG_DATA_HOME=${XDG_DATA_HOME} SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1 bash ${testing_dir_path}/setup/utils/run-azahar.sh ${TIMEOUT} $(test_game_path)/nzp/condebug.log ${working_dir}/nzportable ${working_dir}/${EMULATOR_BIN} ${APP_BIN}"
+	echo "env XDG_CONFIG_HOME=${XDG_CONFIG_HOME} XDG_DATA_HOME=${XDG_DATA_HOME} SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1 bash ${testing_dir_path}/setup/utils/run-azahar.sh ${TIMEOUT} $(test_game_path)/nzp/condebug.log ${working_dir}/nzportable ${EMULATOR_BIN} ${APP_BIN}"
 }
 
 function write_test_setup()

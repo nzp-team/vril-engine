@@ -44,3 +44,11 @@
    match-leak-kinds: definite,possible,indirect,reachable
    fun:_dl_init
 }
+
+{
+   ignore_mesa_gallium_possible_leaks
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   obj:*/libgallium-*.so
+}

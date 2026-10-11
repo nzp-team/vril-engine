@@ -18,6 +18,7 @@ Ideally you should also use this standard for your commit names too. They'll lik
 Uncomment to run Vril PR tests with specific component branches or commits (will use your own forks if you are an external contributor):
 # quakec_ref=main
 # assets_ref=main
+# toolbox_image=
 -->
 
 ### Description of Changes
