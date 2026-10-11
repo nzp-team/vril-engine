@@ -337,7 +337,10 @@ void Key_Message (int key)
 {
 	static int chat_bufferlen = 0;
 
-	if (key == K_BOTTOMFACE) {
+	if (key == K_SPACE)
+		key = ' ';
+
+	if (key == K_BOTTOMFACE || key == K_ENTER) {
 		if (team_message)
 			Cbuf_AddText ("say_team \"");
 		else
@@ -351,7 +354,7 @@ void Key_Message (int key)
 		return;
 	}
 
-	if (key == K_RIGHTFACE) {
+	if (key == K_RIGHTFACE || key == K_ESCAPE || key == K_START) {
 		console_enabled = false;
 		key_dest = key_game;
 		chat_bufferlen = 0;
@@ -359,10 +362,7 @@ void Key_Message (int key)
 		return;
 	}
 
-	if (key < 32 || key > 127)
-		return;	// non printable
-
-	if (key == K_LEFTFACE) {
+	if (key == K_LEFTFACE || key == '\b') {
 		if (chat_bufferlen)
 		{
 			chat_bufferlen--;
@@ -370,6 +370,9 @@ void Key_Message (int key)
 		}
 		return;
 	}
+
+	if (key < 32 || key > 127)
+		return;	// non printable
 
 	if (chat_bufferlen == 31)
 		return; // all full

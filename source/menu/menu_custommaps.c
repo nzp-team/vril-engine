@@ -316,7 +316,6 @@ void Menu_CustomMaps_MapFinder (void)
 
 			// Set map name
 			COM_StripExtension(d_name, map_name);
-			strtolower(map_name);
 
 			// Add the map to our custom_maps[] struct
 			Menu_CustomMaps_AddMap(map_name);
@@ -333,7 +332,6 @@ void Menu_CustomMaps_MapFinder (void)
     if (pak) {
         while (Pak_ReadMap(pak, d_name, sizeof(d_name))) {
 			COM_StripExtension(d_name, map_name);
-			strtolower(map_name);
 
             Menu_CustomMaps_AddMap(map_name);
         }

@@ -1469,20 +1469,20 @@ static int W_fopen_path (char *path)
 	int h = 0;
 	int size;
 
-	size = Sys_FileOpenRead (path, &h);
+	size = COM_OpenFile (path, &h);
 	if (size < 0 || h <= 0)
 		return -1;
 
 	w_file_buffer = Z_Malloc(size + 1);
 	if (size > 0 && Sys_FileRead(h, w_file_buffer, size) != size)
 	{
-		Sys_FileClose(h);
+		COM_CloseFile(h);
 		Z_Free(w_file_buffer);
 		w_file_buffer = NULL;
 		return -1;
 	}
 
-	Sys_FileClose(h);
+	COM_CloseFile(h);
 	w_file_buffer[size] = 0;
 	w_file_size = size;
 	w_file_pos = 0;
@@ -1491,12 +1491,12 @@ static int W_fopen_path (char *path)
 
 int W_fopen (void)
 {
-	return W_fopen_path (va("%s/maps/%s.way",com_gamedir, sv.name));
+	return W_fopen_path (va("maps/%s.way", sv.name));
 }
 
 int W_fopenbeta(void)
 {
-	return W_fopen_path (va("%s/data/%s",com_gamedir, sv.name));
+	return W_fopen_path (va("data/%s", sv.name));
 }
 
 void W_fclose (int h)
