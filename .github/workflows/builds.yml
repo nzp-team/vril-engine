@@ -286,29 +286,47 @@ jobs:
           name: psp2-nzp-vpk
           path: ./build/psp2/nzportable.vpk
   Compile-NRO:
-      if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-      runs-on: ubuntu-latest
-      container:
-        image: devkitpro/devkita64
-      steps:
-        - name: Checkout
-          uses: actions/checkout@v4
-        - name: Install dependencies
-          run: |
-            apt-get update && apt-get install -y git
-            dkp-pacman -S --needed --noconfirm switch-sdl2_mixer
-            git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-        - name: Build
-          working-directory: ./
-          run: |
-            make -f Makefile.nx WERROR=1 -j$(nproc)
-        - name: Upload Artifact
-          uses: actions/upload-artifact@v4
-          with:
-            name: nx-nzp-nro
-            path: |
-              ./build/nx/bin/nzportable.nro
-              ./build/nx/bin/nzportable.nacp
+    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
+    name: Compile Switch
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
+    container:
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - name: Select Vril commit
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          VRIL_REF: ${{ github.ref }}
+          VRIL_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT_NAME" = pull_request ]; then
+            git -C /workspace/repos/vril-engine fetch origin "$VRIL_REF"
+            git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
+            test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$VRIL_SHA"
+            test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
+          else
+            git -C /workspace/repos/vril-engine fetch origin main
+            git -C /workspace/repos/vril-engine checkout --detach "$VRIL_SHA"
+          fi
+      - name: Build
+        run: /entrypoint.sh build-vril --target switch -- WERROR=1
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nx-nzp-nro
+          path: |
+            /workspace/repos/vril-engine/build/nx/bin/nzportable.nro
+            /workspace/repos/vril-engine/build/nx/bin/nzportable.nacp
+          if-no-files-found: error
   prepare-pr-test-content:
     if: github.event_name == 'pull_request'
     name: Prepare Pull Request Test Content
