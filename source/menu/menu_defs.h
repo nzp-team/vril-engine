@@ -170,7 +170,7 @@ typedef struct
 	char* 		map_thumbnail_path;
 } usermap_t;
 
-#define                 MAX_CUSTOMMAPS 64
+#define                 MAX_CUSTOMMAPS 256
 extern usermap_t        custom_maps[MAX_CUSTOMMAPS];
 extern image_t          menu_usermap_image[MAX_CUSTOMMAPS];
 extern int              num_user_maps;
