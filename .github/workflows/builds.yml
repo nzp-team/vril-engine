@@ -90,7 +90,8 @@ jobs:
           TOOLBOX_HOST_OS: Linux
           TOOLBOX_HOST_ARCH: ${{ matrix.host_arch }}
         run: /entrypoint.sh fetch
-      - name: Select Vril commit
+      - &select_vril_commit
+        name: Select Vril commit
         env:
           EVENT_NAME: ${{ github.event_name }}
           VRIL_REF: ${{ github.ref }}
@@ -134,22 +135,7 @@ jobs:
           TOOLBOX_HOST_OS: Linux
           TOOLBOX_HOST_ARCH: x86_64
         run: /entrypoint.sh fetch
-      - name: Select Vril commit
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          VRIL_REF: ${{ github.ref }}
-          VRIL_SHA: ${{ github.sha }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          if [ "$EVENT_NAME" = pull_request ]; then
-            git -C /workspace/repos/vril-engine fetch origin "$VRIL_REF"
-            git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
-            test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$VRIL_SHA"
-            test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
-          else
-            git -C /workspace/repos/vril-engine fetch origin main
-            git -C /workspace/repos/vril-engine checkout --detach "$VRIL_SHA"
-          fi
+      - *select_vril_commit
       - name: Build
         env:
           ARCH: ${{ matrix.arch }}
@@ -176,22 +162,7 @@ jobs:
           TOOLBOX_HOST_OS: Linux
           TOOLBOX_HOST_ARCH: x86_64
         run: /entrypoint.sh fetch
-      - name: Select Vril commit
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          VRIL_REF: ${{ github.ref }}
-          VRIL_SHA: ${{ github.sha }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          if [ "$EVENT_NAME" = pull_request ]; then
-            git -C /workspace/repos/vril-engine fetch origin "$VRIL_REF"
-            git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
-            test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$VRIL_SHA"
-            test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
-          else
-            git -C /workspace/repos/vril-engine fetch origin main
-            git -C /workspace/repos/vril-engine checkout --detach "$VRIL_SHA"
-          fi
+      - *select_vril_commit
       - name: Build
         run: /entrypoint.sh build-vril --target psp -- WERROR=1
       - name: Upload Artifact
@@ -216,22 +187,7 @@ jobs:
           TOOLBOX_HOST_OS: Linux
           TOOLBOX_HOST_ARCH: x86_64
         run: /entrypoint.sh fetch
-      - name: Select Vril commit
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          VRIL_REF: ${{ github.ref }}
-          VRIL_SHA: ${{ github.sha }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          if [ "$EVENT_NAME" = pull_request ]; then
-            git -C /workspace/repos/vril-engine fetch origin "$VRIL_REF"
-            git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
-            test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$VRIL_SHA"
-            test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
-          else
-            git -C /workspace/repos/vril-engine fetch origin main
-            git -C /workspace/repos/vril-engine checkout --detach "$VRIL_SHA"
-          fi
+      - *select_vril_commit
       - name: Build
         run: /entrypoint.sh build-vril --target 3ds -- WERROR=1
       - name: Upload Artifact
@@ -242,49 +198,54 @@ jobs:
           if-no-files-found: error
   Compile-TNS:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
+    name: Compile Nspire
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
     container:
-      image: bensuperpc/ndless:latest
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Build with Ndless SDK
-        working-directory: ./
-        run: |
-          make -f Makefile.nspire WERROR=1
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - *select_vril_commit
+      - name: Build
+        run: /entrypoint.sh build-vril --target nspire -- WERROR=1
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: nspire-nzp-tns
-          path: ./build/nspire/bin/nzportable.tns
+          path: /workspace/repos/vril-engine/build/nspire/bin/nzportable.tns
+          if-no-files-found: error
   Compile-VPK:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
+    name: Compile Vita
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
     container:
-      image: vitasdk/vitasdk
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - uses: actions/checkout@v4
-      - name: Install Packages
-        run: |
-          apt update && apt install -y git
-          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-      - name: Setup latest vitaGL
-        run: |
-          git clone https://github.com/Rinnegatamante/vitaGL.git
-          cd vitaGL
-          git checkout 6e7fe40
-          make MATH_SPEEDHACK=1 PRIMITIVES_SPEEDHACK=1 HAVE_FFP_SHADER_SUPPORT=1 DISABLE_FFP_MULTITEXTURE=1 HAVE_WVP_ON_GPU=1 NO_TILE_CLIPPER=1 NO_SPLASHSCREEN=1 -j$(nproc)
-          make install
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - *select_vril_commit
       - name: Build
-        working-directory: ./
-        run: |
-          make -f Makefile.psp2 WERROR=1 -j$(nproc)
+        run: /entrypoint.sh build-vril --target vita -- WERROR=1
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: psp2-nzp-vpk
-          path: ./build/psp2/nzportable.vpk
+          path: /workspace/repos/vril-engine/build/psp2/nzportable.vpk
+          if-no-files-found: error
   Compile-NRO:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     name: Compile Switch
@@ -301,22 +262,7 @@ jobs:
           TOOLBOX_HOST_OS: Linux
           TOOLBOX_HOST_ARCH: x86_64
         run: /entrypoint.sh fetch
-      - name: Select Vril commit
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          VRIL_REF: ${{ github.ref }}
-          VRIL_SHA: ${{ github.sha }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          if [ "$EVENT_NAME" = pull_request ]; then
-            git -C /workspace/repos/vril-engine fetch origin "$VRIL_REF"
-            git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
-            test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$VRIL_SHA"
-            test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
-          else
-            git -C /workspace/repos/vril-engine fetch origin main
-            git -C /workspace/repos/vril-engine checkout --detach "$VRIL_SHA"
-          fi
+      - *select_vril_commit
       - name: Build
         run: /entrypoint.sh build-vril --target switch -- WERROR=1
       - name: Upload Artifact
@@ -327,108 +273,6 @@ jobs:
             /workspace/repos/vril-engine/build/nx/bin/nzportable.nro
             /workspace/repos/vril-engine/build/nx/bin/nzportable.nacp
           if-no-files-found: error
-  prepare-pr-test-content:
-    if: github.event_name == 'pull_request'
-    name: Prepare Pull Request Test Content
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-    outputs:
-      has_overrides: ${{ steps.dependencies.outputs.has_overrides }}
-      quakec_ref: ${{ steps.dependencies.outputs.quakec_ref }}
-      assets_ref: ${{ steps.dependencies.outputs.assets_ref }}
-    steps:
-      - name: Resolve dependency overrides
-        id: dependencies
-        env:
-          PR_BODY: ${{ github.event.pull_request.body }}
-          PR_HEAD_OWNER: ${{ github.event.pull_request.head.repo.owner.login }}
-        run: |
-          quakec_ref=$(sed -nE 's/^[[:space:]]*quakec_ref=([^[:space:]]+)[[:space:]]*$/\1/p' <<< "${PR_BODY}" | head -n 1)
-          assets_ref=$(sed -nE 's/^[[:space:]]*assets_ref=([^[:space:]]+)[[:space:]]*$/\1/p' <<< "${PR_BODY}" | head -n 1)
-          {
-            echo "quakec_ref=${quakec_ref}"
-            echo "assets_ref=${assets_ref}"
-            echo "quakec_repository=${PR_HEAD_OWNER}/quakec"
-            echo "assets_repository=${PR_HEAD_OWNER}/assets"
-            if [[ -n "${quakec_ref}" || -n "${assets_ref}" ]]; then
-              echo "has_overrides=true"
-            else
-              echo "has_overrides=false"
-            fi
-          } >> "${GITHUB_OUTPUT}"
-      - name: Checkout QuakeC
-        if: steps.dependencies.outputs.quakec_ref != ''
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ steps.dependencies.outputs.quakec_repository }}
-          ref: ${{ steps.dependencies.outputs.quakec_ref }}
-          path: test-dependencies/quakec
-          persist-credentials: false
-      - name: Checkout assets
-        if: steps.dependencies.outputs.assets_ref != ''
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ steps.dependencies.outputs.assets_repository }}
-          ref: ${{ steps.dependencies.outputs.assets_ref }}
-          path: test-dependencies/assets
-          persist-credentials: false
-      - name: Install content build dependencies
-        if: steps.dependencies.outputs.has_overrides == 'true'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git libicu-dev python3 python3-pip unzip wget zip
-          wget -q https://raw.githubusercontent.com/nzp-team/QCHashTableGenerator/main/requirements.txt
-          python3 -m pip install -r requirements.txt --break-system-packages
-      - name: Build QuakeC override
-        if: steps.dependencies.outputs.quakec_ref != ''
-        run: |
-          bash test-dependencies/quakec/tools/qc-compiler-gnu.sh
-          mkdir -p test-overrides/quakec
-          cp test-dependencies/quakec/build/standard/progs.dat test-overrides/quakec/progs.dat
-      - name: Build assets override
-        if: steps.dependencies.outputs.assets_ref != ''
-        run: |
-          git clone --recursive https://github.com/nzp-team/spawn-zone-tool.git test-dependencies/spawn-zone-tool
-          python3 -m pip install -r test-dependencies/spawn-zone-tool/requirements.txt --break-system-packages
-          bash "${GITHUB_WORKSPACE}/test-dependencies/assets/tools/compile-wads.sh"
-          bash "${GITHUB_WORKSPACE}/test-dependencies/assets/tools/compile-maps.sh" --full --zone-tool-path "${GITHUB_WORKSPACE}/test-dependencies/spawn-zone-tool"
-          bash "${GITHUB_WORKSPACE}/test-dependencies/assets/tools/assemble-assets.sh"
-          mkdir -p test-overrides/assets/{linux,windows,ctr}
-          unzip -oq test-dependencies/assets/tmp/pc-nzp-assets.zip -d test-overrides/assets/pc-package
-          cp -a test-overrides/assets/pc-package/nzp/. test-overrides/assets/linux/
-          cp -a test-overrides/assets/pc-package/nzp/. test-overrides/assets/windows/
-          unzip -oq test-dependencies/assets/tmp/3ds-nzp-assets.zip -d test-overrides/assets/ctr-package
-          cp -a test-overrides/assets/ctr-package/nzportable/nzp/. test-overrides/assets/ctr/
-          rm -rf test-overrides/assets/pc-package test-overrides/assets/ctr-package
-      - name: Log repository overrides
-        env:
-          QUAKEC_REF: ${{ steps.dependencies.outputs.quakec_ref }}
-          QUAKEC_REPOSITORY: ${{ steps.dependencies.outputs.quakec_repository }}
-          ASSETS_REF: ${{ steps.dependencies.outputs.assets_ref }}
-          ASSETS_REPOSITORY: ${{ steps.dependencies.outputs.assets_repository }}
-        run: |
-          {
-            echo "### Vril Pull Request Test Overrides"
-            echo
-            if [[ -n "${QUAKEC_REF}" ]]; then
-              echo "* QuakeC: \`${QUAKEC_REPOSITORY}@$(git -C test-dependencies/quakec rev-parse HEAD)\` (requested \`${QUAKEC_REF}\`)"
-            else
-              echo "* QuakeC: N/A"
-            fi
-            if [[ -n "${ASSETS_REF}" ]]; then
-              echo "* Assets: \`${ASSETS_REPOSITORY}@$(git -C test-dependencies/assets rev-parse HEAD)\` (requested \`${ASSETS_REF}\`)"
-            else
-              echo "* Assets: N/A"
-            fi
-          } >> "${GITHUB_STEP_SUMMARY}"
-      - name: Upload test content overrides
-        if: steps.dependencies.outputs.has_overrides == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: pr-test-content-overrides
-          path: test-overrides/
-          retention-days: 1
   Pull-Request-Test-3DS:
     if: github.event_name == 'pull_request'
     name: 3DS ${{ matrix.mode }} ${{ matrix.test }} Pull Request Test
@@ -451,7 +295,8 @@ jobs:
           TOOLBOX_HOST_OS: Linux
           TOOLBOX_HOST_ARCH: x86_64
         run: /entrypoint.sh fetch
-      - name: Select Vril PR merge commit
+      - &select_vril_pr_merge
+        name: Select Vril PR merge commit
         env:
           PR_MERGE_REF: ${{ github.ref }}
           PR_MERGE_SHA: ${{ github.sha }}
@@ -525,16 +370,7 @@ jobs:
           TOOLBOX_HOST_OS: Linux
           TOOLBOX_HOST_ARCH: x86_64
         run: /entrypoint.sh fetch
-      - name: Select Vril PR merge commit
-        env:
-          PR_MERGE_REF: ${{ github.ref }}
-          PR_MERGE_SHA: ${{ github.sha }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          git -C /workspace/repos/vril-engine fetch origin "$PR_MERGE_REF"
-          git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
-          test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$PR_MERGE_SHA"
-          test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
+      - *select_vril_pr_merge
       - name: Download PSP Artifact
         uses: actions/download-artifact@v4
         with:
@@ -673,16 +509,7 @@ jobs:
           TOOLBOX_HOST_OS: Linux
           TOOLBOX_HOST_ARCH: ${{ contains(fromJSON('["arm64","armhf"]'), matrix.arch) && 'arm64' || 'x86_64' }}
         run: /entrypoint.sh fetch
-      - name: Select Vril PR merge commit
-        env:
-          PR_MERGE_REF: ${{ github.ref }}
-          PR_MERGE_SHA: ${{ github.sha }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          git -C /workspace/repos/vril-engine fetch origin "$PR_MERGE_REF"
-          git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
-          test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$PR_MERGE_SHA"
-          test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
+      - *select_vril_pr_merge
       - name: Download Linux Artifact
         uses: actions/download-artifact@v4
         with:
@@ -744,16 +571,7 @@ jobs:
           TOOLBOX_HOST_OS: Linux
           TOOLBOX_HOST_ARCH: x86_64
         run: /entrypoint.sh fetch
-      - name: Select Vril PR merge commit
-        env:
-          PR_MERGE_REF: ${{ github.ref }}
-          PR_MERGE_SHA: ${{ github.sha }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          git -C /workspace/repos/vril-engine fetch origin "$PR_MERGE_REF"
-          git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
-          test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$PR_MERGE_SHA"
-          test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
+      - *select_vril_pr_merge
       - name: Download Windows Artifact
         uses: actions/download-artifact@v4
         with:
