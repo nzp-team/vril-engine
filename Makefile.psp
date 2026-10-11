@@ -110,17 +110,21 @@ COMMON_OBJS = \
 	source/render/r_entity_fragments.o \
 	source/render/r_color_quantization.o \
 	source/render/r_light.o \
+	source/render/r_draw.o \
+	source/render/r_texture.o \
+	source/render/r_pixels.o \
+	source/render/r_dxt.o \
 	source/render/r_mdl.o \
 	source/render/r_surface.o \
+	source/render/r_sky.o \
+	source/render/r_world.o \
 	source/images.o \
 
 HARDWARE_VIDEO_ONLY_OBJS = \
 	source/platform/psp/clipping.o \
 	source/platform/psp/vram.o \
     source/platform/psp/gu/gu_psp.o \
-    source/platform/psp/gu/gu_resample.o \
     source/platform/psp/gu/gu_fullbright.o \
-    source/platform/psp/gu/gu_draw.o \
     source/render/r_particles.o \
 	source/render/r_decals.o \
 	source/platform/psp/gu/gu_hyena.o \
@@ -130,8 +134,8 @@ HARDWARE_VIDEO_ONLY_OBJS = \
     source/platform/psp/gu/gu_model.o \
     source/render/r_screen.o \
     source/platform/psp/gu/gu_surface.o \
-    source/platform/psp/gu/gu_warp.o \
-    source/platform/psp/gu/gu_dxtn.o
+    source/platform/psp/gu/gu_warp.o
+
 HARDWARE_VIDEO_ONLY_FLAGS = -DPSP_HARDWARE_VIDEO
 
 OBJS = $(COMMON_OBJS) $(HARDWARE_VIDEO_ONLY_OBJS)

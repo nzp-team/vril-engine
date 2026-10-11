@@ -69,7 +69,7 @@ typedef struct texture_s
 	char		name[16];
 	unsigned	width, height;
 	int			gl_texturenum;
-	struct msurface_s	*texturechain;	// for gl_texsort drawing
+	struct msurface_s	*texturechain;	// for texture-sorted drawing
 	int			anim_total;				// total tenths in sequence ( 0 = no)
 	int			anim_min, anim_max;		// time for this frame min <=time< max
 	struct texture_s *anim_next;		// in the animation sequence
@@ -88,6 +88,7 @@ typedef struct texture_s
 
 #define TEXFLAG_NODRAW		256
 #define TEXFLAG_LIGHT		512
+#define SURF_NEEDSCLIPPING	2048
 
 typedef struct
 {

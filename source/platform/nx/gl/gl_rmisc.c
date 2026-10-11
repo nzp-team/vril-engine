@@ -99,7 +99,7 @@ void R_InitParticleTexture (void)
 		}
 	}
 
-	particletexture = GL_LoadTexture("particletex", 8, 8, (byte *)data, false, true, 1, true);
+	particletexture = Image_LoadTexture("particletex", 8, 8, (byte *)data, HYE_TEXTURE_INDEX8, HYE_FILTER_LINEAR, 0, true, true, false);
 }
 
 /*
@@ -197,12 +197,8 @@ void R_Init (void)
 
 	Cvar_RegisterVariable (&gl_finish);
 	Cvar_RegisterVariable (&gl_clear);
-	Cvar_RegisterVariable (&gl_texsort);
 
 	Cvar_SetValue("gl_clear", 1);
-
- 	if (gl_mtexable)
-		Cvar_SetValue ("gl_texsort", 0.0);
 
 	Cvar_RegisterVariable (&gl_cull);
 	Cvar_RegisterVariable (&gl_smoothmodels);
@@ -282,15 +278,11 @@ void R_NewMap (void)
 	Sky_NewMap (); //johnfitz -- skybox in worldspawn
 	Fog_ParseWorldspawn ();
 
-	// identify sky texture
-	skytexturenum = -1;
 	mirrortexturenum = -1;
 	for (i=0 ; i<cl.worldmodel->numtextures ; i++)
 	{
 		if (!cl.worldmodel->textures[i])
 			continue;
-		if (!strncmp(cl.worldmodel->textures[i]->name,"sky",3) )
-			skytexturenum = i;
 		if (!strncmp(cl.worldmodel->textures[i]->name,"window02_1",10) )
 			mirrortexturenum = i;
 		cl.worldmodel->textures[i]->texturechain = NULL;
@@ -333,4 +325,3 @@ void R_TimeRefresh_f (void)
 void D_FlushCaches (void)
 {
 }
-

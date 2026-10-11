@@ -246,7 +246,7 @@ image_t Image_LoadImageWithIdentifier(char *filename, char *identifier, int imag
 	}
 
 	// does the texture already exist?
-	texture_index = Image_FindImage(identifier);
+	texture_index = Hyena_FindTexture(identifier);
 	if (texture_index >= 0) {
 		return texture_index;
 	}
@@ -257,24 +257,7 @@ image_t Image_LoadImageWithIdentifier(char *filename, char *identifier, int imag
 		return -1;
 	}
 
-	/*
-	==================
-	FIXME:
-
-	This will need to be unified 
-	while building HYENA.
-	For now this is where we split off into seperate
-	platforms' respective texture upload functions 
-	==================
-	*/
-#ifdef __PSP__
-	texture_index = GL_LoadImages (identifier, image_width, image_height, data, true, filter, 0, 4, keep);
-#elif __NSPIRE__
-	qboolean transparenttoblack = (qboolean)filter;
-	texture_index = Soft_LoadTexture (identifier, image_width, image_height, data, transparenttoblack, keep);
-#else
-	texture_index = GL_LoadTexture (identifier, image_width, image_height, data, mipmap, true, 4, keep);
-#endif
+	texture_index = Image_LoadTexture(identifier, image_width, image_height, data, HYE_TEXTURE_RGBA8, filter, mipmap ? 1 : 0, true, keep, true);
 
 	if(texture_index < 0) {
 		Sys_Error("Image_LoadImage: failed to upload texture %s\n", identifier);
@@ -317,41 +300,10 @@ int loadrgbafrompal (char* name, int width, int height, byte* data)
         rgbadata[i * 4 + 3] = 255; // Set alpha to opaque
 	}
 
-	int ret = GL_LoadImages(texname, width, height, rgbadata, true, GU_LINEAR, 0, 4, true);
+	int ret = Image_LoadTexture(texname, width, height, rgbadata, HYE_TEXTURE_RGBA8, HYE_FILTER_LINEAR, 0, true, true, true);
 
 	free(rgbadata);
 	return ret;
-}
-
-// Hacky thing to only load a top half of an image for skybox sides, hard to imagine other use for this
-int loadskyboxsideimage (char* filename, int image_format, bool keep, int filter)
-{
-	int texture_index;
-	byte *data;
-	char texname[32];
-
-	// create a unique identifier
-	tex_filebase (filename, texname);
-
-	// does the texture already exist?
-	texture_index = Image_FindImage(texname);
-	if (texture_index > 0) {
-		return texture_index;
-	}
-
-	data = Image_LoadPixels (filename, image_format);
-
-	if(data == NULL) {
-		return 0;
-	}
-
-	int newheight = image_height * 0.5;
-	
-	texture_index = GL_LoadImages (texname, image_width, newheight, data, true, filter, 0, 4, keep);
-
-	free(data);
-
-	return texture_index;
 }
 
 /*
@@ -421,7 +373,7 @@ int loadpcxas4bpp (char* filename, int filter)
 	COM_FOpenFile(name, &f2);
 
 	if (!f2) {
-		texture = GL_LoadTexture8to4(texname, width, height, data, palette, filter, 3, NULL);
+		texture = Hyena_LoadPalettedTexture(texname, width, height, data, palette, 3, NULL, filter, 0, true, true);
 	} else {
 		// contain padding for extra whitespace etc 
 		size_t size = 16 * 4 * 2 * 2;
@@ -451,7 +403,7 @@ int loadpcxas4bpp (char* filename, int filter)
 				index++;
 			}
 		}
-		texture = GL_LoadTexture8to4(texname, width, height, data, palette, filter, 3, (byte*)palhint);
+		texture = Hyena_LoadPalettedTexture(texname, width, height, data, palette, 3, (byte *)palhint, filter, 0, true, true);
 	}
 
 	free(data);
@@ -460,80 +412,46 @@ int loadpcxas4bpp (char* filename, int filter)
 }
 #endif
 
-#ifdef SOFTWARE_RENDERER
-
-cachepic_t		cachepics[MAX_CACHED_PICS];
-int				numcachepics = 1;
-// naievil -- texture conversion start 
-byte converted_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE]; 
-byte temp_pixel_storage_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE*4]; // naievil -- rgba storage for max pic size 
-// naievil -- texture conversion end
-
-byte* loadimagepixelstoqpal (char* texname, int width, int height, byte *data, qboolean transparenttoblack, qboolean usehunk)
+byte findclosestpalmatch(byte r, byte g, byte b, byte a)
 {
-	// Set the buffer to empty
-	memset(converted_pixels, 0, width * height);
+	int best_distance = 0x7fffffff;
+	int best_index = 0;
+	int i;
 
-	// Convert the pixels 
-	int converted_counter = 0;
-	byte result;
-	for (int i = 0; i < width * height * 4; i+= 4) {
-		result = data[i + 3] < 128 ? 255 : findclosestpalmatch(data[i], data[i + 1], data[i + 2], data[i + 3]);
-		converted_pixels[converted_counter] = transparenttoblack && result == 255 ? 0 : result;
-		converted_counter++;
-	}
-
-	if (usehunk)
-	{
-		byte *hunk_ptr = Hunk_AllocName (image_width * image_height, texname);
-		Q_memcpy (hunk_ptr, converted_pixels, width * height);
-
-		return hunk_ptr;
-	}
-	else
-	{
-		return converted_pixels;
-	}
-	
-}
-
-/*
-================
-Soft_LoadTexture
-================
-*/
-int Soft_LoadTexture (char *texname, int width, int height, byte *data, qboolean transparenttoblack, qboolean usehunk)
-{
-	cachepic_t	*pic;
-	int			i;
-	int			texture_index = -1;
-	
-	for (pic=cachepics, i=0 ; i<numcachepics ; pic++, i++) {
-		if (!pic->used) {
-			texture_index = i;
-			break;
+	if (a < 128)
+		return 255;
+	for (i = 0; i < 256; ++i) {
+		int red = r - host_basepal[i * 3];
+		int green = g - host_basepal[i * 3 + 1];
+		int blue = b - host_basepal[i * 3 + 2];
+		int distance = red * red + green * green + blue * blue;
+		if (distance < best_distance) {
+			best_distance = distance;
+			best_index = i;
 		}
 	}
-
-	if (numcachepics == MAX_CACHED_PICS) {
-		Sys_Error ("numcachepics == MAX_CACHED_PICS");
-	}
-
-	byte *buf = loadimagepixelstoqpal(texname, width, height, data, transparenttoblack, usehunk);
-	if (!buf) {
-		Sys_Error ("Soft_LoadTexture: failed to load %s", texname);
-	}
-
-	pic->data = Hunk_Alloc(sizeof(byte) + width * height);
-	memcpy(pic->data, buf, width * height);
-	strcpy (pic->name, texname);
-	pic->width = width;
-	pic->height = height;
-	pic->used = qtrue;
-	pic->transparent_color = transparenttoblack ? 0 : 255;
-	
-	numcachepics++;
-
-	return texture_index;
+	return (byte)best_index;
 }
-#endif // SOFTWARE_RENDERER
+
+int
+Image_LoadTexture(const char *identifier, int width, int height, const void *pixels,
+    hyena_texture_format_t format, hyena_texture_filter_t filter, int mip_levels,
+    qboolean alpha, qboolean keep, qboolean stretch_to_power_of_two)
+{
+    hyena_texture_desc_t desc = { 0 };
+    size_t length = strlen(identifier);
+
+    desc.identifier = identifier;
+    desc.pixels = pixels;
+    desc.width = width;
+    desc.height = height;
+    desc.format = format;
+    desc.filter = filter;
+    desc.mip_levels = mip_levels;
+    desc.alpha = alpha;
+    desc.keep = keep;
+    desc.stretch_to_power_of_two = stretch_to_power_of_two;
+    // Effect images and sprite frames need interpolated alpha even with DXT1 selected.
+    desc.smooth_alpha = (length >= 7 && identifier[length - 7] == '$') || (length >= 5 && !strncmp(identifier + length - 5, "spr", 3));
+    return Hyena_CreateTexture(&desc);
+}

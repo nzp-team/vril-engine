@@ -125,7 +125,6 @@ int		d_lightstylevalue[256];	// 8.8 fraction of base light value
 float	dp_time1, dp_time2, db_time1, db_time2, rw_time1, rw_time2;
 float	se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
 
-void R_MarkLeaves (void);
 
 cvar_t	r_draworder = {"r_draworder","0"};
 cvar_t	r_speeds = {"r_speeds","0"};
@@ -502,42 +501,6 @@ void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 // TODO: collect 386-specific code in one place
 
 	D_ViewChanged ();
-}
-
-
-/*
-===============
-R_MarkLeaves
-===============
-*/
-void R_MarkLeaves (void)
-{
-	byte	*vis;
-	mnode_t	*node;
-	int		i;
-
-	if (r_oldviewleaf == r_viewleaf)
-		return;
-	
-	r_visframecount++;
-	r_oldviewleaf = r_viewleaf;
-
-	vis = Mod_LeafPVS (r_viewleaf, cl.worldmodel);
-		
-	for (i=0 ; i<cl.worldmodel->numleafs ; i++)
-	{
-		if (vis[i>>3] & (1<<(i&7)))
-		{
-			node = (mnode_t *)&cl.worldmodel->leafs[i+1];
-			do
-			{
-				if (node->visframe == r_visframecount)
-					break;
-				node->visframe = r_visframecount;
-				node = node->parent;
-			} while (node);
-		}
-	}
 }
 
 
@@ -1193,7 +1156,7 @@ void R_RenderView_ (void)
 #ifdef PASSAGES
 SetVisibilityByPassages ();
 #else
-	R_MarkLeaves ();	// done here so we know if we're in water
+	R_MarkLeaves(false, false);	// done here so we know if we're in water
 #endif
 	/*printf("R_RenderView_ %s:%d\n", __FILE__, __LINE__ );*/
 // make FDIV fast. This reduces timing precision after we've been running for a

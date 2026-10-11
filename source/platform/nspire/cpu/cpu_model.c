@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../r_local.h"
 
 // FIXME: add support for wad3 individual palettes (and pcx lol)
-extern byte converted_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE]; 
+static byte converted_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE];
 
 model_t	*loadmodel;
 char	loadname[32];	// for hunk tags

@@ -25,36 +25,12 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);
 u32 GL_GetDrawBuffer(void);
 
-void GL_Upload8(int texture_index, byte *data, int width, int height);
-void GL_Upload16(int texture_index, byte *data, int width, int height);
-int  GL_LoadTexture(const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level);
-// CLUT4
-int GL_LoadTexture4(const char *identifier, unsigned int width, unsigned int height, byte *data, int filter, qboolean swizzled);
-int GL_LoadTexture8to4(const char *identifier, unsigned int width, unsigned int height, byte *data, const byte *pal, int filter, int inpal_bpp, const byte *palhint);
-
-int GL_LoadTextureLM (const char *identifier, int width, int height, byte *data, int bpp, int filter, qboolean update, int forcopy);
-int GL_LoadImages (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, int bpp, qboolean keep);
-int GL_LoadTexturePixels (byte *data, char *identifier, int width, int height, int mode);
-int GL_LoadPaletteTexture (const char *identifier, int width, int height, const byte *data, byte *palette, int paltype, qboolean stretch_to_power_of_two, int filter, int mipmap_level);
-void GL_MarkTextureAsPermanent(int texture_index);
-
 //Crow_bar
 void GL_GetPixelsBGR (byte *buffer, int width, int height, int i);
 void GL_GetPixelsRGB (byte *buffer, int width, int height, int i);
 void GL_GetPixelsRGBA(byte *buffer, int width, int height, int i);
 
-void swizzle_fast(u8* out, const u8* in, unsigned int width, unsigned int height);
 
-
-#define PAL_RGB  24
-#define PAL_RGBA 32
-
-int GL_LoadPalTex (const char *identifier, int width, int height, byte *data, qboolean stretch_to_power_of_two, int filter, int mipmap_level, byte *palette, int paltype);
-
-int GL_LoadPalletedTexture (byte *in, char *identifier, int width, int height, int mode);
-
-void GL_UnloadTexture (const int texture_index);
-void GL_UnloadAllTextures ();
 
 extern	int glx, gly, glwidth, glheight;
 
@@ -169,7 +145,6 @@ extern	mleaf_t		*r_viewleaf, *r_oldviewleaf;
 extern	texture_t	*r_notexture_mip;
 extern	int		d_lightstylevalue[256];	// 8.8 fraction of base light value
 
-extern  int	    skyimage[5]; // Where sky images are stored
 extern  int 	lightmap_index[MAX_LIGHTMAPS]; // Where lightmaps are stored
 
 extern  int     reloaded_pallete;
@@ -181,7 +156,6 @@ extern	int	particletexture;
 extern	int	playertextures;
 //extern	int	playertextures[MAX_SCOREBOARD];
 
-extern	int	skytexturenum;		// index in cl.loadmodel, not gl texture object
 
 extern	cvar_t  scr_conheight;
 extern 	cvar_t 	scr_fov;
@@ -195,7 +169,6 @@ extern	cvar_t	r_texcompr;
 
 extern	cvar_t	r_skyfog;
 extern	cvar_t	r_skyvflip;
-extern	cvar_t	r_skydis;
 
 extern  cvar_t	r_caustics;
 extern	cvar_t	r_detail;
@@ -211,9 +184,7 @@ extern  cvar_t  r_i_model_transform;
 extern  cvar_t  r_asynch;
 
 extern  cvar_t  cl_loadmapcfg;
-extern  cvar_t  r_fastsky;
 extern  cvar_t  r_skycolor;
-extern  cvar_t  r_skyfogblend;
 extern	cvar_t	r_waterripple;
 extern	cvar_t	r_norefresh;
 extern	cvar_t	r_drawentities;
@@ -283,9 +254,9 @@ extern	mplane_t	*mirror_plane;
 
 extern	ScePspFMatrix4	r_world_matrix;
 
-void GL_Bind   (int texture_index);
-void GL_BindLM (int texture_index);
-void GL_Copy   (int texture_index, int sx, int sy, int dx, int dy, int w, int h);
+
+void Hyena_BindTextureLod(int texture, int lod_mode, float bias, float slope, qboolean mipmapped, qboolean nearest);
+void Hyena_InitTextureStorage(void);
 
 // Added by PM
 void R_DrawBrushModel (entity_t *e);
@@ -298,17 +269,13 @@ void R_InitParticles (void);
 void R_ClearParticles (void);
 void GL_BuildLightmaps (void);
 void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr);
-void GL_Set2D (void);
 void GL_SubdivideSurface (msurface_t *fa);
 void GL_Surface (msurface_t *fa); // dr_mabuse1981: fuck you lag.
 void EmitWaterPolys (msurface_t *fa);
-void EmitSkyPolys (msurface_t *fa);
 void EmitReflectivePolys (msurface_t *fa);
 void EmitScrollPolys (msurface_t *fa);
-void EmitBothSkyLayers (msurface_t *fa);
 // void EmitUnderWaterPolys (void);
 void EmitDetailPolys (void);
-void R_DrawSkyChain (msurface_t *s);
 int R_FrustumCheckBox (vec3_t mins, vec3_t maxs);
 int R_FrustumCheckSphere (vec3_t centre, float radius);
 int R_CullBox (vec3_t emins, vec3_t emaxs);
@@ -317,11 +284,6 @@ void R_RotateForEntity (entity_t *e, int shadow, unsigned char scale);
 void R_BlendedRotateForEntity (entity_t *e, int shadow, unsigned char scale);
 void R_StoreEfrags (efrag_t **ppefrag);
 
-void Sky_LoadSkyBox (char *name);
-void Sky_NewMap (void);
-void Sky_Init (void);
-void R_ClearSkyBox (void);
-void R_DrawSkyBox (void);
 
 void R_SpawnDecal (vec3_t center, vec3_t normal, vec3_t tangent, int tex, int size, int isbsp);
 void R_SpawnDecalStatic(vec3_t org, int tex, int size);
@@ -341,38 +303,5 @@ void ShowMessageDialog(const char *message, int enableYesno);
 extern aliashdr_t*	zfull_mdl;
 extern aliashdr_t*	zcfull_mdl;
 extern int			zombie_skins[2][2];
-
-typedef byte texel;
-
-typedef struct
-{
-	// Source.
-	char		identifier[64];
-	int			original_width;
-	int			original_height;
-	bool		stretch_to_power_of_two;
-
-	// Texture description.
-	int			format;
-	int			filter;
-	int			width;
-	int			height;
-	int 		mipmaps;
-	int     	bpp;
-	int     	swizzle;
-	qboolean	keep;
-	int			texnum;
-
-	unsigned char *palette;
-
-	// Buffers.
-	texel*		ram;
-	texel*		vram;
-} gltexture_t;
-
-#define		MAX_GLTEXTURES	1024
-extern gltexture_t	gltextures[MAX_GLTEXTURES];
-extern bool 		gltextures_used[MAX_GLTEXTURES];
-extern bool 		gltextures_is_permanent[MAX_GLTEXTURES];
 
 extern int faces_rejected, faces_checked, faces_clipped;

@@ -73,7 +73,6 @@ int scr_width = 960, scr_height = 544;
 int		texture_mode = GL_LINEAR;
 
 double		gldepthmin, gldepthmax;
-qboolean gl_mtexable = false;
 
 const char *gl_vendor;
 const char *gl_renderer;
@@ -235,7 +234,7 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 		if (fb_tex == -1) {
 			void *buffer = malloc(scr_width * scr_height * 4);
 			memset(buffer, 0xFF, scr_width * scr_height * 4);
-			fb_tex = GL_LoadTexture ("***framebuffer***", scr_width, scr_height, buffer, false, false, 4, true);
+			fb_tex = Image_LoadTexture("***framebuffer***", scr_width, scr_height, buffer, HYE_TEXTURE_RGBA8, HYE_FILTER_LINEAR, 0, false, true, false);
 			glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, scr_width, scr_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 			free(buffer);
 			glBindTexture(GL_TEXTURE_2D, fb_tex);
@@ -252,6 +251,7 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 void GL_EndRendering (void)
 {
 	//GL_DrawFPS ();
+	Draw_Flush();
 	
 	vglSwapBuffers(isKeyboard || netcheck_dialog_running);
 	/*

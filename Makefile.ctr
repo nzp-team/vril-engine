@@ -147,14 +147,19 @@ COMMON_OBJS =	system.o \
 				render/r_particles.c \
 				platform/ctr/gl/gl_hyena.c \
 				render/r_decals.c \
-				platform/ctr/gl/gl_draw.c \
+				render/r_texture.c \
+				render/r_pixels.c \
+				render/r_dxt.c \
 				render/r_fog.c \
 				platform/ctr/gl/gl_mesh.c \
 				platform/ctr/gl/gl_model.c \
 				render/r_entity_fragments.c \
 				render/r_light.c \
+				render/r_draw.c \
 				render/r_mdl.c \
 				render/r_surface.c \
+				render/r_sky.c \
+				render/r_world.c \
 				platform/ctr/gl/gl_rmain.c \
 				platform/ctr/gl/gl_rmisc.c \
 				platform/ctr/gl/gl_rsurf.c \

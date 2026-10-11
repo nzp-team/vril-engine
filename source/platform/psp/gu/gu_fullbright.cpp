@@ -30,7 +30,7 @@ void ConvertPixels (byte *pixels, int num_pixels)
 
 void DrawFullBrightTextures (msurface_t *first_surf, int num_surfs)
 {
-    // gl_texsort 1 version
+    // Texture-sorted world path
     int i;
     msurface_t *fa;
     texture_t *t;
@@ -48,7 +48,7 @@ void DrawFullBrightTextures (msurface_t *first_surf, int num_surfs)
             sceGuDisable(GU_FOG); //Disable fog for fullbright textures
 		    sceGuEnable(GU_BLEND);
             sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
-			GL_Bind (t->fullbright);
+			Hyena_BindTexture(t->fullbright);
             DrawGLPoly_ex (fa->polys);
             sceGuDisable (GU_BLEND);
             sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
@@ -58,5 +58,4 @@ void DrawFullBrightTextures (msurface_t *first_surf, int num_surfs)
         fa->draw_this_frame = 0;
     }
 }
-
 

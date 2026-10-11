@@ -1,39 +1,65 @@
-/*
- * Copyright (C) 2002-2003, Dr Labman, A. Nourai
- * Copyright (C) 2009, Crow_bar psp port
- * Copyright (C) 2023 NZ:P Team
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
+//
+// Copyright (C) 2002-2003, Dr Labman, A. Nourai
+// Copyright (C) 2009, Crow_bar psp port
+// Copyright (C) 2023 NZ:P Team
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+//
+// See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+//
+//
 // r_particles.c -- Particle rendering built from QuakeMadeBetter
 
 #include "../nzportable_def.h"
 
-#define ABSOLUTE_MIN_PARTICLES 64
-#define ABSOLUTE_MAX_PARTICLES 6144
-#define RAY_RING_START_SIZE 1.25f
-#define RAY_RING_PARTICLE_START_SIZE 0.75f
-#define RAY_RING_PARTICLE_GROWTH 6.0f
-#define RAY_RING_LIFETIME 0.65f
-#define RAY_RING_GROWTH 28.0f
-#define RAY_RING_SEGMENTS 32
+static qboolean r_particle_separate_view;
+
+static void
+R_RotateParticleAxes(const vec3_t * axes, vec3_t * rotated)
+{
+    if (!r_particle_separate_view) {
+        memcpy(rotated, axes, sizeof(vec3_t) * 4);
+        return;
+    }
+    static float matrix[16] __attribute__((aligned(16)));
+    static int frame = -1;
+    static vec3_t direction;
+    int i;
+    if (frame != r_framecount || memcmp(direction, vpn, sizeof(direction))) {
+        Hyena_RotationMatrix(matrix, vpn[2] * (HYE_PI / 180.0f),
+          vpn[1] * (HYE_PI / 180.0f), vpn[0] * (HYE_PI / 180.0f));
+        frame = r_framecount;
+        memcpy(direction, vpn, sizeof(direction));
+    }
+    for (i = 0; i < 4; ++i) {
+        rotated[i][0] = axes[i][0] * matrix[0] + axes[i][1] * matrix[4] + axes[i][2] * matrix[8];
+        rotated[i][1] = axes[i][0] * matrix[1] + axes[i][1] * matrix[5] + axes[i][2] * matrix[9];
+        rotated[i][2] = axes[i][0] * matrix[2] + axes[i][1] * matrix[6] + axes[i][2] * matrix[10];
+    }
+}
+
+#define ABSOLUTE_MIN_PARTICLES          64
+#define ABSOLUTE_MAX_PARTICLES          6144
+#define RAY_RING_START_SIZE             1.25f
+#define RAY_RING_PARTICLE_START_SIZE    0.75f
+#define RAY_RING_PARTICLE_GROWTH        6.0f
+#define RAY_RING_LIFETIME               0.65f
+#define RAY_RING_GROWTH                 28.0f
+#define RAY_RING_SEGMENTS               32
 #define RAY_MUZZLE_RING_PARTICLE_GROWTH 3.0f
-#define RAY_MUZZLE_RING_RADIAL_SPEED 6.0f
-#define RAY_MUZZLE_RING_SEGMENTS 20
+#define RAY_MUZZLE_RING_RADIAL_SPEED    6.0f
+#define RAY_MUZZLE_RING_SEGMENTS        20
 
 extern int decal_blood1, decal_blood2, decal_blood3, decal_q3blood, decal_burn, decal_mark, decal_glow;
 
@@ -424,6 +450,7 @@ QMB_AllocParticles(void)
 void
 R_InitParticles(void)
 {
+    r_particle_separate_view = Hyena_SeparateViewMatrix();
     int i, count = 0, particleimage;
     float max_s, max_t; // For ADD_PARTICLE_TEXTURE
 
@@ -714,7 +741,7 @@ AddParticle(part_type_t type, vec3_t org, int count, float size, float time, col
     byte * color;
     int i, j;
     float tempSize; // stage;
-    particle_t * p, *last = NULL;
+    particle_t * p, * last = NULL;
     particle_type_t * pt;
 
     if (!qmb_initialized)
@@ -747,8 +774,7 @@ AddParticle(part_type_t type, vec3_t org, int count, float size, float time, col
                 QMB_RandomDirection(p->vel);
                 VectorScale(p->vel, size * (2.4f + (rand() % 81) / 100.0f), p->vel);
                 break;
-            case p_raysmoke:
-            {
+            case p_raysmoke: {
                 vec3_t smoke_direction;
                 float radial_speed;
 
@@ -1123,7 +1149,7 @@ R_ClearParticles(void)
     if (!qmb_initialized)
         return;
 
-    free(particles);      // free
+    free(particles); // free
     particles = NULL;
     QMB_AllocParticles(); // and alloc again
     particle_count = 0;
@@ -1396,48 +1422,78 @@ R_CalcBeamVerts(float * vert, vec3_t org1, vec3_t org2, float width)
     vert[14] = org2[2] + width * right2[2];
 }
 
-void
+#define PARTICLE_BATCH_VERTICES 1024
+#define PARTICLE_BATCH_INDICES  3072
+
+static hyena_colored_vertex_t particle_vertices[PARTICLE_BATCH_VERTICES];
+static unsigned short particle_indices[PARTICLE_BATCH_INDICES];
+static int particle_vertex_count;
+static int particle_index_count;
+static qboolean particle_batch_textured;
+
+static void
+R_FlushParticleBatch(void)
+{
+    if (!particle_index_count)
+        return;
+
+    Hyena_DrawIndexedTriangles(
+        particle_vertices, particle_vertex_count, particle_indices, particle_index_count, particle_batch_textured);
+    particle_vertex_count = 0;
+    particle_index_count  = 0;
+}
+
+static hyena_colored_vertex_t *
+R_ReserveParticleFan(int count, const byte * color)
+{
+    int i;
+    hyena_colored_vertex_t * vertices;
+
+    if (particle_vertex_count + count > PARTICLE_BATCH_VERTICES ||
+      particle_index_count + (count - 2) * 3 > PARTICLE_BATCH_INDICES)
+        R_FlushParticleBatch();
+    vertices = particle_vertices + particle_vertex_count;
+    for (i = 0; i < count; ++i) {
+        memcpy(vertices[i].color, color, sizeof(vertices[i].color));
+        vertices[i].uv[0] = vertices[i].uv[1] = 0;
+    }
+    for (i = 1; i < count - 1; ++i) {
+        particle_indices[particle_index_count++] = particle_vertex_count;
+        particle_indices[particle_index_count++] = particle_vertex_count + i;
+        particle_indices[particle_index_count++] = particle_vertex_count + i + 1;
+    }
+    particle_vertex_count += count;
+    return vertices;
+}
+
+static void
+R_ParticlePosition(hyena_colored_vertex_t * vertex, float x, float y, float z)
+{
+    vertex->xyz[0] = x;
+    vertex->xyz[1] = y;
+    vertex->xyz[2] = z;
+}
+
+static void
 DRAW_PARTICLE_BILLBOARD(particle_texture_t * ptex, particle_t * p, vec3_t * coord)
 {
-    float scale;
+    hyena_colored_vertex_t * vertices;
+    float scale = p->size * 0.75f;
+    int i;
 
-    scale = p->size * 0.75f;
+    vec3_t rotated[4];
 
-    Hyena_EnableCapability(HYE_BLEND);
-    Hyena_BeginVertices(HYE_TRIANGLE_FAN);
-
-    Hyena_Translate(p->org[0], p->org[1], p->org[2]);
-    Hyena_Scale(scale, scale, scale);
     if (p->rotspeed) {
-        Hyena_RotateZYX(vpn[0] * (HYE_PI / 180.0f), vpn[1] * (HYE_PI / 180.0f), vpn[2] * (HYE_PI / 180.0f));
+        R_RotateParticleAxes((const vec3_t *) coord, rotated);
+        coord = rotated;
     }
-
-    Hyena_SetColor((float) p->color[0] / 255.0f, (float) p->color[1] / 255.0f, (float) p->color[2] / 255.0f,
-      (float) p->color[3] / 255.0f);
-
-    Hyena_FlushMatrices();
-
-    vertex_t * vertices = Hyena_AllocateMemoryForVertices(4);
-
-    Hyena_2DTextureCoord(&vertices[0], ptex->coords[p->texindex][0], ptex->coords[p->texindex][3]);
-    Hyena_VertexXYZ(&vertices[0], coord[0][0], coord[0][1], coord[0][2]);
-
-    Hyena_2DTextureCoord(&vertices[1], ptex->coords[p->texindex][0], ptex->coords[p->texindex][1]);
-    Hyena_VertexXYZ(&vertices[1], coord[1][0], coord[1][1], coord[1][2]);
-
-    Hyena_2DTextureCoord(&vertices[2], ptex->coords[p->texindex][2], ptex->coords[p->texindex][1]);
-    Hyena_VertexXYZ(&vertices[2], coord[2][0], coord[2][1], coord[2][2]);
-
-    Hyena_2DTextureCoord(&vertices[3], ptex->coords[p->texindex][2], ptex->coords[p->texindex][3]);
-    Hyena_VertexXYZ(&vertices[3], coord[3][0], coord[3][1], coord[3][2]);
-
-    Hyena_DrawVertices(vertices, 4, HYE_TEXTURE_32BITFLOAT, HYE_VERTEX_32BITFLOAT);
-    Hyena_EndVertices();
-    Hyena_FlushMatrices();
-
-    Hyena_DisableCapability(HYE_BLEND);
-    Hyena_SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-} /* DRAW_PARTICLE_BILLBOARD */
+    vertices = R_ReserveParticleFan(4, p->color);
+    for (i = 0; i < 4; ++i) {
+        vertices[i].uv[0] = ptex->coords[p->texindex][i < 2 ? 0 : 2];
+        vertices[i].uv[1] = ptex->coords[p->texindex][i == 0 || i == 3 ? 3 : 1];
+        VectorMA(p->org, scale, coord[i], vertices[i].xyz);
+    }
+}
 
 void
 R_DrawParticles(void)
@@ -1471,11 +1527,7 @@ R_DrawParticles(void)
     Hyena_SetTextureMode(HYE_MODULATE);
     Hyena_SetShadeMode(HYE_SMOOTH);
 
-    // glEnable (GL_BLEND);
-    // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    // glShadeModel (GL_SMOOTH);
-
-    for (i = 0 ; i < num_particletypes ; i++) {
+    for (i = 0; i < num_particletypes; i++) {
         pt = &particle_types[i];
 
         if (!pt->start) {
@@ -1485,8 +1537,7 @@ R_DrawParticles(void)
 
         Hyena_SetBlendFunction(pt->SrcBlend, pt->DstBlend);
 
-        // glBlendFunc (pt->SrcBlend, pt->DstBlend);
-
+        particle_batch_textured = pt->drawtype != pd_spark && pt->drawtype != pd_sparkray;
         switch (pt->drawtype) {
             case pd_hide:
                 break;
@@ -1494,7 +1545,7 @@ R_DrawParticles(void)
                 ptex = &particle_textures[pt->texture];
                 Hyena_BindTexture(ptex->texnum);
                 Hyena_DisableCapability(HYE_CULL_FACE);
-                for (p = pt->start ; p ; p = p->next) {
+                for (p = pt->start; p; p = p->next) {
                     if (particle_time < p->start || particle_time >= p->die)
                         continue;
 
@@ -1502,81 +1553,23 @@ R_DrawParticles(void)
                     if (VectorLength(distance) > r_farclip.value)
                         continue;
 
-                    Hyena_BeginVertices(HYE_TRIANGLE_FAN);
-                    Hyena_SetColor((float) p->color[0] / 255.0f, (float) p->color[1] / 255.0f,
-                      (float) p->color[2] / 255.0f, (float) p->color[3] / 255.0f);
-
-                    vertex_t * beam_vertices = Hyena_AllocateMemoryForVertices(4);
-                    // // Allocate the vertices.
-                    // struct vertex
-                    // {
-                    //  float u, v;
-                    //  float x, y, z;
-                    // };
-
-                    // struct vertex* const out = (struct vertex*)(malloc(sizeof(struct vertex) * 4));
-
-                    // glColor4f(p->color[0]/255, p->color[1]/255, p->color[2]/255, p->color[3]/255);
-
+                    hyena_colored_vertex_t * vertices = R_ReserveParticleFan(4, p->color);
                     R_CalcBeamVerts(varray_vertex, p->org, p->endorg, p->size / 3.0f);
-
-                    Hyena_2DTextureCoord(&beam_vertices[0], 1, 0);
-                    Hyena_VertexXYZ(&beam_vertices[0], varray_vertex[0], varray_vertex[1], varray_vertex[2]);
-
-                    Hyena_2DTextureCoord(&beam_vertices[1], 1, 1);
-                    Hyena_VertexXYZ(&beam_vertices[1], varray_vertex[4], varray_vertex[5], varray_vertex[6]);
-
-                    Hyena_2DTextureCoord(&beam_vertices[2], 0, 1);
-                    Hyena_VertexXYZ(&beam_vertices[2], varray_vertex[8], varray_vertex[9], varray_vertex[10]);
-
-                    Hyena_2DTextureCoord(&beam_vertices[3], 0, 0);
-                    Hyena_VertexXYZ(&beam_vertices[3], varray_vertex[12], varray_vertex[13], varray_vertex[14]);
-
-                    Hyena_DrawVertices(beam_vertices, 4, HYE_TEXTURE_32BITFLOAT, HYE_VERTEX_32BITFLOAT);
-
-                    Hyena_EndVertices();
-                    Hyena_SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-                    // out[0].u = 1;
-                    // out[0].v = 0;
-
-                    // out[0].x = varray_vertex[0];
-                    // out[0].y = varray_vertex[1];
-                    // out[0].z = varray_vertex[2];
-
-                    // out[1].u = 1;
-                    // out[1].v = 1;
-
-                    // out[1].x = varray_vertex[4];
-                    // out[1].y = varray_vertex[5];
-                    // out[1].z = varray_vertex[6];
-
-                    // out[2].u = 0;
-                    // out[2].v = 1;
-
-                    // out[2].x = varray_vertex[8];
-                    // out[2].y = varray_vertex[9];
-                    // out[2].z = varray_vertex[10];
-
-                    // out[3].u = 0;
-                    // out[3].v = 0;
-
-                    // out[3].x = varray_vertex[12];
-                    // out[3].y = varray_vertex[13];
-                    // out[3].z = varray_vertex[14];
-
-                    // glBegin (GL_TRIANGLE_FAN);
-                    // glVertex4fv (out);
-                    // glEnd ();
-                    // glColor4f(1,1,1,1); //return to normal color
+                    for (j = 0; j < 4; ++j) {
+                        vertices[j].uv[0] = j < 2 ? 1 : 0;
+                        vertices[j].uv[1] = j == 0 || j == 3 ? 0 : 1;
+                        memcpy(vertices[j].xyz, varray_vertex + j * 4, sizeof(vertices[j].xyz));
+                    }
                 }
+                R_FlushParticleBatch();
                 Hyena_EnableCapability(HYE_CULL_FACE);
                 break;
             case pd_spark:
                 Hyena_DisableCapability(HYE_TEXTURE_2D);
                 Hyena_DisableCapability(HYE_CULL_FACE);
-                for (p = pt->start ; p ; p = p->next) {
-                    vertex_t * spark_vertices;
+                for (p = pt->start; p; p = p->next) {
+                    hyena_colored_vertex_t * spark_vertices;
+                    byte color[4];
                     int vertex_index;
 
                     if (particle_time < p->start || particle_time >= p->die)
@@ -1586,15 +1579,14 @@ R_DrawParticles(void)
                     if (VectorLength(distance) > r_farclip.value)
                         continue;
 
-                    Hyena_BeginVertices(HYE_TRIANGLE_FAN);
-                    Hyena_SetColor((p->color[0] >> 1) / 255.0f, (p->color[1] >> 1) / 255.0f,
-                      (p->color[2] >> 1) / 255.0f, (p->color[3] >> 1) / 255.0f);
-                    spark_vertices = Hyena_AllocateMemoryForVertices(9);
-                    Hyena_VertexXYZ(&spark_vertices[0], p->org[0], p->org[1], p->org[2]);
+                    for (j = 0; j < 4; ++j)
+                        color[j] = p->color[j] >> 1;
+                    spark_vertices = R_ReserveParticleFan(9, color);
+                    VectorCopy(p->org, spark_vertices[0].xyz);
 
                     vertex_index = 1;
                     for (j = 7; j >= 0; --j) {
-                        Hyena_VertexXYZ(&spark_vertices[vertex_index++],
+                        R_ParticlePosition(&spark_vertices[vertex_index++],
                           p->org[0] - p->vel[0] / 8 + vright[0] * cost[j % 7] * p->size + vup[0] * sint[j % 7]
                           * p->size,
                           p->org[1] - p->vel[1] / 8 + vright[1] * cost[j % 7] * p->size + vup[1] * sint[j % 7]
@@ -1602,19 +1594,17 @@ R_DrawParticles(void)
                           p->org[2] - p->vel[2] / 8 + vright[2] * cost[j % 7] * p->size + vup[2] * sint[j % 7]
                           * p->size);
                     }
-
-                    Hyena_DrawVertices(spark_vertices, 9, HYE_TEXTURE_NOTEXTURE, HYE_VERTEX_32BITFLOAT);
-                    Hyena_EndVertices();
-                    Hyena_SetColor(1.0f, 1.0f, 1.0f, 1.0f);
                 }
+                R_FlushParticleBatch();
                 Hyena_EnableCapability(HYE_CULL_FACE);
                 Hyena_EnableCapability(HYE_TEXTURE_2D);
                 break;
             case pd_sparkray:
                 Hyena_DisableCapability(HYE_TEXTURE_2D);
                 Hyena_DisableCapability(HYE_CULL_FACE);
-                for (p = pt->start ; p ; p = p->next) {
-                    vertex_t * spark_vertices;
+                for (p = pt->start; p; p = p->next) {
+                    hyena_colored_vertex_t * spark_vertices;
+                    byte color[4];
                     int vertex_index;
 
                     if (particle_time < p->start || particle_time >= p->die)
@@ -1627,24 +1617,20 @@ R_DrawParticles(void)
                     if (!TraceLineN(p->endorg, p->org, neworg, NULLVEC))
                         VectorCopy(p->org, neworg);
 
-                    Hyena_BeginVertices(HYE_TRIANGLE_FAN);
-                    Hyena_SetColor((p->color[0] >> 1) / 255.0f, (p->color[1] >> 1) / 255.0f,
-                      (p->color[2] >> 1) / 255.0f, (p->color[3] >> 1) / 255.0f);
-                    spark_vertices = Hyena_AllocateMemoryForVertices(9);
-                    Hyena_VertexXYZ(&spark_vertices[0], p->endorg[0], p->endorg[1], p->endorg[2]);
+                    for (j = 0; j < 4; ++j)
+                        color[j] = p->color[j] >> 1;
+                    spark_vertices = R_ReserveParticleFan(9, color);
+                    VectorCopy(p->endorg, spark_vertices[0].xyz);
 
                     vertex_index = 1;
                     for (j = 7; j >= 0; --j) {
-                        Hyena_VertexXYZ(&spark_vertices[vertex_index++],
+                        R_ParticlePosition(&spark_vertices[vertex_index++],
                           neworg[0] + vright[0] * cost[j % 7] * p->size + vup[0] * sint[j % 7] * p->size,
                           neworg[1] + vright[1] * cost[j % 7] * p->size + vup[1] * sint[j % 7] * p->size,
                           neworg[2] + vright[2] * cost[j % 7] * p->size + vup[2] * sint[j % 7] * p->size);
                     }
-
-                    Hyena_DrawVertices(spark_vertices, 9, HYE_TEXTURE_NOTEXTURE, HYE_VERTEX_32BITFLOAT);
-                    Hyena_EndVertices();
-                    Hyena_SetColor(1.0f, 1.0f, 1.0f, 1.0f);
                 }
+                R_FlushParticleBatch();
                 Hyena_EnableCapability(HYE_CULL_FACE);
                 Hyena_EnableCapability(HYE_TEXTURE_2D);
                 break;
@@ -1652,35 +1638,33 @@ R_DrawParticles(void)
                 ptex = &particle_textures[pt->texture];
                 Hyena_BindTexture(ptex->texnum);
 
-                for (p = pt->start ; p ; p = p->next) {
+                qboolean muzzleflash = pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 ||
+                  pt->texture == ptex_muzzleflash3;
+                if (muzzleflash)
+                    Hyena_SetDepthRange(0, 0.3f);
+
+                for (p = pt->start; p; p = p->next) {
                     if (particle_time < p->start || particle_time >= p->die)
                         continue;
 
-                    for (j = 0 ; j < cl.maxclients ; j++) {
+                    for (j = 0; j < cl.maxclients; j++) {
                         if (pt->custom != -1 && VectorSupCompare(p->org, cl_entities[1 + j].origin, 40)) {
                             p->die = 0;
                             continue;
                         }
                     }
 
-                    if (pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 ||
-                      pt->texture == ptex_muzzleflash3)
-                        Hyena_SetDepthRange(0, 0.3f);
-                    // glDepthRange (0, 0.3);
-
                     DRAW_PARTICLE_BILLBOARD(ptex, p, billboard);
-
-                    if (pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 ||
-                      pt->texture == ptex_muzzleflash3)
-                        Hyena_SetDepthRange(0, 1.0f);
-                    // glDepthRange(0, 1);
                 }
+                R_FlushParticleBatch();
+                if (muzzleflash)
+                    Hyena_SetDepthRange(0, 1.0f);
                 break;
 
             case pd_billboard_vel:
                 ptex = &particle_textures[pt->texture];
                 Hyena_BindTexture(ptex->texnum);
-                for (p = pt->start ; p ; p = p->next) {
+                for (p = pt->start; p; p = p->next) {
                     if (particle_time < p->start || particle_time >= p->die)
                         continue;
 
@@ -1700,18 +1684,16 @@ R_DrawParticles(void)
                 Sys_Error("unexpected drawtype (%d)", pt->drawtype);
                 break;
         }
+        R_FlushParticleBatch();
     }
 
+    Hyena_SetColor(1, 1, 1, 1);
     Hyena_DisableCapability(HYE_BLEND);
     Hyena_SetBlendFunction(HYE_SRC_ALPHA, HYE_ONE_MINUS_SRC_ALPHA);
     Hyena_SetTextureMode(HYE_REPLACE);
     Hyena_SetShadeMode(HYE_SMOOTH);
 
     Hyena_DepthMask(HYE_TRUE);
-    // glDisable (GL_BLEND);
-    // glBlendFunc (HYE_SRC_ALPHA, HYE_ONE_MINUS_SRC_ALPHA);
-    // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-    // glShadeModel (GL_SMOOTH);
 } /* R_DrawParticles */
 
 void
@@ -2061,9 +2043,9 @@ QMB_RunParticleEffect(vec3_t org, vec3_t dir, int col, int count)
             }
             break;
         case 256:
-            color[0] = 30;
-            color[1] = 255;
-            color[2] = 60;
+            color[0]       = 30;
+            color[1]       = 255;
+            color[2]       = 60;
             smoke_color[0] = 60;
             smoke_color[1] = 255;
             smoke_color[2] = 110;
@@ -2071,9 +2053,9 @@ QMB_RunParticleEffect(vec3_t org, vec3_t dir, int col, int count)
             AddParticle(p_rayspark, org, 12, 90, 0.45f, color, dir);
             break;
         case 512:
-            color[0] = 255;
-            color[1] = 35;
-            color[2] = 80;
+            color[0]       = 255;
+            color[1]       = 35;
+            color[2]       = 80;
             smoke_color[0] = 255;
             smoke_color[1] = 62;
             smoke_color[2] = 95;
@@ -2184,23 +2166,35 @@ pap_detr(int weapon)
 qboolean red_or_blue_pap;
 
 void
-QMB_MuzzleFlashColor(int *red, int *green, int *blue)
+QMB_MuzzleFlashColor(int * red, int * green, int * blue)
 {
-	*red = *green = *blue = 255;
+    *red = *green = *blue = 255;
 
     // Red and Blue alternating for Pack-A-Punch
-	if (pap_detr(cl.stats[STAT_ACTIVEWEAPON])) {
-		*red = red_or_blue_pap ? 255 : 22;
-		*green = 10;
-		*blue = red_or_blue_pap ? 22 : 255;
-	}
+    if (pap_detr(cl.stats[STAT_ACTIVEWEAPON])) {
+        *red   = red_or_blue_pap ? 255 : 22;
+        *green = 10;
+        *blue  = red_or_blue_pap ? 22 : 255;
+    }
 
-	switch (cl.stats[STAT_ACTIVEWEAPON]) {
-        case W_RAY: case W_RAYMK2: *red = 30; *green = 255; *blue = 60; break;
-        case W_PORTER: case W_PORTERMK2: *red = 255; *green = 35; *blue = 80; break;
-        case W_TESLA: *red = 22; *green = 139; *blue = 255; break;
-        case W_DG3: *red = 255; *green = 89; *blue = 22; break;
-	}
+    switch (cl.stats[STAT_ACTIVEWEAPON]) {
+        case W_RAY: case W_RAYMK2: *red = 30;
+            *green = 255;
+            *blue  = 60;
+            break;
+        case W_PORTER: case W_PORTERMK2: *red = 255;
+            *green = 35;
+            *blue  = 80;
+            break;
+        case W_TESLA: *red = 22;
+            *green         = 139;
+            *blue = 255;
+            break;
+        case W_DG3: *red = 255;
+            *green       = 89;
+            *blue        = 22;
+            break;
+    }
 }
 
 static void
@@ -2229,7 +2223,7 @@ R_SpawnParticleRing(part_type_t type, vec3_t center, vec3_t axis, col_t color, f
     for (segment = 0; segment < segments; ++segment) {
         float angle = (2.0f * HYE_PI * segment) / segments;
         vec3_t radial, org, velocity;
-        particle_t *p;
+        particle_t * p;
 
         VectorScale(ring_right, cosf(angle), radial);
         VectorMA(radial, sinf(angle), ring_up, radial);
@@ -2238,30 +2232,31 @@ R_SpawnParticleRing(part_type_t type, vec3_t center, vec3_t axis, col_t color, f
         p = AddParticle(type, org, 1, particle_size, lifetime, color, velocity);
         if (p) {
             p->start += start_delay;
-            p->die += start_delay;
+            p->die   += start_delay;
         }
     }
-}
+} /* R_SpawnParticleRing */
 
 void
 QMB_MuzzleFlash(vec3_t org, vec3_t muzzle_axis)
 {
     double frametime = fabs(cl.time - cl.oldtime);
     col_t color;
-	int red, green, blue;
+    int red, green, blue;
 
     // No muzzleflash for the Panzerschreck or the Flamethrower
     if (cl.stats[STAT_ACTIVEWEAPON] == W_PANZER || cl.stats[STAT_ACTIVEWEAPON] == W_LONGINUS ||
-      cl.stats[STAT_ACTIVEWEAPON] == W_M2 || cl.stats[STAT_ACTIVEWEAPON] == W_FIW) {
+      cl.stats[STAT_ACTIVEWEAPON] == W_M2 || cl.stats[STAT_ACTIVEWEAPON] == W_FIW)
+    {
         return;
     }
 
-	QMB_MuzzleFlashColor(&red, &green, &blue);
-	color[0] = (byte)red;
-	color[1] = (byte)green;
-	color[2] = (byte)blue;
-	if (pap_detr(cl.stats[STAT_ACTIVEWEAPON]))
-		red_or_blue_pap = !red_or_blue_pap;
+    QMB_MuzzleFlashColor(&red, &green, &blue);
+    color[0] = (byte) red;
+    color[1] = (byte) green;
+    color[2] = (byte) blue;
+    if (pap_detr(cl.stats[STAT_ACTIVEWEAPON]))
+        red_or_blue_pap = !red_or_blue_pap;
 
     float size, timemod;
 
@@ -2301,15 +2296,14 @@ QMB_MuzzleFlash(vec3_t org, vec3_t muzzle_axis)
         }
     }
 
-    dlight_t *muzzleflash_light;
+    dlight_t * muzzleflash_light;
     muzzleflash_light = CL_AllocDlight(cl.viewentity);
     VectorCopy(org, muzzleflash_light->origin);
-    muzzleflash_light->die = cl.time + 0.1;
-    muzzleflash_light->radius = 128;
-    muzzleflash_light->color[0] = (float)(color[0]/255.0f);
-    muzzleflash_light->color[1] = (float)(color[1]/255.0f);
-    muzzleflash_light->color[2] = (float)(color[2]/255.0f);
-
+    muzzleflash_light->die      = cl.time + 0.1;
+    muzzleflash_light->radius   = 128;
+    muzzleflash_light->color[0] = (float) (color[0] / 255.0f);
+    muzzleflash_light->color[1] = (float) (color[1] / 255.0f);
+    muzzleflash_light->color[2] = (float) (color[2] / 255.0f);
 } /* QMB_MuzzleFlash */
 
 static void
@@ -2338,8 +2332,9 @@ R_RocketTrail(vec3_t start, vec3_t end, trail_type_t type)
                     color[1] = 15;
                     color[2] = 10;
                     AddParticleTrail(p_alphatrail, start, end, 8, 1, color);
-                } else
+                } else {
                     AddParticleTrail(p_smoke, start, end, 1.45, 0.825, NULL);
+                }
             }
             break;
 
@@ -2807,9 +2802,10 @@ R_EntityParticles(entity_t * ent)
 
     dist = 64;
 
-    if (!avelocities[0][0])
+    if (!avelocities[0][0]) {
         for (i = 0 ; i < NUMVERTEXNORMALS; i++)
             avelocities[i][0] = (rand() & 255) * 0.01;
+    }
 
     for (i = 0 ; i < NUMVERTEXNORMALS ; i++) {
         angle = (float) cl.time * avelocities[i][0];

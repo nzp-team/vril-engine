@@ -30,16 +30,15 @@ int		lightmap_bytes;		// 1, 2, or 4
 
 unsigned		blocklights[3*18*18]; // LordHavoc: .lit support (*3 for RGB) to the definitions at the top
 
-#define	BLOCK_WIDTH		128
-#define	BLOCK_HEIGHT	128
+#define	BLOCK_WIDTH		256
+#define	BLOCK_HEIGHT	256
 
 int			active_lightmaps;
 
 typedef struct glRect_s {
-	unsigned char l,t,w,h;
+	unsigned short l,t,w,h;
 } glRect_t;
 
-glpoly_t	*lightmap_polys[MAX_LIGHTMAPS];
 qboolean	lightmap_modified[MAX_LIGHTMAPS];
 glRect_t	lightmap_rectchange[MAX_LIGHTMAPS];
 int 		lightmap_index[MAX_LIGHTMAPS];
@@ -48,14 +47,26 @@ int			allocated[MAX_LIGHTMAPS][BLOCK_WIDTH];
 
 // the lightmap texture data needs to be kept in
 // main memory so texsubimage can update properly
-byte		lightmaps[4*MAX_LIGHTMAPS*BLOCK_WIDTH*BLOCK_HEIGHT];
+byte		*lightmaps;
+static int	lightmap_pages;
 
-// For gl_texsort 0
-msurface_t  *skychain = NULL;
-msurface_t  *waterchain = NULL;
+static void R_ReserveLightmapPages (int pages)
+{
+	byte *storage;
+	size_t old_size, new_size;
 
-extern char	skybox_name[32];
-extern qboolean sky_is_layered;
+	if (pages <= lightmap_pages)
+		return;
+	old_size = (size_t)lightmap_pages * BLOCK_WIDTH * BLOCK_HEIGHT * 4;
+	new_size = (size_t)pages * BLOCK_WIDTH * BLOCK_HEIGHT * 4;
+	storage = realloc (lightmaps, new_size);
+	if (!storage)
+		Sys_Error ("R_ReserveLightmapPages: out of memory\\n");
+	lightmaps = storage;
+	memset (lightmaps + old_size, 0, new_size - old_size);
+	lightmap_pages = pages;
+}
+
 
 /*
 ===============
@@ -282,12 +293,7 @@ texture_t *R_TextureAnimation (texture_t *base)
 */
 
 
-extern	int		solidskytexture;
-extern	int		alphaskytexture;
-extern	float	speedscale;		// for top sky and bottom sky
-
 void DrawGLWaterPoly (glpoly_t *p);
-void DrawGLWaterPolyLightmap (glpoly_t *p);
 
 /*
 ================
@@ -298,12 +304,7 @@ Warp the vertex coordinates
 */
 void DrawGLWaterPoly (glpoly_t *p)
 {
-	R_DrawSurfaceFan(p->verts[0], p->numverts, VERTEXSIZE, 3, true, realtime);
-}
-
-void DrawGLWaterPolyLightmap (glpoly_t *p)
-{
-	R_DrawSurfaceFan(p->verts[0], p->numverts, VERTEXSIZE, 5, true, realtime);
+	R_DrawSurfaceFan(p->verts[0], p->numverts, VERTEXSIZE, 0, 3, true, realtime);
 }
 
 /*
@@ -313,13 +314,7 @@ DrawGLPoly
 */
 void DrawGLPoly (glpoly_t *p)
 {
-	R_DrawSurfaceFan(p->verts[0], p->numverts, VERTEXSIZE, 3, false, 0);
-}
-
-// rbaldwin2 -- This is based on DrawGLWaterPolyLightmap and designed to be cheaper
-void DrawGLPolyLightmap (glpoly_t *p)
-{
-	R_DrawSurfaceFan(p->verts[0], p->numverts, VERTEXSIZE, 5, false, 0);
+	R_DrawSurfaceFan(p->verts[0], p->numverts, VERTEXSIZE, 0, 3, false, 0);
 }
 
 /*
@@ -327,57 +322,65 @@ void DrawGLPolyLightmap (glpoly_t *p)
 R_BlendLightmaps
 ================
 */
-void R_BlendLightmaps ()
+int R_UploadLightmap(int i)
 {
-	int			i;
-	glpoly_t	*p;
+    char name[16];
 
-	if (r_fullbright.value) {
-		return;
-	} 
+    if (lightmap_modified[i]) {
+        glRect_t rect = lightmap_rectchange[i];
 
-	glDepthMask(GL_FALSE);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
-	glDepthFunc(GL_EQUAL);
-	
-	for (i=0 ; i<MAX_LIGHTMAPS ; i++)
-	{
-		p = lightmap_polys[i];
-		if (!p)
-			continue;
+        lightmap_modified[i] = false;
+        lightmap_rectchange[i].l = BLOCK_WIDTH;
+        lightmap_rectchange[i].t = BLOCK_HEIGHT;
+        lightmap_rectchange[i].w = 0;
+        lightmap_rectchange[i].h = 0;
+        snprintf(name, sizeof(name), "lightmap%d", i);
+        lightmap_index[i] = Hyena_UpdateLightmap(name, BLOCK_WIDTH, BLOCK_HEIGHT,
+            lightmaps + i * BLOCK_WIDTH * BLOCK_HEIGHT * lightmap_bytes,
+            HYE_TEXTURE_RGBA8, rect.l, rect.t, rect.w, rect.h,
+            BLOCK_WIDTH * lightmap_bytes);
+    }
+    return lightmap_index[i];
+}
 
-		char lm_name[16];
-		if (lightmap_modified[i])
-		{
-			lightmap_modified[i] = false;
-			lightmap_rectchange[i].l = BLOCK_WIDTH;
-			lightmap_rectchange[i].t = BLOCK_HEIGHT;
-			lightmap_rectchange[i].w = 0;
-			lightmap_rectchange[i].h = 0;
+void
+R_UpdateSurfaceLightmap(msurface_t *surface)
+{
+    byte *base;
+    glRect_t *rect;
+    int maps, smax, tmax;
 
-			sprintf(lm_name,"lightmap%d",i);
-			lightmap_index[i] = GL_LoadLMTexture (lm_name, BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+(i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes), true);
-		}
-		GL_Bind(lightmap_index[i]);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		for ( ; p ; p=p->chain)
-		{
-			if (p->flags & SURF_UNDERWATER)
-				DrawGLWaterPolyLightmap (p);
-			else
-			{
-				DrawGLPolyLightmap(p);
-			}
-		}
-	}
+    for (maps = 0; maps < MAXLIGHTMAPS && surface->styles[maps] != 255; ++maps)
+        if (d_lightstylevalue[surface->styles[maps]] != surface->cached_light[maps])
+            break;
+    if (maps == MAXLIGHTMAPS || surface->styles[maps] == 255) {
+        if (surface->dlightframe != r_framecount && !surface->cached_dlight)
+            return;
+    }
+    if (!r_dynamic.value)
+        return;
 
-	glDisable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDepthMask (GL_TRUE);
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
+    lightmap_modified[surface->lightmaptexturenum] = true;
+    rect = &lightmap_rectchange[surface->lightmaptexturenum];
+    if (surface->light_t < rect->t) {
+        if (rect->h)
+            rect->h += rect->t - surface->light_t;
+        rect->t = surface->light_t;
+    }
+    if (surface->light_s < rect->l) {
+        if (rect->w)
+            rect->w += rect->l - surface->light_s;
+        rect->l = surface->light_s;
+    }
+    smax = (surface->extents[0] >> 4) + 1;
+    tmax = (surface->extents[1] >> 4) + 1;
+    if (rect->w + rect->l < surface->light_s + smax)
+        rect->w = surface->light_s - rect->l + smax;
+    if (rect->h + rect->t < surface->light_t + tmax)
+        rect->h = surface->light_t - rect->t + tmax;
+    base = lightmaps + surface->lightmaptexturenum * lightmap_bytes * BLOCK_WIDTH * BLOCK_HEIGHT;
+    base += surface->light_t * BLOCK_WIDTH * lightmap_bytes + surface->light_s * lightmap_bytes;
+    R_BuildLightMap(surface, base, BLOCK_WIDTH * lightmap_bytes);
 }
 
 /*
@@ -388,24 +391,14 @@ R_RenderBrushPoly
 void R_RenderBrushPoly (msurface_t *fa)
 {
 	texture_t	*t;
-	byte		*base;
-	int			maps;
-	glRect_t    *theRect;
-	int smax, tmax;
 
 	c_brush_polys++;
 
 	if (fa->flags & SURF_DRAWSKY)
-	{	
-		if (!skybox_name[0] && sky_is_layered)
-			EmitBothSkyLayers (fa);
-		else if (!skybox_name[0])
-			EmitFlatSkyPolys (fa);
 		return;
-	}
 		
 	t = R_TextureAnimation (fa->texinfo->texture);
-	GL_Bind (t->gl_texturenum);
+	Hyena_BindTexture(t->gl_texturenum);
 
 	bool choosealpha = t->name[0] == '{' ? true : false; // naievil -- need to choose alpha mode for certain textures
 	if(choosealpha) {
@@ -434,45 +427,8 @@ void R_RenderBrushPoly (msurface_t *fa)
 	else
 		DrawGLPoly (fa->polys);
 
-	// add the poly to the proper lightmap chain
-
-	fa->polys->chain = lightmap_polys[fa->lightmaptexturenum];
-	lightmap_polys[fa->lightmaptexturenum] = fa->polys;
-
-	// check for lightmap modification
-	for (maps = 0 ; maps < MAXLIGHTMAPS && fa->styles[maps] != 255 ; maps++)
-		if (d_lightstylevalue[fa->styles[maps]] != fa->cached_light[maps])
-			goto dynamic;
-
-	if (fa->dlightframe == r_framecount	// dynamic this frame
-		|| fa->cached_dlight)			// dynamic previously
-	{
-dynamic:
-		if (r_dynamic.value)
-		{
-			lightmap_modified[fa->lightmaptexturenum] = true;
-			theRect = &lightmap_rectchange[fa->lightmaptexturenum];
-			if (fa->light_t < theRect->t) {
-				if (theRect->h)
-					theRect->h += theRect->t - fa->light_t;
-				theRect->t = fa->light_t;
-			}
-			if (fa->light_s < theRect->l) {
-				if (theRect->w)
-					theRect->w += theRect->l - fa->light_s;
-				theRect->l = fa->light_s;
-			}
-			smax = (fa->extents[0]>>4)+1;
-			tmax = (fa->extents[1]>>4)+1;
-			if ((theRect->w + theRect->l) < (fa->light_s + smax))
-				theRect->w = (fa->light_s-theRect->l)+smax;
-			if ((theRect->h + theRect->t) < (fa->light_t + tmax))
-				theRect->h = (fa->light_t-theRect->t)+tmax;
-			base = lightmaps + fa->lightmaptexturenum*lightmap_bytes*BLOCK_WIDTH*BLOCK_HEIGHT;
-			base += fa->light_t * BLOCK_WIDTH * lightmap_bytes + fa->light_s * lightmap_bytes;
-			R_BuildLightMap (fa, base, BLOCK_WIDTH*lightmap_bytes);
-		}
-	}
+	R_ChainLightmap(fa);
+	R_UpdateSurfaceLightmap(fa);
 
 	if(choosealpha) {
 		glDisable(GL_ALPHA_TEST);
@@ -481,186 +437,6 @@ dynamic:
 
 }
 
-/*
-================
-R_MirrorChain
-================
-*/
-void R_MirrorChain (msurface_t *s)
-{
-	if (mirror)
-		return;
-	mirror = true;
-	mirror_plane = s->plane;
-}
-
-
-#if 0
-/*
-================
-R_DrawWaterSurfaces
-================
-*/
-void R_DrawWaterSurfaces (void)
-{
-	int			i;
-	msurface_t	*s;
-	texture_t	*t;
-
-	if (r_wateralpha.value == 1.0)
-		return;
-
-	//
-	// go back to the world matrix
-	//
-    glLoadMatrixf (r_world_matrix);
-
-	glEnable (GL_BLEND);
-	glColor4f (1,1,1,r_wateralpha.value);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-	for (i=0 ; i<cl.worldmodel->numtextures ; i++)
-	{
-		t = cl.worldmodel->textures[i];
-		if (!t)
-			continue;
-		s = t->texturechain;
-		if (!s)
-			continue;
-		if ( !(s->flags & SURF_DRAWTURB) )
-			continue;
-
-		// set modulate mode explicitly
-		GL_Bind (t->gl_texturenum);
-
-		for ( ; s ; s=s->texturechain)
-			R_RenderBrushPoly (s);
-
-		t->texturechain = NULL;
-	}
-
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-
-	glColor4f (1,1,1,1);
-	glDisable (GL_BLEND);
-}
-#else
-/*
-================
-R_DrawWaterSurfaces
-================
-*/
-void R_DrawWaterSurfaces (void)
-{
-	int			i;
-	msurface_t	*s;
-	texture_t	*t;
-
-	if (r_wateralpha.value == 1.0f && gl_texsort.value)
-		return;
-
-	//
-	// go back to the world matrix
-	//
-
-    glLoadMatrixf (r_world_matrix);
-
-	if (r_wateralpha.value < 1.0f) {
-		glEnable (GL_BLEND);
-		glColor4f (1,1,1,r_wateralpha.value);
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	}
-
-	if (!gl_texsort.value) {
-		if (!waterchain)
-			return;
-
-		for ( s = waterchain ; s ; s=s->texturechain) {
-			GL_Bind (s->texinfo->texture->gl_texturenum);
-			EmitWaterPolys (s);
-		}
-		
-		waterchain = NULL;
-	} else {
-
-		for (i=0 ; i<cl.worldmodel->numtextures ; i++)
-		{
-			t = cl.worldmodel->textures[i];
-			if (!t)
-				continue;
-			s = t->texturechain;
-			if (!s)
-				continue;
-			if ( !(s->flags & SURF_DRAWTURB ) )
-				continue;
-
-			// set modulate mode explicitly
-			
-			GL_Bind (t->gl_texturenum);
-
-			for ( ; s ; s=s->texturechain)
-				EmitWaterPolys (s);
-			
-			t->texturechain = NULL;
-		}
-
-	}
-
-	if (r_wateralpha.value < 1.0f) {
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-
-		glColor4f (1,1,1,1);
-		glDisable (GL_BLEND);
-	}
-
-}
-
-#endif
-
-/*
-================
-DrawTextureChains
-================
-*/
-void DrawTextureChains (void)
-{
-	int		i;
-	msurface_t	*s;
-	texture_t	*t;
-
-	if (!gl_texsort.value) {
-		if (skychain) {
-			//R_DrawSkyChain(skychain);
-			skychain = NULL;
-		}
-
-		return;
-	} 
-
-	for (i=0 ; i<cl.worldmodel->numtextures ; i++)
-	{
-		t = cl.worldmodel->textures[i];
-		if (!t)
-			continue;
-		s = t->texturechain;
-		if (!s)
-			continue;
-		else if (i == mirrortexturenum && r_mirroralpha.value != 1.0f)
-		{
-			R_MirrorChain (s);
-			continue;
-		}
-		else
-		{
-			if ((s->flags & SURF_DRAWTURB) && r_wateralpha.value != 1.0f)
-				continue;	// draw translucent water later
-			for ( ; s ; s=s->texturechain)
-				R_RenderBrushPoly (s);
-		}
-
-		t->texturechain = NULL;
-	}
-}
 /*
 =================
 R_DrawBrushModel
@@ -701,7 +477,7 @@ void R_DrawBrushModel (entity_t *e)
 		return;
 
 	Hyena_SetColor(1, 1, 1, 1);
-	memset (lightmap_polys, 0, sizeof(lightmap_polys));
+	R_ClearLightmapChains();
 
 	VectorSubtract (r_refdef.vieworg, e->origin, modelorg);
 	if (rotated)
@@ -815,265 +591,6 @@ void R_DrawBrushModel (entity_t *e)
 
 =============================================================
 */
-
-/*
-================
-R_RecursiveWorldNode
-================
-*/
-void R_RecursiveWorldNode (mnode_t *node)
-{
-	int			c, side;
-	mplane_t	*plane;
-	msurface_t	*surf, **mark;
-	mleaf_t		*pleaf;
-	float		dot;
-
-	if (node->contents == CONTENTS_SOLID)
-		return;		// solid
-
-	if (node->visframe != r_visframecount)
-		return;
-	if (R_CullBox (node->minmaxs, node->minmaxs+3))
-		return;
-	
-// if a leaf node, draw stuff
-	if (node->contents < 0)
-	{
-		pleaf = (mleaf_t *)node;
-
-		mark = pleaf->firstmarksurface;
-		c = pleaf->nummarksurfaces;
-
-		if (c)
-		{
-			do
-			{
-				(*mark)->visframe = r_framecount;
-				mark++;
-			} while (--c);
-		}
-
-	// deal with model fragments in this leaf
-		if (pleaf->efrags)
-			R_StoreEfrags (&pleaf->efrags);
-
-		return;
-	}
-
-// node is just a decision point, so go down the apropriate sides
-
-// find which side of the node we are on
-	plane = node->plane;
-
-	switch (plane->type)
-	{
-	case PLANE_X:
-		dot = modelorg[0] - plane->dist;
-		break;
-	case PLANE_Y:
-		dot = modelorg[1] - plane->dist;
-		break;
-	case PLANE_Z:
-		dot = modelorg[2] - plane->dist;
-		break;
-	default:
-		dot = DotProduct (modelorg, plane->normal) - plane->dist;
-		break;
-	}
-
-	if (dot >= 0)
-		side = 0;
-	else
-		side = 1;
-
-// recurse down the children, front side first
-	R_RecursiveWorldNode (node->children[side]);
-
-// draw stuff
-	c = node->numsurfaces;
-
-	if (c)
-	{
-		surf = cl.worldmodel->surfaces + node->firstsurface;
-
-		if (dot < (float)-BACKFACE_EPSILON)
-			side = SURF_PLANEBACK;
-		else if (dot > (float)BACKFACE_EPSILON)
-			side = 0;
-		{
-			for ( ; c ; c--, surf++)
-			{
-				if (surf->visframe != r_framecount)
-					continue;
-
-				// don't backface underwater surfaces, because they warp
-				if ( !(surf->flags & SURF_UNDERWATER) && ( (dot < 0) ^ !!(surf->flags & SURF_PLANEBACK)) )
-					continue;		// wrong side
-
-				// if sorting by texture, just store it out
-				if (gl_texsort.value)
-				{
-					if (!mirror
-					|| surf->texinfo->texture != cl.worldmodel->textures[mirrortexturenum])
-					{
-						surf->texturechain = surf->texinfo->texture->texturechain;
-						surf->texinfo->texture->texturechain = surf;
-					}
-				} /*else if (surf->flags & SURF_DRAWSKY) {
-					surf->texturechain = skychain;
-					skychain = surf;
-				} else if (surf->flags & SURF_DRAWTURB) {
-					surf->texturechain = waterchain;
-					waterchain = surf;
-				} else
-					R_DrawSequentialPoly (surf);*/
-
-			}
-		}
-
-	}
-
-// recurse down the back side
-	R_RecursiveWorldNode (node->children[!side]);
-}
-
-
-void R_AddBrushModelToChains (entity_t * e)
-{
-	model_t * clmodel = e->model;
-	vec3_t mins, maxs;
-	VectorAdd (e->origin, clmodel->mins, mins);
-	VectorAdd (e->origin, clmodel->maxs, maxs);
-
-	if (R_CullBox(mins, maxs))
-	{
-		return;
-	}
-
-	msurface_t * psurf = &clmodel->surfaces[clmodel->firstmodelsurface];
-
-	/*
-	if (clmodel->firstmodelsurface != 0)
-	{
-		for (int k = 0; k < MAX_DLIGHTS; k++)
-		{
-			if ((cl_dlights[k].die < cl.time) ||
-				(!cl_dlights[k].radius))
-				continue;
-			R_MarkLights (&cl_dlights[k], 1<<k,	clmodel->nodes + clmodel->hulls[0].firstclipnode);
-		}
-	}
-	*/
-
-	for (int j = 0; j < clmodel->nummodelsurfaces; j++, psurf++)
-	{
-		// find which side of the node we are on
-		mplane_t * pplane = psurf->plane;
-		float dot = DotProduct (modelorg, pplane->normal) - pplane->dist;
-		// draw the polygon
-		if (((psurf->flags & SURF_PLANEBACK) && (dot < (float)-BACKFACE_EPSILON)) ||
-			(!(psurf->flags & SURF_PLANEBACK) && (dot > (float)BACKFACE_EPSILON)))
-		{
-			// psurf->flags &= ~SURF_NEEDSCLIPPING;
-			// psurf->flags |= SURF_NEEDSCLIPPING * (frustum_check > 1);
-
-			psurf->texturechain = psurf->texinfo->texture->texturechain;
-			psurf->texinfo->texture->texturechain = psurf;
-		}
-	}
-}
-
-void R_AddStaticBrushModelsToChains ()
-{
-	// Con_Printf("static models %d\n", cl_numstaticbrushmodels);
-	for (int i = 0; i < cl_numstaticbrushmodels; i++)
-	{
-		// if (i >= 1) return;
-		R_AddBrushModelToChains(cl_staticbrushmodels[i]);
-	}
-}
-
-/*
-=============
-R_DrawWorld
-=============
-*/
-void R_DrawWorld (void)
-{
-	entity_t	ent;
-
-	memset (&ent, 0, sizeof(ent));
-	ent.model = cl.worldmodel;
-
-	VectorCopy (r_refdef.vieworg, modelorg);
-
-	currententity = &ent;
-
-	Hyena_SetColor(1, 1, 1, 1);
-	memset (lightmap_polys, 0, sizeof(lightmap_polys));
-
-	R_ClearSkyBox ();
-	if (strcmp(skybox_name, "") != 0)
-		R_DrawSkyBox();
-
-	R_RecursiveWorldNode (cl.worldmodel->nodes);
-
-	R_AddStaticBrushModelsToChains (); // shpuld
-	
-	Fog_SetupFrame(true);
-	DrawTextureChains ();
-	Fog_SetupFrame (false); //johnfitz
-
-	R_BlendLightmaps();
-}
-
-
-/*
-===============
-R_MarkLeaves
-===============
-*/
-void R_MarkLeaves (void)
-{
-	byte	*vis;
-	mnode_t	*node;
-	int		i;
-	byte	solid[4096];
-
-	if (r_oldviewleaf == r_viewleaf && !r_novis.value)
-		return;
-	
-	if (mirror)
-		return;
-
-	r_visframecount++;
-	r_oldviewleaf = r_viewleaf;
-
-	if (r_novis.value)
-	{
-		vis = solid;
-		memset (solid, 0xff, (cl.worldmodel->numleafs+7)>>3);
-	}
-	else
-		vis = Mod_LeafPVS (r_viewleaf, cl.worldmodel);
-		
-	for (i=0 ; i<cl.worldmodel->numleafs ; i++)
-	{
-		if (vis[i>>3] & (1<<(i&7)))
-		{
-			node = (mnode_t *)&cl.worldmodel->leafs[i+1];
-			do
-			{
-				if (node->visframe == r_visframecount)
-					break;
-				node->visframe = r_visframecount;
-				node = node->parent;
-			} while (node);
-		}
-	}
-}
-
 
 
 /*
@@ -1265,6 +782,7 @@ void GL_CreateSurfaceLightmap (msurface_t *surf)
 	tmax = (surf->extents[1]>>4)+1;
 
 	surf->lightmaptexturenum = AllocBlock (smax, tmax, &surf->light_s, &surf->light_t);
+	R_ReserveLightmapPages (surf->lightmaptexturenum + 1);
 	base = lightmaps + surf->lightmaptexturenum*lightmap_bytes*BLOCK_WIDTH*BLOCK_HEIGHT;
 	base += (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
 	R_BuildLightMap (surf, base, BLOCK_WIDTH*lightmap_bytes);
@@ -1285,10 +803,12 @@ void GL_BuildLightmaps (void)
 	model_t	*m;
 
 	memset (allocated, 0, sizeof(allocated));
+	free (lightmaps);
+	lightmaps = NULL;
+	lightmap_pages = 0;
 
 	r_framecount = 1;		// no dlightcache
 
-	gl_lightmap_format = GL_RGBA;
 	lightmap_bytes = 4;
 
 	for (j=1 ; j<MAX_MODELS ; j++)
@@ -1329,6 +849,12 @@ void GL_BuildLightmaps (void)
 		char lm_name[16];
 
 		sprintf(lm_name,"lightmap%d",i);
-		lightmap_index[i] = GL_LoadLMTexture (lm_name, BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+(i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes), false);
+		lightmap_index[i] = Hyena_LoadLightmap(lm_name, BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+(i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes), HYE_TEXTURE_RGBA8, false);
 	}
+	{
+        const r_world_layout_t layout = { offsetof(glpoly_t, verts), VERTEXSIZE, 0, 3, 5, 0, 0,
+            SURF_DRAWSKY | SURF_DRAWTURB | SURF_UNDERWATER | TEXFLAG_NODRAW,
+            TEXFLAG_LIGHT, 4, false, NULL, NULL };
+        R_BuildWorldBatch(&layout);
+    }
 }

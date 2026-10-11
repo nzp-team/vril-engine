@@ -82,7 +82,7 @@ typedef struct texture_s
 	int         fullbright;
 #endif
 
-	struct 		msurface_s *texturechain;	// for gl_texsort drawing
+	struct 		msurface_s *texturechain;	// for texture-sorted drawing
 	int			anim_total;				// total tenths in sequence ( 0 = no)
 	int			anim_min, anim_max;		// time for this frame min <=time< max
 	struct 		texture_s *anim_next;		// in the animation sequence
@@ -177,11 +177,6 @@ typedef struct msurface_s
 	qboolean	cached_dlight;				// true if dynamic light in cache
 	byte		*samples;		// [numstyles*surfsize]
 } msurface_t;
-
-typedef struct lightmap_face_s {
-	msurface_t *face;
-	struct lightmap_face_s *next;
-} lightmap_face_t;
 
 typedef struct mnode_s
 {

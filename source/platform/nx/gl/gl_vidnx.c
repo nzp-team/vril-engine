@@ -35,7 +35,6 @@ cvar_t	gl_ztrick = {"gl_ztrick","0"};
 static float vid_gamma = 1.0;
 
 qboolean isPermedia = true;
-qboolean gl_mtexable = false;
 
 /*
 ===============
@@ -163,6 +162,7 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 
 void GL_EndRendering (void)
 {
+	Draw_Flush();
 	//glFinish();
 	eglSwapBuffers(s_display, s_surface);
 }

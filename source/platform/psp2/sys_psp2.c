@@ -475,19 +475,6 @@ int quake_main (unsigned int argc, void* argv){
 	const float tickRate = 1.0f / sceRtcGetTickResolution();
 	static quakeparms_t    parms;
 	
-	// Loading resolution and MSAA mode from config files, those are not handled via Host cause Host_Init requires vitaGL to be working
-	if (is_uma0) f = fopen("uma0:data/nzp/resolution.cfg", "rb");
-	else f = fopen("ux0:data/nzp/resolution.cfg", "rb");
-	if (f != NULL){
-		fscanf(f, "%dx%d", &scr_width, &scr_height);
-		fclose(f);
-	}
-	if (is_uma0) f = fopen("uma0:data/nzp/antialiasing.cfg", "rb");
-	else f = fopen("ux0:data/nzp/antialiasing.cfg", "rb");
-	if (f != NULL){
-		fscanf(f, "%d", &antialiasing);
-		fclose(f);
-	}
 	cfg_width = scr_width;
 	cfg_height = scr_height;
 	

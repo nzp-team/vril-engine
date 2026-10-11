@@ -185,11 +185,8 @@ void Mod_ClearAll (void)
 		}
 	}
 
-	GL_UnloadTextures ();
-
-	//purge old sky textures
-	for (i=0; i<5; i++)
-		skyimage[i] = -1;
+	Hyena_DestroyTextures ();
+	Sky_ClearTextures ();
 
 	//purge old lightmaps
 	for (i=0; i<MAX_LIGHTMAPS; i++)
@@ -416,8 +413,8 @@ void Mod_LoadTextures (lump_t *l)
 			continue;
 		}
 
-		if (loadmodel->bspversion != HL_BSPVERSION && !strncmp(mt->name,"sky",3)) {	
-			R_InitSky (mt);
+		if (!strncmp(mt->name,"sky",3)) {
+			tx->gl_texturenum = -1;
 		} else {
 			if (loadmodel->bspversion == HL_BSPVERSION) {
 
@@ -430,13 +427,13 @@ void Mod_LoadTextures (lump_t *l)
 					data = WAD3_LoadTexture(mt);
 
 					bool choosealpha = mt->name[0] == '{' ? true : false; // naievil -- need to choose alpha mode for certain textures
-					tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)data, false, choosealpha, 4, false);
+					tx->gl_texturenum = Image_LoadTexture(mt->name, tx->width, tx->height, (byte *)data, HYE_TEXTURE_RGBA8, HYE_FILTER_LINEAR, 0, choosealpha, false, false);
 					texture_mode = GL_LINEAR;
 					free(data);
 				}
 			} else {
 				texture_mode = GL_LINEAR_MIPMAP_NEAREST; //_LINEAR;
-				tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(tx+1), false, false, 1, false);
+				tx->gl_texturenum = Image_LoadTexture(mt->name, tx->width, tx->height, (byte *)(tx+1), HYE_TEXTURE_INDEX8, HYE_FILTER_LINEAR, 0, false, false, false);
 				texture_mode = GL_LINEAR;
 			}
 		}
@@ -909,9 +906,6 @@ void Mod_LoadFaces (lump_t *l)
 		if (!strncmp(out->texinfo->texture->name,"sky",3))	// sky
 		{
 			out->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
-#ifndef QUAKE2
-			GL_SubdivideSurface (out);	// cut up polygon for warps
-#endif
 			continue;
 		}
 
@@ -1706,8 +1700,8 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 				pheader->gl_texturenum[i][0] =
 				pheader->gl_texturenum[i][1] =
 				pheader->gl_texturenum[i][2] =
-				pheader->gl_texturenum[i][3] = GL_LoadTexture (name, pheader->skinwidth, 
-					pheader->skinheight, (byte *)(pskintype + 1), false, true, 1, true);
+				pheader->gl_texturenum[i][3] = Image_LoadTexture(name, pheader->skinwidth,
+					pheader->skinheight, (byte *)(pskintype + 1), HYE_TEXTURE_INDEX8, HYE_FILTER_LINEAR, 0, true, true, false);
 			}
 			
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
@@ -1727,8 +1721,8 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					snprintf(model2, 128, "%s_%i_%i", model, i, j);
 					pheader->gl_texturenum[i][j&3] = Image_LoadImage(model2, IMAGE_TGA | IMAGE_PCX, 0, true, false);
 					if (pheader->gl_texturenum[i][j&3] == -1) {
-						pheader->gl_texturenum[i][j&3] = GL_LoadTexture (model2, pheader->skinwidth, 
-						pheader->skinheight, (byte *)(pskintype), false, true, 1, true);
+						pheader->gl_texturenum[i][j&3] = Image_LoadTexture(model2, pheader->skinwidth,
+						pheader->skinheight, (byte *)(pskintype), HYE_TEXTURE_INDEX8, HYE_FILTER_LINEAR, 0, true, true, false);
 					}
 					pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
 			}
@@ -1984,7 +1978,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 		pspriteframe->gl_texturenum = Image_LoadImage(sprite2, IMAGE_TGA, 0, true, false);
 
 		if (pspriteframe->gl_texturenum < 0) // did not find a matching TGA...
-			pspriteframe->gl_texturenum = GL_LoadTexture (sprite2, width, height, (byte *)(pinframe + 1), false, true, 1, true);
+			pspriteframe->gl_texturenum = Image_LoadTexture(sprite2, width, height, (byte *)(pinframe + 1), HYE_TEXTURE_INDEX8, HYE_FILTER_LINEAR, 0, true, true, false);
 	}
 
 	return (void *)((byte *)pinframe + sizeof (dspriteframe_t) + size);
