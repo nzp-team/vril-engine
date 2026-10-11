@@ -1466,23 +1466,23 @@ static int	w_file_pos;
 
 static int W_fopen_path (char *path)
 {
-	int h = 0;
+	FILE *file = NULL;
 	int size;
 
-	size = COM_OpenFile (path, &h);
-	if (size < 0 || h <= 0)
+	size = COM_FOpenFile (path, &file);
+	if (size < 0 || !file)
 		return -1;
 
 	w_file_buffer = Z_Malloc(size + 1);
-	if (size > 0 && Sys_FileRead(h, w_file_buffer, size) != size)
+	if (size > 0 && fread(w_file_buffer, 1, size, file) != (size_t)size)
 	{
-		COM_CloseFile(h);
+		fclose(file);
 		Z_Free(w_file_buffer);
 		w_file_buffer = NULL;
 		return -1;
 	}
 
-	COM_CloseFile(h);
+	fclose(file);
 	w_file_buffer[size] = 0;
 	w_file_size = size;
 	w_file_pos = 0;
