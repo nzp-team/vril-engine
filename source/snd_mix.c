@@ -155,8 +155,42 @@ CHANNEL MIXING
 ===============================================================================
 */
 
-void SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int endtime);
-void SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int endtime);
+void SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count, int offset);
+void SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count, int offset);
+
+int SND_ChannelSamplesRemaining(const channel_t *ch, const sfxcache_t *sc)
+{
+	unsigned int step = ch->step ? ch->step : SOUND_FRACONE;
+	long long remaining = ((long long)(sc->length - ch->pos) * SOUND_FRACONE) - ch->pos_frac;
+	if (remaining <= 0)
+		return 0;
+	if (step == SOUND_FRACONE)
+		return sc->length - ch->pos;
+	return (int)((remaining + step - 1) / step);
+}
+
+static void SND_PaintChannelResampled(channel_t *ch, sfxcache_t *sc, int count, int offset)
+{
+	int i, next, a, b, sample;
+	unsigned int fraction;
+	const signed char *samples8 = (const signed char *)sc->data;
+	const short *samples16 = (const short *)sc->data;
+
+	for (i = 0; i < count; i++)
+	{
+		next = ch->pos + 1;
+		if (next >= sc->length)
+			next = sc->loopstart >= 0 ? sc->loopstart : ch->pos;
+		a = sc->width == 1 ? samples8[ch->pos] * 256 : samples16[ch->pos];
+		b = sc->width == 1 ? samples8[next] * 256 : samples16[next];
+		sample = a + ((b - a) * (int)(ch->pos_frac >> 8)) / 256;
+		paintbuffer[offset + i].left += (sample * ch->leftvol) >> 8;
+		paintbuffer[offset + i].right += (sample * ch->rightvol) >> 8;
+		fraction = ch->pos_frac + ch->step;
+		ch->pos += fraction >> SOUND_FRACBITS;
+		ch->pos_frac = fraction & (SOUND_FRACONE - 1);
+	}
+}
 
 void S_PaintChannels(int endtime)
 {
@@ -180,8 +214,6 @@ void S_PaintChannels(int endtime)
 		{
 			if (!ch->sfx)
 				continue;
-			if (!ch->leftvol && !ch->rightvol)
-				continue;
 			if (!(sc = S_LoadSound (ch->sfx)))
 				continue;
 
@@ -196,10 +228,19 @@ void S_PaintChannels(int endtime)
 
 				if (count > 0)
 				{
-					if (sc->width == 1)
-						SND_PaintChannelFrom8(ch, sc, count);
+					if (!ch->leftvol && !ch->rightvol)
+					{
+						unsigned int step = ch->step ? ch->step : SOUND_FRACONE;
+						long long advance = ch->pos_frac + (long long)step * count;
+						ch->pos += advance >> SOUND_FRACBITS;
+						ch->pos_frac = advance & (SOUND_FRACONE - 1);
+					}
+					else if (ch->step && ch->step != SOUND_FRACONE)
+						SND_PaintChannelResampled(ch, sc, count, ltime - paintedtime);
+					else if (sc->width == 1)
+						SND_PaintChannelFrom8(ch, sc, count, ltime - paintedtime);
 					else
-						SND_PaintChannelFrom16(ch, sc, count);
+						SND_PaintChannelFrom16(ch, sc, count, ltime - paintedtime);
 
 					ltime += count;
 				}
@@ -207,10 +248,16 @@ void S_PaintChannels(int endtime)
 			// if at end of loop, restart
 				if (ltime >= ch->end)
 				{
-					if (sc->loopstart >= 0)
+					if (sc->loopstart >= 0 && sc->loopstart < sc->length)
 					{
-						ch->pos = sc->loopstart;
-						ch->end = ltime + sc->length - ch->pos;
+						if (ch->pos >= sc->length)
+							ch->pos = sc->loopstart + (ch->pos - sc->length) % (sc->length - sc->loopstart);
+						else
+						{
+							ch->pos = sc->loopstart;
+							ch->pos_frac = 0;
+						}
+						ch->end = ltime + SND_ChannelSamplesRemaining(ch, sc);
 					}
 					else
 					{	// channel just stopped
@@ -238,7 +285,7 @@ void SND_InitScaletable (void)
 }
 
 
-void SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count)
+void SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count, int offset)
 {
 	int 		i, data, *lscale, *rscale;
 	unsigned char *sfx;
@@ -255,15 +302,15 @@ void SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count)
 	for (i=0 ; i<count ; i++)
 	{
 		data = sfx[i];
-		paintbuffer[i].left += lscale[data];
-		paintbuffer[i].right += rscale[data];
+		paintbuffer[offset + i].left += lscale[data];
+		paintbuffer[offset + i].right += rscale[data];
 	}
 
 	ch->pos += count;
 }
 
 
-void SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
+void SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count, int offset)
 {
 	int data, left, right, leftvol, rightvol;
 	signed short *sfx;
@@ -278,8 +325,8 @@ void SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 		data = sfx[i];
 		left = (data * leftvol) >> 8;
 		right = (data * rightvol) >> 8;
-		paintbuffer[i].left += left;
-		paintbuffer[i].right += right;
+		paintbuffer[offset + i].left += left;
+		paintbuffer[offset + i].right += right;
 	}
 
 	ch->pos += count;

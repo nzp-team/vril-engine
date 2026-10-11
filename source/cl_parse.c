@@ -137,6 +137,7 @@ void CL_ParseStartSoundPacket(void)
     int 	volume;
     int 	field_mask;
     float 	attenuation;
+    int     speedpct, flags;
  	int		i;
 
     field_mask = MSG_ReadByte();
@@ -151,19 +152,28 @@ void CL_ParseStartSoundPacket(void)
 	else
 		attenuation = DEFAULT_SOUND_PACKET_ATTENUATION;
 
+	speedpct = field_mask & SND_SPEED ? MSG_ReadByte() : DEFAULT_SOUND_PACKET_SPEED;
+	if (speedpct <= 0)
+		Host_Error ("CL_ParseStartSoundPacket: invalid sound speed");
+
+	flags = field_mask & SND_FOLLOW ? SOUNDFLAG_FOLLOW : 0;
+
 	channel = MSG_ReadShort ();
 	sound_num = MSG_ReadShort ();
 
 	ent = channel >> 3;
 	channel &= 7;
 
-	if (ent > MAX_EDICTS)
+	if (ent >= MAX_EDICTS)
 		Host_Error ("CL_ParseStartSoundPacket: ent = %i", ent);
+
+	if (sound_num <= 0 || sound_num >= MAX_SOUNDS)
+		Host_Error ("CL_ParseStartSoundPacket: sound = %i", sound_num);
 
 	for (i=0 ; i<3 ; i++)
 		pos[i] = MSG_ReadCoord ();
 
-    S_StartSound (ent, channel, cl.sound_precache[sound_num], pos, volume/255.0, attenuation);
+    S_StartSoundEx (ent, channel, cl.sound_precache[sound_num], pos, volume/255.0, attenuation, speedpct, flags);
 }
 
 /*

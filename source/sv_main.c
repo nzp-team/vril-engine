@@ -144,7 +144,7 @@ Larger attenuations will drop off.  (max 4 attenuation)
 ==================
 */
 void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
-    float attenuation)
+    float attenuation, int speedpct, int flags)
 {
     int         sound_num;
     int field_mask;
@@ -159,6 +159,8 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 
 	if (channel < 0 || channel > 7)
 		Sys_Error ("channel = %i", channel);
+	if (speedpct < 1 || speedpct > 255)
+		Sys_Error ("sound speed = %i", speedpct);
 
 	if (sv.datagram.cursize > MAX_DATAGRAM-16)
 		return;
@@ -184,6 +186,10 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 		field_mask |= SND_VOLUME;
 	if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION)
 		field_mask |= SND_ATTENUATION;
+	if (speedpct != DEFAULT_SOUND_PACKET_SPEED)
+		field_mask |= SND_SPEED;
+	if (flags & SOUNDFLAG_FOLLOW)
+		field_mask |= SND_FOLLOW;
 
 // directed messages go only to the entity the are targeted on
 	MSG_WriteByte (&sv.datagram, svc_sound);
@@ -192,6 +198,8 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 		MSG_WriteByte (&sv.datagram, volume);
 	if (field_mask & SND_ATTENUATION)
 		MSG_WriteByte (&sv.datagram, attenuation*64);
+	if (field_mask & SND_SPEED)
+		MSG_WriteByte (&sv.datagram, speedpct);
 	MSG_WriteShort (&sv.datagram, channel);
 	MSG_WriteShort (&sv.datagram, sound_num);
 	for (i=0 ; i<3 ; i++)

@@ -687,12 +687,31 @@ void PF_sound (void)
 	edict_t		*entity;
 	int 		volume;
 	float attenuation;
+	float speed, soundflags;
+	int speedpct, flags;
 
 	entity = G_EDICT(OFS_PARM0);
 	channel = G_FLOAT(OFS_PARM1);
 	sample = G_STRING(OFS_PARM2);
 	volume = G_FLOAT(OFS_PARM3) * 255;
 	attenuation = G_FLOAT(OFS_PARM4);
+
+	// Sound flags and pitch shifting from FTE, as optional parms
+	speed = pr_argc > 5 ? G_FLOAT(OFS_PARM5) : 0;
+
+	if (speed == 0)
+		speed = DEFAULT_SOUND_PACKET_SPEED;
+
+	if (!isfinite(speed) || speed < 1 || speed > 255)
+		PR_RunError ("sound: speedpct must be between 1 and 255 (or 0 for normal)");
+
+	speedpct = (int)(speed + 0.5f);
+	soundflags = pr_argc > 6 ? G_FLOAT(OFS_PARM6) : 0;
+
+	if (!isfinite(soundflags) || soundflags < 0 || soundflags > 65535)
+		PR_RunError ("sound: invalid flags");
+	
+	flags = (int)soundflags & SOUNDFLAG_FOLLOW;
 
 	if (volume < 0 || volume > 255)
 		Sys_Error ("volume = %i", volume);
@@ -703,7 +722,7 @@ void PF_sound (void)
 	if (channel < 0 || channel > 7)
 		Sys_Error ("channel = %i", channel);
 
-	SV_StartSound (entity, channel, sample, volume, attenuation);
+	SV_StartSound (entity, channel, sample, volume, attenuation, speedpct, flags);
 }
 
 /*

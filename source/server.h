@@ -202,7 +202,7 @@ void SV_Init (void);
 
 void SV_StartParticle (vec3_t org, vec3_t dir, int color, int count);
 void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
-    float attenuation);
+    float attenuation, int speedpct, int flags);
 
 void SV_DropClient (qboolean crash);
 

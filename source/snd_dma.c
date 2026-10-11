@@ -364,30 +364,57 @@ channel_t *SND_PickChannel(int entnum, int entchannel)
     int ch_idx;
     int first_to_die;
     int life_left;
+    int first_free = -1;
+    int auto_count = 0, first_auto = -1, auto_life_left = 0x7fffffff;
+    channel_t *ch;
 
 // Check for replacement sound, or find the best one to replace
     first_to_die = -1;
     life_left = 0x7fffffff;
     for (ch_idx=NUM_AMBIENTS ; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS ; ch_idx++)
     {
+		ch = &channels[ch_idx];
+		if (!ch->sfx || ch->end <= paintedtime)
+		{
+			if (first_free == -1)
+				first_free = ch_idx;
+			continue;
+		}
 		if (entchannel != 0		// channel 0 never overrides
-		&& channels[ch_idx].entnum == entnum
-		&& (channels[ch_idx].entchannel == entchannel || entchannel == -1) )
+		&& ch->entnum == entnum
+		&& (ch->entchannel == entchannel || entchannel == -1) )
 		{	// always override sound from same entity
 			first_to_die = ch_idx;
 			break;
 		}
+		if (entchannel == 0 && ch->entnum == entnum && ch->entchannel == 0)
+		{
+			auto_count++;
+			if (ch->end - paintedtime < auto_life_left)
+			{
+				auto_life_left = ch->end - paintedtime;
+				first_auto = ch_idx;
+			}
+		}
 
 		// don't let monster sounds override player sounds
-		if (channels[ch_idx].entnum == cl.viewentity && entnum != cl.viewentity && channels[ch_idx].sfx)
+		if (ch->entnum == cl.viewentity && entnum != cl.viewentity)
 			continue;
 
-		if (channels[ch_idx].end - paintedtime < life_left)
+		if (ch->end - paintedtime < life_left)
 		{
-			life_left = channels[ch_idx].end - paintedtime;
+			life_left = ch->end - paintedtime;
 			first_to_die = ch_idx;
 		}
    }
+
+	if (ch_idx == NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS)
+	{
+		if (first_auto != -1 && (auto_count >= MAX_ENTITY_AUTO_CHANNELS || first_free == -1))
+			first_to_die = first_auto;
+		else if (first_free != -1)
+			first_to_die = first_free;
+	}
 
 	if (first_to_die == -1)
 		return NULL;
@@ -523,11 +550,17 @@ void SND_Spatialize(channel_t *ch)
 
 void S_StartSound(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol, float attenuation)
 {
+	S_StartSoundEx(entnum, entchannel, sfx, origin, fvol, attenuation, DEFAULT_SOUND_PACKET_SPEED, 0);
+}
+
+void S_StartSoundEx(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol, float attenuation, int speedpct, int flags)
+{
 #ifdef NO_SOUND_PROCESSING
 	return;
 #endif
 
 	channel_t *target_chan, *check;
+	channel_t new_chan;
 	sfxcache_t	*sc;
 	int		vol;
 	int		ch_idx;
@@ -541,36 +574,36 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float f
 
 	if (nosound.value)
 		return;
+	if (speedpct < 1 || speedpct > 255)
+		return;
 
 	vol = fvol*255;
 
-// pick a channel to play on
-	target_chan = SND_PickChannel(entnum, entchannel);
-	if (!target_chan)
-		return;
+	memset (&new_chan, 0, sizeof(new_chan));
+	VectorCopy(origin, new_chan.origin);
+	new_chan.dist_mult = attenuation / sound_nominal_clip_dist;
+	new_chan.master_vol = vol;
+	new_chan.entnum = entnum;
+	new_chan.entchannel = entchannel;
+	new_chan.flags = flags & SOUNDFLAG_FOLLOW;
+	new_chan.step = (speedpct * SOUND_FRACONE + 50) / 100;
+	SND_Spatialize(&new_chan);
 
-// spatialize
-	memset (target_chan, 0, sizeof(*target_chan));
-	VectorCopy(origin, target_chan->origin);
-	target_chan->dist_mult = attenuation / sound_nominal_clip_dist;
-	target_chan->master_vol = vol;
-	target_chan->entnum = entnum;
-	target_chan->entchannel = entchannel;
-	SND_Spatialize(target_chan);
-
-	if (!target_chan->leftvol && !target_chan->rightvol)
+	if (!new_chan.leftvol && !new_chan.rightvol)
 		return;		// not audible at all
 
 // new channel
-	if (!(sc = S_LoadSound (sfx)))
-	{
-		target_chan->sfx = NULL;
+	if (!(sc = S_LoadSound (sfx)) || sc->length <= 0)
 		return;		// couldn't load the sound's data
-	}
+
+	target_chan = SND_PickChannel(entnum, entchannel);
+	if (!target_chan)
+		return;
+	*target_chan = new_chan;
 
 	target_chan->sfx = sfx;
 	target_chan->pos = 0.0;
-    target_chan->end = paintedtime + sc->length;
+    target_chan->end = paintedtime + SND_ChannelSamplesRemaining(target_chan, sc);
 
 // if an identical sound has also been started this frame, offset the pos
 // a bit to keep it from just making the first one louder
@@ -582,10 +615,10 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float f
 		if (check->sfx == sfx && !check->pos)
 		{
 			skip = rand () % (int)(0.1*shm->speed);
-			if (skip >= target_chan->end)
-				skip = target_chan->end - 1;
+			if (skip >= sc->length)
+				skip = sc->length - 1;
 			target_chan->pos += skip;
-			target_chan->end -= skip;
+			target_chan->end = paintedtime + SND_ChannelSamplesRemaining(target_chan, sc);
 			break;
 		}
 	}
@@ -599,7 +632,7 @@ void S_StopSound(int entnum, int entchannel)
 
 	int i;
 
-	for (i=0 ; i<MAX_DYNAMIC_CHANNELS ; i++)
+	for (i=NUM_AMBIENTS ; i<NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS ; i++)
 	{
 		if (channels[i].entnum == entnum && channels[i].entchannel == entchannel)
 		{
@@ -684,6 +717,7 @@ void S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 	}
 
 	ss = &channels[total_channels];
+	memset(ss, 0, sizeof(*ss));
 	total_channels++;
 
 	if (!(sc = S_LoadSound (sfx)))
@@ -769,6 +803,35 @@ S_Update
 Called once each time through the main loop
 ============
 */
+void SND_UpdateFollow(channel_t *ch)
+{
+	entity_t *ent;
+
+	if (!(ch->flags & SOUNDFLAG_FOLLOW))
+		return;
+	if (ch->entnum <= 0 || ch->entnum >= cl.num_entities)
+	{
+		ch->flags &= ~SOUNDFLAG_FOLLOW;
+		return;
+	}
+	ent = &cl_entities[ch->entnum];
+
+	if (!ent->model || ent->msgtime != cl.mtime[0] || (ch->follow_modelindex && (ch->follow_modelindex != ent->modelindex || (ent->msgtime != ch->follow_msgtime && ch->follow_msgtime != cl.mtime[1]))))
+	{
+		ch->flags &= ~SOUNDFLAG_FOLLOW;
+		return;
+	}
+
+	if (!ch->follow_modelindex)
+	{
+		VectorSubtract(ch->origin, ent->msg_origins[0], ch->follow_offset);
+		ch->follow_modelindex = ent->modelindex;
+	}
+	
+	ch->follow_msgtime = ent->msgtime;
+	VectorAdd(ent->origin, ch->follow_offset, ch->origin);
+}
+
 void S_Update(vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 {
 #ifdef NO_SOUND_PROCESSING
@@ -799,6 +862,7 @@ void S_Update(vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 	{
 		if (!ch->sfx)
 			continue;
+		SND_UpdateFollow(ch);
 		SND_Spatialize(ch);         // respatialize channel
 		if (!ch->leftvol && !ch->rightvol)
 			continue;
