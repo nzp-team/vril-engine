@@ -58,6 +58,75 @@ static int Test_QCVM_VectorOpcode(const char *name, int opcode,
 	return Test_QCVM_Expect(name, matches, 1);
 }
 
+static int Test_QCVM_OmittedArguments(void)
+{
+	// Verifies optional params dont leave dirty values behind
+	// (e.g. optional sound pitching doesnt make everything super slow or fast)
+	dprograms_t program = {.numfunctions = 3};
+	dfunction_t functions[3] = {
+		{0},
+		{.first_statement = 1, .parm_start = 32, .locals = 1,
+		 .numparms = 1, .parm_size = {1}},
+		{.first_statement = 4, .parm_start = 40, .locals = 10,
+		 .numparms = 8, .parm_size = {1, 1, 1, 1, 1, 3, 1, 1}}
+	};
+	dstatement_t statements[15] = {
+		{OP_DONE, 0, 0, 0},
+		{OP_STORE_F, 32, 63, 0},
+		{OP_CALL8, 28, 0, 0},
+		{OP_DONE, 0, 0, 0}
+	};
+	float globals[80] = {0};
+	const int arg_counts[] = {8, 4, 0, 8};
+	dprograms_t *saved_progs = progs;
+	dfunction_t *saved_functions = pr_functions, *saved_xfunction = pr_xfunction;
+	dstatement_t *saved_statements = pr_statements;
+	float *saved_globals = pr_globals;
+	int saved_argc = pr_argc, saved_xstatement = pr_xstatement;
+	qboolean saved_trace = pr_trace;
+	int failures = 0, call, parm, word, packed;
+
+	progs = &program;
+	pr_functions = functions;
+	pr_statements = statements;
+	pr_globals = globals;
+	G_FUNCTION(28) = 2;
+	for (word = 0; word < 10; word++)
+	{
+		statements[4 + word] = (dstatement_t){OP_STORE_F, 40 + word, 64 + word, 0};
+		globals[40 + word] = -100 - word;
+	}
+	statements[14] = (dstatement_t){OP_DONE, 0, 0, 0};
+	for (parm = 0; parm < MAX_PARMS; parm++)
+		for (word = 0; word < 3; word++)
+			globals[OFS_PARM0 + parm * 3 + word] = 10 * (parm + 1) + word;
+
+	for (call = 0; call < 4; call++)
+	{
+		statements[2].op = OP_CALL0 + arg_counts[call];
+		pr_argc = 0;
+		PR_ExecuteProgram(1);
+		failures += Test_QCVM_ExpectFloat("engine kept stale parameter", globals[63], 10);
+		packed = 0;
+		for (parm = 0; parm < MAX_PARMS; parm++)
+			for (word = 0; word < functions[2].parm_size[parm]; word++, packed++)
+			{
+				float expected = parm < arg_counts[call] ? 10 * (parm + 1) + word : 0;
+				failures += Test_QCVM_ExpectFloat("CALL supplied / omitted parameter", globals[64 + packed], expected);
+				failures += Test_QCVM_ExpectFloat("callee parameter locals restored", globals[40 + packed], -100 - packed);
+			}
+	}
+	progs = saved_progs;
+	pr_functions = saved_functions;
+	pr_statements = saved_statements;
+	pr_globals = saved_globals;
+	pr_xfunction = saved_xfunction;
+	pr_xstatement = saved_xstatement;
+	pr_argc = saved_argc;
+	pr_trace = saved_trace;
+	return failures;
+}
+
 test_status_t Test_QCVM_Start(void)
 {
 	union
@@ -319,6 +388,7 @@ test_status_t Test_QCVM_Start(void)
 	value.f = PR_VM_LogicalAnd((uint32_t)c._int, entity);
 	failures += Test_QCVM_Expect("OP_SUB_F -> OP_EQ_F -> OP_AND -> OP_IF", value.bits != 0, 1);
 
+	failures += Test_QCVM_OmittedArguments();
 	if (failures)
 	{
 		Con_Printf("QCVM opcode tests failed: %i failure(s).\n", failures);

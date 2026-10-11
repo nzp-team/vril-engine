@@ -224,7 +224,7 @@ PR_EnterFunction
 Returns the new program statement counter
 ====================
 */
-static inline int PR_EnterFunction (dfunction_t *f)
+static inline int PR_EnterFunction (dfunction_t *f, int argc)
 {
 	int		i, j, c, o;
 
@@ -243,13 +243,14 @@ static inline int PR_EnterFunction (dfunction_t *f)
 		localstack[localstack_used+i] = ((int *)pr_globals)[f->parm_start + i];
 	localstack_used += c;
 
-// copy parameters
+-// copy parameters
 	o = f->parm_start;
 	for (i=0 ; i<f->numparms ; i++)
 	{
 		for (j=0 ; j<f->parm_size[i] ; j++)
 		{
-			((int *)pr_globals)[o] = ((int *)pr_globals)[OFS_PARM0+i*3+j];
+			// fix for stale optional parms
+			((int *)pr_globals)[o] = i < argc ? ((int *)pr_globals)[OFS_PARM0+i*3+j] : 0;
 			o++;
 		}
 	}
@@ -322,7 +323,7 @@ void PR_ExecuteProgram (func_t fnum)
 // make a stack frame
 	exitdepth = pr_depth;
 
-	s = PR_EnterFunction (f);
+	s = PR_EnterFunction (f, f->numparms);
 
 while (1)
 {
@@ -602,7 +603,7 @@ while (1)
 			break;
 		}
 
-		s = PR_EnterFunction (newf);
+		s = PR_EnterFunction (newf, pr_argc);
 		break;
 
 	case OP_DONE:

@@ -22,8 +22,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __SOUND__
 #define __SOUND__
 
-#define DEFAULT_SOUND_PACKET_VOLUME 255
-#define DEFAULT_SOUND_PACKET_ATTENUATION 1.0f
+#define DEFAULT_SOUND_PACKET_VOLUME 		255
+#define DEFAULT_SOUND_PACKET_ATTENUATION 	1.0f
+#define DEFAULT_SOUND_PACKET_SPEED 			100
+#define SOUNDFLAG_FOLLOW 					64 		// creds to FTE
+#define SOUND_FRACBITS 						16
+#define SOUND_FRACONE 						(1U << SOUND_FRACBITS)
 
 typedef struct
 {
@@ -68,6 +72,12 @@ typedef struct
 	int		rightvol;		// 0-255 volume
 	int		end;			// end time in global paintsamples
 	int 	pos;			// sample position in sfx
+	unsigned int pos_frac;  // fractional sample position
+	unsigned int step;      // fixed-point playback rate; 0 means normal for ambient/static channels
+	int flags;
+	vec3_t follow_offset;   // preserve the emitter's bounding-box center
+	int follow_modelindex;
+	double follow_msgtime;
 	int		looping;		// where to loop, -1 = no looping
 	int		entnum;			// to allow overriding a specific sound
 	int		entchannel;		//
@@ -90,6 +100,9 @@ void S_Init (void);
 void S_Startup (void);
 void S_Shutdown (void);
 void S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,  float attenuation);
+void S_StartSoundEx (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol, float attenuation, int speedpct, int flags);
+void SND_UpdateFollow (channel_t *ch);
+int SND_ChannelSamplesRemaining (const channel_t *ch, const sfxcache_t *sc);
 void S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation);
 void S_StopSound (int entnum, int entchannel);
 void S_StopAllSounds(qboolean clear);
@@ -124,15 +137,16 @@ void SNDDMA_Shutdown(void);
 // User-setable variables
 // ====================================================================
 
-#define	MAX_CHANNELS			128
-#define	MAX_DYNAMIC_CHANNELS	8
+#define	MAX_CHANNELS				128
+#define	MAX_DYNAMIC_CHANNELS		8
+#define MAX_ENTITY_AUTO_CHANNELS 	4
 
 #define	MAX_SFX		512
 
 
 extern	channel_t   channels[MAX_CHANNELS];
-// 0 to MAX_DYNAMIC_CHANNELS-1	= normal entity sounds
-// MAX_DYNAMIC_CHANNELS to MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS -1 = water, etc
+// 0 to NUM_AMBIENTS-1 = water, etc
+// NUM_AMBIENTS to NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS-1 = shared entity sounds
 // MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS to total_channels = static sounds
 
 extern	int			total_channels;
