@@ -243,7 +243,7 @@ static inline int PR_EnterFunction (dfunction_t *f, int argc)
 		localstack[localstack_used+i] = ((int *)pr_globals)[f->parm_start + i];
 	localstack_used += c;
 
--// copy parameters
+// copy parameters
 	o = f->parm_start;
 	for (i=0 ; i<f->numparms ; i++)
 	{
