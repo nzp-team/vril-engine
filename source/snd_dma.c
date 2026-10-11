@@ -593,8 +593,17 @@ void S_StartSoundEx(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float
 		return;		// not audible at all
 
 // new channel
-	if (!(sc = S_LoadSound (sfx)) || sc->length <= 0)
+	if (!(sc = S_LoadSound (sfx)))
 		return;		// couldn't load the sound's data
+
+	if (sc->length == 0)
+	{
+		if (entchannel > 0)
+			S_StopSound(entnum, entchannel);
+		return;
+	}
+	if (sc->length < 0)
+		return;
 
 	target_chan = SND_PickChannel(entnum, entchannel);
 	if (!target_chan)
