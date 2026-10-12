@@ -67,6 +67,7 @@ extern	int				pr_edict_size;	// in bytes
 void PR_Init (void);
 
 void PR_ExecuteProgram (func_t fnum);
+qboolean PR_ParseClientCommand (edict_t *client, char *text);
 struct client_s;
 
 void PR_LoadProgs (void);

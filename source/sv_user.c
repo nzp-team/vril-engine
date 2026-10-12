@@ -533,6 +533,8 @@ nextmsg:
 
 			case clc_stringcmd:
 				s = MSG_ReadString ();
+				if (host_client->spawned && PR_ParseClientCommand (host_client->edict, s))
+					break;
 				if (host_client->privileged)
 					ret = 2;
 				else
