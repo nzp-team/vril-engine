@@ -786,7 +786,12 @@ void	Cmd_ExecuteString (char *text, cmd_source_t src)
 	
 // check cvars
 	if (!Cvar_Command ())
-		Con_Printf ("Command \"%s\" not found, check QC...\n", Cmd_Argv(0));
+	{
+		if (src == src_command && cls.state == ca_connected && !cls.demoplayback)
+			Cmd_ForwardToServer ();
+		else
+			Con_Printf ("Command \"%s\" not found, check QC...\n", Cmd_Argv(0));
+	}
 	
 }
 

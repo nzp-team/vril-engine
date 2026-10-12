@@ -289,6 +289,36 @@ dfunction_t *ED_FindFunction (char *name)
 	return NULL;
 }
 
+qboolean PR_ParseClientCommand (edict_t *client, char *text)
+{
+	ddef_t		*override;
+	int			saved_self;
+	float		saved_time;
+	string_t	saved_command;
+	qboolean	handled;
+
+	if (!pr_global_struct->ParseClientCommand)
+		return false;
+
+	override = ED_FindGlobal ("client_parse_override");
+	if (!override)
+		return false;
+	G_FLOAT(override->ofs) = 0;
+
+	saved_self = pr_global_struct->self;
+	saved_time = pr_global_struct->time;
+	saved_command = pr_global_struct->CMD_STRING;
+	pr_global_struct->self = EDICT_TO_PROG(client);
+	pr_global_struct->time = sv.time;
+	pr_global_struct->CMD_STRING = PR_SetString(text);
+	PR_ExecuteProgram (pr_global_struct->ParseClientCommand);
+	handled = G_FLOAT(override->ofs) != 0;
+	pr_global_struct->self = saved_self;
+	pr_global_struct->time = saved_time;
+	pr_global_struct->CMD_STRING = saved_command;
+	return handled;
+}
+
 /*
 eval_t *GetEdictFieldValue(edict_t *ed, char *field)
 {

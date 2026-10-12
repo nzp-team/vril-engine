@@ -28,6 +28,7 @@ char	localmodels[MAX_MODELS][5];			// inline model names for precache
 
 //============================================================================
 cvar_t	r_hlbsponly = {"r_hlbsponly","0",true};
+cvar_t 	sv_cheats = {"sv_cheats", "0"};
 cvar_t 	sv_maxai = {"sv_maxai", "0", true};
 cvar_t 	sv_gamemode = {"sv_gamemode", "0", true};
 cvar_t 	sv_difficulty = {"sv_difficulty", "0", true};
@@ -69,6 +70,7 @@ void SV_Init (void)
 	Cvar_RegisterVariable (&sv_aim);
 	Cvar_RegisterVariable (&sv_nostep);
 	Cvar_RegisterVariable (&pm_stepdown);
+	Cvar_RegisterVariable (&sv_cheats);
 	Cvar_RegisterVariable (&sv_maxai);
 	Cvar_RegisterVariable (&sv_gamemode);
 	Cvar_RegisterVariable (&sv_difficulty);

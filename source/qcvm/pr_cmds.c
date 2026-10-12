@@ -314,7 +314,7 @@ void PF_sprint (void)
 	int			entnum;
 
 	entnum = G_EDICTNUM(OFS_PARM0);
-	s = PF_VarString(1);
+	s = PF_VarString(2);
 
 	if (entnum < 1 || entnum > svs.maxclients)
 	{
@@ -4030,9 +4030,13 @@ string argv (float num) = #442
 */
 void PF_ArgV  (void)
 {
-	char tempc[256];
-	strcpy(tempc, Cmd_Argv(G_FLOAT(OFS_PARM0)));
-	G_INT(OFS_RETURN) = PR_SetString(tempc);
+	static char buffers[8][PR_MAX_TEMPSTRING];
+	static unsigned int buffer_index;
+	char *buffer = buffers[buffer_index++ % 8];
+
+	strncpy(buffer, Cmd_Argv(G_FLOAT(OFS_PARM0)), PR_MAX_TEMPSTRING - 1);
+	buffer[PR_MAX_TEMPSTRING - 1] = 0;
+	G_INT(OFS_RETURN) = PR_SetString(buffer);
 }
 
 
