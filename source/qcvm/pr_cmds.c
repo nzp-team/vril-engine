@@ -1872,7 +1872,7 @@ static int pathfind_node_links[MAX_WAYPOINTS][8];
 static int pathfind_brush_count, pathfind_node_count;
 static qboolean pathfind_geometry_valid, pathfind_sized_actor;
 static unsigned int pathfind_geometry_revision, pathfind_gate_revision;
-static qboolean pathfind_node_open[MAX_WAYPOINTS];
+static int pathfind_node_open[MAX_WAYPOINTS];
 
 typedef struct {
 	int entnum;
@@ -2668,6 +2668,9 @@ static int PathFindEntries(edict_t *actor, int goal)
 	int edge_count = 0, link_count = 0, count = 0;
 	float basis_distance = -1;
 	path_entry_basis_valid = false;
+
+	if (n_waypoints <= 0 || n_waypoints > MAX_WAYPOINTS || goal < 0 || goal >= n_waypoints)
+		return 0;
 
 	for (int i = 0; i < n_waypoints; i++) {
 		heads[i] = -1;

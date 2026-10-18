@@ -1622,7 +1622,6 @@ void Load_Waypoint_NZPBETA() {
 	}
 
 
-	i = 0;
 	if (sys_testmode.value <= 0)
 		Con_DPrintf("Loading BETA waypoints\n");
 
