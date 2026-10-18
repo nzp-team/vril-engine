@@ -51,6 +51,8 @@ OBJECTS := $(patsubst source/%.c,$(BUILD)/%.o,$(SOURCES))
 .PHONY: all clean run
 all: $(TARGET)
 
+$(OBJECTS): source/nzportable_def.h
+
 $(BUILD)/_build_info.h:
 	@mkdir -p $(@D)
 	@{ echo '#define GIT_HASH "$(shell git rev-parse --short HEAD)$(shell git diff --quiet || echo -dirty)"'; \

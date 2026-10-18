@@ -49,6 +49,7 @@ COMMON_OBJS = \
 	source/tests/test_map_boot.o \
 	source/tests/test_restart.o \
 	source/tests/test_qcvm.o \
+	source/tests/test_pathfind.o \
 	source/chase.o \
 	source/cl_demo.o \
 	source/cl_input.o \

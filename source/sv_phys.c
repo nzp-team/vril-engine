@@ -200,8 +200,16 @@ int ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbounce)
 	{
 		change = normal[i]*backoff;
 		out[i] = in[i] - change;
+	}
+	for (i=0 ; i<3 ; i++)
+	{
 		if (out[i] > (float)-STOP_EPSILON && out[i] < (float)STOP_EPSILON)
+		{
+			float component = out[i];
 			out[i] = 0;
+			if (DotProduct(out, normal) < 0)
+				out[i] = component;
+		}
 	}
 
 	return blocked;
@@ -1355,8 +1363,8 @@ void SV_Physics_Walk(edict_t 	*ent)
 	VectorCopy(ent->v.maxs,old_maxs);
 	
 	//'-16,-16,-32', '16,16,40'
-	ent->v.mins[0] = -16; ent->v.mins[1] = -16; ent->v.mins[2] = -32;
-	ent->v.maxs[0] = 16; ent->v.maxs[1] = 16; ent->v.maxs[2] = 40;
+	VectorCopy(ai_hull_mins, ent->v.mins);
+	VectorCopy(ai_hull_maxs, ent->v.maxs);
 
 	//if (!((int)ent->v.flags & (FL_ONGROUND)))
 	//{
@@ -1367,6 +1375,7 @@ void SV_Physics_Walk(edict_t 	*ent)
 	//SV_CheckStuck_IgnoreMonsters(ent);
 	//PushAwayZombies causes too high of a drop in framerate
 		//SV_PushAwayZombies(ent);
+	qboolean groundmove = ((int)ent->v.flags & FL_ONGROUND) && ent->v.velocity[2] <= 0;
 	SV_MonsterWalkMove(ent);
 	
 	
@@ -1374,29 +1383,19 @@ void SV_Physics_Walk(edict_t 	*ent)
 	trace_t	downtrace;
 	vec3_t	groundlocation;
 	VectorCopy(ent->v.origin,groundlocation);
-	groundlocation[2] += -STEPSIZE + ent->v.velocity[2]*(float)host_frametime;
+	groundlocation[2] += -0.25f + ent->v.velocity[2]*(float)host_frametime;
 	
 	downtrace = SV_Move(ent->v.origin,ent->v.mins,ent->v.maxs,groundlocation, MOVE_NOMONSTERS,ent);
 
-	if(!downtrace.allsolid && !downtrace.startsolid)
-	{
-		VectorCopy (downtrace.endpos, ent->v.origin);
-	
-		ent->v.flags = (int) ent->v.flags & ~FL_ONGROUND;
-		if (downtrace.plane.normal[2] > 0.7f)
-		{
-			if(downtrace.ent)
-			{
-				if (downtrace.ent->v.solid == SOLID_BSP)
-				{
-					ent->v.flags =	(int) ent->v.flags | FL_ONGROUND;
-					ent->v.groundentity = EDICT_TO_PROG(downtrace.ent);
-					ent->v.velocity[2] = 0;
-				}
-			}
-		}
+	if (groundmove && ent->v.velocity[2] <= 0 && !downtrace.allsolid && !downtrace.startsolid
+	&& downtrace.fraction < 1 && downtrace.plane.normal[2] > 0.7f
+	&& downtrace.ent && downtrace.ent->v.solid == SOLID_BSP) {
+		VectorCopy(downtrace.endpos, ent->v.origin);
+		ent->v.flags = (int)ent->v.flags | FL_ONGROUND;
+		ent->v.groundentity = EDICT_TO_PROG(downtrace.ent);
+		ent->v.velocity[2] = 0;
 	}
-	
+
 	//restoring the bounding boxes
 	VectorCopy(old_mins,ent->v.mins);
 	VectorCopy(old_maxs,ent->v.maxs);

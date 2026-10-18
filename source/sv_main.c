@@ -39,6 +39,8 @@ cvar_t 	sv_fastrounds = {"sv_fastrounds", "0", true};
 cvar_t  sv_gameconfig = {"sv_gameconfig", "", true};
 cvar_t 	sv_spoofmonth = {"sv_spoofmonth", "0", true};
 
+cvar_t 	pathfind_test_exit = {"pathfind_test_exit", "0"};
+
 /*
 ===============
 SV_Init
@@ -81,6 +83,9 @@ void SV_Init (void)
 	Cvar_RegisterVariable (&sv_gameconfig);
 	Cvar_RegisterVariable (&sv_spoofmonth);
 
+	Cvar_RegisterVariable (&pathfind_test_exit);
+	Cmd_AddCommand ("pathfind_test", Test_Pathfind_Command);
+	
 	Cvar_SetValue("sv_maxai", MAX_AI_COUNT);
 
 #ifdef __3DS__
@@ -192,6 +197,8 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 		field_mask |= SND_SPEED;
 	if (flags & SOUNDFLAG_FOLLOW)
 		field_mask |= SND_FOLLOW;
+	if (flags & SOUNDFLAG_NODISTANCE)
+		field_mask |= SND_NODISTANCE;
 
 // directed messages go only to the entity the are targeted on
 	MSG_WriteByte (&sv.datagram, svc_sound);
@@ -1592,7 +1599,6 @@ int n_waypoints;
 //
 void Load_Waypoint_NZPBETA() {
 	int i, p;
-	int s = 0;
 	int h = 0;
 
 	// Keep track of the waypoint with the highest index we've loaded
@@ -1615,9 +1621,6 @@ void Load_Waypoint_NZPBETA() {
 		}
 	}
 
-	for (i = 0; i < MAX_EDICTS; i++) {
-		closest_waypoints[i] = -1;
-	}
 
 	i = 0;
 	if (sys_testmode.value <= 0)
@@ -1635,11 +1638,11 @@ void Load_Waypoint_NZPBETA() {
 		int waypoint_idx = atoi(W_fgets(h)) - 1; // <id> (1-based index, swap to 0-based)
 
 		n_waypoints_parsed += 1;
-		if(i > max_waypoint_idx) {
-			max_waypoint_idx = i;
+		if(waypoint_idx > max_waypoint_idx) {
+			max_waypoint_idx = waypoint_idx;
 		}
 
-		if(waypoint_idx >= MAX_WAYPOINTS) {
+		if(waypoint_idx < 0 || waypoint_idx >= MAX_WAYPOINTS) {
 		 	Sys_Error ("Waypoint with idx %d past MAX_WAYPOINTS {%i)\n", waypoint_idx, MAX_WAYPOINTS);
 		}
 
@@ -1653,11 +1656,15 @@ void Load_Waypoint_NZPBETA() {
 			// Parse "owner1..owner4"
 			if (i >= 4) {
 				int src_waypoint_idx = atoi(w_string_temp) - 1; // Fix 0-based index
+				if (src_waypoint_idx >= MAX_WAYPOINTS) {
+					Sys_Error ("Waypoint owner %d past MAX_WAYPOINTS (%i)\n", src_waypoint_idx, MAX_WAYPOINTS);
+				}
 				if (src_waypoint_idx >= 0) {
 					// Search for an empty slot in waypoint `src_waypoint_idx`
 					for(int j = 0; j < 8; j++) {
 						if(waypoints[src_waypoint_idx].target[j] < 0) {
 							waypoints[src_waypoint_idx].target[j] = waypoint_idx;
+							break;
 						}
 					}
 				}
@@ -1678,7 +1685,7 @@ void Load_Waypoint_NZPBETA() {
 			if(waypoints[i].target[p] < 0) {
 				continue;
 			}
-			float dist = VecLength2(waypoints[s].origin, waypoints[i].origin);
+			float dist = VecLength2(waypoints[waypoints[i].target[p]].origin, waypoints[i].origin);
 			waypoints[i].dist[p] = dist;
 		}
 		if (sys_testmode.value <= 0)
@@ -1703,51 +1710,41 @@ void Load_Waypoint_NZPBETA() {
 // This also fixes waypoint reference links
 // 
 void cleanup_waypoints() {
-	int new_n_waypoints = 0;
+	int remap[MAX_WAYPOINTS];
+	int ids[MAX_WAYPOINTS];
+	int count = 0;
 
-	for(int i = 0; i < MAX_WAYPOINTS; i++) {
-		// If waypoint slot is used, count it
-		if(waypoints[i].used) { 
-			new_n_waypoints += 1;
-		}
-		// If waypoint slot is unused...
-		else {
-			// Update all waypoint link references greater than this waypoint slot index down one
-			for(int j = 0; j < MAX_WAYPOINTS; j++) {
-				if(waypoints[j].used) {
-					for(int k = 0; k < 8; k++) {
-						if(waypoints[j].target[k] > i) {
-							waypoints[j].target[k] -= 1;
-						}
-					}
-				}
-			}
-
-			// Move all waypoints after this down one slot:
-			for(int j = i; j < MAX_WAYPOINTS - 1; j++) {
-				memcpy(&(waypoints[j]), &(waypoints[j+1]), sizeof(waypoint_ai));
-			}
-			// Mark waypoint slot at the end of the list as unused
-			waypoints[MAX_WAYPOINTS-1].used = 0;
-
-			// Count how many used waypoint slots are to the right of index `i`
-			int n_remaining_waypoints = 0;
-			for(int j = i; j < MAX_WAYPOINTS - 1; j++) {
-				if(waypoints[j].used) {
-					n_remaining_waypoints += 1;
-				}
-			}
-			// If no remaining used waypoint slots, stop
-			if(n_remaining_waypoints == 0) {
-				break;
-			}
-
-			// Search this index again
-			i -= 1;
+	for (int i = 0; i < MAX_WAYPOINTS; i++) {
+		remap[i] = -1;
+		if (waypoints[i].used) {
+			remap[i] = count;
+			ids[count] = i;
+			waypoints[count++] = waypoints[i];
 		}
 	}
-
-	n_waypoints = new_n_waypoints;
+	n_waypoints = count;
+	for (int i = 0; i < count; i++) {
+		int slot = 0;
+		for (int j = 0; j < 8; j++) {
+			int target = waypoints[i].target[j];
+			if (target < 0)
+				continue;
+			if (target >= MAX_WAYPOINTS || remap[target] < 0) {
+				Test_Pathfind_InvalidLink(i, ids[i], target);
+				Con_Printf("Waypoint %i references missing waypoint %i\n", ids[i], target);
+				continue;
+			}
+			waypoints[i].target[slot] = remap[target];
+			waypoints[i].dist[slot] = VecLength2(waypoints[i].origin, waypoints[remap[target]].origin);
+			slot++;
+		}
+		while (slot < 8) {
+			waypoints[i].target[slot] = -1;
+			waypoints[i].dist[slot++] = 0;
+		}
+	}
+	for (int i = count; i < MAX_WAYPOINTS; i++)
+		memset(&waypoints[i], 0, sizeof(waypoints[i]));
 }
 
 
@@ -1755,9 +1752,9 @@ void Load_Waypoint () {
 	char temp[64];
 	int p;
 	int h = 0;
-	int s = 0;
 	vec3_t d;
 
+	Test_Pathfind_Reset();
 	PR_ResetWaypointState ();
 
 	// ---------------------------------------
@@ -1771,9 +1768,6 @@ void Load_Waypoint () {
 			waypoints[i].target[p] = -1;
 			// waypoints[i].target_id[p] = -1;
 		}
-	}
-	for (int i = 0; i < MAX_EDICTS; i++) {
-		closest_waypoints[i] = -1;
 	}
 	// ---------------------------------------
 
@@ -1806,7 +1800,7 @@ void Load_Waypoint () {
 			W_stov (W_substring (W_fgets (h), 9, 20), d);
 			strcpy(temp, W_substring (W_fgets (h), 5, 20));
 			i = atoi (temp);
-			if (i >= MAX_WAYPOINTS) {
+			if (i < 0 || i >= MAX_WAYPOINTS) {
 				Sys_Error ("Waypoint with id %d past MAX_WAYPOINTS {%i)\n", i, MAX_WAYPOINTS);
 			}
 
@@ -1831,7 +1825,11 @@ void Load_Waypoint () {
 				int start = t == 0 ? 9 : 10;
 				strcpy(temp, W_substring (W_fgets (h), start, 20));
 				if (isdigit((int)temp[0])) {
-					waypoints[i].target[slot] = atoi (temp);
+					int target = atoi (temp);
+					if (target >= MAX_WAYPOINTS) {
+						Sys_Error ("Waypoint target %d past MAX_WAYPOINTS (%i)\n", target, MAX_WAYPOINTS);
+					}
+					waypoints[i].target[slot] = target;
 					slot++;
 				}
 			}
@@ -1865,7 +1863,7 @@ void Load_Waypoint () {
 			if(waypoints[i].target[p] < 0) {
 				continue;
 			}
-			float dist = VecLength2(waypoints[s].origin, waypoints[i].origin);
+			float dist = VecLength2(waypoints[waypoints[i].target[p]].origin, waypoints[i].origin);
 			waypoints[i].dist[p] = dist;
 		}
 		if (sys_testmode.value <= 0)
@@ -1889,5 +1887,11 @@ void Load_Waypoint () {
 
 // Util for qsort
 int argsort_comparator(const void *lhs, const void *rhs) {
-	return ((argsort_entry_t*)lhs)->value - ((argsort_entry_t*)rhs)->value;
+	const argsort_entry_t *a = lhs;
+	const argsort_entry_t *b = rhs;
+	if (a->value < b->value)
+		return -1;
+	if (a->value > b->value)
+		return 1;
+	return (a->index > b->index) - (a->index < b->index);
 }

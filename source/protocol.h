@@ -77,6 +77,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	SND_LOOPING		(1<<2)		// a long
 #define SND_SPEED       (1<<3)      // a byte, playback percentage (100 = normal)
 #define SND_FOLLOW      (1<<4)      // a byte (true), follow the sound's entity
+#define SND_NODISTANCE  (1<<5)
 
 #define ENTSCALE_DEFAULT	16 // Equivalent to float 1.0f due to byte packing.
 #define ENTSCALE_ENCODE(a)	((a) ? ((a) * ENTSCALE_DEFAULT) : ENTSCALE_DEFAULT) // Convert to byte

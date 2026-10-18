@@ -877,7 +877,7 @@ R_DrawAliasModel
 =================
 */
 int doZHack;
-extern int zombie_skins[4];
+extern int zombie_skins[NUM_ZOMBIE_SKINS];
 void R_DrawAliasModel (entity_t *e)
 {
 	char		specChar;
@@ -1044,25 +1044,12 @@ void R_DrawAliasModel (entity_t *e)
 
 	if (specChar == '%')//Zombie body
 	{
-		switch(e->skinnum)
-		{
-			case 0:
-				Hyena_BindTexture(zombie_skins[0]);
-				break;
-			case 1:
-				Hyena_BindTexture(zombie_skins[1]);
-				break;
-			case 2:
-				Hyena_BindTexture(zombie_skins[2]);
-				break;
-			case 3:
-				Hyena_BindTexture(zombie_skins[3]);
-				break;
-			default: //out of bounds? assuming 0
-				Con_Printf("Zombie tex out of bounds: Tex[%i]\n",e->skinnum);
-				Hyena_BindTexture(zombie_skins[0]);
-				break;
+		int skin = e->skinnum;
+		if (skin < 0 || skin >= NUM_ZOMBIE_SKINS) {
+			Con_Printf("Zombie tex out of bounds: Tex[%i]\n", skin);
+			skin = 0;
 		}
+		Hyena_BindTexture(zombie_skins[skin]);
 	}
 	else
 	{

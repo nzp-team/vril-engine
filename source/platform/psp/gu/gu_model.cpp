@@ -1920,35 +1920,11 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 
 	if (model_is_zombie(loadmodel->name) == true) {
 		Mod_FloodFillSkin(skin, pheader->skinwidth, pheader->skinheight);
-		// force-fill 4 skin slots
-		for (int i = 0; i < 4; i++) {
-			switch(i) {
-				case 0: 
-					pheader->gl_texturenum[i][0] =
-					pheader->gl_texturenum[i][1] =
-					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = zombie_skins[0][0];
-					break;
-				case 1:
-					pheader->gl_texturenum[i][0] =
-					pheader->gl_texturenum[i][1] =
-					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = zombie_skins[0][1];
-					break;
-				case 2:
-					pheader->gl_texturenum[i][0] =
-					pheader->gl_texturenum[i][1] =
-					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = zombie_skins[1][0];
-					break;
-				case 3:
-					pheader->gl_texturenum[i][0] =
-					pheader->gl_texturenum[i][1] =
-					pheader->gl_texturenum[i][2] =
-					pheader->gl_texturenum[i][3] = zombie_skins[1][1];
-					break;
-				default: break;
-			}
+		for (int i = 0; i < NUM_ZOMBIE_SKINS; i++) {
+			pheader->gl_texturenum[i][0] =
+			pheader->gl_texturenum[i][1] =
+			pheader->gl_texturenum[i][2] =
+			pheader->gl_texturenum[i][3] = zombie_skins[i];
 		}
 
 		pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);

@@ -564,7 +564,7 @@ Hyena_CompressGUTexture(
     return size;
 }
 
-int zombie_skins[2][2];
+int zombie_skins[NUM_ZOMBIE_SKINS];
 
 typedef struct {
     int    format, swizzle;

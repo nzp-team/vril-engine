@@ -302,6 +302,6 @@ void ShowMessageDialog(const char *message, int enableYesno);
 
 extern aliashdr_t*	zfull_mdl;
 extern aliashdr_t*	zcfull_mdl;
-extern int			zombie_skins[2][2];
+extern int			zombie_skins[NUM_ZOMBIE_SKINS];
 
 extern int faces_rejected, faces_checked, faces_clipped;

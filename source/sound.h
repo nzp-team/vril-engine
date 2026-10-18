@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DEFAULT_SOUND_PACKET_ATTENUATION 	1.0f
 #define DEFAULT_SOUND_PACKET_SPEED 			100
 #define SOUNDFLAG_FOLLOW 					64 		// creds to FTE
+#define SOUNDFLAG_NODISTANCE 128
 #define SOUND_FRACBITS 						16
 #define SOUND_FRACONE 						(1U << SOUND_FRACBITS)
 

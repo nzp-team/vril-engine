@@ -82,6 +82,7 @@ static gefv_cache	gefvCache[GEFV_CACHESIZE] = {{NULL, ""}, {NULL, ""}};
 // evaluation shortcuts
 int	eval_gravity;
 int eval_idealpitch, eval_pitch_speed;
+int eval_path_direct_retry_time;
 
 // Half_life modes. Crow_bar
 int	eval_renderamt, eval_rendermode, eval_rendercolor;
@@ -101,6 +102,7 @@ int FindFieldOffset (char *field)
 void FindEdictFieldOffsets (void)
 {
 	eval_gravity = FindFieldOffset ("gravity");
+	eval_path_direct_retry_time = FindFieldOffset ("path_direct_retry_time");
 
     eval_idealpitch = FindFieldOffset ("idealpitch");
 	eval_pitch_speed = FindFieldOffset ("pitch_speed");
@@ -170,8 +172,7 @@ FIXME: walk all entities and NULL out references to this entity
 */
 void ED_Free (edict_t *ed)
 {
-	// pathfind optimization:
-	closest_waypoints[NUM_FOR_EDICT(ed)] = -1;
+	PR_ClearEntityPath (NUM_FOR_EDICT(ed));
 
 	SV_UnlinkEdict (ed);		// unlink from world bsp
 

@@ -121,6 +121,7 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/tests/test_map_boot.c \
 		source/tests/test_restart.c \
 		source/tests/test_qcvm.c \
+		source/tests/test_pathfind.c \
 		source/platform/nspire/vid_nspire.c \
 		source/view.c \
 		source/wad.c \

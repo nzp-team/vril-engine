@@ -512,7 +512,7 @@ void SND_Spatialize(channel_t *ch)
 
 	// anything coming from the view entity will always be full volume
 	// cypress -- added full volume for no attenuation.
-	if (ch->entnum == cl.viewentity || ch->dist_mult == 0)
+	if (ch->entnum == cl.viewentity || (ch->dist_mult == 0 && !(ch->flags & SOUNDFLAG_NODISTANCE)))
 	{
 		ch->leftvol = ch->master_vol;
 		ch->rightvol = ch->master_vol;
@@ -523,7 +523,8 @@ void SND_Spatialize(channel_t *ch)
 
 	VectorSubtract(ch->origin, listener_origin, source_vec);
 
-	dist = VectorNormalize(source_vec) * ch->dist_mult;
+	dist = VectorNormalize(source_vec);
+	dist = ch->flags & SOUNDFLAG_NODISTANCE ? 0 : dist * ch->dist_mult;
 
 	dot = DotProduct(listener_right, source_vec);
 
@@ -585,7 +586,7 @@ void S_StartSoundEx(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float
 	new_chan.master_vol = vol;
 	new_chan.entnum = entnum;
 	new_chan.entchannel = entchannel;
-	new_chan.flags = flags & SOUNDFLAG_FOLLOW;
+	new_chan.flags = flags & (SOUNDFLAG_FOLLOW | SOUNDFLAG_NODISTANCE);
 	new_chan.step = (speedpct * SOUND_FRACONE + 50) / 100;
 	SND_Spatialize(&new_chan);
 
@@ -1134,7 +1135,7 @@ void S_LocalSound (char *sound)
 		Con_Printf ("S_LocalSound: can't cache %s\n", sound);
 		return;
 	}
-	S_StartSound (cl.viewentity, -1, sfx, vec3_origin, 1, 1);
+	S_StartSound (cl.viewentity, -1, sfx, vec3_origin, 0.35, 1);
 }
 
 
