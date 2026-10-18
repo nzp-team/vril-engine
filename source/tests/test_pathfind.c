@@ -215,7 +215,7 @@ Test_Pathfind_Finish(void)
 qboolean
 Test_Pathfind_Begin(void)
 {
-    char path[MAX_OSPATH];
+    char path[sizeof(com_gamedir) + sizeof("/" FILE_SPECIAL_PREFIX "pathfind-report.json" FILE_SPECIAL_SUFFIX)];
     cJSON * map;
     char * text;
     int i, slot, axis;
