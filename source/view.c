@@ -994,10 +994,11 @@ void DropRecoilKick (void)
 
 	if (crosshair_spread_time > sv.time)
 		return;
+	float decay_time = fminf((float)host_frametime, (float)(sv.time - crosshair_spread_time));
 	len = VectorNormalize (cl.gun_kick);
 
 	//Con_Printf ("len = %f\n",len);
-	len = len - 5*(float)host_frametime;
+	len = len - 5 * decay_time;
 	if (len < 0)
 		len = 0;
 	VectorScale (cl.gun_kick, len, cl.gun_kick);

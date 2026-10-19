@@ -38,21 +38,16 @@ R_InitOtherTextures
 void	R_InitOtherTextures (void)
 {
 
-	zombie_skins[0][0] = loadpcxas4bpp("models/ai/zfull.mdl_0", HYE_FILTER_LINEAR);
-	Hyena_KeepTexture(zombie_skins[0][0]);
+	zombie_skins[0] = loadpcxas4bpp("models/ai/zfull.mdl_0", HYE_FILTER_LINEAR);
+	Hyena_KeepTexture(zombie_skins[0]);
 
-	// PSP PHAT: Only have 1 Zombie skin.. this saves 192kB of VRAM, well worth it.
-	if (psp_system_model == PSP_MODEL_PHAT) {
-		zombie_skins[0][1] = zombie_skins[0][0];
-		zombie_skins[1][0] = zombie_skins[0][0];
-		zombie_skins[1][1] = zombie_skins[0][0];
-	} else {
-		zombie_skins[0][1] = loadpcxas4bpp("models/ai/zfull.mdl_1", HYE_FILTER_LINEAR);
-		zombie_skins[1][0] = loadpcxas4bpp("models/ai/zfull.mdl_2", HYE_FILTER_LINEAR);
-		zombie_skins[1][1] = loadpcxas4bpp("models/ai/zfull.mdl_3", HYE_FILTER_LINEAR);
-		Hyena_KeepTexture(zombie_skins[0][1]);
-		Hyena_KeepTexture(zombie_skins[1][0]);
-		Hyena_KeepTexture(zombie_skins[1][1]);
+	for (int i = 1; i < NUM_ZOMBIE_SKINS; i++) {
+		if (psp_system_model == PSP_MODEL_PHAT) {
+			zombie_skins[i] = zombie_skins[0];
+		} else {
+			zombie_skins[i] = loadpcxas4bpp(va("models/ai/zfull.mdl_%i", i), HYE_FILTER_LINEAR);
+			Hyena_KeepTexture(zombie_skins[i]);
+		}
 	}
 
 }

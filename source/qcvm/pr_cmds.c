@@ -711,7 +711,7 @@ void PF_sound (void)
 	if (!isfinite(soundflags) || soundflags < 0 || soundflags > 65535)
 		PR_RunError ("sound: invalid flags");
 	
-	flags = (int)soundflags & SOUNDFLAG_FOLLOW;
+	flags = (int)soundflags & (SOUNDFLAG_FOLLOW | SOUNDFLAG_NODISTANCE);
 
 	if (volume < 0 || volume > 255)
 		Sys_Error ("volume = %i", volume);
@@ -805,123 +805,254 @@ void PF_TraceToss (void)
 		pr_global_struct->trace_ent = EDICT_TO_PROG(sv.edicts);
 }
 
-int TraceMove(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, edict_t *ent)//engine-sides
+static int TraceMoveInternal(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, edict_t *ent, qboolean sliding, float *remaining_distance)
 {
-	if(start[0] == end[0] && start[1] == end[1] && start[2] == end[2])
-	{
-		return 1;
-	}
-	vec3_t forward, up;
-	float HorDist;
-	vec3_t HorGoal;
-	vec3_t tempHorGoal;
+	vec3_t position, next, up, down, delta;
+	float dx = end[0] - start[0];
+	float dy = end[1] - start[1];
+	float distance = sqrtf(dx * dx + dy * dy);
+	int steps;
+	trace_t trace;
+	qboolean slid = false;
 
-	up[0] = 0; up[1] = 0; up[2] = 1;
-	HorGoal[0] = end[0]; HorGoal[1] = end[1]; HorGoal[2] = start[2];
+	if (!isfinite(distance) || distance > 65536)
+		return 0;
 
-	VectorSubtract(HorGoal,start,forward);
-	HorDist = VectorLength(forward);
-	VectorNormalize(forward);
+	float stride = sliding ? 8 : 4;
+	steps = (int)ceilf(distance / (stride * 0.5f)) + 8;
+	VectorCopy(start, position);
+	position[2] += 0.03125f;
 
-	vec3_t CurrentPos;
+	for (int i = 0; i < steps; i++) {
+		VectorSubtract(end, position, delta);
+		delta[2] = 0;
+		distance = VectorNormalize(delta);
 
-	VectorCopy(start,CurrentPos);
-	VectorCopy(HorGoal,tempHorGoal);
+		if (distance > stride * 4 && !(i & 7)) {
+			VectorCopy(end, next);
+			next[2] = position[2];
+			trace = SV_Move(position, mins, maxs, next, type, ent);
 
-	float CurrentDist = 0;//2d distance from initial 3d positionvector
+			if (!trace.startsolid && !trace.allsolid && (!slid || trace.fraction == 1)) {
+				float advance = floorf((distance * trace.fraction - stride) / stride) * stride;
 
-	trace_t trace1, trace2;
-	float tempDist;
-	vec3_t tempVec;
-	vec3_t tempVec2;
-	float i;
-	int STEPSIZEB = 18;//other declaration isn't declared yet
-	float SLOPELEN = 10.4;//18/tan(60) = 10.4, the the length of the triangle formed by the max walkable slope of 60 degrees.
- 	int skip = 0;
-	int LoopBreak = 0;
+				while (advance >= stride * 4) {
+					VectorMA(position, advance, delta, next);
 
-	while(CurrentDist < HorDist)
-	{
-		if(LoopBreak > 20)//was 50, decreased this quite a bit. now it's 260 meters
-		{
-			//Con_Printf("AI Warning: There is a ledge that is greater than 650 meters.\n");
-			return -1;
-		}
+					vec3_t support_start, support_end;
+					VectorCopy(position, support_start);
+					VectorCopy(next, support_end);
+					support_start[2] += mins[2] - 0.125f;
+					support_end[2] = support_start[2];
+					trace = SV_Move(support_start, vec3_origin, vec3_origin, support_end, MOVE_NOMONSTERS, ent);
 
-		trace1 = SV_Move(CurrentPos, mins, maxs, tempHorGoal, MOVE_NOMONSTERS, ent);
+					if (trace.allsolid) {
+						VectorCopy(next, position);
+						VectorSubtract(end, position, delta);
+						delta[2] = 0;
+						distance = VectorNormalize(delta);
+						break;
+					}
 
-		VectorSubtract(tempHorGoal,CurrentPos,tempVec);
-		tempDist = trace1.fraction * VectorLength(tempVec);
-		//Check if we fell along the path
-		for(i = (maxs[0] * 1); i < tempDist; i += (maxs[0] * 1))
-		{
-			VectorScale(forward,i,tempVec);
-			VectorAdd(tempVec,CurrentPos,tempVec);
-			VectorScale(up,-500,tempVec2);//500 inches is about 13 meters
-			VectorAdd(tempVec,tempVec2,tempVec2);
-			trace2 = SV_Move(tempVec, mins, maxs, tempVec2, MOVE_NOMONSTERS, ent);
-			if(trace2.fraction > 0)
-			{
-				VectorScale(up,trace2.fraction * -100,tempVec2);
-				VectorAdd(tempVec,tempVec2,CurrentPos);
-				VectorAdd(tempHorGoal,tempVec2,tempHorGoal);
-				skip = 1;
-				CurrentDist += i;
-				if(trace2.fraction == 1)
-				{
-					//We fell the full 13 meters!, we need to be careful here,
-					//because if we're checking over the void, then we could be stuck in an infinite loop and crash the game
-					//So we're going to keep track of how many times we fall 13 meters
-					LoopBreak++;
+					advance = floorf(advance * 0.5f / stride) * stride;
 				}
-				else
-				{
-					LoopBreak = 0;
+			}
+		}
+
+		if (remaining_distance)
+			*remaining_distance = distance;
+
+		VectorMA(position, fminf(stride, distance), delta, next);
+		trace = SV_Move(position, mins, maxs, next, type, ent);
+
+		if (trace.startsolid || trace.allsolid)
+			return 0;
+
+		if (trace.fraction < 1) {
+			trace_t blocked = trace;
+			VectorCopy(position, up);
+			up[2] += 20;
+			trace = SV_Move(position, mins, maxs, up, type, ent);
+
+			if (!trace.startsolid && !trace.allsolid) {
+				VectorCopy(trace.endpos, up);
+
+				vec3_t step;
+				VectorCopy(next, step);
+				step[2] = up[2];
+				trace = SV_Move(up, mins, maxs, step, type, ent);
+			}
+
+			if (trace.startsolid || trace.allsolid || trace.fraction < 1) {
+				trace = blocked;
+
+				float remaining_x = end[0] - trace.endpos[0];
+				float remaining_y = end[1] - trace.endpos[1];
+
+				if (!sliding && remaining_x * remaining_x + remaining_y * remaining_y >= 16)
+					return 0;
+
+				for (int bump = 0; sliding && bump < 4 && trace.fraction < 1; bump++) {
+					vec3_t slide, remaining;
+					slid = true;
+					VectorSubtract(next, trace.endpos, remaining);
+
+					float into = DotProduct(remaining, trace.plane.normal);
+					VectorMA(remaining, -into, trace.plane.normal, remaining);
+					VectorAdd(trace.endpos, remaining, slide);
+					trace = SV_Move(trace.endpos, mins, maxs, slide, type, ent);
+
+					if (trace.startsolid || trace.allsolid)
+						return 0;
+
+					VectorCopy(slide, next);
 				}
-				break;
 			}
 		}
-		//If we fell at any location along path, then we don't try to step up
-		if(skip == 1)
-		{
-			trace2.fraction = 0;
-			skip = 0;
-			continue;
-		}
-		//We need to advance it as much as possible along path before step up
-		if(trace1.fraction > 0 && trace1.fraction < 1)
-		{
-			VectorCopy(trace1.endpos,CurrentPos);
-			trace1.fraction = 0;
-		}
-		//Check step up
-		if(trace1.fraction < 1)
-		{
-			VectorScale(up,STEPSIZEB,tempVec2);
-			VectorAdd(CurrentPos,tempVec2,tempVec);
-			VectorAdd(tempHorGoal,tempVec2,tempVec2);
-			trace2 = SV_Move(tempVec, mins, maxs, tempVec2, MOVE_NOMONSTERS, ent);
-			//10.4 is minimum length for a slope of 60 degrees, we need to at least advance this much to know the surface is walkable
-			VectorSubtract(tempVec2,tempVec,tempVec2);
-			if(trace2.fraction > (trace1.fraction + (SLOPELEN/VectorLength(tempVec2))) || trace2.fraction == 1)
-			{
-				VectorCopy(tempVec,CurrentPos);
-				tempHorGoal[2] = CurrentPos[2];
-				continue;
-			}
-			else
-			{
-				return 0;//stepping up didn't advance so we've hit a wall, we failed
-			}
-		}
-		if(trace1.fraction == 1)//we've made it horizontally to our goal... so check if we've made it vertically...
-		{
-			if((end[2] - tempHorGoal[2] < STEPSIZEB) && (end[2] - tempHorGoal[2]) > -1 * STEPSIZEB)
-				return 1;
-			else return 0;
-		}
+
+		VectorCopy(trace.endpos, next);
+		VectorCopy(next, down);
+		down[2] -= fmaxf(512, start[2] - end[2] + 20);
+		trace = SV_Move(next, mins, maxs, down, type, ent);
+
+		if (trace.startsolid || trace.allsolid || trace.fraction == 1 || trace.plane.normal[2] <= 0.7f)
+			return 0;
+
+		VectorSubtract(trace.endpos, position, delta);
+		VectorCopy(trace.endpos, position);
+		dx = end[0] - position[0];
+		dy = end[1] - position[1];
+
+		if (dx * dx + dy * dy < 16 && fabsf(position[2] - end[2]) < 20)
+			return 1;
+
+		if (DotProduct(delta, delta) < 0.0001f)
+			return 0;
 	}
+
 	return 0;
+}
+
+int TraceMove(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, edict_t *ent)
+{
+	return TraceMoveInternal(start, mins, maxs, end, type, ent, true, NULL);
+}
+
+static edict_t *waypoint_origin_actor;
+static signed char waypoint_origin_state[MAX_WAYPOINTS];
+static vec3_t waypoint_origins[MAX_WAYPOINTS];
+
+static qboolean WaypointGroundOriginInternal(int waypoint, edict_t *ent, vec3_t position)
+{
+	vec3_t anchor, down;
+	trace_t trace;
+
+	VectorCopy(waypoints[waypoint].origin, anchor);
+	anchor[2] += 0.03125f;
+	trace = SV_Move(anchor, ai_hull_mins, ai_hull_maxs, anchor, MOVE_NOMONSTERS, ent);
+
+	if (!trace.startsolid && !trace.allsolid) {
+		VectorCopy(anchor, down);
+		down[2] -= 64;
+		trace = SV_Move(anchor, ai_hull_mins, ai_hull_maxs, down, MOVE_NOMONSTERS, ent);
+
+		if (!trace.startsolid && !trace.allsolid && trace.fraction < 1 && trace.plane.normal[2] > 0.7f && fabsf(trace.endpos[2] - waypoints[waypoint].origin[2]) < 50) {
+			VectorCopy(trace.endpos, position);
+		} else {
+			VectorCopy(anchor, position);
+		}
+
+		return true;
+	}
+
+	VectorCopy(anchor, down);
+	down[2] -= 128;
+	trace = SV_Move(anchor, vec3_origin, vec3_origin, down, MOVE_NOMONSTERS, ent);
+
+	if (!trace.startsolid && !trace.allsolid && trace.fraction < 1 && trace.plane.normal[2] > 0.7f && fabsf(trace.endpos[2] - ai_hull_mins[2] - waypoints[waypoint].origin[2]) < 50) {
+		VectorCopy(trace.endpos, anchor);
+		anchor[2] -= ai_hull_mins[2];
+	}
+
+	for (int height = 0; height <= 20; height++) {
+		for (int offset = 0; offset < 9; offset++) {
+			vec3_t candidate;
+			VectorCopy(anchor, candidate);
+
+			if (offset) {
+				int index = offset - 1;
+
+				if (index >= 4)
+					index++;
+				candidate[0] += (index / 3 - 1) * 0.125f;
+				candidate[1] += (index % 3 - 1) * 0.125f;
+			}
+
+			candidate[2] += height;
+			trace = SV_Move(candidate, ai_hull_mins, ai_hull_maxs, candidate, MOVE_NOMONSTERS, ent);
+
+			if (trace.startsolid || trace.allsolid)
+				continue;
+
+			VectorCopy(candidate, down);
+			down[2] -= 64;
+			trace = SV_Move(candidate, ai_hull_mins, ai_hull_maxs, down, MOVE_NOMONSTERS, ent);
+
+			if (!trace.startsolid && !trace.allsolid && trace.fraction < 1 && trace.plane.normal[2] > 0.7f && fabsf(trace.endpos[2] - waypoints[waypoint].origin[2]) < 50) {
+				VectorCopy(trace.endpos, position);
+				return true;
+			}
+		}
+	}
+
+	for (int radius = 1; radius < 16; radius++) {
+		for (int x = -3; x <= 3; x++) {
+			for (int y = -3; y <= 3; y++) {
+				if (x * x + y * y != radius)
+					continue;
+
+				for (int height = 0; height <= 20; height++) {
+					vec3_t candidate;
+					VectorCopy(anchor, candidate);
+					candidate[0] += x;
+					candidate[1] += y;
+					candidate[2] += height;
+					trace = SV_Move(candidate, ai_hull_mins, ai_hull_maxs, candidate, MOVE_NOMONSTERS, ent);
+
+					if (trace.startsolid || trace.allsolid)
+						continue;
+
+					VectorCopy(candidate, down);
+					down[2] -= 64;
+					trace = SV_Move(candidate, ai_hull_mins, ai_hull_maxs, down, MOVE_NOMONSTERS, ent);
+
+					if (!trace.startsolid && !trace.allsolid && trace.fraction < 1 && trace.plane.normal[2] > 0.7f && fabsf(trace.endpos[2] - waypoints[waypoint].origin[2]) < 50) {
+						VectorCopy(trace.endpos, position);
+						return true;
+					}
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+qboolean WaypointGroundOrigin(int waypoint, edict_t *ent, vec3_t position)
+{
+	if (!waypoint_origin_actor || waypoint_origin_actor != ent)
+		return WaypointGroundOriginInternal(waypoint, ent, position);
+
+	if (waypoint_origin_state[waypoint] < 0) {
+		waypoint_origin_state[waypoint] = WaypointGroundOriginInternal(waypoint, ent, waypoint_origins[waypoint]);
+	}
+
+	if (waypoint_origin_state[waypoint]) {
+		VectorCopy(waypoint_origins[waypoint], position);
+		return true;
+	}
+
+	return false;
 }
 
 
@@ -937,9 +1068,13 @@ void PF_tracemove(void)//progs side
 	end = G_VECTOR(OFS_PARM3);
 	nomonsters = G_FLOAT(OFS_PARM4);
 	ent = G_EDICT(OFS_PARM5);
+	if (ent->v.movetype == MOVETYPE_WALK && NUM_FOR_EDICT(ent) > svs.maxclients) {
+		mins = ai_hull_mins;
+		maxs = ai_hull_maxs;
+	}
 
 	// Con_DPrintf ("TraceMove start, ");
-	G_INT(OFS_RETURN) = TraceMove(start, mins, maxs, end,nomonsters,ent);
+	G_FLOAT(OFS_RETURN) = TraceMove(start, mins, maxs, end,nomonsters,ent);
 	// Con_DPrintf ("TM end\n");
 	return;
 }
@@ -1219,6 +1354,7 @@ findradius (origin, radius)
 void PF_findradius (void)
 {
 	edict_t	*ent, *chain;
+	const char *classname = pr_argc > 2 ? G_STRING(OFS_PARM2) : NULL;
 	float	rad;
 	float	*org;
 	vec3_t	eorg;
@@ -1237,6 +1373,8 @@ void PF_findradius (void)
 		if (ent->free)
 			continue;
 		if (ent->v.solid == SOLID_NOT)
+			continue;
+		if (classname && classname[0] && strcmp(PR_GetString(ent->v.classname), classname))
 			continue;
 		for (j=0 ; j<3 ; j++)
 			eorg[j] = org[j] - (ent->v.origin[j] + (ent->v.mins[j] + ent->v.maxs[j])*0.5f);
@@ -1713,13 +1851,140 @@ char waypoint_set[MAX_WAYPOINTS]; // waypoint_set[i] contains the set identifier
 unsigned short openset_waypoints[MAX_WAYPOINTS]; // List of waypoints currently in the open set sorted by heuristic cost (index 0 contains lowest cost waypoint)
 unsigned short openset_length; // Current length of the open set
 zombie_ai zombie_list[MAX_AI_COUNT];
+static edict_t *pathfind_actor;
+static signed char pathfind_walkable[MAX_WAYPOINTS][8];
+static float *pathfind_entries;
+static float path_entry_cost[MAX_WAYPOINTS];
+static vec3_t path_entry_point[MAX_WAYPOINTS], path_entry_start[MAX_WAYPOINTS];
+static float path_entry_distance[MAX_WAYPOINTS];
+static vec3_t path_entry_basis;
+static qboolean path_entry_basis_valid;
+
+typedef struct {
+	edict_t *entity;
+	vec3_t origin, angles, mins, maxs, absmin, absmax;
+	float modelindex, owner, flags, size_x, movetype;
+} pathfind_brush_state_t;
+
+static pathfind_brush_state_t pathfind_brushes[MAX_EDICTS];
+static vec3_t pathfind_node_origins[MAX_WAYPOINTS];
+static int pathfind_node_links[MAX_WAYPOINTS][8];
+static int pathfind_brush_count, pathfind_node_count;
+static qboolean pathfind_geometry_valid, pathfind_sized_actor;
+static unsigned int pathfind_geometry_revision, pathfind_gate_revision;
+static int pathfind_node_open[MAX_WAYPOINTS];
+
+typedef struct {
+	int entnum;
+	vec3_t start, goal;
+	unsigned int revision;
+	float until;
+	qboolean valid;
+} pathfind_direct_state_t;
+
+static pathfind_direct_state_t pathfind_direct[MAX_AI_COUNT];
+
+static struct {
+	qboolean valid;
+	vec3_t origin;
+	unsigned int geometry_revision, gate_revision;
+	int waypoint;
+} pathfind_goals[8];
+static unsigned int pathfind_goal_index;
+
+static void PathfindPrepareGeometry(edict_t *actor)
+{
+	edict_t *owner = PROG_TO_EDICT(actor->v.owner);
+	qboolean share = !Test_Pathfind_Active() && actor->v.solid != SOLID_BSP && (owner == sv.edicts || owner->v.solid != SOLID_BSP);
+	qboolean sized = actor->v.size[0] != 0;
+	qboolean reuse = share && pathfind_geometry_valid && sized == pathfind_sized_actor && n_waypoints == pathfind_node_count;
+	int count = 0;
+
+	for (int i = 1; i < sv.num_edicts; i++) {
+		edict_t *ent = EDICT_NUM(i);
+
+		if (ent->free || !ent->area.prev || ent->v.solid != SOLID_BSP)
+			continue;
+
+		pathfind_brush_state_t state;
+		memset(&state, 0, sizeof(state));
+		state.entity = ent;
+		VectorCopy(ent->v.origin, state.origin);
+		VectorCopy(ent->v.angles, state.angles);
+		VectorCopy(ent->v.mins, state.mins);
+		VectorCopy(ent->v.maxs, state.maxs);
+		VectorCopy(ent->v.absmin, state.absmin);
+		VectorCopy(ent->v.absmax, state.absmax);
+		state.modelindex = ent->v.modelindex;
+		state.owner = ent->v.owner;
+		state.flags = ent->v.flags;
+		state.size_x = ent->v.size[0];
+		state.movetype = ent->v.movetype;
+
+		if (ent->v.owner && PROG_TO_EDICT(ent->v.owner) == actor) {
+			share = reuse = false;
+		}
+
+		if (memcmp(&pathfind_brushes[count], &state, sizeof(state))) {
+			pathfind_brushes[count] = state;
+			reuse = false;
+		}
+		count++;
+	}
+
+	if (count != pathfind_brush_count)
+		reuse = false;
+
+	for (int i = 0; i < n_waypoints; i++) {
+		if (pathfind_node_open[i] != waypoints[i].open) {
+			pathfind_node_open[i] = waypoints[i].open;
+			pathfind_gate_revision++;
+		}
+
+		if (memcmp(pathfind_node_origins[i], waypoints[i].origin, sizeof(vec3_t)) || memcmp(pathfind_node_links[i], waypoints[i].target, sizeof(pathfind_node_links[i]))) {
+			VectorCopy(waypoints[i].origin, pathfind_node_origins[i]);
+			memcpy(pathfind_node_links[i], waypoints[i].target, sizeof(pathfind_node_links[i]));
+			reuse = false;
+		}
+	}
+
+	if (!reuse) {
+		pathfind_geometry_revision++;
+		memset(waypoint_origin_state, -1, sizeof(waypoint_origin_state));
+		memset(pathfind_walkable, -1, sizeof(pathfind_walkable));
+	}
+
+	pathfind_brush_count = count;
+	pathfind_node_count = n_waypoints;
+	pathfind_sized_actor = sized;
+	pathfind_geometry_valid = share;
+}
 
 void PR_ResetWaypointState (void)
 {
+	pathfind_geometry_valid = false;
+	memset(pathfind_goals, 0, sizeof(pathfind_goals));
+	pathfind_goal_index = 0;
+	waypoint_origin_actor = NULL;
 	memset (waypoint_set, 0, sizeof(waypoint_set));
 	memset (openset_waypoints, 0, sizeof(openset_waypoints));
 	openset_length = 0;
 	memset (zombie_list, 0, sizeof(zombie_list));
+	pathfind_actor = NULL;
+	pathfind_entries = NULL;
+}
+
+void PR_ClearEntityPath (int entnum)
+{
+	pathfind_direct_state_t *direct = &pathfind_direct[entnum % MAX_AI_COUNT];
+	if (direct->entnum == entnum)
+		direct->valid = false;
+
+	for (int i = 0; i < MAX_AI_COUNT; i++) {
+		if (zombie_list[i].zombienum == entnum) {
+			memset (&zombie_list[i], 0, sizeof(zombie_list[i]));
+		}
+	}
 }
 
 
@@ -1871,8 +2136,7 @@ qboolean sv_way_in_set(char set, int waypoint_idx) {
 // Compute A* heuristic between two waypoints
 //
 float sv_way_heuristic_cost_estimate(int waypoint_idx_a, int waypoint_idx_b) {
-	// Compute distance squared between:
-	return VectorDistanceSquared(waypoints[waypoint_idx_a].origin, waypoints[waypoint_idx_b].origin);
+	return VecLength2(waypoints[waypoint_idx_a].origin, waypoints[waypoint_idx_b].origin);
 }
 
 
@@ -1907,7 +2171,7 @@ void sv_way_reconstruct_path(int start_node, int current_node) {
 // start_way -- Start waypoint index in global waypoints array
 // end_way -- End waypoint index in global waypoints array
 //
-int sv_way_pathfind(int start_way, int end_way) {
+static int sv_way_pathfind_internal(int start_way, int end_way) {
 	int current;
 	float tentative_g_score, tentative_f_score;
 	int i;
@@ -1923,14 +2187,20 @@ int sv_way_pathfind(int start_way, int end_way) {
 	openset_length = 0;
 	// -------------–-------------–-------------–-------------–
 
-	// Cost from start along best known path.
-	waypoints[start_way].g_score = 0; 
-	// Estimated total cost from start to goal through y
-	waypoints[start_way].f_score = waypoints[start_way].g_score + sv_way_heuristic_cost_estimate(start_way, end_way);
+	if (pathfind_entries) {
+		for (i = 0; i < n_waypoints; i++) {
+			if (pathfind_entries[i] < 0)
+				continue;
+			waypoints[i].g_score = pathfind_entries[i];
+			waypoints[i].f_score = pathfind_entries[i] + sv_way_heuristic_cost_estimate(i, end_way);
+			sv_way_add_way_to_set(WAYPOINT_SET_OPEN, i);
+		}
+	} else {
+		waypoints[start_way].g_score = 0;
+		waypoints[start_way].f_score = sv_way_heuristic_cost_estimate(start_way, end_way);
+		sv_way_add_way_to_set(WAYPOINT_SET_OPEN, start_way);
+	}
 
-	// The set of tentative nodes to be evaluated, initially containing the start node
-	sv_way_add_way_to_set(WAYPOINT_SET_OPEN, start_way);
-	
 	while (!sv_way_is_set_empty(WAYPOINT_SET_OPEN)) {
 		current = sv_way_get_lowest_f_score_openset_waypoint();
 
@@ -1962,8 +2232,15 @@ int sv_way_pathfind(int start_way, int end_way) {
 			if (sv_way_in_set(WAYPOINT_SET_CLOSED, neighbor_waypoint_idx)) {
 				continue;
 			}
+
 			tentative_g_score = waypoints[current].g_score + waypoints[current].dist[i];
 			tentative_f_score = tentative_g_score + sv_way_heuristic_cost_estimate(neighbor_waypoint_idx, end_way);
+
+			if (sv_way_in_set(WAYPOINT_SET_OPEN, neighbor_waypoint_idx) && !(tentative_f_score < waypoints[neighbor_waypoint_idx].f_score))
+				continue;
+
+			if (pathfind_actor && pathfind_walkable[current][i] == 0)
+				continue;
 
 			if (sv_way_in_set(WAYPOINT_SET_OPEN, neighbor_waypoint_idx)) {
 				if(tentative_f_score < waypoints[neighbor_waypoint_idx].f_score) {
@@ -1985,6 +2262,46 @@ int sv_way_pathfind(int start_way, int end_way) {
 	}
 	return 0;
 }
+
+int sv_way_pathfind(int start_way, int end_way)
+{
+	while (sv_way_pathfind_internal(start_way, end_way)) {
+		if (!pathfind_actor)
+			return 1;
+
+		qboolean valid = true;
+
+		for (int i = process_list_length - 1; i > 0; i--) {
+			int node = process_list[i];
+			int next = process_list[i - 1];
+			int edge = 0;
+
+			while (edge < 8 && waypoints[node].target[edge] != next)
+				edge++;
+
+			if (edge == 8)
+				return 0;
+
+			if (pathfind_walkable[node][edge] < 0) {
+				vec3_t origin, end;
+				pathfind_walkable[node][edge] = WaypointGroundOrigin(node, pathfind_actor, origin)
+					&& WaypointGroundOrigin(next, pathfind_actor, end)
+					&& TraceMove(origin, ai_hull_mins, ai_hull_maxs, end, MOVE_NOMONSTERS, pathfind_actor);
+			}
+
+			if (!pathfind_walkable[node][edge]) {
+				valid = false;
+				break;
+			}
+		}
+
+		if (valid)
+			return 1;
+	}
+
+	return 0;
+}
+
 
 /*
 =================
@@ -2092,7 +2409,6 @@ float Do_Pathfind (entity zombie, entity target)
 */
 // #define MEASURE_PF_PERF
 float max_waypoint_distance = 750;
-short closest_waypoints[MAX_EDICTS]; 
 
 
 
@@ -2101,8 +2417,149 @@ short closest_waypoints[MAX_EDICTS];
 //
 
 // Dynamic hull sizes for hit detection cause chaos on movement code. Treat all AI ents as same size as player hull for movement
-vec3_t ai_hull_mins = {-16, -16, -36};
+vec3_t ai_hull_mins = {-16, -16, -32};
 vec3_t ai_hull_maxs = { 16,  16,  40};
+
+static qboolean PathfindDirectAllowed(edict_t *ent)
+{
+	eval_t *retry = GETEDICTFIELDVALUE(ent, eval_path_direct_retry_time);
+	return !retry || pr_global_struct->time >= retry->_float;
+}
+
+qboolean TraceMoveToGoal(vec3_t start, vec3_t goal, edict_t *ent, vec3_t result)
+{
+	vec3_t delta;
+	float distance, remaining_distance = -1;
+
+	VectorCopy(goal, result);
+
+	if (TraceMoveInternal(start, ai_hull_mins, ai_hull_maxs, goal, MOVE_NOMONSTERS, ent, false, &remaining_distance))
+		return true;
+
+	VectorSubtract(goal, start, delta);
+	distance = sqrtf(delta[0] * delta[0] + delta[1] * delta[1]);
+
+	if (distance <= 48)
+		return fabsf(delta[2]) < 20;
+
+	result[0] -= delta[0] * 48 / distance;
+	result[1] -= delta[1] * 48 / distance;
+
+	if (remaining_distance > 64)
+		return false;
+
+	return TraceMoveInternal(start, ai_hull_mins, ai_hull_maxs, result, MOVE_NOMONSTERS, ent, false, NULL);
+}
+
+static qboolean PathfindDirectToGoal(vec3_t start, vec3_t goal, edict_t *ent, vec3_t result)
+{
+	int entnum = NUM_FOR_EDICT(ent);
+	pathfind_direct_state_t *direct = &pathfind_direct[entnum % MAX_AI_COUNT];
+	qboolean prepared = false;
+	VectorCopy(goal, result);
+
+	if (direct->valid && direct->entnum == entnum && pr_global_struct->time < direct->until && VectorCompare(start, direct->start) && VectorCompare(goal, direct->goal)) {
+		PathfindPrepareGeometry(ent);
+		prepared = true;
+		if (direct->revision == pathfind_geometry_revision)
+			return false;
+	}
+
+	direct->valid = false;
+	if (TraceMoveToGoal(start, goal, ent, result))
+		return true;
+
+	if (!prepared)
+		PathfindPrepareGeometry(ent);
+
+	direct->entnum = entnum;
+	VectorCopy(start, direct->start);
+	VectorCopy(goal, direct->goal);
+	direct->revision = pathfind_geometry_revision;
+	direct->until = pr_global_struct->time + 0.5f;
+	direct->valid = true;
+	return false;
+}
+
+
+void PF_ai_land(void)
+{
+	edict_t *ent = G_EDICT(OFS_PARM0);
+	vec3_t origin, candidate, down;
+	VectorCopy(G_VECTOR(OFS_PARM1), origin);
+	VectorCopy(origin, G_VECTOR(OFS_RETURN));
+
+	for (int radius = 0; radius <= 1; radius++) {
+		for (int x = -radius; x <= radius; x++) {
+			for (int y = -radius; y <= radius; y++) {
+				if (radius && !x && !y)
+					continue;
+
+				for (int height = 0; height <= 20; height += 4) {
+					VectorCopy(origin, candidate);
+					candidate[0] += x * 8;
+					candidate[1] += y * 8;
+					candidate[2] += height + 0.03125f;
+
+					trace_t line = SV_Move(origin, vec3_origin, vec3_origin, candidate, MOVE_NOMONSTERS, ent);
+
+					if (line.startsolid || line.allsolid || line.fraction < 1)
+						continue;
+
+					VectorCopy(candidate, down);
+					down[2] -= 64;
+
+					trace_t ground = SV_Move(candidate, ai_hull_mins, ai_hull_maxs, down, MOVE_NOMONSTERS, ent);
+
+					if (ground.startsolid || ground.allsolid || ground.fraction == 1 || ground.plane.normal[2] <= 0.7f)
+						continue;
+
+					VectorCopy(ground.endpos, G_VECTOR(OFS_RETURN));
+					return;
+				}
+			}
+		}
+	}
+}
+
+static void PathfindTargetOrigin(edict_t *target, vec3_t origin)
+{
+	VectorCopy(target->v.origin, origin);
+
+	if (((int)target->v.flags & FL_ONGROUND) || strcmp(PR_GetString(target->v.classname), "player"))
+		return;
+
+	vec3_t down;
+	VectorCopy(origin, down);
+	down[2] -= 256;
+	trace_t ground = SV_Move(origin, target->v.mins, target->v.maxs, down, MOVE_NOMONSTERS, target);
+
+	if (ground.startsolid || ground.allsolid || ground.fraction == 1 || ground.plane.normal[2] <= 0.7f)
+		return;
+
+	VectorCopy(ground.endpos, origin);
+	origin[2] += target->v.mins[2] - ai_hull_mins[2];
+}
+
+void PF_pathfind_target_origin(void)
+{
+	PathfindTargetOrigin(G_EDICT(OFS_PARM0), G_VECTOR(OFS_RETURN));
+}
+
+void PF_can_walk_to_enemy(void)
+{
+	edict_t *ent = G_EDICT(OFS_PARM0);
+	edict_t *enemy = PROG_TO_EDICT(ent->v.enemy);
+	vec3_t approach, goal;
+	G_FLOAT(OFS_RETURN) = 0;
+
+	if (enemy == sv.edicts || enemy->free || !PathfindDirectAllowed(ent))
+		return;
+
+	PathfindTargetOrigin(enemy, goal);
+	G_FLOAT(OFS_RETURN) = PathfindDirectToGoal(ent->v.origin, goal, ent, approach);
+}
+
 
 qboolean ofs_tracebox(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, edict_t *ignore_ent) {
 	trace_t trace;
@@ -2113,7 +2570,7 @@ qboolean ofs_tracebox(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int ty
 	start_ofs[2] += 8; // Move 8qu up to work better on uneven terrain
 	end_ofs[2] += 8;
 	trace = SV_Move(start_ofs, mins, maxs, end_ofs, type, ignore_ent);
-	return (trace.fraction >= 1);
+	return (!trace.startsolid && !trace.allsolid && trace.fraction >= 1);
 }
 
 
@@ -2124,47 +2581,302 @@ qboolean ofs_tracebox(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int ty
 // Returns the clsoest waypoint to an entity that the entity can walk to
 // Sorts all waypoints by distance, returns first waypoint we can tracebox to
 //
-int get_closest_waypoint(int entnum) {
-	edict_t *ent = EDICT_NUM(entnum);
+static int get_closest_waypoint(vec3_t goal, edict_t *actor) {
 	const int waypoint_count = n_waypoints;
+
 	if (waypoint_count <= 0)
 		return -1;
+
 	if (waypoint_count > MAX_WAYPOINTS)
 		Sys_Error("Invalid waypoint count: %d", waypoint_count);
 
-	vec3_t ent_mins;
-	vec3_t ent_maxs;
-	// VectorMin(ent->v.mins, ai_hull_mins, ent_mins);
-	// VectorMax(ent->v.maxs, ai_hull_maxs, ent_maxs);
-	VectorCopy(ai_hull_mins, ent_mins);
-	VectorCopy(ai_hull_maxs, ent_maxs);
+	if (pathfind_geometry_valid) {
+		for (int i = 0; i < 8; i++) {
+			if (pathfind_goals[i].valid && pathfind_goals[i].geometry_revision == pathfind_geometry_revision && pathfind_goals[i].gate_revision == pathfind_gate_revision && VectorCompare(pathfind_goals[i].origin, goal))
+				return pathfind_goals[i].waypoint;
+		}
+	}
+
+	qboolean connected[MAX_WAYPOINTS] = {0};
+
+	for (int i = 0; i < waypoint_count; i++) {
+		for (int link = 0; link < 8; link++) {
+			int target = waypoints[i].target[link];
+
+			if (waypoints[i].used && target >= 0 && target < waypoint_count && waypoints[target].used) {
+				connected[i] = true;
+				connected[target] = true;
+			}
+		}
+	}
 
 	// Get all waypoint indices sorted by distance to ent
 	argsort_entry_t waypoint_sort_values[MAX_WAYPOINTS];
+
 	for(int i = 0; i < waypoint_count; i++) {
 		waypoint_sort_values[i].index = i;
-		waypoint_sort_values[i].value = VectorDistanceSquared(waypoints[i].origin, ent->v.origin);
+		waypoint_sort_values[i].value = VectorDistanceSquared(waypoints[i].origin, goal);
 	}
+
 	if (waypoint_count > 1)
 		qsort(waypoint_sort_values, waypoint_count, sizeof(argsort_entry_t), argsort_comparator);
-
-	
 
 	int best_waypoint_idx = -1;
 	// Sweep through waypoints from closest to farthest, stop when we can tracebox to one
 	for(int i = 0; i < waypoint_count; i++) {
 		int waypoint_idx = waypoint_sort_values[i].index;
 
-		if(ofs_tracebox(ent->v.origin, ent_mins, ent_maxs, waypoints[waypoint_idx].origin, MOVE_NOMONSTERS, ent)) {
+		if (!waypoints[waypoint_idx].used || !waypoints[waypoint_idx].open || (waypoint_count > 1 && !connected[waypoint_idx])) {
+			continue;
+		}
+
+		vec3_t approach, origin;
+
+		if (!WaypointGroundOrigin(waypoint_idx, actor, origin))
+			continue;
+
+		if (TraceMoveToGoal(origin, goal, actor, approach)) {
 			best_waypoint_idx = waypoint_idx;
 			break;
 		}
+	}
+
+	if (pathfind_geometry_valid) {
+		int slot = pathfind_goal_index++ % 8;
+		pathfind_goals[slot].valid = true;
+		VectorCopy(goal, pathfind_goals[slot].origin);
+		pathfind_goals[slot].geometry_revision = pathfind_geometry_revision;
+		pathfind_goals[slot].gate_revision = pathfind_gate_revision;
+		pathfind_goals[slot].waypoint = best_waypoint_idx;
 	}
 
 	return best_waypoint_idx;
 }
 
 
+
+static qboolean PathLookaheadGround(edict_t *ent, vec3_t candidate);
+
+static int PathFindEntries(edict_t *actor, int goal)
+{
+	static short heads[MAX_WAYPOINTS], sources[MAX_WAYPOINTS * 8], links[MAX_WAYPOINTS * 8];
+	short queue[MAX_WAYPOINTS];
+	qboolean reachable[MAX_WAYPOINTS] = {0};
+	argsort_entry_t nodes[MAX_WAYPOINTS], edges[8];
+	int edge_start[8], edge_end[8];
+	float edge_fraction[8];
+	int edge_count = 0, link_count = 0, count = 0;
+	float basis_distance = -1;
+	path_entry_basis_valid = false;
+
+	if (n_waypoints <= 0 || n_waypoints > MAX_WAYPOINTS || goal < 0 || goal >= n_waypoints)
+		return 0;
+
+	for (int i = 0; i < n_waypoints; i++) {
+		heads[i] = -1;
+		path_entry_cost[i] = -1;
+		path_entry_distance[i] = -1;
+		VectorCopy(actor->v.origin, path_entry_start[i]);
+		nodes[i].index = i;
+		nodes[i].value = VectorDistanceSquared(actor->v.origin, waypoints[i].origin);
+	}
+
+	for (int i = 0; i < n_waypoints; i++) {
+		if (!waypoints[i].used || !waypoints[i].open)
+			continue;
+
+		for (int j = 0; j < 8; j++) {
+			int next = waypoints[i].target[j];
+
+			if (next < 0)
+				break;
+
+			if (next >= n_waypoints || !waypoints[next].used || !waypoints[next].open)
+				continue;
+
+			sources[link_count] = i;
+			links[link_count] = heads[next];
+			heads[next] = link_count;
+			link_count++;
+		}
+	}
+
+	int tail = 1;
+	queue[0] = goal;
+	reachable[goal] = true;
+
+	for (int head = 0; head < tail; head++) {
+		for (int edge = heads[queue[head]]; edge >= 0; edge = links[edge]) {
+			int node = sources[edge];
+
+			if (!reachable[node]) {
+				reachable[node] = true;
+				queue[tail++] = node;
+			}
+		}
+	}
+
+	qsort(nodes, n_waypoints, sizeof(nodes[0]), argsort_comparator);
+
+	int checked = 0;
+
+	for (int i = 0; i < n_waypoints && checked < 8 && count < 4; i++) {
+		int node = nodes[i].index;
+		vec3_t origin;
+
+		if (!reachable[node] || !waypoints[node].used || !waypoints[node].open)
+			continue;
+
+		checked++;
+
+		if (WaypointGroundOrigin(node, actor, origin) && TraceMove(actor->v.origin, ai_hull_mins, ai_hull_maxs, origin, MOVE_NOMONSTERS, actor)) {
+			path_entry_cost[node] = VecLength2(actor->v.origin, origin);
+			VectorCopy(origin, path_entry_point[node]);
+			count++;
+
+			if (path_entry_cost[node] < 8)
+				return count;
+		}
+	}
+
+	for (int i = 0; i < n_waypoints; i++) {
+		if (!waypoints[i].used || !waypoints[i].open)
+			continue;
+
+		for (int j = 0; j < 8; j++) {
+			int next = waypoints[i].target[j];
+
+			if (next < 0)
+				break;
+
+			if (next >= n_waypoints || !reachable[next] || !waypoints[next].used || !waypoints[next].open || fabsf(waypoints[next].origin[2] - waypoints[i].origin[2]) >= 8)
+				continue;
+
+			vec3_t delta, offset, point;
+			VectorSubtract(waypoints[next].origin, waypoints[i].origin, delta);
+			delta[2] = 0;
+
+			float length_squared = DotProduct(delta, delta);
+
+			if (length_squared < 1)
+				continue;
+
+			VectorSubtract(actor->v.origin, waypoints[i].origin, offset);
+
+			float fraction = DotProduct(offset, delta) / length_squared;
+
+			if (fraction <= 0.05f || fraction >= 0.95f)
+				continue;
+
+			VectorMA(waypoints[i].origin, fraction, delta, point);
+
+			float distance = VectorDistanceSquared(actor->v.origin, point);
+
+			if (distance > 16384)
+				continue;
+
+			int slot = edge_count < 8 ? edge_count : 7;
+
+			while (slot > 0 && distance < edges[slot - 1].value)
+				slot--;
+
+			if (slot == 7 && edge_count == 8 && distance >= edges[7].value)
+				continue;
+
+			for (int k = edge_count < 8 ? edge_count : 7; k > slot; k--) {
+				edges[k] = edges[k - 1];
+				edge_start[k] = edge_start[k - 1];
+				edge_end[k] = edge_end[k - 1];
+				edge_fraction[k] = edge_fraction[k - 1];
+			}
+
+			edges[slot].value = distance;
+			edge_start[slot] = i;
+			edge_end[slot] = next;
+			edge_fraction[slot] = fraction;
+
+			if (edge_count < 8)
+				edge_count++;
+		}
+	}
+
+	for (int i = 0; i < edge_count; i++) {
+		vec3_t start, end, point;
+		int node = edge_end[i];
+
+		if (!WaypointGroundOrigin(edge_start[i], actor, start) || !WaypointGroundOrigin(node, actor, end))
+			continue;
+
+		VectorLerp(start, edge_fraction[i], end, point);
+
+		if (!PathLookaheadGround(actor, point) || (path_entry_cost[node] < 0 && !TraceMoveInternal(point, ai_hull_mins, ai_hull_maxs, end, MOVE_NOMONSTERS, actor, false, NULL)))
+			continue;
+
+		float entry_distance = VectorDistanceSquared(actor->v.origin, point);
+
+		if (basis_distance < 0 || entry_distance < basis_distance) {
+			basis_distance = entry_distance;
+			path_entry_basis_valid = true;
+			VectorCopy(point, path_entry_basis);
+		}
+
+		if (path_entry_distance[node] < 0 || entry_distance < path_entry_distance[node]) {
+			path_entry_distance[node] = entry_distance;
+			VectorCopy(start, path_entry_start[node]);
+		}
+
+		float cost = VecLength2(actor->v.origin, point) + VecLength2(point, end);
+
+		if (path_entry_cost[node] < 0 || cost < path_entry_cost[node]) {
+			if (path_entry_cost[node] < 0)
+				count++;
+			path_entry_cost[node] = cost;
+			VectorCopy(point, path_entry_point[node]);
+		}
+	}
+
+	return count;
+}
+
+static qboolean PathfindCanKeepRoute(edict_t *actor, edict_t *target, int goal)
+{
+	if (!pathfind_geometry_valid || goal < 0 || !actor->v.goalentity || actor->v.goalentity == actor->v.enemy)
+		return false;
+
+	int entnum = NUM_FOR_EDICT(actor);
+	edict_t *anchor = PROG_TO_EDICT(actor->v.goalentity);
+
+	for (int i = 0; i < MAX_AI_COUNT; i++) {
+		zombie_ai *path = &zombie_list[i];
+
+		if (path->zombienum != entnum)
+			continue;
+
+		if (!path->segment_valid || path->goal_waypoint != goal || path->targetnum != NUM_FOR_EDICT(target))
+			return false;
+
+		if (path->geometry_revision != pathfind_geometry_revision || path->gate_revision != pathfind_gate_revision)
+			return false;
+
+		if (VectorDistanceSquared(anchor->v.origin, path->segment_end) >= 1)
+			return false;
+
+		vec3_t delta, offset, point;
+		VectorSubtract(path->segment_end, path->segment_start, delta);
+		VectorSubtract(actor->v.origin, path->segment_start, offset);
+		float length_squared = DotProduct(delta, delta);
+		float fraction = length_squared > 0 ? fmaxf(0, fminf(DotProduct(offset, delta) / length_squared, 1)) : 0;
+		VectorMA(path->segment_start, fraction, delta, point);
+		float distance_squared = VectorDistanceSquared(actor->v.origin, point);
+
+		if (distance_squared > 4096)
+			return false;
+
+		return distance_squared < 1 || TraceMoveInternal(actor->v.origin, ai_hull_mins, ai_hull_maxs, point, MOVE_NOMONSTERS, actor, false, NULL);
+	}
+
+	return false;
+}
 
 void Do_Pathfind (void) {
 
@@ -2182,53 +2894,91 @@ void Do_Pathfind (void) {
 	Con_DPrintf("====================\n");
 
 	int zombie_entnum = G_EDICTNUM(OFS_PARM0);
-	int target_entnum = G_EDICTNUM(OFS_PARM1);
 	edict_t * zombie = G_EDICT(OFS_PARM0);
 	edict_t * ent = G_EDICT(OFS_PARM1);
+	vec3_t approach, goal;
+	PathfindTargetOrigin(ent, goal);
+	waypoint_origin_actor = zombie;
+	qboolean direct_allowed = PathfindDirectAllowed(zombie);
+
+	if (direct_allowed && PathfindDirectToGoal(zombie->v.origin, goal, zombie, approach)) {
+		G_FLOAT(OFS_RETURN) = -1;
+		waypoint_origin_actor = NULL;
+		return;
+	}
+
+	if (!direct_allowed)
+		PathfindPrepareGeometry(zombie);
 
 	if(developer.value == 3) {
 		Con_Printf("Finding start waypoint\n");
 	}
-	int start_waypoint = get_closest_waypoint(zombie_entnum);
+
+	int start_waypoint = -1;
+
 	if(developer.value == 3) {
 		Con_Printf("Finding goal waypoint\n");
 	}
-	int goal_waypoint = get_closest_waypoint(target_entnum);
 
-	if(start_waypoint == -1 || goal_waypoint == -1) {
+	int goal_waypoint = get_closest_waypoint(goal, zombie);
+
+	if (pr_argc > 2 && G_FLOAT(OFS_PARM2) && PathfindCanKeepRoute(zombie, ent, goal_waypoint)) {
+		G_FLOAT(OFS_RETURN) = 2;
+		waypoint_origin_actor = NULL;
+		return;
+	}
+
+	if (goal_waypoint == -1 || !PathFindEntries(zombie, goal_waypoint)) {
 		Con_DPrintf("Pathfind failure. Invalid start or goal waypoint. (Start: %d, Goal: %d)\n", start_waypoint, goal_waypoint);
 		G_FLOAT(OFS_RETURN) = 0;
+		waypoint_origin_actor = NULL;
 		return;
 	}
 
 	Con_DPrintf("\tStarting waypoint: %i, Ending waypoint: %i\n", start_waypoint, goal_waypoint);
-	if (sv_way_pathfind(start_waypoint, goal_waypoint)) {
+	pathfind_actor = zombie;
+	pathfind_entries = path_entry_cost;
+
+	int path_found = sv_way_pathfind(-1, goal_waypoint);
+	pathfind_entries = NULL;
+	pathfind_actor = NULL;
+
+	if (path_found)
+		start_waypoint = process_list[process_list_length - 1];
+
+	if (path_found) {
 
 		// --------------------------------------------------------------------
 		// Debug print zombie path
 		// --------------------------------------------------------------------
 		if(developer.value == 3) {
 			Con_Printf("\tPrinting zombie (%d) (%d --> %d) path: [", zombie_entnum, start_waypoint, goal_waypoint);
+
 			for(i = process_list_length - 1; i >= 0; i--) {
 				Con_Printf("%d, ", process_list[i]);
 			}
+
 			Con_Printf("]\n");
 
 			Con_Printf("\tWaypoint path distances: [");
+
 			for(i = process_list_length - 1; i >= 0; i--) {
 				float waypoint_dist = VectorDistanceSquared(zombie->v.origin, waypoints[process_list[i]].origin);
 				Con_Printf("%.2f, ", (double)waypoint_dist);
 			}
+
 			Con_Printf("]\n");
 
 			Con_Printf("\tWaypoint path traceboxes: [");
+
 			for(i = process_list_length - 1; i >= 0; i--) {
 				int waypoint_tracebox_result = ofs_tracebox(zombie->v.origin, ai_hull_mins, ai_hull_maxs, waypoints[process_list[i]].origin, MOVE_NOMONSTERS, ent);
 				Con_Printf("%d, ", waypoint_tracebox_result);
 			}
+
 			Con_Printf("]\n");
 		}
-		
+
 		// --------------------------------------------------------------------
 
 		int zombie_slot = -1;
@@ -2239,7 +2989,7 @@ void Do_Pathfind (void) {
 			if(free_slot == -1 && !zombie_list[i].zombienum) {
 				free_slot = i;
 			}
-			else if(zombie_entnum == zombie_list[i].zombienum) { 
+			else if(zombie_entnum == zombie_list[i].zombienum) {
 				zombie_slot = i;
 				break;
 			}
@@ -2249,13 +2999,35 @@ void Do_Pathfind (void) {
 		if(zombie_slot == -1 && free_slot != -1) {
 			zombie_slot = free_slot;
 		}
+
 		if(zombie_slot != -1) {
 			// Claim the slot
 			zombie_list[zombie_slot].zombienum = zombie_entnum;
+
 			for (s = 0; s < process_list_length; s++) {
 				zombie_list[zombie_slot].pathlist[s] = process_list[s];
 			}
+
 			zombie_list[zombie_slot].pathlist_length = process_list_length;
+			zombie_list[zombie_slot].segment_valid = false;
+			zombie_list[zombie_slot].goal_waypoint = goal_waypoint;
+			zombie_list[zombie_slot].targetnum = NUM_FOR_EDICT(ent);
+			zombie_list[zombie_slot].geometry_revision = pathfind_geometry_revision;
+			zombie_list[zombie_slot].gate_revision = pathfind_gate_revision;
+			VectorCopy(path_entry_point[start_waypoint], zombie_list[zombie_slot].entry_point);
+			VectorCopy(path_entry_start[start_waypoint], zombie_list[zombie_slot].entry_start);
+
+			if (path_entry_basis_valid) {
+				vec3_t direction;
+				VectorSubtract(waypoints[start_waypoint].origin, zombie->v.origin, direction);
+				direction[2] = 0;
+
+				if (VectorNormalize(direction) > 0)
+					VectorMA(path_entry_basis, -128, direction, zombie_list[zombie_slot].entry_start);
+			}
+
+			vec3_t entry_end;
+			zombie_list[zombie_slot].entry_pending = WaypointGroundOrigin(start_waypoint, zombie, entry_end) && VectorDistanceSquared(entry_end, zombie_list[zombie_slot].entry_point) >= 64;
 
 #ifdef MEASURE_PF_PERF
 			sceRtcGetCurrentTick(&t2);
@@ -2263,15 +3035,10 @@ void Do_Pathfind (void) {
 			Con_Printf("PF time: %f\n", elapsed);
 #endif
 
-			// If there is only one waypoint on the path, we are already at the player's waypoint
-			if(zombie_list[zombie_slot].pathlist_length == 1) {
-				Con_DPrintf("\tWe are at player's waypoint already!\n");
-				G_FLOAT(OFS_RETURN) = -1;
-			} 
-			else {
-				Con_DPrintf("\tPath found!\n");
-				G_FLOAT(OFS_RETURN) = 1;
-			}
+			Con_DPrintf("\tPath found!\n");
+			G_FLOAT(OFS_RETURN) = 1;
+
+			waypoint_origin_actor = NULL;
 			return;
 		}
 	}
@@ -2284,6 +3051,7 @@ void Do_Pathfind (void) {
 
 	Con_DPrintf("Pathfind failure. Goal waypoint not reachable.\n");
 	G_FLOAT(OFS_RETURN) = 0;
+	waypoint_origin_actor = NULL;
 }
 
 //
@@ -2329,348 +3097,300 @@ Get_Next_Waypoint This function will return the next waypoint in zombies path an
 vector Get_Next_Waypoint (entity)
 =================
 */
-void Get_Next_Waypoint (void) {
-	int entnum;
-	edict_t *ent;
-	// vec3_t move;
-	vec3_t start;
-	// vec3_t mins;
-	// vec3_t maxs;
-
-	// Initialize to world origin
-	// VectorCopy(vec3_origin, move);
-
-	entnum = G_EDICTNUM(OFS_PARM0);
-	ent = G_EDICT(OFS_PARM0);
-	VectorCopy(G_VECTOR(OFS_PARM1), start);
-	// VectorCopy(G_VECTOR(OFS_PARM2), mins);
-	// VectorCopy(G_VECTOR(OFS_PARM3), maxs);
-
-
-	edict_t *goal_ent = PROG_TO_EDICT(ent->v.enemy);
-	vec3_t goal;
-	VectorCopy(goal_ent->v.origin, goal);
-
-	if(developer.value == 3){
-		Con_Printf("Get_Next_Waypoint for ent %d\n", entnum);
-		Con_Printf("\tEnt origin: (%f, %f, %f)\n",
-			(double)ent->v.origin[0], (double)ent->v.origin[1], (double)ent->v.origin[2]);
-		Con_Printf("\tSearch start origin: (%f, %f, %f)\n",
-			(double)start[0], (double)start[1], (double)start[2]);
+static void PathSetSegment(zombie_ai *path, vec3_t end, qboolean first_point)
+{
+	if (first_point || !path->segment_valid) {
+		VectorCopy(path->entry_start, path->segment_start);
+	} else {
+		VectorCopy(path->segment_end, path->segment_start);
 	}
 
-	int zombie_idx = -1;
+	VectorCopy(end, path->segment_end);
+	path->segment_valid = true;
+}
+
+static void Get_Next_Waypoint_Internal(qboolean first_point)
+{
+	int entnum = G_EDICTNUM(OFS_PARM0);
+	edict_t *ent = G_EDICT(OFS_PARM0);
+	edict_t *goal = PROG_TO_EDICT(ent->v.enemy);
+	vec3_t start, goal_origin;
+	zombie_ai *path = NULL;
+
+	VectorCopy(G_VECTOR(OFS_PARM1), start);
+	PathfindTargetOrigin(goal, goal_origin);
+	VectorCopy(goal_origin, G_VECTOR(OFS_RETURN));
+
 	for (int i = 0; i < MAX_AI_COUNT; i++) {
-		if(entnum == zombie_list[i].zombienum) {
-			zombie_idx = i;
+		if (zombie_list[i].zombienum == entnum) {
+			path = &zombie_list[i];
 			break;
 		}
 	}
 
-	// If we didn't find the ent in our list of data, stop. Return the enemy ent's origin
-	if(zombie_idx == -1) {
-		if(developer.value == 3){
-			Con_Printf("Warning: no pathing data found for ent %d.\n", entnum);
-		}
-		VectorCopy(goal, G_VECTOR(OFS_RETURN));
+	if (!path || path->pathlist_length < 1)
+		return;
+
+	vec3_t approach;
+	qboolean direct_allowed = PathfindDirectAllowed(ent);
+	qboolean at_start = false;
+
+	if (direct_allowed && PathfindDirectToGoal(start, goal_origin, ent, approach)) {
+		VectorCopy(approach, G_VECTOR(OFS_RETURN));
+		path->pathlist_length = 0;
+		PathSetSegment(path, G_VECTOR(OFS_RETURN), first_point);
 		return;
 	}
 
+	while (path->pathlist_length > 1) {
+		vec3_t delta, origin;
 
-	if(developer.value == 3){
-		// Print path (stored in reverse order from zombie to target ent)
-		Con_Printf("\tpath before: [");
-		for(int i = zombie_list[zombie_idx].pathlist_length - 1; i >= 0; i--) {
-			Con_Printf(" %d,", zombie_list[zombie_idx].pathlist[i]);
-		}
-		Con_Printf("]\n");
+		if (!WaypointGroundOrigin(path->pathlist[path->pathlist_length - 1], ent, origin))
+			break;
+
+		VectorSubtract(origin, start, delta);
+
+		if (delta[0] * delta[0] + delta[1] * delta[1] > 64 || fabsf(delta[2]) >= 20)
+			break;
+
+		path->pathlist_length--;
+		at_start = true;
 	}
 
+	int adjacent = path->pathlist_length - (first_point && !at_start ? 2 : 1);
 
-	// if(developer.value == 3){
-	// 	float dist;
-	// 	if(zombie_list[zombie_idx].pathlist_length > 0) {
-	// 		int first_waypoint_idx = zombie_list[zombie_idx].pathlist[zombie_list[zombie_idx].pathlist_length - 1];
-	// 		dist = VectorDistanceSquared(ent->v.origin, waypoints[first_waypoint_idx].origin);
-	// 		Con_Printf("\tDist squared to first waypoint (%d): %.2f\n", first_waypoint_idx, dist);
-	// 		Con_Printf("\t\tEnt pos: (%.2f, %.2f, %.2f)\n", ent->v.origin[0], ent->v.origin[1], ent->v.origin[2]);
-	// 		Con_Printf("\t\tFirst waypoint pos: (%.2f, %.2f, %.2f)\n", waypoints[first_waypoint_idx].origin[0], waypoints[first_waypoint_idx].origin[1], waypoints[first_waypoint_idx].origin[2]);
-	// 	}
-	// 	dist = VectorDistanceSquared(ent->v.origin, goal_ent->v.origin);
-	// 	Con_Printf("\tDist squared to goal ent: %.2f\n", dist);
-	// }
+	if (adjacent < 0)
+		adjacent = 0;
 
+	if (first_point && path->entry_pending) {
+		path->entry_pending = false;
 
-	// Check if our path is now empty.
-	// If it's empty, we have no more waypoints to chase, follow the enemy entity.
-	if(zombie_list[zombie_idx].pathlist_length < 1) {
-		if(developer.value == 3){
-			Con_Printf("\tZombie path length: %d, returning enemy origin.\n", zombie_list[zombie_idx].pathlist_length);
-		}
-		// The zombie's path is empty, return the enemy origin
-		VectorCopy(goal, G_VECTOR(OFS_RETURN));
-		return;
-	}
-
-
-	// ---------------–---------------–---------------–---------------–
-	// 
-	// There is an unfortunate edge case in the following situation:
-	// 
-	// On uneven terrain, tracebox may fail for the true closest waypoint, 
-	// yielding a nonoptimal path we instead go for a waypoint farther than 
-	// the one we should've gone for.
-	// 
-	// In some instances, this causes us to run away from the optimal path
-	// to some start waypoint, only to run through back through the point
-	// we were originally standing on.
-	//
-	// To attempt to catch this edge case, check the distance from where we are
-	// standing to the closest point on each edge along the waypoint path, 
-	// to see if we are already somewhere along the path.
-	// if so, skip waypoints up to the point we are standing.
-	// 
-	// ---------------–---------------–---------------–---------------–
-	float dist_threshold = 400; // Max distance squared to path
-	// --
-	float best_edge_idx = -2; // -2 = None, -1 = Closest to edge connecting final waypoint and goal
-	float best_edge_dist = INFINITY;
-
-
-	for(int i = zombie_list[zombie_idx].pathlist_length - 1; i >= 0; i--) {
-		float dist;
-		if(i > 0) {
-			dist = dist_to_line_segment(waypoints[zombie_list[zombie_idx].pathlist[i]].origin, waypoints[zombie_list[zombie_idx].pathlist[i-1]].origin, start);
-		}
-		// If on i == 0, endpoint of edge is the goal position
-		else {
-			dist = dist_to_line_segment(waypoints[zombie_list[zombie_idx].pathlist[i]].origin, goal, start);
-		}
-		if(dist < best_edge_dist) {
-			best_edge_idx = i;
-			best_edge_dist = dist;
+		if (VectorDistanceSquared(start, path->entry_point) >= 64) {
+			VectorCopy(path->entry_point, G_VECTOR(OFS_RETURN));
+			PathSetSegment(path, G_VECTOR(OFS_RETURN), true);
+			return;
 		}
 	}
 
-	// If we are within the threshold of a waypoint edge, drop all waypoints up to and including the start waypoint for that edge
-	if(best_edge_dist <= dist_threshold) {
-		zombie_list[zombie_idx].pathlist_length = best_edge_idx;
-	}
+	int shortcut = first_point && !at_start ? path->pathlist_length - 1 : adjacent;
+	int first = 0;
 
-	if(developer.value == 3){
-		// Print path (stored in reverse order from zombie to target ent)
-		Con_Printf("\tpath after pruning: [");
-		for(int i = zombie_list[zombie_idx].pathlist_length - 1; i >= 0; i--) {
-			Con_Printf(" %d,", zombie_list[zombie_idx].pathlist[i]);
+	for (int i = path->pathlist_length - 1; i >= 0; i--) {
+		int node = path->pathlist[i];
+
+		if (node < 0 || node >= n_waypoints || !waypoints[node].open) {
+			first = i + 1;
+			break;
 		}
-		Con_Printf("]\n");
 	}
 
-	// ---------------–---------------–---------------–---------------–
+	for (int i = first; i < path->pathlist_length; i++) {
+		int waypoint = path->pathlist[i];
+		vec3_t origin;
 
-
-	// ---------------–---------------–---------------–---------------–
-	// FIXME - Check if we are already somewhere along the path
-	// Check distance to each line segment
-	// If distance < 40qu, we're going to consider ourselves already on that edge, and skip the initial waypoints
-
-
-
-	// ---------------–---------------–---------------–---------------–
-	// Check to see if we can walk directly to any waypoints farther
-	// along the path.
-	// ---------------–---------------–---------------–---------------–
-	vec3_t ent_mins;
-	vec3_t ent_maxs;
-	VectorCopy(ai_hull_mins, ent_mins);
-	VectorCopy(ai_hull_maxs, ent_maxs);
-
-
-	// Get the index of the farthest waypoint we can walk to in the path:
-	int farthest_walkable_path_node_idx = -2; // -2 means no waypoints were walkable, -1 means we can walk to goal ent position
-	for(int i = zombie_list[zombie_idx].pathlist_length - 1; i >= 0; i--) {
-		if(ofs_tracebox(start, ent_mins, ent_maxs, waypoints[zombie_list[zombie_idx].pathlist[i]].origin, MOVE_NOMONSTERS, ent)) {
-			farthest_walkable_path_node_idx = i;
+		if (!WaypointGroundOrigin(waypoint, ent, origin))
 			continue;
-		}
-		break;
-	}
 
-	// If we were able to walk all the way to the final waypoint, check if we can walk to the goal entity position
-	if(farthest_walkable_path_node_idx == 0) {
-		if(ofs_tracebox(start, ent_mins, ent_maxs, goal, MOVE_NOMONSTERS, ent)) {
-			farthest_walkable_path_node_idx = -1;
-		}
-	}
+		if (i < shortcut && VectorDistanceSquared(start, origin) > 36864)
+			continue;
 
-
-	// If weren't able to walk to any waypoints, return first waypoint in path
-	if(farthest_walkable_path_node_idx == -2) {
-		int waypoint_idx = zombie_list[zombie_idx].pathlist[zombie_list[zombie_idx].pathlist_length - 1];
-
-		// Remove first waypoint from path
-		zombie_list[zombie_idx].pathlist_length -= 1;
-
-
-		if(developer.value == 3){
-			Con_Printf("\tReturning walk to first path node. (path node: %d, waypoint: %d)\n", (zombie_list[zombie_idx].pathlist_length - 1) + 1, waypoint_idx);
-			Con_Printf("\tpath after: [");
-			for(int i = zombie_list[zombie_idx].pathlist_length - 1; i >= 0; i--) {
-				Con_Printf(" %d,", zombie_list[zombie_idx].pathlist[i]);
-			}
-			Con_Printf("]\n");
-		}
-
-
-		VectorCopy(waypoints[waypoint_idx].origin, G_VECTOR(OFS_RETURN));
-		return;
-	}
-
-	// If we were able to walk all the way to goal entity, return that point, clear the path
-	if(farthest_walkable_path_node_idx == -1) {
-		if(developer.value == 3){
-			Con_Printf("\tReturning can walk to goal. (path node: %d)\n", farthest_walkable_path_node_idx);
-		}
-		VectorCopy(goal, G_VECTOR(OFS_RETURN));
-		// Remove all nodes from the path
-		zombie_list[zombie_idx].pathlist_length = 0;
-		return;
-	}
-
-
-	if(developer.value == 3){
-		Con_Printf("Farthest walkable path node: %d (waypoint: %d)\n",
-			(zombie_list[zombie_idx].pathlist_length - 1) - farthest_walkable_path_node_idx,
-			zombie_list[zombie_idx].pathlist[farthest_walkable_path_node_idx]
-		);
-	}
-
-	// Otherwise, we were able to walk to at least one node. 
-	// Binary search
-
-	// Perform a binary search along the edge from cur to next
-	int edge_start_waypoint_idx;
-	int edge_end_waypoint_idx;
-	vec3_t edge_start;
-	vec3_t edge_end;
-
-	if(farthest_walkable_path_node_idx > 0) {
-		edge_start_waypoint_idx = zombie_list[zombie_idx].pathlist[farthest_walkable_path_node_idx];
-		edge_end_waypoint_idx = zombie_list[zombie_idx].pathlist[farthest_walkable_path_node_idx - 1];
-		if(developer.value == 3){
-			Con_Printf("\tPerforming binary search between waypoint %d (%d in path, can walk: 1) and %d (%d in path, can walk: 0)\n", 
-				edge_start_waypoint_idx, (zombie_list[zombie_idx].pathlist_length - 1) - farthest_walkable_path_node_idx,
-				edge_end_waypoint_idx, ((zombie_list[zombie_idx].pathlist_length - 1) - farthest_walkable_path_node_idx) + 1
-			);
-		}
-		VectorCopy(waypoints[edge_start_waypoint_idx].origin, edge_start);
-		VectorCopy(waypoints[edge_end_waypoint_idx].origin, edge_end);
-	}
-	else {
-		edge_start_waypoint_idx = zombie_list[zombie_idx].pathlist[farthest_walkable_path_node_idx];
-		edge_end_waypoint_idx = -1;
-
-		if(developer.value == 3){
-			Con_Printf("\tPerforming binary search between waypoint %d (%d in path, can walk: 1) and goal ent pos\n", 
-				edge_start_waypoint_idx, (zombie_list[zombie_idx].pathlist_length - 1) - farthest_walkable_path_node_idx
-			);
-		}
-		VectorCopy(waypoints[edge_start_waypoint_idx].origin, edge_start);
-		VectorCopy(goal, edge_end);
-	}
-
-
-	int n_iters = 3;
-	int cur_frac_numerator = 1;
-	float cur_frac;
-
-	vec3_t cur_point;
-	vec3_t best_point;
-	VectorCopy(edge_start, best_point);
-	float best_point_frac = 0;
-
-	for(int i = 0; i < n_iters; i++) {
-		// Calculate the number in [0,1] corresponding to how far along the edge we are checking
-		cur_frac = ((float) cur_frac_numerator) / (2 << i);
-		if(developer.value == 3){
-			Con_Printf("\tBinary search iter: %d/%d, frac: %f\n", i, n_iters, (double)cur_frac);
-		}
-		VectorLerp(edge_start, cur_frac, edge_end, cur_point);
-
-		// Check if we can walk from the ent's current location directly to `cur_point`
-		if(ofs_tracebox(start, ent_mins, ent_maxs, cur_point, MOVE_NOMONSTERS, ent)) {
-			cur_frac_numerator = (cur_frac_numerator * 2) + 1;
-			best_point_frac = cur_frac;
-			VectorCopy(cur_point, best_point);
-		}
-		else {
-			cur_frac_numerator = (cur_frac_numerator * 2) - 1;
+		if (TraceMoveInternal(start, ai_hull_mins, ai_hull_maxs, origin, MOVE_NOMONSTERS, ent, i == adjacent, NULL)) {
+			VectorCopy(origin, G_VECTOR(OFS_RETURN));
+			path->pathlist_length = i;
+			PathSetSegment(path, G_VECTOR(OFS_RETURN), first_point);
+			return;
 		}
 	}
 
-	if(developer.value == 3){
-		Con_Printf("\tpath after binary search: (%f x between waypoints (%d,%d), then [", 
-			(double)best_point_frac, 
-			edge_start_waypoint_idx, 
-			edge_end_waypoint_idx
-		);
-		for(int i = farthest_walkable_path_node_idx - 1; i >= 0; i--) {
-			Con_Printf(" %d,", zombie_list[zombie_idx].pathlist[i]);
-		}
-		Con_Printf("]\n");
-	}
-	// Remove all points up to and including `farthest_walkable_path_node_idx` from the path
-	zombie_list[zombie_idx].pathlist_length = farthest_walkable_path_node_idx;
-
-
-
-	// ------------------------------------------------------------------------
-	// If we're already incredibly close to the goal point along the path
-	//
-	// Get_Next_Waypoint should've returned somewhere farther along the path,
-	// but is running into tricky edge cases regarding tracebox. 
-	// For this case, force-advance to the next waypoint / goal along the path
-	// ------------------------------------------------------------------------
-	if(VectorDistanceSquared(start,best_point) < 64) {
-		// If trying to walk to the next waypoint already, skip a waypoint on the path
-		if(best_point_frac >= 1.0f) {
-			zombie_list[zombie_idx].pathlist_length -= 1;
-		}
-
-		// If we have at least one waypoint, walk directly to it, pop from path
-		if(zombie_list[zombie_idx].pathlist_length > 0) {
-			int waypoint_idx = zombie_list[zombie_idx].pathlist[zombie_list[zombie_idx].pathlist_length - 1];
-			VectorCopy(waypoints[waypoint_idx].origin, best_point);
-			zombie_list[zombie_idx].pathlist_length -= 1;
-		}
-		// If we have no waypoints on the path, walk to goal, clear the path
-		else {
-			zombie_list[zombie_idx].pathlist_length = 0;
-			VectorCopy(goal, best_point);
-		}
-
-		if(developer.value == 3) {
-			Con_Printf("\tForce-truncated path to %d waypoints.\n", zombie_list[zombie_idx].pathlist_length);
-		}
-	}
-	// ------------------------------------------------------------------------
-
-
-	if(developer.value == 3){
-		Con_Printf("\tfinal path [");
-		for(int i = zombie_list[zombie_idx].pathlist_length - 1; i >= 0; i--) {
-			Con_Printf(" %d,", zombie_list[zombie_idx].pathlist[i]);
-		}
-		Con_Printf("]\n");
-
-		Con_Printf("\tFinal best point: (%f, %f, %f)\n",
-			(double)best_point[0], (double)best_point[1], (double)best_point[2]);
+	if (!WaypointGroundOrigin(path->pathlist[path->pathlist_length - 1], ent, G_VECTOR(OFS_RETURN))) {
+		VectorCopy(waypoints[path->pathlist[path->pathlist_length - 1]].origin, G_VECTOR(OFS_RETURN));
 	}
 
-	VectorCopy(best_point, G_VECTOR(OFS_RETURN));
-	return;
+	path->pathlist_length--;
+	PathSetSegment(path, G_VECTOR(OFS_RETURN), first_point);
 }
 
+
+static qboolean PathLookaheadGround(edict_t *ent, vec3_t candidate)
+{
+	vec3_t up, down;
+	VectorCopy(candidate, up);
+	VectorCopy(candidate, down);
+	up[2] += 8;
+	down[2] -= 20;
+
+	trace_t ground = SV_Move(up, ai_hull_mins, ai_hull_maxs, down, MOVE_NOMONSTERS, ent);
+
+	if (ground.startsolid || ground.allsolid || ground.fraction == 1 || ground.plane.normal[2] <= 0.7f || fabsf(ground.endpos[2] - ent->v.origin[2]) >= 8)
+		return false;
+
+	VectorCopy(ground.endpos, candidate);
+	return TraceMoveInternal(ent->v.origin, ai_hull_mins, ai_hull_maxs, candidate, MOVE_NOMONSTERS, ent, false, NULL);
+}
+
+void PF_pathfind_follow(void)
+{
+	edict_t *ent = G_EDICT(OFS_PARM0);
+	vec3_t anchor, delta, points[6], candidate;
+	float distance = G_FLOAT(OFS_PARM2);
+	zombie_ai *path = NULL;
+
+	VectorCopy(G_VECTOR(OFS_PARM1), anchor);
+	VectorCopy(anchor, G_VECTOR(OFS_RETURN));
+
+	if (!isfinite(distance) || distance <= 0 || ent->free)
+		return;
+
+	distance = fminf(distance, 192);
+	VectorSubtract(anchor, ent->v.origin, delta);
+
+	if (fabsf(delta[2]) >= 8)
+		return;
+
+	int entnum = NUM_FOR_EDICT(ent);
+
+	for (int i = 0; i < MAX_AI_COUNT; i++) {
+		if (zombie_list[i].zombienum == entnum) {
+			path = &zombie_list[i];
+			break;
+		}
+	}
+
+	if (!path || !path->segment_valid)
+		return;
+
+	VectorCopy(ent->v.origin, points[0]);
+
+	float lateral = 0;
+
+	if (VectorDistanceSquared(anchor, path->segment_end) < 1 && fabsf(path->segment_start[2] - anchor[2]) < 8) {
+		vec3_t offset;
+		VectorSubtract(anchor, path->segment_start, delta);
+		delta[2] = 0;
+
+		float length_squared = DotProduct(delta, delta);
+
+		if (length_squared > 1) {
+			VectorSubtract(ent->v.origin, path->segment_start, offset);
+
+			float fraction = fmaxf(0, fminf(DotProduct(offset, delta) / length_squared, 1));
+			VectorMA(path->segment_start, fraction, delta, candidate);
+			candidate[2] = anchor[2];
+
+			if (VectorDistanceSquared(ent->v.origin, candidate) < 4096) {
+				VectorCopy(candidate, points[0]);
+
+				float length = sqrtf(length_squared);
+				lateral = fmaxf(-48, fminf((offset[1] * delta[0] - offset[0] * delta[1]) / length, 48));
+			}
+		}
+	}
+
+	VectorCopy(anchor, points[1]);
+
+	int count = 2;
+
+	for (int i = path->pathlist_length - 1; i >= 0 && count < 6; i--) {
+		int waypoint = path->pathlist[i];
+
+		if (waypoint < 0 || waypoint >= n_waypoints || !waypoints[waypoint].open || !WaypointGroundOrigin(waypoint, ent, candidate) || fabsf(candidate[2] - anchor[2]) >= 8)
+			break;
+
+		VectorCopy(candidate, points[count]);
+		count++;
+	}
+
+	if (count == 2) {
+		float remaining = VecLength2(ent->v.origin, anchor);
+		float approach = path->pathlist_length == 0 ? 256 : 96;
+		lateral *= fmaxf(0, fminf((remaining - 64) / approach, 1));
+	}
+
+	int segment = 0;
+	qboolean found = false;
+
+	for (int attempt = 0; attempt < 4; attempt++, distance *= 0.5f) {
+		float remaining = distance;
+
+		for (segment = 1; segment < count; segment++) {
+			VectorSubtract(points[segment], points[segment - 1], delta);
+
+			float length = VectorNormalize(delta);
+
+			if (remaining <= length || segment == count - 1) {
+				VectorMA(points[segment - 1], fminf(remaining, length), delta, candidate);
+				break;
+			}
+
+			remaining -= length;
+		}
+
+		vec3_t center, side;
+		VectorCopy(candidate, center);
+		VectorSubtract(points[segment], points[segment - 1], delta);
+		delta[2] = 0;
+		VectorNormalize(delta);
+		side[0] = -delta[1];
+		side[1] = delta[0];
+		side[2] = 0;
+
+		if (attempt == 0 && fabsf(lateral) >= 2) {
+			for (int trial = 0; trial < 2; trial++) {
+				VectorMA(center, lateral * (trial == 0 ? 1 : 0.5f), side, candidate);
+
+				if (PathLookaheadGround(ent, candidate)) {
+					found = true;
+					break;
+				}
+			}
+
+			if (found)
+				break;
+		}
+
+		VectorCopy(center, candidate);
+
+		if (PathLookaheadGround(ent, candidate)) {
+			found = true;
+			break;
+		}
+	}
+
+	if (!found)
+		return;
+
+	VectorCopy(candidate, G_VECTOR(OFS_RETURN));
+
+	edict_t *goal = PROG_TO_EDICT(ent->v.goalentity);
+
+	if (goal == sv.edicts || goal == PROG_TO_EDICT(ent->v.enemy) || VectorDistanceSquared(goal->v.origin, anchor) >= 1 || !path->segment_valid)
+		return;
+
+	for (int i = 2; i <= segment && path->pathlist_length > 0; i++) {
+		vec3_t offset;
+		VectorSubtract(path->segment_end, path->segment_start, delta);
+		delta[2] = 0;
+		VectorSubtract(ent->v.origin, path->segment_end, offset);
+
+		qboolean passed = DotProduct(delta, delta) >= 1 && DotProduct(offset, delta) >= -8 * VectorLength(delta) && dist_to_line_segment(path->segment_start, path->segment_end, ent->v.origin) <= 4096;
+		VectorSubtract(points[i], path->segment_end, delta);
+		delta[2] = 0;
+
+		if (!passed && (DotProduct(delta, delta) < 1 || DotProduct(offset, delta) < 8 * VectorLength(delta) || dist_to_line_segment(path->segment_end, points[i], ent->v.origin) > 4096))
+			break;
+
+		PathSetSegment(path, points[i], false);
+		path->pathlist_length--;
+		VectorCopy(points[i], goal->v.origin);
+		SV_LinkEdict(goal, false);
+	}
+}
+
+
+void Get_Next_Waypoint(void)
+{
+	Get_Next_Waypoint_Internal(false);
+}
 
 
 
@@ -2683,7 +3403,7 @@ vector Get_First_Waypoint (entity)
 */
 void Get_First_Waypoint (void) {
 	// TODO - Remove `Get_First_Waypoint`, replace references with `Get_Next_Waypoint`
-	Get_Next_Waypoint();
+	Get_Next_Waypoint_Internal(true);
 }
 
 
@@ -4277,6 +4997,13 @@ ebfs_builtin_t pr_ebfs_builtins[] =
   { 513, "nzp_setperkorientation", PF_SetPerkOrientation },
   { 514, "useprint_send", PF_useprint_send },
   { 515, "nzp_hudconfig", PF_HUDConfig },
+  { 516, "nzp_pathfind_test", PF_pathfind_test },
+  { 517, "nzp_pathfind_origin", PF_pathfind_origin },
+  { 518, "nzp_pathfind_clear", PF_pathfind_clear },
+	{ 520, "nzp_can_walk_to_enemy", PF_can_walk_to_enemy },
+	{ 521, "nzp_pathfind_follow", PF_pathfind_follow },
+	{ 522, "nzp_ai_land", PF_ai_land },
+	{ 523, "nzp_pathfind_target_origin", PF_pathfind_target_origin },
 
   { 600, "json_parse", PF_json_parse },
   { 601, "json_parse_file", PF_json_parse_file },

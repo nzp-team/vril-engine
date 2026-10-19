@@ -597,7 +597,7 @@ void Host_ServerFrame (void)
 
 // move things around and think
 // always pause in single player if in console or menus
-	if (!sv.paused && !LoadingScreen_IsWaiting() && (svs.maxclients > 1 || key_dest == key_game) )
+	if (!sv.paused && !LoadingScreen_IsWaiting() && (svs.maxclients > 1 || key_dest == key_game || Test_Pathfind_Active()) )
 		SV_Physics ();
 
 // send all messages to the clients

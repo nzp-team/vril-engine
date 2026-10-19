@@ -157,6 +157,8 @@ void CL_ParseStartSoundPacket(void)
 		Host_Error ("CL_ParseStartSoundPacket: invalid sound speed");
 
 	flags = field_mask & SND_FOLLOW ? SOUNDFLAG_FOLLOW : 0;
+	if (field_mask & SND_NODISTANCE)
+		flags |= SOUNDFLAG_NODISTANCE;
 
 	channel = MSG_ReadShort ();
 	sound_num = MSG_ReadShort ();
@@ -971,7 +973,8 @@ CL_ParseWeaponFire
 void CL_ParseWeaponFire (void)
 {
 	vec3_t		kick;
-	return_time = (double)6/MSG_ReadLong ();
+	int recoil_rate = MSG_ReadLong();
+	return_time = recoil_rate > 0 ? 60.0 / recoil_rate : 0;
 	crosshair_spread_time = return_time + sv.time;
 
 	kick[0] = MSG_ReadCoord()/5;
@@ -1120,7 +1123,10 @@ void CL_ParseServerMessage (void)
 			break;
 		case svc_hudconfig:
 			hud_config_index = MSG_ReadByte();
-			HUD_Configure(hud_config_index, MSG_ReadString());
+			if (vid_headless)
+				MSG_ReadString();
+			else
+				HUD_Configure(hud_config_index, MSG_ReadString());
 			break;
 		case svc_hudtoast:
 			HUD_PowerupToast (MSG_ReadString ());

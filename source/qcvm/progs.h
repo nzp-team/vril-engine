@@ -49,8 +49,11 @@ typedef struct edict_s
 #define	EDICT_FROM_AREA(l) STRUCT_FROM_LINK(l,edict_t,area)
 extern	int	eval_gravity;
 extern  int eval_idealpitch, eval_pitch_speed;
+extern int eval_path_direct_retry_time;
 // Half_life modes. Crow_bar
 extern	int	eval_renderamt, eval_rendermode, eval_rendercolor;
+
+extern vec3_t ai_hull_mins, ai_hull_maxs;
 
 //============================================================================
 
@@ -75,6 +78,7 @@ void PR_ResetProgs (void);
 void PR_ClearRegisteredUseprints (void);
 void PR_SendRegisteredUseprints (struct client_s *client);
 void PR_ResetWaypointState (void);
+void PR_ClearEntityPath (int entnum);
 void PR_ClearHUDConfig (void);
 void PR_JSONClear (void);
 void PF_json_parse (void);

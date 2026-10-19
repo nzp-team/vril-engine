@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern cvar_t r_flatlightstyles;
 
-int zombie_skins[4];
+int zombie_skins[NUM_ZOMBIE_SKINS];
 
 /*
 ==================
@@ -33,10 +33,8 @@ R_InitOtherTextures
 void	R_InitOtherTextures (void)
 {
 	// external zombie skins
-	zombie_skins[0] = Image_LoadImage ("models/ai/zfull.mdl_0", IMAGE_PCX, 0, true, false);
-	zombie_skins[1] = Image_LoadImage ("models/ai/zfull.mdl_1", IMAGE_PCX, 0, true, false);
-	zombie_skins[2] = Image_LoadImage ("models/ai/zfull.mdl_2", IMAGE_PCX, 0, true, false);
-	zombie_skins[3] = Image_LoadImage ("models/ai/zfull.mdl_3", IMAGE_PCX, 0, true, false);
+	for (int i = 0; i < NUM_ZOMBIE_SKINS; i++)
+		zombie_skins[i] = Image_LoadImage (va("models/ai/zfull.mdl_%i", i), IMAGE_PCX, 0, true, false);
 }
 
 /*

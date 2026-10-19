@@ -43,6 +43,17 @@ test_status_t Test_MapBoot_Frame(void);
 test_status_t Test_Restart_Start(void);
 test_status_t Test_Restart_Frame(void);
 
+// MARK: Special pathfind test
+qboolean Test_Pathfind_Begin(void);
+void Test_Pathfind_Reset(void);
+void Test_Pathfind_InvalidLink(int source, int source_id, int target_id);
+qboolean Test_Pathfind_Active(void);
+qboolean Test_Pathfind_IgnoreBrush(int entnum, qboolean startsolid, qboolean allsolid, float normal_z, float end_z);
+void Test_Pathfind_Command(void);
+void PF_pathfind_test(void);
+void PF_pathfind_origin(void);
+void PF_pathfind_clear(void);
+
 void TestHandler_Frame(void);
 qboolean TestHandler_ArgumentsAllowHeadless(int argc, char **argv);
 qboolean TestHandler_Init(void);

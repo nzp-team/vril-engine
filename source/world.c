@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // world.c -- world query functions
 
 #include "nzportable_def.h"
+#include <float.h>
 
 /*#ifdef PSP_VFPU
 #include <pspmath.h>
@@ -635,6 +636,20 @@ struct rhtctx_s
 // 1/32 epsilon to keep floating point happy
 #define	DIST_EPSILON	(0.03125)
 
+static float SV_HullPlaneSide (mplane_t *plane, vec3_t point)
+{
+	float x = plane->normal[0] * point[0];
+	float y = plane->normal[1] * point[1];
+	float z = plane->normal[2] * point[2];
+	float distance = x + y + z - plane->dist;
+	float error = (fabsf(x) + fabsf(y) + fabsf(z) + fabsf(plane->dist)) * (8 * FLT_EPSILON) + FLT_MIN;
+
+	if (fabsf(distance) > error)
+		return distance;
+
+	return DoublePrecisionDotProduct(plane->normal, point) - (double)plane->dist;
+}
+
 /*
 ==================
 Q1BSP_RecursiveHullTrace
@@ -692,8 +707,8 @@ reenter:
 	}
 	else
 	{
-		t1 = DoublePrecisionDotProduct (plane->normal, p1) - (double)plane->dist;
-		t2 = DoublePrecisionDotProduct (plane->normal, p2) - (double)plane->dist;
+		t1 = SV_HullPlaneSide(plane, p1);
+		t2 = SV_HullPlaneSide(plane, p2);
 	}
 
 	/*if its completely on one side, resume on that side*/
@@ -748,8 +763,21 @@ reenter:
 		VectorCopy(plane->normal, trace->plane.normal);
 	}
 
-	t1 = DoublePrecisionDotProduct (trace->plane.normal, ctx->start) - (double)trace->plane.dist;
-	t2 = DoublePrecisionDotProduct (trace->plane.normal, ctx->end) - (double)trace->plane.dist;
+	if (plane->type < 3)
+	{
+		t1 = ctx->start[plane->type] - plane->dist;
+		t2 = ctx->end[plane->type] - plane->dist;
+		if (side)
+		{
+			t1 = -t1;
+			t2 = -t2;
+		}
+	}
+	else
+	{
+		t1 = DoublePrecisionDotProduct (trace->plane.normal, ctx->start) - (double)trace->plane.dist;
+		t2 = DoublePrecisionDotProduct (trace->plane.normal, ctx->end) - (double)trace->plane.dist;
+	}
 	midf = (t1 - (float)DIST_EPSILON) / (t1 - t2);
 
 	midf = CLAMP(0, midf, 1);
@@ -1001,6 +1029,8 @@ void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins2, clip->maxs2, clip->end, touch);
 		else
 			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins, clip->maxs, clip->end, touch);
+		if (Test_Pathfind_IgnoreBrush(NUM_FOR_EDICT(touch), trace.startsolid, trace.allsolid, trace.plane.normal[2], trace.endpos[2]))
+			continue;
 
 		if (trace.allsolid || trace.startsolid ||
 		trace.fraction < clip->trace.fraction)
@@ -1081,6 +1111,11 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 // clip to world
 	clip.trace = SV_ClipMoveToEntity( sv.edicts, start, mins, maxs, end, passedict);
 
+	if (clip.trace.allsolid)
+		return clip.trace;
+
+	qboolean clipped = clip.trace.fraction < 1;
+
 	if (type == MOVE_MISSILE)
 	{
 		for (i=0 ; i<3 ; i++)
@@ -1096,10 +1131,16 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 	}
 
 // create the bounding box of the entire move
-	SV_MoveBounds ( start, clip.mins2, clip.maxs2, end, clip.boxmins, clip.boxmaxs );
+	SV_MoveBounds ( start, clip.mins2, clip.maxs2, clip.trace.endpos, clip.boxmins, clip.boxmaxs );
 
 // clip to entities
 	SV_ClipToLinks ( sv_areanodes, &clip );
+
+	if (clipped && clip.trace.startsolid) {
+		SV_MoveBounds(start, clip.mins2, clip.maxs2, end, clip.boxmins, clip.boxmaxs);
+		clip.trace = SV_ClipMoveToEntity(sv.edicts, start, mins, maxs, end, passedict);
+		SV_ClipToLinks(sv_areanodes, &clip);
+	}
 
 	return clip.trace;
 }

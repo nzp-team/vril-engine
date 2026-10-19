@@ -33,7 +33,7 @@ static void Music_f (void);
 
 void Music_VolumeChange(float bgmvolume)
 {
-	int volume = (int)(bgmvolume*(float)PLATFORM_VOLUME_MAX);
+	int volume = (int)(bgmvolume * 0.5f * (float)PLATFORM_VOLUME_MAX);
 	music_volume = volume;
 }
 

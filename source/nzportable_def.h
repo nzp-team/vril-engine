@@ -48,6 +48,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	GAMENAME	"nzp"
 
+#define NUM_ZOMBIE_SKINS 7
+
 // Platforms such as Nspire have filesystem restrictions where
 // files on-flash must meet certain requirements. They can set
 // these in their Makefiles to respect them for use in read/write
@@ -398,6 +400,12 @@ typedef struct
 	int pathlist [MAX_WAYPOINTS];
 	int pathlist_length;
 	int zombienum;
+	vec3_t segment_start, segment_end;
+	qboolean segment_valid;
+	vec3_t entry_point, entry_start;
+	qboolean entry_pending;
+	int goal_waypoint, targetnum;
+	unsigned int geometry_revision, gate_revision;
 } zombie_ai;
 
 typedef struct
@@ -414,7 +422,6 @@ typedef struct
 
 extern waypoint_ai waypoints[MAX_WAYPOINTS];
 extern int n_waypoints;
-extern short closest_waypoints[MAX_EDICTS];
 
 // thread structs
 typedef struct
