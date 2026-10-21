@@ -175,20 +175,44 @@ void Sys_PrintSystemInfo(void)
 
 void Sys_SystemError(char *error)
 {
-	consoleInit(GFX_TOP, NULL);
+    char text[2048];
+    int page = 0;
+    qboolean more;
+    consoleInit(GFX_TOP, NULL);
+    hidScanInput();
+    do
+    {
+        more = Sys_ErrorPage(error, page, 49, 22, text, sizeof(text));
+        consoleClear();
+        printf("%s=== Vril Engine Exception (page %d) ===\n", CONSOLE_RED, page + 1);
+        printf("%s%s\n", CONSOLE_WHITE, text);
+        printf("%sLEFT/RIGHT: pages   START: quit\n", CONSOLE_CYAN);
+        while (aptMainLoop())
+        {
+            hidScanInput();
+            u32 buttons = hidKeysDown();
+            if (buttons & KEY_START)
+                goto done;
+            if ((buttons & KEY_LEFT) && page > 0)
+            {
+                page--;
+                break;
+            }
+            if ((buttons & KEY_RIGHT) && more)
+            {
+                page++;
+                break;
+            }
+            gfxFlushBuffers();
+            gfxSwapBuffers();
+            gspWaitForVBlank();
+        }
+        if (!aptMainLoop())
+            break;
+    } while (1);
 
-	printf("%s=== Vril Engine Exception ===\n", CONSOLE_RED);
-	printf("%s%s\n\n", CONSOLE_WHITE, error);
-	
-	printf("%sPress START to quit.\n", CONSOLE_CYAN);
-
-	while(!(hidKeysDown() & KEY_START))
-		hidScanInput();
-
-	Host_Shutdown();
-
-	gfxExit();
-	Sys_Quit();
+done:
+    Sys_Quit();
 }
 
 void Sys_Printf (char *fmt, ...)

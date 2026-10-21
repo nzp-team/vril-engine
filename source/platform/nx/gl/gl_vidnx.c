@@ -308,6 +308,17 @@ void	VID_Init (unsigned char *palette)
 
 void	VID_Shutdown (void)
 {
+    if (s_display == EGL_NO_DISPLAY)
+        return;
+    eglMakeCurrent(s_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    if (s_context != EGL_NO_CONTEXT)
+        eglDestroyContext(s_display, s_context);
+    if (s_surface != EGL_NO_SURFACE)
+        eglDestroySurface(s_display, s_surface);
+    eglTerminate(s_display);
+    s_context = EGL_NO_CONTEXT;
+    s_surface = EGL_NO_SURFACE;
+    s_display = EGL_NO_DISPLAY;
 }
 
 void	VID_Update (vrect_t *rects)

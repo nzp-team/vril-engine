@@ -469,16 +469,16 @@ void Menu_DrawCharacterPanel(char **description)
     Menu_DrawFill (0, 0, vid.width, vid.height, 255, 0, 0, 20);
 #endif
     // Black background box
-    Menu_DrawFill (0, y_pos, vid.width, vid.height - 40, 0, 0, 0, 255);
+    Menu_DrawFill (0, y_pos, vid.width, (vid.height/vid.scale) - 40, 0, 0, 0, 255);
     // Top yellow line
     Menu_DrawFill (0, y_pos-small_bar_height, vid.width, small_bar_height, 255, 255, 0, 255);
     // Bottom yellow line
-    Menu_DrawFill (0, vid.height - 23, vid.width, small_bar_height, 255, 255, 0, 255);
+    Menu_DrawFill (0, (vid.height/vid.scale) - 23, vid.width, small_bar_height, 255, 255, 0, 255);
 
 	UI_SetAlignment (UI_ANCHOR_CENTER, UI_ANCHOR_TOP);
 
 	for (int i = 0; i < 17; i++) {
-		Menu_DrawStringCentered (0, y_pos + ((_CHAR_HEIGHT * (i + 1)) * vid.scale), description[i], 255, 255, 255, 255);
+		Menu_DrawStringCentered (0, (y_pos + (_CHAR_HEIGHT * (i + 3))) * vid.scale, description[i], 255, 255, 255, 255);
 	}
 }
 
@@ -939,7 +939,7 @@ Menu_DrawBuildDate
 */
 void Menu_DrawBuildDate (void)
 {
-	char* welcome_text = "Welcome, player  ";
+	char* welcome_text = va("Welcome, %s  ", cl_name.string);
 
 	int y_pos = 4;
 	int y_offset = 10;

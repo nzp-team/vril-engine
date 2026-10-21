@@ -690,6 +690,14 @@ void R_DrawSpriteModel (entity_t *e)
 	if (psprite->beamlength == 20)
 		filter = true;
 
+	if (e->effects & EF_FULLBRIGHT)
+		sceGuColor(0xffffffff);
+	else
+	{
+		R_LightPoint(e->origin);
+		sceGuColor(GU_COLOR(lightcolor[0]/255, lightcolor[1]/255, lightcolor[2]/255, 1.0f));
+	}
+
 	// Bind the texture.
 	Hyena_BindTexture(frame->gl_texturenum);
 
@@ -711,7 +719,7 @@ void R_DrawSpriteModel (entity_t *e)
 		sceGuTexFunc(GU_TFX_MODULATE , GU_TCC_RGB);
 	}
 	else
-		sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
+		sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 
 	// Allocate memory for this polygon.
 	glvert_t* const	vertices =
@@ -761,6 +769,7 @@ void R_DrawSpriteModel (entity_t *e)
 
 	Fog_EnableGFog ();
 
+	sceGuColor(0xffffffff);
 	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 	sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
 }
@@ -967,14 +976,14 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 		frame = 0;
 	}
 
-	// HACK: if we're a certain distance away, don't bother blending
+	// Skip blending beyond the resolution- and zoom-scaled cutoff.
 	// cypress -- Lets not care about Z (up).. chances are they're out of the frustum anyway
-	int dist_x = (cl.viewent.origin[0] - e->origin[0]);
-	int dist_y = (cl.viewent.origin[1] - e->origin[1]);
-	int distance_from_client = (int)((dist_x) * (dist_x) + (dist_y) * (dist_y)); // no use sqrting, just slows us down.
+	float dist_x = (cl.viewent.origin[0] - e->origin[0]);
+	float dist_y = (cl.viewent.origin[1] - e->origin[1]);
+	float distance_from_client = dist_x * dist_x + dist_y * dist_y;
 
 	// They're too far away from us to care about blending their frames.
-	if (distance_from_client >= 160000) { // 400 * 400
+	if (distance_from_client >= scr_alias_lerp_distance_squared) {
 		// Fix them from jumping from last lerp
 		e->pose1 = e->pose2 = paliashdr->frames[frame].firstpose;
 		e->frame_interval = 0.1;
@@ -1180,7 +1189,7 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	sceGumUpdateMatrix();
 	IgnoreInterpolatioFrame(e, paliashdr);
 	anim = (int)(cl.time*10) & 3;
-	Hyena_BindTexture(paliashdr->gl_texturenum[e->skinnum][anim]);
+	Hyena_BindTexture(paliashdr->gl_texturenum[bound(0, e->skinnum, paliashdr->numskins - 1)][anim]);
 	//Rendering block
 	if (r_i_model_animation.value)
 	{
@@ -1237,7 +1246,7 @@ void R_DrawAliasModel (entity_t *e)
 	VectorAdd (e->origin, clmodel->mins, mins);
 	VectorAdd (e->origin, clmodel->maxs, maxs);
 
-	if (R_CullBox(mins, maxs) == 2)
+	if (e != &cl.viewent && e != &cl.viewent2 && R_CullBox(mins, maxs) == 2)
 		return;
 
 	//=============================================================================================== 97% at this point
@@ -1391,8 +1400,8 @@ void R_DrawAliasModel (entity_t *e)
 	
 
 	// Special handling of view model to keep FOV from altering look.  Pretty good.  Not perfect but rather close.
-	if ((e == &cl.viewent || e == &cl.viewent2) && scr_fov_viewmodel.value) {
-		float scale = 1.0f / tan (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
+	if ((e == &cl.viewent || e == &cl.viewent2) && scr_render_viewmodel_fov) {
+		float scale = SCR_GetViewmodelScale();
 		if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) scale *= ENTSCALE_DECODE(e->scale);
 
 		const ScePspFVector3 translation = {
@@ -1458,7 +1467,7 @@ void R_DrawAliasModel (entity_t *e)
 	IgnoreInterpolatioFrame(e, paliashdr);
 
 	anim = (int)(cl.time*10) & 3;
-	Hyena_BindTexture(paliashdr->gl_texturenum[e->skinnum][anim]);
+	Hyena_BindTexture(paliashdr->gl_texturenum[bound(0, e->skinnum, paliashdr->numskins - 1)][anim]);
 
 	//===================================================================================================== 80% at this point
 	//Rendering block
@@ -1679,7 +1688,7 @@ void R_DrawEntitiesOnList (void)
 		case mod_alias:
 			{
 				aliashdr_t * paliashdr = (aliashdr_t *)Mod_Extradata (currententity->model);
-				textureindex = paliashdr->gl_texturenum[currententity->skinnum][anim];
+				textureindex = paliashdr->gl_texturenum[bound(0, currententity->skinnum, paliashdr->numskins - 1)][anim];
 				if(specChar == '$') { // alpha blended
 					prev_visedict = trans_entity_batches[textureindex];
 					if (prev_visedict < 0) {
@@ -1991,6 +2000,8 @@ R_RenderScene
 r_refdef must be set before the first call
 ===============
 */
+static float view_projection_fovy, view_projection_aspect, view_projection_far;
+
 void R_RenderScene (void)
 {
 	int 		i;
@@ -2103,7 +2114,10 @@ void R_RenderScene (void)
 		}
 	}
 
-	float farplanedist = (r_refdef.fog_start == 0 || r_refdef.fog_end < 0) ? 4096 : (r_refdef.fog_end + 16); 
+	float farplanedist = (r_refdef.fog_start == 0 || r_refdef.fog_end < 0) ? 4096 : (r_refdef.fog_end + 16);
+	view_projection_fovy = fovy;
+	view_projection_aspect = fovx;
+	view_projection_far = farplanedist;
 	sceGumPerspective(fovy, fovx, clipping::near_clip_distance, farplanedist);
 
 	if (mirror)
@@ -2298,8 +2312,24 @@ void R_RenderView (void)
 	// render normal view
 	R_RenderScene ();
 
+	/* Use the same closer near plane for hardware and CPU clipping. */
+	sceGumMatrixMode(GU_PROJECTION);
+	sceGumPushMatrix();
+	clipping::begin_frame(view_projection_fovy,
+		fmin(160.0f, view_projection_fovy * 2.2f), view_projection_aspect, 0.1f);
+	sceGumMatrixMode(GU_PROJECTION);
+	sceGumLoadIdentity();
+	sceGumPerspective(view_projection_fovy, view_projection_aspect, 0.1f, view_projection_far);
+	sceGumUpdateMatrix();
+	sceGumMatrixMode(GU_MODEL);
 	R_DrawViewModel ();
 	R_DrawView2Model ();
+	clipping::begin_frame(view_projection_fovy,
+		fmin(160.0f, view_projection_fovy * 2.2f), view_projection_aspect);
+	sceGumMatrixMode(GU_PROJECTION);
+	sceGumPopMatrix();
+	sceGumUpdateMatrix();
+	sceGumMatrixMode(GU_MODEL);
 	R_DrawWaterSurfaces ();
 
 	// render mirror view

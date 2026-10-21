@@ -95,7 +95,8 @@ char *svc_strings[] =
 	"svc_perkorientation",
 	"svc_updatescorestats",
 	"svc_registeruseprint",
-	"svc_hudconfig"
+	"svc_hudconfig",
+	[svc_spawnstatic2] = "svc_spawnstatic2"
 };
 
 //=============================================================================
@@ -919,7 +920,7 @@ void CL_ParseClientdata (int bits)
 CL_ParseStatic
 =====================
 */
-void CL_ParseStatic (void)
+void CL_ParseStatic (qboolean extended)
 {
 	entity_t *ent;
 	int		i;
@@ -936,7 +937,8 @@ void CL_ParseStatic (void)
 	ent->frame = ent->baseline.frame;
 	ent->colormap = vid.colormap;
 	ent->skinnum = ent->baseline.skin;
-	ent->effects = ent->baseline.effects;
+	ent->scale = extended ? MSG_ReadByte () : ENTSCALE_DEFAULT;
+	ent->effects = extended ? MSG_ReadShort () : ent->baseline.effects;
 
 	VectorCopy (ent->baseline.origin, ent->origin);
 	VectorCopy (ent->baseline.angles, ent->angles);
@@ -1040,7 +1042,6 @@ void CL_ParseServerMessage (void)
 	else if (cl_shownet.value == 2)
 		Con_Printf ("------------------\n");
 
-	cl.onground = false;	// unless the server says otherwise
 //
 // parse the message
 //
@@ -1265,7 +1266,10 @@ void CL_ParseServerMessage (void)
 			CL_ParseBaseline (CL_EntityNum(i));
 			break;
 		case svc_spawnstatic:
-			CL_ParseStatic ();
+			CL_ParseStatic (false);
+			break;
+		case svc_spawnstatic2:
+			CL_ParseStatic (true);
 			break;
 		case svc_temp_entity:
 			CL_ParseTEnt ();

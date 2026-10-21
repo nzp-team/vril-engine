@@ -1919,6 +1919,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 	s = pheader->skinwidth * pheader->skinheight;
 
 	if (model_is_zombie(loadmodel->name) == true) {
+		pheader->numskins = NUM_ZOMBIE_SKINS;
 		Mod_FloodFillSkin(skin, pheader->skinwidth, pheader->skinheight);
 		for (int i = 0; i < NUM_ZOMBIE_SKINS; i++) {
 			pheader->gl_texturenum[i][0] =
@@ -2196,6 +2197,9 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	// build the draw lists
 	//
 	GL_MakeAliasModelDisplayLists (mod, pheader);
+
+	// We do not need to keep the cached copy of the mesh at this point.
+	Hunk_HighMark ();
 
 //
 // move the complete, relocatable alias model to the cache

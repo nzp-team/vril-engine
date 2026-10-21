@@ -832,7 +832,8 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	MSG_WriteShort (msg, ent->v.viewmodel2_effects);
 
 	MSG_WriteByte (msg, ent->v.gungame_weapon_idx);
-	MSG_WriteShort (msg, ent->v.gungame_score_threshold);
+	// Send the remaining score, independent of spendable points.
+	MSG_WriteShort (msg, ent->v.gungame_score_threshold - PR_GetEdictFloat(ent, "score"));
 }
 
 /*

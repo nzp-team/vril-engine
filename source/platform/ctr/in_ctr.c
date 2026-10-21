@@ -34,6 +34,7 @@ extern cvar_t in_mlook; //Heffo - mlook cvar
 extern cvar_t in_anub_mode;
 
 static float gyro_raw_to_radians;
+static qboolean touch_active;
 
 qboolean IN_PlatformHasMouse(void) { return false; }
 qboolean IN_PlatformHasGamepad(void) { return true; }
@@ -68,13 +69,15 @@ void IN_PlatformInit(void)
 
 void IN_PlatformShutdown(void)
 {
+	IN_PlatformSetLightbar(0, 0, 0);
 	mcuHwcExit();
 	HIDUSER_DisableGyroscope();
 }
 
 void IN_PlatformCommands(void)
 {
-
+	if (!(hidKeysHeld() & KEY_TOUCH) || key_dest != key_game || cl.paused)
+		touch_active = false;
 }
 
 void IN_PlatformSetLightbar(byte red, byte green, byte blue)
@@ -126,7 +129,39 @@ void IN_GetAnalogStick(in_analog_stick_id_t stick, in_analog_stick_t *value)
 
 void IN_PlatformMove(usercmd_t *cmd)
 {
+	static float touch_x, touch_y;
+	touchPosition touch;
+	float x, y;
+
 	(void)cmd;
+	if (!(hidKeysHeld() & KEY_TOUCH)) {
+		touch_active = false;
+		return;
+	}
+
+	hidTouchRead(&touch);
+	if (touch.px > 268 && touch.py > 14 && touch.py < 226) {
+		touch_active = false;
+		return;
+	}
+	if (!touch_active || (hidKeysDown() & KEY_TOUCH)) {
+		touch_x = touch.px;
+		touch_y = touch.py;
+		touch_active = true;
+		return;
+	}
+
+	// Smooth touch coordinates without losing subpixel movement.
+	x = (touch.px + touch_x) * 0.5f;
+	y = (touch.py + touch_y) * 0.5f;
+	V_StopPitchDrift();
+	cl.viewangles[YAW] -= (x - touch_x) * sensitivity.value * 0.5f;
+	cl.viewangles[PITCH] += (y - touch_y) * sensitivity.value * 0.5f
+		* (m_pitch.value > 0 ? -1.0f : 1.0f);
+	if (cl.viewangles[PITCH] > 80) cl.viewangles[PITCH] = 80;
+	if (cl.viewangles[PITCH] < -70) cl.viewangles[PITCH] = -70;
+	touch_x = x;
+	touch_y = y;
 }
 
 //

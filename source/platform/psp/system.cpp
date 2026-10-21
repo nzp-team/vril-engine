@@ -354,36 +354,50 @@ void Sys_PrintSystemInfo(void)
 
 void Sys_SystemError(char *error)
 {
-	// Print the error message to the debug screen.
-	if (!debugScreenInitialized)
-	{
-		pspDebugScreenInit();
-		debugScreenInitialized = true;
-	}
-	pspDebugScreenSetTextColor(0x0000ff);
-	pspDebugScreenPrintf("=== Vril Engine Exception ===\n");
-	pspDebugScreenSetTextColor(0xffffff);
-	pspDebugScreenPrintf(error);
-	pspDebugScreenSetTextColor(0xffff00);
-	pspDebugScreenPrintf("\n\nPress CROSS to quit.\n");
+    char text[2048];
+    int page = 0;
+    unsigned int previous;
+    qboolean more;
+    SceCtrlData pad;
+    // Reclaim the display even if startup logging initialized it earlier.
+    pspDebugScreenInit();
+    debugScreenInitialized = true;
+    sceCtrlSetSamplingCycle(0);
+    sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
+    sceCtrlReadBufferPositive(&pad, 1);
+    previous = pad.Buttons;
+    do
+    {
+        more = Sys_ErrorPage(error, page, 67, 25, text, sizeof(text));
+        pspDebugScreenClear();
+        pspDebugScreenSetTextColor(0x0000ff);
+        pspDebugScreenPrintf("=== Vril Engine Exception (page %d) ===\n", page + 1);
+        pspDebugScreenSetTextColor(0xffffff);
+        pspDebugScreenPrintf("%s\n", text);
+        pspDebugScreenSetTextColor(0xffff00);
+        pspDebugScreenPrintf("LEFT/RIGHT: pages   CROSS: quit\n");
+        for (;;)
+        {
+            sceCtrlReadBufferPositive(&pad, 1);
+            unsigned int buttons = pad.Buttons & ~previous;
+            previous = pad.Buttons;
+            if (buttons & PSP_CTRL_CROSS)
+                goto done;
+            if ((buttons & PSP_CTRL_LEFT) && page > 0)
+            {
+                page--;
+                break;
+            }
+            if ((buttons & PSP_CTRL_RIGHT) && more)
+            {
+                page++;
+                break;
+            }
+        }
+    } while (1);
 
-	// Wait for a button press.
-	sceCtrlSetSamplingCycle(0);
-	sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
-	SceCtrlData pad;
-	do {
-		sceCtrlReadBufferPositive(&pad, 1);
-	} while (pad.Buttons & PSP_CTRL_CROSS);
-	do {
-		sceCtrlReadBufferPositive(&pad, 1);
-	} while ((pad.Buttons & PSP_CTRL_CROSS) == 0);
-	do {
-		sceCtrlReadBufferPositive(&pad, 1);
-	} while (pad.Buttons & PSP_CTRL_CROSS);
-
-	// Quit.
-	pspDebugScreenPrintf("Shutting down...\n");
-	Sys_Quit();
+done:
+    Sys_Quit();
 }
 
 void Sys_Printf (char *fmt, ...)

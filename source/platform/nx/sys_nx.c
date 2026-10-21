@@ -162,23 +162,53 @@ void Sys_PrintSystemInfo(void)
 
 void Sys_SystemError(char *error)
 {
-	consoleInit(NULL);
+    char text[4096];
+    int page = 0;
+    qboolean more;
+    // EGL owns the native window during gameplay. Release it before the
+    // software console creates its framebuffer, and reset the game's crop.
+    VID_Shutdown();
+    PrintConsole *console = consoleInit(NULL);
+    nwindowSetCrop(nwindowGetDefault(), 0, 0,
+        console->consoleWidth * 16, console->consoleHeight * 16);
+    // Errors can occur before the normal input setup has completed.
+    padConfigureInput(1, HidNpadStyleSet_NpadStandard);
+    padInitializeDefault(&pad);
+    padUpdate(&pad);
 
-	printf("%s=== Vril Engine Exception ===\n", CONSOLE_RED);
-	printf("%s%s\n\n", CONSOLE_WHITE, error);
-	
-	printf("%sPress START to quit.\n", CONSOLE_CYAN);
+    do
+    {
+        more = Sys_ErrorPage(error, page, 78, 35, text, sizeof(text));
+        consoleClear();
+        printf("%s=== Vril Engine Exception (page %d) ===\n", CONSOLE_RED, page + 1);
+        printf("%s%s\n", CONSOLE_WHITE, text);
+        printf("%sLEFT/RIGHT: pages   PLUS: quit\n", CONSOLE_CYAN);
+        consoleUpdate(NULL);
+        while (appletMainLoop())
+        {
+            padUpdate(&pad);
+            u64 buttons = padGetButtonsDown(&pad);
+            if (buttons & HidNpadButton_Plus)
+                goto done;
+            if ((buttons & HidNpadButton_Left) && page > 0)
+            {
+                page--;
+                break;
+            }
+            if ((buttons & HidNpadButton_Right) && more)
+            {
+                page++;
+                break;
+            }
+            consoleUpdate(NULL);
+        }
+        if (!appletMainLoop())
+            break;
+    } while (1);
 
-	while(!(padGetButtonsDown(&pad) & HidNpadButton_Plus))
-	{
-		padUpdate(&pad);
-		consoleUpdate(NULL);
-	}
-
-	Host_Shutdown();
-
-	consoleExit(NULL);
-	Sys_Quit();
+done:
+    consoleExit(NULL);
+    Sys_Quit();
 }
 
 void Sys_Printf (char *fmt, ...)

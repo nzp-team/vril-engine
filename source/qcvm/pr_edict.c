@@ -83,6 +83,7 @@ static gefv_cache	gefvCache[GEFV_CACHESIZE] = {{NULL, ""}, {NULL, ""}};
 int	eval_gravity;
 int eval_idealpitch, eval_pitch_speed;
 int eval_path_direct_retry_time;
+int eval_is_using_mouse;
 
 // Half_life modes. Crow_bar
 int	eval_renderamt, eval_rendermode, eval_rendercolor;
@@ -103,6 +104,7 @@ void FindEdictFieldOffsets (void)
 {
 	eval_gravity = FindFieldOffset ("gravity");
 	eval_path_direct_retry_time = FindFieldOffset ("path_direct_retry_time");
+	eval_is_using_mouse = FindFieldOffset ("is_using_mouse");
 
     eval_idealpitch = FindFieldOffset ("idealpitch");
 	eval_pitch_speed = FindFieldOffset ("pitch_speed");

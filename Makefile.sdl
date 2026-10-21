@@ -71,3 +71,5 @@ run: $(TARGET)
 
 clean:
 	rm -rf $(BUILD)
+
+$(BUILD)/render/r_screen.o: source/render/r_alias_lerp.h
