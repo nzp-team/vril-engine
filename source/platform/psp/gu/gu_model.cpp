@@ -2198,6 +2198,9 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	//
 	GL_MakeAliasModelDisplayLists (mod, pheader);
 
+	// We do not need to keep the cached copy of the mesh at this point.
+	Hunk_HighMark ();
+
 //
 // move the complete, relocatable alias model to the cache
 //
