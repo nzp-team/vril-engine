@@ -50,6 +50,7 @@ typedef struct edict_s
 extern	int	eval_gravity;
 extern  int eval_idealpitch, eval_pitch_speed;
 extern int eval_path_direct_retry_time;
+extern int eval_is_using_mouse;
 // Half_life modes. Crow_bar
 extern	int	eval_renderamt, eval_rendermode, eval_rendercolor;
 
@@ -176,6 +177,7 @@ extern	int			pr_xstatement;
 extern	unsigned short		pr_crc;
 
 void PR_RunError (char *error, ...);
+void PR_StackTrace (void);
 
 void ED_PrintEdicts (void);
 void ED_PrintNum (int ent);

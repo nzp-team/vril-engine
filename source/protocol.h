@@ -171,6 +171,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define svc_registeruseprint 57		// [byte] index [string] text [byte] red green blue
 #define svc_hudconfig 		58		// [byte] index [string] config string
 
+#define svc_spawnstatic2		59		// baseline, [byte] scale, [short] effects
+
 //
 // client to server
 //

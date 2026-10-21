@@ -370,6 +370,7 @@ R_DrawSpriteModel
 void R_DrawSpriteModel (entity_t *e)
 {
 	vec3_t	point;
+	extern vec3_t lightcolor;
 	mspriteframe_t	*frame;
 	float		*up, *right;
 	vec3_t		v_forward, v_right, v_up;
@@ -396,7 +397,14 @@ void R_DrawSpriteModel (entity_t *e)
 		right = vright;
 	}
 
-	glColor3f (1,1,1);
+	if (e->effects & EF_FULLBRIGHT)
+		glColor3f (1,1,1);
+	else
+	{
+		R_LightPoint (e->origin);
+		glColor3f (lightcolor[0]/255, lightcolor[1]/255, lightcolor[2]/255);
+	}
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	Hyena_BindTexture(frame->gl_texturenum);
 
@@ -431,6 +439,8 @@ void R_DrawSpriteModel (entity_t *e)
 	glEnd ();
 	glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	glColor3f (1,1,1);
 
 	Fog_EnableGFog ();
 }
@@ -613,14 +623,14 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 		frame = 0;
 	}
 
-	// HACK: if we're a certain distance away, don't bother blending
+	// Skip blending beyond the resolution- and zoom-scaled cutoff.
 	// cypress -- Lets not care about Z (up).. chances are they're out of the frustum anyway
-	int dist_x = (cl.viewent.origin[0] - e->origin[0]);
-	int dist_y = (cl.viewent.origin[1] - e->origin[1]);
-	int distance_from_client = (int)((dist_x) * (dist_x) + (dist_y) * (dist_y)); // no use sqrting, just slows us down.
+	float dist_x = (cl.viewent.origin[0] - e->origin[0]);
+	float dist_y = (cl.viewent.origin[1] - e->origin[1]);
+	float distance_from_client = dist_x * dist_x + dist_y * dist_y;
 
 	// They're too far away from us to care about blending their frames.
-	if (distance_from_client >= 160000) { // 400 * 400
+	if (distance_from_client >= scr_alias_lerp_distance_squared) {
 		// Fix them from jumping from last lerp
 		e->pose1 = e->pose2 = paliashdr->frames[frame].firstpose;
 		e->frame_interval = 0.1;
@@ -828,7 +838,7 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	glScalef (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
 
 	anim = (int)(cl.time*10) & 3;
-	Hyena_BindTexture(paliashdr->gl_texturenum[e->skinnum][anim]);
+	Hyena_BindTexture(paliashdr->gl_texturenum[bound(0, e->skinnum, paliashdr->numskins - 1)][anim]);
 
 	if (gl_smoothmodels.value)
 		glShadeModel (GL_SMOOTH);
@@ -896,8 +906,8 @@ void R_DrawAliasModel (entity_t *e)
 	VectorAdd (currententity->origin, clmodel->mins, mins);
 	VectorAdd (currententity->origin, clmodel->maxs, maxs);
 
-// naievil -- fixme: on psp this is == 2 ? 
-	if (R_CullBox (mins, maxs))
+// Viewmodel bounds do not include the camera-relative FOV transform.
+	if (e != &cl.viewent && e != &cl.viewent2 && R_CullBox (mins, maxs))
 		return;
 
 	specChar = clmodel->name[strlen(clmodel->name) - 5];
@@ -1028,8 +1038,8 @@ void R_DrawAliasModel (entity_t *e)
 	} else {
 
 		// Special handling of view model to keep FOV from altering look.  Pretty good.  Not perfect but rather close.
-		if ((e == &cl.viewent || e == &cl.viewent2) && scr_fov_viewmodel.value) {
-			float scale = 1.0f / tanf (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
+		if ((e == &cl.viewent || e == &cl.viewent2) && scr_render_viewmodel_fov) {
+			float scale = SCR_GetViewmodelScale();
 			if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) scale *= ENTSCALE_DECODE(e->scale);
 			glTranslatef (paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
 			glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
@@ -1054,7 +1064,7 @@ void R_DrawAliasModel (entity_t *e)
 	else
 	{
 		anim = (int)(cl.time*10) & 3;
-		Hyena_BindTexture(paliashdr->gl_texturenum[e->skinnum][anim]);
+		Hyena_BindTexture(paliashdr->gl_texturenum[bound(0, e->skinnum, paliashdr->numskins - 1)][anim]);
 	}
 
 	if (gl_smoothmodels.value)
@@ -1745,8 +1755,18 @@ void R_RenderView (void)
 	Fog_EnableGFog (); //johnfitz
 
 	R_RenderScene ();
+	/* Keep sights in front of the near plane even at high FOV. */
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	MYgluPerspective(r_refdef.fov_y,
+		(float)r_refdef.vrect.width / r_refdef.vrect.height, 0.1f, 4096.0f);
+	glMatrixMode(GL_MODELVIEW);
 	R_DrawViewModel ();
 	R_DrawView2Model ();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
 	R_DrawWaterSurfaces ();
 
 	Fog_DisableGFog (); //johnfitz

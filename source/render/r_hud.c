@@ -214,6 +214,8 @@ HUD_CenterPrint(char * str)
     hud_center_start   = Sys_FloatTime();
     scr_centertime_off = scr_centertime.value + 0.5f;
     hud_center_lines   = 1;
+    if (*str)
+        Con_SilentPrintf("%s%s", str, str[strlen(str) - 1] == '\n' ? "" : "\n");
     for (scan = hud_centerstring; *scan; scan++)
         if (*scan == '\n')
             hud_center_lines++;
@@ -2567,15 +2569,6 @@ HUD_GunGame(void)
     char weapon_id[64];
     char point_info[64];
 
-    int client_points = 0;
-
-    for (int i = 0; i < svs.maxclients; i++) {
-        if (i == cl.viewentity - 1) {
-            client_points = cl.scores[i].points;
-            break;
-        }
-    }
-
     Draw_FillByColor(60 * vid.scale, 2 * vid.scale, vid.width - (120 * vid.scale), 28 * vid.scale, 0, 0, 0, 100);
 
     if (cl.stats[STAT_GUNGAME_IDX] >= 100) {
@@ -2583,7 +2576,7 @@ HUD_GunGame(void)
         sprintf(point_info, "The Winner can choose to End the Game");
     } else {
         sprintf(weapon_id, "%s [%d/32]", PR_GetString(sv_player->v.Weapon_Name), cl.stats[STAT_GUNGAME_IDX] + 1);
-        sprintf(point_info, "[%d] Score until next Weapon", cl.stats[STAT_GUNGAME_SCOREGOAL] - client_points);
+        sprintf(point_info, "[%d] Score until next Weapon", cl.stats[STAT_GUNGAME_SCOREGOAL]);
     }
 
 

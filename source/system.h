@@ -21,6 +21,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 __attribute__((noreturn)) void Sys_PrintError(const char *function_name, const char *source_file, int line_number, char *message, ...);
 
+// Capture console diagnostics while constructing a fatal error report.
+void Sys_BeginErrorReport(void);
+qboolean Sys_CaptureErrorOutput(const char *text);
+qboolean Sys_ErrorPage(const char *error, int page, int columns, int rows,
+    char *text, size_t size);
+
 extern qboolean vid_headless;
 
 #define Sys_Error(message, ...) Sys_PrintError(__func__, __FILE__, __LINE__, message, ##__VA_ARGS__)

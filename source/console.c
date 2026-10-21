@@ -301,7 +301,7 @@ All console printing must go through this in order to be logged to disk
 If no console is visible, the notify window will pop up.
 ================
 */
-void Con_Print (char *txt)
+static void Con_PrintInternal (char *txt, qboolean notify)
 {
 	int		y;
 	int		c, l;
@@ -351,7 +351,7 @@ void Con_Print (char *txt)
 			Con_Linefeed ();
 		// mark time for transparent overlay
 			if (con_current >= 0)
-				con_times[con_current % NUM_CON_TIMES] = realtime;
+				con_times[con_current % NUM_CON_TIMES] = notify ? realtime : 0;
 		}
 
 		switch (c)
@@ -375,6 +375,11 @@ void Con_Print (char *txt)
 		}
 		
 	}
+}
+
+void Con_Print (char *txt)
+{
+	Con_PrintInternal (txt, true);
 }
 
 
@@ -421,16 +426,22 @@ Handles cursor positioning, line wrapping, etc
 ================
 */
 #define	MAXPRINTMSG	4096
-// FIXME: make a buffer size safe vsprintf?
-void Con_Printf (char *fmt, ...)
+static void Con_VPrintf (qboolean notify, char *fmt, va_list argptr)
 {
-	va_list		argptr;
 	char		msg[MAXPRINTMSG];
 	static qboolean	inupdate;
 	
-	va_start (argptr,fmt);
-	vsprintf (msg,fmt,argptr);
-	va_end (argptr);
+	vsnprintf (msg, sizeof(msg), fmt, argptr);
+
+    // Fatal QCVM diagnostics must survive switching away from the game screen.
+    // Avoid rendering or playing sounds while unwinding a broken VM.
+    if (Sys_CaptureErrorOutput(msg))
+    {
+        Sys_Printf("%s", msg);
+        if (con_debuglog)
+            Con_DebugLog(debuglogfile, "%s", msg);
+        return;
+    }
 	
 // also echo to debugging console
 	Sys_Printf ("%s", msg);	// also echo to debugging console
@@ -446,7 +457,10 @@ void Con_Printf (char *fmt, ...)
 		return;		// no graphics mode
 
 // write it to the scrollable buffer
-	Con_Print (msg);
+	// Keep silent text off an existing line that may already be notifying.
+	if (!notify && con_x)
+		Con_PrintInternal ("\n", true);
+	Con_PrintInternal (msg, notify);
 	
 // update the screen if the console is displayed
 	if (cls.signon != SIGNONS && !scr_disabled_for_loading )
@@ -460,6 +474,23 @@ void Con_Printf (char *fmt, ...)
 			inupdate = false;
 		}
 	}
+}
+
+void Con_Printf (char *fmt, ...)
+{
+	va_list argptr;
+	va_start (argptr, fmt);
+	Con_VPrintf (true, fmt, argptr);
+	va_end (argptr);
+}
+
+// Write to console history and logs without displaying a notify overlay.
+void Con_SilentPrintf (char *fmt, ...)
+{
+	va_list argptr;
+	va_start (argptr, fmt);
+	Con_VPrintf (false, fmt, argptr);
+	va_end (argptr);
 }
 
 /*

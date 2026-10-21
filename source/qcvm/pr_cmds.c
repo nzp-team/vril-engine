@@ -84,12 +84,16 @@ void PF_error (void)
 	edict_t	*ed;
 
 	s = PF_VarString(0);
+    Sys_BeginErrorReport();
 	Con_Printf ("======SERVER ERROR in %s:\n%s\n"
 	,PR_GetString(pr_xfunction->s_name),s);
+    Con_Printf("\n--- QC stack trace ---\n");
+    PR_StackTrace();
+    Con_Printf("\n--- self ---\n");
 	ed = PROG_TO_EDICT(pr_global_struct->self);
 	ED_Print (ed);
 
-	Host_Error ("Program error");
+	Host_Error ("Program error (server): %s", s);
 }
 
 /*
@@ -108,13 +112,17 @@ void PF_objerror (void)
 	edict_t	*ed;
 
 	s = PF_VarString(0);
+    Sys_BeginErrorReport();
 	Con_Printf ("======OBJECT ERROR in %s:\n%s\n"
 	,PR_GetString(pr_xfunction->s_name),s);
+    Con_Printf("\n--- QC stack trace ---\n");
+    PR_StackTrace();
+    Con_Printf("\n--- self ---\n");
 	ed = PROG_TO_EDICT(pr_global_struct->self);
 	ED_Print (ed);
 	ED_Free (ed);
 
-	Host_Error ("Program error");
+	Host_Error ("Program error (object): %s", s);
 }
 
 
@@ -3760,6 +3768,11 @@ void PF_droptofloor (void)
 	trace_t		trace;
 
 	ent = PROG_TO_EDICT(pr_global_struct->self);
+	if (ent == sv.edicts)
+	{
+		G_FLOAT(OFS_RETURN) = 0;
+		return;
+	}
 
 	VectorCopy (ent->v.origin, end);
 	end[2] -= 256;
@@ -4222,10 +4235,12 @@ void PF_makestatic (void)
 {
 	edict_t	*ent;
 	int		i;
+	qboolean extended;
 
 	ent = G_EDICT(OFS_PARM0);
 
-	MSG_WriteByte (&sv.signon,svc_spawnstatic);
+	extended = (ent->v.scale != 0 && ent->v.scale != 1) || ent->v.effects;
+	MSG_WriteByte (&sv.signon, extended ? svc_spawnstatic2 : svc_spawnstatic);
 
 	MSG_WriteShort (&sv.signon, SV_ModelIndex(PR_GetString(ent->v.model)));
 
@@ -4236,6 +4251,12 @@ void PF_makestatic (void)
 	{
 		MSG_WriteCoord(&sv.signon, ent->v.origin[i]);
 		MSG_WriteAngle(&sv.signon, ent->v.angles[i]);
+	}
+
+	if (extended)
+	{
+		MSG_WriteByte (&sv.signon, ENTSCALE_ENCODE(ent->v.scale));
+		MSG_WriteShort (&sv.signon, ent->v.effects);
 	}
 
 // throw the entity away now

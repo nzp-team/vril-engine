@@ -754,9 +754,8 @@ void CL_RelinkEntities (void)
 				up_offset		= up_offset/1000;
 				forward_offset  = forward_offset/1000;
 #ifndef SOFTWARE_RENDERER
-				if (scr_fov_viewmodel.value)
-					forward_offset *= (1.0f / tanf (DEG2RAD (scr_fov.value / 2.0f))) *
-						scr_fov_viewmodel.value / 90.0f;
+				if (scr_render_viewmodel_fov)
+					forward_offset *= SCR_GetViewmodelScale();
 #endif
 				
 				VectorMA (start, forward_offset, v_forward ,smokeorg);

@@ -1198,9 +1198,13 @@ void V_CalcRefdef (void)
 	temp_up[1] *= cADSOfs[1];
 	temp_up[2] *= cADSOfs[1];
 
-	temp_forward[0] *= cADSOfs[2];
-	temp_forward[1] *= cADSOfs[2];
-	temp_forward[2] *= cADSOfs[2];
+	float ads_forward = cADSOfs[2];
+#ifndef SOFTWARE_RENDERER
+	ads_forward *= SCR_GetViewmodelScale();
+#endif
+	temp_forward[0] *= ads_forward;
+	temp_forward[1] *= ads_forward;
+	temp_forward[2] *= ads_forward;
 
 	view->origin[0] +=(temp_forward[0] + temp_right[0] + temp_up[0]);
 	view->origin[1] +=(temp_forward[1] + temp_right[1] + temp_up[1]);

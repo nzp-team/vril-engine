@@ -21,6 +21,8 @@
 // screen.c -- master for refresh, status bar, console, chat, notify, etc
 
 #include "../nzportable_def.h"
+#include "r_fov.h"
+#include "r_alias_lerp.h"
 
 /*
  *
@@ -80,10 +82,20 @@ float scr_con_current;
 float scr_conlines; // lines of console to display
 
 float oldscreensize, oldfov;
+float scr_render_fov = 90.0f;
+float scr_render_viewmodel_fov = 70.0f;
+static scr_zoom_t scr_zoom;
+
+float SCR_GetViewmodelScale(void)
+{
+    return SCR_ViewmodelScale(scr_render_fov, scr_render_viewmodel_fov);
+}
+
+float scr_alias_lerp_distance_squared = 160000.0f;
 
 cvar_t scr_viewsize       = { "viewsize", "100", true };
-cvar_t scr_fov            = { "fov", "90" }; // 10 - 170
-cvar_t scr_fov_viewmodel  = { "r_viewmodel_fov", "70" };
+cvar_t scr_fov            = { "fov", "90", true }; // 10 - 170
+cvar_t scr_fov_viewmodel  = { "r_viewmodel_fov", "70", true };
 cvar_t scr_conspeed       = { "scr_conspeed", "300" };
 cvar_t scr_centertime     = { "scr_centertime", "5" };
 cvar_t scr_showram        = { "showram", "1" };
@@ -233,7 +245,7 @@ SCR_CalcRefdef(void)
     else
         r_refdef.vrect.y = (h - r_refdef.vrect.height) / 2;
 
-    r_refdef.fov_x = scr_fov.value;
+    r_refdef.fov_x = scr_render_fov;
     r_refdef.fov_y = CalcFov(r_refdef.fov_x, r_refdef.vrect.width, r_refdef.vrect.height);
 
     scr_vrect = r_refdef.vrect;
@@ -788,9 +800,6 @@ GetWeaponZoomAmount(void)
     }
 } /* GetWeaponZoomAmount */
 
-float zoomin_time;
-int original_fov;
-int original_view_fov;
 void
 SCR_UpdateScreen(void)
 {
@@ -818,36 +827,18 @@ SCR_UpdateScreen(void)
     //
     // determine size of refresh window
     //
-    if (cl.stats[STAT_ZOOM] == 1) {
-        if (!original_fov) {
-            original_fov      = scr_fov.value;
-            original_view_fov = scr_fov_viewmodel.value;
-        }
+    SCR_UpdateZoom(&scr_zoom, scr_fov.value, scr_fov_viewmodel.value,
+        cl.stats[STAT_ZOOM], GetWeaponZoomAmount(), (float)host_frametime,
+        cls.state == ca_connected && cl.stats[STAT_HEALTH] > 0 && !cl.intermission);
+    scr_render_fov = SCR_BoundFov(SCR_BoundFov(scr_fov.value) - scr_zoom.world_zoom);
+    scr_render_viewmodel_fov = scr_fov_viewmodel.value == 0.0f ? 0.0f :
+        SCR_BoundFov(SCR_BoundFov(scr_fov_viewmodel.value) - scr_zoom.viewmodel_zoom);
 
-        if (scr_fov.value > (GetWeaponZoomAmount() + 1)) {// +1 for accounting for floating point inaccurraces
-            scr_fov.value += ((original_fov - GetWeaponZoomAmount()) - scr_fov.value) * 0.25f;
-            scr_fov_viewmodel.value += ((original_view_fov - GetWeaponZoomAmount()) - scr_fov_viewmodel.value) * 0.25f;
-            Cvar_SetValue("fov", scr_fov.value);
-            Cvar_SetValue("r_viewmodel_fov", scr_fov_viewmodel.value);
-        }
-    } else if (cl.stats[STAT_ZOOM] == 2)   {
-        Cvar_SetValue("fov", 30);
-        Cvar_SetValue("r_viewmodel_fov", 30);
-        zoomin_time = 0;
-    } else if (cl.stats[STAT_ZOOM] == 0 && original_fov != 0)   {
-        if (scr_fov.value < (original_fov + 1)) {// +1 for accounting for floating point inaccuracies
-            scr_fov.value += (original_fov - scr_fov.value) * 0.25f;
-            scr_fov_viewmodel.value += (original_view_fov - scr_fov_viewmodel.value) * 0.25f;
-            Cvar_SetValue("fov", scr_fov.value);
-            Cvar_SetValue("r_viewmodel_fov", scr_fov_viewmodel.value);
-        } else   {
-            original_fov      = 0;
-            original_view_fov = 0;
-        }
-    }
+    scr_alias_lerp_distance_squared = R_AliasLerpDistanceSquared(
+        vid.height, SCR_BoundFov(scr_fov.value), scr_render_fov);
 
-    if (oldfov != scr_fov.value) {
-        oldfov = scr_fov.value;
+    if (oldfov != scr_render_fov) {
+        oldfov = scr_render_fov;
         vid.recalc_refdef = true;
     }
 

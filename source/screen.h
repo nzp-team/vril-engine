@@ -62,3 +62,12 @@ extern qboolean		block_drawing;
 void SCR_UpdateWholeScreen (void);
 
 extern cvar_t 	scr_fov;
+
+#ifdef SOFTWARE_RENDERER
+#define scr_render_fov (scr_fov.value)
+#else
+extern float scr_render_fov;
+extern float scr_alias_lerp_distance_squared;
+extern float scr_render_viewmodel_fov;
+float SCR_GetViewmodelScale(void);
+#endif

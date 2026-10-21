@@ -443,6 +443,7 @@ void SV_ReadClientMove (usercmd_t *move)
 	int		i;
 	vec3_t	angle;
 	int		bits;
+	eval_t	*val;
 
 // read ping time
 	host_client->ping_times[host_client->num_pings%NUM_PING_TIMES]
@@ -472,6 +473,8 @@ void SV_ReadClientMove (usercmd_t *move)
 	host_client->edict->v.button7 = (bits & 128)>>1;
 	host_client->edict->v.button8 = (bits & 256)>>1;
 	host_client->edict->v.button9 = (bits & 512)>>1;
+	if ((val = GETEDICTFIELDVALUE(host_client->edict, eval_is_using_mouse)))
+		val->_float = (bits & 1024) != 0;
 
 	i = MSG_ReadByte ();
 	if (i)

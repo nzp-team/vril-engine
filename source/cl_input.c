@@ -298,7 +298,6 @@ Moves the local angle positions
 */
 
 
-extern int original_fov, final_fov;
 void CL_AdjustAngles (void)
 {
 	float	speed;
@@ -311,8 +310,7 @@ void CL_AdjustAngles (void)
 		speed = host_frametime;
 
 	//shpuld begin
-	speed = speed * scr_fov.value/90;
-	//speed = speed*final_fov/original_fov;
+	speed = speed * scr_render_fov/90;
 	//shpuld end
 
 	// ==== Aim Assist + ====
@@ -709,6 +707,10 @@ void CL_SendMove (usercmd_t *cmd)
 
 	if (cl_meleedive.value)
 		bits |= 512;
+
+	// Tell QuakeC when the client is using keyboard/mouse input.
+	if (IN_PlatformHasMouse() && IN_GetActiveDevice() == IN_DEVICE_KEYBOARD_MOUSE)
+		bits |= 1024;
 
     MSG_WriteLong (&buf, bits);
 

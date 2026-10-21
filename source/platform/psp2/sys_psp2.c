@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "errno.h"
 #include "net_dgrm.h"
 #include <vitasdk.h>
+#include <psp2/message_dialog.h>
 
 #define DEBUG
 
@@ -58,6 +59,7 @@ int cfg_height;
 
 uint64_t initialTime = 0;
 int hostInitialized = 0;
+static qboolean sys_vgl_initialized;
 SceCtrlData pad, oldpad;
 /*
 ===============================================================================
@@ -251,14 +253,40 @@ void Sys_PrintSystemInfo(void)
 
 void Sys_SystemError(char *error)
 {
-	FILE* f = NULL;
-	if (is_uma0) f = fopen("uma0:/data/nzp/log.txt", "a+");
-	else f = fopen("ux0:/data/nzp/log.txt", "a+");
-	if (f) {
-		fwrite(error, 1, strlen(error), f);
-		fclose(f);
-	}
-	Sys_Quit();
+    char text[384], message[SCE_MSG_DIALOG_USER_MSG_SIZE];
+    int page = 0;
+    qboolean more;
+    FILE *f = fopen(is_uma0 ? "uma0:/data/nzp/log.txt" : "ux0:/data/nzp/log.txt", "a");
+    if (f)
+    {
+        fprintf(f, "%s\n", error);
+        fclose(f);
+    }
+
+    if (!sys_vgl_initialized)
+    {
+        vglInitExtended(0x100000, 960, 544, 0x1000000, SCE_GXM_MULTISAMPLE_NONE);
+        sys_vgl_initialized = true;
+    }
+    do
+    {
+        SceMsgDialogParam param;
+        SceMsgDialogUserMessageParam user = {0};
+        more = Sys_ErrorPage(error, page, 40, 7, text, sizeof(text));
+        snprintf(message, sizeof(message), "Vril Engine Exception - page %d\n%s\nOK: %s",
+            ++page, text, more ? "next page" : "quit");
+        sceMsgDialogParamInit(&param);
+        param.mode = SCE_MSG_DIALOG_MODE_USER_MSG;
+        user.buttonType = SCE_MSG_DIALOG_BUTTON_TYPE_OK;
+        user.msg = message;
+        param.userMsgParam = &user;
+        if (sceMsgDialogInit(&param) < 0)
+            break; // The complete report is still available in log.txt.
+        while (sceMsgDialogGetStatus() != SCE_COMMON_DIALOG_STATUS_FINISHED)
+            vglSwapBuffers(GL_TRUE);
+        sceMsgDialogTerm();
+    } while (more);
+    Sys_Quit();
 }
 
 void Sys_Printf(char *fmt, ...)
@@ -483,6 +511,7 @@ int quake_main (unsigned int argc, void* argv){
 	// The fixed-function renderer uses glBegin/glEnd, which requires a
 	// non-zero vitaGL legacy/immediate-mode pool.
 	vglInitExtended(0x100000, 960, 544, 0x1000000, SCE_GXM_MULTISAMPLE_4X);
+    sys_vgl_initialized = true;
 
 	gl_ssaa = 1;
 	

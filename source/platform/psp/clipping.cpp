@@ -206,19 +206,19 @@ namespace quake
 			);
 		}
 
-		void begin_frame(float regularfov, float wideclippingfov, float screenaspect)
+		void begin_frame(float regularfov, float wideclippingfov, float screenaspect, float nearclip)
 		{
 			// Get the projection matrix.
 			sceGumMatrixMode(GU_PROJECTION);
 			sceGumLoadIdentity();
-			sceGumPerspective(regularfov + 1.0f, screenaspect, near_clip_distance, 4096); // add + 1.0f to reduce the 1px lines at the edge of viewport when polys get clipped
+			sceGumPerspective(regularfov + 1.0f, screenaspect, nearclip, 4096); // add + 1.0f to reduce the 1px lines at the edge of viewport when polys get clipped
 			sceGumUpdateMatrix();
 		
 			ScePspFMatrix4	proj;
 			sceGumStoreMatrix(&proj);
 
 			sceGumLoadIdentity();
-			sceGumPerspective(wideclippingfov, screenaspect, near_clip_distance, 4096);
+			sceGumPerspective(wideclippingfov, screenaspect, nearclip, 4096);
 			sceGumUpdateMatrix();
 		
 			ScePspFMatrix4	wide_proj;

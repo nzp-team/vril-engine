@@ -124,10 +124,11 @@ void PR_StackTrace (void)
 		return;
 	}
 
-	pr_stack[pr_depth].f = pr_xfunction;
+    // A stack overflow reaches here with pr_depth == MAX_STACK_DEPTH.
+    // Do not write the current function past the end of pr_stack.
 	for (i=pr_depth ; i>=0 ; i--)
 	{
-		f = pr_stack[i].f;
+		f = i == pr_depth ? pr_xfunction : pr_stack[i].f;
 
 		if (!f)
 		{
@@ -190,16 +191,18 @@ void PR_RunError (char *error, ...)
 	char		string[1024];
 
 	va_start (argptr,error);
-	vsprintf (string,error,argptr);
+	vsnprintf (string, sizeof(string), error, argptr);
 	va_end (argptr);
 
+    Sys_BeginErrorReport();
+    Con_Printf("%s\n\n--- QC stack trace ---\n", string);
+    PR_StackTrace();
+    Con_Printf("\n--- QC statement %d ---\n", pr_xstatement);
 	PR_PrintStatement (pr_statements + pr_xstatement);
-	PR_StackTrace ();
-	Con_Printf ("%s\n", string);
 
 	pr_depth = 0;		// dump the stack so host_error can shutdown functions
 
-	Host_Error ("Program error");
+	Host_Error ("Program error: %s", string);
 }
 
 static inline eval_t *PR_VM_GlobalAt (int index, int width)

@@ -244,7 +244,7 @@ void Menu_Accessibility_Draw (void)
 
 	// Camera Bob
 	Menu_DrawButton(7, 6, "CAMERA BOB", "Scale for Camera Bob and Roll.", NULL);
-	Menu_DrawOptionSlider(7, 1, 0, 1, cl_viewbob, "cl_viewbob", false, false, 0.05f);
+	Menu_DrawOptionSlider(7, 6, 0, 1, cl_viewbob, "cl_viewbob", false, false, 0.05f);
 
 	// Melee Dive Shortcut
 	Menu_DrawButton(8, 7, "SPRINT MELEE DIVE", "Dive when Melee while Sprinting.", Menu_Accessibility_ApplyMeleeDive);

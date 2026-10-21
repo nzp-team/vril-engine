@@ -45,6 +45,9 @@ int     num_user_maps = 0;
 int     num_custom_images = 0;
 int     custom_map_pages = 0;
 
+static int user_map_indices[MAX_CUSTOMMAPS];
+static int num_listed_maps = 0;
+
 // needs to be global so 
 // we can grab the index
 int maps_start_position = 0;
@@ -338,7 +341,6 @@ void Menu_CustomMaps_MapFinder (void)
         Pak_Close(pak);
     }
 #endif
-	custom_map_pages = (int)ceil((double)(num_user_maps)/8);
 }
 
 /*
@@ -369,7 +371,7 @@ void Menu_Preload_Custom_Images(void)
 
 void Menu_CustomMaps_SetMap (void)
 {
-	int map_index = maps_start_position + current_menu.cursor;
+	int map_index = user_map_indices[maps_start_position + current_menu.cursor];
 
 	Map_SetDefaultValues();
 	current_selected_bsp = custom_maps[map_index].map_name;
@@ -393,6 +395,14 @@ void Menu_CustomMaps_PrevPage (void)
 void Menu_CustomMaps_Set (void)
 {
 	Menu_ResetMenuButtons();
+
+	num_listed_maps = 0;
+	for (int i = 0; i < num_user_maps; i++) {
+		if (!Menu_IsStockMap(custom_maps[i].map_name)) {
+			user_map_indices[num_listed_maps++] = i;
+		}
+	}
+	custom_map_pages = (int)ceil((double)(num_listed_maps)/MAX_MAP_PER_PAGE);
 	
 	user_maps_page = 0;
 	key_dest = key_menu;
@@ -426,20 +436,21 @@ void Menu_CustomMaps_Draw (void)
 	int maps_on_page = MAX_MAP_PER_PAGE;
 
 	// Not all 8 slots can be filled..
-	if (MAX_MAP_PER_PAGE > num_user_maps - maps_start_position) {
+	if (MAX_MAP_PER_PAGE > num_listed_maps - maps_start_position) {
 		// So set how many maps will be on the last page
-		maps_on_page = num_user_maps - maps_start_position;
+		maps_on_page = num_listed_maps - maps_start_position;
 	}
 
 	for (i = maps_start_position; i < maps_start_position + maps_on_page; i++) {
 		int menu_position = (i + 1) - (user_maps_page * MAX_MAP_PER_PAGE);
-		Menu_DrawMapButton(menu_position, custommap_items, i, MAP_CATEGORY_USER, custom_maps[i].map_name, Menu_CustomMaps_SetMap);
+		int map_index = user_map_indices[i];
+		Menu_DrawMapButton(menu_position, custommap_items, map_index, MAP_CATEGORY_USER, custom_maps[map_index].map_name, Menu_CustomMaps_SetMap);
 		custommap_items++;
 	}
 
 	Menu_DrawDivider(9);
 
-	if (maps_on_page + maps_start_position < num_user_maps) {
+	if (maps_on_page + maps_start_position < num_listed_maps) {
 		Menu_DrawButton(9, custommap_items++, "NEXT PAGE", "Advance to next User Map page.", Menu_CustomMaps_NextPage);
 	} else {
 		Menu_DrawGreyButton(9, "NEXT PAGE");

@@ -217,10 +217,28 @@ void Sys_PrintSystemInfo(void)
 
 void Sys_SystemError(char *error)
 {
-	// naievil -- FIXME: NOT IMPLEMENTED
-	Host_Error(error);
-}
+    char text[512], title[96];
+    int page = 0;
+    qboolean more;
 
+    // Native OS dialogs need the original LCD mode and timer.
+    if (has_colors)
+        lcd_ingray();
+    if (b_valid_timer)
+    {
+        NSPIRE_CX_TIMER_LOAD_VALUE = ui32_nspire_cx_timer_load_value;
+        b_valid_timer = 0;
+    }
+    refresh_osscr();
+    do
+    {
+        more = Sys_ErrorPage(error, page, 38, 8, text, sizeof(text));
+        snprintf(title, sizeof(title), "Vril exception - page %d (%s)",
+            ++page, more ? "OK: next" : "OK: quit");
+        show_msgbox(title, text);
+    } while (more);
+    Sys_Quit();
+}
 
 void Sys_Quit (void)
 {

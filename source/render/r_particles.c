@@ -677,7 +677,7 @@ R_InitParticles(void)
     loading_cur_step++;
     SCR_UpdateScreen();
 
-    ADD_PARTICLE_TYPE(p_lightningbeam, pd_beam, HYE_SRC_ALPHA, HYE_ONE_MINUS_SRC_ALPHA, ptex_lightning, 255, 0, 0,
+    ADD_PARTICLE_TYPE(p_lightningbeam, pd_beam, HYE_SRC_ALPHA, HYE_ONE, ptex_lightning, 255, 0, 0,
       pm_die, 0);
     ADD_PARTICLE_TYPE(p_muzzleflash, pd_billboard, HYE_SRC_ALPHA, HYE_ONE, ptex_muzzleflash, 255, 0, 0, pm_static, 0);
     ADD_PARTICLE_TYPE(p_muzzleflash2, pd_billboard, HYE_SRC_ALPHA, HYE_ONE, ptex_muzzleflash2, 255, 0, 0, pm_static, 0);

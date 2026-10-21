@@ -1919,6 +1919,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 	s = pheader->skinwidth * pheader->skinheight;
 
 	if (model_is_zombie(loadmodel->name) == true) {
+		pheader->numskins = NUM_ZOMBIE_SKINS;
 		Mod_FloodFillSkin(skin, pheader->skinwidth, pheader->skinheight);
 		for (int i = 0; i < NUM_ZOMBIE_SKINS; i++) {
 			pheader->gl_texturenum[i][0] =
