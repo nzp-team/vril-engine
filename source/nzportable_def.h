@@ -394,7 +394,7 @@ void Chase_Reset (void);
 void Chase_Update (void);
 
 //ZOMBIE AI STUFF
-#define MAX_WAYPOINTS 256 //max waypoints
+#define MAX_WAYPOINTS 512 //max waypoints
 typedef struct
 {
 	int pathlist [MAX_WAYPOINTS];
