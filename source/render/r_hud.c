@@ -2282,7 +2282,7 @@ HUD_Screenflash(void)
     }
 
     if (!cl.paused)
-        screenflash_worktime += host_frametime;
+        screenflash_worktime += (double)host_frametime;
     Draw_FillByColor(0, 0, vid.width, vid.height, r, g, b, a);
 } /* HUD_Screenflash */
 

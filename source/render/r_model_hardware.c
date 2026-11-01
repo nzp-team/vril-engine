@@ -221,7 +221,7 @@ void *Mod_LoadAllSkins(int count, daliasskintype_t *input)
             pixels = (byte *)((daliasskininterval_t *)(header + 1) + frames);
         }
         for (frame = 0; frame < frames; frame++, pixels += size) {
-            char name[MAX_OSPATH], external[MAX_OSPATH], base[MAX_OSPATH];
+            char name[MAX_OSPATH], external[MAX_OSPATH], base[MAX_QPATH];
             int texture = -1;
             COM_StripExtension(loadmodel->name, base);
             if (group) {

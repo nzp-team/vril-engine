@@ -540,7 +540,7 @@ vec3_t 	mdlflag_poweruprotate_startangles;
 vec3_t 	mdlflag_poweruprotate_differenceangles;
 vec3_t 	mdlflag_poweruprotate_currentangles;
 
-double 	last_puframetime = 0.0;
+float 	last_puframetime = 0.0f;
 
 /*
 ===============
@@ -990,7 +990,7 @@ int CL_ReadFromServer (void)
 	int		ret;
 
 	cl.oldtime = cl.time;
-	cl.time += host_frametime;
+	cl.time += (double)host_frametime;
 
 	do
 	{

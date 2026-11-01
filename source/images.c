@@ -331,23 +331,31 @@ int loadpcxas4bpp (char* filename, int filter)
 	}
 
 	pcx_t pcxbuf;
-    fread(&pcxbuf, 1, sizeof(pcxbuf), f);
+	if (fread(&pcxbuf, 1, sizeof(pcxbuf), f) != sizeof(pcxbuf)) {
+		Con_DPrintf("Bad pcx file %s\n", name);
+		fclose(f);
+		return -1;
+	}
 
     pcx_t* pcx = &pcxbuf;
 
     if (pcx->manufacturer != 0x0a || pcx->version != 5 || pcx->encoding != 1 ||
         pcx->bits_per_pixel != 8 || pcx->xmax >= 320 || pcx->ymax >= 256) {
         Con_DPrintf("Bad pcx file %s\n", name);
+        fclose(f);
         return -1;
     }
 
 	unsigned int width = pcx->xmax + 1;
 	unsigned int height = pcx->ymax + 1;
 
-	fseek(f, -768, SEEK_END);
-    byte palette[768];
-    fread(palette, 1, 768, f);
-	fseek(f, sizeof(pcxbuf) - 4, SEEK_SET);
+	byte palette[768];
+	if (fseek(f, -768, SEEK_END) != 0 || fread(palette, 1, sizeof(palette), f) != sizeof(palette) ||
+		fseek(f, sizeof(pcxbuf) - 4, SEEK_SET) != 0) {
+		Con_DPrintf("Bad pcx file %s\n", name);
+		fclose(f);
+		return -1;
+	}
 	int size = width * height;
 	byte* data = (unsigned char*)(Q_malloc(4 * size));
 	int data_index = 0;
