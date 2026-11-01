@@ -88,7 +88,10 @@ static scr_zoom_t scr_zoom;
 
 float SCR_GetViewmodelScale(void)
 {
-    return SCR_ViewmodelScale(scr_render_fov, scr_render_viewmodel_fov);
+    if (!r_refdef.vrect.height)
+        return SCR_ViewmodelScale(scr_render_fov, scr_render_viewmodel_fov, 16.0f / 9.0f);
+    return SCR_ViewmodelScale(r_refdef.fov_x, scr_render_viewmodel_fov,
+        (float)r_refdef.vrect.width / r_refdef.vrect.height);
 }
 
 float scr_alias_lerp_distance_squared = 160000.0f;
@@ -96,6 +99,9 @@ float scr_alias_lerp_distance_squared = 160000.0f;
 cvar_t scr_viewsize       = { "viewsize", "100", true };
 cvar_t scr_fov            = { "fov", "90", true }; // 10 - 170
 cvar_t scr_fov_viewmodel  = { "r_viewmodel_fov", "70", true };
+#ifdef PLATFORM_USES_PROJECTION_WIDESCREEN
+cvar_t vid_widescreen = { "vid_widescreen", "0", true };
+#endif
 cvar_t scr_conspeed       = { "scr_conspeed", "300" };
 cvar_t scr_centertime     = { "scr_centertime", "5" };
 cvar_t scr_showram        = { "showram", "1" };
@@ -109,7 +115,7 @@ cvar_t cl_crosshair_debug = { "cl_crosshair_debug", "0", true };
 #ifdef __PSP__
 cvar_t scr_coloredtext = { "scr_coloredtext", "1", true };
 cvar_t scr_conheight   = { "scr_conheight", "0.5" };
-cvar_t r_dithering     = { "r_dithering", "1", true };
+
 #endif
 
 extern cvar_t crosshair;
@@ -246,6 +252,11 @@ SCR_CalcRefdef(void)
         r_refdef.vrect.y = (h - r_refdef.vrect.height) / 2;
 
     r_refdef.fov_x = scr_render_fov;
+#ifdef PLATFORM_USES_PROJECTION_WIDESCREEN
+    if (vid_widescreen.value)
+        r_refdef.fov_x = atanf(tanf(scr_render_fov * (float)M_PI / 360.0f) *
+            ((float)vid.width / glwidth)) * 360.0f / (float)M_PI;
+#endif
     r_refdef.fov_y = CalcFov(r_refdef.fov_x, r_refdef.vrect.width, r_refdef.vrect.height);
 
     scr_vrect = r_refdef.vrect;
@@ -291,6 +302,9 @@ SCR_Init(void)
 {
     Cvar_RegisterVariable(&scr_fov);
     Cvar_RegisterVariable(&scr_fov_viewmodel);
+#ifdef PLATFORM_USES_PROJECTION_WIDESCREEN
+    Cvar_RegisterVariable(&vid_widescreen);
+#endif
     Cvar_RegisterVariable(&scr_viewsize);
     Cvar_RegisterVariable(&scr_conspeed);
     Cvar_RegisterVariable(&scr_showram);
@@ -312,7 +326,9 @@ SCR_Init(void)
     //
     // register our commands
     //
+#ifndef __PS2__
     Cmd_AddCommand("screenshot", SCR_ScreenShot_f);
+#endif
     Cmd_AddCommand("sizeup", SCR_SizeUp_f);
     Cmd_AddCommand("sizedown", SCR_SizeDown_f);
 
@@ -449,6 +465,7 @@ SCR_DrawConsole(void)
  */
 
 #ifndef __PSP__
+#ifndef __PS2__
 typedef struct _TargaHeader {
     unsigned char  id_length, colormap_type, image_type;
     unsigned short colormap_index, colormap_length;
@@ -515,6 +532,12 @@ SCR_ScreenShot_f(void)
     Con_Printf("Wrote %s\n", pcxname);
 } /* SCR_ScreenShot_f */
 
+#else
+void SCR_ScreenShot_f(void)
+{
+    Con_Printf("Screenshots are not supported on PS2\n");
+}
+#endif /* ifndef __PS2__ */
 #endif /* ifndef __PSP__ */
 
 

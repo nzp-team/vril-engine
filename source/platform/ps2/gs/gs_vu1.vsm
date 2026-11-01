@@ -1,0 +1,1263 @@
+; I am really standing on the shoulders of giants here, this is a mess of 
+; a bunch of samples mashed together and loosely following manuals and docs.
+; Seriously, I take no credit.
+; --
+; * https://github.com/ps2dev/ps2sdk/blob/2a18d15da1332665451a9bcf9a0d4df9029c9490/ee/draw/samples/vu1/draw_3D.vsm
+; * https://lukasz.dk/files/vu-instruction-manual.pdf
+; * https://www.mikekohn.net/software/playstation2.php
+; * https://psi-rockin.github.io/ps2tek/#vu
+#include "gs_vu1_layout.h"
+.vu
+.align 4
+.macro VU_WAIT count
+.rept \count
+        NOP                         NOP
+.endr
+.endm
+
+.global VU1_CodeStart
+.global VU1_CodeEnd
+VU1_CodeStart:
+        NOP                         iaddiu VI01,VI00,(VU1_Triangle-VU1_CodeStart)
+        NOP                         isw.x VI01,VU_ENTRY(VI00)
+        NOP                         isw.y VI00,VU_SCRATCH(VI00)
+        NOP                         lq VF01,VU_MATRIX(VI00)
+        NOP                         lq VF02,1(VI00)
+        NOP                         lq VF03,2(VI00)
+        NOP                         lq VF04,3(VI00)
+        NOP                         lq VF05,VU_SCALE(VI00)
+        NOP                         lq VF06,VU_OFFSET(VI00)
+        NOP                         lq VF07,VU_FOG(VI00)
+        NOP                         lq VF10,VU_COLOR_SCALE(VI00)
+        NOP                         lq VF11,VU_UV(VI00)
+        NOP                         lq VF16,VU_ROUNDING(VI00)
+        NOP                         iaddiu VI14,VI00,VU_INPUT
+        NOP                         ilw.x VI02,VU_COUNTS(VI00)
+        NOP                         ilw.z VI06,VU_COUNTS(VI00)
+        NOP                         ilw.z VI03,VU_ENTRY(VI00)
+        NOP                         iaddiu VI01,VI00,VU_PACKET0
+        NOP                         NOP
+        NOP                         ibeq VI03,VI01,VU1_PacketReady
+        NOP                         iaddiu VI01,VI00,VU_PACKET1
+        NOP                         NOP
+        NOP                         ibeq VI03,VI01,VU1_PacketReady
+        NOP                         NOP
+        NOP                         iaddiu VI03,VI00,VU_PACKET0
+VU1_PacketReady:
+        NOP                         ilw.w VI12,VU_COUNTS(VI00)
+        NOP                         NOP
+        NOP                         ibltz VI12,VU1_AliasBegin
+        NOP                         NOP
+        NOP                         iaddiu VI01,VI00,VU_FLAG_INDEXED
+        NOP                         iand VI01,VI12,VI01
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_WorldBegin
+        NOP                         NOP
+        NOP                         iaddiu VI01,VI00,VU_FLAG_STREAM
+        NOP                         iand VI01,VI12,VI01
+        NOP                         NOP
+        NOP                         ibeq VI01,VI00,VU1_Begin
+        NOP                         NOP
+        NOP                         lq VF18,VU_COLOR(VI00)
+        NOP                         NOP
+        maxx VF18,VF18,VF00x       NOP
+        miniw VF18,VF18,VF00w      NOP
+        mul VF18,VF18,VF10         NOP
+VU1_Begin:
+        NOP                         iaddiu VI15,VI00,128
+VU1_Triangle:
+        NOP                         iaddiu VI04,VI00,VU_WORK
+        NOP                         iaddiu VI05,VI00,3
+        NOP                         iadd VI09,VI04,VI00
+        NOP                         iadd VI08,VI05,VI00
+        NOP                         ilw.w VI12,VU_COUNTS(VI00)
+        NOP                         NOP
+        NOP                         ibltz VI12,VU1_IndexedTriangle
+        NOP                         NOP
+        NOP                         iaddiu VI01,VI00,VU_FLAG_INDEXED
+        NOP                         iand VI01,VI12,VI01
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_IndexedTriangle
+        NOP                         NOP
+        NOP                         iaddiu VI01,VI00,VU_FLAG_STREAM
+        NOP                         iand VI01,VI12,VI01
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_StreamTransform
+        NOP                         NOP
+        NOP                         b VU1_Transform
+        NOP                         NOP
+VU1_StreamTransform:
+        NOP                         lq VF20,0(VI14)
+        NOP                         lq VF21,1(VI14)
+        addx VF22,VF18,VF00x        NOP
+        mulax ACC,VF01,VF20x        NOP
+        madday ACC,VF02,VF20y       NOP
+        maddaz ACC,VF03,VF20z       NOP
+        maddw VF23,VF04,VF20w       NOP
+        mul.xy VF21,VF21,VF11      NOP
+        addz.x VF21,VF21,VF11z     NOP
+        addw.y VF21,VF21,VF11w     NOP
+        subw.z VF21,VF07,VF23w     NOP
+        mulx.z VF21,VF21,VF07x     NOP
+        clipw.xyz VF23,VF23w       NOP
+        maxy.z VF21,VF21,VF07y     NOP
+        miniw.z VF21,VF21,VF07w    NOP
+        NOP                         sq VF23,0(VI09)
+        NOP                         sq VF21,1(VI09)
+        NOP                         sq VF22,2(VI09)
+        NOP                         iaddiu VI14,VI14,3
+        NOP                         iaddiu VI09,VI09,3
+        NOP                         isubiu VI08,VI08,1
+        NOP                         NOP
+        NOP                         ibne VI08,VI00,VU1_StreamTransform
+        NOP                         NOP
+        NOP                         iaddiu VI06,VI00,VU_STREAM_CLIP
+        NOP                         b VU1_ClipTriangle
+        NOP                         NOP
+VU1_Transform:
+        NOP                         lq VF20,0(VI14)
+        NOP                         lq VF21,1(VI14)
+        NOP                         lq VF22,2(VI14)
+VU1_Matrix:
+        mulax ACC,VF01,VF20x        NOP
+        madday ACC,VF02,VF20y       NOP
+        maddaz ACC,VF03,VF20z       NOP
+        maddw VF23,VF04,VF20w       NOP
+        mul.xy VF21,VF21,VF11      NOP
+        maxx VF22,VF22,VF00x       NOP
+        miniw VF22,VF22,VF00w      NOP
+        mul VF22,VF22,VF10         NOP
+        addz.x VF21,VF21,VF11z     NOP
+        addw.y VF21,VF21,VF11w     NOP
+        subw.z VF21,VF07,VF23w     NOP
+        mulx.z VF21,VF21,VF07x     NOP
+        clipw.xyz VF23,VF23w       NOP
+        maxy.z VF21,VF21,VF07y     NOP
+        miniw.z VF21,VF21,VF07w    NOP
+        NOP                         sq VF23,0(VI09)
+        NOP                         sq VF21,1(VI09)
+        NOP                         sq VF22,2(VI09)
+        NOP                         iaddiu VI14,VI14,3
+        NOP                         iaddiu VI09,VI09,3
+        NOP                         isubiu VI08,VI08,1
+        NOP                         NOP
+        NOP                         ibne VI08,VI00,VU1_Transform
+        NOP                         NOP
+        NOP                         iaddiu VI06,VI00,VU_STREAM_CLIP
+VU1_ClipTriangle:
+        NOP                         fcand VI01,0x3ffff
+        VU_WAIT 2
+        NOP                         ibeq VI01,VI00,VU1_Output
+        NOP                         iaddiu VI07,VI00,VU_PLANES
+        NOP                         fcor VI01,0xffefbe
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_TriangleDone
+        NOP                         NOP
+        NOP                         fcor VI01,0xffdf7d
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_TriangleDone
+        NOP                         NOP
+        NOP                         fcor VI01,0xffbefb
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_TriangleDone
+        NOP                         NOP
+        NOP                         fcor VI01,0xff7df7
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_TriangleDone
+        NOP                         NOP
+        NOP                         fcor VI01,0xfefbef
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_TriangleDone
+        NOP                         NOP
+        NOP                         fcor VI01,0xfdf7df
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_TriangleDone
+        NOP                         NOP
+        NOP                         fcand VI01,0x20820
+        NOP                         NOP
+        NOP                         isw.z VI01,VU_SCRATCH(VI00)
+.macro vril_clip_plane mask, plane, next
+        NOP                         fcand VI01,\mask
+        NOP                         ilw.z VI12,VU_SCRATCH(VI00)
+        NOP                         NOP
+        NOP                         ior VI01,VI01,VI12
+        NOP                         NOP
+        NOP                         ibeq VI01,VI00,\next
+        NOP                         iaddiu VI07,VI00,\plane
+        NOP                         bal VI01,VU1_Plane
+        NOP                         NOP
+.endm
+VU1_CheckPlane0:
+        vril_clip_plane 0x2082,11,VU1_CheckPlane1
+VU1_CheckPlane1:
+        vril_clip_plane 0x1041,12,VU1_CheckPlane2
+VU1_CheckPlane2:
+        vril_clip_plane 0x8208,13,VU1_CheckPlane3
+VU1_CheckPlane3:
+        vril_clip_plane 0x4104,14,VU1_CheckPlane4
+VU1_CheckPlane4:
+        vril_clip_plane 0x20820,15,VU1_CheckPlane5
+VU1_CheckPlane5:
+        vril_clip_plane 0x10410,16,VU1_CheckPlane6
+VU1_CheckPlane6:
+        NOP                         b VU1_Output
+        NOP                         NOP
+VU1_Plane:
+        NOP                         lq VF08,0(VI07)
+        NOP                         iadd VI09,VI04,VI00
+        NOP                         iadd VI10,VI06,VI00
+        NOP                         iadd VI08,VI05,VI00
+        NOP                         iadd VI11,VI00,VI00
+VU1_Edge:
+        NOP                         lq VF20,0(VI09)
+        NOP                         lq VF21,1(VI09)
+        NOP                         lq VF22,2(VI09)
+        NOP                         iaddiu VI09,VI09,3
+        NOP                         isubiu VI08,VI08,1
+        NOP                         NOP
+        NOP                         ibne VI08,VI00,VU1_NextEdge
+        NOP                         iadd VI13,VI09,VI00
+        NOP                         iadd VI13,VI04,VI00
+VU1_NextEdge:
+        mul VF09,VF20,VF08          lq VF23,0(VI13)
+        NOP                         lq VF24,1(VI13)
+        NOP                         lq VF25,2(VI13)
+        NOP                         NOP
+        addy.x VF09,VF09,VF09y     NOP
+        VU_WAIT 3
+        addz.x VF09,VF09,VF09z     NOP
+        VU_WAIT 3
+        addw.x VF09,VF09,VF09w     NOP
+        mul VF12,VF23,VF08          NOP
+        VU_WAIT 2
+        NOP                         fmand VI12,VI15
+        addy.x VF12,VF12,VF12y     NOP
+        VU_WAIT 3
+        addz.x VF12,VF12,VF12z     NOP
+        VU_WAIT 3
+        addw.x VF12,VF12,VF12w     NOP
+        VU_WAIT 3
+        NOP                         fmand VI13,VI15
+        NOP                         NOP
+        NOP                         ibne VI12,VI00,VU1_Intersection
+        NOP                         NOP
+        NOP                         sq VF20,0(VI10)
+        NOP                         sq VF21,1(VI10)
+        NOP                         sq VF22,2(VI10)
+        NOP                         iaddiu VI10,VI10,3
+        NOP                         iaddiu VI11,VI11,1
+VU1_Intersection:
+        sub.x VF13,VF09,VF12        NOP
+        NOP                         NOP
+        NOP                         ibeq VI12,VI13,VU1_EdgeDone
+        NOP                         NOP
+        sub VF23,VF23,VF20          NOP
+        sub VF24,VF24,VF21          NOP
+        sub VF25,VF25,VF22          div Q,VF09x,VF13x
+        NOP                         waitq
+        mulq VF23,VF23,Q            NOP
+        mulq VF24,VF24,Q            NOP
+        mulq VF25,VF25,Q            NOP
+        NOP                         NOP
+        add VF23,VF23,VF20          NOP
+        add VF24,VF24,VF21          NOP
+        add VF25,VF25,VF22          NOP
+        NOP                         NOP
+        NOP                         sq VF23,0(VI10)
+        NOP                         sq VF24,1(VI10)
+        NOP                         sq VF25,2(VI10)
+        NOP                         iaddiu VI10,VI10,3
+        NOP                         iaddiu VI11,VI11,1
+VU1_EdgeDone:
+        NOP                         NOP
+        NOP                         ibne VI08,VI00,VU1_Edge
+        NOP                         NOP
+        NOP                         iadd VI13,VI04,VI00
+        NOP                         iadd VI04,VI06,VI00
+        NOP                         iadd VI06,VI13,VI00
+        NOP                         iadd VI05,VI11,VI00
+        NOP                         isubiu VI13,VI05,3
+        NOP                         NOP
+        NOP                         ibltz VI13,VU1_TriangleDone
+        NOP                         NOP
+        NOP                         jr VI01
+        NOP                         NOP
+VU1_Output:
+        NOP                         iadd VI11,VI05,VI00
+        NOP                         iadd VI09,VI04,VI00
+        NOP                         ilw.y VI12,VU_COUNTS(VI00)
+        NOP                         ilw.z VI06,VU_COUNTS(VI00)
+        NOP                         iaddiu VI07,VI00,VU_FOG_VERTICES
+        NOP                         iaddiu VI10,VI00,VU_PROJECTED
+        NOP                         ibeq VI06,VI00,VU1_OutputDirect
+        NOP                         NOP
+        NOP                         ilw.w VI13,VU_COUNTS(VI00)
+        NOP                         iaddiu VI01,VI00,VU_FLAG_BATCH
+        NOP                         iand VI13,VI13,VI01
+        NOP                         NOP
+        NOP                         ibeq VI13,VI00,VU1_Project
+        NOP                         NOP
+        NOP                         iadd VI08,VI05,VI00
+        NOP                         iaddiu VI10,VI00,VU_CLIP0
+VU1_CopyPassPolygon:
+        NOP                         lq VF20,0(VI09)
+        NOP                         lq VF21,1(VI09)
+        NOP                         lq VF22,2(VI09)
+        NOP                         NOP
+        NOP                         sq VF20,0(VI10)
+        NOP                         sq VF21,1(VI10)
+        NOP                         sq VF22,2(VI10)
+        NOP                         iaddiu VI09,VI09,3
+        NOP                         iaddiu VI10,VI10,3
+        NOP                         isubiu VI08,VI08,1
+        NOP                         NOP
+        NOP                         ibne VI08,VI00,VU1_CopyPassPolygon
+        NOP                         NOP
+        NOP                         iaddiu VI04,VI00,VU_CLIP0
+        NOP                         iadd VI09,VI04,VI00
+        NOP                         iadd VI10,VI04,VI00
+        NOP                         iaddiu VI07,VI00,VU_CLIP_FOG
+        NOP                         b VU1_Project
+        NOP                         NOP
+VU1_OutputDirect:
+        NOP                         lq VF14,VU_GIFTAG(VI00)
+        NOP                         iaddiu VI13,VI05,0x4000
+        NOP                         iaddiu VI13,VI13,0x4000
+        NOP                         iaddiu VI10,VI03,1
+        NOP                         sq VF14,0(VI03)
+        NOP                         isw.x VI13,0(VI03)
+VU1_Project:
+        NOP                         lq VF23,0(VI09)
+        NOP                         lq VF21,1(VI09)
+        NOP                         lq VF22,2(VI09)
+        subw.xyz VF24,VF00,VF23w   NOP
+        miniw.xyz VF23,VF23,VF23w  NOP
+        max.xyz VF23,VF23,VF24      NOP
+        NOP                         div Q,VF00w,VF23w
+        NOP                         waitq
+        mulq.xyz VF23,VF23,Q        NOP
+        mulq.xy VF21,VF21,Q         NOP
+        sub.w VF21,VF00,VF00        NOP
+        VU_WAIT 3
+        addq.w VF21,VF21,Q          NOP
+        NOP                         NOP
+        mul.xyz VF23,VF23,VF05      NOP
+        VU_WAIT 3
+        add.xyz VF23,VF23,VF06      NOP
+        VU_WAIT 3
+        mulz.w VF23,VF00,VF21z     NOP
+        NOP                         NOP
+        NOP                         ibeq VI12,VI00,VU1_ColorDone
+        NOP                         isubiu VI13,VI12,2
+        NOP                         NOP
+        NOP                         ibltz VI13,VU1_ColorDone
+        VU_WAIT 2
+        NOP                         ibne VI13,VI00,VU1_Overlay
+        NOP                         NOP
+        mulz.w VF22,VF22,VF21z     NOP
+        NOP                         b VU1_ColorDone
+        NOP                         NOP
+VU1_Overlay:
+        NOP                         lq VF22,VU_FOG_COLOR(VI00)
+        subz.w VF22,VF07,VF21z     NOP
+        VU_WAIT 3
+        mulw.w VF22,VF22,VF10w     NOP
+VU1_ColorDone:
+        ftoi4.xyz VF23,VF23         sq VF23,2(VI09)
+        add VF22,VF22,VF16          NOP
+        mulw.w VF23,VF23,VF05w     NOP
+        NOP                         ilw.w VI06,VU_COUNTS(VI00)
+        NOP                         NOP
+        NOP                         iaddiu VI13,VI00,1
+        NOP                         iand VI06,VI06,VI13
+        NOP                         NOP
+        NOP                         iblez VI06,VU1_FogStored
+        NOP                         NOP
+        NOP                         lq VF15,VU_FOG_COLOR(VI00)
+        subz.w VF15,VF07,VF21z     NOP
+        mulw.w VF15,VF15,VF10w     NOP
+        addw VF15,VF15,VF16w       NOP
+        ftoi0 VF15,VF15             NOP
+        NOP                         sq VF15,0(VI07)
+        NOP                         iaddiu VI07,VI07,1
+VU1_FogStored:
+        addw.z VF21,VF00,VF21w     NOP
+        VU_WAIT 2
+        addw.w VF23,VF23,VF16w     NOP
+        ftoi0 VF22,VF22             NOP
+        ftoi4.w VF23,VF23           NOP
+        NOP                         sq VF21,0(VI10)
+        NOP                         sq VF22,1(VI10)
+        NOP                         sq VF23,2(VI10)
+        NOP                         iaddiu VI09,VI09,3
+        NOP                         iaddiu VI10,VI10,3
+        NOP                         isubiu VI05,VI05,1
+        NOP                         NOP
+        NOP                         ibne VI05,VI00,VU1_Project
+        NOP                         NOP
+VU1_ProjectEnd:
+        NOP                         ilw.z VI06,VU_COUNTS(VI00)
+        NOP                         NOP
+        NOP                         ibeq VI06,VI00,VU1_ProjectKick
+        NOP                         NOP
+        NOP                         ilw.w VI12,VU_COUNTS(VI00)
+        NOP                         iaddiu VI13,VI00,VU_FLAG_BATCH
+        NOP                         iand VI12,VI12,VI13
+        NOP                         NOP
+        NOP                         ibne VI12,VI00,VU1_AppendPassTriangles
+        NOP                         NOP
+        NOP                         b VU1_Passes
+        NOP                         NOP
+VU1_ProjectKick:
+        NOP                         xgkick VI03
+        NOP                         iaddiu VI13,VI00,VU_PACKET_TOGGLE
+        NOP                         isub VI03,VI13,VI03
+        NOP                         b VU1_TriangleDone
+        NOP                         NOP
+VU1_Passes:
+        NOP                         iaddiu VI04,VI00,VU_PASSES
+VU1_Pass:
+        NOP                         lq VF20,1(VI04)
+        NOP                         lq VF21,2(VI04)
+        NOP                         lq VF22,3(VI04)
+        NOP                         lq VF23,4(VI04)
+        NOP                         lq VF24,5(VI04)
+        NOP                         lq VF25,6(VI04)
+        NOP                         sq VF20,0(VI03)
+        NOP                         sq VF21,1(VI03)
+        NOP                         sq VF22,2(VI03)
+        NOP                         sq VF23,3(VI03)
+        NOP                         sq VF24,4(VI03)
+        NOP                         sq VF25,5(VI03)
+        NOP                         iaddiu VI10,VI03,6
+        NOP                         ilw.x VI12,0(VI04)
+        NOP                         NOP
+        NOP                         isubiu VI13,VI12,4
+        NOP                         NOP
+        NOP                         ibeq VI13,VI00,VU1_PassKick
+        NOP                         NOP
+        NOP                         iaddiu VI13,VI11,0x4000
+        NOP                         iaddiu VI13,VI13,0x4000
+        NOP                         isw.x VI13,5(VI03)
+        NOP                         iaddiu VI09,VI00,VU_PROJECTED
+        NOP                         iaddiu VI07,VI00,VU_FOG_VERTICES
+        NOP                         iadd VI08,VI11,VI00
+        NOP                         ibeq VI12,VI00,VU1_PassVertex
+        NOP                         isubiu VI13,VI12,2
+        NOP                         NOP
+        NOP                         ibeq VI13,VI00,VU1_PassFogVertex
+        NOP                         NOP
+        sub VF21,VF00,VF00          isubiu VI13,VI12,3
+        NOP                         NOP
+        NOP                         ibne VI13,VI00,VU1_PassSolidVertex
+        NOP                         NOP
+        NOP                         mfir.w VF21,VI15
+        NOP                         NOP
+        NOP                         b VU1_PassSolidVertex
+        NOP                         NOP
+.macro vril_pass_vertex name, color
+\name:
+        NOP                         lq VF20,0(VI09)
+.if \color == 0
+        NOP                         lq VF21,1(VI09)
+.elseif \color == 2
+        NOP                         lq VF21,0(VI07)
+.else
+        NOP                         NOP
+.endif
+        NOP                         lq VF22,2(VI09)
+        NOP                         NOP
+        NOP                         sq VF20,0(VI10)
+        NOP                         sq VF21,1(VI10)
+        NOP                         sq VF22,2(VI10)
+        NOP                         iaddiu VI09,VI09,3
+        NOP                         iaddiu VI07,VI07,1
+        NOP                         iaddiu VI10,VI10,3
+        NOP                         isubiu VI08,VI08,1
+        NOP                         NOP
+        NOP                         ibne VI08,VI00,\name
+        NOP                         NOP
+        NOP                         b VU1_PassKick
+        NOP                         NOP
+.endm
+        vril_pass_vertex VU1_PassVertex,0
+        vril_pass_vertex VU1_PassFogVertex,2
+        vril_pass_vertex VU1_PassSolidVertex,1
+VU1_PassKick:
+        NOP                         xgkick VI03
+        NOP                         iaddiu VI13,VI00,VU_PACKET_TOGGLE
+        NOP                         isub VI03,VI13,VI03
+        NOP                         iaddiu VI04,VI04,7
+        NOP                         isubiu VI06,VI06,1
+        NOP                         NOP
+        NOP                         ibne VI06,VI00,VU1_Pass
+        NOP                         NOP
+        NOP                         ilw.w VI12,VU_COUNTS(VI00)
+        NOP                         iaddiu VI13,VI00,VU_FLAG_BATCH
+        NOP                         iand VI12,VI12,VI13
+        NOP                         NOP
+        NOP                         ibne VI12,VI00,VU1_PassBatchReturn
+        NOP                         NOP
+VU1_TriangleDone:
+        NOP                         isubiu VI02,VI02,1
+        NOP                         ilw.x VI01,VU_ENTRY(VI00)
+        NOP                         NOP
+        NOP                         ibeq VI02,VI00,VU1_FinishTriangles
+        NOP                         NOP
+        NOP                         jr VI01
+        NOP                         NOP
+VU1_FinishTriangles:
+        NOP                         ilw.z VI06,VU_COUNTS(VI00)
+        NOP                         NOP
+        NOP                         ibeq VI06,VI00,VU1_EndTriangles
+        NOP                         NOP
+        NOP                         bal VI12,VU1_FlushPassBatch
+        NOP                         NOP
+        NOP                         b VU1_End
+        NOP                         NOP
+VU1_EndTriangles:
+        NOP                         bal VI12,VU1_FlushTriangles
+        NOP                         NOP
+VU1_End:
+        NOP                         isw.z VI03,VU_ENTRY(VI00)
+        NOP[E]                      NOP
+        NOP                         NOP
+VU1_WorldBegin:
+        NOP                         lq VF27,VU_BATCH_GIFTAG(VI00)
+        NOP                         lq VF18,VU_COLOR(VI00)
+        NOP                         ilw.w VI08,VU_ALIAS_PARAMS(VI00)
+        NOP                         iaddiu VI09,VI00,VU_WORK
+        NOP                         NOP
+        maxx VF18,VF18,VF00x       NOP
+        miniw VF18,VF18,VF00w      NOP
+        mul VF18,VF18,VF10         NOP
+VU1_WorldTransform:
+        NOP                         lq VF20,0(VI14)
+        NOP                         lq VF21,2(VI14)
+        VU_WAIT 2
+        mulax ACC,VF01,VF20x        NOP
+        madday ACC,VF02,VF20y       NOP
+        maddaz ACC,VF03,VF20z       NOP
+        maddw VF23,VF04,VF20w       NOP
+        mul.xy VF21,VF21,VF11      NOP
+        VU_WAIT 3
+        addz.x VF21,VF21,VF11z     NOP
+        addw.y VF21,VF21,VF11w     NOP
+        subw.z VF21,VF07,VF23w     NOP
+        mulx.z VF21,VF21,VF07x     NOP
+        maxy.z VF21,VF21,VF07y     NOP
+        miniw.z VF21,VF21,VF07w    NOP
+        NOP                         sq VF23,0(VI09)
+        NOP                         sq VF18,2(VI09)
+        NOP                         NOP
+        NOP                         sq VF21,1(VI09)
+        NOP                         iaddiu VI14,VI14,3
+        NOP                         isubiu VI08,VI08,1
+        NOP                         iaddiu VI09,VI09,3
+        NOP                         ibne VI08,VI00,VU1_WorldTransform
+        NOP                         NOP
+        NOP                         iaddiu VI09,VI00,VU_WORK
+        NOP                         iaddiu VI10,VI00,VU_INPUT
+        NOP                         ilw.w VI05,VU_ALIAS_PARAMS(VI00)
+        NOP                         ilw.y VI12,VU_COUNTS(VI00)
+        NOP                         b VU1_ProjectBegin
+        NOP                         NOP
+VU1_AliasBegin:
+        NOP                         ilw.x VI02,VU_BATCH_COUNTS(VI00)
+        NOP                         lq VF27,VU_BATCH_GIFTAG(VI00)
+        NOP                         ilw.y VI12,VU_COUNTS(VI00)
+        NOP                         lq VF17,VU_ALIAS_PARAMS(VI00)
+        NOP                         lq VF18,VU_COLOR(VI00)
+        NOP                         ilw.y VI08,VU_BATCH_COUNTS(VI00)
+        NOP                         iaddiu VI09,VI00,VU_WORK
+        NOP                         NOP
+        maxx VF18,VF18,VF00x       NOP
+        VU_WAIT 3
+        miniw VF18,VF18,VF00w      NOP
+        VU_WAIT 3
+        mul VF18,VF18,VF10         iadd VI04,VI00,VI00
+        NOP                         iaddiu VI01,VI00,(VU1_AliasTransform-VU1_CodeStart)
+        NOP                         isw.y VI01,VU_ENTRY(VI00)
+        NOP                         NOP
+        add VF26,VF18,VF16          NOP
+        VU_WAIT 3
+        ftoi0 VF26,VF26             ilw.w VI01,VU_COUNTS(VI00)
+        NOP                         iaddiu VI13,VI00,VU_FLAG_SINGLE
+        NOP                         iand VI01,VI01,VI13
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_StaticBegin
+        NOP                         NOP
+VU1_AliasTransform:
+        NOP                         lq VF20,0(VI14)
+        NOP                         lq VF21,1(VI14)
+        NOP                         lq VF22,2(VI14)
+        NOP                         NOP
+        itof0.xyz VF20,VF20         NOP
+        itof0.xyz VF21,VF21         NOP
+        mul.xy VF19,VF22,VF11      NOP
+        addx.w VF20,VF00,VF00x     NOP
+        mulay.xyz ACC,VF20,VF17y   NOP
+        maddx.xyz VF20,VF21,VF17x  NOP
+        addz.x VF19,VF19,VF11z     NOP
+        addw.y VF19,VF19,VF11w     NOP
+        NOP                         NOP
+        mulax ACC,VF01,VF20x       NOP
+        madday ACC,VF02,VF20y      NOP
+        maddaz ACC,VF03,VF20z      NOP
+        maddw VF23,VF04,VF20w      NOP
+        NOP                         b VU1_AliasVertexFog
+        NOP                         NOP
+VU1_StaticBegin:
+        NOP                         iaddiu VI01,VI00,(VU1_StaticTransform-VU1_CodeStart)
+        NOP                         isw.y VI01,VU_ENTRY(VI00)
+VU1_StaticTransform:
+        NOP                         lq VF20,0(VI14)
+        NOP                         lq VF22,2(VI14)
+        VU_WAIT 2
+        itof0.xyz VF20,VF20         NOP
+        mul.xy VF19,VF22,VF11      NOP
+        addx.w VF20,VF00,VF00x     NOP
+        NOP                         NOP
+        mulax ACC,VF01,VF20x       NOP
+        madday ACC,VF02,VF20y      NOP
+        maddaz ACC,VF03,VF20z      NOP
+        maddw VF23,VF04,VF20w      NOP
+        addz.x VF19,VF19,VF11z     NOP
+        addw.y VF19,VF19,VF11w     NOP
+VU1_AliasVertexFog:
+        NOP                         ibeq VI12,VI00,VU1_AliasVertexProject
+        NOP                         NOP
+        subw.z VF19,VF07,VF23w    NOP
+        VU_WAIT 3
+        mulx.z VF19,VF19,VF07x    NOP
+        VU_WAIT 3
+        maxy.z VF19,VF19,VF07y    NOP
+        VU_WAIT 3
+        miniw.z VF19,VF19,VF07w   NOP
+        VU_WAIT 3
+VU1_AliasVertexProject:
+        clipw.xyz VF23,VF23w       sq VF23,0(VI09)
+        NOP                         sq VF19,1(VI09)
+        NOP                         div Q,VF00w,VF23w
+        NOP                         sq VF26,1(VI14)
+        NOP                         fcand VI01,0x3f
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_AliasVertexSkip
+        NOP                         ior VI04,VI04,VI01
+        NOP                         waitq
+        mulq.xyz VF23,VF23,Q        isubiu VI08,VI08,1
+        mulq.xy VF19,VF19,Q         ilw.y VI01,VU_ENTRY(VI00)
+        sub.w VF19,VF00,VF00        NOP
+        NOP                         NOP
+        mul.xyz VF23,VF23,VF05      NOP
+        NOP                         NOP
+        addq.w VF19,VF19,Q          NOP
+        NOP                         NOP
+        add.xyz VF23,VF23,VF06      NOP
+        mulz.w VF23,VF00,VF19z     NOP
+        addw.z VF19,VF00,VF19w     NOP
+        NOP                         NOP
+        ftoi4.xyz VF23,VF23         sq VF23,2(VI09)
+        mulw.w VF23,VF23,VF05w     NOP
+        NOP                         sq VF19,0(VI14)
+        NOP                         NOP
+        NOP                         iaddiu VI09,VI09,3
+        addw.w VF23,VF23,VF16w     NOP
+        VU_WAIT 3
+        ftoi4.w VF23,VF23           iaddiu VI14,VI14,3
+        VU_WAIT 3
+        NOP                         sq VF23,-1(VI14)
+        NOP                         ibeq VI08,VI00,VU1_AliasVertexDone
+        NOP                         NOP
+        NOP                         jr VI01
+        NOP                         NOP
+VU1_AliasVertexSkip:
+        NOP                         isubiu VI08,VI08,1
+        NOP                         ilw.y VI01,VU_ENTRY(VI00)
+        NOP                         iaddiu VI09,VI09,3
+        NOP                         iaddiu VI14,VI14,3
+        NOP                         ibeq VI08,VI00,VU1_AliasVertexDone
+        NOP                         NOP
+        NOP                         jr VI01
+        NOP                         NOP
+VU1_AliasVertexDone:
+        NOP                         b VU1_ProjectDone
+        NOP                         NOP
+VU1_ProjectBegin:
+        NOP                         iadd VI04,VI00,VI00
+        NOP                         ilw.z VI06,VU_COUNTS(VI00)
+        NOP                         NOP
+        NOP                         ibne VI06,VI00,VU1_WorldProject
+        NOP                         NOP
+        add VF22,VF18,VF16          NOP
+        VU_WAIT 3
+        ftoi0 VF22,VF22             NOP
+VU1_FastProject:
+        NOP                         lq VF23,0(VI09)
+        NOP                         lq VF21,1(VI09)
+        VU_WAIT 2
+        clipw.xyz VF23,VF23w       NOP
+        VU_WAIT 3
+        NOP                         fcand VI01,0x3f
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_FastProjectSkip
+        NOP                         ior VI04,VI04,VI01
+        NOP                         div Q,VF00w,VF23w
+        NOP                         waitq
+        mulq.xyz VF23,VF23,Q        NOP
+        mulq.xy VF21,VF21,Q         NOP
+        sub.w VF21,VF00,VF00        NOP
+        NOP                         NOP
+        mul.xyz VF23,VF23,VF05      NOP
+        NOP                         NOP
+        addq.w VF21,VF21,Q          NOP
+        NOP                         NOP
+        add.xyz VF23,VF23,VF06      NOP
+        mulz.w VF23,VF00,VF21z     NOP
+        addw.z VF21,VF00,VF21w     NOP
+        NOP                         NOP
+        ftoi4.xyz VF23,VF23         sq VF23,2(VI09)
+        mulw.w VF23,VF23,VF05w     NOP
+        NOP                         sq VF21,0(VI10)
+        NOP                         sq VF22,1(VI10)
+        NOP                         NOP
+        addw.w VF23,VF23,VF16w     NOP
+        NOP                         iaddiu VI09,VI09,3
+        NOP                         isubiu VI05,VI05,1
+        NOP                         NOP
+        ftoi4.w VF23,VF23           NOP
+        NOP                         iaddiu VI10,VI10,3
+        VU_WAIT 2
+        NOP                         sq VF23,-1(VI10)
+        NOP                         ibne VI05,VI00,VU1_FastProject
+        NOP                         NOP
+        NOP                         b VU1_ProjectDone
+        NOP                         NOP
+VU1_FastProjectSkip:
+        NOP                         iaddiu VI09,VI09,3
+        NOP                         iaddiu VI10,VI10,3
+        NOP                         isubiu VI05,VI05,1
+        NOP                         NOP
+        NOP                         ibne VI05,VI00,VU1_FastProject
+        NOP                         NOP
+        NOP                         b VU1_ProjectDone
+        NOP                         NOP
+VU1_WorldProject:
+        NOP                         lq VF23,0(VI09)
+        NOP                         lq VF21,1(VI09)
+        VU_WAIT 2
+        clipw.xyz VF23,VF23w       NOP
+        VU_WAIT 3
+        NOP                         fcand VI01,0x3f
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_WorldProjectNext
+        NOP                         ior VI04,VI04,VI01
+        NOP                         div Q,VF00w,VF23w
+        NOP                         waitq
+        mulq.xyz VF23,VF23,Q        NOP
+        mulq.xy VF21,VF21,Q         NOP
+        sub.w VF21,VF00,VF00        NOP
+        add VF22,VF18,VF16          NOP
+        NOP                         ilw.z VI06,VU_COUNTS(VI00)
+        NOP                         NOP
+        addq.w VF21,VF21,Q          NOP
+        mul.xyz VF23,VF23,VF05      NOP
+        NOP                         ibeq VI06,VI00,VU1_WorldProjectColor
+        NOP                         NOP
+        NOP                         ibeq VI12,VI00,VU1_WorldProjectColor
+        NOP                         NOP
+        mulz.w VF22,VF18,VF21z     NOP
+        VU_WAIT 3
+        addw.w VF22,VF22,VF16w     NOP
+VU1_WorldProjectColor:
+        ftoi0 VF22,VF22             NOP
+        VU_WAIT 2
+        add.xyz VF23,VF23,VF06      NOP
+        VU_WAIT 3
+        mulz.w VF23,VF00,VF21z     NOP
+        ftoi4.xyz VF23,VF23         sq VF23,2(VI09)
+        addx.z VF19,VF21,VF00x     NOP
+        NOP                         NOP
+        mulw.w VF23,VF23,VF05w     NOP
+        addw.z VF21,VF00,VF21w     NOP
+        VU_WAIT 2
+        addw.w VF23,VF23,VF16w     NOP
+        NOP                         sq VF21,0(VI10)
+        NOP                         sq VF22,1(VI10)
+        NOP                         NOP
+        ftoi4.w VF23,VF23           NOP
+        VU_WAIT 3
+        NOP                         sq VF23,2(VI10)
+        NOP                         ibeq VI06,VI00,VU1_WorldProjectNext
+        NOP                         NOP
+        NOP                         lq VF15,VU_FOG_COLOR(VI00)
+        subz.w VF15,VF07,VF19z     NOP
+        mulw.w VF15,VF15,VF10w     NOP
+        addw VF15,VF15,VF16w       NOP
+        ftoi0 VF15,VF15             NOP
+        NOP                         sq VF15,2(VI09)
+VU1_WorldProjectNext:
+        NOP                         iaddiu VI09,VI09,3
+        NOP                         iaddiu VI10,VI10,3
+        NOP                         isubiu VI05,VI05,1
+        NOP                         NOP
+        NOP                         ibne VI05,VI00,VU1_WorldProject
+        NOP                         NOP
+VU1_ProjectDone:
+        NOP                         ilw.z VI06,VU_COUNTS(VI00)
+        NOP                         iaddiu VI14,VI00,VU_INDICES
+        NOP                         ibeq VI06,VI00,VU1_IndexedProjectDone
+        NOP                         NOP
+        NOP                         iaddiu VI14,VI00,VU_LIGHTMAP_INDICES
+VU1_IndexedProjectDone:
+        NOP                         iaddiu VI01,VI00,(VU1_IndexedTriangle-VU1_CodeStart)
+        NOP                         ibne VI04,VI00,VU1_SetEntry
+        NOP                         NOP
+        NOP                         ilw.w VI12,VU_COUNTS(VI00)
+        NOP                         iaddiu VI13,VI00,VU_FLAG_STRIPS
+        NOP                         iand VI12,VI12,VI13
+        NOP                         NOP
+        NOP                         ibeq VI12,VI00,VU1_InsideEntry
+        NOP                         NOP
+        NOP                         ilw.z VI12,VU_BATCH_COUNTS(VI00)
+        NOP                         NOP
+        NOP                         ibne VI12,VI00,VU1_StripBegin
+        NOP                         NOP
+VU1_InsideEntry:
+        NOP                         iaddiu VI01,VI00,(VU1_InsideTriangle-VU1_CodeStart)
+VU1_SetEntry:
+        NOP                         isw.x VI01,VU_ENTRY(VI00)
+        NOP                         iaddiu VI15,VI00,128
+        NOP                         jr VI01
+        NOP                         NOP
+VU1_StripBegin:
+        NOP                         ilw.x VI07,0(VI14)
+        NOP                         ilw.y VI08,0(VI14)
+        NOP                         ilw.z VI10,0(VI14)
+        NOP                         ilw.w VI05,0(VI14)
+        NOP                         iaddiu VI13,VI00,128
+        NOP                         iand VI11,VI05,VI13
+        NOP                         lq VF27,VU_STRIP_GIFTAG(VI00)
+        NOP                         ibeq VI11,VI00,VU1_StripTagReady
+        NOP                         NOP
+        NOP                         lq VF27,VU_GIFTAG(VI00)
+        NOP                         isubiu VI05,VI05,128
+VU1_StripTagReady:
+        NOP                         iaddiu VI07,VI07,VU_WORK
+        NOP                         iaddiu VI08,VI08,VU_WORK
+        NOP                         iaddiu VI10,VI10,VU_WORK
+        NOP                         sq VF27,0(VI03)
+        NOP                         iaddiu VI13,VI05,0x4002
+        NOP                         iaddiu VI13,VI13,0x4000
+        NOP                         isw.x VI13,0(VI03)
+        NOP                         iaddiu VI09,VI03,1
+        NOP                         lq VF20,-256(VI07)
+        NOP                         lq VF21,-255(VI07)
+        NOP                         lq VF22,-254(VI07)
+        NOP                         lq VF23,-256(VI08)
+        NOP                         lq VF24,-255(VI08)
+        NOP                         lq VF25,-254(VI08)
+        NOP                         sq VF20,0(VI09)
+        NOP                         sq VF21,1(VI09)
+        NOP                         sq VF22,2(VI09)
+        NOP                         sq VF23,3(VI09)
+        NOP                         sq VF24,4(VI09)
+        NOP                         sq VF25,5(VI09)
+        NOP                         iaddiu VI09,VI09,6
+VU1_StripTriangle:
+        NOP                         ilw.x VI12,VU_SCRATCH(VI00)
+        NOP                         iadd VI04,VI00,VI00
+        NOP                         ibeq VI12,VI00,VU1_StripEmit
+        NOP                         NOP
+        NOP                         lq VF28,2(VI07)
+        NOP                         lq VF29,2(VI08)
+        NOP                         lq VF30,2(VI10)
+        NOP                         NOP
+        sub.xy VF29,VF29,VF28      NOP
+        sub.xy VF30,VF30,VF28      NOP
+        VU_WAIT 3
+        opmula.xyz ACC,VF29,VF30  NOP
+        opmsub.xyz VF31,VF30,VF29 NOP
+        NOP                         iaddiu VI13,VI00,32
+        VU_WAIT 2
+        NOP                         fmand VI12,VI13
+        NOP                         NOP
+        NOP                         ibeq VI12,VI00,VU1_StripEmit
+        NOP                         NOP
+        NOP                         iaddiu VI04,VI00,0x4000
+        NOP                         iaddiu VI04,VI04,0x4000
+VU1_StripEmit:
+        NOP                         lq VF20,-256(VI10)
+        NOP                         lq VF21,-255(VI10)
+        NOP                         lq VF22,-254(VI10)
+        NOP                         ilw.w VI12,-254(VI10)
+        NOP                         sq VF20,0(VI09)
+        NOP                         sq VF21,1(VI09)
+        NOP                         sq VF22,2(VI09)
+        NOP                         ior VI12,VI12,VI04
+        NOP                         isw.w VI12,2(VI09)
+        NOP                         iaddiu VI14,VI14,1
+        NOP                         iaddiu VI09,VI09,3
+        NOP                         isubiu VI02,VI02,1
+        NOP                         isubiu VI05,VI05,1
+        NOP                         NOP
+        NOP                         ibeq VI05,VI00,VU1_StripKick
+        NOP                         NOP
+        NOP                         ilw.x VI07,0(VI14)
+        NOP                         ilw.y VI08,0(VI14)
+        NOP                         ilw.z VI10,0(VI14)
+        NOP                         iaddiu VI07,VI07,VU_WORK
+        NOP                         iaddiu VI08,VI08,VU_WORK
+        NOP                         iaddiu VI10,VI10,VU_WORK
+        NOP                         b VU1_StripTriangle
+        NOP                         NOP
+VU1_StripKick:
+        NOP                         xgkick VI03
+        NOP                         iaddiu VI13,VI00,VU_PACKET_TOGGLE
+        NOP                         isub VI03,VI13,VI03
+        NOP                         ibne VI02,VI00,VU1_StripBegin
+        NOP                         NOP
+        NOP                         b VU1_End
+        NOP                         NOP
+VU1_InsideTriangle:
+        NOP                         ilw.x VI07,0(VI14)
+        NOP                         ilw.y VI08,0(VI14)
+        NOP                         ilw.z VI10,0(VI14)
+        NOP                         iaddiu VI14,VI14,1
+        NOP                         iaddiu VI07,VI07,VU_WORK
+        NOP                         iaddiu VI08,VI08,VU_WORK
+        NOP                         iaddiu VI10,VI10,VU_WORK
+        NOP                         b VU1_IndexedInsideTriangle
+        NOP                         NOP
+VU1_IndexedTriangle:
+        NOP                         ilw.x VI07,0(VI14)
+        NOP                         ilw.y VI08,0(VI14)
+        NOP                         ilw.z VI10,0(VI14)
+        NOP                         iaddiu VI14,VI14,1
+        NOP                         iaddiu VI07,VI07,VU_WORK
+        NOP                         iaddiu VI08,VI08,VU_WORK
+        NOP                         iaddiu VI10,VI10,VU_WORK
+        NOP                         lq VF20,0(VI07)
+        NOP                         lq VF23,0(VI08)
+        NOP                         lq VF26,0(VI10)
+        NOP                         NOP
+        clipw.xyz VF20,VF20w       NOP
+        clipw.xyz VF23,VF23w       NOP
+        clipw.xyz VF26,VF26w       NOP
+        VU_WAIT 3
+        NOP                         fcand VI01,0x3ffff
+        NOP                         NOP
+        NOP                         ibeq VI01,VI00,VU1_IndexedInsideTriangle
+        NOP                         NOP
+        NOP                         fcor VI01,0xffefbe
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_TriangleDone
+        NOP                         NOP
+        NOP                         fcor VI01,0xffdf7d
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_TriangleDone
+        NOP                         NOP
+        NOP                         fcor VI01,0xffbefb
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_TriangleDone
+        NOP                         NOP
+        NOP                         fcor VI01,0xff7df7
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_TriangleDone
+        NOP                         NOP
+        NOP                         fcor VI01,0xfefbef
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_TriangleDone
+        NOP                         NOP
+        NOP                         fcor VI01,0xfdf7df
+        NOP                         NOP
+        NOP                         ibne VI01,VI00,VU1_TriangleDone
+        NOP                         NOP
+        NOP                         ilw.x VI12,VU_SCRATCH(VI00)
+        NOP                         NOP
+        NOP                         ibeq VI12,VI00,VU1_IndexedClipFront
+        NOP                         NOP
+        addx.xyz VF28,VF20,VF00x   NOP
+        addx.xyz VF29,VF23,VF00x   NOP
+        addx.xyz VF30,VF26,VF00x   NOP
+        addw.z VF28,VF00,VF20w    NOP
+        addw.z VF29,VF00,VF23w    NOP
+        addw.z VF30,VF00,VF26w    NOP
+        VU_WAIT 3
+        opmula.xyz ACC,VF29,VF30  NOP
+        opmsub.xyz VF31,VF30,VF29 NOP
+        VU_WAIT 3
+        mul.xyz VF31,VF31,VF28    NOP
+        VU_WAIT 3
+        addy.x VF31,VF31,VF31y    NOP
+        VU_WAIT 3
+        addz.x VF31,VF31,VF31z    NOP
+        VU_WAIT 3
+        NOP                         fmand VI12,VI15
+        NOP                         NOP
+        NOP                         ibeq VI12,VI00,VU1_TriangleDone
+        NOP                         NOP
+VU1_IndexedClipFront:
+        NOP                         ilw.z VI06,VU_COUNTS(VI00)
+        NOP                         NOP
+        NOP                         ibne VI06,VI00,VU1_IndexedClipPasses
+        NOP                         NOP
+        NOP                         bal VI12,VU1_FlushTriangles
+        NOP                         NOP
+        NOP                         b VU1_IndexedClipReady
+        NOP                         NOP
+VU1_IndexedClipPasses:
+        NOP                         bal VI12,VU1_FlushIndexedPasses
+        NOP                         NOP
+VU1_IndexedClipReady:
+        NOP                         iaddiu VI05,VI00,3
+        NOP                         iaddiu VI04,VI00,VU_CLIP0
+        NOP                         iaddiu VI09,VI00,VU_CLIP0
+        NOP                         iaddiu VI06,VI00,VU_CLIP1
+        NOP                         lq VF20,0(VI07)
+        NOP                         lq VF21,1(VI07)
+        NOP                         lq VF22,2(VI07)
+        NOP                         NOP
+        clipw.xyz VF20,VF20w       sq VF20,0(VI09)
+        NOP                         sq VF21,1(VI09)
+        NOP                         sq VF18,2(VI09)
+        NOP                         iaddiu VI09,VI09,3
+        NOP                         lq VF20,0(VI08)
+        NOP                         lq VF21,1(VI08)
+        NOP                         lq VF22,2(VI08)
+        NOP                         NOP
+        clipw.xyz VF20,VF20w       sq VF20,0(VI09)
+        NOP                         sq VF21,1(VI09)
+        NOP                         sq VF18,2(VI09)
+        NOP                         iaddiu VI09,VI09,3
+        NOP                         lq VF20,0(VI10)
+        NOP                         lq VF21,1(VI10)
+        NOP                         lq VF22,2(VI10)
+        NOP                         NOP
+        clipw.xyz VF20,VF20w       sq VF20,0(VI09)
+        NOP                         sq VF21,1(VI09)
+        NOP                         sq VF18,2(VI09)
+        NOP                         iaddiu VI09,VI09,3
+        NOP                         b VU1_ClipTriangle
+        NOP                         NOP
+VU1_IndexedInsideTriangle:
+        NOP                         ilw.z VI06,VU_COUNTS(VI00)
+        NOP                         NOP
+        NOP                         ibne VI06,VI00,VU1_IndexedPassTriangle
+        NOP                         NOP
+        NOP                         ilw.x VI12,VU_SCRATCH(VI00)
+        NOP                         NOP
+        NOP                         ibeq VI12,VI00,VU1_IndexedEmit
+        NOP                         NOP
+        NOP                         lq VF28,2(VI07)
+        NOP                         lq VF29,2(VI08)
+        NOP                         lq VF30,2(VI10)
+        NOP                         NOP
+        sub.xy VF29,VF29,VF28       NOP
+        sub.xy VF30,VF30,VF28       NOP
+        VU_WAIT 3
+        opmula.xyz ACC,VF29,VF30   NOP
+        opmsub.xyz VF31,VF30,VF29  NOP
+        NOP                         iaddiu VI13,VI00,32
+        VU_WAIT 2
+        NOP                         fmand VI12,VI13
+        NOP                         NOP
+        NOP                         ibne VI12,VI00,VU1_TriangleDone
+        NOP                         NOP
+VU1_IndexedEmit:
+        NOP                         ilw.y VI06,VU_SCRATCH(VI00)
+        NOP                         sq VF27,0(VI03)
+        NOP                         iadd VI09,VI06,VI06
+        NOP                         iadd VI09,VI09,VI06
+        NOP                         iadd VI09,VI09,VI03
+        NOP                         iaddiu VI09,VI09,1
+        NOP                         lq VF20,-256(VI07)
+        NOP                         lq VF21,-255(VI07)
+        NOP                         lq VF22,-254(VI07)
+        NOP                         lq VF23,-256(VI08)
+        NOP                         lq VF24,-255(VI08)
+        NOP                         lq VF25,-254(VI08)
+        NOP                         lq VF26,-256(VI10)
+        NOP                         lq VF28,-255(VI10)
+        NOP                         lq VF29,-254(VI10)
+        NOP                         sq VF20,0(VI09)
+        NOP                         sq VF21,1(VI09)
+        NOP                         sq VF22,2(VI09)
+        NOP                         sq VF23,3(VI09)
+        NOP                         sq VF24,4(VI09)
+        NOP                         sq VF25,5(VI09)
+        NOP                         sq VF26,6(VI09)
+        NOP                         sq VF28,7(VI09)
+        NOP                         sq VF29,8(VI09)
+        NOP                         iaddiu VI06,VI06,3
+        NOP                         isw.y VI06,VU_SCRATCH(VI00)
+        NOP                         ilw.w VI12,VU_COUNTS(VI00)
+        NOP                         iaddiu VI13,VI00,VU_FLAG_BATCH
+        NOP                         iand VI12,VI12,VI13
+        NOP                         NOP
+        NOP                         ibeq VI12,VI00,VU1_IndexedFlush
+        NOP                         isubiu VI13,VI06,51
+        NOP                         NOP
+        NOP                         ibne VI13,VI00,VU1_TriangleDone
+        NOP                         NOP
+VU1_IndexedFlush:
+        NOP                         bal VI12,VU1_FlushTriangles
+        NOP                         NOP
+        NOP                         b VU1_TriangleDone
+        NOP                         NOP
+VU1_IndexedPassTriangle:
+        NOP                         ilw.y VI06,VU_SCRATCH(VI00)
+        NOP                         NOP
+        NOP                         isubiu VI13,VI06,39
+        NOP                         NOP
+        NOP                         ibne VI13,VI00,VU1_IndexedPassReady
+        NOP                         NOP
+        NOP                         bal VI12,VU1_FlushIndexedPasses
+        NOP                         NOP
+        NOP                         ilw.y VI06,VU_SCRATCH(VI00)
+VU1_IndexedPassReady:
+        NOP                         iadd VI09,VI06,VI06
+        NOP                         iadd VI09,VI09,VI06
+        NOP                         iaddiu VI09,VI09,VU_PROJECTED
+        NOP                         iaddiu VI13,VI06,VU_FOG_VERTICES
+        NOP                         lq VF20,-256(VI07)
+        NOP                         lq VF21,-255(VI07)
+        NOP                         lq VF22,-254(VI07)
+        NOP                         lq VF23,2(VI07)
+        NOP                         sq VF20,0(VI09)
+        NOP                         sq VF21,1(VI09)
+        NOP                         sq VF22,2(VI09)
+        NOP                         sq VF23,0(VI13)
+        NOP                         lq VF20,-256(VI08)
+        NOP                         lq VF21,-255(VI08)
+        NOP                         lq VF22,-254(VI08)
+        NOP                         lq VF23,2(VI08)
+        NOP                         sq VF20,3(VI09)
+        NOP                         sq VF21,4(VI09)
+        NOP                         sq VF22,5(VI09)
+        NOP                         sq VF23,1(VI13)
+        NOP                         lq VF20,-256(VI10)
+        NOP                         lq VF21,-255(VI10)
+        NOP                         lq VF22,-254(VI10)
+        NOP                         lq VF23,2(VI10)
+        NOP                         sq VF20,6(VI09)
+        NOP                         sq VF21,7(VI09)
+        NOP                         sq VF22,8(VI09)
+        NOP                         sq VF23,2(VI13)
+        NOP                         iaddiu VI06,VI06,3
+        NOP                         isw.y VI06,VU_SCRATCH(VI00)
+        NOP                         b VU1_TriangleDone
+        NOP                         NOP
+VU1_FlushIndexedPasses:
+        NOP                         isw.x VI07,VU_BATCH_GIFTAG(VI00)
+        NOP                         isw.y VI08,VU_BATCH_GIFTAG(VI00)
+        NOP                         isw.z VI10,VU_BATCH_GIFTAG(VI00)
+        NOP                         isw.w VI12,VU_BATCH_GIFTAG(VI00)
+        NOP                         bal VI12,VU1_FlushPassBatch
+        NOP                         NOP
+        NOP                         ilw.x VI07,VU_BATCH_GIFTAG(VI00)
+        NOP                         ilw.y VI08,VU_BATCH_GIFTAG(VI00)
+        NOP                         ilw.z VI10,VU_BATCH_GIFTAG(VI00)
+        NOP                         ilw.w VI01,VU_BATCH_GIFTAG(VI00)
+        NOP                         NOP
+        NOP                         jr VI01
+        NOP                         NOP
+VU1_AppendPassTriangles:
+        NOP                         isubiu VI08,VI11,2
+        NOP                         ilw.y VI06,VU_SCRATCH(VI00)
+        NOP                         iadd VI13,VI08,VI08
+        NOP                         iadd VI13,VI13,VI08
+        NOP                         iadd VI13,VI13,VI06
+        NOP                         isubiu VI13,VI13,40
+        NOP                         NOP
+        NOP                         ibltz VI13,VU1_AppendPassReady
+        NOP                         NOP
+        NOP                         isw.x VI04,VU_SCRATCH(VI00)
+        NOP                         isw.z VI11,VU_SCRATCH(VI00)
+        NOP                         bal VI12,VU1_FlushPassBatch
+        NOP                         NOP
+        NOP                         ilw.x VI04,VU_SCRATCH(VI00)
+        NOP                         ilw.z VI11,VU_SCRATCH(VI00)
+        NOP                         ilw.y VI06,VU_SCRATCH(VI00)
+        NOP                         NOP
+        NOP                         isubiu VI08,VI11,2
+VU1_AppendPassReady:
+        NOP                         iadd VI10,VI06,VI06
+        NOP                         iadd VI10,VI10,VI06
+        NOP                         iaddiu VI10,VI10,VU_PROJECTED
+        NOP                         iaddiu VI13,VI06,VU_FOG_VERTICES
+        NOP                         iadd VI01,VI08,VI08
+        NOP                         iadd VI01,VI01,VI08
+        NOP                         iadd VI06,VI06,VI01
+        NOP                         isw.y VI06,VU_SCRATCH(VI00)
+        NOP                         iaddiu VI09,VI04,3
+        NOP                         iaddiu VI12,VI00,VU_CLIP_FOG+1
+VU1_AppendPassTriangle:
+        NOP                         lq VF20,0(VI04)
+        NOP                         lq VF21,1(VI04)
+        NOP                         lq VF22,2(VI04)
+        NOP                         lq VF23,VU_CLIP_FOG(VI00)
+        NOP                         sq VF20,0(VI10)
+        NOP                         sq VF21,1(VI10)
+        NOP                         sq VF22,2(VI10)
+        NOP                         sq VF23,0(VI13)
+        NOP                         lq VF20,0(VI09)
+        NOP                         lq VF21,1(VI09)
+        NOP                         lq VF22,2(VI09)
+        NOP                         lq VF23,0(VI12)
+        NOP                         sq VF20,3(VI10)
+        NOP                         sq VF21,4(VI10)
+        NOP                         sq VF22,5(VI10)
+        NOP                         sq VF23,1(VI13)
+        NOP                         lq VF20,3(VI09)
+        NOP                         lq VF21,4(VI09)
+        NOP                         lq VF22,5(VI09)
+        NOP                         lq VF23,1(VI12)
+        NOP                         sq VF20,6(VI10)
+        NOP                         sq VF21,7(VI10)
+        NOP                         sq VF22,8(VI10)
+        NOP                         sq VF23,2(VI13)
+        NOP                         iaddiu VI09,VI09,3
+        NOP                         iaddiu VI12,VI12,1
+        NOP                         iaddiu VI10,VI10,9
+        NOP                         iaddiu VI13,VI13,3
+        NOP                         isubiu VI08,VI08,1
+        NOP                         NOP
+        NOP                         ibne VI08,VI00,VU1_AppendPassTriangle
+        NOP                         NOP
+        NOP                         b VU1_TriangleDone
+        NOP                         NOP
+VU1_FlushPassBatch:
+        NOP                         ilw.y VI11,VU_SCRATCH(VI00)
+        NOP                         isw.w VI12,VU_SCRATCH(VI00)
+        NOP                         ilw.z VI06,VU_COUNTS(VI00)
+        NOP                         ibeq VI11,VI00,VU1_PassBatchReturn
+        NOP                         NOP
+        NOP                         b VU1_Passes
+        NOP                         NOP
+VU1_PassBatchReturn:
+        NOP                         isw.y VI00,VU_SCRATCH(VI00)
+        NOP                         ilw.w VI01,VU_SCRATCH(VI00)
+        NOP                         NOP
+        NOP                         jr VI01
+        NOP                         NOP
+VU1_FlushTriangles:
+        NOP                         ilw.y VI06,VU_SCRATCH(VI00)
+        NOP                         isw.w VI12,VU_SCRATCH(VI00)
+        NOP                         NOP
+        NOP                         ibeq VI06,VI00,VU1_FlushReturn
+        NOP                         NOP
+        NOP                         iaddiu VI13,VI06,0x4000
+        NOP                         iaddiu VI13,VI13,0x4000
+        NOP                         isw.x VI13,0(VI03)
+        NOP                         xgkick VI03
+        NOP                         iaddiu VI13,VI00,VU_PACKET_TOGGLE
+        NOP                         isub VI03,VI13,VI03
+        NOP                         isw.y VI00,VU_SCRATCH(VI00)
+VU1_FlushReturn:
+        NOP                         ilw.w VI01,VU_SCRATCH(VI00)
+        NOP                         NOP
+        NOP                         jr VI01
+        NOP                         NOP
+.align 4
+VU1_CodeEnd:

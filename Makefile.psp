@@ -58,7 +58,7 @@ COMMON_OBJS = \
 	source/cl_tent.o \
 	source/cl_slist.o \
     source/cmd.o \
-	source/platform/psp/common.o \
+	source/common.o \
 	source/console.o \
 	source/crc.o \
 	source/cvar.o \
@@ -125,17 +125,17 @@ HARDWARE_VIDEO_ONLY_OBJS = \
 	source/platform/psp/clipping.o \
 	source/platform/psp/vram.o \
     source/platform/psp/gu/gu_psp.o \
-    source/platform/psp/gu/gu_fullbright.o \
     source/render/r_particles.o \
 	source/render/r_decals.o \
 	source/platform/psp/gu/gu_hyena.o \
-    source/platform/psp/gu/gu_main.o \
-    source/platform/psp/gu/gu_mesh.o \
-    source/platform/psp/gu/gu_misc.o \
-    source/platform/psp/gu/gu_model.o \
+    source/render/r_main.o \
+    source/render/r_mesh.o \
+    source/render/r_misc.o \
+    source/render/r_model.o \
+    source/render/r_model_hardware.o \
     source/render/r_screen.o \
-    source/platform/psp/gu/gu_surface.o \
-    source/platform/psp/gu/gu_warp.o
+    source/render/r_surf.o \
+    source/render/r_warp.o
 
 HARDWARE_VIDEO_ONLY_FLAGS = -DPSP_HARDWARE_VIDEO
 
@@ -149,7 +149,10 @@ NET_LIBS    = -lpspwlan -lpspnet_adhoc -lpspnet_adhocctl
 STD_LIBS	= -lstdc++ -lm -lc
 LIBS		= $(GPROF_LIBS) $(GU_LIBS) $(AUDIO_LIBS) $(MISC_LIBS) $(STD_LIBS) $(NET_LIBS)
 
-CFLAGS = -ffast-math -O3 -Ofast -G0 -Wall $(GPROF_FLAGS) -DPSP $(MODE) $(HARDWARE_VIDEO_ONLY_FLAGS) \
+CFLAGS = -DR_WORLD_VERTEX_SIZE=5 -DR_WORLD_POSITION=2 -DR_WORLD_UV=0 -DR_WORLD_LIGHTMAP_UV=-1 \
+		-DR_LIGHTMAP_DARK_LIGHTS=1 -DR_DEFAULT_LIGHTMAP_FASTALLOC=\"1\" -DR_KEEP_SPRITES=1 -DR_KEEP_ALIAS_TEXTURES=0 -DR_ALIAS_VERTEX_TYPE=int8_t -DR_ALIAS_LIGHT_DIVISOR=200 -DR_ALIAS_BRIGHTNESS=32 -DR_ALIAS_LIMB_BRIGHTNESS=0 \
+		-DR_ALIAS_LIGHT_MAX=125 -DR_NEAR_CLIP=6 -DR_DEFAULT_VSYNC=\"0\" -DR_DEFAULT_WATERALPHA=\"0.6\" \
+		-ffast-math -O3 -Ofast -G0 -Wall $(GPROF_FLAGS) -DPSP $(MODE) $(HARDWARE_VIDEO_ONLY_FLAGS) \
 		-DSWIZZLE32 -DPSP_MP3_HWDECODE -DFULLBRIGHT -DHL_RENDER -Wno-strict-aliasing -DPSP_VFPU -DPLATFORM_DIRECTORY="psp" \
 		-DPLATFORM_RENDERER="gu" -DMAX_AI_COUNT=12 -DRENDERER_SUPPORTS_DITHERING -DPLATFORM_KEYBOARD_OSK \
 		-DPLATFORM_HAS_ONE_ANALOG_STICK

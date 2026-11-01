@@ -193,6 +193,9 @@ extern	int		        key_lastpress;
 extern qboolean	        keydown[MAX_KEYS];
 
 void Key_Event (int key, qboolean down);
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+void Key_PressureEvent(int key, qboolean down, int pressure);
+#endif
 void Key_Init (void);
 void Key_SetPlatformKeyConversion(int (*string_to_keynum)(const char *name), const char *(*keynum_to_string)(int keynum));
 void Key_WriteBindings (FILE *f);

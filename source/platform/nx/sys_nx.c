@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <switch.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #include <unistd.h>
 
 //#define TICKS_PER_SEC 268123480.0
@@ -144,6 +145,28 @@ int     Sys_FileTime (char *path)
 	}
 	
 	return -1;
+}
+
+sys_directory_t *Sys_OpenDirectory(const char *path)
+{
+	return (sys_directory_t *)opendir(path);
+}
+
+int Sys_ReadDirectory(sys_directory_t *directory, char *name, size_t size)
+{
+	struct dirent *entry;
+	while ((entry = readdir((DIR *)directory)) != NULL) {
+		if (strlen(entry->d_name) < size) {
+			Q_strlcpy(name, entry->d_name, size);
+			return true;
+		}
+	}
+	return false;
+}
+
+void Sys_CloseDirectory(sys_directory_t *directory)
+{
+	closedir((DIR *)directory);
 }
 
 void Sys_mkdir (char *path)

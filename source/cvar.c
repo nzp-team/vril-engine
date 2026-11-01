@@ -557,7 +557,7 @@ void Cvar_RegisterVariable (cvar_t *variable)
 	variable->flags |= CVAR_REGISTERED;
 
 // copy the value off, because future sets will Z_Free it
-	strlcpy (value, variable->string, sizeof(value));
+	Q_strlcpy (value, variable->string, sizeof(value));
 	variable->string = NULL;
 	variable->default_string = NULL;
 

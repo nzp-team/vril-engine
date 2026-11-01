@@ -1658,7 +1658,7 @@ R_DrawParticles(void)
                 }
                 R_FlushParticleBatch();
                 if (muzzleflash)
-                    Hyena_SetDepthRange(0, 1.0f);
+                    Hyena_ResetDepthRange();
                 break;
 
             case pd_billboard_vel:
@@ -2086,7 +2086,7 @@ QMB_RunParticleEffect(vec3_t org, vec3_t dir, int col, int count)
              *          }
              *      }
              */
-            particlecount = fmax(1, count >> 1);
+            particlecount = max(1, count >> 1);
             for (i = 0 ; i < particlecount ; i++) {
                 for (j = 0 ; j < 3 ; j++) {
                     neworg[j] = org[j] + ((rand() % 20) - 10);
@@ -2629,8 +2629,7 @@ QMB_ShamblerCharge(vec3_t org)
         pos[2] += (rand() % 200) - 100;
 
         VectorSubtract(pos, org, vec);
-        len = VectorLength(vec);
-        VectorNormalize(vec);
+        len = VectorNormalize(vec);
         VectorMA(dir, -200, vec, dir);
         time = len / 200;
 

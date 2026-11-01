@@ -49,6 +49,13 @@ static double holdstart[MAX_KEYS];
 static qboolean holdfired[MAX_KEYS];
 static qboolean defernormal[MAX_KEYS];
 static qboolean dtfired[MAX_KEYS];
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+#define KEY_PRESSURE_HARD 128
+extern cvar_t in_pressure;
+static byte pressure_binding[MAX_KEYS];
+static qboolean pressure_down[MAX_KEYS];
+static int pressure_event = -1;
+#endif
 
 static int (*platform_string_to_keynum)(const char *name);
 static const char *(*platform_keynum_to_string)(int keynum);
@@ -751,6 +758,36 @@ static void Key_RunBinding (char *binding, int key)
 }
 
 
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+static void Key_ReleasePressureBinding(int key)
+{
+	const char *binding = pressure_binding[key] == 2 ? holdbindings[key] : keybindings[key];
+	char cmd[1024];
+	if (binding && binding[0] == '+') {
+		snprintf(cmd, sizeof(cmd), "-%.*s %i\n", (int)strcspn(binding + 1, " ;\t\r\n"), binding + 1, key);
+		Cbuf_AddText(cmd);
+	}
+}
+
+void Key_PressureEvent(int key, qboolean down, int pressure)
+{
+	if (key < 0 || key >= MAX_KEYS)
+		return;
+	if (pressure_binding[key] && (pressure < 0 || !in_pressure.value || key_dest != key_game || con_forcedup))
+		Key_Event(key, false);
+	if (down != pressure_down[key]) {
+		pressure_down[key] = down;
+		pressure_event = pressure;
+		Key_Event(key, down);
+		pressure_event = -1;
+	} else if (down && keydown[key] && pressure_binding[key] == 1 && pressure >= KEY_PRESSURE_HARD) {
+		Key_ReleasePressureBinding(key);
+		pressure_binding[key] = 2;
+		Key_RunBinding(holdbindings[key], key);
+	}
+}
+#endif
+
 /*
 ============
 Key_UpdateHoldBindings
@@ -762,7 +799,7 @@ void Key_UpdateHoldBindings (void)
 	double now = Sys_FloatTime();
 
 	for (key = 0; key < MAX_KEYS; key++) {
-		if (keydown[key] && holdstart[key] && !holdfired[key] &&
+		if (key_dest == key_game && !con_forcedup && keydown[key] && holdstart[key] && !holdfired[key] &&
 			now - holdstart[key] >= HOLD_BIND_TIME) {
 			Key_RunBinding (holdbindings[key], key);
 			holdfired[key] = true;
@@ -910,7 +947,21 @@ void Key_Event (int key, qboolean down)
 
 	oldkey = lastkey;
 	keydown[key] = down;
-	if (down && key_repeats[key] == 0 && holdbindings[key] && *holdbindings[key]) {
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+	if (!down && pressure_binding[key]) {
+		Key_ReleasePressureBinding(key);
+		pressure_binding[key] = 0;
+	}
+	if (down && !key_repeats[key] && pressure_event >= 0 && in_pressure.value &&
+		key_dest == key_game && !con_forcedup && holdbindings[key] && *holdbindings[key]) {
+		pressure_binding[key] = pressure_event >= KEY_PRESSURE_HARD ? 2 : 1;
+		defernormal[key] = true;
+		holdstart[key] = 0;
+		holdfired[key] = false;
+	} else
+#endif
+	if (down && key_repeats[key] == 0 && key_dest == key_game && !con_forcedup &&
+		holdbindings[key] && *holdbindings[key]) {
 		holdstart[key] = Sys_FloatTime();
 		holdfired[key] = false;
 
@@ -1044,6 +1095,9 @@ void Key_Event (int key, qboolean down)
 	|| (key_dest == key_console && !consolekeys[key])
 	|| (key_dest == key_game && ( !con_forcedup || !consolekeys[key] ) ) )
 	{
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+		if (!pressure_binding[key])
+#endif
 		if (oldkey == key && ((oldkeytime + 0.3) > lastkeytime))
 		{
 			kb = dtbindings[key];
@@ -1067,6 +1121,11 @@ void Key_Event (int key, qboolean down)
 			lastkey = 0;
 		}
 
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+		if (pressure_binding[key])
+			kb = pressure_binding[key] == 2 ? holdbindings[key] : keybindings[key];
+		else
+#endif
 		kb = defernormal[key] ? NULL : keybindings[key];
 		if (kb)
 		{
@@ -1121,6 +1180,11 @@ void Key_ClearStates (void)
 	int		i;
 
 	for (i=0 ; i<MAX_KEYS ; i++) {
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+		if (pressure_binding[i])
+			Key_ReleasePressureBinding(i);
+		pressure_binding[i] = 0;
+#endif
 		keydown[i] = false;
 		key_repeats[i] = 0;
 		holdstart[i] = 0;

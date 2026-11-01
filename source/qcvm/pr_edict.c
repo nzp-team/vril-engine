@@ -70,14 +70,14 @@ cvar_t	saved3 = {"saved3", "0", true};
 cvar_t	saved4 = {"saved4", "0", true};
 
 #define	MAX_FIELD_LEN	64
-#define GEFV_CACHESIZE	2
+#define GEFV_CACHESIZE	8
 
 typedef struct {
 	ddef_t	*pcache;
 	char	field[MAX_FIELD_LEN];
 } gefv_cache;
 
-static gefv_cache	gefvCache[GEFV_CACHESIZE] = {{NULL, ""}, {NULL, ""}};
+static gefv_cache	gefvCache[GEFV_CACHESIZE];
 
 // evaluation shortcuts
 int	eval_gravity;
@@ -122,6 +122,8 @@ Sets everything to NULL
 */
 void ED_ClearEdict (edict_t *e)
 {
+	SV_ClearEntityAttachments(e);
+	e->generation++;
 	memset (&e->v, 0, progs->entityfields * 4);
 	e->free = false;
 }
@@ -174,6 +176,8 @@ FIXME: walk all entities and NULL out references to this entity
 */
 void ED_Free (edict_t *ed)
 {
+	SV_ClearEntityAttachments(ed);
+	ed->generation++;
 	PR_ClearEntityPath (NUM_FOR_EDICT(ed));
 
 	SV_UnlinkEdict (ed);		// unlink from world bsp
@@ -322,42 +326,27 @@ qboolean PR_ParseClientCommand (edict_t *client, char *text)
 	return handled;
 }
 
-/*
-eval_t *GetEdictFieldValue(edict_t *ed, char *field)
-{
-	ddef_t			*def = NULL;
-	int				i;
-	static int		rep = 0;
-
-	for (i=0 ; i<GEFV_CACHESIZE ; i++)
-	{
-		if (!strcmp(field, gefvCache[i].field))
-		{
-			def = gefvCache[i].pcache;
-			goto Done;
-		}
-	}
-
-	def = ED_FindField (field);
-
-	if (strlen(field) < MAX_FIELD_LEN)
-	{
-		gefvCache[rep].pcache = def;
-		strcpy (gefvCache[rep].field, field);
-		rep ^= 1;
-	}
-
-Done:
-	if (!def)
-		return NULL;
-
-	return (eval_t *)((char *)&ed->v + def->ofs*4);
-}
-*/
-
 float PR_GetEdictFloat (edict_t *ed, const char *field)
 {
-	ddef_t *def = ED_FindField((char *)field);
+	ddef_t *def;
+	static int next;
+	int i;
+
+	for (i = 0; i < GEFV_CACHESIZE; i++)
+		if (gefvCache[i].field[0] && !strcmp(field, gefvCache[i].field))
+			break;
+	if (i < GEFV_CACHESIZE)
+		def = gefvCache[i].pcache;
+	else
+	{
+		def = ED_FindField((char *)field);
+		if (field[0] && strlen(field) < MAX_FIELD_LEN)
+		{
+			gefvCache[next].pcache = def;
+			strcpy(gefvCache[next].field, field);
+			next = (next + 1) % GEFV_CACHESIZE;
+		}
+	}
 	if (!def)
 		return 0;
 	return ((eval_t *)((byte *)&ed->v + def->ofs * 4))->_float;
@@ -735,38 +724,6 @@ void ED_WriteGlobals (FILE *f)
 		fprintf (f,"\"%s\"\n", PR_UglyValueString(type, (eval_t *)&pr_globals[def->ofs]));
 	}
 	fprintf (f,"}\n");
-}
-
-/*
- * Copy src to string dst of size siz.  At most siz-1 characters
- * will be copied.  Always NUL terminates (unless siz == 0).
- * Returns strlen(src); if retval >= siz, truncation occurred.
- */
-
-size_t
-Q_strlcpy (char *dst, const char *src, size_t siz)
-{
-	char *d = dst;
-	const char *s = src;
-	size_t n = siz;
-
-	/* Copy as many bytes as will fit */
-	if (n != 0) {
-		while (--n != 0) {
-			if ((*d++ = *s++) == '\0')
-				break;
-		}
-	}
-
-	/* Not enough room in dst, add NUL and traverse rest of src */
-	if (n == 0) {
-		if (siz != 0)
-			*d = '\0';		/* NUL-terminate dst */
-		while (*s++)
-			;
-	}
-
-	return(s - src - 1);	/* count does not include NUL */
 }
 
 /*

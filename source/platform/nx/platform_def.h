@@ -26,3 +26,5 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // Some platforms have not fully migrated to bool from qboolean, CTR included. 
 #define qtrue   1
 #define qfalse  0
+
+#define RENDERER_MODEL_HEADER "render/r_model.h"

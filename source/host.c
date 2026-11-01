@@ -42,7 +42,7 @@ quakeparms_t host_parms;
 
 qboolean	host_initialized;		// true if into command execution
 
-double		host_frametime;
+float		host_frametime;
 double		host_time;
 double		realtime;				// without any filtering or bounding
 double		oldrealtime;			// last frame run
@@ -527,11 +527,35 @@ Returns false if the time is too short to run a frame
 */
 qboolean Host_FilterTime (float time)
 {
+#ifdef PLATFORM_USES_FRAME_DEADLINES
+	static double frame_interval, frame_deadline;
+	static float frame_maxfps;
+#endif
+
 	realtime += (double)time;
 #ifndef __WII__
    if (cl_maxfps.value < 1) Cvar_SetValue("cl_maxfps", 30);
+#ifdef PLATFORM_USES_FRAME_DEADLINES
+	if (!cls.timedemo)
+	{
+		if (frame_maxfps != cl_maxfps.value)
+		{
+			frame_maxfps = cl_maxfps.value;
+			frame_interval = 1.0 / (double)frame_maxfps;
+			frame_deadline = oldrealtime + frame_interval;
+		}
+		if (realtime < frame_deadline)
+			return false;
+		if (realtime - frame_deadline > frame_interval)
+			frame_deadline = realtime;
+		frame_deadline += frame_interval;
+	}
+	else
+		frame_maxfps = 0;
+#else
    if (!cls.timedemo && realtime - oldrealtime < 1.0/(double)cl_maxfps.value)
 		return false;		// framerate is too high
+#endif
 #else
 	if (!cls.timedemo && realtime - oldrealtime < 1.0f/60.0f)
 		return false;		// framerate is too high
@@ -542,12 +566,12 @@ qboolean Host_FilterTime (float time)
 
 	//johnfitz -- host_timescale is more intuitive than host_framerate
 	if (host_timescale.value > 0)
-		host_frametime *= (double)host_timescale.value;
+		host_frametime *= host_timescale.value;
 	//johnfitz
 	else if (host_framerate.value > 0)
-		host_frametime = (double)host_framerate.value;
+		host_frametime = host_framerate.value;
 	else // don't allow really long or short frames
-		host_frametime = CLAMP (0.001, host_frametime, 0.1); //johnfitz -- use CLAMP
+		host_frametime = CLAMP (0.001f, host_frametime, 0.1f); //johnfitz -- use CLAMP
 
 	return true;
 }
@@ -679,7 +703,7 @@ void _Host_Frame (float time)
 	if (!sv.active)
 		CL_SendCmd ();
 
-	host_time += host_frametime;
+	host_time += (double)host_frametime;
 
 // fetch results from server
 	if (cls.state == ca_connected)

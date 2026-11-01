@@ -267,8 +267,8 @@ void VID_Shutdown(void)
 
 void GL_BeginRendering (int *x, int *y, int *width, int *height)
 {
-	*x = 2048;
-	*y = 2048;
+	*x = 0;
+	*y = 0;
 	*width = screen_width;
 	*height = screen_height;
 	

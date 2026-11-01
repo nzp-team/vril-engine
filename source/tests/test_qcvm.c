@@ -106,6 +106,8 @@ static int Test_QCVM_OmittedArguments(void)
 		statements[2].op = OP_CALL0 + arg_counts[call];
 		pr_argc = 0;
 		PR_ExecuteProgram(1);
+		failures += Test_QCVM_Expect("caller instruction count", functions[1].profile, (call + 1) * 3);
+		failures += Test_QCVM_Expect("callee instruction count", functions[2].profile, (call + 1) * 11);
 		failures += Test_QCVM_ExpectFloat("engine kept stale parameter", globals[63], 10);
 		packed = 0;
 		for (parm = 0; parm < MAX_PARMS; parm++)

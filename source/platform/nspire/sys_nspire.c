@@ -632,3 +632,22 @@ int main (int argc, char **argv)
 }
 
 
+
+sys_directory_t *Sys_OpenDirectory(const char *path)
+{
+	(void)path;
+	return NULL;
+}
+
+int Sys_ReadDirectory(sys_directory_t *directory, char *name, size_t size)
+{
+	(void)directory;
+	(void)name;
+	(void)size;
+	return false;
+}
+
+void Sys_CloseDirectory(sys_directory_t *directory)
+{
+	(void)directory;
+}

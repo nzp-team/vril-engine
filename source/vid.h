@@ -44,7 +44,7 @@ typedef struct
 	unsigned		width;		
 	unsigned		height;
 	float			aspect;		// width / height -- < 0 is taller than wide
-	int				scale; 		// ui scale (vid.height/240)
+	float			scale; 		// ui scale (vid.height/240)
 	int				numpages;
 	int				recalc_refdef;	// if true, recalc vid-based stuff
 	pixel_t			*conbuffer;

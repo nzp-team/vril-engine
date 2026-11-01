@@ -41,6 +41,8 @@ typedef struct edict_s
 	short		leafnums[MAX_ENT_LEAFS];
 
 	entity_state_t	baseline;
+	unsigned int generation;
+	unsigned short attachment, attachment_children;
 	
 	float		freetime;			// sv.time when the object was freed
 	entvars_t	v;					// C exported fields from progs

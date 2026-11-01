@@ -866,7 +866,7 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 
 	int map_region_center = (150 + (((vid.width-150)/2)+2));
 	int image_x_pos = map_region_center - ((image_width/vid.scale)/2);
-	int image_y_pos = ((big_bar_height+small_bar_height)+(_CHAR_HEIGHT)/2) + (image_height/vid.scale);
+	int image_y_pos = big_bar_height + small_bar_height + (_CHAR_HEIGHT*2) + (image_height/vid.scale);
 
 	int left_column_x = map_region_center - ((image_width/vid.scale)/2) + (20*vid.scale);
 	int left_column_y = 30*vid.scale;
@@ -929,7 +929,7 @@ void Menu_DrawLobbyInfo (char* bsp_name, char* info_gamemode, char* info_difficu
 	// Draw border around map image
 	Menu_DrawMapBorder (image_x_pos/vid.scale, image_y_pos, image_width, image_height);
 	// Map Name (Pretty)
-	Menu_DrawStringCentered (image_x_pos + (image_width/2), image_y_pos - image_height + _CHAR_HEIGHT, custom_maps[i].map_name_pretty, 255, 255, 0, 255);
+	Menu_DrawStringCentered (image_x_pos + (image_width/2), big_bar_height + small_bar_height + _CHAR_HEIGHT, custom_maps[i].map_name_pretty, 255, 255, 0, 255);
 }
 
 /*
@@ -1020,21 +1020,25 @@ void Menu_OSK_Key (int key)
     switch (key)
 	{
 	case K_RIGHTARROW:
+	case K_DPAD_RIGHT:
 		osk_pos_x++;
 		if (osk_pos_x > MAX_X)
 			osk_pos_x = 0;//MAX_X
 		break;
 	case K_LEFTARROW:
+	case K_DPAD_LEFT:
 		osk_pos_x--;
 		if (osk_pos_x < 0)
 			osk_pos_x = MAX_X;//0
 		break;
 	case K_DOWNARROW:
+	case K_DPAD_DOWN:
 		osk_pos_y++;
 		if (osk_pos_y > MAX_Y)
 			osk_pos_y = 0;//MAX_Y
 		break;
 	case K_UPARROW:
+	case K_DPAD_UP:
 		osk_pos_y--;
 		if (osk_pos_y < 0)
 			osk_pos_y = MAX_Y;//0

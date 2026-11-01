@@ -28,6 +28,8 @@
 #define MAX_DECAL_VERTICES  128
 #define MAX_DECAL_TRIANGLES 64
 
+typedef char decal_index_capacity[(MAX_DECAL_VERTICES <= 256) ? 1 : -1];
+
 typedef struct decal_s {
     vec3_t           origin;
     vec3_t           normal;
@@ -48,7 +50,7 @@ typedef struct decal_s {
     int              vertexCount, triangleCount;
     vec3_t           vertexArray[MAX_DECAL_VERTICES];
     float            texcoordArray[MAX_DECAL_VERTICES][2];
-    int              triangleArray[MAX_DECAL_TRIANGLES][3];
+    byte             triangleArray[MAX_DECAL_TRIANGLES][3];
 } decal_t;
 
 int decal_blood1, decal_blood2, decal_blood3, decal_q3blood, decal_burn, decal_mark, decal_glow;
@@ -569,32 +571,36 @@ R_DrawDecals(void)
         }
 
         VectorSubtract(r_refdef.vieworg, p->origin, decaldist);
-        if (VectorLength(decaldist) > r_decal_viewdistance.value)
+        float distance = VectorLength(decaldist);
+        if (distance > r_decal_viewdistance.value)
             continue;
 
         if (!p->bspdecal && p->die - (float) cl.time < 0.5f) {
             dcolor = 1.0f;
             alpha  = bound(0.0f, 2.0f * (p->die - (float) cl.time), 1.0f);
         } else {
-            dcolor = bound(0.0f, 1.0f - VectorLength(decaldist) / r_decal_viewdistance.value, 1.0f);
+            dcolor = bound(0.0f, 1.0f - distance / r_decal_viewdistance.value, 1.0f);
             alpha  = dcolor;
         }
 
         Hyena_BindTexture(p->texture);
         Hyena_SetColor(dcolor, dcolor, dcolor, alpha);
 
-        for (i = 0; i < p->triangleCount; ++i) {
+        if (p->triangleCount) {
             vertex_t * vertices;
-            Hyena_BeginVertices(HYE_TRIANGLE_FAN);
-            vertices = Hyena_AllocateMemoryForVertices(3);
-            for (v = 0; v < 3; ++v) {
-                int index = p->triangleArray[i][v];
-                Hyena_2DTextureCoord(&vertices[v],
-                  p->texcoordArray[index][0], p->texcoordArray[index][1]);
-                Hyena_VertexXYZ(&vertices[v],
-                  p->vertexArray[index][0], p->vertexArray[index][1], p->vertexArray[index][2]);
+            Hyena_BeginVertices(HYE_TRIANGLES);
+            vertices = Hyena_AllocateMemoryForVertices(p->triangleCount * 3);
+            for (i = 0; i < p->triangleCount; ++i) {
+                for (v = 0; v < 3; ++v) {
+                    int index = p->triangleArray[i][v];
+                    vertex_t * vertex = &vertices[i * 3 + v];
+                    Hyena_2DTextureCoord(vertex,
+                      p->texcoordArray[index][0], p->texcoordArray[index][1]);
+                    Hyena_VertexXYZ(vertex,
+                      p->vertexArray[index][0], p->vertexArray[index][1], p->vertexArray[index][2]);
+                }
             }
-            Hyena_DrawVertices(vertices, 3, HYE_TEXTURE_32BITFLOAT, HYE_VERTEX_32BITFLOAT);
+            Hyena_DrawVertices(vertices, p->triangleCount * 3, HYE_TEXTURE_32BITFLOAT, HYE_VERTEX_32BITFLOAT);
             Hyena_EndVertices();
         }
     }

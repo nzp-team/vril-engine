@@ -29,8 +29,8 @@ WaypointGroundOrigin(int waypoint, edict_t * ent, vec3_t position);
 extern int process_list[MAX_WAYPOINTS];
 extern int process_list_length;
 
-static waypoint_ai graph[MAX_WAYPOINTS];
-static waypoint_ai saved_graph[MAX_WAYPOINTS];
+static waypoint_ai *graph;
+static waypoint_ai *saved_graph;
 static float reference_cost[MAX_WAYPOINTS];
 static qboolean visited[MAX_WAYPOINTS];
 extern zombie_ai zombie_list[MAX_AI_COUNT];
@@ -205,6 +205,9 @@ Test_Pathfind_Finish(void)
     }
     cJSON_Delete(fall_events);
     fall_events = NULL;
+    free(graph);
+    free(saved_graph);
+    graph = saved_graph = NULL;
     running     = false;
     Con_Printf(
         "Pathfind tests %s. %i waypoints, %i pairs, %i unreachable, %i closed pairs skipped, %i zombie walks, %i falls, %i errors.\n",
@@ -223,11 +226,24 @@ Test_Pathfind_Begin(void)
     if (running || !sv.active)
         return false;
 
+    graph = malloc(MAX_WAYPOINTS * sizeof(*graph));
+    saved_graph = malloc(MAX_WAYPOINTS * sizeof(*saved_graph));
+    if (!graph || !saved_graph) {
+        free(graph);
+        free(saved_graph);
+        graph = saved_graph = NULL;
+        Con_Printf("Could not allocate pathfind test graphs.\n");
+        return false;
+    }
+
     snprintf(path, sizeof(path), "%s/" FILE_SPECIAL_PREFIX "pathfind-report.json" FILE_SPECIAL_SUFFIX, com_gamedir);
     report = fopen(path, "w");
 
     if (!report) {
         Con_Printf("Could not write pathfind report: %s\n", path);
+        free(graph);
+        free(saved_graph);
+        graph = saved_graph = NULL;
         return false;
     }
 
@@ -241,7 +257,7 @@ Test_Pathfind_Begin(void)
     reference_source = -1;
     running          = true;
     snprintf(test_map, sizeof(test_map), "%s", sv.name);
-    memcpy(graph, waypoints, sizeof(graph));
+    memcpy(graph, waypoints, MAX_WAYPOINTS * sizeof(*graph));
     map  = cJSON_CreateString(test_map);
     text = cJSON_PrintUnformatted(map);
     fprintf(report, "{\"map\":%s,\"errors\":[", text ? text : "null");
@@ -423,8 +439,8 @@ Test_Pathfind_Frame(void)
     if (phase == 2)
         return 1;
 
-    memcpy(saved_graph, waypoints, sizeof(saved_graph));
-    memcpy(waypoints, graph, sizeof(graph));
+    memcpy(saved_graph, waypoints, MAX_WAYPOINTS * sizeof(*saved_graph));
+    memcpy(waypoints, graph, MAX_WAYPOINTS * sizeof(*graph));
     start_time = Sys_FloatTime();
     do{
         for (i = 0; i < count; i++)
@@ -443,7 +459,7 @@ Test_Pathfind_Frame(void)
             }
         }
     } while (phase < 2 && Sys_FloatTime() - start_time < 0.004);
-    memcpy(waypoints, saved_graph, sizeof(saved_graph));
+    memcpy(waypoints, saved_graph, MAX_WAYPOINTS * sizeof(*saved_graph));
     return phase == 2;
 } /* Test_Pathfind_Frame */
 

@@ -34,7 +34,7 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/cl_slist.c \
 		source/cl_tent.c \
 		source/cmd.c \
-		source/platform/nspire/common.c \
+		source/common.c \
 		source/images.c \
 		source/console.c \
 		source/crc.c \
@@ -82,7 +82,8 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/menu/menu_bios.c \
 		source/menu/menu_credits.c \
 		source/platform/nspire/cpu/cpu_main.c \
-		source/platform/nspire/cpu/cpu_model.c \
+		source/render/r_model_soft.c \
+		source/render/r_model.c \
 		source/net_loop.c \
 		source/platform/nspire/net_main.c \
 		source/platform/nspire/net_nspire.c \

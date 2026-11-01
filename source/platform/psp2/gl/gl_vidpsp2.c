@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <vitaGL.h>
 
 #include "../../../nzportable_def.h"
-#include "../common.h"
+#include "../../../common.h"
 
 GLuint fb;
 int fb_tex = -1;
@@ -50,7 +50,6 @@ cvar_t vid_redrawfull = {"vid_redrawfull", "0", true};
 cvar_t vid_waitforrefresh = {"vid_waitforrefresh", "1", true};
 cvar_t gl_outline = {"gl_outline", "0", true};
 cvar_t gl_mipmap = {"gl_mipmap", "1", true};
-cvar_t	gl_ztrick = {"gl_ztrick","0"};
 
 int gl_ssaa = 1;
 
@@ -325,7 +324,6 @@ void VID_Init(unsigned char *palette)
 	Cvar_RegisterVariable (&vid_waitforrefresh);
 	Cvar_RegisterVariable (&gl_outline);
 	Cvar_RegisterVariable (&gl_mipmap);
-	Cvar_RegisterVariable (&gl_ztrick);
 	
 	vid.maxwarpwidth = width;
 	vid.maxwarpheight = height;

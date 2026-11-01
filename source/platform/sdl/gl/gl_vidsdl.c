@@ -8,13 +8,12 @@ int sdl_window_height = 720;
 cvar_t vid_width = {"vid_width", "1280", true};
 cvar_t vid_height = {"vid_height", "720", true};
 cvar_t vid_fullscreen = {"vid_fullscreen", "0", true};
-cvar_t r_vsync = {"r_vsync", "1", true};
+extern cvar_t r_vsync;
 
 unsigned d_8to24table[256];
 unsigned char d_15to8table[65536];
 int texture_mode = GL_LINEAR;
 double gldepthmin, gldepthmax;
-cvar_t gl_ztrick = {"gl_ztrick", "0"};
 qboolean isPermedia = true;
 static float vid_gamma = 1.0f;
 static int sdl_fullscreen = -1;
@@ -128,7 +127,6 @@ void VID_Init(unsigned char *palette)
 	Cvar_RegisterVariable(&vid_width);
 	Cvar_RegisterVariable(&vid_height);
 	Cvar_RegisterVariable(&vid_fullscreen);
-	Cvar_RegisterVariable(&r_vsync);
 	sdl_window_width = (int)vid_width.value;
 	sdl_window_height = (int)vid_height.value;
 	parameter = COM_CheckParm("-width");
@@ -154,7 +152,6 @@ void VID_Init(unsigned char *palette)
 	sdl_vsync = !!r_vsync.value;
 	SDL_GL_GetDrawableSize(sdl_window, &sdl_window_width, &sdl_window_height);
 
-	Cvar_RegisterVariable(&gl_ztrick);
 	vid.maxwarpwidth = vid.width = sdl_window_width;
 	vid.maxwarpheight = vid.height = sdl_window_height;
 	vid.colormap = host_colormap;

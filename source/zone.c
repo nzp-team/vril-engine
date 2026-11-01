@@ -602,7 +602,8 @@ void *Z_Malloc (int size)
 {
 	void	*buf;
 
-	Z_CheckHeap ();	// DEBUG
+	if (developer.value)
+		Z_CheckHeap ();	// DEBUG
 	buf = Z_TagMalloc (size, 1);
 	if (!buf)
 		Sys_Error ("failed on allocation of %zu bytes",size);
@@ -843,7 +844,7 @@ void *Hunk_AllocName (int size, char *name)
 
 	h->size = size;
 	h->sentinel = HUNK_SENTINEL;
-	strlcpy(h->name, name, HUNKNAME_LEN);
+	Q_strlcpy(h->name, name, HUNKNAME_LEN);
 
 	return (void *)(h+1);
 }
@@ -934,7 +935,7 @@ void *Hunk_HighAllocName (int size, char *name)
 	memset (h, 0, size);
 	h->size = size;
 	h->sentinel = HUNK_SENTINEL;
-	strlcpy (h->name, name, HUNKNAME_LEN);
+	Q_strlcpy (h->name, name, HUNKNAME_LEN);
 
 	return (void *)(h+1);
 }
@@ -1305,7 +1306,7 @@ void *Cache_Alloc (cache_user_t *c, int size, char *name)
 		cs = Cache_TryAlloc (size, false);
 		if (cs)
 		{
-			strlcpy (cs->name, name, CACHENAME_LEN);
+			Q_strlcpy (cs->name, name, CACHENAME_LEN);
 			c->data = (void *)(cs+1);
 			cs->user = c;
 			break;

@@ -121,14 +121,14 @@ typedef struct {
 	float	interval;
 } dspriteinterval_t;
 
-typedef enum { SPR_SINGLE=0, SPR_GROUP } spriteframetype_t;
+typedef enum { 
+	SPR_SINGLE = 0, 
+	SPR_GROUP, 
+	SPR_DUMMY = 0x10000 
+} spriteframetype_t;
 
 typedef struct {
-#ifdef __PSP__
-	spriteframetype_t	type;
-#else
-	int 				type;
-#endif // __PSP__
+	int			type;
 } dspriteframetype_t;
 
 #define IDSPRITEHEADER	(('P'<<24)+('S'<<16)+('D'<<8)+'I')

@@ -540,7 +540,7 @@ vec3_t 	mdlflag_poweruprotate_startangles;
 vec3_t 	mdlflag_poweruprotate_differenceangles;
 vec3_t 	mdlflag_poweruprotate_currentangles;
 
-double 	last_puframetime = 0.0;
+float 	last_puframetime = 0.0f;
 
 /*
 ===============
@@ -676,22 +676,27 @@ void CL_RelinkEntities (void)
 		if (ent->forcelink)
 		{	// the entity was not updated in the last message
 			// so move to the final spot
+			ent->translate_start_time = ent->rotate_start_time = 0;
 			VectorCopy (ent->msg_origins[0], ent->origin);
 			VectorCopy (ent->msg_angles[0], ent->angles);
 		}
 		else
 		{	// if the delta is large, assume a teleport and don't lerp
+			qboolean teleport = false;
 			f = frac;
 			for (j=0 ; j<3 ; j++)
 			{
 				delta[j] = ent->msg_origins[0][j] - ent->msg_origins[1][j];
 				if (delta[j] > 100 || delta[j] < -100)//blubs check here for interpolating zombies
-					f = 1;		// assume a teleportation, not a motion
+				{
+					f = 1;
+					teleport = true;
+				}
 			}
 
 		// fenix@io.com: model transform interpolation
         // interpolation should be reset in the event of a large delta
-            if (f >= 1)
+            if (teleport)
             {
 				//ent->frame_start_time     = 0;
 				ent->translate_start_time = 0;
@@ -985,7 +990,7 @@ int CL_ReadFromServer (void)
 	int		ret;
 
 	cl.oldtime = cl.time;
-	cl.time += host_frametime;
+	cl.time += (double)host_frametime;
 
 	do
 	{

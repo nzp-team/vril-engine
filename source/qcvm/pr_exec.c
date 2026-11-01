@@ -301,7 +301,7 @@ void PR_ExecuteProgram (func_t fnum)
 	int			s;
 	dstatement_t	*st;
 	dfunction_t	*f, *newf;
-	int		runaway;
+	int		runaway, profile_count = 0;
 	int		i;
 	edict_t	*ed;
 	int		exitdepth;
@@ -338,9 +338,12 @@ while (1)
 	c = (eval_t *)&pr_globals[st->c];
 
 	if (!--runaway)
+	{
+		pr_xfunction->profile += profile_count;
 		PR_RunError ("runaway loop error");
+	}
 
-	pr_xfunction->profile++;
+	profile_count++;
 	pr_xstatement = s;
 
 	if (pr_trace)
@@ -359,11 +362,17 @@ while (1)
 		c->_float = (PROG_TO_EDICT(a->edict) == sv.edicts);
 		break;
 	case OP_EQ_S:
-		c->_float = !strcmp(PR_GetString(a->string),PR_GetString(b->string));
+	{
+		char *left = PR_GetString(a->string);
+		c->_float = a->string == b->string || !strcmp(left, PR_GetString(b->string));
 		break;
+	}
 	case OP_NE_S:
-		c->_float = strcmp(PR_GetString(a->string),PR_GetString(b->string));
+	{
+		char *left = PR_GetString(a->string);
+		c->_float = a->string == b->string ? 0 : strcmp(left, PR_GetString(b->string));
 		break;
+	}
 
 //==================
 	case OP_STORE_F:
@@ -579,6 +588,8 @@ while (1)
 	case OP_CALL6:
 	case OP_CALL7:
 	case OP_CALL8:
+		pr_xfunction->profile += profile_count;
+		profile_count = 0;
 		pr_argc = st->op - OP_CALL0;
 		if (!a->function)
 			PR_RunError ("NULL function");
@@ -611,6 +622,8 @@ while (1)
 
 	case OP_DONE:
 	case OP_RETURN:
+		pr_xfunction->profile += profile_count;
+		profile_count = 0;
 		pr_globals[OFS_RETURN] = pr_globals[st->a];
 		pr_globals[OFS_RETURN+1] = pr_globals[st->a+1];
 		pr_globals[OFS_RETURN+2] = pr_globals[st->a+2];

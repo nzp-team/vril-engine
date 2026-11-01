@@ -410,7 +410,7 @@ void CL_UpdateTEnts (void)
 				float	f, delta;
 				trace_t	trace;
 
-				f = fmax(0, fmin(1, cl_truelightning.value));
+				f = max(0, min(1, cl_truelightning.value));
 
 				VectorSubtract (playerbeam_end, cl_entities[cl.viewentity].origin, v);
 				//v[2] -= 22;		// adjust for view height

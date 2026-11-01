@@ -607,6 +607,7 @@ void Host_Loadgame_f (void)
 	}
 
 // load the edicts out of the savegame file
+	SV_ClearCollisionAttachments();
 	entnum = -1;		// -1 is the globals
 	while (!feof(f))
 	{

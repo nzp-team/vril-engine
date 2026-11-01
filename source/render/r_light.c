@@ -141,6 +141,238 @@ R_PushDlights(void)
     }
 }
 
+void
+R_AddSurfaceDynamicLights(msurface_t *surf, unsigned *blocklights, qboolean psp_lighting)
+{
+	int			lnum;
+	int			sd, td;
+	float		dist, rad, minlight;
+	vec3_t		impact, local;
+	int			s, t, first, last;
+	int			horizontal[33];
+	int			i;
+	int			smax, tmax;
+	mtexinfo_t	*tex;
+	float		cred, cgreen, cblue, brightness;
+	unsigned	*bl;
+
+	smax = (surf->extents[0]>>4)+1;
+	tmax = (surf->extents[1]>>4)+1;
+	tex = surf->texinfo;
+	if (smax > 33 || tmax > 33)
+		Sys_Error("Lightmap surface exceeds 512 units");
+
+	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
+	{
+		if ( !(surf->dlightbits & (1U<<lnum) ) )
+			continue;
+
+		rad = cl_dlights[lnum].radius;
+		dist = DotProduct (cl_dlights[lnum].origin, surf->plane->normal) -
+				surf->plane->dist;
+		rad -= fabsf(dist);
+		minlight = cl_dlights[lnum].minlight;
+		if (rad < minlight)
+			continue;
+		minlight = rad - minlight;
+
+		for (i=0 ; i<3 ; i++)
+		{
+			impact[i] = cl_dlights[lnum].origin[i] -
+					surf->plane->normal[i]*dist;
+		}
+
+		local[0] = DotProduct (impact, tex->vecs[0]) + tex->vecs[0][3];
+		local[1] = DotProduct (impact, tex->vecs[1]) + tex->vecs[1][3];
+
+		local[0] -= surf->texturemins[0];
+		local[1] -= surf->texturemins[1];
+		if (psp_lighting) {
+			local[0] = (int) local[0];
+			local[1] = (int) local[1];
+		}
+
+		first = smax;
+		last = 0;
+		for (s = 0; s < smax; s++) {
+			sd = local[0] - s * 16;
+			if (sd < 0)
+				sd = -sd;
+			horizontal[s] = sd;
+			if (sd < minlight) {
+				if (first == smax)
+					first = s;
+				last = s + 1;
+			}
+		}
+		if (!last)
+			continue;
+		cred = cl_dlights[lnum].color[0] * 256.0f;
+		cgreen = cl_dlights[lnum].color[1] * 256.0f;
+		cblue = cl_dlights[lnum].color[2] * 256.0f;
+		for (t = 0 ; t<tmax ; t++)
+		{
+			td = local[1] - t*16;
+			if (td < 0)
+				td = -td;
+			if (td >= minlight)
+				continue;
+			bl = blocklights + (t * smax + first) * 3;
+			for (s=first ; s<last ; s++)
+			{
+				sd = horizontal[s];
+				if (sd > td)
+					dist = sd + (td>>1);
+				else
+					dist = td + (sd>>1);
+				if (dist < minlight)
+				{
+					brightness = rad - dist;
+					if (psp_lighting && cl_dlights[lnum].dark) {
+						unsigned red = (int) (brightness * cred);
+						unsigned green = (int) (brightness * cgreen);
+						unsigned blue = (int) (brightness * cblue);
+						bl[0] = bl[0] > red ? bl[0] - red : 0;
+						bl[1] = bl[1] > green ? bl[1] - green : 0;
+						bl[2] = bl[2] > blue ? bl[2] - blue : 0;
+					} else {
+						bl[0] += (int) (brightness * cred);
+						bl[1] += (int) (brightness * cgreen);
+						bl[2] += (int) (brightness * cblue);
+					}
+				}
+				bl += 3;
+			}
+		}
+	}
+}
+
+void
+R_BuildLightmapValues(msurface_t *surf, unsigned *blocklights, qboolean psp_lighting, lightmap_accumulate_t accumulate)
+{
+    int smax = (surf->extents[0] >> 4) + 1;
+    int tmax = (surf->extents[1] >> 4) + 1;
+    int size = smax * tmax * 3;
+    byte *lightmap = surf->samples;
+    qboolean initialized = false;
+    int i, maps;
+    unsigned scale;
+
+    if (smax > 33 || tmax > 33)
+        Sys_Error("Lightmap surface exceeds 512 units");
+    surf->cached_dlight = surf->dlightframe == r_framecount;
+    if (r_fullbright.value || !cl.worldmodel->lightdata) {
+        for (i = 0; i < size; i++)
+            blocklights[i] = 255 * 256;
+        return;
+    }
+    if (lightmap) {
+        for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255; maps++, lightmap += size) {
+            scale = d_lightstylevalue[surf->styles[maps]];
+            surf->cached_light[maps] = scale;
+            if (!scale)
+                continue;
+            if (accumulate && accumulate(blocklights, lightmap, size, scale, initialized)) {
+                initialized = true;
+                continue;
+            }
+            if (initialized) {
+                for (i = 0; i < size; i++)
+                    blocklights[i] += lightmap[i] * scale;
+            } else {
+                for (i = 0; i < size; i++)
+                    blocklights[i] = lightmap[i] * scale;
+            }
+            initialized = true;
+        }
+    }
+    if (!initialized)
+        memset(blocklights, 0, size * sizeof(*blocklights));
+    if (surf->cached_dlight)
+        R_AddSurfaceDynamicLights(surf, blocklights, psp_lighting);
+}
+
+qboolean
+R_ReuseDynamicLightmap(msurface_t *surface, unsigned bits)
+{
+    static dlight_t previous[MAX_DLIGHTS];
+    static unsigned changes;
+    static int frame;
+    int i;
+    if (currententity->model != cl.worldmodel)
+        return false;
+    if (frame != r_framecount) {
+        changes = frame == r_framecount - 1 ? 0 : ~0u;
+        for (i = 0; i < MAX_DLIGHTS; ++i) {
+            const dlight_t *light = &cl_dlights[i];
+            if (memcmp(previous[i].origin, light->origin, sizeof(light->origin)) ||
+                previous[i].radius != light->radius || previous[i].minlight != light->minlight || previous[i].dark != light->dark ||
+                memcmp(previous[i].color, light->color, sizeof(light->color)))
+                changes |= 1u << i;
+            previous[i] = *light;
+        }
+        frame = r_framecount;
+    }
+    if (bits != surface->cached_dlightbits)
+        return false;
+    if (surface->cached_dlightframe != r_framecount &&
+        (surface->cached_dlightframe != r_framecount - 1 || (bits & changes)))
+        return false;
+    surface->cached_dlightframe = r_framecount;
+    return true;
+}
+
+typedef struct {
+    vec3_t origin, color;
+    unsigned int generation;
+    int result;
+} entity_light_t;
+
+static entity_light_t entity_lights[256];
+static int light_styles[256], light_frame = -1;
+static unsigned int light_generation = 1;
+
+void R_ClearEntityLights(void)
+{
+    memset(entity_lights, 0, sizeof(entity_lights));
+    light_frame = -1;
+}
+
+int R_EntityLight(vec3_t origin)
+{
+    unsigned int hash = 2166136261u, bits;
+    entity_light_t *entry;
+    int i;
+
+    if (r_shadows.value || r_fullbright.value || !cl.worldmodel->lightdata)
+        return R_LightPoint(origin);
+    if (light_frame != r_framecount) {
+        if (memcmp(light_styles, d_lightstylevalue, sizeof(light_styles))) {
+            memcpy(light_styles, d_lightstylevalue, sizeof(light_styles));
+            if (!++light_generation) {
+                R_ClearEntityLights();
+                light_generation = 1;
+            }
+        }
+        light_frame = r_framecount;
+    }
+    for (i = 0; i < 3; i++) {
+        memcpy(&bits, origin + i, sizeof(bits));
+        hash = (hash ^ bits) * 16777619u;
+    }
+    entry = &entity_lights[(hash ^ (hash >> 16)) & 255];
+    if (entry->generation == light_generation && !memcmp(entry->origin, origin, sizeof(vec3_t))) {
+        VectorCopy(entry->color, lightcolor);
+        return entry->result;
+    }
+    VectorCopy(origin, entry->origin);
+    entry->result = R_LightPoint(origin);
+    VectorCopy(lightcolor, entry->color);
+    entry->generation = light_generation;
+    return entry->result;
+}
+
+
 // MARK: Light Sampling
 
 mplane_t * lightplane;
@@ -269,3 +501,27 @@ R_LightPoint(vec3_t p)
 }
 
 // LordHavoc: .lit support end
+
+qboolean R_AliasFullbright(const entity_t *entity)
+{
+    size_t length = entity->model ? strlen(entity->model->name) : 0;
+    return (length >= 5 && entity->model->name[length - 5] == '!') ||
+        (entity->effects & EF_FULLBRIGHT) ||
+        (entity == &cl.viewent && (cl.stats[STAT_VIEWMODEL_EFFECTS] & EF_FULLBRIGHT)) ||
+        (entity == &cl.viewent2 && (cl.stats[STAT_VIEWMODEL2_EFFECTS] & EF_FULLBRIGHT));
+}
+
+void R_SetupAliasLighting(entity_t *entity)
+{
+    if (!R_AliasFullbright(entity) || r_shadows.value)
+        R_EntityLight(entity->origin);
+    else
+        lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
+    if (r_shadows.value) {
+        float angle = entity->angles[YAW] * (float)M_PI / 180.0f;
+        shadevector[0] = cosf(-angle);
+        shadevector[1] = sinf(-angle);
+        shadevector[2] = 1;
+        VectorNormalize(shadevector);
+    }
+}

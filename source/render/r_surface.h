@@ -46,6 +46,17 @@ typedef struct {
 extern "C" {
 #endif
 
+extern cvar_t r_lightmap_fastalloc;
+extern int r_lightmap_size;
+void R_ClearLightmaps(void);
+int R_ClipSurface(msurface_t *surface);
+void R_SubdivideSurface(msurface_t *surface);
+void R_SurfacePolygon(msurface_t *surface);
+void EmitFlatPoly(msurface_t *surface);
+void EmitWaterPolys(msurface_t *surface);
+void EmitScrollPolys(msurface_t *surface);
+void EmitReflectivePolys(msurface_t *surface);
+
 void
 R_DrawSurfaceFan(const float * vertices, int count, int stride,
   int position_offset, int texture_offset, qboolean warp, double time);

@@ -106,7 +106,7 @@ PR_JSONError(int code, int position, const char * message)
 {
     pr_json_error_code     = code;
     pr_json_error_position = position;
-    strlcpy(pr_json_error, message, sizeof(pr_json_error));
+    Q_strlcpy(pr_json_error, message, sizeof(pr_json_error));
 }
 
 static void
@@ -401,7 +401,7 @@ static void
 PR_JSONReturnString(const char * value)
 {
     if (!value) value = "";
-    strlcpy(pr_json_string, value, sizeof(pr_json_string));
+    Q_strlcpy(pr_json_string, value, sizeof(pr_json_string));
     G_INT(OFS_RETURN) = PR_SetString(pr_json_string);
 }
 
