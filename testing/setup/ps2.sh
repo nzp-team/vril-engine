@@ -32,10 +32,11 @@ function begin_setup()
 	printf '\nshow_fps "0"\nvid_widescreen "0"\n' >> nzportable/nzp/config.cfg
 	mkdir -p "$(test_game_path)/nzp" "${working_dir}/PCSX2/inis" "${working_dir}/PCSX2/bios"
 	cp "${PS2_BIOS}" "${working_dir}/PCSX2/bios/ps2.bin"
+	print_info "Preparing PS2 USB image.."
 	truncate -s 512M "${working_dir}/usb.img"
-	mkfs.fat -F 32 "${working_dir}/usb.img" > /dev/null
+	mkfs.fat -F 32 "${working_dir}/usb.img"
 	mmd -i "${working_dir}/usb.img" ::/APPS ::/APPS/NZPORTABLE
-	mcopy -s -i "${working_dir}/usb.img" nzportable/nzp ::/APPS/NZPORTABLE/
+	mcopy -s -o -i "${working_dir}/usb.img" nzportable/nzp ::/APPS/NZPORTABLE/
 	cat > "${working_dir}/PCSX2/inis/PCSX2.ini" <<CONFIG
 [UI]
 SettingsVersion = 1

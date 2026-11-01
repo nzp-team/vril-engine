@@ -9,6 +9,7 @@
 # container running ubuntu:24.04.
 #
 set -o errexit
+set -o errtrace
 
 source "nzp_utility.sh"
 
@@ -191,6 +192,7 @@ function main()
     # Ensure every failed test run leaves a summary that CI can publish, even
     # when setup fails before an individual test can report its own details.
     trap write_failure_summary EXIT
+    trap 'printf "[ERROR]: Command failed at %s:%s: %s\n" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}" >&2' ERR
 
     load_setup_script;
     begin_setup "${dir}" "${BINARY_PATH}" "${WORKING_DIR}";
