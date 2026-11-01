@@ -144,7 +144,7 @@ void UI_Align (int *x, int *y)
 {
     switch (current_frame.point_x) {
         case UI_ANCHOR_CENTER:
-            *x = (vid.width * 0.5) + (*x*vid.scale);
+            *x = (vid.width * 0.5f) + (*x*vid.scale);
             break;
         case UI_ANCHOR_LEFT:
 			// no op
@@ -156,7 +156,7 @@ void UI_Align (int *x, int *y)
 
 	switch (current_frame.point_y) {
         case UI_ANCHOR_CENTER:
-            *y = (vid.height * 0.5) + (*y*vid.scale);
+            *y = (vid.height * 0.5f) + (*y*vid.scale);
             break;
         case UI_ANCHOR_TOP:
 			// no op
