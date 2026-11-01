@@ -64,7 +64,7 @@ half-life Render Modes. Crow_bar
 #define	SKYSIZE			(1 << SKYSHIFT)
 #define SKYMASK			(SKYSIZE - 1)
 
-#define BACKFACE_EPSILON	0.01
+#define BACKFACE_EPSILON	0.01f
 
 
 void R_TimeRefresh_f (void);
