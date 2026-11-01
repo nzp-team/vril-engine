@@ -80,3 +80,19 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 // shouldn't be considered solid objects
 
 // passedict is explicitly excluded from clipping checks (normally NULL)
+
+#define COLLISION_ATTACH_FRAME_IF_DEAD 1
+#define COLLISION_ATTACH_PASSIVE 2
+
+qboolean SV_AttachCollision(edict_t *child, edict_t *parent, const float *offset,
+	const float *mins, const float *maxs, int flags, int order);
+void SV_DetachCollision(edict_t *child);
+void SV_ClearEntityAttachments(edict_t *entity);
+void SV_ClearCollisionAttachments(void);
+unsigned SV_CollisionAttachmentVersion(edict_t *entity);
+qboolean SV_PassiveAttachment(edict_t *child);
+void SV_SyncCollisionChildren(edict_t *parent);
+void SV_UpdateCollisionAttachments(void);
+void SV_TouchLinks(edict_t *entity);
+qboolean SV_CollisionChildrenOverlap(edict_t *parent, const float *mins, const float *maxs);
+edict_t *SV_TestCollisionChildren(edict_t *parent);

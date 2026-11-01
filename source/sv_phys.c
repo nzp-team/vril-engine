@@ -50,6 +50,285 @@ cvar_t	pm_stepdown = {"pm_stepdown","1"};
 
 void SV_Physics_Toss (edict_t *ent);
 
+typedef struct {
+	edict_t *parent, *child;
+	unsigned parent_generation, child_generation;
+	vec3_t offset, mins, maxs;
+	int flags, order;
+	unsigned short next;
+	unsigned version;
+} collision_attachment_t;
+
+static collision_attachment_t *attachments;
+static int attachment_count, attachment_capacity, attachment_free;
+static int *attachment_parents, attachment_parent_count;
+static unsigned attachment_version;
+typedef struct { edict_t *child; unsigned generation, version; int attachment; } attachment_contact_t;
+static attachment_contact_t *attachment_contacts;
+static int attachment_contact_capacity;
+static qboolean attachment_updating;
+
+static qboolean SV_AttachmentValid(int index)
+{
+	collision_attachment_t *a = &attachments[index - 1];
+	return a->parent && !a->parent->free && !a->child->free &&
+		a->parent->generation == a->parent_generation && a->child->generation == a->child_generation &&
+		a->child->attachment == index;
+}
+
+void SV_DetachCollision(edict_t *child)
+{
+	int index = child->attachment, i;
+	unsigned short *link;
+	collision_attachment_t *a;
+	if (!index) return;
+	a = &attachments[index - 1];
+	if (a->parent && a->parent->generation == a->parent_generation) {
+		link = &a->parent->attachment_children;
+		while (*link && *link != index) link = &attachments[*link - 1].next;
+		if (*link) *link = a->next;
+		if (!a->parent->attachment_children) {
+			int number = NUM_FOR_EDICT(a->parent);
+			for (i = 0; i < attachment_parent_count; i++)
+				if (attachment_parents[i] == number) {
+					memmove(attachment_parents + i, attachment_parents + i + 1,
+						(--attachment_parent_count - i) * sizeof(*attachment_parents));
+					break;
+				}
+		}
+	}
+	child->attachment = 0;
+	a->parent = NULL;
+	a->next = attachment_free;
+	attachment_free = index;
+}
+
+void SV_ClearEntityAttachments(edict_t *entity)
+{
+	SV_DetachCollision(entity);
+	while (entity->attachment_children)
+		SV_DetachCollision(attachments[entity->attachment_children - 1].child);
+}
+
+void SV_ClearCollisionAttachments(void)
+{
+	int i;
+	for (i = 0; i < sv.num_edicts; i++) {
+		edict_t *entity = EDICT_NUM(i);
+		entity->attachment = entity->attachment_children = 0;
+	}
+	free(attachments);
+	free(attachment_parents);
+	free(attachment_contacts);
+	attachments = NULL;
+	attachment_parents = NULL;
+	attachment_contacts = NULL;
+	attachment_contact_capacity = 0;
+	attachment_updating = false;
+	attachment_count = attachment_capacity = attachment_free = attachment_parent_count = 0;
+}
+
+qboolean SV_AttachCollision(edict_t *child, edict_t *parent, const float *offset,
+	const float *mins, const float *maxs, int flags, int order)
+{
+	collision_attachment_t *a;
+	int index, i, number;
+	unsigned short *link;
+	if (child == sv.edicts || parent == sv.edicts || child == parent || child->free || parent->free ||
+		parent->attachment || child->attachment_children)
+		return false;
+	if (child->attachment) {
+		a = &attachments[child->attachment - 1];
+		if (a->parent != parent || a->order != order)
+			SV_DetachCollision(child);
+	}
+	if (!child->attachment) {
+		if (attachment_free) {
+			index = attachment_free;
+			attachment_free = attachments[index - 1].next;
+		} else {
+			if (attachment_count == attachment_capacity) {
+				int capacity = attachment_capacity ? attachment_capacity * 2 : 32;
+				collision_attachment_t *records;
+				int *parents;
+				if (capacity > MAX_EDICTS) capacity = MAX_EDICTS;
+				if (attachment_count == capacity) return false;
+				records = realloc(attachments, capacity * sizeof(*records));
+				if (!records) Sys_Error("Out of collision attachment memory");
+				attachments = records;
+				parents = realloc(attachment_parents, capacity * sizeof(*parents));
+				if (!parents) Sys_Error("Out of collision parent memory");
+				attachment_parents = parents;
+				attachment_capacity = capacity;
+			}
+			index = ++attachment_count;
+		}
+		if (!parent->attachment_children) {
+			number = NUM_FOR_EDICT(parent);
+			for (i = 0; i < attachment_parent_count && attachment_parents[i] < number; i++) {}
+			memmove(attachment_parents + i + 1, attachment_parents + i,
+				(attachment_parent_count++ - i) * sizeof(*attachment_parents));
+			attachment_parents[i] = number;
+		}
+		link = &parent->attachment_children;
+		while (*link) {
+			a = &attachments[*link - 1];
+			if (a->order > order || (a->order == order && NUM_FOR_EDICT(a->child) > NUM_FOR_EDICT(child))) break;
+			link = &a->next;
+		}
+		a = &attachments[index - 1];
+		a->next = *link;
+		*link = index;
+		child->attachment = index;
+	}
+	a = &attachments[child->attachment - 1];
+	a->parent = parent;
+	a->child = child;
+	a->parent_generation = parent->generation;
+	a->child_generation = child->generation;
+	if (!++attachment_version) ++attachment_version;
+	a->version = attachment_version;
+	a->flags = flags;
+	a->order = order;
+	VectorCopy(offset, a->offset);
+	VectorCopy(mins, a->mins);
+	VectorCopy(maxs, a->maxs);
+	return true;
+}
+
+unsigned SV_CollisionAttachmentVersion(edict_t *entity)
+{
+	return entity->attachment ? attachments[entity->attachment - 1].version : 0;
+}
+
+qboolean SV_PassiveAttachment(edict_t *child)
+{
+	int index = child->attachment;
+	if (!index) return false;
+	if (!SV_AttachmentValid(index) ||
+		((attachments[index - 1].flags & COLLISION_ATTACH_PASSIVE) &&
+		 child->v.movetype != MOVETYPE_STEP && child->v.movetype != MOVETYPE_NONE)) {
+		SV_DetachCollision(child);
+		return false;
+	}
+	return (attachments[index - 1].flags & COLLISION_ATTACH_PASSIVE) != 0;
+}
+
+#if defined(__GNUC__) && !defined(__clang__)
+__attribute__((optimize("no-fast-math", "fp-contract=off")))
+#endif
+static void SV_PlaceCollisionChildren(edict_t *parent, float *forward, float *right, float *up)
+{
+#ifdef __clang__
+#pragma clang fp reassociate(off) contract(off)
+#endif
+	int index, axis;
+	for (index = parent->attachment_children; index; index = attachments[index - 1].next) {
+		collision_attachment_t *a = &attachments[index - 1];
+		edict_t *child = a->child;
+		if (!SV_AttachmentValid(index) || ((a->flags & COLLISION_ATTACH_PASSIVE) &&
+			child->v.movetype != MOVETYPE_STEP && child->v.movetype != MOVETYPE_NONE)) continue;
+		VectorCopy(parent->v.origin, child->v.origin);
+		VectorCopy(parent->v.angles, child->v.angles);
+		if ((a->flags & COLLISION_ATTACH_FRAME_IF_DEAD) && child->v.deadflag)
+			child->v.frame = parent->v.frame;
+		for (axis = 0; axis < 3; axis++) {
+			float x = right[axis] * a->offset[0];
+			float y = forward[axis] * a->offset[1];
+			float z = up[axis] * a->offset[2];
+			float offset = (x + y) + z;
+			float min = a->mins[axis] + offset, max = a->maxs[axis] + offset;
+			if (min > max) { min += max; max = min - max; min -= max; }
+			child->v.mins[axis] = min;
+			child->v.maxs[axis] = max;
+			child->v.size[axis] = max - min;
+		}
+		SV_LinkEdict(child, false);
+	}
+}
+
+void SV_SyncCollisionChildren(edict_t *parent)
+{
+	vec3_t forward, right, up;
+	if (parent->free || !parent->attachment_children) return;
+	AngleVectors(parent->v.angles, forward, right, up);
+	SV_PlaceCollisionChildren(parent, forward, right, up);
+}
+
+void SV_UpdateCollisionAttachments(void)
+{
+	int i, index, count = 0;
+	attachment_contact_t *contacts;
+	vec3_t forward, right, up;
+	qboolean oriented = false;
+	if (!attachment_parent_count) return;
+	if (attachment_updating) PR_RunError("Recursive collision attachment update");
+	attachment_updating = true;
+	if (attachment_count > attachment_contact_capacity) {
+		contacts = realloc(attachment_contacts, attachment_count * sizeof(*contacts));
+		if (!contacts) Sys_Error("Out of collision contact memory");
+		attachment_contacts = contacts;
+		attachment_contact_capacity = attachment_count;
+	}
+	contacts = attachment_contacts;
+	for (i = 0; i < attachment_parent_count; i++) {
+		edict_t *parent = EDICT_NUM(attachment_parents[i]);
+		if (parent->free || !parent->attachment_children) continue;
+		AngleVectors(parent->v.angles, pr_global_struct->v_forward, pr_global_struct->v_right, pr_global_struct->v_up);
+		oriented = true;
+		SV_PlaceCollisionChildren(parent, pr_global_struct->v_forward, pr_global_struct->v_right, pr_global_struct->v_up);
+		for (index = parent->attachment_children; index; index = attachments[index - 1].next) {
+			collision_attachment_t *a = &attachments[index - 1];
+			if (!SV_AttachmentValid(index) || !(a->flags & COLLISION_ATTACH_PASSIVE)) continue;
+			contacts[count++] = (attachment_contact_t){a->child, a->child_generation, a->version, index};
+		}
+	}
+	VectorCopy(pr_global_struct->v_forward, forward);
+	VectorCopy(pr_global_struct->v_right, right);
+	VectorCopy(pr_global_struct->v_up, up);
+	for (i = 0; i < count; i++) {
+		attachment_contact_t *contact = &contacts[i];
+		edict_t *child = contact->child;
+		if (child->free || child->generation != contact->generation || child->attachment != contact->attachment ||
+			!SV_AttachmentValid(contact->attachment) || SV_CollisionAttachmentVersion(child) != contact->version || !SV_PassiveAttachment(child) || child->v.solid == SOLID_NOT)
+			continue;
+		SV_TouchLinks(child);
+	}
+	if (oriented) {
+		VectorCopy(forward, pr_global_struct->v_forward);
+		VectorCopy(right, pr_global_struct->v_right);
+		VectorCopy(up, pr_global_struct->v_up);
+	}
+	attachment_updating = false;
+}
+
+qboolean SV_CollisionChildrenOverlap(edict_t *parent, const float *mins, const float *maxs)
+{
+	int index;
+	for (index = parent->attachment_children; index; index = attachments[index - 1].next) {
+		edict_t *child = attachments[index - 1].child;
+		if (!SV_AttachmentValid(index) || child->v.solid == SOLID_NOT) continue;
+		if (child->v.absmin[0] < maxs[0] && child->v.absmin[1] < maxs[1] && child->v.absmin[2] < maxs[2] &&
+			child->v.absmax[0] > mins[0] && child->v.absmax[1] > mins[1] && child->v.absmax[2] > mins[2])
+			return true;
+	}
+	return false;
+}
+
+edict_t *SV_TestCollisionChildren(edict_t *parent)
+{
+	int index;
+	for (index = parent->attachment_children; index; index = attachments[index - 1].next) {
+		edict_t *child = attachments[index - 1].child;
+		trace_t trace;
+		if (!SV_AttachmentValid(index) || child->v.solid == SOLID_NOT) continue;
+		trace = SV_Move(child->v.origin, child->v.mins, child->v.maxs, child->v.origin, MOVE_NOMONSTERS, child);
+		if (trace.startsolid) return sv.edicts;
+	}
+	return NULL;
+}
+
+
 /*
 ================
 SV_CheckAllEnts
@@ -465,7 +744,9 @@ SV_PushMove
 ============
 */
 edict_t		*moved_edict[MAX_EDICTS];
+static unsigned moved_generation[MAX_EDICTS];
 vec3_t		moved_from[MAX_EDICTS];
+static vec3_t moved_angles[MAX_EDICTS];
 edict_t * SV_PushMove (edict_t *pusher, float movetime)
 {
 	int			i, e, oldsolid;
@@ -492,6 +773,7 @@ edict_t * SV_PushMove (edict_t *pusher, float movetime)
 	// move the pusher to it's final position
 	VectorAdd (pusher->v.origin, move, pusher->v.origin);
 	SV_LinkEdict (pusher, false);
+	SV_SyncCollisionChildren(pusher);
 	pusher->v.ltime += movetime;
 	oldsolid = pusher->v.solid;
 
@@ -505,8 +787,9 @@ edict_t * SV_PushMove (edict_t *pusher, float movetime)
 
 	for (e = 1; e < sv.num_edicts; e++, check = NEXT_EDICT (check))
 	{
-		if (check->free)
+		if (check->free || SV_PassiveAttachment(check))
 			continue;
+		SV_SyncCollisionChildren(check);
 
 		if (check->v.movetype == MOVETYPE_PUSH
 				|| check->v.movetype == MOVETYPE_NONE
@@ -517,16 +800,16 @@ edict_t * SV_PushMove (edict_t *pusher, float movetime)
 		if (!(((int) check->v.flags & FL_ONGROUND)
 				&& PROG_TO_EDICT (check->v.groundentity) == pusher))
 		{
-			if (check->v.absmin[0] >= maxs[0]
+			if ((check->v.absmin[0] >= maxs[0]
 					|| check->v.absmin[1] >= maxs[1]
 					|| check->v.absmin[2] >= maxs[2]
 					|| check->v.absmax[0] <= mins[0]
 					|| check->v.absmax[1] <= mins[1]
-					|| check->v.absmax[2] <= mins[2])
+					|| check->v.absmax[2] <= mins[2]) && !SV_CollisionChildrenOverlap(check, mins, maxs))
 				continue;
 
 			// see if the ent's bbox is inside the pusher's final position
-			if (!SV_TestEntityPosition (check))
+			if (!SV_TestEntityPosition(check) && !SV_TestCollisionChildren(check))
 				continue;
 		}
 
@@ -536,6 +819,8 @@ edict_t * SV_PushMove (edict_t *pusher, float movetime)
 
 		VectorCopy (check->v.origin, entorig);
 		VectorCopy (check->v.origin, moved_from[num_moved]);
+		VectorCopy(check->v.angles, moved_angles[num_moved]);
+		moved_generation[num_moved] = check->generation;
 		moved_edict[num_moved] = check;
 		num_moved++;
 
@@ -543,9 +828,12 @@ edict_t * SV_PushMove (edict_t *pusher, float movetime)
 		pusher->v.solid = SOLID_NOT;
 		SV_PushEntity (check, move, vec3_origin);
 		pusher->v.solid = oldsolid;
+		if (check->free || check->generation != moved_generation[num_moved - 1]) continue;
+		SV_SyncCollisionChildren(check);
 
 		// if it is still inside the pusher, block
-		block = SV_TestEntityPosition (check);
+		block = SV_TestEntityPosition(check);
+		if (!block) block = SV_TestCollisionChildren(check);
 
 		if (block)
 		{
@@ -563,9 +851,11 @@ edict_t * SV_PushMove (edict_t *pusher, float movetime)
 
 			VectorCopy (entorig, check->v.origin);
 			SV_LinkEdict (check, true);
+			SV_SyncCollisionChildren(check);
 
 			VectorCopy (pushorig, pusher->v.origin);
 			SV_LinkEdict (pusher, false);
+			SV_SyncCollisionChildren(pusher);
 			pusher->v.ltime -= movetime;
 
 			// if the pusher has a "blocked" function, call it
@@ -581,12 +871,15 @@ edict_t * SV_PushMove (edict_t *pusher, float movetime)
 			// move back any entities we already moved
 			for (i = 0; i < num_moved; i++)
 			{
+				if (moved_edict[i]->free || moved_edict[i]->generation != moved_generation[i]) continue;
 				VectorCopy (moved_from[i], moved_edict[i]->v.origin);
 				SV_LinkEdict (moved_edict[i], (moved_edict[i] == check) ? true : false);
+				SV_SyncCollisionChildren(moved_edict[i]);
 			}
 			return check;
 		}
 	}
+	SV_SyncCollisionChildren(pusher);
 	return NULL;
 }
 
@@ -625,6 +918,7 @@ edict_t * SV_PushRotate (edict_t *pusher, float movetime)
 	VectorAdd (pusher->v.angles, amove, pusher->v.angles);
 	pusher->v.ltime += movetime;
 	SV_LinkEdict (pusher, false);
+	SV_SyncCollisionChildren(pusher);
     oldsolid = pusher->v.solid;
 
 	// non-solid pushers can't push anything
@@ -640,8 +934,9 @@ edict_t * SV_PushRotate (edict_t *pusher, float movetime)
 
 	for (e = 1; e < sv.num_edicts; e++, check = NEXT_EDICT (check))
 	{
-		if (check->free)
+		if (check->free || SV_PassiveAttachment(check))
 			continue;
+		SV_SyncCollisionChildren(check);
 
 		if (check->v.movetype == MOVETYPE_PUSH
 		|| check->v.movetype == MOVETYPE_NONE
@@ -652,16 +947,17 @@ edict_t * SV_PushRotate (edict_t *pusher, float movetime)
 		// if the entity is standing on the pusher, it will definately be moved
 		if (!(((int) check->v.flags & FL_ONGROUND) && PROG_TO_EDICT (check->v.groundentity) == pusher))
 		{
-			if (check->v.absmin[0] >= pusher->v.absmax[0]
+			if ((check->v.absmin[0] >= pusher->v.absmax[0]
 					|| check->v.absmin[1] >= pusher->v.absmax[1]
 					|| check->v.absmin[2] >= pusher->v.absmax[2]
 					|| check->v.absmax[0] <= pusher->v.absmin[0]
 					|| check->v.absmax[1] <= pusher->v.absmin[1]
-					|| check->v.absmax[2] <= pusher->v.absmin[2])
+					|| check->v.absmax[2] <= pusher->v.absmin[2]) &&
+				!SV_CollisionChildrenOverlap(check, pusher->v.absmin, pusher->v.absmax))
 				continue;
 
 			// see if the ent's bbox is inside the pusher's final position
-			if (!SV_TestEntityPosition (check))
+			if (!SV_TestEntityPosition(check) && !SV_TestCollisionChildren(check))
 				continue;
 		}
 
@@ -672,6 +968,8 @@ edict_t * SV_PushRotate (edict_t *pusher, float movetime)
 		VectorCopy (check->v.origin, entorig);
 		VectorCopy (check->v.origin, moved_from[num_moved]);
 
+		VectorCopy(check->v.angles, moved_angles[num_moved]);
+		moved_generation[num_moved] = check->generation;
 		moved_edict[num_moved] = check;
 		num_moved++;
 
@@ -689,10 +987,14 @@ edict_t * SV_PushRotate (edict_t *pusher, float movetime)
 		pusher->v.solid = SOLID_NOT;
 		SV_PushEntity (check, move, amove);
 		pusher->v.solid = oldsolid;
+		if (check->free || check->generation != moved_generation[num_moved - 1]) continue;
+		VectorAdd(check->v.angles, amove, check->v.angles);
+		SV_SyncCollisionChildren(check);
 
 
 		// if it is still inside the pusher, block
-		block = SV_TestEntityPosition (check);
+		block = SV_TestEntityPosition(check);
+		if (!block) block = SV_TestCollisionChildren(check);
 
 		if (block)
 		{
@@ -709,10 +1011,13 @@ edict_t * SV_PushRotate (edict_t *pusher, float movetime)
 			}
 
 			VectorCopy (entorig, check->v.origin);
+			VectorCopy(moved_angles[num_moved - 1], check->v.angles);
 			SV_LinkEdict (check, true);
+			SV_SyncCollisionChildren(check);
 
 			VectorCopy (pushorig, pusher->v.angles);
 			SV_LinkEdict (pusher, false);
+			SV_SyncCollisionChildren(pusher);
 			pusher->v.ltime -= movetime;
 
 			// if the pusher has a "blocked" function, call it
@@ -727,18 +1032,17 @@ edict_t * SV_PushRotate (edict_t *pusher, float movetime)
 			// move back any entities we already moved
 			for (i = 0; i < num_moved; i++)
 			{
+				if (moved_edict[i]->free || moved_edict[i]->generation != moved_generation[i]) continue;
 				VectorCopy (moved_from[i], moved_edict[i]->v.origin);
-				VectorSubtract (moved_edict[i]->v.angles, amove, moved_edict[i]->v.angles);
+				VectorCopy(moved_angles[i], moved_edict[i]->v.angles);
 				SV_LinkEdict (moved_edict[i], (moved_edict[i] == check) ? true : false);
+				SV_SyncCollisionChildren(moved_edict[i]);
 			}
 			return check;
 		}
-		else
-		{
-			VectorAdd (check->v.angles, amove, check->v.angles);
-		}
 
 	}
+	SV_SyncCollisionChildren(pusher);
 	return NULL;
 }
 
@@ -1749,11 +2053,14 @@ void SV_Physics (void)
 		if (ent->free)
 			continue;
 
-		if (pr_global_struct->force_retouch)
+		qboolean passive = SV_PassiveAttachment(ent);
+		if (pr_global_struct->force_retouch && !passive)
 		{
 			SV_LinkEdict (ent, true);// force retouch even for stationary
 		}
-		if (i > 0 && i <= svs.maxclients)
+		if (passive)
+			SV_RunThink(ent);
+		else if (i > 0 && i <= svs.maxclients)
 			SV_Physics_Client (ent, i);
 		else if (ent->v.movetype == MOVETYPE_PUSH)
 			SV_Physics_Pusher (ent);

@@ -122,6 +122,8 @@ Sets everything to NULL
 */
 void ED_ClearEdict (edict_t *e)
 {
+	SV_ClearEntityAttachments(e);
+	e->generation++;
 	memset (&e->v, 0, progs->entityfields * 4);
 	e->free = false;
 }
@@ -174,6 +176,8 @@ FIXME: walk all entities and NULL out references to this entity
 */
 void ED_Free (edict_t *ed)
 {
+	SV_ClearEntityAttachments(ed);
+	ed->generation++;
 	PR_ClearEntityPath (NUM_FOR_EDICT(ed));
 
 	SV_UnlinkEdict (ed);		// unlink from world bsp

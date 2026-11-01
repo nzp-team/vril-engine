@@ -4770,6 +4770,23 @@ void PF_ArgV  (void)
 
 
 // 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes  end
+void PF_collision_attach(void)
+{
+	G_FLOAT(OFS_RETURN) = SV_AttachCollision(G_EDICT(OFS_PARM0), G_EDICT(OFS_PARM1),
+		G_VECTOR(OFS_PARM2), G_VECTOR(OFS_PARM3), G_VECTOR(OFS_PARM4),
+		(int)G_FLOAT(OFS_PARM5), (int)G_FLOAT(OFS_PARM6));
+}
+
+void PF_collision_detach(void)
+{
+	SV_DetachCollision(G_EDICT(OFS_PARM0));
+}
+
+void PF_collision_update(void)
+{
+	SV_UpdateCollisionAttachments();
+}
+
 builtin_t *pr_builtins;
 int pr_numbuiltins;
 // 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes  start
@@ -5013,6 +5030,10 @@ ebfs_builtin_t pr_ebfs_builtins[] =
 	{ 521, "nzp_pathfind_follow", PF_pathfind_follow },
 	{ 522, "nzp_ai_land", PF_ai_land },
 	{ 523, "nzp_pathfind_target_origin", PF_pathfind_target_origin },
+
+  { 524, "collision_attach", PF_collision_attach },
+  { 525, "collision_detach", PF_collision_detach },
+  { 526, "collision_update", PF_collision_update },
 
   { 600, "json_parse", PF_json_parse },
   { 601, "json_parse_file", PF_json_parse_file },

@@ -274,8 +274,34 @@ SV_ClearWorld
 
 ===============
 */
+typedef struct {
+	edict_t *entity;
+	unsigned generation;
+} sv_touch_entry_t;
+
+typedef struct sv_touch_buffer_s {
+	sv_touch_entry_t *entries;
+	int capacity;
+	qboolean active;
+	struct sv_touch_buffer_s *next;
+} sv_touch_buffer_t;
+
+static sv_touch_buffer_t *sv_touch_buffers;
+
+static void SV_ClearTouchBuffers(void)
+{
+	while (sv_touch_buffers) {
+		sv_touch_buffer_t *next = sv_touch_buffers->next;
+		free(sv_touch_buffers->entries);
+		free(sv_touch_buffers);
+		sv_touch_buffers = next;
+	}
+}
+
 void SV_ClearWorld (void)
 {
+	SV_ClearCollisionAttachments();
+	SV_ClearTouchBuffers();
 	SV_InitBoxHull ();
 
 	memset (sv_areanodes, 0, sizeof(sv_areanodes));
@@ -307,7 +333,7 @@ them and risking the list getting corrupt.
 ====================
 */
 static void
-SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *listcount, const int listspace )
+SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, sv_touch_entry_t *list, int *listcount, const int listspace )
 {
 	link_t		*l, *next;
 	edict_t		*touch;
@@ -332,7 +358,7 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 		if (*listcount == listspace)
 			return; // should never happen
 
-		list[*listcount] = touch;
+		list[*listcount] = (sv_touch_entry_t){touch, touch->generation};
 		(*listcount)++;
 	}
 
@@ -350,7 +376,7 @@ SV_AreaTriggerEdicts ( edict_t *ent, areanode_t *node, edict_t **list, int *list
 ====================
 SV_TouchLinks
 
-ericw -- copy the touching edicts to an array (on the hunk) so we can avoid
+ericw -- copy the touching edicts to an array so we can avoid
 iteating the trigger_edicts linked list while calling PR_ExecuteProgram
 which could potentially corrupt the list while it's being iterated.
 Based on code from Spike.
@@ -358,48 +384,51 @@ Based on code from Spike.
 */
 void SV_TouchLinks (edict_t *ent)
 {
-	edict_t		**list;
-	edict_t		*touch;
-	int		old_self, old_other;
-	int		i, listcount;
-	int		mark;
-	
-	mark = Hunk_LowMark ();
-	list = (edict_t **) Hunk_Alloc (sv.num_edicts*sizeof(edict_t *));
-	
-	listcount = 0;
-	SV_AreaTriggerEdicts (ent, sv_areanodes, list, &listcount, sv.num_edicts);
-
-	for (i = 0; i < listcount; i++)
-	{
-		touch = list[i];
-	// re-validate in case of PR_ExecuteProgram having side effects that make
-	// edicts later in the list no longer touch
-		if (touch == ent)
-			continue;
-		if (!touch->v.touch || touch->v.solid != SOLID_TRIGGER)
+	sv_touch_buffer_t *buffer;
+	int old_self, old_other, i, listcount = 0;
+	unsigned generation = ent->generation;
+	unsigned attachment_version = SV_CollisionAttachmentVersion(ent);
+	for (buffer = sv_touch_buffers; buffer && buffer->active; buffer = buffer->next) {}
+	if (!buffer) {
+		buffer = calloc(1, sizeof(*buffer));
+		if (!buffer) Sys_Error("Out of trigger contact memory");
+		buffer->next = sv_touch_buffers;
+		sv_touch_buffers = buffer;
+	}
+	if (buffer->capacity < sv.num_edicts) {
+		sv_touch_entry_t *entries = realloc(buffer->entries, sv.num_edicts * sizeof(*entries));
+		if (!entries) Sys_Error("Out of trigger contact memory");
+		buffer->entries = entries;
+		buffer->capacity = sv.num_edicts;
+	}
+	buffer->active = true;
+	SV_AreaTriggerEdicts(ent, sv_areanodes, buffer->entries, &listcount, buffer->capacity);
+	for (i = 0; i < listcount; i++) {
+		sv_touch_entry_t *entry = &buffer->entries[i];
+		edict_t *touch = entry->entity;
+		if (ent->free || ent->generation != generation || ent->v.solid == SOLID_NOT ||
+			SV_CollisionAttachmentVersion(ent) != attachment_version)
+			break;
+		if (touch == ent || touch->free || touch->generation != entry->generation ||
+			!touch->v.touch || touch->v.solid != SOLID_TRIGGER)
 			continue;
 		if (ent->v.absmin[0] > touch->v.absmax[0]
 		|| ent->v.absmin[1] > touch->v.absmax[1]
 		|| ent->v.absmin[2] > touch->v.absmax[2]
 		|| ent->v.absmax[0] < touch->v.absmin[0]
 		|| ent->v.absmax[1] < touch->v.absmin[1]
-		|| ent->v.absmax[2] < touch->v.absmin[2] )
+		|| ent->v.absmax[2] < touch->v.absmin[2])
 			continue;
 		old_self = pr_global_struct->self;
 		old_other = pr_global_struct->other;
-
 		pr_global_struct->self = EDICT_TO_PROG(touch);
 		pr_global_struct->other = EDICT_TO_PROG(ent);
 		pr_global_struct->time = sv.time;
-		PR_ExecuteProgram (touch->v.touch);
-
+		PR_ExecuteProgram(touch->v.touch);
 		pr_global_struct->self = old_self;
 		pr_global_struct->other = old_other;
 	}
-
-// free hunk-allocated edicts array
-	Hunk_FreeToLowMark (mark);
+	buffer->active = false;
 }
 
 
