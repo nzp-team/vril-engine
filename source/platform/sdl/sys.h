@@ -72,3 +72,9 @@ void Sys_HighFPPrecision (void);
 void Sys_SetFPCW (void);
 
 void Sys_CaptureScreenshot(void);
+#include <stddef.h>
+
+typedef struct sys_directory_s sys_directory_t;
+sys_directory_t *Sys_OpenDirectory(const char *path);
+int Sys_ReadDirectory(sys_directory_t *directory, char *name, size_t size);
+void Sys_CloseDirectory(sys_directory_t *directory);

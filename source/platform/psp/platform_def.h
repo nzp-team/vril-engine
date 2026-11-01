@@ -24,3 +24,4 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // needed for platform specific constants
 #include <pspgu.h>
+#define RENDERER_MODEL_HEADER "render/r_model.h"

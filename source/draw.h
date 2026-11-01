@@ -83,3 +83,4 @@ typedef struct cachepic_s
 
 #define	MAX_CACHED_PICS	128
 extern cachepic_t cachepics[MAX_CACHED_PICS];
+extern int nonetexture;

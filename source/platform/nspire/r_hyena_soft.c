@@ -464,15 +464,15 @@ Hyena_DrawVertices(vertex_t * vertices, int count, int texture_precision, int ve
     first = hyena_vertex_mode == HYE_TRIANGLES ? 0 : 1;
     step  = hyena_vertex_mode == HYE_TRIANGLES ? 3 : 1;
     if (count >= 3) {
-        for (i = first; i + 1 < count; i += step) {
+        for (i = first; i + (step == 3 ? 2 : 1) < count; i += step) {
             hyena_viewvert_t triangle[3], clipped[4];
             int clipped_count, j;
             int strip_odd = hyena_vertex_mode == HYE_TRIANGLE_STRIP && ((i - 1) & 1);
             int i0        = hyena_vertex_mode == HYE_TRIANGLES ?
               i :
               (hyena_vertex_mode == HYE_TRIANGLE_STRIP ? (strip_odd ? i : i - 1) : 0);
-            int i1 = strip_odd ? i - 1 : i;
-            int i2 = i + 1;
+            int i1 = hyena_vertex_mode == HYE_TRIANGLES ? i + 1 : (strip_odd ? i - 1 : i);
+            int i2 = hyena_vertex_mode == HYE_TRIANGLES ? i + 2 : i + 1;
             Hyena_TransformVertex(&vertices[i0], &triangle[0]);
             Hyena_TransformVertex(&vertices[i1], &triangle[1]);
             Hyena_TransformVertex(&vertices[i2], &triangle[2]);
@@ -509,6 +509,12 @@ Hyena_SetDepthRange(float near_value, float far_value)
 {
     hyena_depth_near = near_value;
     hyena_depth_far  = far_value;
+}
+
+void
+Hyena_ResetDepthRange(void)
+{
+    Hyena_SetDepthRange(0, 1);
 }
 
 void

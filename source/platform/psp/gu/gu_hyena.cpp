@@ -57,6 +57,7 @@ extern "C" {
 #include <vram.h>
 
 static int current_vertex_mode;
+static int currenttexture = -1;
 
 void
 Hyena_SetTextureMode(int texture_mode)
@@ -77,7 +78,7 @@ Hyena_SetTextureMode(int texture_mode)
 void
 Hyena_SetColor(float red, float green, float blue, float alpha)
 {
-    sceGuColor(GU_COLOR(red, green, blue, alpha));
+    sceGuColor(GU_COLOR(bound(0, red, 1), bound(0, green, 1), bound(0, blue, 1), bound(0, alpha, 1)));
 }
 
 static int
@@ -335,6 +336,7 @@ Hyena_ResolveBlendFunction(int blend_function)
         case HYE_ONE_MINUS_SRC_COLOR:
             gu_blend_function = GU_ONE_MINUS_SRC_COLOR;
             break;
+        case HYE_ZERO: return GU_FIX;
         case HYE_SRC_ALPHA:
             gu_blend_function = GU_SRC_ALPHA;
             break;
@@ -355,10 +357,16 @@ Hyena_SetBlendFunction(int source_blend, int dest_blend)
     sceGuBlendFunc(GU_ADD, gu_source_blend, gu_dest_blend, 0, 0xFFFFFFFF);
 }
 
-void
-Hyena_SetDepthRange(float near, float far)
+static float hyena_depthmin, hyena_depthmax = 1;
+void Hyena_SetDepthRange(float near_value, float far_value)
 {
-    sceGuDepthRange((int) (65535.0f * near), (int) (65535.0f * far));
+    float range = hyena_depthmax - hyena_depthmin;
+    sceGuDepthRange((int)(65535 * (hyena_depthmin + near_value * range)),
+        (int)(65535 * (hyena_depthmin + far_value * range)));
+}
+void Hyena_ResetDepthRange(void)
+{
+    Hyena_SetDepthRange(0.3f, 1);
 }
 
 void
@@ -563,8 +571,6 @@ Hyena_CompressGUTexture(
         Convert_DXT5(dest, size);
     return size;
 }
-
-int zombie_skins[NUM_ZOMBIE_SKINS];
 
 typedef struct {
     int    format, swizzle;
@@ -1032,23 +1038,59 @@ Hyena_ArrayPointer(const hyena_array_t * array)
 {
     return array->buffer ? (const byte *) array->buffer->data + (size_t) array->data : array->data;
 }
-
-static void
-Hyena_SubmitArrays(int mode, const hyena_arrays_t * arrays, int count, const unsigned short * indices)
+static void Hyena_SubmitArrays(int mode, const hyena_arrays_t *arrays, int count, const unsigned short *indices)
 {
-    const void * vertices;
-    int format = HYE_PACKED_XYZ_FLOAT;
-
-    if (arrays->uv.data || arrays->uv.buffer) {
-        format  |= HYE_PACKED_UV_FLOAT;
-        vertices = Hyena_ArrayPointer(&arrays->uv);
-    } else if (arrays->color.data || arrays->color.buffer) {
-        format  |= HYE_PACKED_COLOR;
-        vertices = Hyena_ArrayPointer(&arrays->color);
-    } else {
-        vertices = Hyena_ArrayPointer(&arrays->position);
+    const byte *position_data = (const byte *)Hyena_ArrayPointer(&arrays->position);
+    const byte *uv_data = (arrays->uv.data || arrays->uv.buffer) ? (const byte *)Hyena_ArrayPointer(&arrays->uv) : NULL;
+    if (!arrays->color.data && !arrays->color.buffer && arrays->position.type == HYE_FLOAT) {
+        if (!uv_data && (!arrays->position.stride || arrays->position.stride == 3 * sizeof(float))) {
+            Hyena_DrawPacked(mode, HYE_PACKED_XYZ_FLOAT, 1, count, position_data, indices, arrays->flags);
+            return;
+        }
+        if (uv_data && arrays->uv.type == HYE_FLOAT && position_data == uv_data + 2 * sizeof(float) &&
+            arrays->uv.stride == 5 * sizeof(float) && arrays->position.stride == 5 * sizeof(float)) {
+            Hyena_DrawPacked(mode, HYE_PACKED_UV_FLOAT | HYE_PACKED_XYZ_FLOAT, 1, count, uv_data, indices, arrays->flags);
+            return;
+        }
     }
-    Hyena_DrawPacked(mode, format, 1, count, vertices, indices, arrays->flags);
+    struct vertex { float uv[2]; unsigned int color; float xyz[3]; };
+    int vertices = arrays->count, i, axis;
+    vertex *output = (vertex *)sceGuGetMemory(vertices * sizeof(*output));
+    const byte *positions = (const byte *)Hyena_ArrayPointer(&arrays->position);
+    const byte *uvs = (arrays->uv.data || arrays->uv.buffer) ? (const byte *)Hyena_ArrayPointer(&arrays->uv) : NULL;
+    const byte *colors = (arrays->color.data || arrays->color.buffer) ? (const byte *)Hyena_ArrayPointer(&arrays->color) : NULL;
+    int position_size = arrays->position.type == HYE_SHORT ? 2 : arrays->position.type == HYE_UBYTE ? 1 : 4;
+    int position_stride = arrays->position.stride ? arrays->position.stride : position_size * 3;
+    int uv_stride = arrays->uv.stride ? arrays->uv.stride : 2 * sizeof(float);
+    int color_stride = arrays->color.stride ? arrays->color.stride : arrays->color.type == HYE_FLOAT ? 4 * sizeof(float) : 4;
+    for (i = 0; i < vertices; i++) {
+        for (axis = 0; axis < 3; axis++) {
+            const byte *p = positions + i * position_stride;
+            output[i].xyz[axis] = arrays->position.type == HYE_SHORT ? ((const short *)p)[axis] * arrays->scale :
+                arrays->position.type == HYE_UBYTE ? p[axis] * arrays->scale : ((const float *)p)[axis];
+        }
+        output[i].uv[0] = output[i].uv[1] = 0;
+        if (uvs)
+            memcpy(output[i].uv, uvs + i * uv_stride, sizeof(output[i].uv));
+        output[i].color = 0xffffffff;
+        if (colors) {
+            const byte *c = colors + i * color_stride;
+            output[i].color = arrays->color.type == HYE_FLOAT ?
+                GU_COLOR(((const float *)c)[0], ((const float *)c)[1], ((const float *)c)[2], ((const float *)c)[3]) : *(const unsigned int *)c;
+        }
+    }
+    int format = HYE_PACKED_UV_FLOAT | HYE_PACKED_XYZ_FLOAT;
+    if (colors) format |= HYE_PACKED_COLOR;
+    if (!colors) {
+        struct plain_vertex { float uv[2], xyz[3]; };
+        plain_vertex *plain = (plain_vertex *)sceGuGetMemory(vertices * sizeof(*plain));
+        for (i = 0; i < vertices; i++) {
+            memcpy(plain[i].uv, output[i].uv, sizeof(plain[i].uv));
+            memcpy(plain[i].xyz, output[i].xyz, sizeof(plain[i].xyz));
+        }
+        Hyena_DrawPacked(mode, format, 1, count, plain, indices, arrays->flags & ~HYE_COPY_VERTICES);
+    } else
+        Hyena_DrawPacked(mode, format, 1, count, output, indices, arrays->flags & ~HYE_COPY_VERTICES);
 }
 
 void
@@ -1066,7 +1108,7 @@ Hyena_DrawElements(int mode, const hyena_arrays_t * arrays, int count, hyena_buf
 void
 Hyena_DepthFunction(int function)
 {
-    sceGuDepthFunc(function == HYE_EQUAL ? GU_EQUAL : GU_LEQUAL);
+    sceGuDepthFunc(function == HYE_EQUAL ? GU_EQUAL : function == HYE_GEQUAL || hyena_depthmin > hyena_depthmax ? GU_GEQUAL : GU_LEQUAL);
 }
 
 void
@@ -1106,7 +1148,7 @@ Hyena_LoadViewMatrix(const float * matrix)
     sceGumMatrixMode(GU_MODEL);
 }
 
-static void
+void
 Hyena_BlendConstant(float alpha)
 {
     sceGuBlendFunc(GU_ADD, GU_FIX, GU_FIX, GU_COLOR(alpha, alpha, alpha, alpha),
@@ -1193,3 +1235,148 @@ Hyena_TextureAlpha(float alpha)
     else
         Hyena_BlendConstant(alpha);
 }
+
+
+
+
+
+static int hyena_matrix_mode = HYE_MODELVIEW;
+void Hyena_MatrixMode(int mode) { hyena_matrix_mode = mode; sceGumMatrixMode(mode == HYE_PROJECTION ? GU_PROJECTION : mode == HYE_VIEW ? GU_VIEW : GU_MODEL); }
+void Hyena_LoadIdentity(void) { sceGumLoadIdentity(); }
+void Hyena_LoadMatrix(const float *matrix) { sceGumLoadMatrix((const ScePspFMatrix4 *)matrix); }
+void Hyena_GetMatrix(float *matrix) { sceGumStoreMatrix((ScePspFMatrix4 *)matrix); }
+void Hyena_PushMatrix(void) { sceGumPushMatrix(); }
+void Hyena_PopMatrix(void) { sceGumPopMatrix(); sceGumUpdateMatrix(); }
+void Hyena_MatrixTranslate(float x, float y, float z)
+{
+    const ScePspFVector3 translation = {x, y, z};
+    sceGumTranslate(&translation);
+}
+void Hyena_MatrixScale(float x, float y, float z)
+{
+    const ScePspFVector3 scale = {x, y, z};
+    sceGumScale(&scale);
+}
+void Hyena_MatrixRotate(float degrees, float x, float y, float z)
+{
+    float radians = degrees * (GU_PI / 180.0f);
+    if (x) sceGumRotateX(radians * x);
+    if (y) sceGumRotateY(radians * y);
+    if (z) sceGumRotateZ(radians * z);
+}
+void Hyena_UpdateMatrices(void) { sceGumUpdateMatrix(); }
+void Hyena_Frustum(float left, float right, float bottom, float top, float near_value, float far_value)
+{
+    ScePspFMatrix4 matrix __attribute__((aligned(16)));
+    memset(&matrix, 0, sizeof(matrix));
+    matrix.x.x = 2 * near_value / (right - left);
+    matrix.y.y = 2 * near_value / (top - bottom);
+    matrix.z.x = (right + left) / (right - left);
+    matrix.z.y = (top + bottom) / (top - bottom);
+    matrix.z.z = -(far_value + near_value) / (far_value - near_value);
+    matrix.z.w = -1;
+    matrix.w.z = -2 * far_value * near_value / (far_value - near_value);
+    sceGumMultMatrix(&matrix);
+}
+void Hyena_Viewport(int x, int y, int width, int height)
+{
+    sceGuViewport(x + width / 2 - glwidth / 2, glheight / 2 - y - height / 2, width, height);
+    sceGuScissor(x, glheight - y - height, x + width, glheight - y);
+}
+void Hyena_ClipFrustum(float fovy, float aspect, float near_value)
+{
+    sceGumMatrixMode(GU_PROJECTION);
+    sceGumPushMatrix();
+    quake::clipping::begin_frame(fovy, min(160.0f, fovy * 2.2f), aspect, near_value);
+    sceGumMatrixMode(GU_PROJECTION);
+    sceGumPopMatrix();
+    sceGumUpdateMatrix();
+    Hyena_MatrixMode(hyena_matrix_mode);
+}
+void Hyena_CullFace(qboolean back) { sceGuFrontFace(back ? GU_CCW : GU_CW); }
+void Hyena_ClearColor(float red, float green, float blue, float alpha) { sceGuClearColor(GU_COLOR(red, green, blue, alpha)); }
+void Hyena_Clear(qboolean color, qboolean depth, qboolean stencil)
+{
+    sceGuClearStencil(GU_TRUE);
+    sceGuClear((color ? GU_COLOR_BUFFER_BIT : 0) | (depth ? GU_DEPTH_BUFFER_BIT : 0) | (stencil ? GU_STENCIL_BUFFER_BIT : 0));
+}
+void Hyena_DepthBounds(float near_value, float far_value)
+{
+    hyena_depthmin = near_value;
+    hyena_depthmax = far_value;
+}
+void Hyena_PerspectiveCorrection(qboolean enabled) { (void)enabled; }
+void Hyena_Finish(void) { }
+qboolean Hyena_ReadPixels(int x, int y, int width, int height, byte *rgba)
+{
+    (void)x; (void)y;
+    GL_GetPixelsRGBA(rgba, width, height, 0);
+    return true;
+}
+qboolean Hyena_DrawMorphMesh(const hyena_morph_mesh_t *mesh, const byte *first, const byte *second, float blend)
+{
+    (void)mesh; (void)first; (void)second; (void)blend;
+    return false;
+}
+void Hyena_AddLightTime(double seconds) { (void)seconds; }
+
+size_t Hyena_TextureBudget(void) { return psp_system_model == PSP_MODEL_PHAT ? 1024 * 1024 : 4 * 1024 * 1024; }
+int Hyena_PreferredPaletteBits(void) { return 4; }
+
+void Hyena_SelectDrawBuffer(qboolean front) { (void)front; }
+void Hyena_SelectReadBuffer(qboolean front) { (void)front; }
+
+qboolean Hyena_MorphMeshesSupported(void) { return false; }
+
+static byte hyena_pixel_arena[128 * 128 * 128] __attribute__((aligned(64)));
+static size_t hyena_pixel_used;
+static int hyena_pixel_allocations;
+void *Hyena_AllocateTexturePixels(size_t bytes)
+{
+    bytes = (bytes + 63) & ~(size_t)63;
+    if (bytes <= sizeof(hyena_pixel_arena) - hyena_pixel_used) {
+        byte *pixels = hyena_pixel_arena + hyena_pixel_used;
+        hyena_pixel_used += bytes;
+        hyena_pixel_allocations++;
+        return pixels;
+    }
+    return memalign(64, bytes);
+}
+void Hyena_FreeTexturePixels(void *pixels)
+{
+    if ((uintptr_t)pixels >= (uintptr_t)hyena_pixel_arena && (uintptr_t)pixels < (uintptr_t)(hyena_pixel_arena + sizeof(hyena_pixel_arena))) {
+        if (!--hyena_pixel_allocations)
+            hyena_pixel_used = 0;
+    } else free(pixels);
+}
+int Hyena_PreferredLightmapSize(void) { return 128; }
+
+hyena_texture_format_t Hyena_PreferredLightmapFormat(void) { return HYE_TEXTURE_RGBA8; }
+unsigned *Hyena_LightmapScratch(int count) { (void)count; return NULL; }
+qboolean Hyena_AccumulateLightmap(unsigned *dest, const byte *source, int count, unsigned scale, qboolean add)
+{
+    (void)dest; (void)source; (void)count; (void)scale; (void)add;
+    return false;
+}
+void Hyena_PrepareTextureUpdate(int texture) { (void)texture; }
+void Hyena_ClipArrays(const hyena_arrays_t *source, hyena_arrays_t *clipped)
+{
+    const glvert_t *vertices = (const glvert_t *)source->uv.data;
+    size_t count = source->count;
+    *clipped = *source;
+    if (quake::clipping::is_clipping_required(vertices, count)) {
+        quake::clipping::clip(vertices, count, &vertices, &count);
+        if (count) {
+            glvert_t *copy = (glvert_t *)sceGuGetMemory(count * sizeof(*copy));
+            memcpy(copy, vertices, count * sizeof(*copy));
+            vertices = copy;
+        }
+    }
+    clipped->count = count;
+    clipped->uv.data = vertices;
+    clipped->position.data = count ? vertices[0].xyz : NULL;
+}
+void Hyena_BeginModelClipping(void) { quake::clipping::begin_brush_model(); }
+void Hyena_EndModelClipping(void) { quake::clipping::end_brush_model(); }
+
+void Hyena_ClearMorphMeshes(void) {  }

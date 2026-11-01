@@ -1795,7 +1795,7 @@ void SV_Physics (void)
 
 trace_t SV_Trace_Toss (edict_t *ent, edict_t *ignore)
 {
-	double	save_frametime;
+	float	save_frametime;
 	vec3_t	move, end;
 	edict_t	tempent, *tent;
 	trace_t	trace;

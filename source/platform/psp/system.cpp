@@ -326,6 +326,28 @@ int	Sys_FileTime (char *path)
 	*/
 }
 
+sys_directory_t *Sys_OpenDirectory(const char *path)
+{
+	return (sys_directory_t *)opendir(path);
+}
+
+int Sys_ReadDirectory(sys_directory_t *directory, char *name, size_t size)
+{
+	struct dirent *entry;
+	while ((entry = readdir((DIR *)directory)) != NULL) {
+		if (strlen(entry->d_name) < size) {
+			Q_strlcpy(name, entry->d_name, size);
+			return true;
+		}
+	}
+	return false;
+}
+
+void Sys_CloseDirectory(sys_directory_t *directory)
+{
+	closedir((DIR *)directory);
+}
+
 void Sys_mkdir (char *path)
 {
 	Sys_Printf("Mkdir: %s\n", path);

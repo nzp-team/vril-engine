@@ -1875,12 +1875,9 @@ typedef struct {
 } pathfind_brush_state_t;
 
 static pathfind_brush_state_t pathfind_brushes[MAX_EDICTS];
-static vec3_t pathfind_node_origins[MAX_WAYPOINTS];
-static int pathfind_node_links[MAX_WAYPOINTS][8];
 static int pathfind_brush_count, pathfind_node_count;
 static qboolean pathfind_geometry_valid, pathfind_sized_actor;
 static unsigned int pathfind_geometry_revision, pathfind_gate_revision;
-static int pathfind_node_open[MAX_WAYPOINTS];
 
 typedef struct {
 	int entnum;
@@ -1942,19 +1939,6 @@ static void PathfindPrepareGeometry(edict_t *actor)
 
 	if (count != pathfind_brush_count)
 		reuse = false;
-
-	for (int i = 0; i < n_waypoints; i++) {
-		if (pathfind_node_open[i] != waypoints[i].open) {
-			pathfind_node_open[i] = waypoints[i].open;
-			pathfind_gate_revision++;
-		}
-
-		if (memcmp(pathfind_node_origins[i], waypoints[i].origin, sizeof(vec3_t)) || memcmp(pathfind_node_links[i], waypoints[i].target, sizeof(pathfind_node_links[i]))) {
-			VectorCopy(waypoints[i].origin, pathfind_node_origins[i]);
-			memcpy(pathfind_node_links[i], waypoints[i].target, sizeof(pathfind_node_links[i]));
-			reuse = false;
-		}
-	}
 
 	if (!reuse) {
 		pathfind_geometry_revision++;
@@ -2241,13 +2225,13 @@ static int sv_way_pathfind_internal(int start_way, int end_way) {
 				continue;
 			}
 
+			if (pathfind_actor && pathfind_walkable[current][i] == 0)
+				continue;
+
 			tentative_g_score = waypoints[current].g_score + waypoints[current].dist[i];
 			tentative_f_score = tentative_g_score + sv_way_heuristic_cost_estimate(neighbor_waypoint_idx, end_way);
 
 			if (sv_way_in_set(WAYPOINT_SET_OPEN, neighbor_waypoint_idx) && !(tentative_f_score < waypoints[neighbor_waypoint_idx].f_score))
-				continue;
-
-			if (pathfind_actor && pathfind_walkable[current][i] == 0)
 				continue;
 
 			if (sv_way_in_set(WAYPOINT_SET_OPEN, neighbor_waypoint_idx)) {
@@ -2368,6 +2352,8 @@ void Open_Waypoint (void) {
 		//no need to open without tag
 		if (waypoints[i].special[0]) {
 			if (!strcmp(p, waypoints[i].special)) {
+				if (!waypoints[i].open)
+					pathfind_gate_revision++;
 				waypoints[i].open = 1;
 				//Con_DPrintf("Open_Waypoint: %i, opened\n", i);
 			}
@@ -2399,6 +2385,8 @@ void Close_Waypoint (void) {
 		//no need to open without tag
 		if (waypoints[i].special[0]) {
 			if (!strcmp(p, waypoints[i].special)) {
+				if (waypoints[i].open)
+					pathfind_gate_revision++;
 				waypoints[i].open = 0;
 			}
 			else {
@@ -3573,7 +3561,7 @@ void PF_Find (void)
 		t = E_STRING(ed,f);
 		if (!t)
 			continue;
-		if (!strcmp(t,s))
+		if (t == s || (*t == *s && !strcmp(t,s)))
 		{
 			RETURN_EDICT(ed);
 			return;

@@ -28,7 +28,6 @@ int		texture_mode = GL_LINEAR;
 
 double	gldepthmin, gldepthmax;
 
-cvar_t	gl_ztrick = {"gl_ztrick","0"};
 
 static float vid_gamma = 1.0;
 
@@ -172,7 +171,6 @@ void	VID_Init (unsigned char *palette)
 	int width = 400;
 	int height = 240;
 
-	Cvar_RegisterVariable (&gl_ztrick);
 	
 	vid.maxwarpwidth = width;
 	vid.maxwarpheight = height;

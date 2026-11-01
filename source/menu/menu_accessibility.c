@@ -28,6 +28,10 @@ char 			*screenflash_string;
 char 			*monthspoof_string;
 char 			*crosshairdot_string;
 char 			*meleedive_string;
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+extern cvar_t in_pressure;
+static char *pressure_string;
+#endif
 #ifdef PLATFORM_SUPPORTS_LIGHTBAR
 static char     *lightbar_string;
 #endif
@@ -109,6 +113,13 @@ static void Menu_Accessibility_ApplyLightbar(void)
 }
 #endif
 
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+static void Menu_Accessibility_ApplyPressure(void)
+{
+	Cvar_SetValue("in_pressure", !in_pressure.value);
+}
+#endif
+
 void Menu_Accessibility_ApplySettings (void)
 {
 	// no op
@@ -155,6 +166,9 @@ void Menu_Accessibility_SetStrings (void)
 	}
 
 	meleedive_string = cl_meleedive.value ? "ENABLED" : "DISABLED";
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+	pressure_string = in_pressure.value ? "ENABLED" : "DISABLED";
+#endif
 #ifdef PLATFORM_SUPPORTS_LIGHTBAR
 	lightbar_string = in_lightbar.value ? "ENABLED" : "DISABLED";
 #endif
@@ -250,17 +264,16 @@ void Menu_Accessibility_Draw (void)
 	Menu_DrawButton(8, 7, "SPRINT MELEE DIVE", "Dive when Melee while Sprinting.", Menu_Accessibility_ApplyMeleeDive);
 	Menu_DrawOptionButton(8, meleedive_string);
 
+	int option = 9;
 #ifdef PLATFORM_SUPPORTS_LIGHTBAR
-	Menu_DrawButton(9, 8, "GAMEPAD LIGHTBAR", "Enable Light Bar feedback.", Menu_Accessibility_ApplyLightbar);
-	Menu_DrawOptionButton(9, lightbar_string);
+	Menu_DrawButton(option, option - 1, "GAMEPAD LIGHTBAR", "Enable Light Bar feedback.", Menu_Accessibility_ApplyLightbar);
+	Menu_DrawOptionButton(option++, lightbar_string);
 #endif
-
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+	Menu_DrawButton(option, option - 1, "ANALOG BUTTONS", "Enables soft/hold press of inputs in place of tap/hold.", Menu_Accessibility_ApplyPressure);
+	Menu_DrawOptionButton(option++, pressure_string);
+#endif
 	Menu_DrawDivider(-2.5);
-#ifdef PLATFORM_SUPPORTS_LIGHTBAR
-	Menu_DrawButton(-2, 9, "APPLY", "Save & Apply Settings.", Menu_Accessibility_ApplySettings);
-	Menu_DrawButton(-1, 10, "BACK", "Return to Configuration Menu.", Menu_Configuration_Set);
-#else
-	Menu_DrawButton(-2, 8, "APPLY", "Save & Apply Settings.", Menu_Accessibility_ApplySettings);
-	Menu_DrawButton(-1, 9, "BACK", "Return to Configuration Menu.", Menu_Configuration_Set);
-#endif
+	Menu_DrawButton(-2, option - 1, "APPLY", "Save & Apply Settings.", Menu_Accessibility_ApplySettings);
+	Menu_DrawButton(-1, option, "BACK", "Return to Configuration Menu.", Menu_Configuration_Set);
 }

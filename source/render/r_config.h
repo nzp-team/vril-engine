@@ -1,0 +1,50 @@
+#ifndef R_CONFIG_H
+#define R_CONFIG_H
+
+#ifndef R_ALIAS_LIGHT_DIVISOR
+#define R_ALIAS_LIGHT_DIVISOR 255
+#endif
+#ifndef R_ALIAS_BRIGHTNESS
+#define R_ALIAS_BRIGHTNESS 60
+#endif
+#ifndef R_ALIAS_LIMB_BRIGHTNESS
+#define R_ALIAS_LIMB_BRIGHTNESS 48
+#endif
+#ifndef R_ALIAS_LIGHT_MAX
+#define R_ALIAS_LIGHT_MAX 0
+#endif
+#ifndef R_NEAR_CLIP
+#define R_NEAR_CLIP 4
+#endif
+#ifndef R_DEFAULT_VSYNC
+#define R_DEFAULT_VSYNC "1"
+#endif
+#ifndef R_DEFAULT_WATERALPHA
+#define R_DEFAULT_WATERALPHA "1"
+#endif
+
+#ifndef R_WORLD_VERTEX_SIZE
+#define R_WORLD_VERTEX_SIZE 7
+#define R_WORLD_POSITION 0
+#define R_WORLD_UV 3
+#define R_WORLD_LIGHTMAP_UV 5
+#endif
+#ifndef R_ALIAS_VERTEX_TYPE
+#define R_ALIAS_VERTEX_TYPE byte
+#endif
+
+#ifndef R_LIGHTMAP_DARK_LIGHTS
+#define R_LIGHTMAP_DARK_LIGHTS 0
+#endif
+#ifndef R_DEFAULT_LIGHTMAP_FASTALLOC
+#define R_DEFAULT_LIGHTMAP_FASTALLOC "0"
+#endif
+
+#ifndef R_KEEP_SPRITES
+#define R_KEEP_SPRITES 0
+#endif
+#ifndef R_KEEP_ALIAS_TEXTURES
+#define R_KEEP_ALIAS_TEXTURES 1
+#endif
+
+#endif

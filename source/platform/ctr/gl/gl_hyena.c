@@ -23,6 +23,7 @@
 
 #include <3ds.h>
 
+static float hyena_blend_alpha = 1;
 static int hyena_vertex_mode;
 static vec3_t hyena_translation;
 static vec3_t hyena_scale;
@@ -39,7 +40,7 @@ Hyena_SetColor(float r, float g, float b, float a)
     hyena_color[1] = g;
     hyena_color[2] = b;
     hyena_color[3] = a;
-    glColor4f(r, g, b, a);
+    glColor4f(r, g, b, a * hyena_blend_alpha);
 }
 
 void
@@ -132,6 +133,15 @@ Hyena_DrawVertices(vertex_t * vertices, int count, int texture_precision, int ve
             Hyena_SubmitVertex(&vertices[0], textured);
             Hyena_SubmitVertex(&vertices[i], textured);
             Hyena_SubmitVertex(&vertices[i + 1], textured);
+        }
+        glEnd();
+    }
+    else if (hyena_vertex_mode == HYE_TRIANGLES) {
+        glBegin(GL_TRIANGLES);
+        for (i = 0; i + 2 < count; i += 3) {
+            Hyena_SubmitVertex(&vertices[i], textured);
+            Hyena_SubmitVertex(&vertices[i + 1], textured);
+            Hyena_SubmitVertex(&vertices[i + 2], textured);
         }
         glEnd();
     }
@@ -387,6 +397,7 @@ static GLenum
 Hyena_ResolveBlend(int blend)
 {
     switch (blend) {
+        case HYE_ZERO: return GL_ZERO;
         case HYE_SRC_ALPHA:
             return GL_SRC_ALPHA;
 
@@ -414,13 +425,20 @@ Hyena_ResolveBlend(int blend)
 void
 Hyena_SetBlendFunction(int source, int destination)
 {
+    hyena_blend_alpha = 1;
     glBlendFunc(Hyena_ResolveBlend(source), Hyena_ResolveBlend(destination));
 }
-
 void
 Hyena_SetDepthRange(float near_value, float far_value)
 {
-    glDepthRange(near_value, far_value);
+    double range = gldepthmax - gldepthmin;
+    glDepthRange(gldepthmin + near_value * range, gldepthmin + far_value * range);
+}
+
+void
+Hyena_ResetDepthRange(void)
+{
+    glDepthRange(gldepthmin + 0.3f * (gldepthmax - gldepthmin), gldepthmax);
 }
 
 void
@@ -547,10 +565,11 @@ Hyena_UpdateBuffer(hyena_buffer_t * buffer, const void * data, size_t size)
     // Static storage owns its bytes; streamed indices keep the caller's frame allocation.
     buffer->owned = buffer->target == HYE_ARRAY_BUFFER;
     if (buffer->owned) {
-        buffer->data = linearAlloc(size);
-        if (!buffer->data)
+        buffer->data = size ? linearAlloc(size) : NULL;
+        if (size && !buffer->data)
             Sys_Error("Hyena_UpdateBuffer: out of memory");
-        memcpy(buffer->data, data, size);
+        if (size && data)
+            memcpy(buffer->data, data, size);
     } else {
         buffer->data = (void *) data;
     }
@@ -794,11 +813,10 @@ Hyena_DrawArrays(int mode, const hyena_arrays_t * arrays, int count)
     if (arrays->scale != 0 && arrays->scale != 1)
         glPopMatrix();
 } /* Hyena_DrawArrays */
-
 void
 Hyena_DepthFunction(int function)
 {
-    glDepthFunc(function == HYE_EQUAL ? GL_EQUAL : GL_LEQUAL);
+    glDepthFunc(function == HYE_EQUAL ? GL_EQUAL : function == HYE_GEQUAL || gldepthmin > gldepthmax ? GL_GEQUAL : GL_LEQUAL);
 }
 
 void
@@ -832,7 +850,7 @@ Hyena_InvalidateTextureBinding(void)
 void
 Hyena_SetCurrentColor(float r, float g, float b, float a)
 {
-    glColor4f(r, g, b, a);
+    glColor4f(r, g, b, a * hyena_blend_alpha);
 }
 
 qboolean
@@ -920,3 +938,83 @@ Hyena_UnmapBuffer(hyena_buffer_t * buffer)
 {
     (void) buffer;
 }
+
+void Hyena_SelectDrawBuffer(qboolean front)
+{
+	(void)front;
+}
+
+void Hyena_SelectReadBuffer(qboolean front)
+{
+	(void)front;
+}
+
+static int hyena_matrix_mode;
+void Hyena_MatrixMode(int mode) { hyena_matrix_mode = mode; glMatrixMode(mode == HYE_PROJECTION ? GL_PROJECTION : GL_MODELVIEW); }
+void Hyena_LoadIdentity(void) { glLoadIdentity(); }
+void Hyena_LoadMatrix(const float *matrix) { glLoadMatrixf(matrix); }
+void Hyena_GetMatrix(float *matrix) { glGetFloatv(hyena_matrix_mode == HYE_PROJECTION ? GL_PROJECTION_MATRIX : GL_MODELVIEW_MATRIX, matrix); }
+void Hyena_PushMatrix(void) { glPushMatrix(); }
+void Hyena_PopMatrix(void) { glPopMatrix(); }
+void Hyena_MatrixTranslate(float x, float y, float z) { glTranslatef(x, y, z); }
+void Hyena_MatrixScale(float x, float y, float z) { glScalef(x, y, z); }
+void Hyena_MatrixRotate(float degrees, float x, float y, float z) { glRotatef(degrees, x, y, z); }
+void Hyena_UpdateMatrices(void) { }
+void Hyena_Frustum(float left, float right, float bottom, float top, float near_value, float far_value)
+{
+    glFrustum(left, right, bottom, top, near_value, far_value);
+}
+void Hyena_Viewport(int x, int y, int width, int height) { glViewport(x, y, width, height); }
+void Hyena_ClipFrustum(float fovy, float aspect, float near_value) { (void)fovy; (void)aspect; (void)near_value; }
+void Hyena_CullFace(qboolean back) { glCullFace(back ? GL_BACK : GL_FRONT); }
+void Hyena_ClearColor(float red, float green, float blue, float alpha) { glClearColor(red, green, blue, alpha); }
+void Hyena_Clear(qboolean color, qboolean depth, qboolean stencil)
+{
+    glClear((color ? GL_COLOR_BUFFER_BIT : 0) | (depth ? GL_DEPTH_BUFFER_BIT : 0) | (stencil ? GL_STENCIL_BUFFER_BIT : 0));
+}
+void Hyena_DepthBounds(float near_value, float far_value)
+{
+    gldepthmin = near_value;
+    gldepthmax = far_value;
+}
+void Hyena_PerspectiveCorrection(qboolean enabled) { glHint(GL_PERSPECTIVE_CORRECTION_HINT, enabled ? GL_NICEST : GL_FASTEST); }
+void Hyena_BlendConstant(float alpha)
+{
+    hyena_blend_alpha = alpha;
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+void Hyena_Finish(void) { glFinish(); }
+qboolean Hyena_ReadPixels(int x, int y, int width, int height, byte *rgba)
+{
+    glReadPixels(x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+    return true;
+}
+qboolean Hyena_DrawMorphMesh(const hyena_morph_mesh_t *mesh, const byte *first, const byte *second, float blend)
+{
+    (void)mesh; (void)first; (void)second; (void)blend;
+    return false;
+}
+void Hyena_AddLightTime(double seconds) { (void)seconds; }
+
+void Hyena_InitTextureStorage(void) { }
+size_t Hyena_TextureBudget(void) { return 0; }
+int Hyena_PreferredPaletteBits(void) { return 8; }
+
+qboolean Hyena_MorphMeshesSupported(void) { return false; }
+
+void *Hyena_AllocateTexturePixels(size_t bytes) { return malloc(bytes); }
+void Hyena_FreeTexturePixels(void *pixels) { free(pixels); }
+int Hyena_PreferredLightmapSize(void) { return 256; }
+hyena_texture_format_t Hyena_PreferredLightmapFormat(void) { return HYE_TEXTURE_RGBA8; }
+unsigned *Hyena_LightmapScratch(int count) { (void)count; return NULL; }
+qboolean Hyena_AccumulateLightmap(unsigned *dest, const byte *source, int count, unsigned scale, qboolean add)
+{
+    (void)dest; (void)source; (void)count; (void)scale; (void)add;
+    return false;
+}
+void Hyena_PrepareTextureUpdate(int texture) { (void)texture; }
+void Hyena_ClipArrays(const hyena_arrays_t *source, hyena_arrays_t *clipped) { *clipped = *source; }
+void Hyena_BeginModelClipping(void) { }
+void Hyena_EndModelClipping(void) { }
+
+void Hyena_ClearMorphMeshes(void) {  }

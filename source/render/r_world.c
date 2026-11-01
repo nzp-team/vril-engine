@@ -82,7 +82,7 @@ R_UploadWorldCachePage(int page, const world_vertex_t * vertices, int count)
         Hyena_UnmapBuffer(cached->vertices);
         Hyena_UnmapBuffer(cached->lightmap);
     } else {
-        cached->vertices = Hyena_CreateBuffer(HYE_ARRAY_BUFFER, vertices, count * sizeof(*vertices));
+        Hyena_UnmapBuffer(cached->vertices);
         if (Hyena_NeedsColorArray()) {
             // Immutable white colors avoid rebuilding a picaGL color stream for each group.
             byte * colors = malloc(count * 4);
@@ -170,8 +170,8 @@ R_CopyWorldSurfaceVertices(const msurface_t * surface, world_vertex_t * vertices
             // Some loaders retain only diffuse UVs. Derive atlas UVs once, when building the cache.
             float s = DotProduct(vertices[i].xyz, surface->texinfo->vecs[0]) + surface->texinfo->vecs[0][3];
             float t = DotProduct(vertices[i].xyz, surface->texinfo->vecs[1]) + surface->texinfo->vecs[1][3];
-            vertices[i].lightmap_uv[0] = (s - surface->texturemins[0] + surface->light_s * 16 + 8) / (128 * 16.0f);
-            vertices[i].lightmap_uv[1] = (t - surface->texturemins[1] + surface->light_t * 16 + 8) / (128 * 16.0f);
+            vertices[i].lightmap_uv[0] = (s - surface->texturemins[0] + surface->light_s * 16 + 8) / (r_lightmap_size * 16.0f);
+            vertices[i].lightmap_uv[1] = (t - surface->texturemins[1] + surface->light_t * 16 + 8) / (r_lightmap_size * 16.0f);
         }
     }
     return poly->numverts;
@@ -248,8 +248,8 @@ R_DrawLightmapSurface(msurface_t * surface)
         memcpy(&count, (const byte *) poly + world_layout.clipped_count_offset, sizeof(count));
     }
     if (uv_offset < 0) {
-        float sscale = surface->texinfo->texture->width / (128 * 16.0f);
-        float tscale = surface->texinfo->texture->height / (128 * 16.0f);
+        float sscale = surface->texinfo->texture->width / (r_lightmap_size * 16.0f);
+        float tscale = surface->texinfo->texture->height / (r_lightmap_size * 16.0f);
         uv_offset = world_layout.uv_offset;
         Hyena_TextureTransform(sscale, tscale,
           sscale * (-surface->texturemins[0] + surface->light_s * 16 + 8) / surface->texinfo->texture->width,
@@ -477,7 +477,12 @@ R_BuildWorldBatch(const r_world_layout_t * layout)
 
     R_CreateWorldCache(world_cache_pages);
     for (page = 0; page < world_cache_pages; ++page) {
-        vertices = malloc(page_vertices[page] * sizeof(*vertices));
+        if (world_separate_arrays) {
+            world_pages[page].vertices = Hyena_CreateBuffer(HYE_ARRAY_BUFFER, NULL,
+                page_vertices[page] * sizeof(*vertices));
+            vertices = Hyena_MapBuffer(world_pages[page].vertices);
+        } else
+            vertices = malloc(page_vertices[page] * sizeof(*vertices));
         if (!vertices)
             Sys_Error("R_BuildWorldBatch: out of vertex memory\n");
         for (i = 0; i < world_cache_surfaces; ++i) {
@@ -490,7 +495,8 @@ R_BuildWorldBatch(const r_world_layout_t * layout)
                 Sys_Error("R_BuildWorldBatch: surface vertex count changed\n");
         }
         R_UploadWorldCachePage(page, vertices, page_vertices[page]);
-        free(vertices);
+        if (!world_separate_arrays)
+            free(vertices);
     }
     free(page_vertices);
 } /* R_BuildWorldBatch */

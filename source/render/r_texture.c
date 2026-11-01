@@ -50,7 +50,8 @@ Hyena_CreateTexture(const hyena_texture_desc_t * desc)
 
     if (!desc || !desc->identifier || !desc->identifier[0] || !desc->pixels ||
       desc->width <= 0 || desc->height <= 0 ||
-      (desc->format != HYE_TEXTURE_INDEX8 && desc->format != HYE_TEXTURE_RGBA8) ||
+      (desc->format != HYE_TEXTURE_INDEX8 && desc->format != HYE_TEXTURE_RGBA8 &&
+        !(desc->lightmap && desc->format == HYE_TEXTURE_PLANAR_RGB8)) ||
       (desc->palette && desc->palette_bpp != 3 && desc->palette_bpp != 4))
         return -1;
 

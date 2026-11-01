@@ -35,3 +35,4 @@ extern bool new3ds_flag;
 // Used to determine if the user is using the Circle Pad Pro.
 // on OLD CTR
 extern bool circlepadpro_flag;
+#define RENDERER_MODEL_HEADER "render/r_model.h"

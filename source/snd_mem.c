@@ -78,7 +78,7 @@ void ResampleSfx (sfx_t *sfx, int inrate, int inwidth, byte *data)
 			if (inwidth == 2)
 				sample = LittleShort ( ((short *)data)[srcsample] );
 			else
-				sample = (int)( (unsigned char)(data[srcsample]) - 128) << 8;
+				sample = (int)( (unsigned char)(data[srcsample]) - 128) * 256;
 			if (sc->width == 2)
 				((short *)sc->data)[i] = sample;
 			else
@@ -99,7 +99,9 @@ sfxcache_t *S_LoadSound (sfx_t *s)
     char	namebuffer[256];
 	byte	*data;
 	wavinfo_t	info;
-	int		len;
+	int		len, length;
+	FILE	*file;
+	qboolean	allocated = false;
 	float	stepscale;
 	sfxcache_t	*sc;
 	byte	stackbuf[1*1024];		// avoid dirtying the cache heap
@@ -115,27 +117,54 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 
 //	Con_Printf ("loading %s\n",namebuffer);
 
-	if (!(data = COM_LoadStackFile(namebuffer, stackbuf, sizeof(stackbuf))))
+	length = COM_FOpenFile(namebuffer, &file);
+	if (!file)
 	{
 		Con_Printf ("Couldn't load %s\n", namebuffer);
 		return NULL;
+	}
+	data = length + 1 <= sizeof(stackbuf) ? stackbuf : malloc(length + 1);
+	if (data)
+	{
+		allocated = data != stackbuf;
+		if (fread(data, 1, length, file) != length) {
+			fclose(file);
+			if (allocated)
+				free(data);
+			return NULL;
+		}
+		data[length] = 0;
+		fclose(file);
+	}
+	else
+	{
+		fclose(file);
+		data = COM_LoadStackFile(namebuffer, stackbuf, sizeof(stackbuf));
+		if (!data)
+			return NULL;
 	}
 
 	info = GetWavinfo (s->name, data, com_filesize);
 	if (info.channels != 1)
 	{
 		Con_Printf ("%s is a stereo sample\n",s->name);
+		if (allocated)
+			free(data);
 		return NULL;
 	}
 
 	stepscale = (float)info.rate / shm->speed;
 	len = info.samples / stepscale;
 
-	len = len * info.width * info.channels;
+	len = len * (loadas8bit.value ? 1 : info.width) * info.channels;
 
 	sc = Cache_Alloc ( &s->cache, len + sizeof(sfxcache_t), s->name);
 	if (!sc)
+	{
+		if (allocated)
+			free(data);
 		return NULL;
+	}
 
 	sc->length = info.samples;
 	sc->loopstart = info.loopstart;
@@ -144,6 +173,8 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 	sc->stereo = info.channels;
 
 	ResampleSfx (s, sc->speed, sc->width, data + info.dataofs);
+	if (allocated)
+		free(data);
 
 	return sc;
 }

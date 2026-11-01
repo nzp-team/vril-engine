@@ -45,7 +45,7 @@ endif
 
 ENGINE_SOURCES := $(wildcard source/*.c) $(wildcard source/menu/*.c) $(wildcard source/qcvm/*.c) $(wildcard source/render/*.c) $(wildcard source/tests/*.c)
 SDL_SOURCES := $(wildcard source/platform/sdl/*.c) $(wildcard source/platform/sdl/gl/*.c)
-SOURCES := $(ENGINE_SOURCES) $(SDL_SOURCES)
+SOURCES := $(filter-out source/render/r_model_soft.c,$(ENGINE_SOURCES)) $(SDL_SOURCES)
 OBJECTS := $(patsubst source/%.c,$(BUILD)/%.o,$(SOURCES))
 
 .PHONY: all clean run

@@ -1,0 +1,46 @@
+#ifndef _VU1_LAYOUT_H
+#define _VU1_LAYOUT_H
+
+#define VU_VERTICES 84
+#define VU_TRIANGLES 64
+#define VU_MATRIX 0
+#define VU_SCALE 4
+#define VU_OFFSET 5
+#define VU_COUNTS 6
+#define VU_GIFTAG 7
+#define VU_FOG 8
+#define VU_UV 9
+#define VU_COLOR_SCALE 10
+#define VU_PLANES 11
+#define VU_FOG_COLOR 17
+#define VU_ROUNDING 18
+#define VU_PASSES 19
+#define VU_INDICES 28
+#define VU_LIGHTMAP_INDICES 68
+#define VU_ALIAS_PARAMS 92
+#define VU_COLOR 93
+#define VU_SCRATCH 94
+#define VU_BATCH_GIFTAG 95
+#define VU_INPUT 96
+#define VU_ENTRY 348
+#define VU_BATCH_COUNTS 349
+#define VU_STRIP_GIFTAG 350
+#define VU_WORK 352
+#define VU_STREAM_CLIP 400
+#define VU_PROJECTED 513
+#define VU_WORLD_PASS_VERTICES ((VU_PROJECTED - VU_WORK) / 3)
+#define VU_CLIP0 608
+#define VU_FOG_VERTICES 640
+#define VU_CLIP1 656
+#define VU_CLIP_FOG 684
+#define VU_PACKET0 704
+#define VU_PACKET1 864
+#define VU_PACKET_TOGGLE 1568
+#define VU_FLAG_ALIAS 0x8000
+#define VU_FLAG_STREAM 0x4000
+#define VU_FLAG_BATCH 0x2000
+#define VU_FLAG_INDEXED 0x1000
+#define VU_FLAG_SINGLE 0x0800
+#define VU_FLAG_STRIPS 0x0400
+
+#endif

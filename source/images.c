@@ -278,7 +278,6 @@ image_t Image_LoadImage(char* filename, int image_format, int filter, bool keep,
 }
 
 // used on PSP
-#ifdef __PSP__
 /*
 =============
 loadrgbafrompal
@@ -320,6 +319,11 @@ int loadpcxas4bpp (char* filename, int filter)
 
 	sprintf(name, "%s.pcx", filename);
 	tex_filebase (name, texname);
+	int cached = Hyena_FindTexture(texname);
+	if (cached >= 0) {
+		Hyena_KeepTexture(cached);
+		return cached;
+	}
 	COM_FOpenFile(name, &f);
 	if (!f) {
 		Con_DPrintf("Could not load PCX file %s\n", name);
@@ -410,7 +414,6 @@ int loadpcxas4bpp (char* filename, int filter)
 
 	return texture;
 }
-#endif
 
 byte findclosestpalmatch(byte r, byte g, byte b, byte a)
 {

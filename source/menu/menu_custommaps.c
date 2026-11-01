@@ -129,7 +129,7 @@ int Pak_ReadMap(PakDir *p, char *out_name, size_t out_size)
 
 			// strip "maps/"
 			const char *filename = e->name + 5;
-			strlcpy(out_name, filename, out_size);
+			Q_strlcpy(out_name, filename, out_size);
 			return 1;
 		}
     }
@@ -181,7 +181,7 @@ int Dir_Read(GlobalDir *d, char *out_name, size_t out_size)
 		return 0;
 	}
 
-    strlcpy(out_name, d->dirent.d_name, out_size);
+    Q_strlcpy(out_name, d->dirent.d_name, out_size);
     return 1;
 #else
     struct dirent *dp = readdir(d->dir);
@@ -189,7 +189,7 @@ int Dir_Read(GlobalDir *d, char *out_name, size_t out_size)
 		return 0;
 	}
 
-	strlcpy(out_name, dp->d_name, out_size);
+	Q_strlcpy(out_name, dp->d_name, out_size);
     return 1;
 #endif
 }

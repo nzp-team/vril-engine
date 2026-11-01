@@ -24,12 +24,25 @@
 #ifndef _RENDER_LIGHT_H_
 #define _RENDER_LIGHT_H_
 
+typedef qboolean (*lightmap_accumulate_t)(unsigned *dest, const byte *source, int count, unsigned scale, qboolean add);
+
 void
 R_AnimateLight(void);
 void
 R_MarkLights(dlight_t * light, int bit, mnode_t * node);
 void
 R_PushDlights(void);
+void
+R_AddSurfaceDynamicLights(msurface_t *surf, unsigned *blocklights, qboolean psp_lighting);
+void
+R_BuildLightmapValues(msurface_t *surf, unsigned *blocklights, qboolean psp_lighting, lightmap_accumulate_t accumulate);
+qboolean
+R_ReuseDynamicLightmap(msurface_t *surface, unsigned bits);
+extern vec3_t lightcolor;
+void R_ClearEntityLights(void);
+int R_EntityLight(vec3_t origin);
+qboolean R_AliasFullbright(const entity_t *entity);
+void R_SetupAliasLighting(entity_t *entity);
 int
 R_LightPoint(vec3_t p);
 

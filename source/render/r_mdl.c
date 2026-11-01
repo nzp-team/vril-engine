@@ -20,6 +20,8 @@ extern entity_t * currententity;
 
 static short * r_alias_positions;
 static int r_alias_vertex_capacity;
+static float *r_alias_shadow_positions;
+static int r_alias_shadow_capacity;
 
 typedef struct alias_topology_s {
     const void *              key;
@@ -35,10 +37,12 @@ static alias_topology_t * r_alias_topologies;
 
 typedef struct alias_pose_s {
     const trivertx_t *    source;
+    size_t               bytes;
     hyena_buffer_t *      vertices;
     struct alias_pose_s * next;
 } alias_pose_t;
 typedef struct alias_arrays_s {
+    const void *            key;
     const int *             commands;
     hyena_buffer_t *        uvs, * indices;
     alias_pose_t *          poses;
@@ -129,12 +133,13 @@ R_DrawAliasBatch(const alias_batch_t * batch)
     // The backend supplies a memory limit; the renderer owns pose keys and eviction.
     if (budget) {
         for (cache = alias_arrays; cache; cache = cache->next)
-            if (cache->commands == batch->commands)
+            if (cache->key == batch->key && cache->commands == batch->commands)
                 break;
         if (!cache) {
             cache = calloc(1, sizeof(*cache));
             if (!cache)
                 Sys_Error("R_DrawAliasBatch: out of memory");
+            cache->key = batch->key;
             cache->commands = batch->commands;
             cache->uvs      = Hyena_CreateBuffer(HYE_ARRAY_BUFFER, batch->uvs, batch->num_vertices * 2 * sizeof(float));
             cache->indices  = Hyena_CreateBuffer(HYE_ARRAY_BUFFER, batch->indices,
@@ -181,6 +186,7 @@ R_DrawAliasBatch(const alias_batch_t * batch)
                 if (!pose)
                     Sys_Error("R_DrawAliasBatch: out of pose memory");
                 pose->source      = batch->pose1;
+                pose->bytes       = size;
                 pose->vertices    = Hyena_CreateBuffer(HYE_ARRAY_BUFFER, positions, size);
                 pose->next        = cache->poses;
                 cache->poses      = pose;
@@ -211,12 +217,33 @@ R_ClearAliasTopologyCache(void)
     r_alias_topologies = NULL;
 }
 
+static void R_InvalidateAliasArrays(const void *key)
+{
+    alias_arrays_t **link = &alias_arrays;
+    while (*link) {
+        alias_arrays_t *cache = *link;
+        alias_pose_t *pose, *next;
+        if (cache->key != key) {
+            link = &cache->next;
+            continue;
+        }
+        *link = cache->next;
+        for (pose = cache->poses; pose; pose = next) {
+            next = pose->next;
+            alias_pose_bytes -= pose->bytes;
+            Hyena_DestroyBuffer(pose->vertices);
+            free(pose);
+        }
+        Hyena_DestroyBuffer(cache->uvs);
+        Hyena_DestroyBuffer(cache->indices);
+        free(cache);
+    }
+}
+
 static alias_topology_t *
-R_AliasTopology(const int * commands)
+R_AliasTopology(const void *key, const int *commands, const unsigned short *remap, int vertices)
 {
     alias_topology_t * topology;
-    const void * key = currententity && currententity->model ?
-      (const void *) currententity->model : (const void *) commands;
     const int * scan;
     int count, vertex_base = 0, index = 0;
 
@@ -226,6 +253,7 @@ R_AliasTopology(const int * commands)
         if (topology->commands == commands)
             return topology;
 
+        R_InvalidateAliasArrays(key);
         free(topology->uvs);
         free(topology->indices);
         topology->uvs          = NULL;
@@ -249,6 +277,8 @@ R_AliasTopology(const int * commands)
         topology->num_vertices += count;
         topology->num_indices  += 3 * (count - 2);
     }
+    if (remap)
+        topology->num_vertices = vertices;
     if (!topology->num_vertices)
         return topology;
     topology->uvs     = malloc(topology->num_vertices * 2 * sizeof(*topology->uvs));
@@ -261,8 +291,10 @@ R_AliasTopology(const int * commands)
 
         if (fan)
             count = -count;
-        memcpy(topology->uvs + vertex_base * 2, commands,
-          count * 2 * sizeof(*topology->uvs));
+        for (i = 0; i < count; i++) {
+            int vertex = remap ? remap[vertex_base + i] : vertex_base + i;
+            memcpy(topology->uvs + vertex * 2, commands + i * 2, 2 * sizeof(*topology->uvs));
+        }
         for (i = 0; i < count - 2; ++i) {
             if (fan) {
                 topology->indices[index++] = vertex_base;
@@ -276,6 +308,9 @@ R_AliasTopology(const int * commands)
         commands    += count * 2;
         vertex_base += count;
     }
+    if (remap)
+        for (index = 0; index < topology->num_indices; index++)
+            topology->indices[index] = remap[topology->indices[index]];
     return topology;
 } /* R_AliasTopology */
 
@@ -283,7 +318,7 @@ static void
 R_BuildAliasBatch(
     const int * commands, const trivertx_t * pose1, const trivertx_t * pose2, float blend, alias_batch_t * batch)
 {
-    alias_topology_t * topology = R_AliasTopology(commands);
+    alias_topology_t * topology = R_AliasTopology(batch->key, commands, batch->remap, batch->num_vertices);
     int i;
 
     if (!topology->num_vertices)
@@ -327,6 +362,7 @@ R_DrawAliasCommands(const int * commands, const trivertx_t * pose1, const triver
     alias_batch_t batch;
 
     memset(&batch, 0, sizeof(batch));
+    batch.key           = commands;
     batch.commands      = commands;
     batch.pose1         = pose1;
     batch.pose2         = pose2;
@@ -337,3 +373,185 @@ R_DrawAliasCommands(const int * commands, const trivertx_t * pose1, const triver
         R_BuildAliasBatch(commands, pose1, pose2, blend, &batch);
     R_DrawAliasBatch(&batch);
 }
+
+int R_CompactAliasVertices(const int *commands, const int *order, int count,
+    unsigned short *remap, int *compact)
+{
+    const int *scan = commands;
+    int capacity = 1, vertices = 0, index = 0, primitive, i;
+    int *storage, *slots, *uvs;
+    while (capacity < count * 2)
+        capacity *= 2;
+    storage = malloc((capacity + count * 2) * sizeof(*storage));
+    if (!storage)
+        return 0;
+    slots = storage;
+    uvs = slots + capacity;
+    memset(slots, 255, capacity * sizeof(*slots));
+    while ((primitive = *scan++) != 0) {
+        if (primitive < 0)
+            primitive = -primitive;
+        if (primitive < 3 || primitive > count - index)
+            Sys_Error("Invalid alias commands");
+        for (i = 0; i < primitive; i++, index++, scan += 2) {
+            unsigned int hash = (unsigned int)order[index] * 16777619u;
+            int slot, previous;
+            hash = (hash ^ (unsigned int)scan[0]) * 16777619u;
+            hash = (hash ^ (unsigned int)scan[1]) * 16777619u;
+            slot = hash & (capacity - 1);
+            while ((previous = slots[slot]) != -1) {
+                if (order[previous] == order[index] && uvs[previous * 2] == scan[0] &&
+                    uvs[previous * 2 + 1] == scan[1])
+                    break;
+                slot = (slot + 1) & (capacity - 1);
+            }
+            if (previous == -1) {
+                slots[slot] = index;
+                compact[vertices] = order[index];
+                remap[index] = vertices++;
+            } else
+                remap[index] = remap[previous];
+            memcpy(uvs + index * 2, scan, 2 * sizeof(*uvs));
+        }
+    }
+    if (index != count)
+        Sys_Error("Invalid alias vertex count");
+    free(storage);
+    return vertices;
+}
+
+static int R_EqualAliasPoses(const trivertx_t *first, const trivertx_t *second,
+    const int *order, int count)
+{
+    int i;
+    for (i = 0; i < count; i++) {
+        int vertex = order ? order[i] : i;
+        if (memcmp(first + vertex, second + vertex, sizeof(*first)))
+            return 0;
+    }
+    return 1;
+}
+
+int R_StoreAliasPoses(const void *header, const trivertx_t * const *poses,
+    int pose_count, int vertex_count, const int *order, int *posemap)
+{
+    unsigned int *hashes = NULL;
+    unsigned short *unique = NULL, *mapping = NULL, *slots = NULL;
+    int capacity = 1, physical = pose_count, pose, vertex;
+    trivertx_t *data;
+    *posemap = 0;
+    if (pose_count > 1 && pose_count < 65535) {
+        while (capacity < pose_count * 2)
+            capacity *= 2;
+        hashes = malloc(pose_count * (sizeof(*hashes) + 4) + capacity * 2);
+        if (hashes) {
+            unique = (unsigned short *)(hashes + pose_count);
+            mapping = unique + pose_count;
+            slots = mapping + pose_count;
+            memset(slots, 255, capacity * sizeof(*slots));
+            physical = 0;
+            for (pose = 0; pose < pose_count; pose++) {
+                unsigned int hash = 2166136261u;
+                int slot;
+                for (vertex = 0; vertex < vertex_count; vertex++) {
+                    const byte *bytes = (const byte *)&poses[pose][order ? order[vertex] : vertex];
+                    size_t i;
+                    for (i = 0; i < sizeof(trivertx_t); i++)
+                        hash = (hash ^ bytes[i]) * 16777619u;
+                }
+                slot = hash & (capacity - 1);
+                while (slots[slot] != 65535) {
+                    int match = slots[slot];
+                    if (hashes[match] == hash && R_EqualAliasPoses(poses[pose], poses[unique[match]], order, vertex_count))
+                        break;
+                    slot = (slot + 1) & (capacity - 1);
+                }
+                if (slots[slot] == 65535) {
+                    hashes[physical] = hash;
+                    unique[physical] = pose;
+                    slots[slot] = physical++;
+                }
+                mapping[pose] = slots[slot];
+            }
+            if ((size_t)(pose_count - physical) * vertex_count * sizeof(trivertx_t) <=
+                pose_count * sizeof(*mapping) + 32)
+                physical = pose_count;
+        }
+    }
+    if (physical < pose_count) {
+        unsigned short *stored = Hunk_Alloc(pose_count * sizeof(*stored));
+        memcpy(stored, mapping, pose_count * sizeof(*stored));
+        *posemap = (byte *)stored - (const byte *)header;
+    }
+    data = Hunk_Alloc(physical * vertex_count * sizeof(*data));
+    for (pose = 0; pose < physical; pose++) {
+        const trivertx_t *source = poses[physical < pose_count ? unique[pose] : pose];
+        for (vertex = 0; vertex < vertex_count; vertex++)
+            data[pose * vertex_count + vertex] = source[order ? order[vertex] : vertex];
+    }
+    free(hashes);
+    return (byte *)data - (const byte *)header;
+}
+
+trivertx_t *R_AliasPoseData(const void *header, int offset, int stride, int map, int pose)
+{
+    if (map)
+        pose = ((const unsigned short *)((const byte *)header + map))[pose];
+    return (trivertx_t *)((const byte *)header + offset) + pose * stride;
+}
+
+void R_DrawAliasMesh(const model_t *model, const int *commands, const unsigned short *remap,
+    int vertices, const trivertx_t *first, const trivertx_t *second, float blend)
+{
+    alias_batch_t batch = {0};
+    if (second && blend == 1) {
+        first = second;
+        second = NULL;
+    } else if (second && (first == second || blend == 0))
+        second = NULL;
+    batch.key = model;
+    batch.commands = commands;
+    batch.remap = remap;
+    batch.num_vertices = vertices;
+    batch.pose1 = first;
+    batch.pose2 = second;
+    batch.blend = blend;
+    R_BuildAliasBatch(commands, first, second, blend, &batch);
+    R_DrawAliasBatch(&batch);
+}
+
+void R_DrawAliasShadowMesh(const void *key, const int *commands, const unsigned short *remap,
+    int vertices, const trivertx_t *pose, const float *scale, const float *origin,
+    const float *direction, float height)
+{
+    alias_topology_t *topology = R_AliasTopology(key, commands, remap, vertices);
+    hyena_arrays_t arrays = {0};
+    int i;
+    if (!topology->num_indices)
+        return;
+    if (topology->num_vertices > r_alias_shadow_capacity) {
+        float *positions = realloc(r_alias_shadow_positions, topology->num_vertices * 3 * sizeof(*positions));
+        if (!positions)
+            Sys_Error("Out of alias shadow memory");
+        r_alias_shadow_positions = positions;
+        r_alias_shadow_capacity = topology->num_vertices;
+    }
+    for (i = 0; i < topology->num_vertices; ++i) {
+        float *out = r_alias_shadow_positions + i * 3;
+        float z = pose[i].v[2] * scale[2] + origin[2] + height;
+        out[0] = pose[i].v[0] * scale[0] + origin[0] - direction[0] * z;
+        out[1] = pose[i].v[1] * scale[1] + origin[1] - direction[1] * z;
+        out[2] = 1 - height;
+    }
+    arrays.position.data = r_alias_shadow_positions;
+    arrays.position.type = HYE_FLOAT;
+    arrays.position.stride = 3 * sizeof(float);
+    arrays.count = topology->num_vertices;
+    arrays.scale = 1;
+    arrays.flags = HYE_COPY_VERTICES;
+    if (!alias_client_indices)
+        alias_client_indices = Hyena_CreateBuffer(HYE_CLIENT_INDEX_BUFFER, NULL, 0);
+    Hyena_UpdateBuffer(alias_client_indices, topology->indices, topology->num_indices * sizeof(*topology->indices));
+    Hyena_DrawElements(HYE_TRIANGLES, &arrays, topology->num_indices, alias_client_indices, 0);
+}
+

@@ -227,22 +227,22 @@ Draw_String(int x, int y, char * str)
 void
 Draw_ColoredString(int x, int y, char * str, float r, float g, float b, float a, float scale)
 {
-    int scale_int = (int) rintf(scale);
+    float cursor = x;
 
     if (!str || y <= -8)
         return;
 
-    if (scale_int < 1)
-        scale_int = 1;
+    if (scale < 1)
+        scale = 1;
 
     while (*str) {
-        Draw_CharacterRGBA(x, y, (byte) * str, r, g, b, a, scale_int);
+        Draw_CharacterRGBA(cursor, y, (byte) * str, r, g, b, a, scale);
         if (*str == ' ')
-            x += 4 * scale_int;
+            cursor += 4 * scale;
         else if ((byte) * str < 33 || (byte) * str > 126)
-            x += 8 * scale_int;
+            cursor += 8 * scale;
         else
-            x += (font_kerningamount[(byte) * str - 33] + 1) * scale_int;
+            cursor += (font_kerningamount[(byte) * str - 33] + 1) * scale;
         ++str;
     }
 }
@@ -250,21 +250,20 @@ Draw_ColoredString(int x, int y, char * str, float r, float g, float b, float a,
 int
 getTextWidth(char * str, float scale)
 {
-    int width     = 0;
-    int scale_int = (int) scale;
+    float width = 0;
 
     if (!str)
         return 0;
 
-    if (scale_int < 1)
-        scale_int = 1;
+    if (scale < 1)
+        scale = 1;
     while (*str) {
         if (*str == ' ')
-            width += 4 * scale_int;
+            width += 4 * scale;
         else if ((byte) * str < 33 || (byte) * str > 126)
-            width += 8 * scale_int;
+            width += 8 * scale;
         else
-            width += (font_kerningamount[(byte) * str - 33] + 1) * scale_int;
+            width += (font_kerningamount[(byte) * str - 33] + 1) * scale;
         ++str;
     }
     return width;

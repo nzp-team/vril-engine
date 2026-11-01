@@ -71,10 +71,11 @@ void Sys_LowFPPrecision (void);
 void Sys_HighFPPrecision (void);
 void Sys_SetFPCW (void);
 
-// >>> FIX: For Nintendo Wii using devkitPPC / libogc
-// New functions for big stack handling:
-void* Sys_BigStackAlloc(int size, char* purpose);
-void Sys_BigStackFree(int size, char* purpose);
-void Sys_BigStackRewind(void);
-// <<< FIX
+
 void Sys_CaptureScreenshot(void);
+#include <stddef.h>
+
+typedef struct sys_directory_s sys_directory_t;
+sys_directory_t *Sys_OpenDirectory(const char *path);
+int Sys_ReadDirectory(sys_directory_t *directory, char *name, size_t size);
+void Sys_CloseDirectory(sys_directory_t *directory);

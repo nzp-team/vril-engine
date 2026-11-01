@@ -146,6 +146,31 @@ jobs:
           name: windows-${{ matrix.arch }}-nzp-sdl
           path: /workspace/repos/vril-engine/build/sdl/windows-${{ matrix.arch }}/nzportable.exe
           if-no-files-found: error
+  Compile-ELF:
+    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
+    name: Compile PS2
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
+    container:
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - *select_vril_commit
+      - name: Build
+        run: /entrypoint.sh build-vril --target ps2 -- WERROR=1
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ps2-nzp-elf
+          path: /workspace/repos/vril-engine/build/ps2/nzportable.elf
+          if-no-files-found: error
   Compile-EBOOT:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     name: Compile PSP
@@ -347,6 +372,79 @@ jobs:
             echo ""
             echo "[Failure Artifact]($ARTIFACT_URL)"
             echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+  Pull-Request-Test-PS2:
+    if: github.event_name == 'pull_request'
+    name: PS2 ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-ELF, prepare-toolbox-test-content]
+    strategy:
+      fail-fast: false
+      matrix:
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+    runs-on: ubuntu-24.04
+    container:
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+      options: --shm-size=8192m
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - *select_vril_pr_merge
+      - name: Download PS2 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ps2-nzp-elf
+          path: /workspace/vril-test-artifact
+      - name: Download Test Content Overrides
+        if: needs['prepare-toolbox-test-content'].outputs.has_overrides == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: toolbox-pr-test-content-overrides
+          path: /workspace/vril-test-overrides
+      - name: Install PCSX2
+        run: bash /workspace/repos/vril-engine/testing/setup/utils/install-pcsx2.sh
+      - name: Prepare BIOS
+        env:
+          PS2_BIOS_URL: ${{ secrets.PS2_BIOS_URL }}
+        run: |
+          test -n "$PS2_BIOS_URL" || { echo 'PS2_BIOS_URL is not configured.' >&2; exit 1; }
+          curl --fail --silent --show-error --location "$PS2_BIOS_URL" --output /tmp/ps2-bios.bin
+          echo 'PS2_BIOS=/tmp/ps2-bios.bin' >> "$GITHUB_ENV"
+      - name: Run test
+        env:
+          ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/ctr
+          QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+          VRIL_TEST: ${{ matrix.test }}
+        run: /entrypoint.sh test-vril --platform ps2 --test "$VRIL_TEST" --binary /workspace/vril-test-artifact/nzportable.elf
+      - name: Remove BIOS
+        if: always()
+        run: rm -f /tmp/ps2-bios.bin /workspace/repos/vril-engine/testing/working/PCSX2/bios/ps2.bin
+      - name: Upload Failure Artifact
+        id: ps2_failure_artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ps2-${{ matrix.test }}-pr-failures
+          path: /workspace/repos/vril-engine/testing/working/fail/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Add Failure Summary
+        if: failure() && steps.ps2_failure_artifact.outputs.artifact-url != ''
+        env:
+          ARTIFACT_URL: ${{ steps.ps2_failure_artifact.outputs.artifact-url }}
+          VRIL_TEST: ${{ matrix.test }}
+        run: |
+          {
+            echo "## PS2 $VRIL_TEST PR Test Failed"
+            echo ""
+            cat /workspace/repos/vril-engine/testing/working/fail/summary.md
+            echo ""
+            echo "[Failure Artifact]($ARTIFACT_URL)"
           } >> "$GITHUB_STEP_SUMMARY"
   Pull-Request-Test-PSP:
     if: github.event_name == 'pull_request'
@@ -616,7 +714,7 @@ jobs:
   Unify-and-Release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: [Compile-Linux-Toolbox, Compile-Windows, Compile-EBOOT, Compile-3DSX, Compile-TNS, Compile-VPK, Compile-NRO]
+    needs: [Compile-Linux-Toolbox, Compile-Windows, Compile-EBOOT, Compile-ELF, Compile-3DSX, Compile-TNS, Compile-VPK, Compile-NRO]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -629,6 +727,7 @@ jobs:
           path: ./
       - name: Turn Artifacts into .ZIP archives
         run: |
+          zip -r -j ps2-nzp-elf.zip ps2-nzp-elf/*
           zip -r -j psp-nzp-eboot.zip psp-nzp-eboot/*
           zip -r -j ctr-nzp-3dsx.zip ctr-nzp-3dsx/*
           zip -r -j nspire-nzp-tns.zip nspire-nzp-tns/*
@@ -659,17 +758,27 @@ jobs:
           tag_name: bleeding-edge
           release_name: Automated Release ${{ steps.date.outputs.date }}
           body: |
-            This is a **bleeding edge** NZ:P PSP/PSVITA/3DS/NSPIRE/PC release, stability is not guarenteed.
+            This is a **bleeding edge** NZ:P PS2/PSP/PSVITA/3DS/NSPIRE/PC release, stability is not guarenteed.
 
             To install:
             - Grab the .ZIP archive for your platform
             - PSP: Extract the `EBOOT.PBP` to `/PSP/GAME/nzportable/`
+            - PS2: Put `nzportable.elf` on USB and game data under `/APPS/NZPORTABLE/nzp/`.
             - PS VITA: Install `nzportable.vpk` using VitaShell.
             - 3DS: Extract `nzportable.3dsx` to `/3ds/nzportable/`.
             - NSPIRE: Sync `nzportable.tns` to `/`.
             - PC: Extract the archive for your CPU architecture and run `nzportable`.
           draft: true
           prerelease: false
+      - name: Upload PS2 Archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ps2-nzp-elf.zip
+          asset_name: ps2-nzp-elf.zip
+          asset_content_type: application/zip
       - name: Upload PSP Archive
         uses: actions/upload-release-asset@v1
         env:

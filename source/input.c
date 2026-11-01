@@ -22,6 +22,9 @@ cvar_t in_gyro_sensitivity_x = {"in_gyro_sensitivity_x", "1.0", true};
 cvar_t in_gyro_sensitivity_y = {"in_gyro_sensitivity_y", "1.0", true};
 cvar_t in_gyro_zoom_scaling = {"in_gyro_zoom_scaling", "1", true};
 #endif
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+cvar_t in_pressure = {"in_pressure", "0", true};
+#endif
 #ifdef PLATFORM_SUPPORTS_RUMBLE
 cvar_t in_rumble = {"in_rumble", "1", true};
 #endif
@@ -64,6 +67,9 @@ void IN_Init(void)
 	Cvar_RegisterVariable(&in_gyro_sensitivity_x);
 	Cvar_RegisterVariable(&in_gyro_sensitivity_y);
 	Cvar_RegisterVariable(&in_gyro_zoom_scaling);
+#endif
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+	Cvar_RegisterVariable(&in_pressure);
 #endif
 #ifdef PLATFORM_SUPPORTS_RUMBLE
 	Cvar_RegisterVariable(&in_rumble);

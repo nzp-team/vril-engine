@@ -238,7 +238,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	SOUND_CHANNELS		8
 
-#include PLATFORM_FILE(common.h)
+#include "common.h"
 
 #include "vid.h"
 
@@ -289,7 +289,10 @@ typedef struct
 #include "qcvm/progs.h"
 #include "server.h"
 
-#include RENDERER_FILE(model.h)
+#ifndef RENDERER_MODEL_HEADER
+#define RENDERER_MODEL_HEADER RENDERER_FILE(model.h)
+#endif
+#include RENDERER_MODEL_HEADER
 
 #ifdef SOFTWARE_RENDERER
 #include PLATFORM_FILE(d_iface.h)
@@ -347,7 +350,7 @@ extern	cvar_t		sys_nostdout;
 extern	cvar_t		developer;
 
 extern	qboolean	host_initialized;		// true if into command execution
-extern	double		host_frametime;
+extern	float		host_frametime;
 extern	byte		*host_basepal;
 extern	byte		*host_colormap;
 

@@ -35,6 +35,7 @@ R_DrawSurfaceFan(const float * source, int count, int stride,
         return;
 
     arrays.count = count;
+    arrays.flags = warp ? HYE_COPY_VERTICES | HYE_CLIP_POLYGON : 0;
     static float * warped_positions, * warped_uvs;
     static int capacity;
     int i;

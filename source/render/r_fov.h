@@ -62,9 +62,9 @@ static inline void SCR_UpdateZoom(scr_zoom_t *state, float world, float viewmode
     state->viewmodel_zoom = viewmodel == 0.0f ? 0.0f : SCR_LerpZoom(state->viewmodel_zoom, viewmodel_target, fraction);
 }
 
-static inline float SCR_ViewmodelScale(float world, float viewmodel)
+static inline float SCR_ViewmodelScale(float world, float viewmodel, float aspect)
 {
     if (viewmodel == 0.0f)
         return 1.0f;
-    return viewmodel / (90.0f * tanf(world * (3.14159265358979323846f / 360.0f)));
+    return viewmodel * aspect / (160.0f * tanf(world * (3.14159265358979323846f / 360.0f)));
 }

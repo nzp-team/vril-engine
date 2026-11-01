@@ -276,14 +276,11 @@ static byte *ConvertWad3ToRGBA(miptex_t *tex) {
    return data;
 }
 
-#ifdef __PSP__
-
 int WAD3_LoadTextureClut4(miptex_t *mt)
 {
 	// Check that texture has data
     if (!mt->offsets[0]) {
-        Sys_Error("mt->offsets[0] == 0");
-        return 0;
+        return -1;
     }
 
     // Get pointers to WAD3 data and palette
@@ -292,8 +289,6 @@ int WAD3_LoadTextureClut4(miptex_t *mt)
 
 	return Hyena_LoadPalettedTexture(mt->name, mt->width, mt->height, wadData, palette, 3, NULL, HYE_FILTER_NEAREST, 0, true, true);
 }
-
-#endif // __PSP__
 
 byte *WAD3_LoadTexture(miptex_t *mt) {
    char texname[MAX_QPATH];

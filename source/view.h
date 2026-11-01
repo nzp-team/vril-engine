@@ -37,6 +37,7 @@ extern vec3_t CWeaponRot;
 
 void V_Init (void);
 void V_RenderView (void);
+void V_CalcBlend (void);
 float V_CalcRoll (vec3_t angles, vec3_t velocity);
 void V_UpdatePalette (void);
 

@@ -88,7 +88,7 @@ COMMON_OBJS =	system.o \
 				cl_slist.c \
 				platform/ctr/bsp_strlcpy.c \
 				cmd.c \
-				platform/ctr/common.c \
+				common.c \
 				console.c \
 				platform/ctr/circle_pad_pro.c \
 				crc.c \
@@ -152,8 +152,9 @@ COMMON_OBJS =	system.o \
 				render/r_pixels.c \
 				render/r_dxt.c \
 				render/r_fog.c \
-				platform/ctr/gl/gl_mesh.c \
-				platform/ctr/gl/gl_model.c \
+				render/r_mesh.c \
+				render/r_model.c \
+				render/r_model_hardware.c \
 				render/r_entity_fragments.c \
 				render/r_light.c \
 				render/r_draw.c \
@@ -161,11 +162,11 @@ COMMON_OBJS =	system.o \
 				render/r_surface.c \
 				render/r_sky.c \
 				render/r_world.c \
-				platform/ctr/gl/gl_rmain.c \
-				platform/ctr/gl/gl_rmisc.c \
-				platform/ctr/gl/gl_rsurf.c \
+				render/r_main.c \
+				render/r_misc.c \
+				render/r_surf.c \
 				render/r_screen.c \
-				platform/ctr/gl/gl_warp.c \
+				render/r_warp.c \
 				platform/ctr/gl/gl_vidctr.c \
 				platform/ctr/touch_ctr.c \
 				crypter.c

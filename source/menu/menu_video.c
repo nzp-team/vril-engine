@@ -36,6 +36,15 @@ void VID_SetFullscreen(qboolean fullscreen);
 void VID_SetVSync(qboolean vsync);
 #endif
 
+#ifdef PLATFORM_USES_PROJECTION_WIDESCREEN
+extern cvar_t vid_widescreen;
+
+static void Menu_Video_ApplyScreenMode (void)
+{
+    Cvar_SetValue ("vid_widescreen", !vid_widescreen.value);
+}
+#endif
+
 qboolean platform_supports_dithering;
 
 extern cvar_t scr_showfps;
@@ -183,6 +192,7 @@ Menu_Video_Draw
 void Menu_Video_Draw (void)
 {
     int video_items = 0;
+    int option_order = 8;
 
 	// Background
 	Menu_DrawCustomBackground (true);
@@ -226,18 +236,23 @@ void Menu_Video_Draw (void)
     Menu_DrawButton (7, video_items++, "TEXTURE FILTERING", "Choose 3D Environment Filtering Mode.", Menu_Video_ApplyTextureFiltering);
     Menu_DrawOptionButton (7, retro_string);
 
+#ifdef PLATFORM_USES_PROJECTION_WIDESCREEN
+    Menu_DrawButton (option_order, video_items++, "SCREEN MODE", "Change display proportions.", Menu_Video_ApplyScreenMode);
+    Menu_DrawOptionButton (option_order++, vid_widescreen.value ? "WIDESCREEN" : "FULL SCREEN");
+#endif
+
     // Dithering 
     if (platform_supports_dithering) {
-        Menu_DrawButton (8, video_items++, "DITHERING", "Toggle Decrease in Color Banding", Menu_Video_ApplyDithering);
-        Menu_DrawOptionButton (8, dithering_string);
+        Menu_DrawButton (option_order, video_items++, "DITHERING", "Toggle Decrease in Color Banding", Menu_Video_ApplyDithering);
+        Menu_DrawOptionButton (option_order++, dithering_string);
     }
 
 #ifdef PLATFORM_SUPPORTS_VIDEO_OPTIONS
-    Menu_DrawButton (8, video_items++, "FULLSCREEN", "Toggle desktop fullscreen mode.", Menu_Video_ApplyFullscreen);
-    Menu_DrawOptionButton (8, fullscreen_string);
+    Menu_DrawButton (option_order, video_items++, "FULLSCREEN", "Toggle desktop fullscreen mode.", Menu_Video_ApplyFullscreen);
+    Menu_DrawOptionButton (option_order++, fullscreen_string);
 
-    Menu_DrawButton (9, video_items++, "VSYNC", "Synchronize frames to the display refresh rate.", Menu_Video_ApplyVSync);
-    Menu_DrawOptionButton (9, vsync_string);
+    Menu_DrawButton (option_order, video_items++, "VSYNC", "Synchronize frames to the display refresh rate.", Menu_Video_ApplyVSync);
+    Menu_DrawOptionButton (option_order++, vsync_string);
 #endif
 
     Menu_DrawDivider(-2.5);

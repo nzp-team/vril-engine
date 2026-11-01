@@ -22,6 +22,9 @@
 
 #include "r_types.h"
 
+void Hyena_SelectDrawBuffer(qboolean front);
+void Hyena_SelectReadBuffer(qboolean front);
+
 void
 Hyena_SetTextureMode(int texture_mode);
 void
@@ -76,6 +79,8 @@ void
 Hyena_SetBlendFunction(int source_blend, int destination_blend);
 void
 Hyena_SetDepthRange(float near_value, float far_value);
+void
+Hyena_ResetDepthRange(void);
 void
 Hyena_SetDepthOffset(float offset);
 void
@@ -196,5 +201,44 @@ void
 Hyena_InvalidateTextureBinding(void);
 void
 Hyena_RotationMatrix(float * matrix, float x, float y, float z);
+
+void Hyena_InitTextureStorage(void);
+size_t Hyena_TextureBudget(void);
+int Hyena_PreferredPaletteBits(void);
+void *Hyena_AllocateTexturePixels(size_t bytes);
+void Hyena_FreeTexturePixels(void *pixels);
+int Hyena_PreferredLightmapSize(void);
+hyena_texture_format_t Hyena_PreferredLightmapFormat(void);
+unsigned *Hyena_LightmapScratch(int count);
+qboolean Hyena_AccumulateLightmap(unsigned *dest, const byte *source, int count, unsigned scale, qboolean add);
+void Hyena_PrepareTextureUpdate(int texture);
+void Hyena_ClipArrays(const hyena_arrays_t *source, hyena_arrays_t *clipped);
+void Hyena_BeginModelClipping(void);
+void Hyena_EndModelClipping(void);
+void Hyena_MatrixMode(int mode);
+void Hyena_LoadIdentity(void);
+void Hyena_LoadMatrix(const float *matrix);
+void Hyena_GetMatrix(float *matrix);
+void Hyena_PushMatrix(void);
+void Hyena_PopMatrix(void);
+void Hyena_MatrixTranslate(float x, float y, float z);
+void Hyena_MatrixScale(float x, float y, float z);
+void Hyena_MatrixRotate(float degrees, float x, float y, float z);
+void Hyena_UpdateMatrices(void);
+void Hyena_Frustum(float left, float right, float bottom, float top, float near_value, float far_value);
+void Hyena_Viewport(int x, int y, int width, int height);
+void Hyena_ClipFrustum(float fovy, float aspect, float near_value);
+void Hyena_CullFace(qboolean back);
+void Hyena_ClearColor(float red, float green, float blue, float alpha);
+void Hyena_Clear(qboolean color, qboolean depth, qboolean stencil);
+void Hyena_DepthBounds(float near_value, float far_value);
+void Hyena_PerspectiveCorrection(qboolean enabled);
+void Hyena_BlendConstant(float alpha);
+void Hyena_Finish(void);
+qboolean Hyena_ReadPixels(int x, int y, int width, int height, byte *rgba);
+void Hyena_ClearMorphMeshes(void);
+qboolean Hyena_MorphMeshesSupported(void);
+qboolean Hyena_DrawMorphMesh(const hyena_morph_mesh_t *mesh, const byte *first, const byte *second, float blend);
+void Hyena_AddLightTime(double seconds);
 
 #endif // _HYENA_H_

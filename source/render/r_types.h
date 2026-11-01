@@ -51,7 +51,7 @@ typedef struct {
     byte  r, g, b, a;
 } hyena_2d_quad_t;
 
-typedef enum { HYE_TEXTURE_INDEX8, HYE_TEXTURE_RGBA8 } hyena_texture_format_t;
+typedef enum { HYE_TEXTURE_INDEX8, HYE_TEXTURE_RGBA8, HYE_TEXTURE_PLANAR_RGB8 } hyena_texture_format_t;
 
 typedef enum { HYE_FILTER_NEAREST, HYE_FILTER_LINEAR } hyena_texture_filter_t;
 
@@ -156,5 +156,19 @@ typedef byte col_t[4];
 #define HYE_2D_LINEAR           (1 << 2)
 
 #define HYE_PI                  3.141593f
+
+#define HYE_MODELVIEW 0
+#define HYE_PROJECTION 1
+#define HYE_VIEW 2
+#define HYE_GEQUAL 3
+#define HYE_ZERO 8
+
+typedef struct {
+    const void *key;
+    const int *commands;
+    const unsigned short *remap;
+    const byte *poses;
+    int vertices, command_vertices, poses_count;
+} hyena_morph_mesh_t;
 
 #endif // _R_TYPES_H_

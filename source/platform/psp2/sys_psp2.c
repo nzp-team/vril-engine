@@ -27,9 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define DEBUG
 
-#define BIGSTACK_SIZE 20 * 1024 * 1024
-byte sys_bigstack[BIGSTACK_SIZE];
-int sys_bigstack_cursize;
 
 uint8_t is_uma0 = 0;
 int tex_cache = 0;
@@ -191,40 +188,11 @@ void Sys_mkdir(char *path)
 	sceIoMkdir(path, 0777);
 }
 
-void Sys_BigStackRewind(void)
-{
-	sys_bigstack_cursize = 0;
-}
 
-void* Sys_BigStackAlloc(int size, char* purpose)
-{
-	void* p;
 
-	p = 0;
-	if (sys_bigstack_cursize + size < BIGSTACK_SIZE)
-	{
-		p = sys_bigstack + sys_bigstack_cursize;
-		sys_bigstack_cursize = sys_bigstack_cursize + size;
-	}
-	else
-	{
-		Sys_Error("Sys_BigStackAlloc: %s - failed on %i bytes", purpose, size);
-	};
-	return p;
-}
 
-void Sys_BigStackFree(int size, char* purpose)
-{
-	if (sys_bigstack_cursize - size >= 0)
-	{
-		sys_bigstack_cursize = sys_bigstack_cursize - size;
-	}
-	else
-	{
-		Sys_Error("Sys_BigStackFree: %s - underflow on %i bytes", purpose, sys_bigstack_cursize - size);
-	};
-}
-// <<< FIX
+
+
 
 
 /*
@@ -794,4 +762,41 @@ int main(int argc, char **argv) {
 void Sys_CaptureScreenshot(void)
 {
 	Sys_Error("Sys_CaptureScreenshot: Not implemented!");
+}
+
+struct sys_directory_s { SceUID handle; };
+
+sys_directory_t *Sys_OpenDirectory(const char *path)
+{
+	SceUID handle = sceIoDopen(path);
+	sys_directory_t *directory;
+	if (handle < 0)
+		return NULL;
+	directory = malloc(sizeof(*directory));
+	if (!directory) {
+		sceIoDclose(handle);
+		return NULL;
+	}
+	directory->handle = handle;
+	return directory;
+}
+
+int Sys_ReadDirectory(sys_directory_t *directory, char *name, size_t size)
+{
+	SceIoDirent entry;
+	memset(&entry, 0, sizeof(entry));
+	while (sceIoDread(directory->handle, &entry) > 0) {
+		if (strlen(entry.d_name) < size) {
+			Q_strlcpy(name, entry.d_name, size);
+			return true;
+		}
+		memset(&entry, 0, sizeof(entry));
+	}
+	return false;
+}
+
+void Sys_CloseDirectory(sys_directory_t *directory)
+{
+	sceIoDclose(directory->handle);
+	free(directory);
 }
