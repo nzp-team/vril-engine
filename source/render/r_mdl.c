@@ -296,21 +296,21 @@ R_AliasTopology(const void *key, const int *commands, const unsigned short *rema
             memcpy(topology->uvs + vertex * 2, commands + i * 2, 2 * sizeof(*topology->uvs));
         }
         for (i = 0; i < count - 2; ++i) {
+            int first, second, third = vertex_base + i + 2;
             if (fan) {
-                topology->indices[index++] = vertex_base;
-                topology->indices[index++] = vertex_base + i + 1;
+                first = vertex_base;
+                second = vertex_base + i + 1;
             } else {
-                topology->indices[index++] = vertex_base + i + (i & 1);
-                topology->indices[index++] = vertex_base + i + 1 - (i & 1);
+                first = vertex_base + i + (i & 1);
+                second = vertex_base + i + 1 - (i & 1);
             }
-            topology->indices[index++] = vertex_base + i + 2;
+            topology->indices[index++] = remap ? remap[first] : first;
+            topology->indices[index++] = remap ? remap[second] : second;
+            topology->indices[index++] = remap ? remap[third] : third;
         }
         commands    += count * 2;
         vertex_base += count;
     }
-    if (remap)
-        for (index = 0; index < topology->num_indices; index++)
-            topology->indices[index] = remap[topology->indices[index]];
     return topology;
 } /* R_AliasTopology */
 

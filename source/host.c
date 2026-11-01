@@ -566,12 +566,12 @@ qboolean Host_FilterTime (float time)
 
 	//johnfitz -- host_timescale is more intuitive than host_framerate
 	if (host_timescale.value > 0)
-		host_frametime *= (double)host_timescale.value;
+		host_frametime *= host_timescale.value;
 	//johnfitz
 	else if (host_framerate.value > 0)
-		host_frametime = (double)host_framerate.value;
+		host_frametime = host_framerate.value;
 	else // don't allow really long or short frames
-		host_frametime = CLAMP (0.001, host_frametime, 0.1); //johnfitz -- use CLAMP
+		host_frametime = CLAMP (0.001f, host_frametime, 0.1f); //johnfitz -- use CLAMP
 
 	return true;
 }
@@ -703,7 +703,7 @@ void _Host_Frame (float time)
 	if (!sv.active)
 		CL_SendCmd ();
 
-	host_time += host_frametime;
+	host_time += (double)host_frametime;
 
 // fetch results from server
 	if (cls.state == ca_connected)

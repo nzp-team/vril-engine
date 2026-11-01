@@ -395,11 +395,12 @@ void SV_TouchLinks (edict_t *ent)
 		buffer->next = sv_touch_buffers;
 		sv_touch_buffers = buffer;
 	}
-	if (buffer->capacity < sv.num_edicts) {
-		sv_touch_entry_t *entries = realloc(buffer->entries, sv.num_edicts * sizeof(*entries));
+	if (!buffer->entries || buffer->capacity < sv.num_edicts) {
+		int capacity = sv.num_edicts > 0 ? sv.num_edicts : 1;
+		sv_touch_entry_t *entries = realloc(buffer->entries, capacity * sizeof(*entries));
 		if (!entries) Sys_Error("Out of trigger contact memory");
 		buffer->entries = entries;
-		buffer->capacity = sv.num_edicts;
+		buffer->capacity = capacity;
 	}
 	buffer->active = true;
 	SV_AreaTriggerEdicts(ent, sv_areanodes, buffer->entries, &listcount, buffer->capacity);

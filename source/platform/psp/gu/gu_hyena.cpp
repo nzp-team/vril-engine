@@ -378,7 +378,7 @@ Hyena_SetDepthOffset(float offset)
 void
 Hyena_Set2D(void)
 {
-    sceGuViewport(glx, gly, glwidth, glheight);
+    sceGuViewport(2048, 2048, glwidth, glheight);
     sceGuScissor(0, 0, glwidth, glheight);
     sceGuEnable(GU_BLEND);
     sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
@@ -1280,7 +1280,7 @@ void Hyena_Frustum(float left, float right, float bottom, float top, float near_
 }
 void Hyena_Viewport(int x, int y, int width, int height)
 {
-    sceGuViewport(x + width / 2 - glwidth / 2, glheight / 2 - y - height / 2, width, height);
+    sceGuViewport(2048 + x + width / 2 - glwidth / 2, 2048 + glheight / 2 - y - height / 2, width, height);
     sceGuScissor(x, glheight - y - height, x + width, glheight - y);
 }
 void Hyena_ClipFrustum(float fovy, float aspect, float near_value)

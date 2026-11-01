@@ -391,9 +391,6 @@ static void Mod_LoadQ2SpriteModel (model_t *mod, void *buffer)
 	dmd2sprframe_t		*pframetype;
 	mspriteframe_t		*frame;
 	float origin[2];
-	int hunkstart;
-
-	hunkstart = Hunk_LowMark();
 
 	pin = (dmd2sprite_t *)buffer;
 
@@ -406,6 +403,8 @@ static void Mod_LoadQ2SpriteModel (model_t *mod, void *buffer)
 	}
 
 	numframes = LittleLong (pin->numframes);
+	if (numframes < 1)
+		Sys_Error ("Invalid # of frames: %d\n", numframes);
 
 	size = sizeof (msprite_t) +	(numframes - 1) * sizeof (psprite->frames);
 
@@ -428,13 +427,6 @@ static void Mod_LoadQ2SpriteModel (model_t *mod, void *buffer)
 //
 // load the frames
 //
-	if (numframes < 1)
-	{
-		Sys_Error ("Invalid # of frames: %d\n", numframes);
-		Hunk_FreeToLowMark(hunkstart);
-		return;
-	}
-
 	mod->numframes = numframes;
 
 	pframetype = pin->frames;
@@ -1279,7 +1271,6 @@ static void Mod_LoadTextures(lump_t *lump)
 		memset (altanims, 0, sizeof(altanims));
 
 		max = tx->name[1];
-		altmax = 0;
 		if (max >= 'a' && max <= 'z')
 			max -= 'a' - 'A';
 		if (max >= '0' && max <= '9')

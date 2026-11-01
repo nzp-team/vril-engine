@@ -2097,7 +2097,7 @@ void SV_Physics (void)
 	if (pr_global_struct->force_retouch)
 		pr_global_struct->force_retouch--;
 
-	sv.time += host_frametime;
+	sv.time += (double)host_frametime;
 }
 
 trace_t SV_Trace_Toss (edict_t *ent, edict_t *ignore)
