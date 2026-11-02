@@ -52,7 +52,7 @@ qboolean SNDDMA_Init(void)
 	shm->samples = SDL_DMA_SAMPLES;
 	shm->samplepos = 0;
 	shm->submission_chunk = 1;
-	audio_buffer = calloc(SDL_DMA_SAMPLES, sizeof(short));
+	audio_buffer = calloc(SDL_DMA_SAMPLES*2, sizeof(char));
 	if (!audio_buffer) {
 		Mix_CloseAudio();
 		Mix_Quit();
