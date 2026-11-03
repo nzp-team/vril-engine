@@ -271,6 +271,31 @@ jobs:
           name: psp2-nzp-vpk
           path: /workspace/repos/vril-engine/build/psp2/nzportable.vpk
           if-no-files-found: error
+  Compile-PKG:
+    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
+    name: Compile PS4
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
+    container:
+      image: ${{ needs.resolve-toolbox.outputs.image }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Toolbox Fetch
+        env:
+          TOOLBOX_HOST_OS: Linux
+          TOOLBOX_HOST_ARCH: x86_64
+        run: /entrypoint.sh fetch
+      - *select_vril_commit
+      - name: Build
+        run: /entrypoint.sh build-vril --target ps4 -- WERROR=1
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ps4-nzp-pkg
+          path: /workspace/repos/vril-engine/build/ps4/nzportable.pkg
+          if-no-files-found: error
   Compile-NRO:
     if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
     name: Compile Switch
@@ -714,7 +739,7 @@ jobs:
   Unify-and-Release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: [Compile-Linux-Toolbox, Compile-Windows, Compile-EBOOT, Compile-ELF, Compile-3DSX, Compile-TNS, Compile-VPK, Compile-NRO]
+    needs: [Compile-Linux-Toolbox, Compile-Windows, Compile-EBOOT, Compile-ELF, Compile-3DSX, Compile-TNS, Compile-VPK, Compile-PKG, Compile-NRO]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -732,6 +757,7 @@ jobs:
           zip -r -j ctr-nzp-3dsx.zip ctr-nzp-3dsx/*
           zip -r -j nspire-nzp-tns.zip nspire-nzp-tns/*
           zip -r -j psp2-nzp-vpk.zip psp2-nzp-vpk/*
+          zip -r -j ps4-nzp-pkg.zip ps4-nzp-pkg/*
           zip -r -j nx-nzp-nro.zip nx-nzp-nro/*
           zip -r -j linux-x86-nzp-sdl.zip linux-x86-nzp-sdl/*
           zip -r -j linux-x86_64-nzp-sdl.zip linux-x86_64-nzp-sdl/*
@@ -758,13 +784,14 @@ jobs:
           tag_name: bleeding-edge
           release_name: Automated Release ${{ steps.date.outputs.date }}
           body: |
-            This is a **bleeding edge** NZ:P PS2/PSP/PSVITA/3DS/NSPIRE/PC release, stability is not guarenteed.
+            This is a **bleeding edge** Vril Engine release, stability is not guarenteed.
 
             To install:
             - Grab the .ZIP archive for your platform
             - PSP: Extract the `EBOOT.PBP` to `/PSP/GAME/nzportable/`
             - PS2: Put `nzportable.elf` on USB and game data under `/APPS/NZPORTABLE/nzp/`.
             - PS VITA: Install `nzportable.vpk` using VitaShell.
+            - PS4: Install `nzportable.pkg` and place game data under `/data/nzportable/nzp/`.
             - 3DS: Extract `nzportable.3dsx` to `/3ds/nzportable/`.
             - NSPIRE: Sync `nzportable.tns` to `/`.
             - PC: Extract the archive for your CPU architecture and run `nzportable`.
@@ -814,6 +841,15 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./psp2-nzp-vpk.zip
           asset_name: psp2-nzp-vpk.zip
+          asset_content_type: application/zip
+      - name: Upload PS4 Archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ps4-nzp-pkg.zip
+          asset_name: ps4-nzp-pkg.zip
           asset_content_type: application/zip
       - name: Upload Nintendo Switch Archive
         uses: actions/upload-release-asset@v1

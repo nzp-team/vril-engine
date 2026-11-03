@@ -50,7 +50,7 @@ qboolean platform_supports_dithering;
 extern cvar_t scr_showfps;
 extern cvar_t cl_maxfps;
 extern cvar_t scr_fov;
-extern cvar_t v_gamma;
+extern cvar_t v_brightness;
 extern cvar_t r_runqmbparticles;
 extern cvar_t r_retro;
 extern cvar_t r_dithering;
@@ -220,9 +220,9 @@ void Menu_Video_Draw (void)
     Menu_DrawButton (3, video_items++, "FIELD OF VIEW", "Change Camera Field of View", NULL);
     Menu_DrawOptionSlider (3, video_items-1, 60, 160, scr_fov, "fov", false, true, 10.0f);
 
-    // Gamma
-    Menu_DrawButton (4, video_items++, "GAMMA", "Adjust game Black Level.", NULL);
-    Menu_DrawOptionSlider (4, video_items-1, 0, 1, v_gamma, "gamma", false, false, 0.1f);
+    // Brightness
+    Menu_DrawButton (4, video_items++, "BRIGHTNESS", "Adjust screen brightness.", NULL);
+    Menu_DrawOptionSlider (4, video_items-1, 0, 1, v_brightness, "brightness", false, false, 0.1f);
 
     // Ultrawide Mode
     Menu_DrawButton (5, video_items++, "ULTRAWIDE MODE", "Condenses HUD closer to center of Display.", Menu_Video_ApplyUltrawide);

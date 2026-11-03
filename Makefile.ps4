@@ -1,0 +1,139 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 NZ:P Team
+
+.DEFAULT_GOAL := all
+TOOLCHAIN ?= $(OO_PS4_TOOLCHAIN)
+PS4_DEPS ?= $(TOOLCHAIN)/usr/local
+BUILD ?= build/ps4
+PS4_VERSION ?= 01.00
+PS4_TITLE_ID := NZPT00001
+PS4_CONTENT_ID := NZ0000-$(PS4_TITLE_ID)_00-NZPORTABLE000000
+PSBC ?= psbc
+PSBC_BIN := $(shell command -v $(PSBC) 2>/dev/null)
+GLSLANG ?= glslangValidator
+GIT_HASH ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
+CC := clang
+LD := ld.lld
+
+HOST_TOOLS := $(TOOLCHAIN)/bin/$(if $(filter Darwin,$(shell uname -s)),macos,linux)
+
+CPPFLAGS := -I$(BUILD)/compat -Isource -I$(BUILD) -I$(PS4_DEPS)/include \
+    -DGLQUAKE -DPLATFORM_PS4 -DPLATFORM_DIRECTORY=ps4 -DPLATFORM_RENDERER=gnm \
+    -DMAX_AI_COUNT=24 -DPLATFORM_SUPPORTS_GYRO -DPLATFORM_SUPPORTS_RUMBLE \
+    -DPLATFORM_SUPPORTS_LIGHTBAR -DPLATFORM_KEYBOARD_SYSTEM=1
+
+CFLAGS := --target=x86_64-pc-freebsd12-elf -isysroot $(TOOLCHAIN) \
+    -isystem $(TOOLCHAIN)/include -fPIC -funwind-tables -O2 -g -std=gnu99 \
+    -Wall -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unknown-warning-option -MMD -MP
+
+LDFLAGS := -m elf_x86_64 -pie --script $(TOOLCHAIN)/link.x --eh-frame-hdr \
+    -L$(PS4_DEPS)/lib -L$(TOOLCHAIN)/lib
+
+LDLIBS := -lmpg123 -lm -lc -lpthread -lkernel \
+    -lScePad -lSceUserService -lSceAudioOut -lSceNet -lSceNetCtl -lSceSysmodule -lSceSystemService -lSceImeDialog -lSceCommonDialog
+
+ENGINE := $(wildcard source/*.c source/menu/*.c source/qcvm/*.c source/render/*.c source/tests/*.c)
+
+SOURCES := $(filter-out source/render/r_model_soft.c,$(ENGINE)) \
+    $(wildcard source/platform/ps4/*.c)
+CPPFLAGS += -DUSE_OPENGNM -I$(PS4_DEPS)/include/opengnm -I$(PS4_DEPS)/include/freegnm-helpers
+CFLAGS += -ffunction-sections -fdata-sections
+LDFLAGS += --gc-sections
+LDLIBS += -lfreegnm-helpers -lopengnm -lSceGnmDriver -lSceVideoOut
+SOURCES += \
+    source/platform/ps4/gnm/gnm_hyena.c source/platform/ps4/gnm/gnm_vidps4.c
+
+OBJECTS := $(patsubst source/%.c,$(BUILD)/%.o,$(SOURCES))
+
+.PHONY: all clean check-deps
+all: $(BUILD)/eboot.bin
+check-deps:
+	@test -n "$(TOOLCHAIN)" -a -f "$(TOOLCHAIN)/lib/crt1.o" || { echo 'Set OO_PS4_TOOLCHAIN to an installed OpenOrbis toolchain.'; exit 1; }
+	@test -f "$(PS4_DEPS)/include/opengnm/gnm/texture.h" -a -f "$(PS4_DEPS)/lib/libopengnm.a" || { echo 'Install PS4 OpenGNM headers and library in PS4_DEPS.'; exit 1; }
+	@test -f "$(PS4_DEPS)/include/freegnm-helpers/displayctx.h" -a -f "$(PS4_DEPS)/lib/libfreegnm-helpers.a" || { echo 'Install the PS4 freegnm helper library in PS4_DEPS.'; exit 1; }
+	@test -f "$(PS4_DEPS)/include/mpg123.h" || { echo 'Install PS4 mpg123 in PS4_DEPS.'; exit 1; }
+$(BUILD)/compat/sys/dirent.h:
+	@mkdir -p $(@D)
+	@printf '#include <dirent.h>\n' > $@
+$(OBJECTS): Makefile.ps4 $(BUILD)/compat/sys/dirent.h
+$(OBJECTS): | check-deps
+$(BUILD)/_build_info.h:
+	@mkdir -p $(@D)
+	@{ echo '#define GIT_HASH "$(GIT_HASH)"'; \
+	   echo '#define GIT_BRANCH "$(GIT_BRANCH)"'; \
+	   echo '#define BUILD_DATE "$(shell date -u +%Y-%m-%dT%H:%M:%SZ)"'; } > $@
+$(BUILD)/%.o: source/%.c $(BUILD)/_build_info.h
+	@mkdir -p $(@D)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+$(BUILD)/nzportable.elf: $(OBJECTS) $(PS4_DEPS)/lib/libopengnm.a $(PS4_DEPS)/lib/libfreegnm-helpers.a
+	$(LD) $(LDFLAGS) -o $@ $(TOOLCHAIN)/lib/crt1.o $(OBJECTS) $(LDLIBS)
+# Hardware-verified data-directory permissions; ordinary homebrew PAID cannot chdir /data.
+PS4_AUTH_INFO := 000000000000000000000000001C004000FF000000000080000000000000000000000000000000000000008000400040000000000000008000000000000000080040FFFF000000F000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+$(BUILD)/eboot.bin: $(BUILD)/nzportable.elf
+	$(HOST_TOOLS)/create-fself -in=$< -out=$(BUILD)/nzportable.oelf --library-path $(TOOLCHAIN)/lib --eboot $@ --paid 0x3800000000000035 --authinfo $(PS4_AUTH_INFO)
+	@test "$$(od -An -tx1 -N4 $@ | tr -d ' \n')" = 4f153d1d
+clean:
+	rm -rf $(BUILD)
+-include $(OBJECTS:.o=.d)
+
+PS4_MODULES ?= $(TOOLCHAIN)/samples/graphics/sce_module
+PS4_ICON ?= source/platform/ps4/art/icon0.png
+PS4_RIGHTS ?= $(TOOLCHAIN)/samples/graphics/sce_sys/about/right.sprx
+SHADER_DIR := source/platform/ps4/gnm/shaders
+SHADER_NAMES := hyena.vert hyena.frag clear.frag present.vert present.frag
+SHADERS := $(addprefix $(BUILD)/shaders/,$(addsuffix .sb,$(SHADER_NAMES)))
+PACKAGE := $(BUILD)/nzportable.pkg
+$(SHADERS) $(PACKAGE): | check-shader-tools
+.PHONY: shaders check-shader-tools pkg FORCE
+.SECONDARY:
+check-shader-tools:
+	@command -v "$(PSBC)" >/dev/null || { echo 'Install upstream psbc or set PSBC to its executable.'; exit 1; }
+	@command -v "$(GLSLANG)" >/dev/null || { echo 'Install glslangValidator or set GLSLANG to its executable.'; exit 1; }
+FORCE:
+$(BUILD)/package-version: FORCE
+	@mkdir -p $(@D)
+	@printf '%s\n' '$(PS4_VERSION)' > $@.tmp
+	@cmp -s $@.tmp $@ || cp $@.tmp $@
+	@rm -f $@.tmp
+shaders: $(SHADERS)
+$(BUILD)/shaders/%.spv: $(SHADER_DIR)/%
+	@mkdir -p $(@D)
+	$(GLSLANG) -V -S $(if $(filter %.vert,$*),vert,frag) $< -o $@
+$(BUILD)/shaders/%.sb: $(BUILD)/shaders/%.spv $(PSBC_BIN)
+	$(PSBC) -s $(if $(filter %.vert,$*),vertex,fragment) $< $@
+pkg: check-shader-tools $(PACKAGE)
+PS4_PIC1 ?= source/platform/ps4/art/pic1.png
+PARAM_SFO := $(BUILD)/param.sfo
+PKGTOOL := $(abspath $(HOST_TOOLS))/PkgTool.Core
+PACKAGE_FILES := eboot.bin sce_sys/param.sfo sce_sys/icon0.png sce_sys/about/right.sprx \
+    sce_module/libc.prx sce_module/libSceFios2.prx $(addprefix shaders/,$(addsuffix .sb,$(SHADER_NAMES)))
+PACKAGE_FILES += $(if $(wildcard $(PS4_PIC1)),sce_sys/pic1.png)
+$(PARAM_SFO): Makefile.ps4 $(BUILD)/package-version
+	$(PKGTOOL) sfo_new $@
+	$(PKGTOOL) sfo_setentry $@ APP_TYPE --type Integer --maxsize 4 --value 0
+	$(PKGTOOL) sfo_setentry $@ APP_VER --type Utf8 --maxsize 8 --value $(PS4_VERSION)
+	$(PKGTOOL) sfo_setentry $@ ATTRIBUTE --type Integer --maxsize 4 --value 0
+	$(PKGTOOL) sfo_setentry $@ CATEGORY --type Utf8 --maxsize 4 --value gd
+	$(PKGTOOL) sfo_setentry $@ FORMAT --type Utf8 --maxsize 4 --value obs
+	$(PKGTOOL) sfo_setentry $@ CONTENT_ID --type Utf8 --maxsize 48 --value $(PS4_CONTENT_ID)
+	$(PKGTOOL) sfo_setentry $@ DOWNLOAD_DATA_SIZE --type Integer --maxsize 4 --value 0
+	$(PKGTOOL) sfo_setentry $@ PARENTAL_LEVEL --type Integer --maxsize 4 --value 1
+	$(PKGTOOL) sfo_setentry $@ SYSTEM_VER --type Integer --maxsize 4 --value 0
+	$(PKGTOOL) sfo_setentry $@ TITLE --type Utf8 --maxsize 128 --value "Nazi Zombies: Portable"
+	$(PKGTOOL) sfo_setentry $@ TITLE_ID --type Utf8 --maxsize 12 --value $(PS4_TITLE_ID)
+	$(PKGTOOL) sfo_setentry $@ VERSION --type Utf8 --maxsize 8 --value $(PS4_VERSION)
+
+$(PACKAGE): $(BUILD)/eboot.bin $(SHADERS) $(PARAM_SFO) Makefile.ps4 $(PS4_ICON) $(PS4_RIGHTS) $(wildcard $(PS4_PIC1)) $(PS4_MODULES)/libc.prx $(PS4_MODULES)/libSceFios2.prx
+	rm -rf $(BUILD)/package
+	mkdir -p $(BUILD)/package/sce_sys/about $(BUILD)/package/sce_module $(BUILD)/package/shaders
+	cp $(BUILD)/eboot.bin $(BUILD)/package/
+	cp $(PARAM_SFO) $(BUILD)/package/sce_sys/param.sfo
+	cp $(PS4_ICON) $(BUILD)/package/sce_sys/icon0.png
+	cp $(PS4_RIGHTS) $(BUILD)/package/sce_sys/about/right.sprx
+	cp $(PS4_MODULES)/libc.prx $(PS4_MODULES)/libSceFios2.prx $(BUILD)/package/sce_module/
+	cp $(SHADERS) $(BUILD)/package/shaders/
+	$(if $(wildcard $(PS4_PIC1)),cp $(PS4_PIC1) $(BUILD)/package/sce_sys/pic1.png,:)
+	cd $(BUILD)/package && $(abspath $(HOST_TOOLS))/create-gp4 -content-id=$(PS4_CONTENT_ID) -files="$(PACKAGE_FILES)" -out=package.gp4
+	cd $(BUILD)/package && $(PKGTOOL) pkg_build package.gp4 ..
+	mv $(BUILD)/$(PS4_CONTENT_ID).pkg $@
