@@ -308,9 +308,6 @@ jobs:
         with:
           name: toolbox-pr-test-content-overrides
           path: /workspace/vril-test-overrides
-      - name: Install PCSX2
-        if: env.VRIL_PLATFORM == 'ps2'
-        run: bash /workspace/repos/vril-engine/testing/setup/utils/install-pcsx2.sh
       - name: Prepare BIOS
         if: env.VRIL_PLATFORM == 'ps2'
         env:

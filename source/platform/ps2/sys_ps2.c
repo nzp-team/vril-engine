@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../../nzportable_def.h"
 #include <errno.h>
+#include <limits.h>
 #include <malloc.h>
 #include <stdint.h>
 #include <sys/stat.h>
@@ -33,12 +34,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <ee_debug.h>
 #include <unistd.h>
 #include <sbv_patches.h>
+#include <smod.h>
 #include <iopcontrol.h>
 #define NEWLIB_PORT_AWARE
 #include <io_common.h>
 #include <fileXio_rpc.h>
+#include <usbhdfsd-common.h>
+#include <hdd-ioctl.h>
 
-#define PS2_DATA_DIRECTORY "mass:/APPS/NZPORTABLE"
+static char sys_data_directory[MAX_QPATH] = "mass:/APPS/NZPORTABLE";
+static char sys_hdd_partition[APA_IDMAX + 6];
+typedef enum {
+	PS2_STORAGE_USB,
+	PS2_STORAGE_MX4SIO,
+	PS2_STORAGE_MMCE,
+	PS2_STORAGE_MEMORY_CARD,
+	PS2_STORAGE_HDD,
+	PS2_STORAGE_ATA
+} sys_ps2_storage_t;
 static qboolean sys_boot_screen;
 static char sys_last_file[MAX_OSPATH];
 static unsigned int sys_sound_opens;
@@ -60,6 +73,18 @@ extern unsigned char usbd_irx[];
 extern unsigned int size_usbd_irx;
 extern unsigned char usbmass_bd_irx[];
 extern unsigned int size_usbmass_bd_irx;
+extern unsigned char mx4sio_bd_irx[];
+extern unsigned int size_mx4sio_bd_irx;
+extern unsigned char mmceman_irx[];
+extern unsigned int size_mmceman_irx;
+extern unsigned char ps2dev9_irx[];
+extern unsigned int size_ps2dev9_irx;
+extern unsigned char ata_bd_irx[];
+extern unsigned int size_ata_bd_irx;
+extern unsigned char ps2hdd_irx[];
+extern unsigned int size_ps2hdd_irx;
+extern unsigned char ps2fs_irx[];
+extern unsigned int size_ps2fs_irx;
 extern unsigned char sio2man_irx[];
 extern unsigned int size_sio2man_irx;
 extern unsigned char padman_irx[];
@@ -83,21 +108,17 @@ int Sys_FindHandle(void)
 
 int Sys_FileLength(FILE *f)
 {
-	int             pos;
-	int             end;
+	struct stat info;
 
-	pos = ftell(f);
-	fseek(f, 0, SEEK_END);
-	end = ftell(f);
-	fseek(f, pos, SEEK_SET);
-
-	return end;
+	if (fstat(fileno(f), &info) < 0 || info.st_size < 0 || info.st_size > INT_MAX)
+		return -1;
+	return (int)info.st_size;
 }
 
 int Sys_FileOpenRead(char *path, int *hndl)
 {
 	FILE    *f;
-	int             i;
+	int             i, length;
 
 	i = Sys_FindHandle();
 
@@ -107,13 +128,19 @@ int Sys_FileOpenRead(char *path, int *hndl)
 		*hndl = -1;
 		return -1;
 	}
+	length = Sys_FileLength(f);
+	if (length < 0) {
+		fclose(f);
+		*hndl = -1;
+		return -1;
+	}
 	sys_handles[i] = f;
 	Q_strlcpy(sys_last_file, path, sizeof(sys_last_file));
 	if (strstr(path, "/sounds/"))
 		sys_sound_opens++;
 	*hndl = i;
 
-	return Sys_FileLength(f);
+	return length;
 }
 
 int Sys_FileOpenWrite(char *path)
@@ -154,16 +181,9 @@ int Sys_FileWrite(int handle, void *data, int count)
 
 int     Sys_FileTime(char *path)
 {
-	FILE    *f;
+	struct stat info;
 
-	f = fopen(path, "rb");
-	if (f)
-	{
-		fclose(f);
-		return 1;
-	}
-
-	return -1;
+	return stat(path, &info) == 0 ? 1 : -1;
 }
 
 sys_directory_t *Sys_OpenDirectory(const char *path)
@@ -303,12 +323,14 @@ void Sys_SendKeyEvents(void)
 void Sys_CaptureScreenshot(void)
 {
     byte header[54] = {'B', 'M'}, *row;
+    char path[MAX_OSPATH];
     unsigned int size = 54 + vid.width * vid.height * 4, value;
     FILE *file;
     int x, y;
     row = malloc(vid.width * 4);
     if (!row) return;
-    file = fopen(PS2_DATA_DIRECTORY "/capture.bmp", "wb");
+    snprintf(path, sizeof(path), "%s/capture.bmp", sys_data_directory);
+    file = fopen(path, "wb");
     if (!file) { free(row); return; }
     memcpy(header + 2, &size, 4);
     value = 54; memcpy(header + 10, &value, 4);
@@ -330,7 +352,7 @@ void Sys_CaptureScreenshot(void)
     fclose(file);
     free(row);
     if (y != vid.height) {
-        remove(PS2_DATA_DIRECTORY "/capture.bmp");
+        remove(path);
         Con_Printf("Could not capture the framebuffer.\n");
     }
 }
@@ -353,19 +375,165 @@ static void Sys_LoadModuleBuffer(char *name, void *buffer, int size)
 		Sys_SystemError(va("Could not load %s (id %d, result %d)", name, id, result));
 }
 
-static void Sys_InitUSB(void)
+static sys_ps2_storage_t Sys_PS2BootStorage(int argc, char **argv, int *unit)
+{
+	smod_mod_info_t module;
+	char driver[16] = {0};
+	int fd, length;
+	const char *partition;
+	sys_ps2_storage_t storage;
+
+	*unit = 0;
+	sys_hdd_partition[0] = 0;
+	if (argc < 1 || !argv || !argv[0])
+		return PS2_STORAGE_USB;
+	if (!strncmp(argv[0], "hdd0:", 5) || !strncmp(argv[0], "hdd1:", 5)) {
+		*unit = argv[0][3] - '0';
+		partition = argv[0] + 5;
+		if (*partition == '/')
+			partition++;
+		length = strcspn(partition, ":/");
+		if (length > APA_IDMAX)
+			Sys_SystemError("HDD partition name is too long");
+		if (length)
+			snprintf(sys_hdd_partition, sizeof(sys_hdd_partition),
+				"%.5s%.*s", argv[0], length, partition);
+		return PS2_STORAGE_HDD;
+	}
+	if (!strncmp(argv[0], "pfs", 3))
+		return PS2_STORAGE_HDD;
+	if (!strncmp(argv[0], "ata", 3))
+		return PS2_STORAGE_ATA;
+	if (!strncmp(argv[0], "mc0:", 4) || !strncmp(argv[0], "mc1:", 4)) {
+		*unit = argv[0][2] - '0';
+		return PS2_STORAGE_MEMORY_CARD;
+	}
+	if (!strncmp(argv[0], "mmce0:", 6) || !strncmp(argv[0], "mmce1:", 6) ||
+		!strncmp(argv[0], "mmce:", 5)) {
+		*unit = argv[0][4] == '1';
+		return PS2_STORAGE_MMCE;
+	}
+	if (!strncmp(argv[0], "mx4sio:", 7))
+		return PS2_STORAGE_MX4SIO;
+	if (strncmp(argv[0], "mass", 4))
+		return PS2_STORAGE_USB;
+	if (!smod_get_mod_by_name("IOX/File_Manager_Rpc", &module))
+		return smod_get_mod_by_name("mx4sio", &module) &&
+			!smod_get_mod_by_name("usbmass_bd", &module) ?
+			PS2_STORAGE_MX4SIO : PS2_STORAGE_USB;
+	if (fileXioInit() < 0)
+		return PS2_STORAGE_USB;
+	fd = fileXioOpen(argv[0], FIO_O_RDONLY, 0);
+	if (fd >= 0) {
+		fileXioIoctl2(fd, USBMASS_IOCTL_GET_DRIVERNAME, NULL, 0,
+			driver, sizeof(driver) - 1);
+		fileXioClose(fd);
+	}
+	if (!strcmp(driver, "sdc"))
+		storage = PS2_STORAGE_MX4SIO;
+	else if (!strcmp(driver, "ata"))
+		storage = PS2_STORAGE_ATA;
+	else
+		storage = PS2_STORAGE_USB;
+	fileXioExit();
+	return storage;
+}
+
+static qboolean Sys_PS2MountHDD(const char *partition)
 {
 	DIR *dir;
-	int i;
+
+	if (fileXioMount("pfs0:", partition, FIO_MT_RDWR) < 0)
+		return false;
+	dir = opendir("pfs0:/APPS/NZPORTABLE/nzp");
+	if (!dir) {
+		fileXioUmount("pfs0:");
+		return false;
+	}
+	closedir(dir);
+	Q_strlcpy(sys_data_directory, "pfs0:/APPS/NZPORTABLE", sizeof(sys_data_directory));
+	return true;
+}
+
+static void Sys_PS2InitHDD(int unit)
+{
+	iox_dirent_t entry;
+	char device[] = "hdd0:", partition[APA_IDMAX + 6];
+	int fd;
+	qboolean mounted = false;
+
+	Sys_LoadModuleBuffer("ps2hdd.irx", ps2hdd_irx, size_ps2hdd_irx);
+	Sys_LoadModuleBuffer("ps2fs.irx", ps2fs_irx, size_ps2fs_irx);
+	if (fileXioInit() < 0)
+		Sys_SystemError("Could not initialize HDD file access");
+	if (sys_hdd_partition[0]) {
+		if (!Sys_PS2MountHDD(sys_hdd_partition))
+			Sys_SystemError(va("Could not load APPS/NZPORTABLE/nzp from %s", sys_hdd_partition));
+		return;
+	}
+	device[3] += unit;
+	fd = fileXioDopen(device);
+	if (fd >= 0) {
+		while (fileXioDread(fd, &entry) > 0) {
+			if (entry.stat.mode != APA_TYPE_PFS || (entry.stat.attr & APA_FLAG_SUB))
+				continue;
+			snprintf(partition, sizeof(partition), "%s%.*s", device, APA_IDMAX, entry.name);
+			if ((mounted = Sys_PS2MountHDD(partition)))
+				break;
+		}
+		fileXioDclose(fd);
+	}
+	if (!mounted)
+		Sys_SystemError("HDD game data not found: APPS/NZPORTABLE/nzp");
+}
+
+static void Sys_PS2InitStorage(sys_ps2_storage_t storage, int unit)
+{
+	DIR *dir;
+	char root[16];
+	int i, slot;
 
 	Sys_LoadModuleBuffer("iomanX.irx", iomanX_irx, size_iomanX_irx);
 	Sys_LoadModuleBuffer("fileXio.irx", fileXio_irx, size_fileXio_irx);
+	if (storage == PS2_STORAGE_MMCE || storage == PS2_STORAGE_MEMORY_CARD) {
+		Sys_LoadModuleBuffer("mmceman.irx", mmceman_irx, size_mmceman_irx);
+		if (fileXioInit() < 0)
+			Sys_SystemError("Could not initialize storage file access");
+		for (i = 0; i < 100; i++) {
+			for (slot = 0; slot < 2; slot++) {
+				snprintf(root, sizeof(root), "mmce%d:/", unit ^ slot);
+				dir = opendir(root);
+				if (dir) {
+					closedir(dir);
+					snprintf(sys_data_directory, sizeof(sys_data_directory),
+						"%sAPPS/NZPORTABLE", root);
+					return;
+				}
+			}
+			if (storage == PS2_STORAGE_MEMORY_CARD)
+				break;
+			usleep(100000);
+		}
+		if (storage == PS2_STORAGE_MMCE)
+			Sys_SystemError("MMCE SD card not accessible (check firmware and card)");
+	}
 	Sys_LoadModuleBuffer("bdm.irx", bdm_irx, size_bdm_irx);
 	Sys_LoadModuleBuffer("bdmfs_fatfs.irx", bdmfs_fatfs_irx, size_bdmfs_fatfs_irx);
-	Sys_LoadModuleBuffer("usbd.irx", usbd_irx, size_usbd_irx);
-	Sys_LoadModuleBuffer("usbmass_bd.irx", usbmass_bd_irx, size_usbmass_bd_irx);
+	if (storage == PS2_STORAGE_HDD || storage == PS2_STORAGE_ATA) {
+		Sys_LoadModuleBuffer("ps2dev9.irx", ps2dev9_irx, size_ps2dev9_irx);
+		Sys_LoadModuleBuffer("ata_bd.irx", ata_bd_irx, size_ata_bd_irx);
+		if (storage == PS2_STORAGE_HDD) {
+			Sys_PS2InitHDD(unit);
+			return;
+		}
+	} else if (storage == PS2_STORAGE_MX4SIO) {
+		Sys_LoadModuleBuffer("mx4sio_bd.irx", mx4sio_bd_irx, size_mx4sio_bd_irx);
+	} else {
+		Sys_LoadModuleBuffer("usbd.irx", usbd_irx, size_usbd_irx);
+		Sys_LoadModuleBuffer("usbmass_bd.irx", usbmass_bd_irx, size_usbmass_bd_irx);
+	}
 	if (fileXioInit() < 0)
-		Sys_SystemError("Could not initialize USB file access");
+		Sys_SystemError("Could not initialize storage file access");
 	for (i = 0; i < 100; i++) {
 		dir = opendir("mass:/");
 		if (dir) {
@@ -375,7 +543,8 @@ static void Sys_InitUSB(void)
 		usleep(100000);
 	}
 	if (i == 100)
-		Sys_SystemError("USB drive did not mount");
+		Sys_SystemError(storage == PS2_STORAGE_ATA ? "HDD did not mount" :
+			storage == PS2_STORAGE_MX4SIO ? "MX4SIO card did not mount" : "USB drive did not mount");
 }
 
 extern int hunk_size, hunk_low_used, hunk_high_used;
@@ -412,7 +581,7 @@ static volatile int sys_exception_active;
 static void Sys_PS2WriteException(void)
 {
 	EE_RegFrame *frame = &sys_exception_frame;
-	char text[2048];
+	char text[2048], path[MAX_OSPATH];
 	int fd, length, i, written = 0;
 
 	EIntr();
@@ -427,7 +596,8 @@ static void Sys_PS2WriteException(void)
 		length += snprintf(text + length, sizeof(text) - length,
 			"r%02d %08x %08x %08x %08x\n", i, reg[0], reg[1], reg[2], reg[3]);
 	}
-	fd = fileXioOpen(PS2_DATA_DIRECTORY "/crash.log", FIO_O_WRONLY | FIO_O_CREAT | FIO_O_TRUNC, 0666);
+	snprintf(path, sizeof(path), "%s/crash.log", sys_data_directory);
+	fd = fileXioOpen(path, FIO_O_WRONLY | FIO_O_CREAT | FIO_O_TRUNC, 0666);
 	if (fd >= 0) {
 		while (written < length) {
 			int count = fileXioWrite(fd, text + written, length - written);
@@ -459,12 +629,13 @@ int main(int argc, char **argv)
 	static quakeparms_t parms;
 	static startup_arguments_t startup;
 	const char *base_directory;
-	char startup_error[256], game_directory[MAX_OSPATH];
-	const char *setup_path = PS2_DATA_DIRECTORY "/setup.ini";
+	char startup_error[256], game_directory[MAX_OSPATH], setup_file[MAX_OSPATH];
+	const char *setup_path = setup_file;
 	size_t heap_size, default_heap;
 	DIR *dir;
 	double oldtime, newtime;
-	int i, heaparg;
+	int i, heaparg, unit;
+	sys_ps2_storage_t storage;
 
 	ChangeThreadPriority(GetThreadId(), 0x40);
 	init_scr();
@@ -475,22 +646,25 @@ int main(int argc, char **argv)
 	sys_boot_screen = true;
 	Sys_Printf("NZ:P PS2\n");
 	SifInitRpc(0);
+	storage = Sys_PS2BootStorage(argc, argv, &unit);
 	while (!SifIopReset(NULL, 0)) {}
 	while (!SifIopSync()) {}
 	SifInitRpc(0);
 	sbv_patch_enable_lmb();
-	Sys_InitUSB();
 	Sys_LoadModuleBuffer("sio2man.irx", sio2man_irx, size_sio2man_irx);
+	Sys_PS2InitStorage(storage, unit);
+	COM_SetFileSystemCaseSensitive(storage == PS2_STORAGE_HDD);
 	Sys_LoadModuleBuffer("padman.irx", padman_irx, size_padman_irx);
 	Sys_LoadModule("rom0:LIBSD");
 	Sys_LoadModuleBuffer("audsrv.irx", audsrv_irx, size_audsrv_irx);
 
+	snprintf(setup_file, sizeof(setup_file), "%s/setup.ini", sys_data_directory);
 	if (Sys_FileTime((char *)setup_path) < 0)
 		setup_path = NULL;
 	if (!Startup_LoadArguments(&startup, argc, argv, setup_path,
 		startup_error, sizeof(startup_error)))
 		Sys_Error("Startup: %s", startup_error);
-	if (!Startup_GetBaseDirectory(&startup, PS2_DATA_DIRECTORY, &base_directory,
+	if (!Startup_GetBaseDirectory(&startup, sys_data_directory, &base_directory,
 		startup_error, sizeof(startup_error)))
 		Sys_Error("Startup: %s", startup_error);
 	for (i = 1; i < startup.argc; i++)
