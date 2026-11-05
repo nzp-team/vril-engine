@@ -132,8 +132,10 @@ SubmitCommands(void)
         return;
 
     uint64_t token = ++serial;
+    uint32_t * fence = command.cmdptr;
 
     gnmDrawCmdEventWriteEop(&command, GNM_CACHE_FLUSH_TS, (uint64_t) completion, GNM_DATA_SEL_SEND_DATA64, token);
+    fence[3] &= ~(3u << 24);
 
     void * dcb = command.beginptr, * ccb = NULL;
     uint32_t bytes = (command.cmdptr - command.beginptr) * 4, zero = 0;
@@ -207,6 +209,38 @@ BindSlots(GnmShaderStage stage, const GnmInputUsageSlot * slots, unsigned count,
 
         gnmDrawCmdSetPointerUserData(&command, stage, slots[i].startregister, address);
     }
+}
+
+static void
+SetShaderIdentity(const GnmShaderCommonData * common, const void * registers)
+{
+    uint32_t address[2];
+    uint32_t size = gnmShaderCommonCodeSize(common);
+
+    memcpy(address, registers, sizeof(address));
+
+    uint8_t * code = (uint8_t *) (((uint64_t) address[0] << 8) | ((uint64_t) address[1] << 40));
+
+    if (size < sizeof(GnmShaderBinaryInfo))
+        Sys_Error("GNM shader binary info missing");
+
+    GnmShaderBinaryInfo * info = (GnmShaderBinaryInfo *) (code + size - sizeof(*info));
+
+    if (memcmp(info->signature, "OrbShdr", 7) || info->length > size - sizeof(*info))
+        Sys_Error("GNM shader binary info invalid");
+
+    if (info->shaderhash0 || info->shaderhash1)
+        return;
+
+    uint64_t hash = UINT64_C(14695981039346656037);
+
+    for (uint32_t i = 0; i < info->length; ++i) {
+        hash ^= code[i];
+        hash *= UINT64_C(1099511628211);
+    }
+
+    info->shaderhash0 = (uint32_t) hash;
+    info->shaderhash1 = (uint32_t) (hash >> 32);
 }
 
 static void
@@ -691,7 +725,7 @@ GNMR_Upload(int level, int storage, int w, int h, int x, int y, int replace,
                                     .nummiplevels = t->mip_count,
                                     .numslices    = 1,
                                     .format       = GNM_FMT_R8G8B8A8_UNORM,
-                                    .tilemodehint = GNM_TM_DISPLAY_LINEAR_GENERAL,
+                                    .tilemodehint = GNM_TM_DISPLAY_LINEAR_ALIGNED,
                                     .mingpumode   = GNM_GPU_BASE,
                                     .numfragments = 1 };
 
@@ -931,6 +965,12 @@ PS4_GraphicsInit(void)
       !loadpshader(&present_ps, &permanent, "/app0/shaders/present.frag.sb") ||
       !loadpshader(&clear_ps, &permanent, "/app0/shaders/clear.frag.sb"))
         Sys_Error("GNM compiled shader load failed");
+
+    SetShaderIdentity(&game_vs->common, &game_vs->registers);
+    SetShaderIdentity(&game_ps->common, &game_ps->registers);
+    SetShaderIdentity(&present_vs->common, &present_vs->registers);
+    SetShaderIdentity(&present_ps->common, &present_ps->registers);
+    SetShaderIdentity(&clear_ps->common, &clear_ps->registers);
 
     GnmFetchShaderCreateInfo fi = { .regs           = &game_vs->registers,
                                     .vtxinputs      = gnmVsShaderInputSemanticTable(game_vs),

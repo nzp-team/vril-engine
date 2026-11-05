@@ -402,7 +402,39 @@ Sys_DefaultConfig(void)
 void
 Sys_CaptureScreenshot(void)
 {
-    Con_Printf("PS4: use the system screenshot control.\n");
+    FILE * file;
+    unsigned attempt;
+
+    if (!sys_testmode.value)
+        return;
+
+    file = fopen("/data/nzportable/capture.enable", "r");
+
+    if (!file)
+        return;
+
+    fclose(file);
+    remove("/data/nzportable/capture.done");
+    file = fopen("/data/nzportable/capture.request", "w");
+
+    if (!file)
+        Sys_Error("Sys_CaptureScreenshot: could not request test screenshot");
+
+    fclose(file);
+
+    for (attempt = 0; attempt < 600; ++attempt) {
+        file = fopen("/data/nzportable/capture.done", "r");
+
+        if (file) {
+            fclose(file);
+            remove("/data/nzportable/capture.request");
+            return;
+        }
+
+        sceKernelUsleep(100000);
+    }
+
+    Sys_Error("Sys_CaptureScreenshot: test screenshot timed out");
 }
 
 int
