@@ -823,6 +823,42 @@ GetWeaponZoomAmount(void)
     }
 } /* GetWeaponZoomAmount */
 
+static void
+SCR_DrawBrightness(void)
+{
+    float brightness = bound(0.0f, v_brightness.value, 1.0f);
+    float amount = fabsf(brightness - 0.5f) * 2.0f;
+    if (brightness > 0.5f)
+        amount *= 0.25f;
+    byte color = brightness > 0.5f ? 255 : 0;
+    byte alpha = (byte)(amount * 255.0f + 0.5f);
+    hyena_colored_vertex_t vertices[4] = {0};
+    static const unsigned short indices[6] = {0, 1, 2, 0, 2, 3};
+
+    if (!alpha)
+        return;
+
+    vertices[1].xyz[0] = vertices[2].xyz[0] = vid.width;
+    vertices[2].xyz[1] = vertices[3].xyz[1] = vid.height;
+    for (int i = 0; i < 4; ++i) {
+        vertices[i].color[0] = vertices[i].color[1] = vertices[i].color[2] = color;
+        vertices[i].color[3] = alpha;
+    }
+
+    Hyena_Set2D();
+    Hyena_FogDisable();
+    Hyena_DisableCapability(HYE_ALPHA_TEST);
+    Hyena_DisableCapability(HYE_TEXTURE_2D);
+    Hyena_EnableCapability(HYE_BLEND);
+    Hyena_SetBlendFunction(HYE_SRC_ALPHA, brightness > 0.5f ? HYE_ONE : HYE_ONE_MINUS_SRC_ALPHA);
+    Hyena_DrawIndexedTriangles(vertices, 4, indices, 6, false);
+    Hyena_SetBlendFunction(HYE_SRC_ALPHA, HYE_ONE_MINUS_SRC_ALPHA);
+    Hyena_DisableCapability(HYE_BLEND);
+    Hyena_EnableCapability(HYE_TEXTURE_2D);
+    Hyena_EnableCapability(HYE_ALPHA_TEST);
+    Hyena_SetColor(1, 1, 1, 1);
+}
+
 void
 SCR_UpdateScreen(void)
 {
@@ -900,6 +936,7 @@ SCR_UpdateScreen(void)
     // Flush 2D draws before changing the palette or CLUT.
     Draw_Flush();
     V_UpdatePalette();
+    SCR_DrawBrightness();
 
     GL_EndRendering();
 } /* SCR_UpdateScreen */

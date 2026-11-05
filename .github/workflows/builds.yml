@@ -54,44 +54,27 @@ jobs:
           tests=$(find testing/tests -maxdepth 1 -type f -name '*.sh' ! -name 'generate-source.sh' | sed -E 's@.*/([^/]+)\.sh$@\1@' | jq -Rsc 'split("\n") | map(select(length > 0)) | sort')
           test "$tests" != '[]' && echo "tests=$tests" >> "$GITHUB_OUTPUT"
 
-  Compile-Linux-Toolbox:
-    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-    name: Compile Linux (${{ matrix.arch }})
+  Compile-linux-x86_64:
+    if: &build_condition ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
+    name: Compile Linux (x86_64)
     needs: resolve-toolbox
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x86_64
-            runner: ubuntu-24.04
-            host_arch: x86_64
-            binary: build/sdl/nzportable
-          - arch: x86
-            runner: ubuntu-24.04
-            host_arch: x86_64
-            binary: build/sdl/x86/nzportable
-          - arch: arm64
-            runner: ubuntu-24.04
-            host_arch: x86_64
-            binary: build/sdl/arm64/nzportable
-          - arch: armhf
-            runner: ubuntu-24.04
-            host_arch: x86_64
-            binary: build/sdl/armhf/nzportable
-    runs-on: ${{ matrix.runner }}
-    container:
+    runs-on: ubuntu-24.04
+    container: &toolbox_container
       image: ${{ needs.resolve-toolbox.outputs.image }}
-    defaults:
+    defaults: &bash_defaults
       run:
         shell: bash
-    steps:
+    env:
+      VRIL_BUILD_TARGET: linux-x86_64
+      VRIL_ARTIFACT: linux-x86_64-nzp-sdl
+      VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/sdl/nzportable
+    steps: &compile_steps
       - name: Toolbox Fetch
         env:
           TOOLBOX_HOST_OS: Linux
-          TOOLBOX_HOST_ARCH: ${{ matrix.host_arch }}
+          TOOLBOX_HOST_ARCH: x86_64
         run: /entrypoint.sh fetch
-      - &select_vril_commit
-        name: Select Vril commit
+      - name: Select Vril commit
         env:
           EVENT_NAME: ${{ github.event_name }}
           VRIL_REF: ${{ github.ref }}
@@ -108,220 +91,203 @@ jobs:
             git -C /workspace/repos/vril-engine checkout --detach "$VRIL_SHA"
           fi
       - name: Build
-        run: /entrypoint.sh build-vril --target linux-${{ matrix.arch }} -- WERROR=1
+        run: /entrypoint.sh build-vril --target "$VRIL_BUILD_TARGET" -- WERROR=1
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-${{ matrix.arch }}-nzp-sdl
-          path: /workspace/repos/vril-engine/${{ matrix.binary }}
+          name: ${{ env.VRIL_ARTIFACT }}
+          path: ${{ env.VRIL_ARTIFACT_PATHS }}
           if-no-files-found: error
-  Compile-Windows:
-    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-    name: Compile Windows (${{ matrix.arch }})
+
+  Compile-linux-x86:
+    if: *build_condition
+    name: Compile Linux (x86)
     needs: resolve-toolbox
     runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [x86, x86_64]
-    container:
-      image: ${{ needs.resolve-toolbox.outputs.image }}
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Toolbox Fetch
-        env:
-          TOOLBOX_HOST_OS: Linux
-          TOOLBOX_HOST_ARCH: x86_64
-        run: /entrypoint.sh fetch
-      - *select_vril_commit
-      - name: Build
-        env:
-          ARCH: ${{ matrix.arch }}
-        run: /entrypoint.sh build-vril --target "windows-$ARCH" -- WERROR=1
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-${{ matrix.arch }}-nzp-sdl
-          path: /workspace/repos/vril-engine/build/sdl/windows-${{ matrix.arch }}/nzportable.exe
-          if-no-files-found: error
-  Compile-ELF:
-    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-    name: Compile PS2
+    container: *toolbox_container
+    defaults: *bash_defaults
+    env:
+      VRIL_BUILD_TARGET: linux-x86
+      VRIL_ARTIFACT: linux-x86-nzp-sdl
+      VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/sdl/x86/nzportable
+    steps: *compile_steps
+
+  Compile-linux-arm64:
+    if: *build_condition
+    name: Compile Linux (arm64)
     needs: resolve-toolbox
     runs-on: ubuntu-24.04
-    container:
-      image: ${{ needs.resolve-toolbox.outputs.image }}
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Toolbox Fetch
-        env:
-          TOOLBOX_HOST_OS: Linux
-          TOOLBOX_HOST_ARCH: x86_64
-        run: /entrypoint.sh fetch
-      - *select_vril_commit
-      - name: Build
-        run: /entrypoint.sh build-vril --target ps2 -- WERROR=1
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ps2-nzp-elf
-          path: /workspace/repos/vril-engine/build/ps2/nzportable.elf
-          if-no-files-found: error
-  Compile-EBOOT:
-    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-    name: Compile PSP
+    container: *toolbox_container
+    defaults: *bash_defaults
+    env:
+      VRIL_BUILD_TARGET: linux-arm64
+      VRIL_ARTIFACT: linux-arm64-nzp-sdl
+      VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/sdl/arm64/nzportable
+    steps: *compile_steps
+
+  Compile-linux-armhf:
+    if: *build_condition
+    name: Compile Linux (armhf)
     needs: resolve-toolbox
     runs-on: ubuntu-24.04
-    container:
-      image: ${{ needs.resolve-toolbox.outputs.image }}
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Toolbox Fetch
-        env:
-          TOOLBOX_HOST_OS: Linux
-          TOOLBOX_HOST_ARCH: x86_64
-        run: /entrypoint.sh fetch
-      - *select_vril_commit
-      - name: Build
-        run: /entrypoint.sh build-vril --target psp -- WERROR=1
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: psp-nzp-eboot
-          path: /workspace/repos/vril-engine/build/psp/bin/EBOOT.PBP
-          if-no-files-found: error
-  Compile-3DSX:
-    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-    name: Compile 3DS
+    container: *toolbox_container
+    defaults: *bash_defaults
+    env:
+      VRIL_BUILD_TARGET: linux-armhf
+      VRIL_ARTIFACT: linux-armhf-nzp-sdl
+      VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/sdl/armhf/nzportable
+    steps: *compile_steps
+
+  Compile-windows-x86:
+    if: *build_condition
+    name: Compile Windows (x86)
     needs: resolve-toolbox
     runs-on: ubuntu-24.04
-    container:
-      image: ${{ needs.resolve-toolbox.outputs.image }}
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Toolbox Fetch
-        env:
-          TOOLBOX_HOST_OS: Linux
-          TOOLBOX_HOST_ARCH: x86_64
-        run: /entrypoint.sh fetch
-      - *select_vril_commit
-      - name: Build
-        run: /entrypoint.sh build-vril --target 3ds -- WERROR=1
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ctr-nzp-3dsx
-          path: /workspace/repos/vril-engine/build/ctr/bin/nzportable.3dsx
-          if-no-files-found: error
-  Compile-TNS:
-    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-    name: Compile Nspire
+    container: *toolbox_container
+    defaults: *bash_defaults
+    env:
+      VRIL_BUILD_TARGET: windows-x86
+      VRIL_ARTIFACT: windows-x86-nzp-sdl
+      VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/sdl/windows-x86/nzportable.exe
+    steps: *compile_steps
+
+  Compile-windows-x86_64:
+    if: *build_condition
+    name: Compile Windows (x86_64)
     needs: resolve-toolbox
     runs-on: ubuntu-24.04
-    container:
-      image: ${{ needs.resolve-toolbox.outputs.image }}
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Toolbox Fetch
-        env:
-          TOOLBOX_HOST_OS: Linux
-          TOOLBOX_HOST_ARCH: x86_64
-        run: /entrypoint.sh fetch
-      - *select_vril_commit
-      - name: Build
-        run: /entrypoint.sh build-vril --target nspire -- WERROR=1
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: nspire-nzp-tns
-          path: /workspace/repos/vril-engine/build/nspire/bin/nzportable.tns
-          if-no-files-found: error
-  Compile-VPK:
-    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-    name: Compile Vita
+    container: *toolbox_container
+    defaults: *bash_defaults
+    env:
+      VRIL_BUILD_TARGET: windows-x86_64
+      VRIL_ARTIFACT: windows-x86_64-nzp-sdl
+      VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/sdl/windows-x86_64/nzportable.exe
+    steps: *compile_steps
+
+  Compile-ps2:
+    if: *build_condition
+    name: Compile PlayStation 2
     needs: resolve-toolbox
     runs-on: ubuntu-24.04
-    container:
-      image: ${{ needs.resolve-toolbox.outputs.image }}
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Toolbox Fetch
-        env:
-          TOOLBOX_HOST_OS: Linux
-          TOOLBOX_HOST_ARCH: x86_64
-        run: /entrypoint.sh fetch
-      - *select_vril_commit
-      - name: Build
-        run: /entrypoint.sh build-vril --target vita -- WERROR=1
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: psp2-nzp-vpk
-          path: /workspace/repos/vril-engine/build/psp2/nzportable.vpk
-          if-no-files-found: error
-  Compile-NRO:
-    if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'pull_request' }}
-    name: Compile Switch
+    container: *toolbox_container
+    defaults: *bash_defaults
+    env:
+      VRIL_BUILD_TARGET: ps2
+      VRIL_ARTIFACT: ps2-nzp-elf
+      VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/ps2/nzportable.elf
+    steps: *compile_steps
+
+  Compile-psp:
+    if: *build_condition
+    name: Compile PlayStation Portable
     needs: resolve-toolbox
     runs-on: ubuntu-24.04
-    container:
-      image: ${{ needs.resolve-toolbox.outputs.image }}
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Toolbox Fetch
-        env:
-          TOOLBOX_HOST_OS: Linux
-          TOOLBOX_HOST_ARCH: x86_64
-        run: /entrypoint.sh fetch
-      - *select_vril_commit
-      - name: Build
-        run: /entrypoint.sh build-vril --target switch -- WERROR=1
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: nx-nzp-nro
-          path: |
-            /workspace/repos/vril-engine/build/nx/bin/nzportable.nro
-            /workspace/repos/vril-engine/build/nx/bin/nzportable.nacp
-          if-no-files-found: error
-  Pull-Request-Test-3DS:
+    container: *toolbox_container
+    defaults: *bash_defaults
+    env:
+      VRIL_BUILD_TARGET: psp
+      VRIL_ARTIFACT: psp-nzp-eboot
+      VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/psp/bin/EBOOT.PBP
+    steps: *compile_steps
+
+  Compile-3ds:
+    if: *build_condition
+    name: Compile Nintendo 3DS
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
+    container: *toolbox_container
+    defaults: *bash_defaults
+    env:
+      VRIL_BUILD_TARGET: 3ds
+      VRIL_ARTIFACT: ctr-nzp-3dsx
+      VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/ctr/bin/nzportable.3dsx
+    steps: *compile_steps
+
+  Compile-nspire:
+    if: *build_condition
+    name: Compile TI-Nspire
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
+    container: *toolbox_container
+    defaults: *bash_defaults
+    env:
+      VRIL_BUILD_TARGET: nspire
+      VRIL_ARTIFACT: nspire-nzp-tns
+      VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/nspire/bin/nzportable.tns
+    steps: *compile_steps
+
+  Compile-vita:
+    if: *build_condition
+    name: Compile PlayStation VITA
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
+    container: *toolbox_container
+    defaults: *bash_defaults
+    env:
+      VRIL_BUILD_TARGET: vita
+      VRIL_ARTIFACT: psp2-nzp-vpk
+      VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/psp2/nzportable.vpk
+    steps: *compile_steps
+
+  Compile-ps4:
+    if: *build_condition
+    name: Compile PlayStation 4
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
+    container: *toolbox_container
+    defaults: *bash_defaults
+    env:
+      VRIL_BUILD_TARGET: ps4
+      VRIL_ARTIFACT: ps4-nzp-pkg
+      VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/ps4/nzportable.pkg
+    steps: *compile_steps
+
+  Compile-switch:
+    if: *build_condition
+    name: Compile Nintendo Switch
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
+    container: *toolbox_container
+    defaults: *bash_defaults
+    env:
+      VRIL_BUILD_TARGET: switch
+      VRIL_ARTIFACT: nx-nzp-nro
+      VRIL_ARTIFACT_PATHS: |
+        /workspace/repos/vril-engine/build/nx/bin/nzportable.nro
+        /workspace/repos/vril-engine/build/nx/bin/nzportable.nacp
+    steps: *compile_steps
+
+  Test-linux-x86_64:
     if: github.event_name == 'pull_request'
-    name: 3DS ${{ matrix.mode }} ${{ matrix.test }} Pull Request Test
-    needs: [resolve-toolbox, discover-tests, Compile-3DSX, prepare-toolbox-test-content]
+    name: Linux (x86_64) ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-linux-x86_64, prepare-toolbox-test-content]
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        mode: [old, new]
         test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
-    runs-on: ubuntu-24.04
-    container:
+        mode: [""]
+    container: &test_container
       image: ${{ needs.resolve-toolbox.outputs.image }}
       options: --shm-size=8192m
-    defaults:
-      run:
-        shell: bash
-    steps:
+    defaults: *bash_defaults
+    env:
+      VRIL_PLATFORM: linux
+      VRIL_HOST_ARCH: x86_64
+      VRIL_ARTIFACT: linux-x86_64-nzp-sdl
+      VRIL_BINARY: nzportable
+      VRIL_REFERENCE: ''
+      VRIL_TEST_TARGET: linux-x86_64
+      VRIL_TEST_NAME: Linux (x86_64)
+      ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/linux
+      QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+    steps: &pr_steps
       - name: Toolbox Fetch
         env:
           TOOLBOX_HOST_OS: Linux
-          TOOLBOX_HOST_ARCH: x86_64
+          TOOLBOX_HOST_ARCH: ${{ env.VRIL_HOST_ARCH }}
         run: /entrypoint.sh fetch
-      - &select_vril_pr_merge
-        name: Select Vril PR merge commit
+      - name: Select Vril PR merge commit
         env:
           PR_MERGE_REF: ${{ github.ref }}
           PR_MERGE_SHA: ${{ github.sha }}
@@ -331,74 +297,10 @@ jobs:
           git -C /workspace/repos/vril-engine checkout --detach FETCH_HEAD
           test "$(git -C /workspace/repos/vril-engine rev-parse HEAD)" = "$PR_MERGE_SHA"
           test "$(git -C /workspace/repos/vril-engine rev-parse 'HEAD^2')" = "$PR_HEAD_SHA"
-      - name: Download 3DS Artifact
+      - name: Download Engine Artifact
         uses: actions/download-artifact@v4
         with:
-          name: ctr-nzp-3dsx
-          path: /workspace/vril-test-artifact
-      - name: Download Test Content Overrides
-        if: needs['prepare-toolbox-test-content'].outputs.has_overrides == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: toolbox-pr-test-content-overrides
-          path: /workspace/vril-test-overrides
-      - name: Run test
-        env:
-          ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/ctr
-          QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
-          CTR_MODE: ${{ matrix.mode }}
-          VRIL_TEST: ${{ matrix.test }}
-        run: /entrypoint.sh test-vril --platform ctr --test "$VRIL_TEST" --mode "$CTR_MODE" --binary /workspace/vril-test-artifact/nzportable.3dsx
-      - name: Upload Failure Artifact
-        id: ctr_failure_artifact
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ctr-${{ matrix.mode }}-${{ matrix.test }}-pr-failures
-          path: /workspace/repos/vril-engine/testing/working/fail/
-          if-no-files-found: ignore
-          retention-days: 14
-      - name: Add Failure Summary
-        if: failure() && steps.ctr_failure_artifact.outputs.artifact-url != ''
-        env:
-          ARTIFACT_URL: ${{ steps.ctr_failure_artifact.outputs.artifact-url }}
-          CTR_MODE: ${{ matrix.mode }}
-          VRIL_TEST: ${{ matrix.test }}
-        run: |
-          {
-            echo "## 3DS $CTR_MODE $VRIL_TEST PR Test Failed"
-            echo ""
-            cat /workspace/repos/vril-engine/testing/working/fail/summary.md
-            echo ""
-            echo "[Failure Artifact]($ARTIFACT_URL)"
-            echo ""
-          } >> "$GITHUB_STEP_SUMMARY"
-  Pull-Request-Test-PS2:
-    if: github.event_name == 'pull_request'
-    name: PS2 ${{ matrix.test }} Pull Request Test
-    needs: [resolve-toolbox, discover-tests, Compile-ELF, prepare-toolbox-test-content]
-    strategy:
-      fail-fast: false
-      matrix:
-        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
-    runs-on: ubuntu-24.04
-    container:
-      image: ${{ needs.resolve-toolbox.outputs.image }}
-      options: --shm-size=8192m
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Toolbox Fetch
-        env:
-          TOOLBOX_HOST_OS: Linux
-          TOOLBOX_HOST_ARCH: x86_64
-        run: /entrypoint.sh fetch
-      - *select_vril_pr_merge
-      - name: Download PS2 Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ps2-nzp-elf
+          name: ${{ env.VRIL_ARTIFACT }}
           path: /workspace/vril-test-artifact
       - name: Download Test Content Overrides
         if: needs['prepare-toolbox-test-content'].outputs.has_overrides == 'true'
@@ -407,8 +309,10 @@ jobs:
           name: toolbox-pr-test-content-overrides
           path: /workspace/vril-test-overrides
       - name: Install PCSX2
+        if: env.VRIL_PLATFORM == 'ps2'
         run: bash /workspace/repos/vril-engine/testing/setup/utils/install-pcsx2.sh
       - name: Prepare BIOS
+        if: env.VRIL_PLATFORM == 'ps2'
         env:
           PS2_BIOS_URL: ${{ secrets.PS2_BIOS_URL }}
         run: |
@@ -417,99 +321,262 @@ jobs:
           echo 'PS2_BIOS=/tmp/ps2-bios.bin' >> "$GITHUB_ENV"
       - name: Run test
         env:
-          ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/ctr
-          QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
           VRIL_TEST: ${{ matrix.test }}
-        run: /entrypoint.sh test-vril --platform ps2 --test "$VRIL_TEST" --binary /workspace/vril-test-artifact/nzportable.elf
+          VRIL_MODE: ${{ matrix.mode }}
+        run: |
+          arguments=(--platform "$VRIL_PLATFORM" --test "$VRIL_TEST" --binary "/workspace/vril-test-artifact/$VRIL_BINARY")
+          if [ -n "$VRIL_MODE" ]; then
+            arguments+=(--mode "$VRIL_MODE")
+          fi
+          if [ -n "$VRIL_REFERENCE" ]; then
+            arguments+=(--reference-platform "$VRIL_REFERENCE")
+          fi
+          /entrypoint.sh test-vril "${arguments[@]}"
       - name: Remove BIOS
-        if: always()
+        if: always() && env.VRIL_PLATFORM == 'ps2'
         run: rm -f /tmp/ps2-bios.bin /workspace/repos/vril-engine/testing/working/PCSX2/bios/ps2.bin
       - name: Upload Failure Artifact
-        id: ps2_failure_artifact
+        id: failure_artifact
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: ps2-${{ matrix.test }}-pr-failures
+          name: ${{ env.VRIL_TEST_TARGET }}-${{ matrix.test }}-pr-failures
           path: /workspace/repos/vril-engine/testing/working/fail/
           if-no-files-found: ignore
           retention-days: 14
       - name: Add Failure Summary
-        if: failure() && steps.ps2_failure_artifact.outputs.artifact-url != ''
+        if: failure() && steps.failure_artifact.outputs.artifact-url != ''
         env:
-          ARTIFACT_URL: ${{ steps.ps2_failure_artifact.outputs.artifact-url }}
+          ARTIFACT_URL: ${{ steps.failure_artifact.outputs.artifact-url }}
+          PLATFORM_NAME: ${{ env.VRIL_TEST_NAME }}
           VRIL_TEST: ${{ matrix.test }}
         run: |
           {
-            echo "## PS2 $VRIL_TEST PR Test Failed"
+            echo "## $PLATFORM_NAME $VRIL_TEST PR Test Failed"
             echo ""
             cat /workspace/repos/vril-engine/testing/working/fail/summary.md
             echo ""
             echo "[Failure Artifact]($ARTIFACT_URL)"
+            echo ""
           } >> "$GITHUB_STEP_SUMMARY"
-  Pull-Request-Test-PSP:
+
+  Test-linux-x86:
     if: github.event_name == 'pull_request'
-    name: PSP ${{ matrix.mode }} ${{ matrix.test }} Pull Request Test
-    needs: [resolve-toolbox, discover-tests, Compile-EBOOT, prepare-toolbox-test-content]
+    name: Linux (x86) ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-linux-x86, prepare-toolbox-test-content]
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        mode: [fat, slim]
         test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+        mode: [""]
+    container: *test_container
+    defaults: *bash_defaults
+    env:
+      VRIL_PLATFORM: linux
+      VRIL_HOST_ARCH: x86_64
+      VRIL_ARTIFACT: linux-x86-nzp-sdl
+      VRIL_BINARY: nzportable
+      VRIL_REFERENCE: ''
+      VRIL_TEST_TARGET: linux-x86
+      VRIL_TEST_NAME: Linux (x86)
+      ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/linux
+      QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+    steps: *pr_steps
+
+  Test-linux-arm64:
+    if: github.event_name == 'pull_request'
+    name: Linux (arm64) ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-linux-arm64, prepare-toolbox-test-content]
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+        mode: [""]
+    container: *test_container
+    defaults: *bash_defaults
+    env:
+      VRIL_PLATFORM: linux
+      VRIL_HOST_ARCH: arm64
+      VRIL_ARTIFACT: linux-arm64-nzp-sdl
+      VRIL_BINARY: nzportable
+      VRIL_REFERENCE: ''
+      VRIL_TEST_TARGET: linux-arm64
+      VRIL_TEST_NAME: Linux (arm64)
+      ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/linux
+      QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+    steps: *pr_steps
+
+  Test-linux-armhf:
+    if: github.event_name == 'pull_request'
+    name: Linux (armhf) ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-linux-armhf, prepare-toolbox-test-content]
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+        mode: [""]
+    container: *test_container
+    defaults: *bash_defaults
+    env:
+      VRIL_PLATFORM: linux
+      VRIL_HOST_ARCH: arm64
+      VRIL_ARTIFACT: linux-armhf-nzp-sdl
+      VRIL_BINARY: nzportable
+      VRIL_REFERENCE: ''
+      VRIL_TEST_TARGET: linux-armhf
+      VRIL_TEST_NAME: Linux (armhf)
+      ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/linux
+      QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+    steps: *pr_steps
+
+  Test-windows-x86:
+    if: github.event_name == 'pull_request'
+    name: Windows (x86) ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-windows-x86, prepare-toolbox-test-content]
     runs-on: ubuntu-24.04
-    container:
-      image: ${{ needs.resolve-toolbox.outputs.image }}
-      options: --shm-size=8192m
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Toolbox Fetch
-        env:
-          TOOLBOX_HOST_OS: Linux
-          TOOLBOX_HOST_ARCH: x86_64
-        run: /entrypoint.sh fetch
-      - *select_vril_pr_merge
-      - name: Download PSP Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: psp-nzp-eboot
-          path: /workspace/vril-test-artifact
-      - name: Download Test Content Overrides
-        if: needs['prepare-toolbox-test-content'].outputs.has_overrides == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: toolbox-pr-test-content-overrides
-          path: /workspace/vril-test-overrides
-      - name: Run test
-        env:
-          ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/psp
-          QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
-          PSP_MODE: ${{ matrix.mode }}
-          VRIL_TEST: ${{ matrix.test }}
-        run: /entrypoint.sh test-vril --platform psp --test "$VRIL_TEST" --mode "$PSP_MODE" --binary /workspace/vril-test-artifact/EBOOT.PBP
-      - name: Upload Failure Artifact
-        id: psp_failure_artifact
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: psp-${{ matrix.mode }}-${{ matrix.test }}-pr-failures
-          path: /workspace/repos/vril-engine/testing/working/fail/
-          if-no-files-found: ignore
-          retention-days: 14
-      - name: Add Failure Summary
-        if: failure() && steps.psp_failure_artifact.outputs.artifact-url != ''
-        env:
-          ARTIFACT_URL: ${{ steps.psp_failure_artifact.outputs.artifact-url }}
-          PSP_MODE: ${{ matrix.mode }}
-          VRIL_TEST: ${{ matrix.test }}
-        run: |
-          {
-            echo "## PSP $PSP_MODE $VRIL_TEST PR Test Failed"
-            echo ""
-            cat /workspace/repos/vril-engine/testing/working/fail/summary.md
-            echo ""
-            echo "[Failure Artifact]($ARTIFACT_URL)"
-          } >> "$GITHUB_STEP_SUMMARY"
+    strategy:
+      fail-fast: false
+      matrix:
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+        mode: [""]
+    container: *test_container
+    defaults: *bash_defaults
+    env:
+      VRIL_PLATFORM: windows
+      VRIL_HOST_ARCH: x86_64
+      VRIL_ARTIFACT: windows-x86-nzp-sdl
+      VRIL_BINARY: nzportable.exe
+      VRIL_REFERENCE: linux
+      VRIL_TEST_TARGET: windows-x86
+      VRIL_TEST_NAME: Windows (x86)
+      ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/windows
+      QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+    steps: *pr_steps
+
+  Test-windows-x86_64:
+    if: github.event_name == 'pull_request'
+    name: Windows (x86_64) ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-windows-x86_64, prepare-toolbox-test-content]
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+        mode: [""]
+    container: *test_container
+    defaults: *bash_defaults
+    env:
+      VRIL_PLATFORM: windows
+      VRIL_HOST_ARCH: x86_64
+      VRIL_ARTIFACT: windows-x86_64-nzp-sdl
+      VRIL_BINARY: nzportable.exe
+      VRIL_REFERENCE: linux
+      VRIL_TEST_TARGET: windows-x86_64
+      VRIL_TEST_NAME: Windows (x86_64)
+      ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/windows
+      QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+    steps: *pr_steps
+
+  Test-ps2:
+    if: github.event_name == 'pull_request'
+    name: PlayStation 2 ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-ps2, prepare-toolbox-test-content]
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+        mode: [""]
+    container: *test_container
+    defaults: *bash_defaults
+    env:
+      VRIL_PLATFORM: ps2
+      VRIL_HOST_ARCH: x86_64
+      VRIL_ARTIFACT: ps2-nzp-elf
+      VRIL_BINARY: nzportable.elf
+      VRIL_REFERENCE: ''
+      VRIL_TEST_TARGET: ps2
+      VRIL_TEST_NAME: PlayStation 2
+      ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/ctr
+      QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+    steps: *pr_steps
+
+  Test-psp:
+    if: github.event_name == 'pull_request'
+    name: PlayStation Portable ${{ matrix.mode }} ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-psp, prepare-toolbox-test-content]
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+        mode: ["fat", "slim"]
+    container: *test_container
+    defaults: *bash_defaults
+    env:
+      VRIL_PLATFORM: psp
+      VRIL_HOST_ARCH: x86_64
+      VRIL_ARTIFACT: psp-nzp-eboot
+      VRIL_BINARY: EBOOT.PBP
+      VRIL_REFERENCE: ''
+      VRIL_TEST_TARGET: psp-${{ matrix.mode }}
+      VRIL_TEST_NAME: PlayStation Portable ${{ matrix.mode }}
+      ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/psp
+      QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+    steps: *pr_steps
+
+  Test-3ds:
+    if: github.event_name == 'pull_request'
+    name: Nintendo 3DS ${{ matrix.mode }} ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-3ds, prepare-toolbox-test-content]
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+        mode: ["old", "new"]
+    container: *test_container
+    defaults: *bash_defaults
+    env:
+      VRIL_PLATFORM: ctr
+      VRIL_HOST_ARCH: x86_64
+      VRIL_ARTIFACT: ctr-nzp-3dsx
+      VRIL_BINARY: nzportable.3dsx
+      VRIL_REFERENCE: ''
+      VRIL_TEST_TARGET: ctr-${{ matrix.mode }}
+      VRIL_TEST_NAME: Nintendo 3DS ${{ matrix.mode }}
+      ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/ctr
+      QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+    steps: *pr_steps
+
+  Test-ps4:
+    if: github.event_name == 'pull_request'
+    name: PlayStation 4 ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-ps4, prepare-toolbox-test-content]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+        mode: [""]
+    container: *test_container
+    defaults: *bash_defaults
+    env:
+      VRIL_PLATFORM: ps4
+      VRIL_HOST_ARCH: x86_64
+      VRIL_ARTIFACT: ps4-nzp-pkg
+      VRIL_BINARY: nzportable.pkg
+      VRIL_REFERENCE: ''
+      VRIL_TEST_TARGET: ps4
+      VRIL_TEST_NAME: PlayStation 4
+      ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/ctr
+      QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+    steps: *pr_steps
+
   prepare-toolbox-test-content:
     if: github.event_name == 'pull_request'
     name: Prepare Toolbox Test Content
@@ -585,163 +652,22 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  Pull-Request-Test-Linux-Toolbox:
-    if: github.event_name == 'pull_request'
-    name: Linux ${{ matrix.arch }} ${{ matrix.test }} Pull Request Test
-    needs: [resolve-toolbox, discover-tests, Compile-Linux-Toolbox, prepare-toolbox-test-content]
-    runs-on: ${{ contains(fromJSON('["arm64","armhf"]'), matrix.arch) && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
-    container:
-      image: ${{ needs.resolve-toolbox.outputs.image }}
-      options: --shm-size=8192m
-    strategy:
-      fail-fast: false
-      matrix:
-        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
-        arch: [x86_64, x86, arm64, armhf]
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Toolbox Fetch
-        env:
-          TOOLBOX_HOST_OS: Linux
-          TOOLBOX_HOST_ARCH: ${{ contains(fromJSON('["arm64","armhf"]'), matrix.arch) && 'arm64' || 'x86_64' }}
-        run: /entrypoint.sh fetch
-      - *select_vril_pr_merge
-      - name: Download Linux Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-${{ matrix.arch }}-nzp-sdl
-          path: /workspace/vril-test-artifact
-      - name: Download Test Content Overrides
-        if: needs['prepare-toolbox-test-content'].outputs.has_overrides == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: toolbox-pr-test-content-overrides
-          path: /workspace/vril-test-overrides
-      - name: Run test
-        env:
-          ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/linux
-          QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
-          VRIL_TEST: ${{ matrix.test }}
-        run: /entrypoint.sh test-vril --platform linux --test "$VRIL_TEST" --binary /workspace/vril-test-artifact/nzportable
-      - name: Upload Failure Artifact
-        id: linux_x86_64_failure_artifact
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-${{ matrix.arch }}-${{ matrix.test }}-pr-failures
-          path: /workspace/repos/vril-engine/testing/working/fail/
-          if-no-files-found: ignore
-          retention-days: 14
-      - name: Add Failure Summary
-        if: failure() && steps.linux_x86_64_failure_artifact.outputs.artifact-url != ''
-        env:
-          ARTIFACT_URL: ${{ steps.linux_x86_64_failure_artifact.outputs.artifact-url }}
-        run: |
-          {
-            echo "## Linux ${{ matrix.arch }} ${{ matrix.test }} PR Test Failed"
-            echo ""
-            cat /workspace/repos/vril-engine/testing/working/fail/summary.md
-            echo ""
-            echo "[Failure Artifact](${ARTIFACT_URL})"
-            echo ""
-          } >> "$GITHUB_STEP_SUMMARY"
-  Pull-Request-Test-Windows:
-    if: github.event_name == 'pull_request'
-    name: Windows ${{ matrix.arch }} ${{ matrix.test }} Pull Request Test
-    needs: [resolve-toolbox, discover-tests, Compile-Windows, prepare-toolbox-test-content]
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [x86, x86_64]
-        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
-    runs-on: ubuntu-24.04
-    container:
-      image: ${{ needs.resolve-toolbox.outputs.image }}
-      options: --shm-size=8192m
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Toolbox Fetch
-        env:
-          TOOLBOX_HOST_OS: Linux
-          TOOLBOX_HOST_ARCH: x86_64
-        run: /entrypoint.sh fetch
-      - *select_vril_pr_merge
-      - name: Download Windows Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-${{ matrix.arch }}-nzp-sdl
-          path: /workspace/vril-test-artifact
-      - name: Download Test Content Overrides
-        if: needs['prepare-toolbox-test-content'].outputs.has_overrides == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: toolbox-pr-test-content-overrides
-          path: /workspace/vril-test-overrides
-      - name: Run test
-        env:
-          ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/windows
-          QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
-          VRIL_TEST: ${{ matrix.test }}
-        run: /entrypoint.sh test-vril --platform windows --test "$VRIL_TEST" --binary /workspace/vril-test-artifact/nzportable.exe --reference-platform linux
-      - name: Upload Failure Artifact
-        id: windows_failure_artifact
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-${{ matrix.arch }}-${{ matrix.test }}-pr-failures
-          path: /workspace/repos/vril-engine/testing/working/fail/
-          if-no-files-found: ignore
-          retention-days: 14
-      - name: Add Failure Summary
-        if: failure() && steps.windows_failure_artifact.outputs.artifact-url != ''
-        env:
-          ARTIFACT_URL: ${{ steps.windows_failure_artifact.outputs.artifact-url }}
-          WINDOWS_ARCH: ${{ matrix.arch }}
-          VRIL_TEST: ${{ matrix.test }}
-        run: |
-          {
-            echo "## Windows $WINDOWS_ARCH $VRIL_TEST PR Test Failed"
-            echo ""
-            cat /workspace/repos/vril-engine/testing/working/fail/summary.md
-            echo ""
-            echo "[Failure Artifact]($ARTIFACT_URL)"
-            echo ""
-          } >> "$GITHUB_STEP_SUMMARY"
-  Unify-and-Release:
+  Create-Release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: [Compile-Linux-Toolbox, Compile-Windows, Compile-EBOOT, Compile-ELF, Compile-3DSX, Compile-TNS, Compile-VPK, Compile-NRO]
+    needs: [Compile-linux-x86_64, Compile-linux-x86, Compile-linux-arm64, Compile-linux-armhf, Compile-windows-x86, Compile-windows-x86_64, Compile-ps2, Compile-psp, Compile-3ds, Compile-nspire, Compile-vita, Compile-ps4, Compile-switch]
+    outputs:
+      id: ${{ steps.create_release.outputs.id }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Wait for GitHub to keep up..
         run: sleep 2s
         shell: bash
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./
-      - name: Turn Artifacts into .ZIP archives
-        run: |
-          zip -r -j ps2-nzp-elf.zip ps2-nzp-elf/*
-          zip -r -j psp-nzp-eboot.zip psp-nzp-eboot/*
-          zip -r -j ctr-nzp-3dsx.zip ctr-nzp-3dsx/*
-          zip -r -j nspire-nzp-tns.zip nspire-nzp-tns/*
-          zip -r -j psp2-nzp-vpk.zip psp2-nzp-vpk/*
-          zip -r -j nx-nzp-nro.zip nx-nzp-nro/*
-          zip -r -j linux-x86-nzp-sdl.zip linux-x86-nzp-sdl/*
-          zip -r -j linux-x86_64-nzp-sdl.zip linux-x86_64-nzp-sdl/*
-          zip -r -j linux-arm64-nzp-sdl.zip linux-arm64-nzp-sdl/*
-          zip -r -j linux-armhf-nzp-sdl.zip linux-armhf-nzp-sdl/*
-          zip -r -j windows-x86-nzp-sdl.zip windows-x86-nzp-sdl/*
-          zip -r -j windows-x86_64-nzp-sdl.zip windows-x86_64-nzp-sdl/*
       - name: Generate Build Date
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d-%H-%M-%S')"
+        run: echo "date=$(date +'%Y-%m-%d-%H-%M-%S')" >> "$GITHUB_OUTPUT"
       - name: Delete Old Release
         uses: dev-drprasad/delete-tag-and-release@v0.2.1
         with:
@@ -758,129 +684,81 @@ jobs:
           tag_name: bleeding-edge
           release_name: Automated Release ${{ steps.date.outputs.date }}
           body: |
-            This is a **bleeding edge** NZ:P PS2/PSP/PSVITA/3DS/NSPIRE/PC release, stability is not guarenteed.
+            This is a **bleeding edge** Vril Engine release, stability is not guarenteed.
 
             To install:
             - Grab the .ZIP archive for your platform
             - PSP: Extract the `EBOOT.PBP` to `/PSP/GAME/nzportable/`
             - PS2: Put `nzportable.elf` on USB and game data under `/APPS/NZPORTABLE/nzp/`.
             - PS VITA: Install `nzportable.vpk` using VitaShell.
+            - PS4: Install `nzportable.pkg` and place game data under `/data/nzportable/nzp/`.
             - 3DS: Extract `nzportable.3dsx` to `/3ds/nzportable/`.
             - NSPIRE: Sync `nzportable.tns` to `/`.
             - PC: Extract the archive for your CPU architecture and run `nzportable`.
           draft: true
           prerelease: false
-      - name: Upload PS2 Archive
+
+  Upload-Release:
+    name: Upload ${{ matrix.name }} Release
+    needs: Create-Release
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux (x86_64)
+            artifact: linux-x86_64-nzp-sdl
+          - name: Linux (x86)
+            artifact: linux-x86-nzp-sdl
+          - name: Linux (arm64)
+            artifact: linux-arm64-nzp-sdl
+          - name: Linux (armhf)
+            artifact: linux-armhf-nzp-sdl
+          - name: Windows (x86)
+            artifact: windows-x86-nzp-sdl
+          - name: Windows (x86_64)
+            artifact: windows-x86_64-nzp-sdl
+          - name: PlayStation 2
+            artifact: ps2-nzp-elf
+          - name: PlayStation Portable
+            artifact: psp-nzp-eboot
+          - name: Nintendo 3DS
+            artifact: ctr-nzp-3dsx
+          - name: TI-Nspire
+            artifact: nspire-nzp-tns
+          - name: PlayStation VITA
+            artifact: psp2-nzp-vpk
+          - name: PlayStation 4
+            artifact: ps4-nzp-pkg
+          - name: Nintendo Switch
+            artifact: nx-nzp-nro
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
+      - name: Create ZIP Archive
+        env:
+          ARTIFACT: ${{ matrix.artifact }}
+        run: zip -r -j "$ARTIFACT.zip" "$ARTIFACT/"*
+      - name: Upload Release Archive
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ps2-nzp-elf.zip
-          asset_name: ps2-nzp-elf.zip
+          upload_url: ${{ needs.Create-Release.outputs.upload_url }}
+          asset_path: ./${{ matrix.artifact }}.zip
+          asset_name: ${{ matrix.artifact }}.zip
           asset_content_type: application/zip
-      - name: Upload PSP Archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./psp-nzp-eboot.zip
-          asset_name: psp-nzp-eboot.zip
-          asset_content_type: application/zip
-      - name: Upload 3DS Archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ctr-nzp-3dsx.zip
-          asset_name: ctr-nzp-3dsx.zip
-          asset_content_type: application/zip
-      - name: Upload NSPIRE Archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./nspire-nzp-tns.zip
-          asset_name: nspire-nzp-tns.zip
-          asset_content_type: application/zip
-      - name: Upload PSVITA Archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./psp2-nzp-vpk.zip
-          asset_name: psp2-nzp-vpk.zip
-          asset_content_type: application/zip
-      - name: Upload Nintendo Switch Archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./nx-nzp-nro.zip
-          asset_name: nx-nzp-nro.zip
-          asset_content_type: application/zip
-      - name: Upload Linux x86 Archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./linux-x86-nzp-sdl.zip
-          asset_name: linux-x86-nzp-sdl.zip
-          asset_content_type: application/zip
-      - name: Upload Linux x86_64 Archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./linux-x86_64-nzp-sdl.zip
-          asset_name: linux-x86_64-nzp-sdl.zip
-          asset_content_type: application/zip
-      - name: Upload Linux arm64 Archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./linux-arm64-nzp-sdl.zip
-          asset_name: linux-arm64-nzp-sdl.zip
-          asset_content_type: application/zip
-      - name: Upload Linux armhf Archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./linux-armhf-nzp-sdl.zip
-          asset_name: linux-armhf-nzp-sdl.zip
-          asset_content_type: application/zip
-      - name: Upload Windows x86 Archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./windows-x86-nzp-sdl.zip
-          asset_name: windows-x86-nzp-sdl.zip
-          asset_content_type: application/zip
-      - name: Upload Windows x86_64 Archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./windows-x86_64-nzp-sdl.zip
-          asset_name: windows-x86_64-nzp-sdl.zip
-          asset_content_type: application/zip
+
+  Publish-Release:
+    needs: [Create-Release, Upload-Release]
+    runs-on: ubuntu-latest
+    steps:
       - name: Publish Release
         uses: StuYarrow/publish-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          id: ${{ steps.create_release.outputs.id }}
+          id: ${{ needs.Create-Release.outputs.id }}

@@ -409,53 +409,10 @@ cshift_t	cshift_water = { {130,80,50}, 128 };
 cshift_t	cshift_slime = { {0,25,5}, 150 };
 cshift_t	cshift_lava = { {255,80,0}, 150 };
 
-cvar_t		v_gamma = {"gamma", "1", true};
+cvar_t v_brightness = {"brightness", "0.5", true};
 
-byte		gammatable[256];	// palette is sent through this
-
-byte		ramps[3][256];
-float		v_blend[4];		// rgba 0.0 - 1.0
-
-void BuildGammaTable (float g)
-{
-	int		i, inf;
-
-	if (g == 1.0f)
-	{
-		for (i=0 ; i<256 ; i++)
-			gammatable[i] = i;
-		return;
-	}
-
-	for (i=0 ; i<256 ; i++)
-	{
-		inf = 255 * powf ( (i+0.5f)/255.5f , g ) + 0.5f;
-		if (inf < 0)
-			inf = 0;
-		if (inf > 255)
-			inf = 255;
-		gammatable[i] = inf;
-	}
-}
-
-/*
-=================
-V_CheckGamma
-=================
-*/
-static float oldgammavalue;
-qboolean V_CheckGamma (void)
-{
-	if (v_gamma.value == oldgammavalue)
-		return false;
-	oldgammavalue = v_gamma.value;
-
-	BuildGammaTable (v_gamma.value);
-	vid.recalc_refdef = 1;				// force a surface cache flush
-
-	return true;
-}
-
+static byte ramps[3][256];
+float v_blend[4]; // rgba 0.0 - 1.0
 
 /*
 ==================
@@ -627,11 +584,12 @@ void V_UpdatePalette (void)
 	byte	pal[768];
 	float	r,g,b,a;
 	int		ir, ig, ib;
-	qboolean force;
+	static qboolean initialized;
 
 	//V_HealthCshift ();
 
-	new = false;
+	new = !initialized;
+	initialized = true;
 
 	for (i=0 ; i<NUM_CSHIFTS ; i++)
 	{
@@ -653,8 +611,7 @@ void V_UpdatePalette (void)
 	if (cl.cshifts[CSHIFT_BONUS].percent <= 0)
 		cl.cshifts[CSHIFT_BONUS].percent = 0;
 
-	force = V_CheckGamma ();
-	if (!new && !force)
+	if (!new)
 		return;
 
 	V_CalcBlend ();
@@ -677,9 +634,9 @@ void V_UpdatePalette (void)
 		if (ib > 255)
 			ib = 255;
 
-		ramps[0][i] = gammatable[ir];
-		ramps[1][i] = gammatable[ig];
-		ramps[2][i] = gammatable[ib];
+		ramps[0][i] = ir;
+		ramps[1][i] = ig;
+		ramps[2][i] = ib;
 	}
 
 	basepal = host_basepal;
@@ -1763,6 +1720,5 @@ void V_Init (void)
 	Cvar_RegisterVariable (&v_kickroll);
 	Cvar_RegisterVariable (&v_kickpitch);
 
-	BuildGammaTable (1.0);	// no gamma yet
-	Cvar_RegisterVariable (&v_gamma);
+	Cvar_RegisterVariable (&v_brightness);
 }
