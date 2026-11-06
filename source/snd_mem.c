@@ -99,8 +99,7 @@ sfxcache_t *S_LoadSound (sfx_t *s)
     char	namebuffer[256];
 	byte	*data;
 	wavinfo_t	info;
-	int		len, length;
-	FILE	*file;
+	int		len, length, file;
 	qboolean	allocated = false;
 	float	stepscale;
 	sfxcache_t	*sc;
@@ -117,8 +116,8 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 
 //	Con_Printf ("loading %s\n",namebuffer);
 
-	length = COM_FOpenFile(namebuffer, &file);
-	if (!file)
+	length = COM_OpenFile(namebuffer, &file, NULL);
+	if (file == -1)
 	{
 		Con_Printf ("Couldn't load %s\n", namebuffer);
 		return NULL;
@@ -127,18 +126,18 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 	if (data)
 	{
 		allocated = data != stackbuf;
-		if (fread(data, 1, length, file) != length) {
-			fclose(file);
+		if (Sys_FileRead(file, data, length) != length) {
+			COM_CloseFile(file);
 			if (allocated)
 				free(data);
 			return NULL;
 		}
 		data[length] = 0;
-		fclose(file);
+		COM_CloseFile(file);
 	}
 	else
 	{
-		fclose(file);
+		COM_CloseFile(file);
 		data = COM_LoadStackFile(namebuffer, stackbuf, sizeof(stackbuf));
 		if (!data)
 			return NULL;

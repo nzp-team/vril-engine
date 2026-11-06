@@ -268,6 +268,7 @@ extern searchpath_t *com_searchpaths, *com_verifypaths;
 char *strtolower(char *s);
 
 void COM_CopyFile(char *netpath, char *cachepath);
+void COM_SetFileSystemCaseSensitive(qboolean case_sensitive);
 void COM_AddGameDirectory(char *directory);
 
 void COM_InitFilesystem(void);

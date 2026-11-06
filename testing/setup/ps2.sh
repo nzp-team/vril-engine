@@ -13,7 +13,7 @@ function begin_setup()
 	binary_path="$2"
 	working_dir="$3"
 	if [[ ! -x "${EMULATOR_BIN}" || ! -f "$(dirname "${EMULATOR_BIN}")/usb-sync.so" ]]; then
-		print_error "PCSX2 is unavailable at [${EMULATOR_BIN}]. Run setup/utils/install-pcsx2.sh first." "1"
+		print_error "PCSX2 is unavailable at [${EMULATOR_BIN}]. Use an updated amd64 Toolbox image." "1"
 	fi
 	if [[ ! -f "${PS2_BIOS:-}" ]]; then
 		print_error "Set PS2_BIOS to a PS2 BIOS file." "1"
