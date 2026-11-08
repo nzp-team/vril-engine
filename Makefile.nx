@@ -89,6 +89,7 @@ COMMON_OBJS =	system.o \
 				platform/nx/bsp_strlcpy.c \
 				cmd.c \
 				common.c \
+				asset_cache.c \
 				console.c \
 				crc.c \
 				cvar.c \
@@ -106,6 +107,7 @@ COMMON_OBJS =	system.o \
 				menu/menu_lobby.c \
 				menu/menu_gamesettings.c \
 				menu/menu_configuration.c \
+				menu/menu_storage.c \
 				menu/menu_video.c \
 				menu/menu_audio.c \
 				menu/menu_controls.c \

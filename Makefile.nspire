@@ -35,6 +35,7 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/cl_tent.c \
 		source/cmd.c \
 		source/common.c \
+		source/asset_cache.c \
 		source/images.c \
 		source/console.c \
 		source/crc.c \
@@ -72,6 +73,7 @@ COMMON_OBJS = 	source/platform/nspire/cd_nspire.c \
 		source/menu/menu_lobby.c \
 		source/menu/menu_gamesettings.c \
 		source/menu/menu_configuration.c \
+		source/menu/menu_storage.c \
 		source/menu/menu_video.c \
 		source/menu/menu_audio.c \
 		source/menu/menu_controls.c \

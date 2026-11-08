@@ -65,9 +65,11 @@ void Menu_Configuration_Draw (void)
 	Menu_DrawButton(3, 2, "CONTROLS", "Control Options and Bindings.", Menu_Controls_Set);
     Menu_DrawButton(4, 3, "ACCESSIBILITY", "Content, Interface, and Readability options.", Menu_Accessibility_Set);
 
-	Menu_DrawDivider(5);
+    Menu_DrawButton(5, 4, "STORAGE", "Asset cache options.", Menu_Storage_Set);
 
-    Menu_DrawButton(5, 4, "OPEN CONSOLE", "Access the Developer Console.", Con_ToggleConsole_f);
+	Menu_DrawDivider(6);
 
-	Menu_DrawButton(-1, 5, "BACK", "Return to Main Menu.", Menu_Configuration_Back);
+    Menu_DrawButton(6, 5, "OPEN CONSOLE", "Access the Developer Console.", Con_ToggleConsole_f);
+
+	Menu_DrawButton(-1, 6, "BACK", "Return to Main Menu.", Menu_Configuration_Back);
 }

@@ -32,6 +32,7 @@ COMMON_OBJS =	\
 	source/cl_slist.o \
     source/cmd.o \
 	source/common.o \
+	source/asset_cache.o \
 	source/menu/menu_sys.o \
 	source/menu/menu.o \
 	source/menu/menu_custommaps.o \
@@ -41,6 +42,7 @@ COMMON_OBJS =	\
 	source/menu/menu_lobby.o \
 	source/menu/menu_gamesettings.o \
 	source/menu/menu_configuration.o \
+	source/menu/menu_storage.o \
 	source/menu/menu_video.o \
 	source/menu/menu_audio.o \
 	source/menu/menu_controls.o \

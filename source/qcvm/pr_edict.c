@@ -1452,7 +1452,7 @@ void PR_Init (void)
 
 
 
-inline edict_t *EDICT_NUM(int n)
+edict_t *EDICT_NUM(int n)
 {
 	if (n < 0 || n >= sv.max_edicts)
 		Sys_Error ("bad number %i", n);

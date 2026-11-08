@@ -536,7 +536,7 @@ qboolean Host_FilterTime (float time)
 #ifndef __WII__
    if (cl_maxfps.value < 1) Cvar_SetValue("cl_maxfps", 30);
 #ifdef PLATFORM_USES_FRAME_DEADLINES
-	if (!cls.timedemo)
+	if (!cls.timedemo && !(vid.vsync_rate > 0 && cl_maxfps.value >= vid.vsync_rate))
 	{
 		if (frame_maxfps != cl_maxfps.value)
 		{
@@ -559,6 +559,11 @@ qboolean Host_FilterTime (float time)
 #else
 	if (!cls.timedemo && realtime - oldrealtime < 1.0f/60.0f)
 		return false;		// framerate is too high
+#endif
+
+#ifdef PLATFORM_USES_FRAME_DEADLINES
+	// A skipped screen update must restore software pacing on the next frame.
+	vid.vsync_rate = 0;
 #endif
 
 	host_frametime = realtime - oldrealtime;
@@ -649,8 +654,9 @@ void _Host_Frame (float time)
 		return;			// something bad happened, or the server disconnected
 	}
 	
-// keep the random time dependent
-	rand ();
+// Keep gameplay random time dependent, but not fixed-step test runs.
+	if (sys_testmode.value <= 0)
+		rand ();
 
 // decide the simulation time
 	if (!Host_FilterTime (time))
@@ -711,6 +717,7 @@ void _Host_Frame (float time)
 		CL_ReadFromServer ();
 	}
 // update video
+	AssetCache_BuildFrame();
 	if (host_speeds.value)
 		time1 = Sys_FloatTime ();
 	SCR_UpdateScreen ();
@@ -902,6 +909,7 @@ void Host_Init (quakeparms_t *parms)
 	Host_InitLocal ();
 	Key_Init ();
 	Con_Init ();
+	AssetCache_Init ();
 	PR_Init ();
 	Mod_Init ();
 	NET_Init ();
@@ -972,6 +980,7 @@ void Host_Shutdown(void)
 		return;
 	}
 	isdown = true;
+	AssetCache_Shutdown();
 
 // keep Con_Printf from trying to update the screen
 	scr_disabled_for_loading = true;

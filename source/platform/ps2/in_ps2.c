@@ -317,7 +317,7 @@ void IN_GetAnalogStick(in_analog_stick_id_t stick, in_analog_stick_t *value)
 		value->y = -IN_PS2Axis(pad.ljoy_v);
 	} else {
 		value->x = IN_PS2Axis(pad.rjoy_h);
-		value->y = IN_PS2Axis(pad.rjoy_v);
+		value->y = -IN_PS2Axis(pad.rjoy_v);
 	}
 }
 

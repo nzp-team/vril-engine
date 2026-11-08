@@ -51,7 +51,8 @@ OBJECTS := $(patsubst source/%.c,$(BUILD)/%.o,$(SOURCES))
 .PHONY: all clean run
 all: $(TARGET)
 
-$(OBJECTS): source/nzportable_def.h
+$(OBJECTS): source/nzportable_def.h source/vid.h
+$(filter $(BUILD)/menu/%,$(OBJECTS)): source/menu/menu_defs.h
 
 $(BUILD)/_build_info.h:
 	@mkdir -p $(@D)

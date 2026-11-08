@@ -18,23 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "../nzportable_def.h"
 #include "menu_defs.h"
-#ifdef __NSPIRE__
-#include <libndls.h>
-#include <dirent.h>
-#include <sys/types.h>
-#include <os.h>
-#elif __PSP__
-#include <pspkernel.h>
-#include <psputility.h>
-#include <pspiofilemgr.h>
-#elif __PSP2__
-#include <dirent.h>
-#include <psp2/io/fcntl.h> 
-#elif defined(PLATFORM_SDL)
-#include <dirent.h>
-#else
-#include <sys/dirent.h>
-#endif
 
 image_t             	menu_usermap_image[MAX_CUSTOMMAPS];
 achievement_list_t  	achievement_list[MAX_ACHIEVEMENTS];
@@ -138,73 +121,22 @@ int Pak_ReadMap(PakDir *p, char *out_name, size_t out_size)
 
 #endif
 
-typedef struct GlobalDir {
-#ifdef __PSP__
-    SceUID 		dir;
-    SceIoDirent dirent;
-#else
-    DIR 		*dir;
-	struct 		dirent *dp;
-#endif
-} GlobalDir;
+typedef sys_directory_t GlobalDir;
 
 GlobalDir *Dir_Open(char *path)
 {
-    GlobalDir *d = malloc(sizeof(GlobalDir));
-    if (!d) {
-		return NULL;
-	}
-        
-#ifdef __PSP__
-    d->dir = sceIoDopen(path);
-    if (d->dir < 0) {
-        free(d);
-        return NULL;
-    }
-
-    memset(&d->dirent, 0, sizeof(SceIoDirent));
-#else
-    d->dir = opendir(path);
-    if (!d->dir) {
-        free(d);
-        return NULL;
-    }
-#endif
-
-    return d;
+    return Sys_OpenDirectory(path);
 }
 
-int Dir_Read(GlobalDir *d, char *out_name, size_t out_size)
+int Dir_Read(GlobalDir *directory, char *name, size_t size)
 {
-#ifdef __PSP__
-    if (sceIoDread(d->dir, &d->dirent) <= 0) {
-		return 0;
-	}
-
-    Q_strlcpy(out_name, d->dirent.d_name, out_size);
-    return 1;
-#else
-    struct dirent *dp = readdir(d->dir);
-    if (!dp) {
-		return 0;
-	}
-
-	Q_strlcpy(out_name, dp->d_name, out_size);
-    return 1;
-#endif
+    return Sys_ReadDirectory(directory, name, size);
 }
 
-void Dir_Close(GlobalDir *d)
+void Dir_Close(GlobalDir *directory)
 {
-    if (!d) return;
-
-#ifdef __PSP__
-    sceIoDclose(d->dir);
-#else
-    closedir(d->dir);
-#endif
-
-    free(d);
+    if (directory)
+        Sys_CloseDirectory(directory);
 }
 
 void Menu_CustomMaps_AllocStrings (void)

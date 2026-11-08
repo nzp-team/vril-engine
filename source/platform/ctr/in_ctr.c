@@ -157,7 +157,7 @@ void IN_PlatformMove(usercmd_t *cmd)
 	V_StopPitchDrift();
 	cl.viewangles[YAW] -= (x - touch_x) * sensitivity.value * 0.5f;
 	cl.viewangles[PITCH] += (y - touch_y) * sensitivity.value * 0.5f
-		* (m_pitch.value > 0 ? -1.0f : 1.0f);
+		* (IN_LookInverted() ? -1.0f : 1.0f);
 	if (cl.viewangles[PITCH] > 80) cl.viewangles[PITCH] = 80;
 	if (cl.viewangles[PITCH] < -70) cl.viewangles[PITCH] = -70;
 	touch_x = x;

@@ -142,7 +142,7 @@ R_DrawAliasBatch(const alias_batch_t * batch)
             cache->key = batch->key;
             cache->commands = batch->commands;
             cache->uvs      = Hyena_CreateBuffer(HYE_ARRAY_BUFFER, batch->uvs, batch->num_vertices * 2 * sizeof(float));
-            cache->indices  = Hyena_CreateBuffer(HYE_ARRAY_BUFFER, batch->indices,
+            cache->indices  = Hyena_CreateBuffer(HYE_CLIENT_INDEX_BUFFER, batch->indices,
                 batch->num_indices * sizeof(unsigned short));
             cache->next  = alias_arrays;
             alias_arrays = cache;

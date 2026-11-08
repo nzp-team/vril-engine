@@ -54,6 +54,9 @@ static int loading_progress_phase_current;
 static int loading_progress_phase_total;
 char *LoadingScreen_ReturnTip(void)
 {
+	// Rotating tips must not change the test's random stream during slow loads.
+	if (sys_testmode.value > 0)
+		return (char *)loading_tips[0];
 	return (char *)loading_tips[rand() % (sizeof(loading_tips) / sizeof(loading_tips[0]))];
 }
 
@@ -262,6 +265,7 @@ qboolean LoadingScreen_IsWaiting(void)
 
 void LoadingScreen_MarkPrecacheComplete(void)
 {
+	AssetCache_Flush();
 	loading_precache_complete = true;
 }
 

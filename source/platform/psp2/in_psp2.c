@@ -149,7 +149,7 @@ void IN_GetAnalogStick(in_analog_stick_id_t stick, in_analog_stick_t *value)
 		value->y = (127.5f - (float)state.ly) / 127.5f;
 	} else {
 		value->x = ((float)state.rx - 127.5f) / 127.5f;
-		value->y = ((float)state.ry - 127.5f) / 127.5f;
+		value->y = (127.5f - (float)state.ry) / 127.5f;
 	}
 }
 

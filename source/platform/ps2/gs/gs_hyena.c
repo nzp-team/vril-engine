@@ -2287,31 +2287,55 @@ Hyena_UploadIndexedTexture(int texture, const hyena_texture_desc_t *desc)
         Sys_Error("Hyena: out of indexed texture memory");
     memset(pixels, 0, plane_size + 1024);
     clut = (unsigned int *)(pixels + plane_size);
-    for (y = 0; y < height; ++y) {
-        int sy = y * desc->height / height;
-        for (x = 0; x < width; ++x) {
-            int sx = (2 * x + 1) * desc->width / (2 * width);
-            int index = sy * desc->width + sx;
-            const byte *color = desc->format == HYE_TEXTURE_INDEX8 ?
-                palette + source[index] * palette_bpp : source + index * 4;
-            unsigned int alpha = desc->format == HYE_TEXTURE_INDEX8 && palette_bpp == 3 ? 255 : color[3];
-            unsigned int rgba = color[0] | (color[1] << 8) | (color[2] << 16) | (((alpha + 1) >> 1) << 24);
-            unsigned int hash = (rgba * 2654435761u) >> 22;
-
-            while (slots[hash] && keys[hash] != rgba)
-                hash = (hash + 1) & 1023;
-            if (!slots[hash]) {
-                int swizzled;
-                if (count == 256) {
-                    free(pixels);
-                    return false;
-                }
-                swizzled = (count & ~0x18) | ((count & 8) << 1) | ((count & 16) >> 1);
-                clut[swizzled] = rgba;
-                slots[hash] = ++count;
-                keys[hash] = rgba;
+    asset_cache_data_t cached = {0};
+    uint32_t source_crc = 0;
+    const uint32_t fields[] = { 0x50533201u, width, height, plane_size };
+    uint32_t variant = AssetCache_HashWords(fields, sizeof(fields) / sizeof(fields[0]));
+    qboolean use_cache = AssetCache_Enabled() && !desc->update;
+    qboolean restored = false;
+    if (use_cache) {
+        source_crc = Hyena_TextureSourceCRC(desc);
+        if (AssetCache_Load(ASSET_CACHE_TEXTURE, desc->identifier, source_crc, variant, &cached)) {
+            if (cached.size == plane_size + 1024) {
+                memcpy(pixels, cached.data, cached.size);
+                restored = true;
             }
-            pixels[y * width + x] = slots[hash] - 1;
+            free(cached.data);
+        }
+    }
+    if (!restored) {
+        for (y = 0; y < height; ++y) {
+            int sy = y * desc->height / height;
+            for (x = 0; x < width; ++x) {
+                int sx = (2 * x + 1) * desc->width / (2 * width);
+                int index = sy * desc->width + sx;
+                const byte *color = desc->format == HYE_TEXTURE_INDEX8 ?
+                    palette + source[index] * palette_bpp : source + index * 4;
+                unsigned int alpha = desc->format == HYE_TEXTURE_INDEX8 && palette_bpp == 3 ? 255 : color[3];
+                unsigned int rgba = color[0] | (color[1] << 8) | (color[2] << 16) | (((alpha + 1) >> 1) << 24);
+                unsigned int hash = (rgba * 2654435761u) >> 22;
+
+                while (slots[hash] && keys[hash] != rgba)
+                    hash = (hash + 1) & 1023;
+                if (!slots[hash]) {
+                    int swizzled;
+                    if (count == 256) {
+                        free(pixels);
+                        return false;
+                    }
+                    swizzled = (count & ~0x18) | ((count & 8) << 1) | ((count & 16) >> 1);
+                    clut[swizzled] = rgba;
+                    slots[hash] = ++count;
+                    keys[hash] = rgba;
+                }
+                pixels[y * width + x] = slots[hash] - 1;
+            }
+        }
+        if (use_cache) {
+            memset(&cached, 0, sizeof(cached));
+            cached.data = pixels;
+            cached.size = plane_size + 1024;
+            AssetCache_Store(ASSET_CACHE_TEXTURE, desc->identifier, source_crc, variant, &cached);
         }
     }
     if (image->Mem && Hyena_GSGlobal())

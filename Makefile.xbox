@@ -1,0 +1,87 @@
+BUILD ?= build/xbox
+TARGET ?= $(BUILD)/nzportable/default.xbe
+
+ifndef NXDK_DIR
+$(error NXDK_DIR is not set; prepare dependencies separately in Toolbox)
+endif
+ifndef GLES_DIR
+$(error GLES_DIR is not set; point it at the prebuilt nxdk-gles11 checkout)
+endif
+ifndef MINIMP3_DIR
+$(error MINIMP3_DIR is not set; point it at the minimp3 headers)
+endif
+
+CC := $(NXDK_DIR)/bin/nxdk-cc
+LD := $(NXDK_DIR)/bin/nxdk-link
+CXBE := $(NXDK_DIR)/tools/cxbe/cxbe
+PYTHON ?= python3
+XBE_ICON := source/platform/xbox/art/icon.png
+XBE_ICON_TOOL := source/platform/xbox/tools/pack_icon.py
+LWIP_DIR := $(NXDK_DIR)/lib/net/lwip/src
+
+CPPFLAGS := -I$(BUILD) -Isource -I$(GLES_DIR)/include -I$(GLES_DIR)/lib/stb -I$(MINIMP3_DIR) \
+	-I$(NXDK_DIR)/lib/usb/libusbohci/inc -I$(NXDK_DIR)/lib/usb/libusbohci_xbox \
+	-I$(LWIP_DIR)/include -I$(NXDK_DIR)/lib/net/nforceif/include \
+	-DGLQUAKE -DPLATFORM_XBOX -DPLATFORM_DIRECTORY=xbox -DPLATFORM_RENDERER=gles \
+	-DPLATFORM_HAS_CASE_INSENSITIVE_FILESYSTEM \
+	-DMAX_AI_COUNT=24 -DPLATFORM_SUPPORTS_RUMBLE -DPLATFORM_HAS_PRES_SENS_INPUTS \
+	-DPLATFORM_USES_GENERIC_GLYPHS -DPLATFORM_DISALLOW_GLYPH_OVERRIDE \
+	-DPLATFORM_USES_PROJECTION_WIDESCREEN \
+	-DPLATFORM_SUPPORTS_OVERSCAN -DPLATFORM_PRESSURE_THRESHOLD=64 \
+	-DPLATFORM_KEYBOARD_OSK -DPLATFORM_USES_FRAME_DEADLINES \
+	-DUSBH_USE_EXTERNAL_CONFIG=\"usbh_config_xbox.h\" -DSTBI_NO_SIMD -Dstrtod=Sys_XboxStrtod \
+	-Dsprintf=Sys_XboxSPrintf -Dsnprintf=Sys_XboxSNPrintf -Dvsprintf=Sys_XboxVSPrintf \
+	-Dvsnprintf=Sys_XboxVSNPrintf -Dfprintf=Sys_XboxFPrintf -Dvfprintf=Sys_XboxVFPrintf
+CFLAGS ?= -O2 -g
+CFLAGS += -std=gnu99 -Wall -fno-strict-aliasing -Wno-unused-variable -Wno-unused-but-set-variable \
+	-Wno-unknown-warning-option -Wno-unknown-pragmas
+ifeq ($(WERROR),1)
+CFLAGS += -Werror
+endif
+
+ENGINE_SOURCES := $(wildcard source/*.c) $(wildcard source/menu/*.c) $(wildcard source/qcvm/*.c) \
+	$(wildcard source/render/*.c) $(wildcard source/tests/*.c)
+XBOX_SOURCES := $(wildcard source/platform/xbox/*.c) $(wildcard source/platform/xbox/gles/*.c)
+SOURCES := $(filter-out source/render/r_model_soft.c,$(ENGINE_SOURCES)) $(XBOX_SOURCES)
+OBJECTS := $(patsubst source/%.c,$(BUILD)/%.obj,$(SOURCES))
+
+# All archives and tools are prepared by Toolbox. Building Vril never fetches or builds dependencies.
+LDLIBS := $(GLES_DIR)/build/libGLESv1_CM.lib $(GLES_DIR)/build/libswizzle.lib \
+	$(GLES_DIR)/build/arena_build/libarena.lib \
+	$(NXDK_DIR)/lib/libpbkit.lib $(NXDK_DIR)/lib/nxdk_usb.lib \
+	$(NXDK_DIR)/lib/libnxdk_net.lib $(NXDK_DIR)/lib/libnxdk.lib \
+	$(NXDK_DIR)/lib/libnxdk_automount_d.lib $(NXDK_DIR)/lib/libnxdk_hal.lib \
+	$(NXDK_DIR)/lib/libwinapi.lib $(NXDK_DIR)/lib/libxboxrt.lib \
+	$(NXDK_DIR)/lib/libpdclib.lib $(NXDK_DIR)/lib/xboxkrnl/libxboxkrnl.lib
+
+GIT_HASH ?= $(shell git rev-parse --short HEAD)
+GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
+
+.PHONY: all clean source/_build_info.h
+all: $(TARGET)
+
+$(TARGET): $(BUILD)/nzportable.exe $(CXBE) $(XBE_ICON) $(XBE_ICON_TOOL)
+	@mkdir -p $(@D)
+	$(CXBE) -OUT:$@ -TITLE:"Nazi Zombies: Portable" $<
+	$(PYTHON) $(XBE_ICON_TOOL) $(XBE_ICON) $@
+
+$(BUILD)/nzportable.exe: $(OBJECTS) $(LDLIBS)
+	$(LD) -stack:1048576 -include:_automount_d_drive -map:$(BUILD)/nzportable.map -out:$@ $(OBJECTS) $(LDLIBS)
+
+# Memory routines are also called by SDK interrupt handlers.
+$(BUILD)/platform/xbox/memory_xbox.obj: CFLAGS += -mno-sse -mno-mmx
+
+$(BUILD)/%.obj: source/%.c source/_build_info.h Makefile.xbox
+	@mkdir -p $(@D)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -c $< -o $@
+
+source/_build_info.h:
+	@mkdir -p $(@D)
+	@{ echo '#define GIT_HASH "$(GIT_HASH)"'; \
+	   echo '#define GIT_BRANCH "$(GIT_BRANCH)"'; \
+	   echo '#define BUILD_DATE "$(shell date -u +%Y-%m-%dT%H:%M:%SZ)"'; } > $@
+
+clean:
+	rm -rf $(BUILD)
+
+-include $(OBJECTS:.obj=.d)

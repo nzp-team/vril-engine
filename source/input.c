@@ -24,6 +24,10 @@ cvar_t in_gyro_zoom_scaling = {"in_gyro_zoom_scaling", "1", true};
 #endif
 #ifdef PLATFORM_HAS_PRES_SENS_INPUTS
 cvar_t in_pressure = {"in_pressure", "0", true};
+#ifndef PLATFORM_PRESSURE_THRESHOLD
+#define PLATFORM_PRESSURE_THRESHOLD 128
+#endif
+cvar_t in_pressure_threshold = {"in_pressure_threshold", STRINGIFY_MACRO(PLATFORM_PRESSURE_THRESHOLD), true};
 #endif
 #ifdef PLATFORM_SUPPORTS_RUMBLE
 cvar_t in_rumble = {"in_rumble", "1", true};
@@ -45,6 +49,13 @@ static float IN_Clamp(float value, float minimum, float maximum)
 
 void IN_SetActiveDevice(in_device_t device) { in_active_device = device; }
 in_device_t IN_GetActiveDevice(void) { return in_active_device; }
+
+qboolean IN_LookInverted(void)
+{
+	// Legacy configs use +0.022 for normal pitch and -0.022 for inverted.
+	// Current menu settings use 0 and 1. Interpret both consistently.
+	return m_pitch.value >= 1 || m_pitch.value < 0;
+}
 
 qboolean IN_KeyMatchesDevice(int key, in_device_t device)
 {
@@ -70,6 +81,7 @@ void IN_Init(void)
 #endif
 #ifdef PLATFORM_HAS_PRES_SENS_INPUTS
 	Cvar_RegisterVariable(&in_pressure);
+	Cvar_RegisterVariable(&in_pressure_threshold);
 #endif
 #ifdef PLATFORM_SUPPORTS_RUMBLE
 	Cvar_RegisterVariable(&in_rumble);
@@ -216,7 +228,7 @@ void IN_Move(usercmd_t *cmd)
 
 			V_StopPitchDrift();
 			cl.viewangles[YAW] += gyro_y * radians_to_degrees * in_gyro_sensitivity_x.value * gyro_scale * (float)host_frametime;
-			cl.viewangles[PITCH] -= gyro_x * radians_to_degrees * in_gyro_sensitivity_y.value * (m_pitch.value > 0 ? -1.0f : 1.0f) * gyro_scale * (float)host_frametime;
+			cl.viewangles[PITCH] -= gyro_x * radians_to_degrees * in_gyro_sensitivity_y.value * (IN_LookInverted() ? -1.0f : 1.0f) * gyro_scale * (float)host_frametime;
 			cl.viewangles[PITCH] = IN_Clamp(cl.viewangles[PITCH], -70.0f, 80.0f);
 		}
 	}
@@ -248,7 +260,7 @@ void IN_Move(usercmd_t *cmd)
 	look_y = IN_ShapeAxis(look_stick.y, speed, tolerance, acceleration);
 	V_StopPitchDrift();
 	cl.viewangles[YAW] -= 30.0f * look_x * (float)host_frametime;
-	cl.viewangles[PITCH] += 30.0f * (m_pitch.value > 0 ? 1.0f : -1.0f)
+	cl.viewangles[PITCH] += 30.0f * (IN_LookInverted() ? 1.0f : -1.0f)
 		* look_y * (float)host_frametime;
 	cl.viewangles[PITCH] = IN_Clamp(cl.viewangles[PITCH], -70.0f, 80.0f);
 

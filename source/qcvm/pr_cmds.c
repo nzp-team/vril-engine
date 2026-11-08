@@ -3546,6 +3546,8 @@ void PF_Find (void)
 	int		f;
 	char	*s, *t;
 	edict_t	*ed;
+	string_t last_string = 0;
+	qboolean have_last_string = false;
 
 	e = G_EDICTNUM(OFS_PARM0);
 	f = G_INT(OFS_PARM1);
@@ -3553,12 +3555,25 @@ void PF_Find (void)
 	if (!s)
 		PR_RunError ("PF_Find: bad search string");
 
-	for (e++ ; e < sv.num_edicts ; e++)
+	if (++e >= sv.num_edicts)
 	{
-		ed = EDICT_NUM(e);
+		RETURN_EDICT(sv.edicts);
+		return;
+	}
+
+	// Validate the starting entity once, then walk the contiguous edict array.
+	for (ed = EDICT_NUM(e); e < sv.num_edicts; e++, ed = NEXT_EDICT(ed))
+	{
 		if (ed->free)
 			continue;
-		t = E_STRING(ed,f);
+		string_t field_string = E_INT(ed, f);
+		// No callbacks run during this search. A repeated string handle has
+		// the same rejected value as the previous live entity in this scan.
+		if (have_last_string && field_string == last_string)
+			continue;
+		last_string = field_string;
+		have_last_string = true;
+		t = PR_GetString(field_string);
 		if (!t)
 			continue;
 		if (t == s || (*t == *s && !strcmp(t,s)))

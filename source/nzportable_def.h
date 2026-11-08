@@ -270,6 +270,7 @@ typedef struct
 #include "draw.h"
 #include "images.h"
 #include "cvar.h"
+#include "asset_cache.h"
 
 #include "screen.h"
 #include PLATFORM_FILE(net.h)

@@ -32,9 +32,13 @@ void Menu_CustomMaps_Draw(void);
 void Menu_Lobby_Draw(void);
 void Menu_GameSettings_Draw (void);
 void Menu_Configuration_Draw (void);
+void Menu_Storage_Draw(void);
 void Menu_Video_Draw (void);
 void Menu_Audio_Draw (void);
 void Menu_Controls_Draw (void);
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+void Menu_Pressure_Draw(void);
+#endif
 #ifdef PLATFORM_SUPPORTS_GYRO
 void Menu_Gyro_Draw (void);
 #endif
@@ -260,8 +264,18 @@ void Menu_Draw (void)
 		break;
 #endif
 
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+	case m_pressure:
+		Menu_Pressure_Draw();
+		break;
+#endif
+
 	case m_bindings:
 		Menu_Bindings_Draw ();
+		break;
+
+	case m_storage:
+		Menu_Storage_Draw();
 		break;
 
 	case m_accessibility:

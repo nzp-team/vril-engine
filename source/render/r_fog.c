@@ -237,8 +237,18 @@ Fog_ParseWorldspawn(void)
         strcpy(value, com_token);
 
         if (!strcmp("fog", key)) {
-            sscanf(value, "%f %f %f %f %f", &r_refdef.fog_start, &r_refdef.fog_end, &r_refdef.fog_red,
-              &r_refdef.fog_green, &r_refdef.fog_blue);
+            float * values[] = { &r_refdef.fog_start, &r_refdef.fog_end, &r_refdef.fog_red,
+                                 &r_refdef.fog_green, &r_refdef.fog_blue };
+            char * fog_data = value;
+            int i;
+
+            // Some platform C libraries cannot scan floats with sscanf.
+            for (i = 0; i < 5; ++i) {
+                fog_data = COM_Parse(fog_data);
+                if (!fog_data)
+                    break;
+                *values[i] = Q_atof(com_token);
+            }
         }
     }
 

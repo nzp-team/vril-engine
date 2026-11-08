@@ -239,17 +239,6 @@ void Menu_InitUI (void)
 		device = IN_DEVICE_GAMEPAD;
 	Menu_SetInputDevice(device);
 
-	// Set OSK button images
-	// these are currently the only
-	// two platforms which use OSK
-	// will be expanded to NSpire once
-	// button images are added.
-#if defined(__PSP__) || defined (__PSP2__)
-	osk_button[0] = b_leftface;
-	osk_button[1] = b_rightface;
-	osk_button[2] = b_topface;
-	osk_button[3] = b_bottomface;
-#endif
 }
 
 int Menu_GetActiveMenuButtons (void)

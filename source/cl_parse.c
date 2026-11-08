@@ -1157,9 +1157,9 @@ void CL_ParseServerMessage (void)
 
 		case svc_rumble: {
 #ifdef PLATFORM_SUPPORTS_RUMBLE
-			int low_frequency = MSG_ReadShort();
-			int high_frequency = MSG_ReadShort();
-			int duration = MSG_ReadShort();
+			int low_frequency = (unsigned short) MSG_ReadShort();
+			int high_frequency = (unsigned short) MSG_ReadShort();
+			int duration = (unsigned short) MSG_ReadShort();
 			IN_StartRumble(low_frequency, high_frequency, duration);
 #else
 			// We still need to read rumble messages for the protocol.

@@ -486,7 +486,8 @@ SCR_ScreenShot_f(void)
     byte * buffer;
     char pcxname[80];
     char checkname[MAX_OSPATH * 2];
-    int i, c, temp;
+    int i, pixels;
+    qboolean captured;
 
     //
     // find a file name to save it to
@@ -506,7 +507,8 @@ SCR_ScreenShot_f(void)
     }
 
 
-    buffer = malloc(glwidth * glheight * 3 + 18);
+    pixels = glwidth * glheight;
+    buffer = malloc(pixels * 4 + 18);
     if (!buffer)
         Sys_Error("SCR_ScreenShot_f: out of memory");
     memset(buffer, 0, 18);
@@ -517,16 +519,25 @@ SCR_ScreenShot_f(void)
     buffer[15] = glheight >> 8;
     buffer[16] = 24; // pixel size
 
-    glReadPixels(glx, gly, glwidth, glheight, GL_RGB, GL_UNSIGNED_BYTE, buffer + 18);
-
-    // swap rgb to bgr
-    c = 18 + glwidth * glheight * 3;
-    for (i = 18 ; i < c ; i += 3) {
-        temp          = buffer[i];
-        buffer[i]     = buffer[i + 2];
-        buffer[i + 2] = temp;
+    Hyena_SelectReadBuffer(true);
+    captured = Hyena_ReadPixels(glx, gly, glwidth, glheight, buffer + 18);
+    Hyena_SelectReadBuffer(false);
+    if (!captured) {
+        free(buffer);
+        Con_Printf("SCR_ScreenShot_f: Could not read the framebuffer\n");
+        return;
     }
-    COM_WriteFile(pcxname, buffer, glwidth * glheight * 3 + 18);
+
+    // Compact RGBA to the TGA's BGR layout in place.
+    for (i = 0; i < pixels; ++i) {
+        byte red = buffer[18 + i * 4];
+        byte green = buffer[18 + i * 4 + 1];
+        byte blue = buffer[18 + i * 4 + 2];
+        buffer[18 + i * 3] = blue;
+        buffer[18 + i * 3 + 1] = green;
+        buffer[18 + i * 3 + 2] = red;
+    }
+    COM_WriteFile(pcxname, buffer, pixels * 3 + 18);
 
     free(buffer);
     Con_Printf("Wrote %s\n", pcxname);

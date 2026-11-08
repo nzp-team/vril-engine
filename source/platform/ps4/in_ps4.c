@@ -192,8 +192,7 @@ IN_GetAnalogStick(in_analog_stick_id_t which, in_analog_stick_t * value)
     value->x = ((int) state.x - 128) / (state.x < 128 ? 128.0f : 127.0f);
     value->y = ((int) state.y - 128) / (state.y < 128 ? 128.0f : 127.0f);
 
-    if (which == IN_STICK_LEFT)
-        value->y = -value->y;
+    value->y = -value->y;
 }
 
 qboolean
