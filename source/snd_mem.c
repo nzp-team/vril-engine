@@ -197,7 +197,7 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 	}
 
 	stepscale = (float)info.rate / shm->speed;
-	if ((double)info.samples / stepscale < 1 || (double)info.samples / stepscale >
+	if ((double)info.samples / (double)stepscale < 1 || (double)info.samples / (double)stepscale >
 		(INT_MAX - (int)sizeof(sfxcache_t)) /
 		(loadas8bit.value ? 1 : info.width)) {
 		if (allocated)
@@ -393,8 +393,8 @@ S_BuildSoundCache(const char * name)
     }
     stepscale    = (float) stream.info.rate / shm->speed;
     stream.width = loadas8bit.value ? 1 : stream.info.width;
-    if ((double) stream.info.samples / stepscale < 1 ||
-      (double) stream.info.samples / stepscale > (16u * 1024u * 1024u) / stream.width)
+    if ((double) stream.info.samples / (double) stepscale < 1 ||
+      (double) stream.info.samples / (double) stepscale > (16u * 1024u * 1024u) / stream.width)
     {
         fclose(stream.file);
         return false;

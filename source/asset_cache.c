@@ -551,7 +551,7 @@ Cache_ReadPack(void)
     qboolean a, b, loaded = false;
     long size;
 
-    if (fseek(archive.file, 0, SEEK_END) || (size = ftell(archive.file)) < CACHE_PACK_HEADER || size > INT_MAX ||
+    if (fseek(archive.file, 0, SEEK_END) || (size = ftell(archive.file)) < (long) CACHE_PACK_HEADER || size > INT_MAX ||
       fseek(archive.file, 0, SEEK_SET) || fread(slots, 1, sizeof(slots), archive.file) != sizeof(slots)) return false;
 
     archive.physical = size;
@@ -608,7 +608,7 @@ Cache_LegacyInventory(qboolean clear)
 
     while (Sys_ReadDirectory(directory, name, sizeof(name))) {
         if (!Cache_OwnedName(name)) continue;
-        if (snprintf(path, sizeof(path), "%s/%s", archive.directory, name) >= sizeof(path)) continue;
+        if (snprintf(path, sizeof(path), "%s/%s", archive.directory, name) >= (int) sizeof(path)) continue;
         if (!clear || remove(path)) archive.legacy += Cache_FileSize(path);
     }
     Sys_CloseDirectory(directory);

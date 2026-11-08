@@ -164,6 +164,19 @@ jobs:
       VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/sdl/windows-x86_64/nzportable.exe
     steps: *compile_steps
 
+  Compile-xbox:
+    if: *build_condition
+    name: Compile Xbox
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
+    container: *toolbox_container
+    defaults: *bash_defaults
+    env:
+      VRIL_BUILD_TARGET: xbox
+      VRIL_ARTIFACT: xbox-nzp-xbe
+      VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/xbox/nzportable/default.xbe
+    steps: *compile_steps
+
   Compile-ps2:
     if: *build_condition
     name: Compile PlayStation 2
@@ -316,6 +329,14 @@ jobs:
           test -n "$PS2_BIOS_URL" || { echo 'PS2_BIOS_URL is not configured.' >&2; exit 1; }
           curl --fail --silent --show-error --location "$PS2_BIOS_URL" --output /tmp/ps2-bios.bin
           echo 'PS2_BIOS=/tmp/ps2-bios.bin' >> "$GITHUB_ENV"
+      - name: Prepare Xbox firmware and HDD
+        if: env.VRIL_PLATFORM == 'xbox'
+        env:
+          XBOX_BIOS_URL: ${{ secrets.XBOX_BIOS_URL }}
+        run: |
+          test -n "$XBOX_BIOS_URL" || { echo 'XBOX_BIOS_URL is not configured.' >&2; exit 1; }
+          mkdir -p "$XEMU_FILES"
+          curl --fail --silent --show-error --location --retry 3 "$XBOX_BIOS_URL" --output "$XEMU_FILES/bios.rar"
       - name: Run test
         env:
           VRIL_TEST: ${{ matrix.test }}
@@ -332,6 +353,9 @@ jobs:
       - name: Remove BIOS
         if: always() && env.VRIL_PLATFORM == 'ps2'
         run: rm -f /tmp/ps2-bios.bin /workspace/repos/vril-engine/testing/working/PCSX2/bios/ps2.bin
+      - name: Remove Xbox firmware and HDD
+        if: always() && env.VRIL_PLATFORM == 'xbox'
+        run: rm -f "$XEMU_FILES/bios.rar" "$XEMU_FILES/bios.bin" "$XEMU_FILES/mcpx_1.0.bin" "$XEMU_FILES/xbox_hdd.qcow2" /workspace/repos/vril-engine/testing/working/xbox_hdd.qcow2
       - name: Upload Failure Artifact
         id: failure_artifact
         if: failure()
@@ -474,6 +498,32 @@ jobs:
       VRIL_TEST_TARGET: windows-x86_64
       VRIL_TEST_NAME: Windows (x86_64)
       ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/windows
+      QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+    steps: *pr_steps
+
+  Test-xbox:
+    if: github.event_name == 'pull_request'
+    name: Xbox ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-xbox, prepare-toolbox-test-content]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+        mode: [""]
+    container: *test_container
+    defaults: *bash_defaults
+    env:
+      VRIL_PLATFORM: xbox
+      VRIL_HOST_ARCH: x86_64
+      VRIL_ARTIFACT: xbox-nzp-xbe
+      VRIL_BINARY: default.xbe
+      VRIL_REFERENCE: ''
+      VRIL_TEST_TARGET: xbox
+      VRIL_TEST_NAME: Xbox
+      XEMU_FILES: /tmp/xemu-files
+      ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/ctr
       QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
     steps: *pr_steps
 
@@ -652,7 +702,7 @@ jobs:
   Create-Release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: [Compile-linux-x86_64, Compile-linux-x86, Compile-linux-arm64, Compile-linux-armhf, Compile-windows-x86, Compile-windows-x86_64, Compile-ps2, Compile-psp, Compile-3ds, Compile-nspire, Compile-vita, Compile-ps4, Compile-switch]
+    needs: [Compile-linux-x86_64, Compile-linux-x86, Compile-linux-arm64, Compile-linux-armhf, Compile-windows-x86, Compile-windows-x86_64, Compile-xbox, Compile-ps2, Compile-psp, Compile-3ds, Compile-nspire, Compile-vita, Compile-ps4, Compile-switch]
     outputs:
       id: ${{ steps.create_release.outputs.id }}
       upload_url: ${{ steps.create_release.outputs.upload_url }}
@@ -685,6 +735,7 @@ jobs:
 
             To install:
             - Grab the .ZIP archive for your platform
+            - Xbox: Put `default.xbe` under `<drive>\Games\nzportable\`, with game data in its `nzp\` directory.
             - PSP: Extract the `EBOOT.PBP` to `/PSP/GAME/nzportable/`
             - PS2: Put `nzportable.elf` on USB and game data under `/APPS/NZPORTABLE/nzp/`.
             - PS VITA: Install `nzportable.vpk` using VitaShell.
@@ -715,6 +766,8 @@ jobs:
             artifact: windows-x86-nzp-sdl
           - name: Windows (x86_64)
             artifact: windows-x86_64-nzp-sdl
+          - name: Xbox
+            artifact: xbox-nzp-xbe
           - name: PlayStation 2
             artifact: ps2-nzp-elf
           - name: PlayStation Portable

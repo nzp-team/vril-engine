@@ -30,6 +30,16 @@ function begin_setup()
     working_dir="$3"
     [[ -f "$binary_path" ]] || print_error 'Supply an Xbox XBE with --binary.' 1
     [[ -x "$EMULATOR_BIN" ]] || print_error "xemu is unavailable at [$EMULATOR_BIN]. Prepare Toolbox's Xbox dependencies first." 1
+    if [[ -f "${XEMU_FILES}/bios.rar" ]]; then
+        if ! command -v bsdtar >/dev/null 2>&1; then
+            apt-get update
+            apt-get install -y --no-install-recommends libarchive-tools
+        fi
+        bsdtar -xOf "${XEMU_FILES}/bios.rar" 'Xbox BIOS/Flash ROM (BIOS)/Complex_4627v1.03.bin' > "${XEMU_FILES}/bios.bin"
+        bsdtar -xOf "${XEMU_FILES}/bios.rar" 'Xbox BIOS/MCPX Boot ROM/mcpx_1.0.bin' > "${XEMU_FILES}/mcpx_1.0.bin"
+        bsdtar -xOf "${XEMU_FILES}/bios.rar" 'Xbox BIOS/Hard Disk/xbox_hdd.qcow2' > "${XEMU_FILES}/xbox_hdd.qcow2"
+        rm -f "${XEMU_FILES}/bios.rar"
+    fi
     for required in bios.bin mcpx_1.0.bin xbox_hdd.qcow2; do
         [[ -f "${XEMU_FILES}/${required}" ]] || print_error "Missing xemu input [${XEMU_FILES}/${required}]." 1
     done
