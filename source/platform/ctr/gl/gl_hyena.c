@@ -438,7 +438,7 @@ Hyena_SetDepthRange(float near_value, float far_value)
 void
 Hyena_ResetDepthRange(void)
 {
-    glDepthRange(gldepthmin + (double)0.3f * (gldepthmax - gldepthmin), gldepthmax);
+    glDepthRange(gldepthmin, gldepthmax);
 }
 
 void

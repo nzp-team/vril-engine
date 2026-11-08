@@ -1101,7 +1101,8 @@ void R_SetupGL(void)
     }
     r_projection_fovy = fovy;
     r_projection_aspect = (float)r_refdef.vrect.width / r_refdef.vrect.height;
-    r_projection_far = r_refdef.fog_start != 0 && r_refdef.fog_end > 0 ? r_refdef.fog_end + 16 : r_farclip.value;
+    r_projection_far = R_FIXED_FAR_CLIP ? R_FIXED_FAR_CLIP :
+        (r_refdef.fog_start != 0 && r_refdef.fog_end > 0 ? r_refdef.fog_end + 16 : r_farclip.value);
     if (r_projection_far < R_NEAR_CLIP + 1)
         r_projection_far = R_NEAR_CLIP + 1;
     Hyena_MatrixMode(HYE_PROJECTION);

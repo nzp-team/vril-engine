@@ -52,8 +52,6 @@ function begin_setup()
     fi
     apply_content_overrides
     cp "$binary_path" nzportable/default.xbe
-    mkdir -p nzportable/nzp/gfx/controller_glyphs
-    cp /workspace/repos/assets/common/gfx/controller_glyphs/xbox.tga nzportable/nzp/gfx/controller_glyphs/
     mkdir -p xbox-installer
     cp "${testing_dir_path}/setup/utils/xbox-install.c" xbox-installer/main.c
     printf 'XBE_TITLE = Test Installer\nSRCS = %s/xbox-installer/main.c\nOUTPUT_DIR = %s/xbox-installer/disc\ninclude %s/Makefile\n' \
