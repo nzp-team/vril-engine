@@ -51,7 +51,7 @@ Hyena_CreateTexture(const hyena_texture_desc_t * desc)
     if (!desc || !desc->identifier || !desc->identifier[0] || !desc->pixels ||
       desc->width <= 0 || desc->height <= 0 ||
       (desc->format != HYE_TEXTURE_INDEX8 && desc->format != HYE_TEXTURE_RGBA8 &&
-        !(desc->lightmap && desc->format == HYE_TEXTURE_PLANAR_RGB8)) ||
+      !(desc->lightmap && desc->format == HYE_TEXTURE_PLANAR_RGB8)) ||
       (desc->palette && desc->palette_bpp != 3 && desc->palette_bpp != 4))
         return -1;
 
@@ -219,13 +219,112 @@ Hyena_InitTextureSettings(const char * maximum, qboolean mip_filtering, int limi
         Cmd_AddCommand("gl_texturemode", Hyena_TextureMode_f);
 }
 
+uint32_t
+Hyena_TextureSourceCRC(const hyena_texture_desc_t * desc)
+{
+    int bpp = desc->format == HYE_TEXTURE_INDEX8 ? 1 : 4;
+    uint32_t fields[] = { 1,                             desc->width,                                desc->height,
+                          desc->format,                                  desc->alpha,
+                          desc->smooth_alpha,            desc->stretch_to_power_of_two,
+                          AssetCache_CRC32(desc->pixels, (size_t) desc->width * desc->height * bpp), 0,            0 };
+
+    if (desc->format == HYE_TEXTURE_INDEX8)
+        fields[8] = AssetCache_CRC32(desc->palette ? desc->palette : d_8to24table,
+            256 * (desc->palette ? desc->palette_bpp : 4));
+    if (desc->palette_hint)
+        fields[9] = AssetCache_CRC32(desc->palette_hint, 16 * 4);
+    return AssetCache_HashWords(fields, sizeof(fields) / sizeof(fields[0]));
+}
+
+static qboolean
+Hyena_LoadPreparedPixels(const hyena_texture_desc_t * desc, uint32_t source_crc, uint32_t variant,
+  int width, int height, hyena_pixels_t * prepared)
+{
+    asset_cache_data_t cached;
+    int i, w = width, h = height;
+    size_t size = 0;
+
+    memset(prepared, 0, sizeof(*prepared));
+    prepared->count = Hyena_TextureMipCount(width, height,
+        desc->mip_levels ? HYENA_MAX_MIP_LEVELS - 1 : 0, 1, 1);
+    for (i = 0; i < prepared->count; ++i) {
+        hyena_mip_t * level = &prepared->levels[i];
+        level->width  = w;
+        level->height = h;
+        level->size   = (size_t) w * h * 4;
+        size += level->size;
+        w     = w > 1 ? w / 2 : 1;
+        h     = h > 1 ? h / 2 : 1;
+    }
+    if (!AssetCache_Load(ASSET_CACHE_TEXTURE, desc->identifier, source_crc, variant, &cached))
+        return false;
+
+    if (cached.size != size) {
+        free(cached.data);
+        return false;
+    }
+    prepared->storage = cached.data;
+    prepared->size    = size;
+    size = 0;
+    for (i = 0; i < prepared->count; ++i) {
+        prepared->levels[i].pixels = prepared->storage + size;
+        size += prepared->levels[i].size;
+    }
+    return true;
+} /* Hyena_LoadPreparedPixels */
+
+qboolean
+Hyena_PrepareTexturePixels(hyena_pixels_t * prepared, const hyena_texture_desc_t * desc, int width, int height)
+{
+    const void * pixels = desc->pixels;
+    byte * expanded     = NULL;
+    uint32_t source_crc = 0;
+    uint32_t fields[]   = { 0x48595001u, width, height, desc->mip_levels != 0 };
+    uint32_t variant    = AssetCache_HashWords(fields, sizeof(fields) / sizeof(fields[0]));
+    // RGBA pixels at their final size without mips only need a memory copy.
+    // Reading another identical payload from disk costs more than that copy.
+    qboolean use_cache  = AssetCache_Enabled() && !desc->lightmap && !desc->update &&
+      (desc->format != HYE_TEXTURE_RGBA8 || width != desc->width || height != desc->height || desc->mip_levels);
+    qboolean complete;
+
+    if (!pixels || desc->width < 1 || desc->height < 1 || width < 1 || height < 1 ||
+      width > 32768 || height > 32768 || desc->width > 32768 || desc->height > 32768)
+        return false;
+
+    if (use_cache)
+        source_crc = Hyena_TextureSourceCRC(desc);
+    if (use_cache && Hyena_LoadPreparedPixels(desc, source_crc, variant, width, height, prepared))
+        return true;
+
+    if (desc->format == HYE_TEXTURE_INDEX8) {
+        expanded = malloc((size_t) desc->width * desc->height * 4);
+        if (!expanded)
+            return false;
+
+        Hyena_ExpandPalette(pixels, expanded, (size_t) desc->width * desc->height,
+          desc->palette ? desc->palette : (const byte *) d_8to24table,
+          desc->palette ? desc->palette_bpp : 4);
+        pixels = expanded;
+    }
+    complete = Hyena_PreparePixels(prepared, pixels, desc->width, desc->height, width, height, 4,
+        true, false, desc->mip_levels ? HYENA_MAX_MIP_LEVELS - 1 : 0, 1, 1);
+    free(expanded);
+    if (complete && use_cache) {
+        asset_cache_data_t cached = { 0 };
+        cached.data = prepared->storage;
+        cached.size = prepared->size;
+        AssetCache_Store(ASSET_CACHE_TEXTURE, desc->identifier, source_crc, variant, &cached);
+    }
+    return complete;
+} /* Hyena_PrepareTexturePixels */
+
 void
 Hyena_PrepareTextureUpload(int texture, const hyena_texture_desc_t * desc, int compact_format,
   hyena_upload_level_fn upload)
 {
     hyena_texture_t * record = &hyena_textures[texture];
     const void * pixels      = desc->pixels;
-    byte * expanded = NULL, * region = NULL;
+    byte * region = NULL;
     unsigned short * packed = NULL;
     int width = desc->width, height = desc->height;
     int storage = HYE_PIXELS_RGBA8, bpp = 4;
@@ -270,20 +369,9 @@ Hyena_PrepareTextureUpload(int texture, const hyena_texture_desc_t * desc, int c
     } else {
         hyena_pixels_t prepared;
         int i;
-        if (desc->format == HYE_TEXTURE_INDEX8) {
-            expanded = malloc((size_t) width * height * 4);
-            if (!expanded)
-                Sys_Error("Hyena: out of palette expansion memory");
-            Hyena_ExpandPalette(pixels, expanded, (size_t) width * height,
-              desc->palette ? desc->palette : (const byte *) d_8to24table,
-              desc->palette ? desc->palette_bpp : 4);
-            pixels = expanded;
-        }
         width  = Hyena_TextureDimension(width, false, 4, (int) gl_max_size.value, (int) gl_picmip.value);
         height = Hyena_TextureDimension(height, false, 4, (int) gl_max_size.value, (int) gl_picmip.value);
-        // These backends consume a box-filtered chain; native tiled storage can prepare its own levels.
-        if (!Hyena_PreparePixels(&prepared, pixels, desc->width, desc->height, width, height, 4,
-          true, false, desc->mip_levels ? HYENA_MAX_MIP_LEVELS - 1 : 0, 1, 1))
+        if (!Hyena_PrepareTexturePixels(&prepared, desc, width, height))
             Sys_Error("Hyena: could not prepare texture");
         for (i = 0; i < prepared.count; ++i) {
             const hyena_mip_t * level = &prepared.levels[i];
@@ -298,7 +386,6 @@ Hyena_PrepareTextureUpload(int texture, const hyena_texture_desc_t * desc, int c
     if (desc->mip_levels > 0)
         min_filter = desc->filter == HYE_FILTER_LINEAR ? hyena_filter_min : HYE_NEAREST_MIPMAP_NEAREST;
     Hyena_BackendTextureFilter(texture, min_filter, mag_filter);
-    free(expanded);
     free(region);
     free(packed);
 } /* Hyena_PrepareTextureUpload */

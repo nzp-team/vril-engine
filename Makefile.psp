@@ -59,6 +59,7 @@ COMMON_OBJS = \
 	source/cl_slist.o \
     source/cmd.o \
 	source/common.o \
+	source/asset_cache.o \
 	source/console.o \
 	source/crc.o \
 	source/cvar.o \
@@ -76,6 +77,7 @@ COMMON_OBJS = \
 	source/menu/menu_lobby.o \
 	source/menu/menu_gamesettings.o \
 	source/menu/menu_configuration.o \
+	source/menu/menu_storage.o \
 	source/menu/menu_video.o \
 	source/menu/menu_audio.o \
 	source/menu/menu_controls.o \
@@ -180,9 +182,9 @@ _build_info.h:
 	echo "#define BUILD_DATE \"$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")\"" >> source/_build_info.h
 
 clean:
-	rm -rf build/
-	rm -rf source/_build_info.h
-	find . -type f -name '*.o' -exec rm {} +
+	rm -rf build/psp/
+	rm -f source/_build_info.h $(OBJS)
+	rm -f $(TARGET).elf $(TARGET).prx EBOOT.PBP PARAM.SFO
 
 install: EBOOT.PBP
 	mkdir -p build/psp/

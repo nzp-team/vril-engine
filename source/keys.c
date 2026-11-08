@@ -50,8 +50,7 @@ static qboolean holdfired[MAX_KEYS];
 static qboolean defernormal[MAX_KEYS];
 static qboolean dtfired[MAX_KEYS];
 #ifdef PLATFORM_HAS_PRES_SENS_INPUTS
-#define KEY_PRESSURE_HARD 128
-extern cvar_t in_pressure;
+extern cvar_t in_pressure, in_pressure_threshold;
 static byte pressure_binding[MAX_KEYS];
 static qboolean pressure_down[MAX_KEYS];
 static int pressure_event = -1;
@@ -275,7 +274,7 @@ void Key_Console (int key)
 		return;
 	}
 
-	if (key == K_UPARROW) {
+	if (key == K_UPARROW || key == K_DPAD_UP) {
 		do {
 			history_line = (history_line - 1) & 31;
 		} while (history_line != edit_line
@@ -287,7 +286,7 @@ void Key_Console (int key)
 		return;
 	}
 
-	if (key == K_DOWNARROW) {
+	if (key == K_DOWNARROW || key == K_DPAD_DOWN) {
 		if (history_line == edit_line) return;
 		do {
 			history_line = (history_line + 1) & 31;
@@ -780,7 +779,8 @@ void Key_PressureEvent(int key, qboolean down, int pressure)
 		pressure_event = pressure;
 		Key_Event(key, down);
 		pressure_event = -1;
-	} else if (down && keydown[key] && pressure_binding[key] == 1 && pressure >= KEY_PRESSURE_HARD) {
+	} else if (down && keydown[key] && pressure_binding[key] == 1 &&
+		pressure >= bound(1, in_pressure_threshold.value, 255)) {
 		Key_ReleasePressureBinding(key);
 		pressure_binding[key] = 2;
 		Key_RunBinding(holdbindings[key], key);
@@ -954,7 +954,7 @@ void Key_Event (int key, qboolean down)
 	}
 	if (down && !key_repeats[key] && pressure_event >= 0 && in_pressure.value &&
 		key_dest == key_game && !con_forcedup && holdbindings[key] && *holdbindings[key]) {
-		pressure_binding[key] = pressure_event >= KEY_PRESSURE_HARD ? 2 : 1;
+		pressure_binding[key] = pressure_event >= bound(1, in_pressure_threshold.value, 255) ? 2 : 1;
 		defernormal[key] = true;
 		holdstart[key] = 0;
 		holdfired[key] = false;
@@ -1184,6 +1184,7 @@ void Key_ClearStates (void)
 		if (pressure_binding[i])
 			Key_ReleasePressureBinding(i);
 		pressure_binding[i] = 0;
+		pressure_down[i] = false;
 #endif
 		keydown[i] = false;
 		key_repeats[i] = 0;

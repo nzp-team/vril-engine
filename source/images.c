@@ -72,103 +72,68 @@ typedef struct
     unsigned char	data;			// unbounded
 } pcx_t;
 
-byte* LoadPCX(FILE* f, int matchwidth, int matchheight) 
+static byte *Image_LoadFailure(FILE *file, const char *message, qboolean quiet)
 {
-    pcx_t pcxbuf = {0};
-    if (fread(&pcxbuf, 1, 128, f) != 128) {
-        fclose(f);
-        Sys_Error("Truncated pcx header\n");
+    fclose(file);
+    if (quiet)
+        Con_DPrintf("Image cache: %s\n", message);
+    else
+        Sys_Error("%s\n", message);
+    return NULL;
+}
+
+static byte *LoadPCX(FILE *file, int length, qboolean quiet)
+{
+    pcx_t header;
+    byte palette[768], *pixels;
+    long start = ftell(file), palette_offset;
+    int width, height, stride, y;
+
+    if (start < 0 || length < 128 + 768 || fread(&header, 1, 128, file) != 128)
+        return Image_LoadFailure(file, "Truncated pcx header", quiet);
+    width = (unsigned short)LittleShort(header.xmax) + 1;
+    height = (unsigned short)LittleShort(header.ymax) + 1;
+    stride = (unsigned short)LittleShort(header.bytes_per_line);
+    if (header.manufacturer != 0x0a || header.version != 5 || header.encoding != 1 ||
+        header.bits_per_pixel != 8 || header.color_planes != 1 || width > 640 || height > 480 ||
+        header.xmin || header.ymin || stride < width || stride > 4096)
+        return Image_LoadFailure(file, "Bad pcx file", quiet);
+    palette_offset = start + length - 768;
+    if (fseek(file, palette_offset, SEEK_SET) || fread(palette, 1, sizeof(palette), file) != sizeof(palette) ||
+        fseek(file, start + 128, SEEK_SET))
+        return Image_LoadFailure(file, "Truncated pcx palette", quiet);
+    pixels = malloc((size_t)width * height * 4);
+    if (!pixels) {
+        fclose(file);
         return NULL;
     }
-
-    pcx_t* pcx = &pcxbuf;
-
-#ifdef __WII__
-	pcx->xmin = LittleShort(pcx->xmin);
-    pcx->ymin = LittleShort(pcx->ymin);
-    pcx->xmax = LittleShort(pcx->xmax);
-    pcx->ymax = LittleShort(pcx->ymax);
-    pcx->hres = LittleShort(pcx->hres);
-    pcx->vres = LittleShort(pcx->vres);
-    pcx->bytes_per_line = LittleShort(pcx->bytes_per_line);
-    pcx->palette_type = LittleShort(pcx->palette_type);
-#endif // __WII__
-
-    if (pcx->manufacturer != 0x0a || pcx->version != 5 || pcx->encoding != 1 ||
-        pcx->bits_per_pixel != 8 || pcx->xmax >= 640 || pcx->ymax >= 480) {
-		fclose(f);
-        Sys_Error("Bad pcx file\n");
-        return NULL;
-    }
-
-    if (matchwidth && (pcx->xmax + 1) != matchwidth) {
-		Sys_Error("Matchwidth!\n");
-        fclose(f);
-        return NULL;
-    }
-
-    if (matchheight && (pcx->ymax + 1) != matchheight) {
-		Sys_Error("Matchheight!\n");
-        fclose(f);
-        return NULL;
-    }
-
-    unsigned char palette[768];
-    if (fseek(f, -768, SEEK_END) != 0 || fread(palette, 1, sizeof(palette), f) != sizeof(palette)) {
-        fclose(f);
-        Sys_Error("Truncated pcx palette\n");
-        return NULL;
-    }
-
-    if (fseek(f, 128, SEEK_SET) != 0) {
-        fclose(f);
-        Sys_Error("Invalid pcx data offset\n");
-        return NULL;
-    }
-
-    int count = (pcx->xmax + 1) * (pcx->ymax + 1);
-    byte* image_rgba = (unsigned char*)(Q_malloc(4 * count));
-	byte* pix = image_rgba;
-
-    for (int y = 0; y <= pcx->ymax; y++) {
-        for (int x = 0; x <= pcx->xmax;) {
-            int dataByte = fgetc(f);
-            if (dataByte == EOF) {
-                free(image_rgba);
-                fclose(f);
-                Sys_Error("Truncated pcx image data\n");
-                return NULL;
+    for (y = 0; y < height; ++y) {
+        int x = 0;
+        while (x < stride) {
+            int value = ftell(file) < palette_offset ? fgetc(file) : EOF;
+            int run = 1;
+            if (value != EOF && (value & 0xc0) == 0xc0) {
+                run = value & 0x3f;
+                value = ftell(file) < palette_offset ? fgetc(file) : EOF;
             }
-
-            int runLength = 1;
-            if ((dataByte & 0xC0) == 0xC0) {
-                runLength = dataByte & 0x3F;
-                dataByte = fgetc(f);
-                if (dataByte == EOF) {
-                    free(image_rgba);
-                    fclose(f);
-                    Sys_Error("Truncated pcx run data\n");
-                    return NULL;
+            if (value == EOF || !run || run > stride - x) {
+                free(pixels);
+                return Image_LoadFailure(file, "Truncated or invalid pcx run", quiet);
+            }
+            while (run--) {
+                if (x < width) {
+                    byte *out = pixels + ((size_t)y * width + x) * 4;
+                    memcpy(out, palette + value * 3, 3);
+                    out[3] = 255;
                 }
-            }
-
-            while (runLength-- > 0) {
-                byte* color = palette + dataByte * 3;
-                pix[0] = color[0];
-                pix[1] = color[1];
-                pix[2] = color[2];
-                pix[3] = 0xFF;  // set alpha to 255
-                pix += 4;
-                x++;
+                ++x;
             }
         }
     }
-
-    image_width = pcx->xmax + 1;
-    image_height = pcx->ymax + 1;
-
-    fclose(f);
-    return image_rgba;
+    image_width = width;
+    image_height = height;
+    fclose(file);
+    return pixels;
 }
 
 /*small function to read files with stb_image - single-file image loader library.
@@ -180,15 +145,22 @@ byte* LoadPCX(FILE* f, int matchwidth, int matchheight)
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_FAILURE_USERMSG
 #include "stb_image.h"
-byte* LoadSTBI_Image(FILE *f)
+static byte *LoadSTBI_Image(FILE *f, qboolean quiet)
 {
 	int bpp;
 	int inwidth, inheight;
+	if (quiet) {
+		long start = ftell(f);
+		if (start < 0 || !stbi_info_from_file(f, &inwidth, &inheight, &bpp) ||
+			inwidth < 1 || inheight < 1 || inwidth > 4096 || inheight > 4096 ||
+			(size_t)inwidth * inheight > (16u * 1024u * 1024u) / 4 ||
+			fseek(f, start, SEEK_SET))
+			return Image_LoadFailure(f, "Image is invalid or too large to prepare", true);
+	}
 	byte* image = stbi_load_from_file(f, &inwidth, &inheight, &bpp, 4);
 
 	if(image == NULL) {
-		Sys_Error(" stbi failure: %s\n", stbi_failure_reason());
-		return NULL;
+        return Image_LoadFailure(f, stbi_failure_reason(), quiet);
 	}
 
 	image_width = inwidth;
@@ -197,40 +169,87 @@ byte* LoadSTBI_Image(FILE *f)
 	return image;
 }
 
+#define IMAGE_CACHE_VERSION 1
+
+static byte *Image_LoadSource(FILE *file, const char *name, int format, int length, qboolean quiet)
+{
+    asset_cache_data_t cached;
+    byte *pixels;
+    uint32_t source_crc = 0;
+    qboolean use_cache = AssetCache_Enabled() && length >= 0 && AssetCache_FileCRC(file, length, &source_crc);
+
+    if (use_cache && AssetCache_Load(ASSET_CACHE_IMAGE, name, source_crc, IMAGE_CACHE_VERSION, &cached)) {
+        size_t width = cached.metadata[0], height = cached.metadata[1];
+        if (width && height && width <= 4096 && height <= 4096 && cached.size == width * height * 4) {
+            image_width = width;
+            image_height = height;
+            fclose(file);
+            return cached.data;
+        }
+        free(cached.data);
+    }
+    pixels = format == IMAGE_PCX ? LoadPCX(file, length, quiet) : LoadSTBI_Image(file, quiet);
+    if (use_cache && pixels && image_width > 0 && image_height > 0 && image_width <= 4096 && image_height <= 4096) {
+        memset(&cached, 0, sizeof(cached));
+        cached.data = pixels;
+        cached.size = (size_t)image_width * image_height * 4;
+        cached.metadata[0] = image_width;
+        cached.metadata[1] = image_height;
+        AssetCache_Store(ASSET_CACHE_IMAGE, name, source_crc, IMAGE_CACHE_VERSION, &cached);
+    }
+    return pixels;
+}
+
 byte* Image_LoadPixels(char* filename, int image_format)
 {
-	FILE	*f;
-	char name[MAX_QPATH];
+    static const struct { int format; const char *extension; } formats[] = {
+        {IMAGE_PCX, "pcx"}, {IMAGE_TGA, "tga"}, {IMAGE_PNG, "png"},
+        {IMAGE_JPG, "jpg"}, {IMAGE_JPG, "jpeg"}
+    };
+    FILE *file;
+    char name[MAX_QPATH];
+    size_t i;
 
-	if (image_format & IMAGE_PCX) {
-		snprintf (name, sizeof(name), "%s.pcx", filename);
-		if (COM_FOpenFile(name, &f) != -1)
-			return LoadPCX (f, 0, 0);
-	}
+    for (i = 0; i < sizeof(formats) / sizeof(formats[0]); ++i) {
+        if (!(image_format & formats[i].format))
+            continue;
+        snprintf(name, sizeof(name), "%s.%s", filename, formats[i].extension);
+        int length = COM_FOpenFile(name, &file);
+        if (length >= 0)
+            return Image_LoadSource(file, name, formats[i].format, length, false);
+    }
+    return NULL;
+}
 
-	if (image_format & IMAGE_TGA) {
-		snprintf (name, sizeof(name), "%s.tga", filename);
-		if (COM_FOpenFile(name, &f) != -1)
-			return LoadSTBI_Image (f);
-	}
+qboolean Image_BuildCache(const char *name)
+{
+    char extension[8];
+    const char *dot = strrchr(name, '.');
+    FILE *file;
+    byte *pixels;
+    int format, length;
 
-	if (image_format & IMAGE_PNG) {
-		snprintf (name, sizeof(name), "%s.png", filename);
-		if (COM_FOpenFile(name, &f) != -1)
-			return LoadSTBI_Image (f);
-	}
-
-	if (image_format & IMAGE_JPG) {
-		snprintf (name, sizeof(name), "%s.jpg", filename);
-		if (COM_FOpenFile(name, &f) != -1)
-			return LoadSTBI_Image (f);
-
-		snprintf (name, sizeof(name), "%s.jpeg", filename);
-		if (COM_FOpenFile(name, &f) != -1)
-			return LoadSTBI_Image (f);
-	}
-
-	return NULL;					
+    if (!AssetCache_Enabled() || !dot || strlen(dot + 1) >= sizeof(extension))
+        return false;
+    Q_strlcpy(extension, dot + 1, sizeof(extension));
+    format = !Q_strcasecmp(extension, "pcx") ? IMAGE_PCX :
+        !Q_strcasecmp(extension, "tga") ? IMAGE_TGA :
+        !Q_strcasecmp(extension, "png") ? IMAGE_PNG :
+        (!Q_strcasecmp(extension, "jpg") || !Q_strcasecmp(extension, "jpeg")) ? IMAGE_JPG : 0;
+    if (!format)
+        return false;
+    length = COM_FOpenFile((char *)name, &file);
+    if (!file)
+        return false;
+    if (length <= 0 || length > 16 * 1024 * 1024) {
+        fclose(file);
+        return false;
+    }
+    pixels = Image_LoadSource(file, name, format, length, true);
+    if (!pixels)
+        return false;
+    free(pixels);
+    return true;
 }
 
 image_t Image_LoadImageWithIdentifier(char *filename, char *identifier, int image_format,

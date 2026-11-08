@@ -22,12 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef NeXT
 #include <libc.h>
 #endif
-#ifndef _MSC_VER
-#include <unistd.h>
-#endif
-#include <errno.h>
-#include <fcntl.h>
-
 #include "nzportable_def.h"
 
 int 		con_linewidth;
@@ -255,7 +249,7 @@ void Con_Init (void)
 		if (strlen (com_gamedir) < (MAXGAMEDIRLEN - strlen (t2)))
 		{
 			sprintf (debuglogfile, "%s%s", com_gamedir, t2);
-			unlink (debuglogfile);
+			remove (debuglogfile);
 		}
 	}
 
@@ -390,31 +384,15 @@ Con_DebugLog
 */
 void Con_DebugLog(char *file, char *fmt, ...)
 {
-    va_list argptr; 
-    static char data[1024];
-    int fd;
-    size_t length;
-    size_t written = 0;
-    
-    va_start(argptr, fmt);
-    vsnprintf(data, sizeof(data), fmt, argptr);
-    va_end(argptr);
-    fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0666);
-    if (fd < 0)
-        return;
+    va_list argptr;
+    FILE *log = fopen(file, "ab");
 
-    length = strlen(data);
-    while (written < length) {
-        ssize_t result = write(fd, data + written, length - written);
-        if (result > 0) {
-            written += (size_t)result;
-        } else if (result < 0 && errno == EINTR) {
-            continue;
-        } else {
-            break;
-        }
-    }
-    close(fd);
+    if (!log)
+        return;
+    va_start(argptr, fmt);
+    vfprintf(log, fmt, argptr);
+    va_end(argptr);
+    fclose(log);
 }
 
 

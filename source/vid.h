@@ -55,6 +55,7 @@ typedef struct
 	int				maxwarpheight;
 	pixel_t			*direct;		// direct drawing to framebuffer, if not
 									//  NULL
+	float           vsync_rate;     // Hz of the last blocking presentation; consumed by the frame limiter
 } viddef_t;
 
 extern	viddef_t	vid;				// global video state

@@ -104,6 +104,10 @@ SetRumble(byte low, byte high)
 void
 IN_PlatformInit(void)
 {
+    extern cvar_t cl_controllerglyphs;
+
+    Cvar_Set("cl_controllerglyphs", "sony");
+    cl_controllerglyphs.flags |= CVAR_ROM;
     Cmd_AddCommand("osk", IN_OpenOSKeyboard);
 
     if (PS4_LoadModule(ORBIS_SYSMODULE_INTERNAL_PAD) < 0)
@@ -192,8 +196,7 @@ IN_GetAnalogStick(in_analog_stick_id_t which, in_analog_stick_t * value)
     value->x = ((int) state.x - 128) / (state.x < 128 ? 128.0f : 127.0f);
     value->y = ((int) state.y - 128) / (state.y < 128 ? 128.0f : 127.0f);
 
-    if (which == IN_STICK_LEFT)
-        value->y = -value->y;
+    value->y = -value->y;
 }
 
 qboolean

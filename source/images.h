@@ -23,6 +23,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "render/r_types.h"
 
+extern int image_width, image_height;
+qboolean Image_BuildCache(const char *name);
+
 void tex_filebase (char *in, char *out);
 byte* Image_LoadPixels (char* filename, int image_format);
 int Image_LoadImage(char* filename, int image_format, int filter, bool keep, bool mipmap);

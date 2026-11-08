@@ -801,46 +801,92 @@ Hyena_BackendUploadTexture(int texture_index, const hyena_texture_desc_t * desc)
     }
     destination = texture.vram ? texture.vram : texture.ram;
     byte * out = destination;
-    scratch = static_cast<byte *>(malloc((size_t) width * height * bpp));
-    if (!scratch)
-        Sys_Error("Hyena: out of texture preparation memory");
-    for (i = 0; i < mip_count; ++i) {
-        hyena_mip_t level;
-        level.width  = width >> i;
-        level.height = height >> i;
-        level.size   = (size_t) level.width * level.height * bpp;
-        level.pixels = scratch;
-        Hyena_PreparePixelLevel(scratch, desc->pixels, desc->width, desc->height, level.width, level.height, bpp,
-          i || stretch, bpp == 4 && r_restexf.value);
-        if (format >= GU_PSM_DXT1) {
-            Hyena_CompressGUTexture(bpp, level.width, level.height, level.pixels, format, out);
-        } else if (format == GU_PSM_T4) {
-            if (!texture.palette)
-                texture.palette = static_cast<byte *>(memalign(16, 64));
-            byte * packed = static_cast<byte *>(malloc(level.size / 2));
-            if (!texture.palette || !packed)
-                Sys_Error("Hyena: out of palette memory\n");
-            if (desc->palette_hint) {
-                memcpy(texture.palette, desc->palette_hint, 64);
-                convert_8bpp_to_4bpp_with_hint(level.pixels, static_cast<const byte *>(desc->palette),
-                  desc->palette_bpp, level.width, level.height, packed,
-                  static_cast<const byte *>(desc->palette_hint));
-            } else {
-                convert_8bpp_to_4bpp(level.pixels, static_cast<const byte *>(desc->palette), desc->palette_bpp,
-                  level.width, level.height, packed, texture.palette);
+    uint32_t source_crc = 0;
+    const uint32_t fields[] = { 0x50535001u, static_cast<uint32_t>(format),
+        static_cast<uint32_t>(width), static_cast<uint32_t>(height),
+        static_cast<uint32_t>(mip_count), static_cast<uint32_t>(stretch),
+        static_cast<uint32_t>(bpp == 4 && r_restexf.value) };
+    uint32_t variant = AssetCache_HashWords(fields, sizeof(fields) / sizeof(fields[0]));
+    asset_cache_data_t cached = {};
+    size_t palette_size = format == GU_PSM_T4 ? 64 : 0;
+    bool use_cache = AssetCache_Enabled() && !desc->lightmap && !desc->update;
+    bool restored = false;
+    if (use_cache) {
+        source_crc = Hyena_TextureSourceCRC(desc);
+        if (AssetCache_Load(ASSET_CACHE_TEXTURE, desc->identifier, source_crc, variant, &cached)) {
+            if (cached.size == buffer_size + palette_size) {
+                if (palette_size && !texture.palette)
+                    texture.palette = static_cast<byte *>(memalign(16, palette_size));
+                if (!palette_size || texture.palette) {
+                    const byte *data = static_cast<const byte *>(cached.data);
+                    if (palette_size) {
+                        memcpy(texture.palette, data, palette_size);
+                        sceKernelDcacheWritebackRange(texture.palette, palette_size);
+                    }
+                    memcpy(destination, data + palette_size, buffer_size);
+                    restored = true;
+                }
             }
-            Hyena_TilePixels(packed, out, level.width / 2, level.height, 16, 8);
-            free(packed);
-            sceKernelDcacheWritebackRange(texture.palette, 64);
-        } else {
-            int stored_bpp = format == GU_PSM_4444 ? 2 : bpp;
-            if (format == GU_PSM_4444) {
-                Hyena_PackRGBA4444(level.pixels, reinterpret_cast<unsigned short *>(level.pixels),
-                  (size_t) level.width * level.height, true);
-            }
-            Hyena_TilePixels(level.pixels, out, level.width * stored_bpp, level.height, 16, 8);
+            free(cached.data);
         }
-        out += GL_GetTexSize(format, level.width, level.height, 0);
+    }
+    if (!restored) {
+        scratch = static_cast<byte *>(malloc((size_t) width * height * bpp));
+        if (!scratch)
+            Sys_Error("Hyena: out of texture preparation memory");
+        for (i = 0; i < mip_count; ++i) {
+            hyena_mip_t level;
+            level.width  = width >> i;
+            level.height = height >> i;
+            level.size   = (size_t) level.width * level.height * bpp;
+            level.pixels = scratch;
+            Hyena_PreparePixelLevel(scratch, desc->pixels, desc->width, desc->height, level.width, level.height, bpp,
+              i || stretch, bpp == 4 && r_restexf.value);
+            if (format >= GU_PSM_DXT1) {
+                Hyena_CompressGUTexture(bpp, level.width, level.height, level.pixels, format, out);
+            } else if (format == GU_PSM_T4) {
+                if (!texture.palette)
+                    texture.palette = static_cast<byte *>(memalign(16, 64));
+                byte * packed = static_cast<byte *>(malloc(level.size / 2));
+                if (!texture.palette || !packed)
+                    Sys_Error("Hyena: out of palette memory\n");
+                if (desc->palette_hint) {
+                    memcpy(texture.palette, desc->palette_hint, 64);
+                    convert_8bpp_to_4bpp_with_hint(level.pixels, static_cast<const byte *>(desc->palette),
+                      desc->palette_bpp, level.width, level.height, packed,
+                      static_cast<const byte *>(desc->palette_hint));
+                } else {
+                    convert_8bpp_to_4bpp(level.pixels, static_cast<const byte *>(desc->palette), desc->palette_bpp,
+                      level.width, level.height, packed, texture.palette);
+                }
+                Hyena_TilePixels(packed, out, level.width / 2, level.height, 16, 8);
+                free(packed);
+                sceKernelDcacheWritebackRange(texture.palette, 64);
+            } else {
+                int stored_bpp = format == GU_PSM_4444 ? 2 : bpp;
+                if (format == GU_PSM_4444) {
+                    Hyena_PackRGBA4444(level.pixels, reinterpret_cast<unsigned short *>(level.pixels),
+                      (size_t) level.width * level.height, true);
+                }
+                Hyena_TilePixels(level.pixels, out, level.width * stored_bpp, level.height, 16, 8);
+            }
+            out += GL_GetTexSize(format, level.width, level.height, 0);
+        }
+        free(scratch);
+        if (use_cache) {
+            memset(&cached, 0, sizeof(cached));
+            cached.size = buffer_size + palette_size;
+            cached.data = palette_size ? malloc(cached.size) : destination;
+            if (cached.data) {
+                if (palette_size) {
+                    memcpy(cached.data, texture.palette, palette_size);
+                    memcpy(static_cast<byte *>(cached.data) + palette_size, destination, buffer_size);
+                }
+                AssetCache_Store(ASSET_CACHE_TEXTURE, desc->identifier, source_crc, variant, &cached);
+                if (palette_size)
+                    free(cached.data);
+            }
+        }
     }
     sceKernelDcacheWritebackRange(destination, buffer_size);
     record.width    = width;
@@ -849,7 +895,6 @@ Hyena_BackendUploadTexture(int texture_index, const hyena_texture_desc_t * desc)
     texture.format  = format;
     texture.swizzle = format < GU_PSM_DXT1;
     record.mipmaps  = mip_count - 1;
-    free(scratch);
     currenttexture = -1;
 } // Hyena_BackendUploadTexture
 

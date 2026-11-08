@@ -1,5 +1,6 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
+Copyright (C) 2026 NZ:P Team.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -30,6 +31,7 @@ const qboolean mod_loading_progress = true, mod_external_sprites = true;
 const qboolean mod_permanent_sprites = R_KEEP_SPRITES;
 const int mod_lighting_channels = 3;
 static void Mod_PrepareAlias(aliashdr_t *header);
+static qboolean mod_building_cache;
 aliashdr_t	*pheader;
 
 stvert_t	stverts[MAXALIASVERTS];
@@ -50,7 +52,8 @@ void * Mod_LoadAliasFrame (void * pin, maliasframedesc_t *frame)
 	
 	pdaliasframe = (daliasframe_t *)pin;
 
-	strcpy (frame->name, pdaliasframe->name);
+	memcpy(frame->name, pdaliasframe->name, sizeof(frame->name));
+	frame->name[sizeof(frame->name) - 1] = 0;
 	frame->firstpose = posenum;
 	frame->numposes = 1;
 
@@ -231,7 +234,7 @@ void *Mod_LoadAllSkins(int count, daliasskintype_t *input)
                 snprintf(external, sizeof(external), "%s.mdl_%d", base, skin);
                 snprintf(name, sizeof(name), "%s_%d", loadmodel->name, skin);
             }
-            if (cls.state != ca_dedicated && !vid_headless) {
+            if (!mod_building_cache && cls.state != ca_dedicated && !vid_headless) {
                 Mod_FloodFillSkin(pixels, pheader->skinwidth, pheader->skinheight);
                 if (!strcmp(loadmodel->name, "models/weapons/m1911/v_biatch_left.mdl") ||
                     !strcmp(loadmodel->name, "models/weapons/m1911/v_biatch_right.mdl"))
@@ -276,7 +279,286 @@ static void Mod_AliasBounds(model_t *model, aliashdr_t *header)
 	model->radius = RadiusFromBounds(model->mins, model->maxs);
 }
 
-void Mod_LoadAliasModel (model_t *mod, void *buffer)
+// Prepared alias data contains relative offsets. Process-local model pointers
+// and texture handles are cleared on disk and rebound for each load.
+
+typedef struct {
+    float    mins[3], maxs[3];
+    uint32_t bytes, reserved;
+} alias_cache_header_t;
+
+static uint32_t
+Mod_AliasCacheVariant(void)
+{
+    const uint32_t fields[] = { 0x4d444c02u,                   sizeof(aliashdr_t), sizeof(maliasframedesc_t),
+                                sizeof(trivertx_t),            sizeof(void *),     LittleLong(1) == 1,
+                                Hyena_PackedArraysSupported(), Hyena_MorphMeshesSupported() };
+
+    return AssetCache_HashWords(fields, sizeof(fields) / sizeof(fields[0]));
+}
+
+static qboolean
+Mod_AliasSourceValid(const void * buffer, size_t size)
+{
+    const mdl_t * input = buffer;
+    const byte * cursor, * end = (const byte *) buffer + size;
+    int skins, width, height, vertices, triangles_count, frames, i, j, poses = 0;
+
+    if (size < sizeof(*input) || LittleLong(input->ident) != IDPOLYHEADER ||
+      LittleLong(input->version) != ALIAS_VERSION)
+        return false;
+
+    skins           = LittleLong(input->numskins);
+    width           = LittleLong(input->skinwidth);
+    height          = LittleLong(input->skinheight);
+    vertices        = LittleLong(input->numverts);
+    triangles_count = LittleLong(input->numtris);
+    frames          = LittleLong(input->numframes);
+    if (skins < 1 || skins > MAX_SKINS || width < 1 || width > 4096 || (width & 3) ||
+      height < 1 || height > MAX_LBM_HEIGHT || vertices < 1 || vertices > MAXALIASVERTS ||
+      triangles_count < 1 || triangles_count > MAXALIASTRIS || frames < 1 || frames > MAXALIASFRAMES)
+        return false;
+
+    for (i = 0; i < 3; ++i)
+        if (!isfinite(LittleFloat(input->scale[i])) || !isfinite(LittleFloat(input->scale_origin[i])) ||
+          !isfinite(LittleFloat(input->eyeposition[i]))) return false;
+
+    cursor = (const byte *) (input + 1);
+    for (i = 0; i < skins; ++i) {
+        int type, count = 1;
+        size_t bytes;
+        if (end - cursor < 4) return false;
+
+        memcpy(&type, cursor, 4);
+        type    = LittleLong(type);
+        cursor += 4;
+        if (type == ALIAS_SKIN_GROUP) {
+            if (end - cursor < 4) return false;
+
+            memcpy(&count, cursor, 4);
+            count   = LittleLong(count);
+            cursor += 4;
+            if (count < 1 || count > MAXALIASFRAMES || (size_t) (end - cursor) < (size_t) count * 4)
+                return false;
+
+            cursor += count * 4;
+        } else if (type != ALIAS_SKIN_SINGLE) return false;
+
+        bytes = (size_t) width * height * count;
+        if (bytes > (size_t) (end - cursor)) return false;
+
+        cursor += bytes;
+    }
+    if ((size_t) (end - cursor) < (size_t) vertices * sizeof(stvert_t)
+      + (size_t) triangles_count * sizeof(dtriangle_t)) return false;
+
+    cursor += vertices * sizeof(stvert_t);
+    for (i = 0; i < triangles_count; ++i) {
+        const dtriangle_t * triangle = (const dtriangle_t *) cursor;
+        for (j = 0; j < 3; ++j) {
+            int index = LittleLong(triangle->vertindex[j]);
+            if (index < 0 || index >= vertices) return false;
+        }
+        cursor += sizeof(*triangle);
+    }
+    for (i = 0; i < frames; ++i) {
+        int type, count = 1;
+        size_t bytes;
+        if (end - cursor < 4) return false;
+
+        memcpy(&type, cursor, 4);
+        type    = LittleLong(type);
+        cursor += 4;
+        if (type == ALIAS_GROUP) {
+            float interval;
+            if ((size_t) (end - cursor) < sizeof(daliasgroup_t)) return false;
+
+            memcpy(&count, cursor, 4);
+            count   = LittleLong(count);
+            cursor += sizeof(daliasgroup_t);
+            if (count < 1 || count > MAXALIASFRAMES || (size_t) (end - cursor) < (size_t) count * 4)
+                return false;
+
+            memcpy(&interval, cursor, 4);
+            if (!(LittleFloat(interval) > 0)) return false;
+
+            cursor += count * 4;
+        } else if (type != ALIAS_SINGLE) return false;
+
+        bytes = (size_t) count * (sizeof(daliasframe_t) + vertices * sizeof(trivertx_t));
+        if (bytes > (size_t) (end - cursor) || count > MAXALIASFRAMES - poses) return false;
+
+        poses += count;
+        for (j = 0; j < count; ++j) {
+            cursor += sizeof(daliasframe_t) + vertices * sizeof(trivertx_t);
+        }
+    }
+    return true;
+} /* Mod_AliasSourceValid */
+
+static qboolean
+Mod_AliasCacheRange(int offset, size_t bytes, size_t size, size_t minimum)
+{
+    return offset >= 0 && (size_t) offset >= minimum && !(offset & 1) &&
+           (size_t) offset <= size && bytes <= size - offset;
+}
+
+static size_t
+Mod_AliasDataSize(const aliashdr_t * header)
+{
+    int physical = header->numposes, i;
+
+    if (header->posemap) {
+        const unsigned short * map = (const unsigned short *) ((const byte *) header + header->posemap);
+        physical = 0;
+        for (i = 0; i < header->numposes; ++i)
+            if (map[i] >= physical) physical = map[i] + 1;
+    }
+    if (header->posedata)
+        return header->posedata + (size_t) physical * header->poseverts * sizeof(trivertx_t);
+
+    return header->commands + (size_t) header->command_words * sizeof(int);
+}
+
+static qboolean
+Mod_AliasCacheValid(const aliashdr_t * header, size_t size, const mdl_t * input)
+{
+    size_t minimum;
+    const int * commands;
+    int i, cursor, words, vertices = 0, physical = header->numposes;
+    qboolean packed = Hyena_PackedArraysSupported();
+
+    if (size < sizeof(*header) || header->model || header->numframes != LittleLong(input->numframes) ||
+      header->numframes < 1 || header->numframes > MAXALIASFRAMES ||
+      header->numverts != LittleLong(input->numverts) || header->numtris != LittleLong(input->numtris) ||
+      header->skinwidth != LittleLong(input->skinwidth) || header->skinheight != LittleLong(input->skinheight) ||
+      header->numposes < 1 || header->numposes > MAXALIASFRAMES || header->poseverts < 1 ||
+      header->poseverts > MAXALIASTRIS * 3 || header->command_vertices < 3 ||
+      header->command_vertices > MAXALIASTRIS * 3 || header->numskins < 1 || header->numskins > MAX_SKINS ||
+      header->vertex_scale != (packed ? 128 : 1)) return false;
+
+    minimum = sizeof(*header) + (header->numframes - 1) * sizeof(header->frames[0]);
+    if (minimum > size || !Mod_AliasCacheRange(header->commands, 4, size, minimum) ||
+      (header->commands & 3)) return false;
+
+    words = min((size - header->commands) / 4, MAXALIASTRIS * 7 + 2);
+    if (packed) {
+        if (header->command_words < 2 || header->command_words > words) return false;
+
+        words = header->command_words;
+    } else if (header->command_words) return false;
+
+    for (i = 0; i < header->numframes; ++i) {
+        const maliasframedesc_t * frame = &header->frames[i];
+        if (frame->firstpose < 0 || frame->numposes < 1 || frame->firstpose > header->numposes - frame->numposes ||
+          !memchr(frame->name, 0, sizeof(frame->name))) return false;
+    }
+    commands = (const int *) ((const byte *) header + header->commands);
+    cursor   = packed ? 1 : 0;
+    if (packed && commands[0] != header->command_words) return false;
+
+    while (cursor < words) {
+        int count = commands[cursor++], stride = packed && header->numposes > 1 ? 1 : 2;
+        if (!count) break;
+        if (count < -MAXALIASTRIS * 3 || count > MAXALIASTRIS * 3 || abs(count) < 3 ||
+          abs(count) > (words - cursor) / stride) return false;
+
+        vertices += abs(count);
+        cursor   += abs(count) * stride;
+    }
+    if ((packed && cursor != words) || !cursor || commands[cursor - 1] || vertices != header->command_vertices)
+        return false;
+
+    if (header->command_remap) {
+        const unsigned short * remap;
+        if (!Mod_AliasCacheRange(header->command_remap, (size_t) vertices * 2, size, minimum)) return false;
+
+        remap = (const unsigned short *) ((const byte *) header + header->command_remap);
+        for (i = 0; i < vertices; ++i) if (remap[i] >= header->poseverts) return false;
+    }
+    if (header->posemap) {
+        const unsigned short * map;
+        if (!Mod_AliasCacheRange(header->posemap, (size_t) header->numposes * 2, size, minimum)) return false;
+
+        map      = (const unsigned short *) ((const byte *) header + header->posemap);
+        physical = 0;
+        for (i = 0; i < header->numposes; ++i) {
+            if (map[i] >= header->numposes) return false;
+
+            if (map[i] >= physical) physical = map[i] + 1;
+        }
+    }
+    if (packed && header->numposes == 1)
+        return !header->posedata && !header->posemap && !header->command_remap;
+
+    return !(header->posedata & 3) && Mod_AliasCacheRange(header->posedata,
+             (size_t) physical * header->poseverts * sizeof(trivertx_t), size, minimum);
+} /* Mod_AliasCacheValid */
+
+static qboolean
+Mod_RestoreAlias(model_t * model, const mdl_t * input, uint32_t crc)
+{
+    asset_cache_data_t entry;
+    alias_cache_header_t prefix;
+    const aliashdr_t * stored;
+    int i;
+
+    if (!AssetCache_Load(ASSET_CACHE_MODEL, model->name, crc, Mod_AliasCacheVariant(), &entry)) return false;
+
+    if (entry.size < sizeof(prefix) + sizeof(*stored)) goto invalid;
+    memcpy(&prefix, entry.data, sizeof(prefix));
+    stored = (const aliashdr_t *) ((const byte *) entry.data + sizeof(prefix));
+    if (prefix.bytes != entry.size - sizeof(prefix) || !Mod_AliasCacheValid(stored, prefix.bytes, input))
+        goto invalid;
+    for (i = 0; i < 3; ++i)
+        if (!isfinite(prefix.mins[i]) || !isfinite(prefix.maxs[i]) || prefix.mins[i] > prefix.maxs[i]) goto invalid;
+    if (mod_building_cache) { free(entry.data); return true; }
+    pheader = Hunk_AllocName(prefix.bytes, loadname);
+    memcpy(pheader, stored, prefix.bytes);
+    pheader->model = model;
+    Mod_LoadAllSkins(LittleLong(input->numskins), (daliasskintype_t *) (input + 1));
+    model->flags     = LittleLong(input->flags);
+    model->synctype  = LittleLong(input->synctype);
+    model->numframes = pheader->numframes;
+    model->type      = mod_alias;
+    memcpy(model->mins, prefix.mins, sizeof(prefix.mins));
+    memcpy(model->maxs, prefix.maxs, sizeof(prefix.maxs));
+    model->radius = RadiusFromBounds(model->mins, model->maxs);
+    Cache_Alloc(&model->cache, prefix.bytes, loadname);
+    memcpy(model->cache.data, pheader, prefix.bytes);
+    free(entry.data);
+    return true;
+
+invalid:
+    free(entry.data);
+    return false;
+} /* Mod_RestoreAlias */
+
+static qboolean
+Mod_StoreAlias(model_t * model, uint32_t crc, size_t bytes)
+{
+    asset_cache_data_t entry    = { 0 };
+    alias_cache_header_t prefix = { { 0 }, { 0 }, 0, 0 };
+    aliashdr_t * stored;
+
+    prefix.bytes = bytes;
+    memcpy(prefix.mins, model->mins, sizeof(prefix.mins));
+    memcpy(prefix.maxs, model->maxs, sizeof(prefix.maxs));
+    entry.size = sizeof(prefix) + bytes;
+    entry.data = malloc(entry.size);
+    if (!entry.data) return false;
+
+    memcpy(entry.data, &prefix, sizeof(prefix));
+    stored = (aliashdr_t *) ((byte *) entry.data + sizeof(prefix));
+    memcpy(stored, pheader, bytes);
+    stored->model = NULL;
+    memset(stored->gl_texturenum, 0, sizeof(stored->gl_texturenum));
+    qboolean stored_ok = AssetCache_Store(ASSET_CACHE_MODEL, model->name, crc, Mod_AliasCacheVariant(), &entry);
+    free(entry.data);
+    return stored_ok;
+}
+
+static qboolean Mod_LoadAliasModelInternal(model_t *mod, void *buffer)
 {
 	int					i, j;
 	mdl_t				*pinmodel;
@@ -286,7 +568,9 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	int					size;
 	daliasframetype_t	*pframetype;
 	daliasskintype_t	*pskintype;
-	int					start, end, total;
+	int					start, total;
+    uint32_t source_crc = 0;
+    qboolean use_cache = AssetCache_Enabled(), stored_ok = false;
 
 // some models are special
 	// NOTE: comparing not only with player.mdl, but with all models
@@ -317,9 +601,16 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	else
 		mod->modhint = MOD_NORMAL;
 	
-	start = Hunk_LowMark ();
-
-	pinmodel = (mdl_t *)buffer;
+    if (!Mod_AliasSourceValid(buffer, com_filesize))
+        Sys_Error("Invalid or truncated alias model: %s", mod->name);
+    if (use_cache)
+        source_crc = AssetCache_CRC32(buffer, com_filesize);
+    start = Hunk_LowMark();
+    pinmodel = (mdl_t *)buffer;
+    if (use_cache && Mod_RestoreAlias(mod, pinmodel, source_crc)) {
+        Hunk_FreeToLowMark(start);
+        return true;
+    }
 
 	version = LittleLong (pinmodel->version);
 	if (version != ALIAS_VERSION)
@@ -455,15 +746,61 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 //
 // move the complete, relocatable alias model to the cache
 //	
-	end = Hunk_LowMark ();
-	total = end - start;
+    total = Mod_AliasDataSize(pheader);
+    if (use_cache)
+        stored_ok = Mod_StoreAlias(mod, source_crc, total);
+    if (mod_building_cache) {
+        Hunk_FreeToLowMark(start);
+        return stored_ok;
+    }
 	
 	Cache_Alloc (&mod->cache, total, loadname);
 	if (!mod->cache.data)
-		return;
+		return false;
 	memcpy (mod->cache.data, pheader, total);
 
 	Hunk_FreeToLowMark (start);
+    return stored_ok;
+}
+
+
+void Mod_LoadAliasModel(model_t *mod, void *buffer)
+{
+    Mod_LoadAliasModelInternal(mod, buffer);
+}
+
+qboolean Mod_BuildAliasCache(const char *name)
+{
+    model_t model = {0};
+    model_t *saved_model = loadmodel;
+    aliashdr_t *saved_header = pheader;
+    char saved_name[MAX_QPATH];
+    int saved_size = com_filesize, length;
+    qboolean prepared;
+    byte *data;
+    FILE *file;
+    if (!AssetCache_Enabled() || strlen(name) >= sizeof(model.name)) return false;
+    length = COM_FOpenFile((char *)name, &file);
+    if (!file) return false;
+    if (length <= 0 || length > 16 * 1024 * 1024 || !(data = malloc(length))) {
+        fclose(file); return false;
+    }
+    if (fread(data, 1, length, file) != (size_t)length || !Mod_AliasSourceValid(data, length)) {
+        free(data); fclose(file); return false;
+    }
+    fclose(file);
+    Q_strlcpy(model.name, name, sizeof(model.name));
+    Q_strlcpy(saved_name, loadname, sizeof(saved_name));
+    COM_FileBase(model.name, loadname);
+    loadmodel = &model;
+    mod_building_cache = true;
+    prepared = Mod_LoadAliasModelInternal(&model, data);
+    mod_building_cache = false;
+    loadmodel = saved_model; pheader = saved_header;
+    Q_strlcpy(loadname, saved_name, sizeof(saved_name));
+    com_filesize = saved_size;
+    free(data);
+    return prepared;
 }
 
 

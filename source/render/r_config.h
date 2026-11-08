@@ -16,6 +16,9 @@
 #ifndef R_NEAR_CLIP
 #define R_NEAR_CLIP 4
 #endif
+#ifndef R_FIXED_FAR_CLIP
+#define R_FIXED_FAR_CLIP 0
+#endif
 #ifndef R_DEFAULT_VSYNC
 #define R_DEFAULT_VSYNC "1"
 #endif

@@ -543,6 +543,9 @@ Menu_DrawButton
 */
 void Menu_DrawButton (int order, int button_index, char* button_name, char* button_summary, void *on_activate)
 {
+	if ((unsigned)button_index >= MAX_MENU_BUTTONS)
+		Sys_Error("Menu_DrawButton: invalid button index %d", button_index);
+
 	int y_factor = 15;
 	int x_pos = 140;
 	int y_pos = 0;
@@ -798,11 +801,11 @@ void Menu_DrawOptionSlider(int order, int button_index, float min_option_value, 
 	}
 
 	char _option_string[16] = "";
-	// if increment amount is a float
-	if (increment_amount < 1) {
-		sprintf(_option_string, "%.2f", (double)option.value);
+	float display_scale = button->slider_display_scale ? button->slider_display_scale : 1;
+	if (increment_amount * display_scale < 1) {
+		snprintf(_option_string, sizeof(_option_string), "%.2f", (double)(option.value * display_scale));
 	} else {
-		sprintf(_option_string, "%i", (int)option.value);
+		snprintf(_option_string, sizeof(_option_string), "%i", (int)(option.value * display_scale));
 	}
 
 	if (zero_to_one) {
@@ -981,17 +984,12 @@ void Menu_DrawCreditContributor (int order, int sub_order, char *header)
 #define MAX_Y 8
 #define MAX_X 12
 
-#define MAX_CHAR_LINE 36
-#define MAX_CHAR      72
-
 int  osk_pos_x = 0;
 int  osk_pos_y = 0;
 int  max_len   = 0;
 
 char* osk_out_buff = NULL;
 char  osk_buffer[128];
-
-image_t osk_button[4];
 
 char *osk_text [] =
 {
@@ -1008,10 +1006,10 @@ char *osk_text [] =
 
 void Con_OSK_f (char *input, char *output, int outlen)
 {
-	max_len = outlen;
-	strncpy(osk_buffer,input,max_len);
-	osk_buffer[outlen] = '\0';
+	max_len = bound(0, outlen, (int)sizeof(osk_buffer) - 1);
+	Q_strncpyz(osk_buffer, input, max_len + 1);
 	osk_out_buff = output;
+	Q_strncpyz(osk_out_buff, osk_buffer, max_len + 1);
 }
 
 void Con_SetOSKActive(qboolean active);
@@ -1061,7 +1059,7 @@ void Menu_OSK_Key (int key)
 			strcat(osk_buffer,selected_char);
 		}
 	} else if (key == MENU_KEY_SAVE_INPUT) {
-		strncpy(osk_out_buff,osk_buffer,max_len);
+		Q_strncpyz(osk_out_buff, osk_buffer, max_len + 1);
 		Con_SetOSKActive(false);
 	} else if (key == MENU_KEY_DELETE) {
 		if (strlen(osk_buffer) > 0) {
@@ -1072,94 +1070,85 @@ void Menu_OSK_Key (int key)
 	}
 }
 
+static int Menu_OSK_LineLength (const char *text, int width)
+{
+	char line[sizeof(osk_buffer)];
+	int length;
+
+	for (length = 0; text[length] && length < sizeof(line) - 1; length++) {
+		line[length] = text[length];
+		line[length + 1] = '\0';
+		if (getTextWidth(line, 1) > width)
+			break;
+	}
+	return max(1, length);
+}
+
 void Menu_OSK_Draw (void)
 {
-	int i;
+	char *labels[] = {"CONFIRM", "CANCEL", "DELETE", "ADD CHAR"};
+	int keys[] = {MENU_KEY_SAVE_INPUT, MENU_KEY_BACK, MENU_KEY_DELETE, MENU_KEY_CONFIRM};
+	char line[sizeof(osk_buffer)];
+	const char *text = osk_buffer;
+	int keyboard_width = 0, label_width = 0, lines = 1;
+	int padding = 8, icon_size = 12, line_height = _CHAR_HEIGHT + 2;
+	int i, length, width, height, x_pos, y_pos, sidebar_x, input_y;
+	int char_index = 1 + 2 * osk_pos_x;
 
-	char *selected_line = osk_text[osk_pos_y];
-	char selected_char[2];
+	// Menu helpers scale logical coordinates; keep the entire panel in that space.
+	for (i = 0; i <= MAX_Y; i++)
+		keyboard_width = max(keyboard_width, getTextWidth(osk_text[i], 1));
+	for (i = 0; i < 4; i++)
+		label_width = max(label_width, getTextWidth(labels[i], 1));
+	width = padding * 4 + keyboard_width + label_width + icon_size;
+	while (*text) {
+		length = Menu_OSK_LineLength(text, width - padding * 2 - 2);
+		text += length;
+		if (*text) lines++;
+	}
+	height = padding * 3 + _CHAR_HEIGHT * (MAX_Y + 1) + lines * line_height;
+	x_pos = ((int)(vid.width / vid.scale) - width) / 2;
+	y_pos = ((int)(vid.height / vid.scale) - height) / 2;
+	sidebar_x = x_pos + padding * 2 + keyboard_width;
+	input_y = y_pos + padding * 2 + _CHAR_HEIGHT * (MAX_Y + 1);
+	UI_SetAlignment(UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
+	Menu_DrawFill(x_pos, y_pos, width, height, 0, 0, 0, 255);
+	Menu_DrawMapBorder(x_pos, y_pos, width * vid.scale, height * vid.scale);
+	Menu_DrawFill(sidebar_x - padding, y_pos + padding, 1, _CHAR_HEIGHT * (MAX_Y + 1), 130, 130, 130, 255);
+	Menu_DrawFill(x_pos + padding, input_y - padding, width - padding * 2, 1, 130, 130, 130, 255);
 
-	selected_char[0] = selected_line[1+(2*osk_pos_x)];
-	selected_char[1] = '\0';
-	if (selected_char[0] == ' ' || selected_char[0] == '\t')
-		selected_char[0] = 'X';
-
-	int x_value = (vid.width/3)+80;
-	int y_value = (vid.height/3)+20;
-
-	int x_pos = vid.width/4;
-	int y_pos = vid.height/2 - y_value;
-
-	UI_SetAlignment (UI_ANCHOR_LEFT, UI_ANCHOR_TOP);
-
-	// Draw the background fill
-	Menu_DrawFill(x_pos-5, y_pos-10, x_value, y_value, 0, 0, 0, 255);
-	// Map border is fine for this occassion 
-	Menu_DrawMapBorder (x_pos-5, y_pos-10, x_value, y_value);
-
-	for(i=0;i<=MAX_Y;i++) {
-		Menu_DrawString (x_pos, y_pos+(_CHAR_HEIGHT*i), osk_text[i], 255, 255, 255, 255, vid.scale, 0);
-		
-		if (i == 0) {
-			Menu_DrawString (x_pos+(x_value)-88, y_pos+(_CHAR_HEIGHT*i), "CONFIRM", 255, 255, 0, 255, vid.scale, 0);
-			Menu_DrawPicStretch (x_pos+(x_value)-20, y_pos+(_CHAR_HEIGHT*i), osk_button[0], 8, 8);
-		} else if (i == 2) {
-			Menu_DrawString (x_pos+(x_value)-88, y_pos+(_CHAR_HEIGHT*i), "CANCEL", 255, 255, 0, 255, vid.scale, 0);
-			Menu_DrawPicStretch (x_pos+(x_value)-20, y_pos+(_CHAR_HEIGHT*i), osk_button[1], 8, 8);
-		} else if (i == 4) {
-			Menu_DrawString (x_pos+(x_value)-88, y_pos+(_CHAR_HEIGHT*i), "DELETE", 255, 255, 0, 255, vid.scale, 0);
-			Menu_DrawPicStretch (x_pos+(x_value)-20, y_pos+(_CHAR_HEIGHT*i), osk_button[2], 8, 8);
-		} else if (i == 6) {
-			Menu_DrawString (x_pos+(x_value)-88, y_pos+(_CHAR_HEIGHT*i), "ADD CHAR", 255, 255, 0, 255, vid.scale, 0);
-			Menu_DrawPicStretch (x_pos+(x_value)-20, y_pos+(_CHAR_HEIGHT*i), osk_button[3], 8, 8);
+	// Draw each key once, so selection uses the identical glyph position and rounding.
+	for (i = 0; i <= MAX_Y; i++) {
+		int j;
+		for (j = 0; osk_text[i][j]; j++) {
+			qboolean selected = i == osk_pos_y && j == char_index;
+			int glyph = osk_text[i][j];
+			line[j] = '\0';
+			if (selected && (glyph == ' ' || glyph == '\t')) glyph = 'X';
+			Draw_CharacterRGBA(UI_X(x_pos + padding) + getTextWidth(line, vid.scale),
+				UI_Y(y_pos + padding + _CHAR_HEIGHT * i), glyph,
+				255, selected ? 0 : 255, selected ? 0 : 255, 255, vid.scale);
+			line[j] = osk_text[i][j];
 		}
 	}
-	// Side bar
-	Menu_DrawFill(x_pos+(x_value)-95, y_pos-10, 2, y_value-26, 130, 130, 130, 255);
-	// Bottom bar
-	Menu_DrawFill(x_pos-3, y_pos+y_value-36, x_value-2, 2, 130, 130, 130, 255);
-	
-	int text_len = strlen(osk_buffer);
-	if (text_len > MAX_CHAR_LINE) {
-		char oneline[MAX_CHAR_LINE+1];
-		strncpy(oneline,osk_buffer,MAX_CHAR_LINE);
-		oneline[MAX_CHAR_LINE] = '\0';
-
-		Menu_DrawString (x_pos, y_pos+4+(_CHAR_HEIGHT*(MAX_Y+2)), oneline, 255, 0, 0, 255, vid.scale, 0);
-
-		strncpy(oneline,osk_buffer+MAX_CHAR_LINE, text_len - MAX_CHAR_LINE);
-		oneline[text_len - MAX_CHAR_LINE] = '\0';
-
-		// Current input char
-		Menu_DrawString (x_pos+(_CHAR_WIDTH/2), y_pos+4+(_CHAR_HEIGHT*(MAX_Y+3)), oneline, 255, 255, 255, 255, vid.scale, 0);
-		// Current cursor
-		Menu_DrawFill (x_pos+((_CHAR_WIDTH)*(text_len)), y_pos+4+(_CHAR_HEIGHT*(MAX_Y+2)), 1, _CHAR_HEIGHT, 255, 0, 0, 255);
-	} else {
-		// Current input char
-		Menu_DrawString (x_pos+(_CHAR_WIDTH/2), y_pos+4+(_CHAR_HEIGHT*(MAX_Y+2)), osk_buffer, 255, 255, 255, 255, vid.scale, 0);
-		// Current cursor
-		Menu_DrawFill (x_pos+((_CHAR_WIDTH)*(text_len)), y_pos+4+(_CHAR_HEIGHT*(MAX_Y+2)), 1, _CHAR_HEIGHT, 255, 0, 0, 255);
+	for (i = 0; i < 4; i++) {
+		int y = y_pos + padding + _CHAR_HEIGHT * i * 2;
+		Menu_DrawString(sidebar_x, y, labels[i], 255, 255, 0, 255, vid.scale, 0);
+		HUD_DrawKeyIcon(UI_X(x_pos + width - padding - icon_size), UI_Y(y - 2), keys[i], UI_W(icon_size), 255);
 	}
 
-	// Use font kerning logic to find
-	// correct spacing for hovered OSK
-	// key
-	int char_index = 1 + (2 * osk_pos_x);
-	int hover_x = x_pos;
-	char *line = osk_text[osk_pos_y];
-
-	for (int i = 0; i < char_index; i++) {
-		char c = line[i];
-		if (c == ' ') {
-			hover_x += 4;
-		} else if ((int)c < 33 || (int)c > 126) {
-			hover_x += 8;
-		} else {
-			hover_x += (font_kerningamount[(int)(c - 33)] + 1);
-		}	
-	}
-
-	// Current hovered char
-	Draw_ColoredString(hover_x, y_pos + (osk_pos_y * _CHAR_HEIGHT), selected_char, 255, 0, 0, 255, vid.scale);
+	text = osk_buffer;
+	do {
+		length = *text ? Menu_OSK_LineLength(text, width - padding * 2 - 2) : 0;
+		memcpy(line, text, length);
+		line[length] = '\0';
+		Menu_DrawString(x_pos + padding, input_y, line, 255, 255, 255, 255, vid.scale, 0);
+		text += length;
+		if (!*text)
+			Draw_FillByColor(UI_X(x_pos + padding) + getTextWidth(line, vid.scale), UI_Y(input_y),
+				UI_W(1), UI_H(_CHAR_HEIGHT), 255, 0, 0, 255);
+		input_y += line_height;
+	} while (*text);
 }
+
 #endif

@@ -28,10 +28,6 @@ char 			*screenflash_string;
 char 			*monthspoof_string;
 char 			*crosshairdot_string;
 char 			*meleedive_string;
-#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
-extern cvar_t in_pressure;
-static char *pressure_string;
-#endif
 #ifdef PLATFORM_SUPPORTS_LIGHTBAR
 static char     *lightbar_string;
 #endif
@@ -113,13 +109,6 @@ static void Menu_Accessibility_ApplyLightbar(void)
 }
 #endif
 
-#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
-static void Menu_Accessibility_ApplyPressure(void)
-{
-	Cvar_SetValue("in_pressure", !in_pressure.value);
-}
-#endif
-
 void Menu_Accessibility_ApplySettings (void)
 {
 	// no op
@@ -166,9 +155,6 @@ void Menu_Accessibility_SetStrings (void)
 	}
 
 	meleedive_string = cl_meleedive.value ? "ENABLED" : "DISABLED";
-#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
-	pressure_string = in_pressure.value ? "ENABLED" : "DISABLED";
-#endif
 #ifdef PLATFORM_SUPPORTS_LIGHTBAR
 	lightbar_string = in_lightbar.value ? "ENABLED" : "DISABLED";
 #endif
@@ -268,10 +254,6 @@ void Menu_Accessibility_Draw (void)
 #ifdef PLATFORM_SUPPORTS_LIGHTBAR
 	Menu_DrawButton(option, option - 1, "GAMEPAD LIGHTBAR", "Enable Light Bar feedback.", Menu_Accessibility_ApplyLightbar);
 	Menu_DrawOptionButton(option++, lightbar_string);
-#endif
-#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
-	Menu_DrawButton(option, option - 1, "ANALOG BUTTONS", "Enables soft/hold press of inputs in place of tap/hold.", Menu_Accessibility_ApplyPressure);
-	Menu_DrawOptionButton(option++, pressure_string);
 #endif
 	Menu_DrawDivider(-2.5);
 	Menu_DrawButton(-2, option - 1, "APPLY", "Save & Apply Settings.", Menu_Accessibility_ApplySettings);

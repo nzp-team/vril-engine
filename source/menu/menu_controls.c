@@ -26,6 +26,10 @@ char			*aimassist_string;
 char			*invert_string;
 char 			*anub_string;
 
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+extern cvar_t in_pressure, in_pressure_threshold;
+#endif
+
 cvar_t			global_sensitivity;
 
 extern cvar_t 	in_aimassist;
@@ -34,7 +38,7 @@ extern cvar_t	in_acceleration;
 extern cvar_t	in_tolerance;
 extern cvar_t	in_anub_mode;
 extern cvar_t	m_pitch;
-#ifdef PLATFORM_USES_GENERIC_GLYPHS
+#if defined(PLATFORM_USES_GENERIC_GLYPHS) && !defined(PLATFORM_DISALLOW_GLYPH_OVERRIDE)
 extern cvar_t    cl_controllerglyphs;
 static char     *controller_glyphs_string;
 #endif
@@ -74,7 +78,7 @@ void Menu_Controls_SetStrings (void)
 		aimassist_string = "DISABLED";
 	}
 
-	if((int)m_pitch.value > 0) {
+	if(IN_LookInverted()) {
 		invert_string = "ENABLED";
 	} else {
 		invert_string = "DISABLED";
@@ -121,6 +125,20 @@ void Menu_Gyro_Set(void)
 }
 #endif
 
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+static void Menu_Controls_ApplyPressure(void)
+{
+	Cvar_SetValue("in_pressure", !in_pressure.value);
+}
+
+void Menu_Pressure_Set(void)
+{
+	Menu_ResetMenuButtons();
+	m_previous_state = m_controls;
+	m_state = m_pressure;
+}
+#endif
+
 #ifdef PLATFORM_SUPPORTS_RUMBLE
 static void Menu_Controls_ApplyRumble(void)
 {
@@ -142,14 +160,7 @@ void Menu_Controls_ApplyAimAssist (void)
 
 void Menu_Controls_ApplyLookInversion (void)
 {
-    float current_lookinversion = m_pitch.value;
-
-    current_lookinversion += 1;
-    if (current_lookinversion > 1) {
-        current_lookinversion = 0;
-    }
-
-    Cvar_SetValue ("m_pitch", current_lookinversion);
+    Cvar_SetValue ("m_pitch", !IN_LookInverted());
 }
 
 void Menu_Controls_ApplyAnubMode (void)
@@ -172,7 +183,7 @@ void Menu_Controls_ApplySettings (void)
     Menu_SetSound(MENU_SND_ENTER);
 }
 
-#ifdef PLATFORM_USES_GENERIC_GLYPHS
+#if defined(PLATFORM_USES_GENERIC_GLYPHS) && !defined(PLATFORM_DISALLOW_GLYPH_OVERRIDE)
 static void Menu_Controls_ApplyControllerGlyphs(void)
 {
 	const char *next = "xbox";
@@ -229,7 +240,7 @@ void Menu_Controls_Draw (void)
 	Menu_DrawButton (controls_buttons++, controls_index++, "INVERT LOOK", "Invert Y-Axis Camera Input.", Menu_Controls_ApplyLookInversion);
 	Menu_DrawOptionButton (controls_buttons-1, invert_string);
 
-#ifdef PLATFORM_USES_GENERIC_GLYPHS
+#if defined(PLATFORM_USES_GENERIC_GLYPHS) && !defined(PLATFORM_DISALLOW_GLYPH_OVERRIDE)
 	Menu_Controls_SetControllerGlyphString();
 	Menu_DrawButton(controls_buttons++, controls_index++, "CONTROLLER GLYPHS", "Change the controller glyph tilemap.", Menu_Controls_ApplyControllerGlyphs);
 	Menu_DrawOptionButton(controls_buttons-1, controller_glyphs_string);
@@ -253,6 +264,10 @@ void Menu_Controls_Draw (void)
 
 #ifdef PLATFORM_SUPPORTS_GYRO
 	Menu_DrawButton(controls_buttons++, controls_index++, "GYROSCOPE", "Configure Gyroscope.", Menu_Gyro_Set);
+#endif
+
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+	Menu_DrawButton(controls_buttons++, controls_index++, "PRESSURE BUTTONS", "Configure light and firm button presses.", Menu_Pressure_Set);
 #endif
 
 	// Bindings
@@ -287,5 +302,23 @@ void Menu_Gyro_Draw(void)
 	Menu_DrawOptionButton(gyro_buttons-1, gyro_zoom_scaling_string);
 
 	Menu_DrawButton(-1, gyro_index, "BACK", "Return to Control Options.", Menu_Controls_Set);
+}
+#endif
+
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+void Menu_Pressure_Draw(void)
+{
+	Menu_DrawCustomBackground(true);
+	Menu_DrawTitle("PRESSURE BUTTONS", MENU_COLOR_WHITE);
+	Menu_DrawMapPanel();
+
+	Menu_DrawButton(1, 0, "ANALOG BUTTONS", "Use light and firm presses for button actions.", Menu_Controls_ApplyPressure);
+	Menu_DrawOptionButton(1, in_pressure.value ? "ENABLED" : "DISABLED");
+
+	Menu_DrawButton(2, 1, "FIRM PRESS FORCE", "Force required for the firm press action.", NULL);
+	current_menu.button[1].slider_display_scale = 1.0f / 255.0f;
+	Menu_DrawOptionSlider(2, 1, 0, 255, in_pressure_threshold, "in_pressure_threshold", false, true, 255 * 0.05f);
+
+	Menu_DrawButton(-1, 2, "BACK", "Return to Control Options.", Menu_Controls_Set);
 }
 #endif

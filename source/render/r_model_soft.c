@@ -32,6 +32,12 @@ static byte converted_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE];
 
 #include "r_model_local.h"
 
+qboolean Mod_BuildAliasCache(const char *name)
+{
+    (void)name;
+    return false;
+}
+
 #define MAXALIASVERTS 2000
 #define ALIAS_BASE_SIZE_RATIO (1.0 / 11.0)
 texture_t *Mod_CreateTexture(miptex_t *mt)

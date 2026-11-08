@@ -113,6 +113,9 @@ qboolean TestHandler_Init(void)
 	active_suite = TestHandler_FindSuite(requested_mode);
 	if (!active_suite)
 		Sys_Error("Unknown test mode: %i", requested_mode);
+	// Apply before the first host frame so skipped frames cannot consume random values.
+	Cvar_SetValue("sys_testmode", requested_mode);
+	srand(0);
 	if (!active_suite->requires_server)
 	{
 		TestHandler_Frame();

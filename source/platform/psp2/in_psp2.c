@@ -67,6 +67,10 @@ void IN_PlatformMouseMove(usercmd_t *cmd) { (void)cmd; }
 
 void IN_PlatformInit(void)
 {
+	extern cvar_t cl_controllerglyphs;
+
+	Cvar_Set("cl_controllerglyphs", "sony");
+	cl_controllerglyphs.flags |= CVAR_ROM;
   Cvar_SetValue("in_anub_mode", 1);
 	Cvar_RegisterVariable (&m_filter);
 	Cvar_RegisterVariable (&retrotouch);
@@ -149,7 +153,7 @@ void IN_GetAnalogStick(in_analog_stick_id_t stick, in_analog_stick_t *value)
 		value->y = (127.5f - (float)state.ly) / 127.5f;
 	} else {
 		value->x = ((float)state.rx - 127.5f) / 127.5f;
-		value->y = ((float)state.ry - 127.5f) / 127.5f;
+		value->y = (127.5f - (float)state.ry) / 127.5f;
 	}
 }
 

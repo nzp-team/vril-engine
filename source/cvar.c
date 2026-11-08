@@ -247,12 +247,27 @@ Cvar_FindVar
 */
 cvar_t *Cvar_FindVar (const char *var_name)
 {
-	cvar_t	*var;
+	static cvar_t *lookup[128];
+	const unsigned char *name = (const unsigned char *)var_name;
+	unsigned hash = 0;
+	cvar_t *var;
 
+	while (*name)
+		hash = hash * 33 + *name++;
+	hash &= 127;
+	var = lookup[hash];
+	if (var && !strcmp(var_name, var->name))
+		return var;
+
+	// Registered variables have permanent addresses; cache successful lookups
+	// while preserving exact name comparisons and the sorted iteration list.
 	for (var = cvar_vars ; var ; var = var->next)
 	{
 		if (!strcmp(var_name, var->name))
+		{
+			lookup[hash] = var;
 			return var;
+		}
 	}
 
 	return NULL;

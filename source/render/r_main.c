@@ -40,6 +40,7 @@ entity_t	*currententity;
 int			r_visframecount;
 int			r_framecount;
 int			r_texture_frame;
+static double r_animation_time;
 
 mplane_t	frustum[5];
 
@@ -278,6 +279,13 @@ int SignbitsForPlane (mplane_t *out)
 
 void R_DrawAliasGeometry(aliashdr_t *header, const trivertx_t *first, const trivertx_t *second, float blend)
 {
+    // Exact endpoints need one cached pose, without interpolation or uploads.
+    if (second && blend == 0)
+        second = NULL;
+    else if (second && blend == 1) {
+        first = second;
+        second = NULL;
+    }
     const int *commands = (const int *)((const byte *)header + header->commands);
     const unsigned short *remap = header->command_remap ?
         (const unsigned short *)((const byte *)header + header->command_remap) : NULL;
@@ -343,6 +351,8 @@ void R_SetupFrame (void)
 
 	r_framecount++;
 	r_texture_frame = (int)(cl.time * 10);
+	// Fixed simulation steps must also give reference captures fixed model poses.
+	r_animation_time = sys_testmode.value > 0 ? cl.time : realtime;
 
 	VectorCopy (r_refdef.vieworg, r_origin);
 
@@ -519,14 +529,14 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 	if (!r_i_model_animation.value || paliashdr->numposes <= 1) {
 		R_SetupAliasFrame(frame, paliashdr);
 		e->pose1 = e->pose2 = lastposenum;
-		e->frame_start_time = realtime;
+		e->frame_start_time = r_animation_time;
 		return;
 	}
 	if (e->pose1 < 0 || e->pose1 >= paliashdr->numposes ||
 		e->pose2 < 0 || e->pose2 >= paliashdr->numposes)
 	{
 		e->pose1 = e->pose2 = paliashdr->frames[frame].firstpose;
-		e->frame_start_time = realtime;
+		e->frame_start_time = r_animation_time;
 	}
 
 	float dist_x = (cl.viewent.origin[0] - e->origin[0]);
@@ -556,13 +566,13 @@ void R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t* e)
 
 		if (e->pose2 != pose)
 		{
-			e->frame_start_time = realtime;
+			e->frame_start_time = r_animation_time;
 			e->pose1 = e->pose2;
 			e->pose2 = pose;
 			blend = 0;
 		}
 		else
-			blend = ((float)realtime - e->frame_start_time) / e->frame_interval;
+			blend = ((float)r_animation_time - e->frame_start_time) / e->frame_interval;
 
 		if (cl.paused || blend > 1) blend = 1;
 
@@ -1091,7 +1101,8 @@ void R_SetupGL(void)
     }
     r_projection_fovy = fovy;
     r_projection_aspect = (float)r_refdef.vrect.width / r_refdef.vrect.height;
-    r_projection_far = r_refdef.fog_start != 0 && r_refdef.fog_end > 0 ? r_refdef.fog_end + 16 : r_farclip.value;
+    r_projection_far = R_FIXED_FAR_CLIP ? R_FIXED_FAR_CLIP :
+        (r_refdef.fog_start != 0 && r_refdef.fog_end > 0 ? r_refdef.fog_end + 16 : r_farclip.value);
     if (r_projection_far < R_NEAR_CLIP + 1)
         r_projection_far = R_NEAR_CLIP + 1;
     Hyena_MatrixMode(HYE_PROJECTION);
@@ -1348,7 +1359,7 @@ static void R_BlendEntityVector(const vec3_t from, const vec3_t to, float blend,
 
 static void R_InterpolateEntity(entity_t *entity, vec3_t origin, vec3_t angles)
 {
-    float now = (float)realtime;
+    float now = (float)r_animation_time;
     float position_blend, angle_blend;
     int i;
     qboolean reset = cl.paused || !entity->translate_start_time || !entity->rotate_start_time ||

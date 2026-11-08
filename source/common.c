@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <assert.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <limits.h>
 
 #define NUM_SAFE_ARGVS  7
 
@@ -1271,6 +1272,9 @@ qboolean COM_BuildFilePath (char *path, size_t size, const char *directory, cons
 
 static qboolean COM_ResolveCaseInsensitivePath(char *resolved, size_t resolved_size, const char *directory, const char *filename)
 {
+#ifdef PLATFORM_HAS_CASE_INSENSITIVE_FILESYSTEM
+    return false;
+#else
 	char relative[MAX_OSPATH];
 	char current[MAX_OSPATH];
 	char joined[MAX_OSPATH];
@@ -1315,6 +1319,7 @@ static qboolean COM_ResolveCaseInsensitivePath(char *resolved, size_t resolved_s
 		return false;
 	strcpy(resolved, current);
 	return true;
+#endif
 }
 
 void COM_WriteFile(char *filename, void *data, int len)
@@ -1409,6 +1414,23 @@ Finds the file in the search path.
 Sets com_filesize and one of handle or file
 ===========
 */
+static int COM_OpenLooseFile(char *path, int *handle, FILE **file)
+{
+    long length;
+    if (handle)
+        return Sys_FileOpenRead(path, handle);
+    *file = fopen(path, "rb");
+    if (!*file)
+        return -1;
+    if (fseek(*file, 0, SEEK_END) || (length = ftell(*file)) < 0 ||
+        length > INT_MAX || fseek(*file, 0, SEEK_SET)) {
+        fclose(*file);
+        *file = NULL;
+        return -1;
+    }
+    return length;
+}
+
 int COM_FindFile (char *filename, int *handle, FILE **file, unsigned int *path_id)
 {
 	searchpath_t    *search;
@@ -1446,7 +1468,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file, unsigned int *path_i
 			for (i=0 ; i<pak->numfiles ; i++)
 				if (!strcmp (pak->files[i].name, filename))
 				{       // found it!
-					Sys_Printf ("PackFile: %s : %s\n",pak->filename, filename);
+					if (developer.value) Sys_Printf ("PackFile: %s : %s\n",pak->filename, filename);
 					if (path_id)
 						*path_id = search->path_id;
 					if (handle)
@@ -1478,24 +1500,32 @@ int COM_FindFile (char *filename, int *handle, FILE **file, unsigned int *path_i
 				!COM_BuildFilePath(netpath, sizeof(netpath), search->filename, diskname))
 				continue;
 
+            // A normal FILE lookup needs one open, not a stat, handle open,
+            // close, and second open. Keep the legacy -cachedir path below.
+            if (!com_cachedir[0]) {
+                com_filesize = COM_OpenLooseFile(netpath, handle, file);
+                if (com_filesize < 0 && COM_ResolveCaseInsensitivePath(netpath, sizeof(netpath), search->filename, diskname))
+                    com_filesize = COM_OpenLooseFile(netpath, handle, file);
+                if (com_filesize < 0)
+                    continue;
+                if (path_id)
+                    *path_id = search->path_id;
+                if (developer.value) Sys_Printf("FindFile: %s\n", netpath);
+                return com_filesize;
+            }
+
+			findtime = Sys_FileTime (netpath);
+			if (findtime == -1 && COM_ResolveCaseInsensitivePath(netpath, sizeof(netpath), search->filename, diskname))
+				findtime = Sys_FileTime(netpath);
+			if (findtime == -1)
+				continue;
+
 		// see if the file needs to be updated in the cache
 			if (!com_cachedir[0])
-			{
-				com_filesize = Sys_FileOpenRead (netpath, &i);
-				if (com_filesize < 0 && COM_ResolveCaseInsensitivePath(netpath, sizeof(netpath), search->filename, diskname))
-					com_filesize = Sys_FileOpenRead (netpath, &i);
-				if (com_filesize < 0)
-					continue;
-			}
+				strcpy (cachepath, netpath);
 			else
 			{
-				char *relative;
-				findtime = Sys_FileTime (netpath);
-				if (findtime == -1 && COM_ResolveCaseInsensitivePath(netpath, sizeof(netpath), search->filename, diskname))
-					findtime = Sys_FileTime(netpath);
-				if (findtime == -1)
-					continue;
-				relative = strchr(netpath, ':');
+				char *relative = strchr(netpath, ':');
 				if (!relative)
 					relative = netpath;
 				else
@@ -1510,12 +1540,12 @@ int COM_FindFile (char *filename, int *handle, FILE **file, unsigned int *path_i
 				if (strlen(cachepath) >= sizeof(netpath))
 					continue;
 				strcpy (netpath, cachepath);
-				com_filesize = Sys_FileOpenRead (netpath, &i);
-				if (com_filesize < 0)
-					continue;
 			}
 
-			Sys_Printf ("FindFile: %s\n",netpath);
+			if (developer.value) Sys_Printf ("FindFile: %s\n",netpath);
+			com_filesize = Sys_FileOpenRead (netpath, &i);
+			if (com_filesize < 0)
+				continue;
 			if (path_id)
 				*path_id = search->path_id;
 			if (handle)
@@ -1532,7 +1562,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file, unsigned int *path_i
 
 	}
 
-	Sys_Printf ("FindFile: can't find %s\n", filename);
+	if (developer.value) Sys_Printf ("FindFile: can't find %s\n", filename);
 
 	if (handle)
 		*handle = -1;

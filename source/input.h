@@ -27,6 +27,7 @@ void IN_Commands (void);
 // oportunity for devices to stick commands on the script buffer
 
 void IN_Move (usercmd_t *cmd);
+qboolean IN_LookInverted(void);
 // add additional movement on top of the keyboard move cmd
 
 void IN_ClearPendingInput(void);

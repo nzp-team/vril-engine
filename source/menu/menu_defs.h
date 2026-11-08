@@ -48,11 +48,13 @@ extern int				m_previous_state;
 #define m_bindings		22
 #define m_bios 			23
 #define m_gyro			24
+#define m_storage       25
+#define m_pressure      26
 ///////////////////////////
 ///////////////////////////
 ///////////////////////////
 
-#define MAX_MENU_BUTTONS 11
+#define MAX_MENU_BUTTONS 16
 
 // Curent menu state and buttons are stored here
 // when m_state is flipped, the respective menu "Set"
@@ -68,6 +70,7 @@ typedef struct menu_button_s {
 	qboolean        is_slider;
 	int             slider_x, slider_y, slider_width, slider_height;
 	float           slider_min, slider_max, slider_step;
+	float           slider_display_scale;
 	char            *slider_cvar;
 } menu_button_t;
 
@@ -202,10 +205,6 @@ extern int				MENU_KEY_BACK;
 extern int				MENU_KEY_DELETE;
 extern int				MENU_KEY_SAVE_INPUT;
 
-// Holds the button images for the
-// osk prompt
-extern image_t 			osk_button[4];
-
 // Stock map struct which holds the current
 // stockmaps loaded
 typedef struct
@@ -313,6 +312,7 @@ void Menu_Pause_Set(void);
 void Menu_Resume(void);
 void Menu_Keys_Set(void);
 void Menu_Video_Set(void);
+void Menu_Storage_Set(void);
 void Menu_Restart_Set(void);
 void Menu_Credits_Set(void);
 void Menu_Exit_Set(void);
@@ -324,6 +324,9 @@ void Menu_Bios_Set(void);
 void Menu_Video_Set (void);
 void Menu_Audio_Set (void);
 void Menu_Controls_Set (void);
+#ifdef PLATFORM_HAS_PRES_SENS_INPUTS
+void Menu_Pressure_Set(void);
+#endif
 #ifdef PLATFORM_SUPPORTS_GYRO
 void Menu_Gyro_Set (void);
 #endif

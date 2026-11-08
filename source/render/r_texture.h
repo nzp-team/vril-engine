@@ -20,6 +20,8 @@
 #ifndef _R_TEXTURE_H_
 #define _R_TEXTURE_H_
 
+#include "r_pixels.h"
+
 typedef struct {
     char     identifier[MAX_QPATH];
     int      width, height, original_width, original_height;
@@ -43,6 +45,10 @@ void
 Hyena_InitTextureSettings(const char * maximum, qboolean mip_filtering, int limit);
 typedef void (*hyena_upload_level_fn)(int texture, int level, int format, int width, int height,
   int x, int y, qboolean replace, const void * pixels);
+qboolean
+Hyena_PrepareTexturePixels(hyena_pixels_t * prepared, const hyena_texture_desc_t * desc, int width, int height);
+uint32_t
+Hyena_TextureSourceCRC(const hyena_texture_desc_t * desc);
 void
 Hyena_PrepareTextureUpload(int texture, const hyena_texture_desc_t * desc, int compact_format,
   hyena_upload_level_fn upload);

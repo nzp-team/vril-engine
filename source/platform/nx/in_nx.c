@@ -165,6 +165,10 @@ void IN_PlatformMouseMove(usercmd_t *cmd) { (void)cmd; }
 
 void IN_PlatformInit(void)
 {
+	extern cvar_t cl_controllerglyphs;
+
+	Cvar_Set("cl_controllerglyphs", "nintendo");
+	cl_controllerglyphs.flags |= CVAR_ROM;
 	memset(&nx_motion, 0, sizeof(nx_motion));
 	Cvar_SetValue("in_anub_mode", 1);
 }
@@ -218,8 +222,6 @@ void IN_GetAnalogStick(in_analog_stick_id_t stick, in_analog_stick_t *value)
 	HidAnalogStickState state = padGetStickPos(&pad, stick == IN_STICK_LEFT ? 0 : 1);
 	value->x = (float)state.x / (float)SHRT_MAX;
 	value->y = (float)state.y / (float)SHRT_MAX;
-	if (stick == IN_STICK_RIGHT)
-		value->y = -value->y;
 }
 
 void IN_PlatformMove(usercmd_t *cmd) { (void)cmd; }

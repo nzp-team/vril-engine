@@ -55,6 +55,9 @@ extern cvar_t r_runqmbparticles;
 extern cvar_t r_retro;
 extern cvar_t r_dithering;
 extern cvar_t vid_ultrawide_limiter;
+#ifdef PLATFORM_SUPPORTS_OVERSCAN
+extern cvar_t vid_overscan;
+#endif
 
 void Menu_Video_ApplyShowFPS (void)
 {
@@ -239,6 +242,10 @@ void Menu_Video_Draw (void)
 #ifdef PLATFORM_USES_PROJECTION_WIDESCREEN
     Menu_DrawButton (option_order, video_items++, "SCREEN MODE", "Change display proportions.", Menu_Video_ApplyScreenMode);
     Menu_DrawOptionButton (option_order++, vid_widescreen.value ? "WIDESCREEN" : "FULL SCREEN");
+#endif
+#ifdef PLATFORM_SUPPORTS_OVERSCAN
+    Menu_DrawButton (option_order, video_items++, "SCREEN INSET", "Move screen edges inward to fit your TV.", NULL);
+    Menu_DrawOptionSlider (option_order++, video_items-1, 0, 10, vid_overscan, "vid_overscan", false, true, 1.0f);
 #endif
 
     // Dithering 

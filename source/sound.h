@@ -179,6 +179,7 @@ extern int		snd_blocked;
 
 void S_LocalSound (char *s);
 sfxcache_t *S_LoadSound (sfx_t *s);
+qboolean S_BuildSoundCache (const char *name);
 
 wavinfo_t GetWavinfo (char *name, byte *wav, int wavlength);
 
