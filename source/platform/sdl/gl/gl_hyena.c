@@ -193,7 +193,7 @@ Hyena_Draw2DQuads(const hyena_2d_quad_t * quads, int count, int texture, unsigne
     if (flags & HYE_2D_TEXTURED) {
         Hyena_BindTexture(texture);
         glEnable(GL_TEXTURE_2D);
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, flags & HYE_2D_LINEAR ? GL_LINEAR : GL_NEAREST);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, flags & HYE_2D_LINEAR ? GL_LINEAR : GL_NEAREST);
     } else {
@@ -318,7 +318,7 @@ Hyena_BackendUploadTexture(int texture, const hyena_texture_desc_t * desc)
         glGenTextures(1, &hyena_texture_objects[texture]);
     Hyena_PrepareTextureUpload(texture, desc, HYE_PIXELS_RGBA5551, Hyena_BackendUploadLevel);
     if (!desc->lightmap)
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
 static GLenum
@@ -349,7 +349,7 @@ Hyena_ResolveCapability(int capability)
 void
 Hyena_SetTextureMode(int mode)
 {
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, mode == HYE_MODULATE ? GL_MODULATE : GL_REPLACE);
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, mode == HYE_MODULATE ? GL_MODULATE : GL_REPLACE);
 }
 
 void

@@ -5,9 +5,14 @@ CC := $(CROSS_COMPILE)gcc
 endif
 endif
 PKG_CONFIG ?= pkg-config
+TARGET_TRIPLE := $(shell $(CC) -dumpmachine)
 
 BUILD ?= build/sdl
+ifneq ($(findstring wasm32,$(TARGET_TRIPLE)),)
+TARGET ?= $(BUILD)/nzportable.js
+else
 TARGET ?= $(BUILD)/nzportable
+endif
 DATA_DIR ?= build/data
 CPPFLAGS := -Isource -I$(BUILD) -DGLQUAKE -DPLATFORM_SDL -DPLATFORM_CONFIRM_IS_ENTER \
 			-DGL_SILENCE_DEPRECATION -DPLATFORM_DIRECTORY=sdl -DPLATFORM_RENDERER=gl \
@@ -22,8 +27,18 @@ endif
 ifeq ($(WERROR),1)
 CFLAGS += -Werror
 endif
-LDLIBS := $(shell $(PKG_CONFIG) --libs sdl2) -lSDL2_mixer -lm
-TARGET_TRIPLE := $(shell $(CC) -dumpmachine)
+ifeq ($(findstring wasm32,$(TARGET_TRIPLE)),)
+LDLIBS := $(shell $(PKG_CONFIG) --libs sdl2) -lSDL2_mixer
+else
+# no --embed-file $HOME/nzp@nzp cause we don't want to do that here
+LDLIBS := -sUSE_SDL=2 -sUSE_SDL_MIXER=2 -sSDL2_MIXER_FORMATS='["mp3"]' 
+LDLIBS += -sFORCE_FILESYSTEM -sINITIAL_MEMORY=256mb -sSTACK_SIZE=1mb
+LDLIBS += -sLEGACY_GL_EMULATION -sGL_FFP_ONLY -gsource-map
+
+CFLAGS += -sUSE_SDL=2 -sUSE_SDL_MIXER=2 -sSDL2_MIXER_FORMATS='["mp3"]' 
+CFLAGS += -gsource-map
+endif
+LDLIBS +=  -lm
 ifneq ($(findstring mingw,$(TARGET_TRIPLE)),)
 LDLIBS += -static \
 	-lopengl32 \
@@ -39,6 +54,7 @@ LDLIBS += -static \
 	-luuid
 else ifeq ($(shell uname -s),Darwin)
 LDLIBS += -framework OpenGL
+else ifneq ($(findstring wasm32,$(TARGET_TRIPLE)),)
 else
 LDLIBS += -lGL -lGLU
 endif
