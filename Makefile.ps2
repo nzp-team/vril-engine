@@ -114,7 +114,7 @@ COMMON_OBJS = \
 	source/platform/ps2/gs/gs_vidps2.o \
 	source/platform/ps2/net_none.o
 
-IOP_MODULES = iomanX fileXio bdm bdmfs_fatfs usbd usbmass_bd audsrv sio2man padman
+IOP_MODULES = iomanX fileXio bdm bdmfs_fatfs usbd usbmass_bd mx4sio_bd mmceman ps2dev9 ata_bd ps2hdd ps2fs audsrv sio2man padman
 IOP_OBJS = $(addprefix $(BUILD)/,$(addsuffix _irx.o,$(IOP_MODULES)))
 EE_OBJS = $(addprefix $(BUILD)/,$(COMMON_OBJS)) $(IOP_OBJS)
 EE_INCS = -I$(PS2SDK)/ports/include -I$(PS2DEV)/gsKit/include

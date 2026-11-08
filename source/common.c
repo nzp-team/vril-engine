@@ -1219,6 +1219,12 @@ char    com_gamedir[MAX_OSPATH];
 
 searchpath_t    *com_searchpaths = NULL;	// JPG 3.20 - added NULL
 searchpath_t	*com_verifypaths = NULL;	// JPG 3.20 - use original game directory for verify path
+static qboolean com_filesystem_case_sensitive = true;
+
+void COM_SetFileSystemCaseSensitive(qboolean case_sensitive)
+{
+	com_filesystem_case_sensitive = case_sensitive;
+}
 
 /*
 ============
@@ -1273,6 +1279,9 @@ static qboolean COM_ResolveCaseInsensitivePath(char *resolved, size_t resolved_s
 	char current[MAX_OSPATH];
 	char joined[MAX_OSPATH];
 	char *component, *next;
+
+	if (!com_filesystem_case_sensitive)
+		return false;
 
 	strncpy(relative, filename, sizeof(relative) - 1);
 	relative[sizeof(relative) - 1] = 0;

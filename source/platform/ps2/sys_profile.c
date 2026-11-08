@@ -51,6 +51,7 @@ static u64 Sys_PS2Sample(s32 id, u64 scheduled, u64 actual, void *arg, void *pc_
 static void Sys_PS2ProfileStop(void)
 {
 	FILE *file;
+	char path[MAX_OSPATH];
 	unsigned int header[4];
 	if (!profile_active)
 		return;
@@ -62,7 +63,8 @@ static void Sys_PS2ProfileStop(void)
 	header[1] = 7;
 	header[2] = profile_count;
 	header[3] = profile_outside;
-	file = fopen("mass:/APPS/NZPORTABLE/cpu-profile.bin", "wb");
+	snprintf(path, sizeof(path), "%s/cpu-profile.bin", host_parms.basedir);
+	file = fopen(path, "wb");
 	if (file) {
 		fwrite(header, sizeof(header), 1, file);
 		fwrite(profile_samples, sizeof(*profile_samples), profile_count, file);
