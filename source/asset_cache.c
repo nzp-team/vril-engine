@@ -742,7 +742,8 @@ Cache_ReadPayload(const cache_index_t * item, asset_cache_data_t * result, qbool
     if (fseek(archive.file, item->offset + CACHE_HEADER_SIZE, SEEK_SET)) goto bad;
     while (offset < size) {
         size_t count = min(size - offset, sizeof(buffer));
-        void * dest  = allocate ? (byte *) result->data + offset : buffer;
+        byte * dest = buffer;
+        if (allocate) dest = (byte *) result->data + offset;
         if (fread(dest, 1, count, archive.file) != count) goto bad;
         crc     = Cache_UpdateCRC(crc, dest, count);
         offset += count;
@@ -778,6 +779,7 @@ Cache_LoadLegacy(asset_cache_kind_t kind, const char * name, uint32_t source_crc
     int i;
     qboolean valid = false;
 
+    memset(result, 0, sizeof(*result));
     if (!archive.legacy || !Cache_Path(kind, name, variant, path,
       sizeof(path)) || !(file = fopen(path, "rb")))
         return false;
@@ -1175,7 +1177,9 @@ Cache_BuildKind(const char * name)
     if (!dot || strlen(dot + 1) >= sizeof(extension)) return 0;
 
     Q_strlcpy(extension, dot + 1, sizeof(extension));
+#ifndef NO_SOUND_PROCESSING
     if (!Q_strcasecmp(extension, "wav")) return ASSET_CACHE_SOUND;
+#endif
 
     if (!Q_strcasecmp(extension, "mdl")) return ASSET_CACHE_MODEL;
 
@@ -1220,8 +1224,10 @@ Cache_BuildAsset(const char * name)
     switch (Cache_BuildKind(name)) {
         case ASSET_CACHE_IMAGE: prepared = Image_BuildCache(name);
             break;
+#ifndef NO_SOUND_PROCESSING
         case ASSET_CACHE_SOUND: prepared = S_BuildSoundCache(name);
             break;
+#endif
         case ASSET_CACHE_MODEL: prepared = Mod_BuildAliasCache(name);
             break;
         default: break;
