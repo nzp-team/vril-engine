@@ -45,11 +45,10 @@ function begin_setup()
     done
     mkdir -p "${working_dir}/nzportable"
     cd "${working_dir}"
-    if [[ -z "${ASSETS_OVERRIDE_DIRECTORY:-}" ]]; then
-        curl -fL --retry 3 -o nzportable-3ds.zip \
-            https://github.com/nzp-team/nzportable/releases/download/nightly/nzportable-3ds.zip
-        unzip -oq nzportable-3ds.zip
-    fi
+
+    curl -fL --retry 3 -o nzportable-3ds.zip \
+        https://github.com/nzp-team/nzportable/releases/download/nightly/nzportable-3ds.zip
+    unzip -oq nzportable-3ds.zip
     apply_content_overrides
     cp "$binary_path" nzportable/default.xbe
     mkdir -p xbox-installer
