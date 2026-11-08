@@ -165,6 +165,10 @@ void IN_PlatformMouseMove(usercmd_t *cmd) { (void)cmd; }
 
 void IN_PlatformInit(void)
 {
+	extern cvar_t cl_controllerglyphs;
+
+	Cvar_Set("cl_controllerglyphs", "nintendo");
+	cl_controllerglyphs.flags |= CVAR_ROM;
 	memset(&nx_motion, 0, sizeof(nx_motion));
 	Cvar_SetValue("in_anub_mode", 1);
 }

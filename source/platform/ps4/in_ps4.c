@@ -104,6 +104,10 @@ SetRumble(byte low, byte high)
 void
 IN_PlatformInit(void)
 {
+    extern cvar_t cl_controllerglyphs;
+
+    Cvar_Set("cl_controllerglyphs", "sony");
+    cl_controllerglyphs.flags |= CVAR_ROM;
     Cmd_AddCommand("osk", IN_OpenOSKeyboard);
 
     if (PS4_LoadModule(ORBIS_SYSMODULE_INTERNAL_PAD) < 0)

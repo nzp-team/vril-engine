@@ -87,7 +87,10 @@ static void IN_PS2RumbleTest(void)
 
 void IN_PlatformInit(void)
 {
+	extern cvar_t cl_controllerglyphs;
 
+	Cvar_Set("cl_controllerglyphs", "sony");
+	cl_controllerglyphs.flags |= CVAR_ROM;
 	Cmd_AddCommand("ps2_rumble_test", IN_PS2RumbleTest);
 	Sys_PS2ProfileInit();
 	padInit(0);

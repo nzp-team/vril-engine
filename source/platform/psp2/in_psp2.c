@@ -67,6 +67,10 @@ void IN_PlatformMouseMove(usercmd_t *cmd) { (void)cmd; }
 
 void IN_PlatformInit(void)
 {
+	extern cvar_t cl_controllerglyphs;
+
+	Cvar_Set("cl_controllerglyphs", "sony");
+	cl_controllerglyphs.flags |= CVAR_ROM;
   Cvar_SetValue("in_anub_mode", 1);
 	Cvar_RegisterVariable (&m_filter);
 	Cvar_RegisterVariable (&retrotouch);
