@@ -97,18 +97,5 @@ function write_test_setup()
 
 function run_nzportable()
 {
-    local log="$(test_game_path)/nzp/condebug.log"
-    local failed='Test suite failed:|QCVM opcode test failed|Segmentation fault!|Host_Error|Sys_Error|invalid opcode found|PPC Interpreter: Invalid instruction'
-    cd "${xenon_work}"
-    ulimit -f 16384
-    HOME="${xenon_work}/home" timeout --kill-after=5 "${TIMEOUT}" stdbuf -oL "${EMULATOR_BIN}" > "${log}" 2>&1 &
-    local pid=$!
-    trap 'kill "${pid}" 2>/dev/null || true; wait "${pid}" 2>/dev/null || true' EXIT
-    while kill -0 "${pid}" 2>/dev/null; do
-        if grep -qE "${failed}" "${log}" || grep -qF "Test suite passed: ${xenon_test}" "${log}"; then
-            break
-        fi
-        sleep 0.2
-    done
-    ! grep -qE "${failed}" "${log}" && grep -qF "Test suite passed: ${xenon_test}" "${log}"
+    echo "bash ${testing_dir_path}/setup/utils/run-xenon.sh ${TIMEOUT} ${xenon_work} ${EMULATOR_BIN} $(test_game_path)/nzp/condebug.log ${xenon_test}"
 }

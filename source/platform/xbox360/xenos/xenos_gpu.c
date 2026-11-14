@@ -351,8 +351,13 @@ PrepareDraw(const xenr_uniforms_t * uniforms)
         ShaderConstants(&hyena_vert, 0);
         ShaderConstants(fragment_source, 1);
     }
-    if (!constants_valid || memcmp(pixel_constants.fog_color, uniforms->fog_color, 12 * sizeof(float))) {
-        Xe_SetPixelShaderConstantF(&device, 9, uniforms->fog_color, 3);
+    if (!constants_valid ||
+      memcmp(pixel_constants.fog_color, uniforms->fog_color, sizeof(uniforms->fog_color)) ||
+      memcmp(pixel_constants.params, uniforms->params, sizeof(uniforms->params)) ||
+      memcmp(pixel_constants.flags, uniforms->flags, sizeof(uniforms->flags))) {
+        Xe_SetPixelShaderConstantF(&device, 9, uniforms->fog_color, 1);
+        Xe_SetPixelShaderConstantF(&device, 10, uniforms->params, 1);
+        Xe_SetPixelShaderConstantF(&device, 11, uniforms->flags, 1);
         pixel_constants = *uniforms;
     }
     viewport[0] = (float) state.w / WIDTH;

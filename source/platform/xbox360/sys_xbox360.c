@@ -266,7 +266,7 @@ double
 Sys_FloatTime(void)
 {
     static uint64_t start;
-    uint32_t high, low, check;
+    uint32_t high = 0, low = 0, check = 0;
     uint64_t now;
 
     do {
