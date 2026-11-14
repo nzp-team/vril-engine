@@ -65,6 +65,7 @@ void IN_PlatformCommands(void);
 void IN_PlatformMove(usercmd_t *cmd);
 
 #ifdef PLATFORM_SUPPORTS_GYRO
+// Radians per second: positive x tilts the view up; positive y turns left.
 qboolean IN_PlatformGetGyro(float *x, float *y);
 #endif
 

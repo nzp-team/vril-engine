@@ -108,7 +108,7 @@ qboolean IN_PlatformGetGyro(float *x, float *y)
 
 	hidGyroRead(&gyro);
 
-	*x = -(float)gyro.x * gyro_raw_to_radians;
+	*x = (float)gyro.x * gyro_raw_to_radians;
 	*y = (float)gyro.y * gyro_raw_to_radians;
 
 	return true;

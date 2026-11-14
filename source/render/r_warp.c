@@ -197,11 +197,21 @@ static float R_WarpSine(float time)
 
 static void R_EmitWarpPolygon(msurface_t *surface, int effect)
 {
+    static vertex_t *vertices;
+    static int capacity;
     glpoly_t *poly;
     for (poly = surface->polys; poly; poly = poly->next) {
         hyena_arrays_t arrays = {0};
-        vertex_t *vertices = Hyena_AllocateTransient(poly->numverts * sizeof(*vertices));
+        if (poly->numverts < 3)
+            continue;
         int i;
+        if (poly->numverts > capacity) {
+            vertex_t *resized = realloc(vertices, poly->numverts * sizeof(*vertices));
+            if (!resized)
+                Sys_Error("R_EmitWarpPolygon: out of memory");
+            vertices = resized;
+            capacity = poly->numverts;
+        }
         for (i = 0; i < poly->numverts; i++) {
             const float *position = R_PolyPosition(poly, i), *uv = R_PolyUV(poly, i);
             float s = uv[0], t = uv[1];
@@ -230,7 +240,7 @@ static void R_EmitWarpPolygon(msurface_t *surface, int effect)
         arrays.uv.data = &vertices[0].uv;
         arrays.position.stride = arrays.uv.stride = sizeof(*vertices);
         arrays.count = poly->numverts;
-        arrays.flags = HYE_CLIP_POLYGON;
+        arrays.flags = HYE_CLIP_POLYGON | HYE_COPY_VERTICES;
         Hyena_DrawArrays(HYE_TRIANGLE_FAN, &arrays, poly->numverts);
     }
 }

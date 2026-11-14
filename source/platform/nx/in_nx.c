@@ -202,7 +202,7 @@ qboolean IN_PlatformGetGyro(float *x, float *y)
 	if (!hidGetSixAxisSensorStates(nx_motion.gyro[sensor], &state, 1))
 		return false;
 
-	*x = -state.angular_velocity.x * revolutions_to_radians;
+	*x = state.angular_velocity.x * revolutions_to_radians;
 	*y = (nx_motion.style == HidNpadStyleTag_NpadJoyDual
 		? state.angular_velocity.z : state.angular_velocity.y)
 		* revolutions_to_radians;

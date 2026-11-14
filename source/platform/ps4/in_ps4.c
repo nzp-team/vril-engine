@@ -208,7 +208,7 @@ IN_PlatformGetGyro(float * x, float * y)
         return false;
 
     // OpenOrbis 0.5.4 names the angular-velocity ABI field acell.
-    *x = -pad.acell.x;
+    *x = pad.acell.x;
     *y = pad.acell.y;
 
     return true;
@@ -217,7 +217,11 @@ IN_PlatformGetGyro(float * x, float * y)
 void
 IN_PlatformRumble(unsigned short low, unsigned short high, unsigned int duration)
 {
-    SetRumble(duration ? low / 257 : 0, duration ? high / 257 : 0);
+    // Match Xbox's gain for legacy gameplay effects in the 1000-2000 range.
+    unsigned low_strength = min(65535u, (unsigned) low * 16u);
+    unsigned high_strength = min(65535u, (unsigned) high * 16u);
+
+    SetRumble(duration ? low_strength / 257 : 0, duration ? high_strength / 257 : 0);
     rumble_end = duration ? Sys_FloatTime() + duration / 1000.0 : 0;
 }
 

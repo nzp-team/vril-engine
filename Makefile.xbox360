@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 NZ:P Team
+
+.DEFAULT_GOAL := all
+BUILD ?= build/xbox360
+DEVKITXENON ?= /usr/local/xenon
+MINIMP3_DIR ?= /opt/minimp3
+XOST_DIR ?= /opt/xenos-toolchain
+GLSLANG ?= glslangValidator
+PYTHON ?= python3
+LINK_SCRIPT := source/platform/xbox360/xenon.lds
+CC := $(if $(XENON_CC),$(XENON_CC),$(DEVKITXENON)/bin/xenon-gcc)
+OBJCOPY := $(if $(XENON_OBJCOPY),$(XENON_OBJCOPY),$(DEVKITXENON)/bin/xenon-objcopy)
+STRIP := $(if $(XENON_STRIP),$(XENON_STRIP),$(DEVKITXENON)/bin/xenon-strip)
+GIT_HASH ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
+
+CPPFLAGS := -Isource -I$(BUILD) -I$(DEVKITXENON)/usr/include -I$(MINIMP3_DIR) \
+    -DXENON -DGLQUAKE -DPLATFORM_XBOX360 -DPLATFORM_DIRECTORY=xbox360 -DPLATFORM_RENDERER=xenos \
+    -DMAX_AI_COUNT=24 -DPLATFORM_SUPPORTS_RUMBLE \
+    -DPLATFORM_USES_GENERIC_GLYPHS -DPLATFORM_DISALLOW_GLYPH_OVERRIDE \
+    -DPLATFORM_HAS_CASE_INSENSITIVE_FILESYSTEM -DPLATFORM_USES_FRAME_DEADLINES -DPLATFORM_SUPPORTS_OVERSCAN
+CFLAGS ?= -O2 -g
+CFLAGS += -m32 -mpowerpc64 -maltivec -mhard-float -fno-pic -fno-strict-aliasing \
+    -fno-tree-vectorize -ffunction-sections -fdata-sections -std=gnu99 -Wall -Wno-unused-variable -Wno-unused-but-set-variable -MMD -MP
+LDFLAGS := -m32 -mpowerpc64 -maltivec -mhard-float -fno-pic \
+    -L$(DEVKITXENON)/xenon/lib/32 -L$(DEVKITXENON)/usr/lib \
+    -Wl,--gc-sections,-Map,$(BUILD)/nzportable.map -n -T $(LINK_SCRIPT)
+LDLIBS := -lfat -lxenon -lm
+ifeq ($(WERROR),1)
+CFLAGS += -Werror
+endif
+
+ENGINE := $(wildcard source/*.c source/menu/*.c source/qcvm/*.c source/render/*.c source/tests/*.c)
+SOURCES := $(filter-out source/render/r_model_soft.c,$(ENGINE)) \
+    $(wildcard source/platform/xbox360/*.c source/platform/xbox360/xenos/*.c)
+OBJECTS := $(patsubst source/%.c,$(BUILD)/%.o,$(SOURCES))
+SHADERS := $(wildcard source/platform/xbox360/xenos/shaders/*)
+SHADER_COMPILER := $(wildcard $(XOST_DIR)/xsc/*.py $(XOST_DIR)/xasm/*.py $(XOST_DIR)/xdis/*.py)
+
+.PHONY: all clean check-deps shaders
+all: $(BUILD)/xenon.elf
+check-deps:
+	@test -x "$(CC)" -a -f "$(DEVKITXENON)/usr/lib/libxenon.a" || { echo 'Install libxenon and set DEVKITXENON.'; exit 1; }
+	@test -f "$(MINIMP3_DIR)/minimp3_ex.h" || { echo 'Set MINIMP3_DIR to the prepared minimp3 headers.'; exit 1; }
+$(OBJECTS): Makefile.xbox360 | check-deps
+$(BUILD)/_build_info.h:
+	@mkdir -p $(@D)
+	@{ echo '#define GIT_HASH "$(GIT_HASH)"'; \
+	   echo '#define GIT_BRANCH "$(GIT_BRANCH)"'; \
+	   echo '#define BUILD_DATE "$(shell date -u +%Y-%m-%dT%H:%M:%SZ)"'; } > $@
+shaders: $(BUILD)/xenos_shaders.h
+$(BUILD)/xenos_shaders.h: $(SHADERS) $(SHADER_COMPILER) source/platform/xbox360/xenos/compile_shaders.py
+	$(PYTHON) source/platform/xbox360/xenos/compile_shaders.py --xost "$(XOST_DIR)" --glslang "$(GLSLANG)" --source source/platform/xbox360/xenos/shaders --output $@
+$(BUILD)/platform/xbox360/xenos/xenos_gpu.o: $(BUILD)/xenos_shaders.h
+$(BUILD)/%.o: source/%.c $(BUILD)/_build_info.h
+	@mkdir -p $(@D)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+$(BUILD)/nzportable.elf: $(OBJECTS) $(LINK_SCRIPT)
+	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) $(LDLIBS)
+$(BUILD)/xenon.elf: $(BUILD)/nzportable.elf
+	$(OBJCOPY) -O elf32-powerpc --adjust-vma 0x80000000 $< $@
+	$(STRIP) $@
+clean:
+	rm -rf $(BUILD)
+-include $(OBJECTS:.o=.d)
