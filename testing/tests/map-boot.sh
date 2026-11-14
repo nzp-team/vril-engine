@@ -4,8 +4,7 @@
 # map-boot tests
 # ----
 # Verifies that we can boot into all of our
-# built-in maps without visual breakage via MSE
-# validation.
+# built-in maps and compare captures where supported.
 #
 # This is done via an emulator, and intended
 # to be used via a Docker container running
@@ -34,18 +33,32 @@ function run_mapboot_test()
     local working_dir="${WORKING_DIR}"
     local game_path="$(test_game_path)"
     local content_path="${CONTENT_DIR}/${REFERENCE_PLATFORM}${MODE:+-$MODE}"
-    local captured_image="$(capture_path)"
+    local captured_image=""
+    local require_capture=1
+    if [[ "${VRIL_PR_ENV_NO_CAPTURE:-0}" == "1" ]]; then
+        require_capture=0
+    else
+        captured_image="$(capture_path)"
+    fi
     local launch_log="${WORKING_DIR}/launch.log"
+    local maps=()
     local failed_maps=()
     local failure_details=()
 
-    for bsp in ${working_dir}/nzportable/nzp/maps/*.bsp; do
+    for bsp in "${working_dir}"/nzportable/nzp/maps/*.bsp; do
+        [[ -f "${bsp}" ]] && maps+=("${bsp}")
+    done
+    if [[ "${#maps[@]}" == "0" ]]; then
+        print_error "No compiled maps found in [${game_path}/nzp/maps]." "1"
+    fi
+
+    for bsp in "${maps[@]}"; do
         local map_failed="0"
         local emulator_failed="0"
         local ffmpeg_failed="0"
 
         # Get the BSP basename so we can add it to our setup.ini.
-        local pretty_bsp=$(basename ${bsp} .bsp) 
+        local pretty_bsp=$(basename "${bsp}" .bsp)
 
         if [[ "${pretty_bsp}" == "wahnsinn" ]]; then
             print_info "Skipping map-boot test for [${pretty_bsp}].."
@@ -53,14 +66,21 @@ function run_mapboot_test()
         fi
 
         # Remove the console log.
-        rm -f "${game_path}/nzp/condebug.log" "${captured_image}"
+        rm -f "${game_path}/nzp/condebug.log"
+        if [[ "${require_capture}" == "1" ]]; then
+            rm -f "${captured_image}"
+        fi
 
         # Write the platform launch configuration used to load the BSP.
         write_test_setup "${pretty_bsp}"
 
         # Load emulator and attempt to boot map
         print_info "Loading Nazi Zombies: Portable via [${EMULATOR_BIN}] with map [${pretty_bsp}].."
-        local command=$(run_nzportable "1" "${content_path}/${pretty_bsp}.bmp" "${MODE}")
+        local reference_image=""
+        if [[ "${require_capture}" == "1" ]]; then
+            reference_image="${content_path}/${pretty_bsp}.bmp"
+        fi
+        local command=$(run_nzportable "${require_capture}" "${reference_image}" "${MODE}")
         echo "[${command}]"
         ${command} > "${launch_log}" 2>&1 || emulator_failed="1"
 
@@ -104,6 +124,10 @@ function run_mapboot_test()
             continue
         else
             echo "[PASS]: SUCCESSFULLY spawned server using map [${pretty_bsp}]!"
+        fi
+
+        if [[ "${require_capture}" == "0" ]]; then
+            continue
         fi
 
         if [[ ! -s "${captured_image}" ]]; then
