@@ -106,7 +106,7 @@ qboolean IN_PlatformGetGyro(float *x, float *y)
 	*x = *y = 0.0f;
 	if (sceMotionGetState(&state) < 0)
 		return false;
-	*x = -state.angularVelocity.x;
+	*x = state.angularVelocity.x;
 	*y = state.angularVelocity.y;
 	return true;
 }

@@ -177,6 +177,19 @@ jobs:
       VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/xbox/nzportable/default.xbe
     steps: *compile_steps
 
+  Compile-xbox360:
+    if: *build_condition
+    name: Compile Xbox 360
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
+    container: *toolbox_container
+    defaults: *bash_defaults
+    env:
+      VRIL_BUILD_TARGET: xbox360
+      VRIL_ARTIFACT: xbox360-nzp-elf
+      VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/xbox360/xenon.elf
+    steps: *compile_steps
+
   Compile-ps2:
     if: *build_condition
     name: Compile PlayStation 2
@@ -527,6 +540,31 @@ jobs:
       QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
     steps: *pr_steps
 
+  Test-xbox360:
+    if: github.event_name == 'pull_request'
+    name: Xbox 360 ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-xbox360, prepare-toolbox-test-content]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+        mode: [""]
+    container: *test_container
+    defaults: *bash_defaults
+    env:
+      VRIL_PLATFORM: xbox360
+      VRIL_HOST_ARCH: x86_64
+      VRIL_ARTIFACT: xbox360-nzp-elf
+      VRIL_BINARY: xenon.elf
+      VRIL_REFERENCE: ''
+      VRIL_TEST_TARGET: xbox360
+      VRIL_TEST_NAME: Xbox 360
+      ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/ctr
+      QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+    steps: *pr_steps
+
   Test-ps2:
     if: github.event_name == 'pull_request'
     name: PlayStation 2 ${{ matrix.test }} Pull Request Test
@@ -702,7 +740,7 @@ jobs:
   Create-Release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: [Compile-linux-x86_64, Compile-linux-x86, Compile-linux-arm64, Compile-linux-armhf, Compile-windows-x86, Compile-windows-x86_64, Compile-xbox, Compile-ps2, Compile-psp, Compile-3ds, Compile-nspire, Compile-vita, Compile-ps4, Compile-switch]
+    needs: [Compile-linux-x86_64, Compile-linux-x86, Compile-linux-arm64, Compile-linux-armhf, Compile-windows-x86, Compile-windows-x86_64, Compile-xbox, Compile-xbox360, Compile-ps2, Compile-psp, Compile-3ds, Compile-nspire, Compile-vita, Compile-ps4, Compile-switch]
     outputs:
       id: ${{ steps.create_release.outputs.id }}
       upload_url: ${{ steps.create_release.outputs.upload_url }}
@@ -736,6 +774,7 @@ jobs:
             To install:
             - Grab the .ZIP archive for your platform
             - Xbox: Put `default.xbe` under `<drive>\Games\nzportable\`, with game data in its `nzp\` directory.
+            - Xbox 360: Boot `xenon.elf` through XeLL and put game data in `uda:/nzportable/nzp/`.
             - PSP: Extract the `EBOOT.PBP` to `/PSP/GAME/nzportable/`
             - PS2: Put `nzportable.elf` on USB and game data under `/APPS/NZPORTABLE/nzp/`.
             - PS VITA: Install `nzportable.vpk` using VitaShell.
@@ -768,6 +807,8 @@ jobs:
             artifact: windows-x86_64-nzp-sdl
           - name: Xbox
             artifact: xbox-nzp-xbe
+          - name: Xbox 360
+            artifact: xbox360-nzp-elf
           - name: PlayStation 2
             artifact: ps2-nzp-elf
           - name: PlayStation Portable
