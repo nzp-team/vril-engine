@@ -814,6 +814,7 @@ jobs:
             - Xbox: Put `default.xbe` under `<drive>\Games\nzportable\`, with game data in its `nzp\` directory.
             - Xbox 360: Boot `xenon.elf` through XeLL and put game data in `uda:/nzportable/nzp/`.
             - PSP: Extract the `EBOOT.PBP` to `/PSP/GAME/nzportable/`
+            - PS3: Install `nzportable.pkg`.
             - PS2: Put `nzportable.elf` on USB and game data under `/APPS/NZPORTABLE/nzp/`.
             - PS VITA: Install `nzportable.vpk` using VitaShell.
             - PS4: Install `nzportable.pkg` and place game data under `/data/nzportable/nzp/`.
@@ -859,6 +860,8 @@ jobs:
             artifact: psp2-nzp-vpk
           - name: PlayStation 4
             artifact: ps4-nzp-pkg
+          - name: PlayStation 3
+            artifact: ps3-nzp-pkg
           - name: Nintendo Switch
             artifact: nx-nzp-nro
     steps:
