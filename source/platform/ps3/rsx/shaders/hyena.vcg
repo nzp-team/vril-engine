@@ -1,0 +1,37 @@
+/*
+ * Copyright (C) 1996-1997 Id Software, Inc.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *
+ */
+
+void
+main(float3 position : POSITION, float2 texcoord : TEXCOORD0, float4 color : COLOR0,
+  uniform float4x4 mvp, uniform float4x4 modelview, uniform float4 uv, uniform float4 fog_color,
+  uniform float4 params, uniform float4 flags, uniform float4 vertex_state,
+  out float4 opos : POSITION, out float2 ouv : TEXCOORD0, out float4 ocolor : COLOR0,
+  out float4 ofog : TEXCOORD1, out float4 oparams : TEXCOORD2, out float4 oflags : TEXCOORD3)
+{
+    float4 p = float4(position * vertex_state.x, 1);
+
+    opos   = mul(mvp, p);
+    ouv    = texcoord * uv.xy + uv.zw;
+    ocolor = float4(color.rgb, color.a * vertex_state.y);
+    ofog   = float4(fog_color.rgb, saturate((params.y - abs(mul(modelview, p).z))
+        / max(params.y - params.x, 0.0001)));
+    oparams = params;
+    oflags  = flags;
+}

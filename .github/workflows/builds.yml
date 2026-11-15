@@ -255,6 +255,19 @@ jobs:
       VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/psp2/nzportable.vpk
     steps: *compile_steps
 
+  Compile-ps3:
+    if: *build_condition
+    name: Compile PlayStation 3
+    needs: resolve-toolbox
+    runs-on: ubuntu-24.04
+    container: *toolbox_container
+    defaults: *bash_defaults
+    env:
+      VRIL_BUILD_TARGET: ps3
+      VRIL_ARTIFACT: ps3-nzp-pkg
+      VRIL_ARTIFACT_PATHS: /workspace/repos/vril-engine/build/ps3/nzportable.pkg
+    steps: *compile_steps
+
   Compile-ps4:
     if: *build_condition
     name: Compile PlayStation 4
@@ -633,6 +646,31 @@ jobs:
       VRIL_REFERENCE: ''
       VRIL_TEST_TARGET: ctr-${{ matrix.mode }}
       VRIL_TEST_NAME: Nintendo 3DS ${{ matrix.mode }}
+      ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/ctr
+      QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
+    steps: *pr_steps
+
+  Test-ps3:
+    if: github.event_name == 'pull_request'
+    name: PlayStation 3 ${{ matrix.test }} Pull Request Test
+    needs: [resolve-toolbox, discover-tests, Compile-ps3, prepare-toolbox-test-content]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+        mode: [""]
+    container: *test_container
+    defaults: *bash_defaults
+    env:
+      VRIL_PLATFORM: ps3
+      VRIL_HOST_ARCH: x86_64
+      VRIL_ARTIFACT: ps3-nzp-pkg
+      VRIL_BINARY: nzportable.pkg
+      VRIL_REFERENCE: ''
+      VRIL_TEST_TARGET: ps3
+      VRIL_TEST_NAME: PlayStation 3
       ASSETS_OVERRIDE_DIRECTORY: /workspace/vril-test-overrides/assets/ctr
       QUAKEC_OVERRIDE_FILE: /workspace/vril-test-overrides/quakec/progs.dat
     steps: *pr_steps

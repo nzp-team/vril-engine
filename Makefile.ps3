@@ -1,0 +1,113 @@
+#
+
+# Copyright (C) 2026 NZ:P Team
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+#
+.DEFAULT_GOAL := all
+
+PS3DEV ?= /usr/local/ps3dev
+PSL1GHT ?= $(PS3DEV)
+BUILD ?= build/ps3
+PORTLIBS ?= $(PS3DEV)/portlibs/ppu
+PREFIX ?= $(PS3DEV)/ppu/bin/ppu-
+CC := $(PREFIX)gcc
+CGCOMP ?= $(PS3DEV)/bin/cgcomp
+
+GIT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
+
+CPPFLAGS := -Isource -I$(BUILD) -I$(BUILD)/compat -I$(PSL1GHT)/ppu/include -I$(PORTLIBS)/include -I$(PORTLIBS)/include/soundlib \
+    -DPLATFORM_USES_FRAME_DEADLINES -DGLQUAKE -DPLATFORM_PS3 -DPLATFORM_DIRECTORY=ps3 -DPLATFORM_RENDERER=rsx \
+    -DMAX_AI_COUNT=24 -DPLATFORM_SUPPORTS_GYRO -DPLATFORM_SUPPORTS_RUMBLE \
+    -DPLATFORM_HAS_PRES_SENS_INPUTS -DPLATFORM_KEYBOARD_SYSTEM=1 -DPLATFORM_USES_GENERIC_GLYPHS -DPLATFORM_DISALLOW_GLYPH_OVERRIDE
+
+CFLAGS := -O2 -g -std=gnu99 -mcpu=cell -mhard-float -maltivec -Wall -Wextra \
+    -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unused-variable \
+    -ffunction-sections -fdata-sections -MMD -MP
+
+LDFLAGS := -L$(PSL1GHT)/ppu/lib -L$(PORTLIBS)/lib -Wl,--gc-sections,-Map,$(BUILD)/nzportable.map
+LDLIBS := -lmpg123 -laudio -lnetctl -lnet -lio -lrsx -lgcm_sys -lsysutil -lsysmodule -lrt -llv2 -lm
+
+ENGINE := $(wildcard source/*.c source/menu/*.c source/qcvm/*.c source/render/*.c source/tests/*.c)
+SOURCES := $(filter-out source/render/r_model_soft.c,$(ENGINE)) \
+    $(wildcard source/platform/ps3/*.c source/platform/ps3/rsx/*.c)
+OBJECTS := $(patsubst source/%.c,$(BUILD)/%.o,$(SOURCES))
+
+SHADERS := $(addprefix $(BUILD)/shaders/,hyena.vpo present.vpo present.fpo present_copy.fpo particle_depth.fpo particle_composite.fpo) $(addprefix $(BUILD)/shaders/hyena_,$(addsuffix .fpo,0 1 2 3 4 5 6 7))
+
+.PHONY: all clean check-deps shaders pkg
+
+all: $(BUILD)/nzportable.self shaders
+
+check-deps:
+	@test -x "$(CC)" -a -f "$(PSL1GHT)/ppu/include/rsx/rsx.h" || { echo 'Install PSL1GHT and set PS3DEV/PSL1GHT.'; exit 1; }
+	@test -f "$(PORTLIBS)/include/mpg123.h" -o -f "$(PORTLIBS)/include/soundlib/mpg123.h" || { echo 'Install PS3 mpg123 portlib.'; exit 1; }
+
+$(BUILD)/compat/sys/dirent.h:
+	@mkdir -p $(@D)
+	@printf '#include <dirent.h>\n' > $@
+
+$(BUILD)/_build_info.h:
+	@mkdir -p $(@D)
+	@printf '#define GIT_HASH "%s"\n#define GIT_BRANCH "%s"\n#define BUILD_DATE "%s"\n' '$(GIT_HASH)' '$(GIT_BRANCH)' '$(shell date -u +%Y-%m-%dT%H:%M:%SZ)' > $@
+
+$(OBJECTS): Makefile.ps3 $(BUILD)/compat/sys/dirent.h $(BUILD)/_build_info.h | check-deps
+
+$(BUILD)/render/r_particles.o: CPPFLAGS += -include source/platform/ps3/particle_hooks.h
+
+$(BUILD)/render/r_particles.o: source/platform/ps3/particle_hooks.h
+
+$(BUILD)/%.o: source/%.c
+	@mkdir -p $(@D)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/nzportable.elf: $(OBJECTS)
+	$(CC) -mcpu=cell $(LDFLAGS) -o $@ $(OBJECTS) $(LDLIBS)
+
+$(BUILD)/nzportable.self: $(BUILD)/nzportable.elf
+	$(PREFIX)strip $< -o $(BUILD)/nzportable-stripped.elf
+	$(PS3DEV)/bin/sprxlinker $(BUILD)/nzportable-stripped.elf
+	$(PS3DEV)/bin/make_self $(BUILD)/nzportable-stripped.elf $@
+
+shaders: $(SHADERS)
+
+$(BUILD)/shaders/%.vpo: source/platform/ps3/rsx/shaders/%.vcg
+	@mkdir -p $(@D)
+	$(CGCOMP) -v $< $@
+
+$(BUILD)/shaders/hyena_%.fpo: source/platform/ps3/rsx/shaders/hyena.fcg Makefile.ps3
+	@mkdir -p $(@D)
+	$(CGCOMP) -f -Wcg,-DTEXTURED=$$(($* & 1)) -Wcg,-DALPHA_TEST=$$((($* >> 1) & 1)) -Wcg,-DFOG=$$((($* >> 2) & 1)) $< $@
+
+$(BUILD)/shaders/%.fpo: source/platform/ps3/rsx/shaders/%.fcg
+	@mkdir -p $(@D)
+	$(CGCOMP) -f $< $@
+
+PS3_ART := source/platform/ps3/art
+PS3_SND0 := $(PS3_ART)/SND0.AT3
+
+pkg: all
+	mkdir -p $(BUILD)/package/USRDIR/shaders $(BUILD)/package/USRDIR/nzportable
+	$(PS3DEV)/bin/make_self_npdrm $(BUILD)/nzportable-stripped.elf $(BUILD)/package/USRDIR/EBOOT.BIN UP0001-NZPT00001_00-NZPORTABLE0000000
+	cp $(SHADERS) $(BUILD)/package/USRDIR/shaders/
+	cp $(PS3_ART)/ICON0.PNG $(PS3_ART)/PIC1.PNG $(PS3_SND0) $(BUILD)/package/
+	$(PS3DEV)/bin/sfo --title "Nazi Zombies: Portable" --appid NZPT00001 -f $(PS3DEV)/bin/sfo.xml $(BUILD)/package/PARAM.SFO
+	$(PS3DEV)/bin/pkg --contentid UP0001-NZPT00001_00-NZPORTABLE0000000 $(BUILD)/package/ $(BUILD)/nzportable.pkg
+
+clean:
+	rm -rf $(BUILD)
+
+-include $(OBJECTS:.o=.d)

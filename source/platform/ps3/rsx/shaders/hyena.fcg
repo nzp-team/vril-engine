@@ -1,0 +1,42 @@
+/*
+ * Copyright (C) 1996-1997 Id Software, Inc.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *
+ */
+
+float4
+main(float2 uv : TEXCOORD0, float4 color : COLOR0, float4 fog : TEXCOORD1,
+  float4 params : TEXCOORD2, float4 flags : TEXCOORD3, uniform sampler2D image : TEXUNIT0)
+    : COLOR
+{
+    float4 result = color;
+
+    #if TEXTURED
+    float4 texel = tex2D(image, uv);
+    result = flags.x > 0.5 ? texel * color : texel;
+    #endif
+    #if ALPHA_TEST
+
+    if (result.a <= params.z)
+        discard;
+
+    #endif
+    #if FOG
+    result.rgb = lerp(fog.rgb, result.rgb, fog.a);
+    #endif
+    return result;
+}
