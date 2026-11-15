@@ -1,0 +1,47 @@
+/*
+ * Copyright (C) 1996-1997 Id Software, Inc.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *
+ */
+
+float4
+main(float2 uv : TEXCOORD0, uniform sampler2D image : TEXUNIT0)
+    : COLOR
+{
+    float2 px = float2(1.0 / 1920.0, 1.0 / 1080.0);
+    float3 nw = tex2D(image, uv + float2(-1, -1) * px).rgb;
+    float3 ne = tex2D(image, uv + float2(1, -1) * px).rgb;
+    float3 sw = tex2D(image, uv + float2(-1, 1) * px).rgb;
+    float3 se = tex2D(image, uv + float2(1, 1) * px).rgb;
+    float3 m  = tex2D(image, uv).rgb;
+    float3 l  = float3(0.299, 0.587, 0.114);
+    float a = dot(nw, l), b = dot(ne, l), c = dot(sw, l), d = dot(se, l), e = dot(m, l);
+    float lo = min(e, min(min(a, b), min(c, d))), hi = max(e, max(max(a, b), max(c, d)));
+
+    if (hi - lo < max(1.0 / 16.0, hi * 0.125))
+        return float4(m, 1);
+
+    float2 dir   = float2(-((a + b) - (c + d)), (a + c) - (b + d));
+    float reduce = max((a + b + c + d) * (0.25 / 8.0), 1.0 / 128.0);
+    dir = clamp(dir / (min(abs(dir.x), abs(dir.y)) + reduce), -8.0, 8.0) * px;
+    float3 r1 = 0.5 * (tex2D(image, uv + dir * (1.0 / 3.0 - 0.5)).rgb
+      + tex2D(image, uv + dir * (2.0 / 3.0 - 0.5)).rgb);
+    float3 r2 =
+      r1 * 0.5 + 0.25 * (tex2D(image, uv - dir * 0.5).rgb + tex2D(image, uv + dir * 0.5).rgb);
+    float t = dot(r2, l);
+    return float4(t < lo || t > hi ? r1 : r2, 1);
+}
