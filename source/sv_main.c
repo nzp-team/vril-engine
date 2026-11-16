@@ -780,6 +780,10 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 
 // send the data
 
+	MSG_WriteByte(msg, svc_updatestat);
+	MSG_WriteByte(msg, STAT_EQUIPMENT);
+	MSG_WriteLong(msg, (int)PR_GetEdictFloat(ent, "equipment_state"));
+
 	MSG_WriteByte (msg, svc_clientdata);
 	MSG_WriteShort (msg, bits);
 

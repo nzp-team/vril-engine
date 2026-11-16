@@ -945,6 +945,14 @@ void Key_Event (int key, qboolean down)
 	if (LoadingScreen_Key(key, down))
 		return;
 
+	// Picker keys bypass tap/hold/double-tap bindings. Releases still reach
+	// the normal path so actions held before opening cannot get stuck.
+	if (CL_EquipmentKey(key, down)) {
+		lastkey = oldkey = 0;
+		lastkeytime = oldkeytime = 0;
+		return;
+	}
+
 	oldkey = lastkey;
 	keydown[key] = down;
 #ifdef PLATFORM_HAS_PRES_SENS_INPUTS

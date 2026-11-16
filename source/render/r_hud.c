@@ -44,6 +44,7 @@ image_t deadpic;
 image_t mulepic;
 image_t fragpic;
 image_t bettypic;
+image_t equipment_dpadpic;
 
 image_t fx_blood_lu;
 image_t fx_blood_ru;
@@ -143,6 +144,7 @@ static int hud_stopwatch_round;
 extern cvar_t scr_centertime;
 extern cvar_t scr_printspeed;
 extern cvar_t cl_textopacity;
+extern cvar_t cl_equipmenthud;
 extern cvar_t cl_colorblind;
 extern cvar_t cl_cinematic;
 extern cvar_t vid_ultrawide_limiter;
@@ -186,15 +188,21 @@ HUD_SmoothStep(float value)
 }
 
 static void
-HUD_DrawTextBackdrop(int x, int y, const char * text, int r, int g, int b, int a, float scale)
+HUD_DrawTextBackground(int x, int y, int width, int a, float scale)
 {
     int pad    = (int) (2 * scale);
     int height = (int) (8 * scale);
     int alpha  = (int) (cl_textopacity.value * a);
 
     if (alpha > 0)
-        Draw_FillByColor(x - pad, y - pad, getTextWidth((char *) text, scale) + pad * 2,
+        Draw_FillByColor(x - pad, y - pad, width + pad * 2,
           height + pad * 2, 0, 0, 0, alpha);
+}
+
+static void
+HUD_DrawTextBackdrop(int x, int y, const char * text, int r, int g, int b, int a, float scale)
+{
+    HUD_DrawTextBackground(x, y, getTextWidth((char *) text, scale), a, scale);
     Draw_ColoredString(x, y, (char *) text, r, g, b, a, scale);
 }
 
@@ -279,20 +287,31 @@ static int hud_use_key;
 static int hud_use_type;
 
 static int
-HUD_GetBoundKey(const char * command)
+HUD_FindBoundKey(const char *command, const char **gesture)
 {
-    int key;
+    static const char *const gestures[] = {"Press", "Double-tap", "Hold"};
     size_t len = strlen(command);
 
-    for (key = 0; key < MAX_KEYS; key++) {
+    for (int key = 0; key < MAX_KEYS; key++) {
         if (!IN_KeyMatchesActiveDevice(key))
             continue;
-        if ((keybindings[key] && !strncmp(keybindings[key], command, len)) ||
-          (dtbindings[key] && !strncmp(dtbindings[key], command, len)) ||
-          (holdbindings[key] && !strncmp(holdbindings[key], command, len)))
-            return key;
+        const char *bindings[] = {keybindings[key], dtbindings[key], holdbindings[key]};
+        for (int i = 0; i < 3; ++i) {
+            const char *binding = bindings[i];
+            if (binding && !strncmp(binding, command, len) && strchr(" \t;\r\n", binding[len])) {
+                if (gesture)
+                    *gesture = gestures[i];
+                return key;
+            }
+        }
     }
     return -1;
+}
+
+static int
+HUD_GetBoundKey(const char *command)
+{
+    return HUD_FindBoundKey(command, NULL);
 }
 
 static const char *
@@ -501,7 +520,7 @@ HUD_ExpandUsePrint(const char * source, const char * button, const char * touch)
     while (*source && remaining > 1) {
         const char * replacement = NULL;
 
-        if (source[0] == '%' && source[1] == 'b') {
+        if (source[0] == '%' && (source[1] == 'b' || source[1] == 'g')) {
             replacement = button;
             if (!hud_use_has_button) {
                 char prefix[HUD_USEPRINT_LENGTH];
@@ -541,7 +560,7 @@ HUD_UsePrint(int index, int cost)
         return;
     }
 
-    hud_use_key = HUD_GetBoundKey("+use");
+    hud_use_key = HUD_GetBoundKey(strstr(hud_useprint_strings[index], "%g") ? "+grenade" : "+use");
     button      = HUD_KeyHasIcon(hud_use_key) ? "  " : HUD_UseKeyLabel(hud_use_key);
 
     hud_usecost[0] = 0;
@@ -673,6 +692,7 @@ HUD_Init(void)
     mulepic          = HUD_LoadConfigImage("gfx/hud/mule");
     fragpic          = HUD_LoadConfigImage("gfx/hud/frag");
     bettypic         = HUD_LoadConfigImage("gfx/hud/betty");
+    equipment_dpadpic = HUD_LoadConfigImage("gfx/hud/default/equipment/dpad");
     hud_sniper_scope = Image_LoadImage("gfx/hud/scope_nb", IMAGE_TGA, 0, true, false);
     hud_hitmarker    = Image_LoadImage("gfx/hud/hit_marker", IMAGE_TGA, 0, true, false);
 
@@ -811,6 +831,7 @@ HUD_Configure(int index, const char * value)
             break;
         case 31: picture = &sb_moneyback_condensed;
             break;
+        case 35: picture = &equipment_dpadpic;
         default: return;
     }
     if (!*value) {
@@ -2035,6 +2056,8 @@ IsDualWeapon(int weapon)
     return 0;
 }
 
+#define HUD_EQUIPMENT_BOTTOM_OFFSET 42
+
 void
 HUD_Ammo(void)
 {
@@ -2044,20 +2067,20 @@ HUD_Ammo(void)
     alpha = HUD_GetAlphaForWeaponObjects();
     if (!alpha) return;
 
-    y         = vid.height - 25 * vid.scale;
+    y         = vid.height - (HUD_EQUIPMENT_BOTTOM_OFFSET - 4) * vid.scale;
     mag_r     = GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG] ? 215 : 255;
     reserve_r = GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_AMMO] ? 215 : 255;
     if (IsDualWeapon(cl.stats[STAT_ACTIVEWEAPON])) {
         snprintf(full, sizeof(full), "%i %i/%i", cl.stats[STAT_CURRENTMAG2], cl.stats[STAT_CURRENTMAG],
           cl.stats[STAT_AMMO]);
-        x = vid.width - HUD_UltrawideOffset() - 55 * vid.scale - getTextWidth(full, vid.scale);
+        x = vid.width - HUD_UltrawideOffset() - 50 * vid.scale - getTextWidth(full, vid.scale);
         HUD_DrawTextBackdrop(x, y, full, 255, 255, 255, alpha, vid.scale);
         return;
     }
     snprintf(mag, sizeof(mag), "%i", cl.stats[STAT_CURRENTMAG]);
     snprintf(reserve, sizeof(reserve), "/%i", cl.stats[STAT_AMMO]);
     snprintf(full, sizeof(full), "%s%s", mag, reserve);
-    x = vid.width - HUD_UltrawideOffset() - 55 * vid.scale - getTextWidth(full, vid.scale);
+    x = vid.width - HUD_UltrawideOffset() - 50 * vid.scale - getTextWidth(full, vid.scale);
     HUD_DrawTextBackdrop(x, y, mag, mag_r, mag_r == 215 ? 0 : 255, mag_r == 215 ? 0 : 255, alpha, vid.scale);
     HUD_DrawTextBackdrop(x + getTextWidth(mag, vid.scale), y, reserve,
       reserve_r, reserve_r == 215 ? 0 : 255, reserve_r == 215 ? 0 : 255, alpha, vid.scale);
@@ -2105,37 +2128,215 @@ HUD_AmmoString(void)
 #define     UI_FRAG  1
 #define     UI_BETTY 2
 
-void
+static void HUD_EquipmentHalo(int x, int y, int icon_size, qboolean available, int alpha);
+
+static void HUD_DrawEquipmentBlood(int x, int y, int alpha)
+{
+    if (equipment_dpadpic >= 0)
+        Draw_ColoredStretchPic(x - 24 * vid.scale, y - 24 * vid.scale, equipment_dpadpic,
+          48 * vid.scale, 48 * vid.scale, 255, 255, 255, alpha);
+}
+
+static void HUD_DrawEquipmentItem(int x, int y, int size, qboolean betty, int alpha)
+{
+    int slot = betty ? UI_BETTY : UI_FRAG;
+    int count = max(0, cl.stats[betty ? STAT_SECGRENADES : STAT_PRIGRENADES]);
+    int tint = count ? 255 : 0;
+
+    HUD_EquipmentHalo(x, y, size, count > 0, alpha);
+    Draw_ColoredStretchPic(x - size / 2, y - size / 2, betty ? bettypic : fragpic,
+      size, size, 255, 255, 255, alpha);
+    if (cl.stats[STAT_GRENADES] & slot)
+        Draw_ColoredString(x + size / 2 - 5 * vid.scale, y + size / 2 - 4 * vid.scale,
+          va("%d", count), 255, tint, tint, alpha, vid.scale);
+}
+
+static void
 HUD_Grenades(void)
 {
     int alpha = HUD_GetAlphaForWeaponObjects();
-
     if (!alpha)
         return;
 
-    Draw_ColoredStretchPic(vid.width - HUD_UltrawideOffset() - (53 * vid.scale), vid.height - (40 * vid.scale), fragpic,
-      22 * vid.scale, 22 * vid.scale, 255, 255, 255, alpha);
+    float scale = vid.scale;
+    int right = vid.width - HUD_UltrawideOffset();
+    int cx = right - 27 * scale;
+    int cy = vid.height - HUD_EQUIPMENT_BOTTOM_OFFSET * scale;
+    HUD_DrawEquipmentBlood(cx, cy, alpha);
 
-    if (cl.stats[STAT_GRENADES] & UI_FRAG) {
-        if (cl.stats[STAT_PRIGRENADES] <= 0)
-            Draw_ColoredString(vid.width - HUD_UltrawideOffset() - (40 * vid.scale), vid.height - (25 * vid.scale),
-              va("%i", cl.stats[STAT_PRIGRENADES]), 255, 0, 0, alpha, vid.scale);
-        else
-            Draw_ColoredString(vid.width - HUD_UltrawideOffset() - (40 * vid.scale), vid.height - (25 * vid.scale),
-              va("%i", cl.stats[STAT_PRIGRENADES]), 255, 255, 255, alpha, vid.scale);
+    int state = cl.stats[STAT_EQUIPMENT];
+    if ((state & EQUIPMENT_SUPPORTED) && cl_equipmenthud.value != 0) {
+        qboolean betty = (state & EQUIPMENT_BETTY) != 0;
+        HUD_DrawEquipmentItem(cx, cy, 22 * scale, betty, alpha);
+        if (cl.equipment_name_until > Sys_FloatTime()) {
+            char *name = betty ? "Bouncing Betty" : "Stielhandgranate";
+            HUD_DrawTextBackdrop(cx + 24 * scale - getTextWidth(name, scale),
+              cy - 30 * scale, name, 255, 255, 255, alpha, scale);
+        }
+        return;
     }
 
-    if (cl.stats[STAT_GRENADES] & UI_BETTY) {
-        Draw_ColoredStretchPic(vid.width - HUD_UltrawideOffset() - (32 * vid.scale), vid.height - (40 * vid.scale),
-          bettypic,
-          22 * vid.scale, 22 * vid.scale, 255, 255, 255, alpha);
-        if (cl.stats[STAT_PRIGRENADES] <= 0)
-            Draw_ColoredString(vid.width - HUD_UltrawideOffset() - (17 * vid.scale), vid.height - (25 * vid.scale),
-              va("%i", cl.stats[STAT_SECGRENADES]), 255, 0, 0, alpha, vid.scale);
-        else
-            Draw_ColoredString(vid.width - HUD_UltrawideOffset() - (17 * vid.scale), vid.height - (25 * vid.scale),
-              va("%i", cl.stats[STAT_SECGRENADES]), 255, 255, 255, alpha, vid.scale);
+    Draw_FillByColor(cx - 6 * scale, cy - scale, 13 * scale, 3 * scale,
+      235, 235, 225, alpha * 2 / 3);
+    Draw_FillByColor(cx - scale, cy - 6 * scale, 3 * scale, 13 * scale,
+      235, 235, 225, alpha * 2 / 3);
+    if (cl.stats[STAT_GRENADES] & UI_BETTY)
+        HUD_DrawEquipmentItem(cx + 14 * scale, cy, 14 * scale, true, alpha);
+    static const int grenade_opacity[] = {100, 75, 50, 25};
+    int max_icons = sizeof(grenade_opacity) / sizeof(grenade_opacity[0]);
+    int count = CLAMP(0, cl.stats[STAT_PRIGRENADES], max_icons);
+    int y = vid.height - 12 * scale;
+    int size = 14 * scale;
+    for (int i = 0; i < count; i++) {
+        int x = right - (13 + (count - 1 - i) * 16) * scale;
+        int icon_alpha = alpha * grenade_opacity[i] / 100;
+        HUD_EquipmentHalo(x, y, size, true, icon_alpha);
+        Draw_ColoredStretchPic(x - size / 2, y - size / 2, fragpic,
+          size, size, 255, 255, 255, icon_alpha);
     }
+}
+
+static const char *HUD_EquipmentKeyLabel(int key)
+{
+    if (key == K_LEFTARROW || key == K_DPAD_LEFT) return "LEFTARROW";
+    if (key == K_RIGHTARROW || key == K_DPAD_RIGHT) return "RIGHTARROW";
+    if (key == K_MOUSE1) return "LMOUSE";
+    return HUD_UseKeyLabel(key);
+}
+
+static int HUD_EquipmentKeyWidth(int key)
+{
+    if (HUD_KeyIcon(key) >= 0)
+        return 14 * vid.scale;
+    return getTextWidth((char *)HUD_EquipmentKeyLabel(key), vid.scale) + 4 * vid.scale;
+}
+
+static int HUD_EquipmentLegend(int x, int y, int key, const char *action)
+{
+    int width = HUD_EquipmentKeyWidth(key);
+    if (HUD_KeyIcon(key) >= 0)
+        HUD_DrawKeyIcon(x, y - 2 * vid.scale, key, 12 * vid.scale, 255);
+    else
+        Draw_ColoredString(x, y, (char *)HUD_EquipmentKeyLabel(key), 255, 255, 0, 255, vid.scale);
+    if (*action)
+        Draw_ColoredString(x + width, y, (char *)action, 255, 255, 255, 255, vid.scale);
+    return width + (*action ? getTextWidth((char *)action, vid.scale) + 8 * vid.scale : 0);
+}
+
+static void HUD_EquipmentUseHint(int y)
+{
+    qboolean picker = cl_equipmenthud.value != 0;
+    const char *action = picker ? "to choose equipment" : "to use Bouncing Betty";
+    const char *prefix;
+    int key = HUD_FindBoundKey(picker ? "equipment" : "impulse 33", &prefix);
+
+    if (key >= 0) {
+        int prefix_width = getTextWidth((char *)prefix, vid.scale) + 6 * vid.scale;
+        int width = prefix_width + HUD_EquipmentKeyWidth(key) +
+          getTextWidth((char *)action, vid.scale);
+        int x = (vid.width - width) / 2;
+        HUD_DrawTextBackground(x, y, width, 255, vid.scale);
+        Draw_ColoredString(x, y, (char *)prefix, 255, 255, 255, 255, vid.scale);
+        HUD_EquipmentLegend(x + prefix_width, y, key, action);
+    }
+}
+
+static void HUD_EquipmentOutline(int x, int y, int width, int height, int red, int green, int blue)
+{
+    int line = vid.scale;
+    Draw_FillByColor(x, y, width, line, red, green, blue, 255);
+    Draw_FillByColor(x, y + height - line, width, line, red, green, blue, 255);
+    Draw_FillByColor(x, y + line, line, height - 2 * line, red, green, blue, 255);
+    Draw_FillByColor(x + width - line, y + line, line, height - 2 * line, red, green, blue, 255);
+}
+
+static void HUD_EquipmentHalo(int x, int y, int icon_size, qboolean available, int alpha)
+{
+    // Layer soft-edged discs so the black silhouettes read on a dark panel.
+    static const int half_width[] = {5, 8, 10, 11, 12, 13, 13, 12, 11, 10, 8, 5};
+    float scale = icon_size / 22.0f;
+    int opacity = (available ? 46 : 24) * alpha / 255;
+    for (int row = 0; row < 12; row++) {
+        int top = (int) floorf((row * 2 - 12) * scale);
+        int bottom = (int) floorf((row * 2 - 10) * scale);
+        for (int inset = 0; inset <= 4; inset += 2) {
+            if (row < inset || row >= 12 - inset)
+                continue;
+            int width = (half_width[row] - inset) * scale;
+            Draw_FillByColor(x - width, y + top, 2 * width, bottom - top,
+              255, 255, 255, opacity);
+        }
+    }
+}
+
+static void HUD_Equipment(void)
+{
+    int state = cl.stats[STAT_EQUIPMENT];
+    int icon_size = 22 * vid.scale;
+    if (!(state & EQUIPMENT_SUPPORTED))
+        return;
+
+    if (!cl.equipment_open)
+        return;
+
+    int scale = vid.scale;
+    int cell_width = 32 * scale;
+    int cell_height = 28 * scale;
+    int padding_x = 4 * scale;
+    int padding_y = 3 * scale;
+    int columns = min(EQUIPMENT_ITEM_COUNT, EQUIPMENT_GRID_COLUMNS);
+    int rows = (EQUIPMENT_ITEM_COUNT + EQUIPMENT_GRID_COLUMNS - 1) / EQUIPMENT_GRID_COLUMNS;
+    int width = columns * cell_width + 2 * padding_x;
+    int height = rows * cell_height + 2 * padding_y;
+    int bottom = vid.height - 44 * scale;
+    int x = (vid.width - width) / 2;
+    int y = bottom - height;
+    Draw_FillByColor(x, y, width, height, 12, 12, 12, 225);
+    HUD_EquipmentOutline(x, y, width, height, 255, 255, 255);
+
+    for (int i = 0; i < EQUIPMENT_ITEM_COUNT; i++) {
+        int tile_x = x + padding_x + (i % EQUIPMENT_GRID_COLUMNS) * cell_width;
+        int tile_y = y + padding_y + (i / EQUIPMENT_GRID_COLUMNS) * cell_height;
+        int amount = max(0, cl.stats[i ? STAT_SECGRENADES : STAT_PRIGRENADES]);
+        qboolean available = amount > 0 && (!i || (cl.stats[STAT_GRENADES] & UI_BETTY));
+        int tint = available ? 255 : 145;
+
+        HUD_EquipmentHalo(tile_x + 16 * scale, tile_y + 13 * scale, icon_size, available, 255);
+        Draw_ColoredStretchPic(tile_x + 5 * scale, tile_y + 2 * scale,
+          i ? bettypic : fragpic, icon_size, icon_size, 255, 255, 255, 255);
+        Draw_ColoredString(tile_x + 29 * scale - getTextWidth(va("%d", amount), scale), tile_y + 16 * scale,
+          va("%d", amount), tint, tint, tint, 255, scale);
+        if (cl.equipment_highlight == i)
+            HUD_EquipmentOutline(tile_x + scale, tile_y + scale,
+              cell_width - 2 * scale, cell_height - 2 * scale, 255, 55, 55);
+    }
+
+    const char *name = cl.equipment_highlight ? "Bouncing Betty" : "Stielhandgranate";
+    int count = cl.stats[cl.equipment_highlight ? STAT_SECGRENADES : STAT_PRIGRENADES];
+    qboolean available = count > 0 && (!cl.equipment_highlight || (cl.stats[STAT_GRENADES] & UI_BETTY));
+    if (!available)
+        name = va("%s (unavailable)", name);
+    HUD_DrawTextBackdrop((vid.width - getTextWidth((char *)name, scale)) / 2,
+      bottom + 6 * scale, name, 255, 255, 255, 255, scale);
+
+    int left = K_LEFTARROW;
+    int right = K_RIGHTARROW;
+#ifdef PLATFORM_USES_GENERIC_GLYPHS
+    if (IN_GetActiveDevice() != IN_DEVICE_KEYBOARD_MOUSE) {
+        left = K_DPAD_LEFT;
+        right = K_DPAD_RIGHT;
+    }
+#endif
+    int fire = HUD_GetBoundKey("+attack");
+    int legend_width = HUD_EquipmentKeyWidth(left) + HUD_EquipmentKeyWidth(right) +
+      getTextWidth("Select", scale) + 8 * scale + HUD_EquipmentKeyWidth(fire) +
+      getTextWidth("Confirm", scale);
+    int legend_x = (vid.width - legend_width) / 2;
+    int legend_y = bottom + 20 * scale;
+    HUD_DrawTextBackground(legend_x, legend_y, legend_width, 255, scale);
+    legend_x += HUD_EquipmentLegend(legend_x, legend_y, left, "");
+    legend_x += HUD_EquipmentLegend(legend_x, legend_y, right, "Select");
+    HUD_EquipmentLegend(legend_x, legend_y, fire, "Confirm");
 }
 
 /*******************
@@ -2150,7 +2351,7 @@ HUD_Weapon(void)
     double remaining;
     int alpha;
     int x;
-    int y = vid.height - (40 * vid.scale);
+    int y = vid.height - (HUD_EQUIPMENT_BOTTOM_OFFSET + 12) * vid.scale;
 
     strcpy(str, PR_GetString(sv_player->v.Weapon_Name));
     if (strcmp(str, last_weapon_name)) {
@@ -2163,7 +2364,7 @@ HUD_Weapon(void)
 
     alpha = remaining > 2 ? 255 : (int) (remaining * 255 / 2);
 
-    x = (vid.width - HUD_UltrawideOffset() - (55 * vid.scale)) - getTextWidth(str, vid.scale);
+    x = (vid.width - HUD_UltrawideOffset() - (50 * vid.scale)) - getTextWidth(str, vid.scale);
     HUD_DrawTextBackdrop(x, y, str, 255, 255, 255, alpha, vid.scale);
 }
 
@@ -2175,6 +2376,11 @@ HUD_Weapon(void)
 void
 HUD_BettyPrompt(void)
 {
+    if (cl.stats[STAT_EQUIPMENT] & EQUIPMENT_SUPPORTED) {
+        if (!cl.equipment_open)
+            HUD_EquipmentUseHint(60 * vid.scale);
+        return;
+    }
     char str[64];
     char str2[32];
     int x;
@@ -2701,6 +2907,7 @@ HUD_Draw(void)
     HUD_DrawHitmark();
 
     if (sv_gamemode.value == 3) {
+        HUD_Equipment();
         HUD_Blood();
         HUD_Points();
         HUD_Point_Change();
@@ -2720,6 +2927,7 @@ HUD_Draw(void)
     HUD_Blood();
     HUD_Crosshair();
     if (cl.stats[STAT_ZOOM] == 2) {
+        HUD_Equipment();
         if (screenflash_duration > sv.time)
             HUD_Screenflash();
         return;
@@ -2728,7 +2936,8 @@ HUD_Draw(void)
     HUD_Perks();
     HUD_Powerups();
     HUD_ProgressBar();
-    HUD_DrawUsePrint();
+    if (!cl.equipment_open)
+        HUD_DrawUsePrint();
     if (sys_testmode.value <= 0 &&
       (HUD_Change_time > Sys_FloatTime() || GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON],
       1) >= cl.stats[STAT_CURRENTMAG] || GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_AMMO]) &&
@@ -2748,6 +2957,7 @@ HUD_Draw(void)
         case GAMEMODE_GUNGAME: HUD_GunGame();
         default: break;
     }
+    HUD_Equipment();
     HUD_Stopwatches();
     HUD_PlayerDebugInfo();
 

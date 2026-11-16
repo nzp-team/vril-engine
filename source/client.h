@@ -249,6 +249,11 @@ typedef struct
 // frag scoreboard
 	scoreboard_t	*scores;		// [cl.maxclients]
 
+	qboolean 	equipment_open;
+	int 		equipment_highlight;
+	int 		equipment_block_buttons;
+	double 		equipment_name_until;
+
 #ifdef QUAKE2
 // light level at player's position including dlights
 // this is sent back to the server each frame
@@ -435,3 +440,12 @@ void CL_InitTEnts (void);
 void CL_SignonReply (void);
 
 qboolean TraceLineN (vec3_t start, vec3_t end, vec3_t impact, vec3_t normal);
+
+// MARK: Equipment submenu
+
+#define 	EQUIPMENT_GRID_COLUMNS 3
+#define 	EQUIPMENT_GRID_ROWS 2
+#define 	EQUIPMENT_ITEM_COUNT 2
+
+qboolean 	CL_EquipmentKey(int key, qboolean down);
+void 		CL_EquipmentReset(void);
