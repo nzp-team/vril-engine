@@ -832,6 +832,7 @@ HUD_Configure(int index, const char * value)
         case 31: picture = &sb_moneyback_condensed;
             break;
         case 35: picture = &equipment_dpadpic;
+            break;
         default: return;
     }
     if (!*value) {
