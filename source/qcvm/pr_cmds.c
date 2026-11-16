@@ -4366,7 +4366,7 @@ void PF_HUDToast(void)
 	MSG_WriteString(&sv.reliable_datagram, (char *)text);
 }
 
-#define MAX_HUD_CONFIGS 35
+#define MAX_HUD_CONFIGS 36
 static char pr_hudconfig[MAX_HUD_CONFIGS][64];
 static qboolean pr_hudconfig_set[MAX_HUD_CONFIGS];
 
