@@ -82,6 +82,7 @@ extern bool system_has_right_stick;
 
 void IN_PlatformInit(void)
 {
+	Cvar_SetValueROM("cl_equipmenthud", 1);
 	// Set up the controller.
 	sceCtrlSetSamplingCycle(0);
 	sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);

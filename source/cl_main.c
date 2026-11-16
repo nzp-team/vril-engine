@@ -54,6 +54,7 @@ cvar_t	in_anub_mode = {"in_anub_mode", "0", true};
 
 cvar_t 	cl_hitmarkers = {"cl_hitmarkers", "1", true};
 cvar_t 	cl_colorblind = {"cl_colorblind", "0", true};
+cvar_t  cl_equipmenthud = {"cl_equipmenthud", "0", true};
 cvar_t 	cl_textopacity = {"cl_textopacity", "0.20", true};
 cvar_t 	cl_cinematic = {"cl_cinematic", "0", true};
 cvar_t 	vid_ultrawide_limiter = {"vid_ultrawide_limiter", "0", true};
@@ -139,6 +140,7 @@ CL_ClearState
 */
 void CL_ClearState (void)
 {
+	CL_EquipmentReset();
 	if (!sv.active)
 		Host_ClearMemory ();
 
@@ -174,6 +176,7 @@ This is also called on Host_Error, so it shouldn't cause any errors
 */
 void CL_Disconnect (void)
 {
+	CL_EquipmentReset();
 // stop sounds (especially looping!)
 	S_StopAllSounds (true);
 
@@ -1168,6 +1171,7 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&cl_hitmarkers);
 	Cvar_RegisterVariable (&cl_colorblind);
 	Cvar_RegisterVariable (&cl_textopacity);
+	Cvar_RegisterVariable (&cl_equipmenthud);
 	Cvar_RegisterVariable (&cl_cinematic);
 	Cvar_RegisterVariable (&vid_ultrawide_limiter);
 	Cvar_RegisterVariable (&cl_crosshairdot);

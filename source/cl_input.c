@@ -57,6 +57,118 @@ kbutton_t	in_up, in_down;
 
 int			in_impulse;
 
+#define MOVE_BUTTON_AIM 256
+#define EQUIPMENT_COMBAT_BUTTONS (1 | 8 | 16 | 32 | 64 | 128 | MOVE_BUTTON_AIM)
+static qboolean equipment_consumed[MAX_KEYS];
+
+static qboolean CL_EquipmentAvailable(void)
+{
+	int required = EQUIPMENT_SUPPORTED | EQUIPMENT_ALLOWED;
+	return key_dest == key_game && !cl.intermission && !cls.demoplayback &&
+		cl.stats[STAT_HEALTH] > 0 && (cl.stats[STAT_EQUIPMENT] & required) == required;
+}
+
+static void CL_EquipmentToggle(void)
+{
+	if (cl.equipment_open) {
+		cl.equipment_open = false;
+		return;
+	}
+	if (!CL_EquipmentAvailable() ||
+		(in_attack.state & 1) || (in_grenade.state & 1))
+		return;
+	cl.equipment_highlight = !!(cl.stats[STAT_EQUIPMENT] & EQUIPMENT_BETTY);
+	cl.equipment_open = true;
+}
+
+static int CL_EquipmentGridMove(int slot, int dx, int dy)
+{
+	int column = slot % EQUIPMENT_GRID_COLUMNS + dx;
+	int row = slot / EQUIPMENT_GRID_COLUMNS + dy;
+	int next = row * EQUIPMENT_GRID_COLUMNS + column;
+
+	if (column < 0 || column >= EQUIPMENT_GRID_COLUMNS ||
+		row < 0 || row >= EQUIPMENT_GRID_ROWS || next >= EQUIPMENT_ITEM_COUNT)
+		return slot;
+
+	return next;
+}
+
+qboolean CL_EquipmentKey(int key, qboolean down)
+{
+	const char *binding;
+	int dx = 0, dy = 0;
+	if (!down) {
+		equipment_consumed[key] = false;
+		return false;
+	}
+	if (equipment_consumed[key])
+		return true;
+	if (!cl.equipment_open)
+		return false;
+	if (!CL_EquipmentAvailable()) {
+		cl.equipment_open = false;
+		return false;
+	}
+	binding = keybindings[key] ? keybindings[key] : "";
+	if (!strcmp(binding, "+aim") || (holdbindings[key] && !strcmp(holdbindings[key], "+aim"))) {
+		cl.equipment_open = false;
+		cl.equipment_block_buttons &= ~MOVE_BUTTON_AIM;
+		return false;
+	}
+	switch (key) {
+	case K_LEFTARROW: case K_DPAD_LEFT:
+		dx = -1;
+		break;
+	case K_RIGHTARROW: case K_DPAD_RIGHT:
+		dx = 1;
+		break;
+	case K_UPARROW: case K_DPAD_UP:
+		dy = -1;
+		break;
+	case K_DOWNARROW: case K_DPAD_DOWN:
+		dy = 1;
+		break;
+	}
+
+	if (dx || dy) {
+		cl.equipment_highlight = CL_EquipmentGridMove(cl.equipment_highlight, dx, dy);
+	} else if (key == K_ESCAPE || key == K_START || key == K_SELECT || !strcmp(binding, "+use") ||
+		(holdbindings[key] && !strcmp(holdbindings[key], "+use")) ||
+		!strcmp(binding, "equipment")) {
+		cl.equipment_open = false;
+	} else if (!strcmp(binding, "+attack") || key == K_ENTER) {
+		int count = cl.stats[cl.equipment_highlight ? STAT_SECGRENADES : STAT_PRIGRENADES];
+		if (count > 0 && (!cl.equipment_highlight || (cl.stats[STAT_GRENADES] & 2))) {
+			in_impulse = cl.equipment_highlight ? 35 : 34;
+			cl.equipment_open = false;
+			cl.equipment_name_until = Sys_FloatTime() + 2;
+		}
+	} else if (strcmp(binding, "+grenade") && strcmp(binding, "+reload") &&
+		strcmp(binding, "+switch") && strcmp(binding, "+knife")) {
+		return false; // Includes PSP face-button movement and analog movement elsewhere.
+	}
+	equipment_consumed[key] = true;
+	return true;
+}
+
+void CL_EquipmentReset(void)
+{
+	cl.equipment_open = false;
+	cl.equipment_block_buttons = 0;
+	memset(equipment_consumed, 0, sizeof(equipment_consumed));
+}
+
+static int CL_EquipmentFilterButtons(int bits)
+{
+	if (cl.equipment_open && !CL_EquipmentAvailable())
+		cl.equipment_open = false;
+	cl.equipment_block_buttons &= bits;
+	if (cl.equipment_open)
+		cl.equipment_block_buttons |= bits & EQUIPMENT_COMBAT_BUTTONS;
+	return bits & ~cl.equipment_block_buttons;
+}
+
 cvar_t cl_meleedive = {"cl_meleedive", "1", true};
 
 void KeyDown (kbutton_t *b)
@@ -706,7 +818,7 @@ void CL_SendMove (usercmd_t *cmd)
 	in_use.state &= ~2;
 	
 	if (in_aim.state & 3)
-		bits |= 256;
+		bits |= MOVE_BUTTON_AIM;
 	in_aim.state &= ~2; 
 
 	if (cl_meleedive.value)
@@ -715,6 +827,8 @@ void CL_SendMove (usercmd_t *cmd)
 	// Tell QuakeC when the client is using keyboard/mouse input.
 	if (IN_PlatformHasMouse() && IN_GetActiveDevice() == IN_DEVICE_KEYBOARD_MOUSE)
 		bits |= 1024;
+
+	bits = CL_EquipmentFilterButtons(bits);
 
     MSG_WriteLong (&buf, bits);
 
@@ -791,6 +905,7 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("+aim", IN_AimDown);
 	Cmd_AddCommand ("-aim", IN_AimUp);
 	Cmd_AddCommand ("impulse", IN_Impulse);
+	Cmd_AddCommand ("equipment", CL_EquipmentToggle);
 	Cmd_AddCommand ("+klook", IN_KLookDown);
 	Cmd_AddCommand ("-klook", IN_KLookUp);
 #ifdef __WII__

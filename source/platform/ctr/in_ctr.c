@@ -44,6 +44,7 @@ void IN_PlatformMouseMove(usercmd_t *cmd) { (void)cmd; }
 
 void IN_PlatformInit(void)
 {
+	Cvar_SetValueROM("cl_equipmenthud", 1);
 	mcuHwcInit();
 
 	if (R_SUCCEEDED(HIDUSER_EnableGyroscope())) {
