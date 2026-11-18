@@ -18,3 +18,7 @@ source/_build_info.h
 *.velf
 *.sfo
 testing/working
+*.data
+*.html
+*.js
+*.wasm

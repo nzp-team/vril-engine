@@ -1,46 +1,91 @@
 #include "../../nzportable_def.h"
+
 #include "sdl_local.h"
+#include <SDL2/SDL_mixer.h>
 
 #define SDL_DMA_SAMPLES 32768
-static SDL_AudioDeviceID audio_device;
+
 static unsigned int audio_position;
+static qboolean audio_initialized;
+static unsigned char *audio_buffer;
 
 static void SDLCALL AudioCallback(void *userdata, Uint8 *stream, int length)
 {
 	int bytes = shm->samples * (shm->samplebits / 8);
 	int offset = (audio_position * (shm->samplebits / 8)) % bytes;
 	int first = length < bytes - offset ? length : bytes - offset;
+
 	(void)userdata;
-	memcpy(stream, shm->buffer + offset, first);
-	if (first < length) memcpy(stream + first, shm->buffer, length - first);
+	SDL_MixAudioFormat(stream, shm->buffer + offset, AUDIO_S16SYS, first, SDL_MIX_MAXVOLUME);
+	if (first < length)
+		SDL_MixAudioFormat(stream + first, shm->buffer, AUDIO_S16SYS, length - first, SDL_MIX_MAXVOLUME);
 	audio_position = (audio_position + length / (shm->samplebits / 8)) % shm->samples;
 }
 
 qboolean SNDDMA_Init(void)
 {
-	SDL_AudioSpec wanted, obtained;
-	memset(&wanted, 0, sizeof(wanted));
-	wanted.freq = 44100;
-	wanted.format = AUDIO_S16SYS;
-	wanted.channels = 2;
-	wanted.samples = 1024;
-	wanted.callback = AudioCallback;
-	audio_device = SDL_OpenAudioDevice(NULL, 0, &wanted, &obtained, 0);
-	if (!audio_device) { Con_Printf("SDL audio disabled: %s\n", SDL_GetError()); return false; }
+	int frequency;
+	int channels;
+
+	if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
+		Con_Printf("SDL audio initialization failed: %s\n", SDL_GetError());
+		return false;
+	}
+	if ((Mix_Init(MIX_INIT_MP3) & MIX_INIT_MP3) == 0) {
+		Con_Printf("SDL_mixer MP3 support unavailable: %s\n", Mix_GetError());
+		SDL_QuitSubSystem(SDL_INIT_AUDIO);
+		return false;
+	}
+	if (Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 1024) < 0) {
+		Con_Printf("SDL_mixer audio initialization failed: %s\n", Mix_GetError());
+		Mix_Quit();
+		SDL_QuitSubSystem(SDL_INIT_AUDIO);
+		return false;
+	}
+
 	shm = &sn;
 	shm->splitbuffer = 0;
 	shm->samplebits = 16;
-	shm->speed = obtained.freq;
-	shm->channels = obtained.channels;
+	Mix_QuerySpec(&frequency, NULL, &channels);
+	shm->speed = frequency;
+	shm->channels = channels;
 	shm->samples = SDL_DMA_SAMPLES;
 	shm->samplepos = 0;
 	shm->submission_chunk = 1;
-	shm->buffer = calloc(SDL_DMA_SAMPLES * (shm->samplebits / 8), sizeof(*shm->buffer));
-	if (!shm->buffer) { SDL_CloseAudioDevice(audio_device); audio_device = 0; return false; }
-	SDL_PauseAudioDevice(audio_device, 0);
+	audio_buffer = calloc(SDL_DMA_SAMPLES*2, sizeof(unsigned char));
+	if (!audio_buffer) {
+		Mix_CloseAudio();
+		Mix_Quit();
+		SDL_QuitSubSystem(SDL_INIT_AUDIO);
+		return false;
+	}
+	shm->buffer = audio_buffer;
+
+	Mix_SetPostMix(AudioCallback, NULL);
+	audio_position = 0;
+	audio_initialized = true;
 	return true;
 }
 
-int SNDDMA_GetDMAPos(void) { return (int)audio_position; }
-void SNDDMA_Submit(void) {}
-void SNDDMA_Shutdown(void) { if (audio_device) SDL_CloseAudioDevice(audio_device); free(shm ? shm->buffer : NULL); audio_device = 0; }
+int SNDDMA_GetDMAPos(void)
+{
+	return (int)audio_position;
+}
+
+void SNDDMA_Submit(void)
+{
+}
+
+void SNDDMA_Shutdown(void)
+{
+	if (!audio_initialized)
+		return;
+
+	Mix_SetPostMix(NULL, NULL);
+	Mix_CloseAudio();
+	Mix_Quit();
+	SDL_QuitSubSystem(SDL_INIT_AUDIO);
+	free(audio_buffer);
+	audio_buffer = NULL;
+	audio_initialized = false;
+}

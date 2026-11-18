@@ -1,6 +1,6 @@
 #include "../../nzportable_def.h"
 
-#if !defined(_WIN32)
+#if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
 size_t SDL_strlcpy(char *dst, const char *src, size_t size)
 {
 	size_t length = strlen(src);

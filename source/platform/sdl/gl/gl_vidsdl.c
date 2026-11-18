@@ -34,7 +34,7 @@ void GL_Init(void)
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
@@ -135,9 +135,11 @@ void VID_Init(unsigned char *palette)
 	parameter = COM_CheckParm("-height");
 	if (!parameter) parameter = COM_CheckParm("+vid_height");
 	if (parameter && parameter + 1 < com_argc) sdl_window_height = Q_atoi(com_argv[parameter + 1]);
+	#ifndef __EMSCRIPTEN__
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+	#endif
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	sdl_window = SDL_CreateWindow("Nazi Zombies: Portable", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
